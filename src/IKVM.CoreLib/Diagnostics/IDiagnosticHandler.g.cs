@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{arg0}"
+/// Found main method in class "{arg0}".
         /// </remarks>
         void MainMethodFound(string arg0);
 
@@ -18,7 +18,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{arg0}"
+/// Output file is "{arg0}".
         /// </remarks>
         void OutputFileIs(string arg0);
 
@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{arg0}"
+/// Automatically adding reference to "{arg0}".
         /// </remarks>
         void AutoAddRef(string arg0);
 
@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{arg0}" based on jar manifest
+/// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
         void MainMethodFromManifest(string arg0);
 
@@ -82,7 +82,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{arg0}" not found
+/// Class "{arg0}" not found.
         /// </remarks>
         void ClassNotFound(string arg0);
 
@@ -98,7 +98,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{arg0}"
+/// Duplicate class name: "{arg0}".
         /// </remarks>
         void DuplicateClassName(string arg0);
 

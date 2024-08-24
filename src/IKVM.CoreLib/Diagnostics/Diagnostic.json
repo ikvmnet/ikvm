@@ -2,7 +2,7 @@
     "MainMethodFound": {
         "id": 1,
         "level": "Informational",
-        "message": "Found main method in class \"{arg0}\"",
+        "message": "Found main method in class \"{arg0}\".",
         "args": [
             {
                 "name": "arg0",
@@ -13,7 +13,7 @@
     "OutputFileIs": {
         "id": 2,
         "level": "Informational",
-        "message": "Output file is \"{arg0}\"",
+        "message": "Output file is \"{arg0}\".",
         "args": [
             {
                 "name": "arg0",
@@ -24,7 +24,7 @@
     "AutoAddRef": {
         "id": 3,
         "level": "Informational",
-        "message": "Automatically adding reference to \"{arg0}\"",
+        "message": "Automatically adding reference to \"{arg0}\".",
         "args": [
             {
                 "name": "arg0",
@@ -35,7 +35,7 @@
     "MainMethodFromManifest": {
         "id": 4,
         "level": "Informational",
-        "message": "Using main class \"{arg0}\" based on jar manifest",
+        "message": "Using main class \"{arg0}\" based on jar manifest.",
         "args": [
             {
                 "name": "arg0",
@@ -101,7 +101,7 @@
     "ClassNotFound": {
         "id": 100,
         "level": "Warning",
-        "message": "Class \"{arg0}\" not found",
+        "message": "Class \"{arg0}\" not found.",
         "args": [
             {
                 "name": "arg0",
@@ -127,7 +127,7 @@
     "DuplicateClassName": {
         "id": 102,
         "level": "Warning",
-        "message": "Duplicate class name: \"{arg0}\"",
+        "message": "Duplicate class name: \"{arg0}\".",
         "args": [
             {
                 "name": "arg0",

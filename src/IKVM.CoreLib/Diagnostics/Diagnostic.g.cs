@@ -12,12 +12,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{arg0}"
+/// Found main method in class "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), CompositeFormat.Parse("Found main method in class \"{0}\""), DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), CompositeFormat.Parse("Found main method in class \"{0}\"."), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), "Found main method in class \"{0}\"", DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), "Found main method in class \"{0}\".", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -29,12 +29,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{arg0}"
+/// Output file is "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), CompositeFormat.Parse("Output file is \"{0}\""), DiagnosticLevel.Informational);
+        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), CompositeFormat.Parse("Output file is \"{0}\"."), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), "Output file is \"{0}\"", DiagnosticLevel.Informational);
+        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), "Output file is \"{0}\".", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -46,12 +46,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{arg0}"
+/// Automatically adding reference to "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), CompositeFormat.Parse("Automatically adding reference to \"{0}\""), DiagnosticLevel.Informational);
+        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), CompositeFormat.Parse("Automatically adding reference to \"{0}\"."), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), "Automatically adding reference to \"{0}\"", DiagnosticLevel.Informational);
+        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), "Automatically adding reference to \"{0}\".", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -63,12 +63,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{arg0}" based on jar manifest
+/// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), CompositeFormat.Parse("Using main class \"{0}\" based on jar manifest"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), CompositeFormat.Parse("Using main class \"{0}\" based on jar manifest."), DiagnosticLevel.Informational);
 #else
-        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), "Using main class \"{0}\" based on jar manifest", DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), "Using main class \"{0}\" based on jar manifest.", DiagnosticLevel.Informational);
 #endif
 
     }
@@ -165,12 +165,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{arg0}" not found
+/// Class "{arg0}" not found.
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic ClassNotFound = new Diagnostic(100, nameof(ClassNotFound), CompositeFormat.Parse("Class \"{0}\" not found"), DiagnosticLevel.Warning);
+        public static readonly Diagnostic ClassNotFound = new Diagnostic(100, nameof(ClassNotFound), CompositeFormat.Parse("Class \"{0}\" not found."), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic ClassNotFound = new Diagnostic(100, nameof(ClassNotFound), "Class \"{0}\" not found", DiagnosticLevel.Warning);
+        public static readonly Diagnostic ClassNotFound = new Diagnostic(100, nameof(ClassNotFound), "Class \"{0}\" not found.", DiagnosticLevel.Warning);
 #endif
 
     }
@@ -199,12 +199,12 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{arg0}"
+/// Duplicate class name: "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic DuplicateClassName = new Diagnostic(102, nameof(DuplicateClassName), CompositeFormat.Parse("Duplicate class name: \"{0}\""), DiagnosticLevel.Warning);
+        public static readonly Diagnostic DuplicateClassName = new Diagnostic(102, nameof(DuplicateClassName), CompositeFormat.Parse("Duplicate class name: \"{0}\"."), DiagnosticLevel.Warning);
 #else
-        public static readonly Diagnostic DuplicateClassName = new Diagnostic(102, nameof(DuplicateClassName), "Duplicate class name: \"{0}\"", DiagnosticLevel.Warning);
+        public static readonly Diagnostic DuplicateClassName = new Diagnostic(102, nameof(DuplicateClassName), "Duplicate class name: \"{0}\".", DiagnosticLevel.Warning);
 #endif
 
     }

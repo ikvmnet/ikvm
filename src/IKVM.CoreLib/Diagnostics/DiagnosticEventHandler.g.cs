@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{arg0}"
+/// Found main method in class "{arg0}".
         /// </remarks>
         public void MainMethodFound(string arg0) => Report(Diagnostic.MainMethodFound.Event([arg0]));
 
@@ -18,7 +18,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{arg0}"
+/// Output file is "{arg0}".
         /// </remarks>
         public void OutputFileIs(string arg0) => Report(Diagnostic.OutputFileIs.Event([arg0]));
 
@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{arg0}"
+/// Automatically adding reference to "{arg0}".
         /// </remarks>
         public void AutoAddRef(string arg0) => Report(Diagnostic.AutoAddRef.Event([arg0]));
 
@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{arg0}" based on jar manifest
+/// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
         public void MainMethodFromManifest(string arg0) => Report(Diagnostic.MainMethodFromManifest.Event([arg0]));
 
@@ -82,7 +82,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{arg0}" not found
+/// Class "{arg0}" not found.
         /// </remarks>
         public void ClassNotFound(string arg0) => Report(Diagnostic.ClassNotFound.Event([arg0]));
 
@@ -98,7 +98,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{arg0}"
+/// Duplicate class name: "{arg0}".
         /// </remarks>
         public void DuplicateClassName(string arg0) => Report(Diagnostic.DuplicateClassName.Event([arg0]));
 

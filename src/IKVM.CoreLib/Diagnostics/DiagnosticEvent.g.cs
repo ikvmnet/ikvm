@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{arg0}"
+/// Found main method in class "{arg0}".
         /// </remarks>
         public static DiagnosticEvent MainMethodFound(string arg0) => Diagnostic.MainMethodFound.Event((object?[])[arg0]);
 
@@ -20,7 +20,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{arg0}"
+/// Output file is "{arg0}".
         /// </remarks>
         public static DiagnosticEvent OutputFileIs(string arg0) => Diagnostic.OutputFileIs.Event((object?[])[arg0]);
 
@@ -28,7 +28,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{arg0}"
+/// Automatically adding reference to "{arg0}".
         /// </remarks>
         public static DiagnosticEvent AutoAddRef(string arg0) => Diagnostic.AutoAddRef.Event((object?[])[arg0]);
 
@@ -36,7 +36,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{arg0}" based on jar manifest
+/// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
         public static DiagnosticEvent MainMethodFromManifest(string arg0) => Diagnostic.MainMethodFromManifest.Event((object?[])[arg0]);
 
@@ -84,7 +84,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{arg0}" not found
+/// Class "{arg0}" not found.
         /// </remarks>
         public static DiagnosticEvent ClassNotFound(string arg0) => Diagnostic.ClassNotFound.Event((object?[])[arg0]);
 
@@ -100,7 +100,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{arg0}"
+/// Duplicate class name: "{arg0}".
         /// </remarks>
         public static DiagnosticEvent DuplicateClassName(string arg0) => Diagnostic.DuplicateClassName.Event((object?[])[arg0]);
 

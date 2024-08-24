@@ -12,43 +12,43 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{0}"
+/// Found main method in class "{arg0}".
         /// </remarks>
-        [Event(1, Message = "Found main method in class \"{0}\"", Level = EventLevel.Informational)]
+        [Event(1, Message = "Found main method in class \"{0}\".", Level = EventLevel.Informational)]
         public void MainMethodFound(string arg0) => WriteEvent(1, arg0);
 
         /// <summary>
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{0}"
+/// Output file is "{arg0}".
         /// </remarks>
-        [Event(2, Message = "Output file is \"{0}\"", Level = EventLevel.Informational)]
+        [Event(2, Message = "Output file is \"{0}\".", Level = EventLevel.Informational)]
         public void OutputFileIs(string arg0) => WriteEvent(2, arg0);
 
         /// <summary>
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{0}"
+/// Automatically adding reference to "{arg0}".
         /// </remarks>
-        [Event(3, Message = "Automatically adding reference to \"{0}\"", Level = EventLevel.Informational)]
+        [Event(3, Message = "Automatically adding reference to \"{0}\".", Level = EventLevel.Informational)]
         public void AutoAddRef(string arg0) => WriteEvent(3, arg0);
 
         /// <summary>
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{0}" based on jar manifest
+/// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
-        [Event(4, Message = "Using main class \"{0}\" based on jar manifest", Level = EventLevel.Informational)]
+        [Event(4, Message = "Using main class \"{0}\" based on jar manifest.", Level = EventLevel.Informational)]
         public void MainMethodFromManifest(string arg0) => WriteEvent(4, arg0);
 
         /// <summary>
         /// The 'GenericCompilerInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(5, Message = "{0}", Level = EventLevel.Informational)]
         public void GenericCompilerInfo(string arg0) => WriteEvent(5, arg0);
@@ -57,7 +57,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericClassLoadingInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6, Message = "{0}", Level = EventLevel.Informational)]
         public void GenericClassLoadingInfo(string arg0) => WriteEvent(6, arg0);
@@ -66,7 +66,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericVerifierInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(7, Message = "{0}", Level = EventLevel.Informational)]
         public void GenericVerifierInfo(string arg0) => WriteEvent(7, arg0);
@@ -75,7 +75,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericRuntimeInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(8, Message = "{0}", Level = EventLevel.Informational)]
         public void GenericRuntimeInfo(string arg0) => WriteEvent(8, arg0);
@@ -84,7 +84,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericJniInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(9, Message = "{0}", Level = EventLevel.Informational)]
         public void GenericJniInfo(string arg0) => WriteEvent(9, arg0);
@@ -93,16 +93,16 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{0}" not found
+/// Class "{arg0}" not found.
         /// </remarks>
-        [Event(100, Message = "Class \"{0}\" not found", Level = EventLevel.Warning)]
+        [Event(100, Message = "Class \"{0}\" not found.", Level = EventLevel.Warning)]
         public void ClassNotFound(string arg0) => WriteEvent(100, arg0);
 
         /// <summary>
         /// The 'ClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{0}". (class format error "{1}")
+/// Unable to compile class "{arg0}". (class format error "{arg1}")
         /// </remarks>
         [Event(101, Message = "Unable to compile class \"{0}\". (class format error \"{1}\")", Level = EventLevel.Warning)]
         public void ClassFormatError(string arg0, string arg1) => WriteEvent(101, arg0, arg1);
@@ -111,16 +111,16 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{0}"
+/// Duplicate class name: "{arg0}".
         /// </remarks>
-        [Event(102, Message = "Duplicate class name: \"{0}\"", Level = EventLevel.Warning)]
+        [Event(102, Message = "Duplicate class name: \"{0}\".", Level = EventLevel.Warning)]
         public void DuplicateClassName(string arg0) => WriteEvent(102, arg0);
 
         /// <summary>
         /// The 'IllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{0}". (illegal access error "{1}")
+/// Unable to compile class "{arg0}". (illegal access error "{arg1}")
         /// </remarks>
         [Event(103, Message = "Unable to compile class \"{0}\". (illegal access error \"{1}\")", Level = EventLevel.Warning)]
         public void IllegalAccessError(string arg0, string arg1) => WriteEvent(103, arg0, arg1);
@@ -129,7 +129,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'VerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{0}". (verification error "{1}")
+/// Unable to compile class "{arg0}". (verification error "{arg1}")
         /// </remarks>
         [Event(104, Message = "Unable to compile class \"{0}\". (verification error \"{1}\")", Level = EventLevel.Warning)]
         public void VerificationError(string arg0, string arg1) => WriteEvent(104, arg0, arg1);
@@ -138,7 +138,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'NoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{0}". (missing class "{1}")
+/// Unable to compile class "{arg0}". (missing class "{arg1}")
         /// </remarks>
         [Event(105, Message = "Unable to compile class \"{0}\". (missing class \"{1}\")", Level = EventLevel.Warning)]
         public void NoClassDefFoundError(string arg0, string arg1) => WriteEvent(105, arg0, arg1);
@@ -147,7 +147,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericUnableToCompileError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{0}". ("{1}": "{2}")
+/// Unable to compile class "{arg0}". ("{arg1}": "{arg2}")
         /// </remarks>
         [Event(106, Message = "Unable to compile class \"{0}\". (\"{1}\": \"{2}\")", Level = EventLevel.Warning)]
         public void GenericUnableToCompileError(string arg0, string arg1, string arg2) => WriteEvent(106, arg0, arg1, arg2);
@@ -156,7 +156,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'DuplicateResourceName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Skipping resource (name clash): "{0}"
+/// Skipping resource (name clash): "{arg0}"
         /// </remarks>
         [Event(107, Message = "Skipping resource (name clash): \"{0}\"", Level = EventLevel.Warning)]
         public void DuplicateResourceName(string arg0) => WriteEvent(107, arg0);
@@ -165,7 +165,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'SkippingReferencedClass' diagnostic.
         /// </summary>
         /// <remarks>
-/// Skipping class: "{0}". (class is already available in referenced assembly "{1}")
+/// Skipping class: "{arg0}". (class is already available in referenced assembly "{arg1}")
         /// </remarks>
         [Event(109, Message = "Skipping class: \"{0}\". (class is already available in referenced assembly \"{1}\")", Level = EventLevel.Warning)]
         public void SkippingReferencedClass(string arg0, string arg1) => WriteEvent(109, arg0, arg1);
@@ -183,7 +183,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedNoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoClassDefFoundError in "{0}". ("{1}").
+/// Emitted java.lang.NoClassDefFoundError in "{arg0}". ("{arg1}").
         /// </remarks>
         [Event(111, Message = "Emitted java.lang.NoClassDefFoundError in \"{0}\". (\"{1}\").", Level = EventLevel.Warning)]
         public void EmittedNoClassDefFoundError(string arg0, string arg1) => WriteEvent(111, arg0, arg1);
@@ -192,7 +192,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedIllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IllegalAccessError in "{0}". ("{1}")
+/// Emitted java.lang.IllegalAccessError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(112, Message = "Emitted java.lang.IllegalAccessError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedIllegalAccessError(string arg0, string arg1) => WriteEvent(112, arg0, arg1);
@@ -201,7 +201,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedInstantiationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.InstantiationError in "{0}". ("{1}")
+/// Emitted java.lang.InstantiationError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(113, Message = "Emitted java.lang.InstantiationError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedInstantiationError(string arg0, string arg1) => WriteEvent(113, arg0, arg1);
@@ -210,7 +210,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedIncompatibleClassChangeError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IncompatibleClassChangeError in "{0}". ("{1}")
+/// Emitted java.lang.IncompatibleClassChangeError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(114, Message = "Emitted java.lang.IncompatibleClassChangeError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedIncompatibleClassChangeError(string arg0, string arg1) => WriteEvent(114, arg0, arg1);
@@ -219,7 +219,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedNoSuchFieldError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchFieldError in "{0}". ("{1}")
+/// Emitted java.lang.NoSuchFieldError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(115, Message = "Emitted java.lang.NoSuchFieldError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedNoSuchFieldError(string arg0, string arg1) => WriteEvent(115, arg0, arg1);
@@ -228,7 +228,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedAbstractMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.AbstractMethodError in "{0}". ("{1}")
+/// Emitted java.lang.AbstractMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(116, Message = "Emitted java.lang.AbstractMethodError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedAbstractMethodError(string arg0, string arg1) => WriteEvent(116, arg0, arg1);
@@ -237,7 +237,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedNoSuchMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchMethodError in "{0}". ("{1}")
+/// Emitted java.lang.NoSuchMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(117, Message = "Emitted java.lang.NoSuchMethodError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedNoSuchMethodError(string arg0, string arg1) => WriteEvent(117, arg0, arg1);
@@ -246,7 +246,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedLinkageError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.LinkageError in "{0}". ("{1}")
+/// Emitted java.lang.LinkageError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(118, Message = "Emitted java.lang.LinkageError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedLinkageError(string arg0, string arg1) => WriteEvent(118, arg0, arg1);
@@ -255,7 +255,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedVerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.VerificationError in "{0}". ("{1}")
+/// Emitted java.lang.VerificationError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(119, Message = "Emitted java.lang.VerificationError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedVerificationError(string arg0, string arg1) => WriteEvent(119, arg0, arg1);
@@ -264,7 +264,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'EmittedClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.ClassFormatError in "{0}". ("{1}")
+/// Emitted java.lang.ClassFormatError in "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(120, Message = "Emitted java.lang.ClassFormatError in \"{0}\". (\"{1}\")", Level = EventLevel.Warning)]
         public void EmittedClassFormatError(string arg0, string arg1) => WriteEvent(120, arg0, arg1);
@@ -273,7 +273,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error emitting "{0}" custom attribute. ("{1}")
+/// Error emitting "{arg0}" custom attribute. ("{arg1}")
         /// </remarks>
         [Event(121, Message = "Error emitting \"{0}\" custom attribute. (\"{1}\")", Level = EventLevel.Warning)]
         public void InvalidCustomAttribute(string arg0, string arg1) => WriteEvent(121, arg0, arg1);
@@ -282,7 +282,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'IgnoredCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom attribute "{0}" was ignored. ("{1}")
+/// Custom attribute "{arg0}" was ignored. ("{arg1}")
         /// </remarks>
         [Event(122, Message = "Custom attribute \"{0}\" was ignored. (\"{1}\")", Level = EventLevel.Warning)]
         public void IgnoredCustomAttribute(string arg0, string arg1) => WriteEvent(122, arg0, arg1);
@@ -291,7 +291,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'AssumeAssemblyVersionMatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Assuming assembly reference "{0}" matches "{1}", you may need to supply runtime policy
+/// Assuming assembly reference "{arg0}" matches "{arg1}", you may need to supply runtime policy
         /// </remarks>
         [Event(123, Message = "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime p" +
     "olicy", Level = EventLevel.Warning)]
@@ -301,7 +301,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidDirectoryInLibOptionPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{0}" specified in -lib option is not valid.
+/// Directory "{arg0}" specified in -lib option is not valid.
         /// </remarks>
         [Event(124, Message = "Directory \"{0}\" specified in -lib option is not valid.", Level = EventLevel.Warning)]
         public void InvalidDirectoryInLibOptionPath(string arg0) => WriteEvent(124, arg0);
@@ -310,7 +310,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidDirectoryInLibEnvironmentPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{0}" specified in LIB environment is not valid.
+/// Directory "{arg0}" specified in LIB environment is not valid.
         /// </remarks>
         [Event(125, Message = "Directory \"{0}\" specified in LIB environment is not valid.", Level = EventLevel.Warning)]
         public void InvalidDirectoryInLibEnvironmentPath(string arg0) => WriteEvent(125, arg0);
@@ -319,7 +319,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'LegacySearchRule' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found assembly "{0}" using legacy search rule, please append '.dll' to the reference.
+/// Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference.
         /// </remarks>
         [Event(126, Message = "Found assembly \"{0}\" using legacy search rule, please append \'.dll\' to the refere" +
     "nce.", Level = EventLevel.Warning)]
@@ -329,7 +329,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'AssemblyLocationIgnored' diagnostic.
         /// </summary>
         /// <remarks>
-/// Assembly "{0}" is ignored as previously loaded assembly "{1}" has the same identity "{2}".
+/// Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}".
         /// </remarks>
         [Event(127, Message = "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identi" +
     "ty \"{2}\".", Level = EventLevel.Warning)]
@@ -339,7 +339,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InterfaceMethodCantBeInternal' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring @ikvm.lang.Internal annotation on interface method. ("{0}.{1}{2}")
+/// Ignoring @ikvm.lang.Internal annotation on interface method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         [Event(128, Message = "Ignoring @ikvm.lang.Internal annotation on interface method. (\"{0}.{1}{2}\")", Level = EventLevel.Warning)]
         public void InterfaceMethodCantBeInternal(string arg0, string arg1, string arg2) => WriteEvent(128, arg0, arg1, arg2);
@@ -348,7 +348,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'DuplicateAssemblyReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate assembly reference "{0}"
+/// Duplicate assembly reference "{arg0}"
         /// </remarks>
         [Event(132, Message = "Duplicate assembly reference \"{0}\"", Level = EventLevel.Warning)]
         public void DuplicateAssemblyReference(string arg0) => WriteEvent(132, arg0);
@@ -357,7 +357,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnableToResolveType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference in "{0}" to type "{1}" claims it is defined in "{2}", but it could not be found.
+/// Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found.
         /// </remarks>
         [Event(133, Message = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not " +
     "be found.", Level = EventLevel.Warning)]
@@ -367,7 +367,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'StubsAreDeprecated' diagnostic.
         /// </summary>
         /// <remarks>
-/// Compiling stubs is deprecated. Please add a reference to assembly "{0}" instead.
+/// Compiling stubs is deprecated. Please add a reference to assembly "{arg0}" instead.
         /// </remarks>
         [Event(134, Message = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.", Level = EventLevel.Warning)]
         public void StubsAreDeprecated(string arg0) => WriteEvent(134, arg0);
@@ -376,7 +376,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'WrongClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile "{0}" (wrong name: "{1}")
+/// Unable to compile "{arg0}" (wrong name: "{arg1}")
         /// </remarks>
         [Event(135, Message = "Unable to compile \"{0}\" (wrong name: \"{1}\")", Level = EventLevel.Warning)]
         public void WrongClassName(string arg0, string arg1) => WriteEvent(135, arg0, arg1);
@@ -385,7 +385,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ReflectionCallerClassRequiresCallerID' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reflection.getCallerClass() called from non-CallerID method. ("{0}.{1}{2}")
+/// Reflection.getCallerClass() called from non-CallerID method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         [Event(136, Message = "Reflection.getCallerClass() called from non-CallerID method. (\"{0}.{1}{2}\")", Level = EventLevel.Warning)]
         public void ReflectionCallerClassRequiresCallerID(string arg0, string arg1, string arg2) => WriteEvent(136, arg0, arg1, arg2);
@@ -413,7 +413,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnknownWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(999, Message = "{0}", Level = EventLevel.Warning)]
         public void UnknownWarning(string arg0) => WriteEvent(999, arg0);
@@ -422,7 +422,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'DuplicateIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}.
+/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         [Event(139, Message = "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}.", Level = EventLevel.Warning)]
         public void DuplicateIkvmLangProperty(string arg0, string arg1) => WriteEvent(139, arg0, arg1);
@@ -431,7 +431,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MalformedIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}.
+/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         [Event(140, Message = "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}.", Level = EventLevel.Warning)]
         public void MalformedIkvmLangProperty(string arg0, string arg1) => WriteEvent(140, arg0, arg1);
@@ -440,7 +440,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericCompilerWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(5, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericCompilerWarning(string arg0) => WriteEvent(5, arg0);
@@ -449,7 +449,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericClassLoadingWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericClassLoadingWarning(string arg0) => WriteEvent(6, arg0);
@@ -458,7 +458,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericVerifierWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericVerifierWarning(string arg0) => WriteEvent(6, arg0);
@@ -467,7 +467,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericRuntimeWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(7, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericRuntimeWarning(string arg0) => WriteEvent(7, arg0);
@@ -476,7 +476,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericJniWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6, Message = "{0}", Level = EventLevel.Warning)]
         public void GenericJniWarning(string arg0) => WriteEvent(6, arg0);
@@ -485,7 +485,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnableToCreateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to create proxy "{0}". ("{1}")
+/// Unable to create proxy "{arg0}". ("{arg1}")
         /// </remarks>
         [Event(4001, Message = "Unable to create proxy \"{0}\". (\"{1}\")", Level = EventLevel.Error)]
         public void UnableToCreateProxy(string arg0, string arg1) => WriteEvent(4001, arg0, arg1);
@@ -494,7 +494,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'DuplicateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate proxy "{0}".
+/// Duplicate proxy "{arg0}".
         /// </remarks>
         [Event(4002, Message = "Duplicate proxy \"{0}\".", Level = EventLevel.Error)]
         public void DuplicateProxy(string arg0) => WriteEvent(4002, arg0);
@@ -503,7 +503,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MapXmlUnableToResolveOpCode' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve opcode in remap file: {0}.
+/// Unable to resolve opcode in remap file: {arg0}.
         /// </remarks>
         [Event(4003, Message = "Unable to resolve opcode in remap file: {0}.", Level = EventLevel.Error)]
         public void MapXmlUnableToResolveOpCode(string arg0) => WriteEvent(4003, arg0);
@@ -512,7 +512,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MapXmlError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error in remap file: {0}.
+/// Error in remap file: {arg0}.
         /// </remarks>
         [Event(4004, Message = "Error in remap file: {0}.", Level = EventLevel.Error)]
         public void MapXmlError(string arg0) => WriteEvent(4004, arg0);
@@ -521,7 +521,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InputFileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Source file '{0}' not found.
+/// Source file '{arg0}' not found.
         /// </remarks>
         [Event(4005, Message = "Source file \'{0}\' not found.", Level = EventLevel.Error)]
         public void InputFileNotFound(string arg0) => WriteEvent(4005, arg0);
@@ -530,7 +530,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnknownFileType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown file type: {0}.
+/// Unknown file type: {arg0}.
         /// </remarks>
         [Event(4006, Message = "Unknown file type: {0}.", Level = EventLevel.Error)]
         public void UnknownFileType(string arg0) => WriteEvent(4006, arg0);
@@ -539,7 +539,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnknownElementInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown element {0} in remap file, line {1}, column {2}.
+/// Unknown element {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         [Event(4007, Message = "Unknown element {0} in remap file, line {1}, column {2}.", Level = EventLevel.Error)]
         public void UnknownElementInMapFile(string arg0, string arg1, string arg2) => WriteEvent(4007, arg0, arg1, arg2);
@@ -548,7 +548,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnknownAttributeInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown attribute {0} in remap file, line {1}, column {2}.
+/// Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         [Event(4008, Message = "Unknown attribute {0} in remap file, line {1}, column {2}.", Level = EventLevel.Error)]
         public void UnknownAttributeInMapFile(string arg0, string arg1, string arg2) => WriteEvent(4008, arg0, arg1, arg2);
@@ -557,7 +557,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidMemberNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {0} name '{1}' in remap file in class {2}.
+/// Invalid {arg0} name '{arg1}' in remap file in class {arg2}.
         /// </remarks>
         [Event(4009, Message = "Invalid {0} name \'{1}\' in remap file in class {2}.", Level = EventLevel.Error)]
         public void InvalidMemberNameInMapFile(string arg0, string arg1, string arg2) => WriteEvent(4009, arg0, arg1, arg2);
@@ -566,7 +566,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidMemberSignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {0} signature '{3}' in remap file for {0} {1}.{2}.
+/// Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}.
         /// </remarks>
         [Event(4010, Message = "Invalid {0} signature \'{3}\' in remap file for {0} {1}.{2}.", Level = EventLevel.Error)]
         public void InvalidMemberSignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => WriteEvent(4010, arg0, arg1, arg2, arg3);
@@ -575,7 +575,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidPropertyNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {0} name '{3}' in remap file for property {1}.{2}.
+/// Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         [Event(4011, Message = "Invalid property {0} name \'{3}\' in remap file for property {1}.{2}.", Level = EventLevel.Error)]
         public void InvalidPropertyNameInMapFile(string arg0, string arg1, string arg2, string arg3) => WriteEvent(4011, arg0, arg1, arg2, arg3);
@@ -584,7 +584,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidPropertySignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {0} signature '{3}' in remap file for property {1}.{2}.
+/// Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         [Event(4012, Message = "Invalid property {0} signature \'{3}\' in remap file for property {1}.{2}.", Level = EventLevel.Error)]
         public void InvalidPropertySignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => WriteEvent(4012, arg0, arg1, arg2, arg3);
@@ -593,7 +593,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'NonPrimaryAssemblyReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly "{0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{1}" instead.
+/// Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead.
         /// </remarks>
         [Event(4013, Message = "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader gr" +
     "oup, please reference primary assembly \"{1}\" instead.", Level = EventLevel.Error)]
@@ -603,7 +603,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MissingType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference to type "{0}" claims it is defined in "{1}", but it could not be found.
+/// Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found.
         /// </remarks>
         [Event(4014, Message = "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found." +
     "", Level = EventLevel.Error)]
@@ -613,7 +613,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MissingReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{1}'.
+/// The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         [Event(4015, Message = "The type \'{0}\' is defined in an assembly that is notResponseFileDepthExceeded ref" +
     "erenced. You must add a reference to assembly \'{1}\'.", Level = EventLevel.Error)]
@@ -623,7 +623,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'CallerSensitiveOnUnsupportedMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// CallerSensitive annotation on unsupported method. ("{0}.{1}{2}")
+/// CallerSensitive annotation on unsupported method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         [Event(4016, Message = "CallerSensitive annotation on unsupported method. (\"{0}.{1}{2}\")", Level = EventLevel.Error)]
         public void CallerSensitiveOnUnsupportedMethod(string arg0, string arg1, string arg2) => WriteEvent(4016, arg0, arg1, arg2);
@@ -632,7 +632,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'RemappedTypeMissingDefaultInterfaceMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0} does not implement default interface method {1}.
+/// {arg0} does not implement default interface method {arg1}.
         /// </remarks>
         [Event(4017, Message = "{0} does not implement default interface method {1}.", Level = EventLevel.Error)]
         public void RemappedTypeMissingDefaultInterfaceMethod(string arg0, string arg1) => WriteEvent(4017, arg0, arg1);
@@ -641,7 +641,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericCompilerError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(4018, Message = "{0}", Level = EventLevel.Error)]
         public void GenericCompilerError(string arg0) => WriteEvent(4018, arg0);
@@ -650,7 +650,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericClassLoadingError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(4019, Message = "{0}", Level = EventLevel.Error)]
         public void GenericClassLoadingError(string arg0) => WriteEvent(4019, arg0);
@@ -659,7 +659,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericVerifierError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(4020, Message = "{0}", Level = EventLevel.Error)]
         public void GenericVerifierError(string arg0) => WriteEvent(4020, arg0);
@@ -668,7 +668,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericRuntimeError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(4021, Message = "{0}", Level = EventLevel.Error)]
         public void GenericRuntimeError(string arg0) => WriteEvent(4021, arg0);
@@ -677,7 +677,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericJniError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(4022, Message = "{0}", Level = EventLevel.Error)]
         public void GenericJniError(string arg0) => WriteEvent(4022, arg0);
@@ -704,7 +704,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ErrorReadingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to read file: {0}. ({1})
+/// Unable to read file: {arg0}. ({arg1})
         /// </remarks>
         [Event(5001, Message = "Unable to read file: {0}. ({1})", Level = EventLevel.Critical)]
         public void ErrorReadingFile(string arg0, string arg1) => WriteEvent(5001, arg0, arg1);
@@ -722,7 +722,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'FileFormatLimitationExceeded' diagnostic.
         /// </summary>
         /// <remarks>
-/// File format limitation exceeded: {0}.
+/// File format limitation exceeded: {arg0}.
         /// </remarks>
         [Event(5003, Message = "File format limitation exceeded: {0}.", Level = EventLevel.Critical)]
         public void FileFormatLimitationExceeded(string arg0) => WriteEvent(5003, arg0);
@@ -749,7 +749,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidStrongNameKeyPair' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid key {0} specified. ("{1}")
+/// Invalid key {arg0} specified. ("{arg1}")
         /// </remarks>
         [Event(5006, Message = "Invalid key {0} specified. (\"{1}\")", Level = EventLevel.Critical)]
         public void InvalidStrongNameKeyPair(string arg0, string arg1) => WriteEvent(5006, arg0, arg1);
@@ -758,7 +758,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ReferenceNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference not found: {0}
+/// Reference not found: {arg0}
         /// </remarks>
         [Event(5007, Message = "Reference not found: {0}", Level = EventLevel.Critical)]
         public void ReferenceNotFound(string arg0) => WriteEvent(5007, arg0);
@@ -776,7 +776,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnrecognizedTargetType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{0}' for -target option.
+/// Invalid value '{arg0}' for -target option.
         /// </remarks>
         [Event(5009, Message = "Invalid value \'{0}\' for -target option.", Level = EventLevel.Critical)]
         public void UnrecognizedTargetType(string arg0) => WriteEvent(5009, arg0);
@@ -785,7 +785,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnrecognizedPlatform' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{0}' for -platform option.
+/// Invalid value '{arg0}' for -platform option.
         /// </remarks>
         [Event(5010, Message = "Invalid value \'{0}\' for -platform option.", Level = EventLevel.Critical)]
         public void UnrecognizedPlatform(string arg0) => WriteEvent(5010, arg0);
@@ -794,7 +794,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnrecognizedApartment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{0}' for -apartment option.
+/// Invalid value '{arg0}' for -apartment option.
         /// </remarks>
         [Event(5011, Message = "Invalid value \'{0}\' for -apartment option.", Level = EventLevel.Critical)]
         public void UnrecognizedApartment(string arg0) => WriteEvent(5011, arg0);
@@ -803,7 +803,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MissingFileSpecification' diagnostic.
         /// </summary>
         /// <remarks>
-/// Missing file specification for '{0}' option.
+/// Missing file specification for '{arg0}' option.
         /// </remarks>
         [Event(5012, Message = "Missing file specification for \'{0}\' option.", Level = EventLevel.Critical)]
         public void MissingFileSpecification(string arg0) => WriteEvent(5012, arg0);
@@ -812,7 +812,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'PathTooLong' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path too long: {0}.
+/// Path too long: {arg0}.
         /// </remarks>
         [Event(5013, Message = "Path too long: {0}.", Level = EventLevel.Critical)]
         public void PathTooLong(string arg0) => WriteEvent(5013, arg0);
@@ -821,7 +821,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'PathNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path not found: {0}.
+/// Path not found: {arg0}.
         /// </remarks>
         [Event(5014, Message = "Path not found: {0}.", Level = EventLevel.Critical)]
         public void PathNotFound(string arg0) => WriteEvent(5014, arg0);
@@ -830,7 +830,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid path: {0}.
+/// Invalid path: {arg0}.
         /// </remarks>
         [Event(5015, Message = "Invalid path: {0}.", Level = EventLevel.Critical)]
         public void InvalidPath(string arg0) => WriteEvent(5015, arg0);
@@ -839,7 +839,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidOptionSyntax' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid option: {0}.
+/// Invalid option: {arg0}.
         /// </remarks>
         [Event(5016, Message = "Invalid option: {0}.", Level = EventLevel.Critical)]
         public void InvalidOptionSyntax(string arg0) => WriteEvent(5016, arg0);
@@ -848,7 +848,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ExternalResourceNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file does not exist: {0}.
+/// External resource file does not exist: {arg0}.
         /// </remarks>
         [Event(5017, Message = "External resource file does not exist: {0}.", Level = EventLevel.Critical)]
         public void ExternalResourceNotFound(string arg0) => WriteEvent(5017, arg0);
@@ -857,7 +857,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ExternalResourceNameInvalid' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file may not include path specification: {0}.
+/// External resource file may not include path specification: {arg0}.
         /// </remarks>
         [Event(5018, Message = "External resource file may not include path specification: {0}.", Level = EventLevel.Critical)]
         public void ExternalResourceNameInvalid(string arg0) => WriteEvent(5018, arg0);
@@ -866,7 +866,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidVersionFormat' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid version specified: {0}.
+/// Invalid version specified: {arg0}.
         /// </remarks>
         [Event(5019, Message = "Invalid version specified: {0}.", Level = EventLevel.Critical)]
         public void InvalidVersionFormat(string arg0) => WriteEvent(5019, arg0);
@@ -875,7 +875,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidFileAlignment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{0}' for -filealign option.
+/// Invalid value '{arg0}' for -filealign option.
         /// </remarks>
         [Event(5020, Message = "Invalid value \'{0}\' for -filealign option.", Level = EventLevel.Critical)]
         public void InvalidFileAlignment(string arg0) => WriteEvent(5020, arg0);
@@ -884,7 +884,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ErrorWritingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to write file: {0}. ({1})
+/// Unable to write file: {arg0}. ({arg1})
         /// </remarks>
         [Event(5021, Message = "Unable to write file: {0}. ({1})", Level = EventLevel.Critical)]
         public void ErrorWritingFile(string arg0, string arg1) => WriteEvent(5021, arg0, arg1);
@@ -893,7 +893,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnrecognizedOption' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unrecognized option: {0}.
+/// Unrecognized option: {arg0}.
         /// </remarks>
         [Event(5022, Message = "Unrecognized option: {0}.", Level = EventLevel.Critical)]
         public void UnrecognizedOption(string arg0) => WriteEvent(5022, arg0);
@@ -965,7 +965,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ErrorParsingMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to parse remap file: {0}. ({1})
+/// Unable to parse remap file: {arg0}. ({arg1})
         /// </remarks>
         [Event(5030, Message = "Unable to parse remap file: {0}. ({1})", Level = EventLevel.Critical)]
         public void ErrorParsingMapFile(string arg0, string arg1) => WriteEvent(5030, arg0, arg1);
@@ -1074,7 +1074,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MapFileTypeNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{0}' referenced in remap file was not found.
+/// Type '{arg0}' referenced in remap file was not found.
         /// </remarks>
         [Event(5042, Message = "Type \'{0}\' referenced in remap file was not found.", Level = EventLevel.Critical)]
         public void MapFileTypeNotFound(string arg0) => WriteEvent(5042, arg0);
@@ -1083,7 +1083,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MapFileClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class '{0}' referenced in remap file was not found.
+/// Class '{arg0}' referenced in remap file was not found.
         /// </remarks>
         [Event(5043, Message = "Class \'{0}\' referenced in remap file was not found.", Level = EventLevel.Critical)]
         public void MapFileClassNotFound(string arg0) => WriteEvent(5043, arg0);
@@ -1101,7 +1101,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'LinkageError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Link error: {0}
+/// Link error: {arg0}
         /// </remarks>
         [Event(5045, Message = "Link error: {0}", Level = EventLevel.Critical)]
         public void LinkageError(string arg0) => WriteEvent(5045, arg0);
@@ -1110,7 +1110,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {1}. Referenced assembly runtime: {2}
+/// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {arg1}. Referenced assembly runtime: {arg2}
         /// </remarks>
         [Event(5046, Message = "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version. C" +
     "urrent runtime: {1}. Referenced assembly runtime: {2}", Level = EventLevel.Critical)]
@@ -1138,7 +1138,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'CriticalClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load critical class '{0}'.
+/// Unable to load critical class '{arg0}'.
         /// </remarks>
         [Event(5049, Message = "Unable to load critical class \'{0}\'.", Level = EventLevel.Critical)]
         public void CriticalClassNotFound(string arg0) => WriteEvent(5049, arg0);
@@ -1147,7 +1147,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'AssemblyContainsDuplicateClassNames' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{0}' and '{1}' both map to the same name '{2}'. ({3})
+/// Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'. ({arg3})
         /// </remarks>
         [Event(5050, Message = "Type \'{0}\' and \'{1}\' both map to the same name \'{2}\'. ({3})", Level = EventLevel.Critical)]
         public void AssemblyContainsDuplicateClassNames(string arg0, string arg1, string arg2, string arg3) => WriteEvent(5050, arg0, arg1, arg2, arg3);
@@ -1165,7 +1165,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'UnableToResolveInterface' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve interface '{0}' on type '{1}'.
+/// Unable to resolve interface '{arg0}' on type '{arg1}'.
         /// </remarks>
         [Event(5052, Message = "Unable to resolve interface \'{0}\' on type \'{1}\'.", Level = EventLevel.Critical)]
         public void UnableToResolveInterface(string arg0, string arg1) => WriteEvent(5052, arg0, arg1);
@@ -1174,7 +1174,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MissingBaseType' diagnostic.
         /// </summary>
         /// <remarks>
-/// The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved.
+/// The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved.
         /// </remarks>
         [Event(5053, Message = "The base class or interface \'{0}\' in assembly \'{1}\' referenced by type \'{2}\' in \'" +
     "{3}\' could not be resolved.", Level = EventLevel.Critical)]
@@ -1184,7 +1184,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MissingBaseTypeReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.
+/// The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         [Event(5054, Message = "The type \'{0}\' is defined in an assembly that is not referenced. You must add a r" +
     "eference to assembly \'{1}\'.", Level = EventLevel.Critical)]
@@ -1194,7 +1194,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'FileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// File not found: {0}.
+/// File not found: {arg0}.
         /// </remarks>
         [Event(5055, Message = "File not found: {0}.", Level = EventLevel.Critical)]
         public void FileNotFound(string arg0) => WriteEvent(5055, arg0);
@@ -1203,7 +1203,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'RuntimeMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Runtime method '{0}' not found.
+/// Runtime method '{arg0}' not found.
         /// </remarks>
         [Event(5056, Message = "Runtime method \'{0}\' not found.", Level = EventLevel.Critical)]
         public void RuntimeMethodMissing(string arg0) => WriteEvent(5056, arg0);
@@ -1212,7 +1212,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'MapFileFieldNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Field '{0}' referenced in remap file was not found in class '{1}'.
+/// Field '{arg0}' referenced in remap file was not found in class '{arg1}'.
         /// </remarks>
         [Event(5057, Message = "Field \'{0}\' referenced in remap file was not found in class \'{1}\'.", Level = EventLevel.Critical)]
         public void MapFileFieldNotFound(string arg0, string arg1) => WriteEvent(5057, arg0, arg1);
@@ -1221,7 +1221,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GhostInterfaceMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Remapped class '{0}' does not implement ghost interface method. ({1}.{2}{3})
+/// Remapped class '{arg0}' does not implement ghost interface method. ({arg1}.{arg2}{arg3})
         /// </remarks>
         [Event(5058, Message = "Remapped class \'{0}\' does not implement ghost interface method. ({1}.{2}{3})", Level = EventLevel.Critical)]
         public void GhostInterfaceMethodMissing(string arg0, string arg1, string arg2, string arg3) => WriteEvent(5058, arg0, arg1, arg2, arg3);
@@ -1230,7 +1230,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'ModuleInitializerMethodRequirements' diagnostic.
         /// </summary>
         /// <remarks>
-/// Method '{0}.{1}{2}' does not meet the requirements of a module initializer.
+/// Method '{arg1}.{arg2}{arg3}' does not meet the requirements of a module initializer.
         /// </remarks>
         [Event(5059, Message = "Method \'{0}.{1}{2}\' does not meet the requirements of a module initializer.", Level = EventLevel.Critical)]
         public void ModuleInitializerMethodRequirements(string arg1, string arg2, string arg3) => WriteEvent(5059, arg1, arg2, arg3);
@@ -1239,7 +1239,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'InvalidZip' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid zip: {0}.
+/// Invalid zip: {name}.
         /// </remarks>
         [Event(5060, Message = "Invalid zip: {0}.", Level = EventLevel.Critical)]
         public void InvalidZip(string name) => WriteEvent(5060, name);
@@ -1248,7 +1248,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericRuntimeTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6000, Message = "{0}", Level = EventLevel.Verbose)]
         public void GenericRuntimeTrace(string arg0) => WriteEvent(6000, arg0);
@@ -1257,7 +1257,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericJniTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6001, Message = "{0}", Level = EventLevel.Verbose)]
         public void GenericJniTrace(string arg0) => WriteEvent(6001, arg0);
@@ -1266,7 +1266,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'GenericCompilerTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {0}
+/// {arg0}
         /// </remarks>
         [Event(6002, Message = "{0}", Level = EventLevel.Verbose)]
         public void GenericCompilerTrace(string arg0) => WriteEvent(6002, arg0);
