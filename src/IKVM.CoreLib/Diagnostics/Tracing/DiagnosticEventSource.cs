@@ -12,6 +12,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
     {
 
         /// <inheritdoc />
+        [NonEvent]
         bool IDiagnosticHandler.IsEnabled(Diagnostic diagnostic)
         {
             return IsEnabled(ToLevel(diagnostic.Level), EventKeywords.All);
@@ -23,6 +24,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// <param name="level"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
+        [NonEvent]
         EventLevel ToLevel(DiagnosticLevel level)
         {
             return level switch
@@ -36,6 +38,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
             };
         }
 
+        [NonEvent]
         void WriteEvent(int eventId, string arg0, string arg1, string arg2, string arg3)
         {
             arg0 ??= "";
