@@ -167,13 +167,13 @@ namespace IKVM.Runtime
             {
                 if (typeWrapper == Context.VerifierJavaTypeFactory.Null)
                 {
-                    var tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
+                    var tw = thisType.ClassLoader.LoadClass(name, mode | LoadMode.WarnClassNotFound);
 #if !IMPORTER && !FIRST_PASS
                     if (!tw.IsUnloadable)
                     {
                         try
                         {
-                            thisType.GetClassLoader().CheckPackageAccess(tw, thisType.ClassObject.pd);
+                            thisType.ClassLoader().CheckPackageAccess(tw, thisType.ClassObject.pd);
                         }
                         catch (java.lang.SecurityException)
                         {

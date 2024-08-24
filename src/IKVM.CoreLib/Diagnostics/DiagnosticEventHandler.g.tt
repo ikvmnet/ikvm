@@ -18,10 +18,11 @@
 <#@ import namespace="Newtonsoft.Json" #>
 <#@ import namespace="Newtonsoft.Json.Linq" #>
 <#@ output extension=".cs" #>
-using System.Text;
-
 namespace IKVM.CoreLib.Diagnostics
 {
+
+    internal abstract partial class DiagnosticEventHandler
+    {
 
 <#
 foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
@@ -35,23 +36,25 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
     foreach (var segment in CompositeFormat.Parse(kvp.Value.Message ?? "").Segments)
         message.Add(segment.Literal != null ? segment.Literal : $"{{{kvp.Value.Args.FindIndex(i => i.Name == segment.Arg)}}}");
 
-#>
-    partial record class Diagnostic
-    {
+    var argDecl = new List<string>();
+    foreach (var arg in kvp.Value.Args)
+        argDecl.Add($"{arg.Type} {arg.Name}");
 
+    var argList = new List<string>();
+    foreach (var arg in kvp.Value.Args)
+        argList.Add($"{arg.Name}");
+#>
         /// <summary>
         /// <#= desc #>
         /// </summary>
-#if NET8_0_OR_GREATER
-        public static readonly Diagnostic <#= kvp.Key #> = new Diagnostic(<#= kvp.Value.Id #>, nameof(<#= kvp.Key #>), CompositeFormat.Parse(<#= Util.ToStringLiteral(string.Join("", message)) #>), DiagnosticLevel.<#= kvp.Value.Level #>);
-#else
-        public static readonly Diagnostic <#= kvp.Key #> = new Diagnostic(<#= kvp.Value.Id #>, nameof(<#= kvp.Key #>), <#= Util.ToStringLiteral(string.Join("", message)) #>, DiagnosticLevel.<#= kvp.Value.Level #>);
-#endif
-
-    }
+        /// <remarks>
+<#= Util.ToCommentString(string.Join("", message)) #>
+        /// </remarks>
+        public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Report(Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>]));
 
 <#
 }
 #>
+    }
 
 }

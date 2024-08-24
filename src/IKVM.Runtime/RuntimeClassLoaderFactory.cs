@@ -275,7 +275,7 @@ namespace IKVM.Runtime
             list.Add(context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly));
             foreach (Type arg in type.GetGenericArguments())
             {
-                RuntimeClassLoader loader = GetJavaTypeFromType(arg).GetClassLoader();
+                RuntimeClassLoader loader = GetJavaTypeFromType(arg).ClassLoader;
                 if (!list.Contains(loader) && loader != bootstrapClassLoader)
                 {
                     list.Add(loader);

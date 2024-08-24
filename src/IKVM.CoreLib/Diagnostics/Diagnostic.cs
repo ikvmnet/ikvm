@@ -5,9 +5,9 @@ namespace IKVM.CoreLib.Diagnostics
 {
 
 #if NET8_0_OR_GREATER
-    partial record class Diagnostic(DiagnosticId Id, string Name, CompositeFormat Message, DiagnosticLevel Level)
+    internal partial record class Diagnostic(int Id, string Name, CompositeFormat Message, DiagnosticLevel Level)
 #else
-    partial record class Diagnostic(DiagnosticId Id, string Name, string Message, DiagnosticLevel Level)
+    internal partial record class Diagnostic(int Id, string Name, string Message, DiagnosticLevel Level)
 #endif
     {
 

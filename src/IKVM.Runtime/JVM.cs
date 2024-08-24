@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Threading;
 
+using IKVM.CoreLib.Diagnostics.Tracing;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Runtime
@@ -127,6 +128,11 @@ namespace IKVM.Runtime
 #endif
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+        /// <summary>
+        /// Gets the JVM diagnostic handler.
+        /// </summary>
+        internal static DiagnosticEventSource Diagnostics = new DiagnosticEventSource();
 
         /// <summary>
         /// Gets the current <see cref="RuntimeContext"/> of the JVM.

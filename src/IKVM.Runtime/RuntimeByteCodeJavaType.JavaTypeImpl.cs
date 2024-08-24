@@ -28,8 +28,6 @@ using System.Collections.Concurrent;
 
 using IKVM.Attributes;
 
-using IKVM.CoreLib.Diagnostics;
-
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -75,7 +73,7 @@ namespace IKVM.Runtime
 
             internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
             {
-                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerInfo.Event(["constructing JavaTypeImpl for " + f.Name]));
+                wrapper.ClassLoader.Diagnostics.GenericCompilerInfo("constructing JavaTypeImpl for " + f.Name);
                 this.host = host;
                 this.classFile = f;
                 this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;
@@ -227,7 +225,7 @@ namespace IKVM.Runtime
                 {
                     // If we end up here, we either have to add support or add them to the white-list in the above clause
                     // to allow them to fall back to dynamic stack walking.
-                    wrapper.Context.ReportEvent(Diagnostic.CallerSensitiveOnUnsupportedMethod.Event([classFile.Name, method.Name, method.Signature]));
+                    wrapper.ClassLoader.Diagnostics.CallerSensitiveOnUnsupportedMethod(classFile.Name, method.Name, method.Signature);
                     return false;
                 }
             }
@@ -303,7 +301,7 @@ namespace IKVM.Runtime
                     {
                         if (!CheckInnerOuterNames(f.Name, enclosingClassName))
                         {
-                            wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Incorrect {(outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod")} attribute on {f.Name}"]));
+                            wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Incorrect {(outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod")} attribute on {f.Name}");
                         }
                         else
                         {
@@ -313,7 +311,7 @@ namespace IKVM.Runtime
                             }
                             catch (RetargetableJavaException x)
                             {
-                                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})"]));
+                                wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})");
                             }
 
                             if (enclosingClassWrapper != null)
@@ -323,7 +321,7 @@ namespace IKVM.Runtime
                                 // class live in the same class loader (when doing a multi target compilation,
                                 // it is possible to split the two classes across assemblies)
                                 var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
-                                if (oimpl != null && enclosingClassWrapper.GetClassLoader() == wrapper.GetClassLoader())
+                                if (oimpl != null && enclosingClassWrapper.ClassLoader == wrapper.ClassLoader)
                                 {
                                     var outerClassFile = oimpl.classFile;
                                     var outerInnerClasses = outerClassFile.InnerClasses;
@@ -366,7 +364,7 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    wrapper.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Non-reciprocal inner class {f.Name}"]));
+                                    wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Non-reciprocal inner class {f.Name}");
                                 }
                             }
                         }
@@ -486,7 +484,7 @@ namespace IKVM.Runtime
 
                             try
                             {
-                                exists = wrapper.GetClassLoader().TryLoadClassByName(name) != null;
+                                exists = wrapper.ClassLoader.TryLoadClassByName(name) != null;
                             }
                             catch (RetargetableJavaException)
                             {
@@ -977,7 +975,7 @@ namespace IKVM.Runtime
                 }
                 int fieldIndex = GetFieldIndex(fw);
 #if IMPORTER
-                if (wrapper.GetClassLoader().RemoveUnusedFields
+                if (wrapper.ClassLoader.RemoveUnusedFields
                     && fw.IsPrivate
                     && fw.IsStatic
                     && fw.IsFinal
@@ -986,7 +984,7 @@ namespace IKVM.Runtime
                     && !classFile.IsReferenced(classFile.Fields[fieldIndex]))
                 {
                     // unused, so we skip it
-                    wrapper.Context.ReportEvent(Diagnostic.GenericCompilerInfo.Event([$"Unused field {wrapper.Name}::{fw.Name}"]));
+                    wrapper.ClassLoader.Diagnostics.GenericCompilerInfo($"Unused field {wrapper.Name}::{fw.Name}");
                     return null;
                 }
 
@@ -1230,7 +1228,7 @@ namespace IKVM.Runtime
                     throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
 
                 finishInProgress = true;
-                wrapper.Context.ReportEvent(Diagnostic.GenericCompilerTrace.Event([$"Finishing: {wrapper.Name}"]));
+                wrapper.ClassLoader.Diagnostics.GenericCompilerTrace($"Finishing: {wrapper.Name}");
                 Profiler.Enter("JavaTypeImpl.Finish.Core");
 
                 try
@@ -1359,7 +1357,7 @@ namespace IKVM.Runtime
                 {
                     try
                     {
-                        var tw = wrapper.GetClassLoader().TryLoadClassByName(type.Substring(1, type.Length - 2));
+                        var tw = wrapper.ClassLoader.TryLoadClassByName(type.Substring(1, type.Length - 2));
                         if (tw != null)
                         {
                             if ((tw.Modifiers & Modifiers.Annotation) != 0)
@@ -1547,7 +1545,7 @@ namespace IKVM.Runtime
                                 Annotation annotation = Annotation.Load(o.wrapper, def);
                                 if (annotation != null && annotation.IsCustomAttribute)
                                 {
-                                    annotation.Apply(o.wrapper.GetClassLoader(), attributeTypeBuilder, def);
+                                    annotation.Apply(o.wrapper.ClassLoader, attributeTypeBuilder, def);
                                 }
                                 if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
                                 {
@@ -2527,7 +2525,7 @@ namespace IKVM.Runtime
                         wrapper.Context.AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
                     }
 
-                    if (wrapper.GetClassLoader().NoParameterReflection)
+                    if (wrapper.ClassLoader.NoParameterReflection)
                     {
                         // ignore MethodParameters (except to extract parameter names)
                     }
@@ -2781,7 +2779,7 @@ namespace IKVM.Runtime
                         {
                             // the CLR doesn't allow (non-virtual) instance methods in interfaces,
                             // so we need to turn it into a static method
-                            mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                            mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
                                 tb, NamePrefix.PrivateInterfaceInstanceMethod + name, attribs | MethodAttributes.Static | MethodAttributes.SpecialName,
                                 typeBuilder, false);
 #if IMPORTER
@@ -2890,13 +2888,13 @@ namespace IKVM.Runtime
                 {
                     if (wrapper.IsGhost)
                     {
-                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
                             typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.SpecialName,
                             null, false));
                     }
                     else
                     {
-                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
                             typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName,
                             typeBuilder, false));
                     }

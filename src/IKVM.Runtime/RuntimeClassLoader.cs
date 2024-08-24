@@ -92,6 +92,11 @@ namespace IKVM.Runtime
 #endif
         }
 
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> events originated by this class loader should be sent to.
+        /// </summary>
+        public virtual IDiagnosticHandler Diagnostics => Context.Diagnostics;
+
 #if IMPORTER || EXPORTER
 
         internal void SetRemappedType(Type type, RuntimeJavaType tw)
@@ -370,12 +375,12 @@ namespace IKVM.Runtime
 #if IMPORTER
 
                 if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
-                    Context.ReportEvent(Diagnostic.ClassNotFound.Event([name]));
+                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
 
 #else
 
                 if (!(name.Length > 1 && name[0] == '['))
-                    Context.ReportEvent(Diagnostic.GenericClassLoadingError.Event([$"Class not found: {name}"]));
+                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
 
 #endif
                 switch (mode & LoadMode.MaskReturn)
@@ -676,7 +681,7 @@ namespace IKVM.Runtime
                 if ((mode & LoadMode.SuppressExceptions) == 0)
                     throw new ClassLoadingException(ikvm.runtime.Util.mapException(x), name);
 
-                if (Context.IsDiagnosticEnabled(Diagnostic.GenericClassLoadingError))
+                if (Diagnostics.IsEnabled(Diagnostic.GenericClassLoadingError))
                 {
                     var cl = GetJavaClassLoader();
                     if (cl != null)
@@ -690,11 +695,11 @@ namespace IKVM.Runtime
                             cl = cl.getParent();
                         }
 
-                        Context.ReportEvent(Diagnostic.GenericClassLoadingError.Event([$"ClassLoader chain: {sb}"]));
+                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb}");
                     }
 
                     var m = ikvm.runtime.Util.mapException(x);
-                    Context.ReportEvent(Diagnostic.GenericClassLoadingError.Event([m.ToString() + Environment.NewLine + m.StackTrace]));
+                    Diagnostics.GenericClassLoadingError(m.ToString() + Environment.NewLine + m.StackTrace);
                 }
 
                 return null;
@@ -721,7 +726,7 @@ namespace IKVM.Runtime
             Debug.Assert(!elementJavaType.IsUnloadable && !elementJavaType.IsVerifierType && !elementJavaType.IsArray);
             Debug.Assert(dimensions >= 1);
 
-            return elementJavaType.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType.Context, elementJavaType, name));
+            return elementJavaType.ClassLoader.RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType.Context, elementJavaType, name));
         }
 
 #if !IMPORTER && !EXPORTER
@@ -923,8 +928,8 @@ namespace IKVM.Runtime
 
         internal virtual bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
-            Debug.Assert(wrapper.GetClassLoader() == this);
-            return this == friend.GetClassLoader();
+            Debug.Assert(wrapper.ClassLoader == this);
+            return this == friend.ClassLoader;
         }
 
 #if !IMPORTER && !EXPORTER
@@ -939,15 +944,6 @@ namespace IKVM.Runtime
 #endif
         }
 
-#endif
-
-#if IMPORTER
-        internal virtual void Report(in DiagnosticEvent evt)
-        {
-            // it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
-            // but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
-            Context.StaticCompiler.ReportEvent(evt);
-        }
 #endif
 
         internal void CheckPackageAccess(RuntimeJavaType tw, ProtectionDomain pd)

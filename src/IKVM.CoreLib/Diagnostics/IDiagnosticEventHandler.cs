@@ -2,9 +2,9 @@
 {
 
     /// <summary>
-    /// Exposes methods to accept diagnostic invocations.
+    /// Exposes a method to accept diagnostic events.
     /// </summary>
-    partial interface IDiagnosticHandler
+    interface IDiagnosticEventHandler
     {
 
         /// <summary>
@@ -13,6 +13,12 @@
         /// <param name="diagnostic"></param>
         /// <returns></returns>
         bool IsEnabled(Diagnostic diagnostic);
+
+        /// <summary>
+        /// Reports a diagnostic event.
+        /// </summary>
+        /// <param name="event"></param>
+        void Report(in DiagnosticEvent @event);
 
     }
 

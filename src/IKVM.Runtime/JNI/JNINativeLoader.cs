@@ -68,7 +68,7 @@ namespace IKVM.Runtime.JNI
                     }
 
                     // find whether the native library was already loaded
-                    foreach (var h in fromClass.GetClassLoader().GetNativeLibraries())
+                    foreach (var h in fromClass.ClassLoader().GetNativeLibraries())
                     {
                         if (h == p)
                         {
@@ -122,7 +122,7 @@ namespace IKVM.Runtime.JNI
 
                     // record addition of native library
                     loaded.Add(p);
-                    fromClass.GetClassLoader().RegisterNativeLibrary(p);
+                    fromClass.ClassLoader().RegisterNativeLibrary(p);
                     return p;
                 }
                 catch (DllNotFoundException e)
@@ -178,7 +178,7 @@ namespace IKVM.Runtime.JNI
 
                 // remove record of native library
                 loaded.Remove(p);
-                fromClass.GetClassLoader().UnregisterNativeLibrary(p);
+                fromClass.ClassLoader().UnregisterNativeLibrary(p);
                 LibJvm.Instance.JVM_UnloadLibrary(p);
             }
         }

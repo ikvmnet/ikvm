@@ -208,10 +208,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
-        }
+        internal override RuntimeClassLoader ClassLoader => Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
         static ExModifiers GetModifiers(RuntimeContext context, Type type)
         {
@@ -373,7 +370,7 @@ namespace IKVM.Runtime
                 }
                 foreach (string s in Context.AttributeHelper.GetNonNestedInnerClasses(type))
                 {
-                    wrappers.Add(GetClassLoader().LoadClassByName(s));
+                    wrappers.Add(ClassLoader.LoadClassByName(s));
                 }
 
                 return wrappers.ToArray();
@@ -396,8 +393,9 @@ namespace IKVM.Runtime
                 string decl = Context.AttributeHelper.GetNonNestedOuterClasses(type);
                 if (decl != null)
                 {
-                    return GetClassLoader().LoadClassByName(decl);
+                    return ClassLoader.LoadClassByName(decl);
                 }
+
                 return null;
             }
         }
@@ -493,7 +491,7 @@ namespace IKVM.Runtime
                 // as object (not as arrays of object)
                 if (type.IsArray)
                 {
-                    type = GetClassLoader().FieldTypeWrapperFromSig(sigtype, LoadMode.LoadOrThrow);
+                    type = ClassLoader.FieldTypeWrapperFromSig(sigtype, LoadMode.LoadOrThrow);
                 }
                 else if (type.IsPrimitive)
                 {
@@ -518,7 +516,7 @@ namespace IKVM.Runtime
                     }
                     try
                     {
-                        RuntimeJavaType tw = GetClassLoader().TryLoadClassByName(sigtype);
+                        RuntimeJavaType tw = ClassLoader.TryLoadClassByName(sigtype);
                         if (tw != null && tw.IsRemapped)
                         {
                             type = tw;
@@ -610,7 +608,7 @@ namespace IKVM.Runtime
             retType = method is ConstructorInfo ? Context.PrimitiveJavaTypeFactory.VOID : GetParameterTypeWrapper(Context, ((MethodInfo)method).ReturnParameter);
             var parameters = method.GetParameters();
             int len = parameters.Length;
-            if (len > 0 && IsCallerID(Context, parameters[len - 1].ParameterType) && GetClassLoader() == Context.ClassLoaderFactory.GetBootstrapClassLoader() && IsCallerSensitive(method))
+            if (len > 0 && IsCallerID(Context, parameters[len - 1].ParameterType) && ClassLoader == Context.ClassLoaderFactory.GetBootstrapClassLoader() && IsCallerSensitive(method))
             {
                 len--;
                 flags |= MemberFlags.CallerID;

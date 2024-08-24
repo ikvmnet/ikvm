@@ -183,7 +183,7 @@ namespace IKVM.Runtime
                                 {
                                     if (classFile.IsInterface)
                                     {
-                                        classFile.context.ReportEvent(Diagnostic.InterfaceMethodCantBeInternal.Event([classFile.Name, Name, Signature]));
+                                        classFile.diagnostics.InterfaceMethodCantBeInternal(classFile.Name, Name, Signature);
                                     }
                                     else
                                     {
@@ -208,7 +208,7 @@ namespace IKVM.Runtime
                                 {
                                     if (classFile.IsInterface || IsConstructor || IsClassInitializer || IsPrivate || IsStatic == false)
                                     {
-                                        classFile.context.ReportEvent(Diagnostic.ModuleInitializerMethodRequirements.Event([classFile.Name, Name, Signature]));
+                                        classFile.diagnostics.ModuleInitializerMethodRequirements(classFile.Name, Name, Signature);
                                     }
                                     else
                                     {

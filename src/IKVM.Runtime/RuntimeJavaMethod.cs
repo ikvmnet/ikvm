@@ -162,7 +162,7 @@ namespace IKVM.Runtime
             if (method == null)
             {
                 Link();
-                RuntimeClassLoader loader = this.DeclaringType.GetClassLoader();
+                RuntimeClassLoader loader = this.DeclaringType.ClassLoader;
                 RuntimeJavaType[] argTypes = GetParameters();
                 java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
                 for (int i = 0; i < argTypes.Length; i++)
@@ -249,7 +249,7 @@ namespace IKVM.Runtime
                 java.lang.Class[] array = new java.lang.Class[classes.Length];
                 for (int i = 0; i < classes.Length; i++)
                 {
-                    array[i] = this.DeclaringType.GetClassLoader().LoadClassByName(classes[i]).ClassObject;
+                    array[i] = this.DeclaringType.ClassLoader.LoadClassByName(classes[i]).ClassObject;
                 }
                 return array;
             }
@@ -308,7 +308,7 @@ namespace IKVM.Runtime
                     return;
                 }
             }
-            RuntimeClassLoader loader = this.DeclaringType.GetClassLoader();
+            RuntimeClassLoader loader = this.DeclaringType.ClassLoader;
             RuntimeJavaType ret = loader.RetTypeWrapperFromSig(Signature, mode);
             RuntimeJavaType[] parameters = loader.ArgJavaTypeListFromSig(Signature, mode);
             lock (this)
@@ -354,7 +354,7 @@ namespace IKVM.Runtime
         internal void AssertLinked()
         {
             if (!(parameterTypeWrappers != null && returnTypeWrapper != null))
-                DeclaringType.Context.ReportEvent(Diagnostic.GenericRuntimeError.Event([$"AssertLinked failed: {DeclaringType.Name}::{Name}{Signature}"]));
+                DeclaringType.ClassLoader.Diagnostics.GenericRuntimeError($"AssertLinked failed: {DeclaringType.Name}::{Name}{Signature}");
 
             Debug.Assert(parameterTypeWrappers != null && returnTypeWrapper != null, DeclaringType.Name + "::" + Name + Signature);
         }
@@ -458,7 +458,7 @@ namespace IKVM.Runtime
             {
                 var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
                 if (type == null)
-                    type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
+                    type = DeclaringType.ClassLoader.GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
 
                 var types = new Type[paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1)];
                 for (int i = 0; i < paramTypes.Length; i++)

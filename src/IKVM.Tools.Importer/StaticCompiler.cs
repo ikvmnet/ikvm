@@ -39,11 +39,12 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer
 {
 
-    class StaticCompiler : IDiagnosticHandler
+    class StaticCompiler
     {
 
         readonly ConcurrentDictionary<string, Type> runtimeTypeCache = new();
 
+        readonly IDiagnosticHandler diagnostics;
         internal Universe universe;
         internal Assembly runtimeAssembly;
         internal Assembly baseAssembly;
@@ -51,6 +52,15 @@ namespace IKVM.Tools.Importer
         internal int errorCount;
 
         internal Universe Universe => universe;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="diagnostics"></param>
+        public StaticCompiler(IDiagnosticHandler diagnostics)
+        {
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+        }
 
         /// <summary>
         /// Initializes the universe.
@@ -143,7 +153,7 @@ namespace IKVM.Tools.Importer
         {
             if (requestingModule != null && member is Type)
             {
-                ReportEvent(Diagnostic.UnableToResolveType.Event([requestingModule.Name, ((Type)member).FullName, member.Module.FullyQualifiedName]));
+                diagnostics.UnableToResolveType(requestingModule.Name, ((Type)member).FullName, member.Module.FullyQualifiedName);
             }
         }
 
@@ -207,46 +217,32 @@ namespace IKVM.Tools.Importer
             throw new FatalCompilerErrorException(Diagnostic.LinkageError.Event([str]));
         }
 
-        static string AssemblyQualifiedName(RuntimeJavaType tw)
+        static string AssemblyQualifiedName(RuntimeJavaType javaType)
         {
-            RuntimeClassLoader loader = tw.GetClassLoader();
-            RuntimeAssemblyClassLoader acl = loader as RuntimeAssemblyClassLoader;
+            var loader = javaType.ClassLoader;
+            var acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
-            {
-                return tw.Name + ", " + acl.GetAssembly(tw).FullName;
-            }
-            CompilerClassLoader ccl = loader as CompilerClassLoader;
+                return javaType.Name + ", " + acl.GetAssembly(javaType).FullName;
+
+            var ccl = loader as CompilerClassLoader;
             if (ccl != null)
-            {
-                return tw.Name + ", " + ccl.GetTypeWrapperFactory().ModuleBuilder.Assembly.FullName;
-            }
-            return tw.Name + " (unknown assembly)";
+                return javaType.Name + ", " + ccl.GetTypeWrapperFactory().ModuleBuilder.Assembly.FullName;
+
+            return javaType.Name + " (unknown assembly)";
         }
 
         internal void IssueMissingTypeMessage(Type type)
         {
             type = ReflectUtil.GetMissingType(type);
-            ReportEvent((type.Assembly.__IsMissing ? Diagnostic.MissingReference : Diagnostic.MissingType).Event([type.FullName, type.Assembly.FullName]));
+            if (type.Assembly.__IsMissing)
+                diagnostics.MissingReference(type.FullName, type.Assembly.FullName);
+            else
+                diagnostics.MissingType(type.FullName, type.Assembly.FullName);
         }
 
         internal void SuppressWarning(CompilerOptions options, Diagnostic diagnostic, string name)
         {
-            options.suppressWarnings[diagnostic.Id.Value + ":" + name] = null;
-        }
-
-        public void ReportEvent(in DiagnosticEvent evt)
-        {
-            IkvmImporterInternal.ReportEvent(this, evt);
-        }
-
-        internal void ReportEvent(CompilerOptions options, in DiagnosticEvent evt)
-        {
-            IkvmImporterInternal.ReportEvent(this, options, evt);
-        }
-
-        public bool IsDiagnosticEnabled(Diagnostic diagnostic)
-        {
-            return IkvmImporterInternal.IsDiagnosticEnabled(this, diagnostic);
+            options.suppressWarnings[diagnostic.Id + ":" + name] = null;
         }
 
     }

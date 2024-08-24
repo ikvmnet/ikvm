@@ -59,10 +59,8 @@ namespace IKVM.Runtime
             if (lmf.getInstance == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
             {
 #if IMPORTER
-                if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
-                {
-                    context.Context.ReportEvent(Diagnostic.UnableToCreateLambdaFactory.Event([]));
-                }
+                if (context.TypeWrapper.ClassLoader.DisableDynamicBinding)
+                    context.TypeWrapper.ClassLoader.Diagnostics.UnableToCreateLambdaFactory();
 #endif
                 return false;
             }
@@ -441,7 +439,7 @@ namespace IKVM.Runtime
                 FieldBuilder instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
 
                 // static constructor
-                MethodBuilder cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.GetClassLoader());
+                MethodBuilder cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.ClassLoader);
                 CodeEmitter ilgenCCtor = context.Context.CodeEmitterFactory.Create(cctor);
                 ilgenCCtor.Emit(OpCodes.Newobj, ctor);
                 ilgenCCtor.Emit(OpCodes.Stsfld, instField);
@@ -509,7 +507,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ret);
                 ilgen.DoEmit();
 
-                if (!context.TypeWrapper.GetClassLoader().NoAutomagicSerialization)
+                if (!context.TypeWrapper.ClassLoader.NoAutomagicSerialization)
                 {
                     // add .NET serialization interop support
                     context.Context.Serialization.MarkSerializable(tb);
@@ -738,7 +736,7 @@ namespace IKVM.Runtime
         {
             // we use special name to hide these from Java reflection
             const MethodAttributes attr = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName;
-            RuntimeJavaTypeFactory factory = context.TypeWrapper.GetClassLoader().GetTypeWrapperFactory();
+            RuntimeJavaTypeFactory factory = context.TypeWrapper.ClassLoader.GetTypeWrapperFactory();
             foreach (RuntimeJavaMethod mw in methodList)
             {
                 if (!mw.IsAbstract)

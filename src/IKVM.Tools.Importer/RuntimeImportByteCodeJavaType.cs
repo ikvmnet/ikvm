@@ -271,8 +271,8 @@ namespace IKVM.Tools.Importer
         {
             foreach (var prop in clazz.Properties)
             {
-                var typeWrapper = GetClassLoader().RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
-                var propargs = GetClassLoader().ArgJavaTypeListFromSig(prop.Sig, LoadMode.Link);
+                var typeWrapper = ClassLoader.RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
+                var propargs = ClassLoader.ArgJavaTypeListFromSig(prop.Sig, LoadMode.Link);
                 Type[] indexer = new Type[propargs.Length];
                 for (int i = 0; i < propargs.Length; i++)
                 {
@@ -449,8 +449,8 @@ namespace IKVM.Tools.Importer
 
         private void MapSignature(string sig, out Type returnType, out Type[] parameterTypes)
         {
-            returnType = GetClassLoader().RetTypeWrapperFromSig(sig, LoadMode.Link).TypeAsSignatureType;
-            var parameterTypeWrappers = GetClassLoader().ArgJavaTypeListFromSig(sig, LoadMode.Link);
+            returnType = ClassLoader.RetTypeWrapperFromSig(sig, LoadMode.Link).TypeAsSignatureType;
+            var parameterTypeWrappers = ClassLoader.ArgJavaTypeListFromSig(sig, LoadMode.Link);
             parameterTypes = new Type[parameterTypeWrappers.Length];
             for (int i = 0; i < parameterTypeWrappers.Length; i++)
             {
@@ -563,7 +563,7 @@ namespace IKVM.Tools.Importer
 
                                 if (method.Override != null)
                                 {
-                                    var mw = GetClassLoader().LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
+                                    var mw = ClassLoader.LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
@@ -607,7 +607,7 @@ namespace IKVM.Tools.Importer
                     {
                         foreach (Implements iface in clazz.Interfaces)
                         {
-                            var tw = GetClassLoader().LoadClassByName(iface.Class);
+                            var tw = ClassLoader.LoadClassByName(iface.Class);
                             // NOTE since this interface won't be part of the list in the ImplementAttribute,
                             // it won't be visible from Java that the type implements this interface.
                             typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);
@@ -1060,7 +1060,7 @@ namespace IKVM.Tools.Importer
 
             private void DoEmit(CodeEmitter ilgen)
             {
-                var context = new IKVM.Tools.Importer.MapXml.CodeGenContext(this.DeclaringType.GetClassLoader());
+                var context = new IKVM.Tools.Importer.MapXml.CodeGenContext(DeclaringType.ClassLoader);
                 // we don't want the line numbers from map.xml, so we have our own emit loop
                 for (int i = 0; i < code.Instructions.Length; i++)
                     code.Instructions[i].Generate(context, ilgen);
@@ -1085,7 +1085,7 @@ namespace IKVM.Tools.Importer
 
         internal override RuntimeJavaMethod[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
-            var replacedMethods = ((CompilerClassLoader)GetClassLoader()).GetReplacedMethodsFor(mw);
+            var replacedMethods = ((CompilerClassLoader)ClassLoader).GetReplacedMethodsFor(mw);
             var baseReplacedMethodWrappers = base.GetReplacedMethodsFor(mw);
             if (replacedMethods != null || baseReplacedMethodWrappers != null || this.replacedMethods != null)
             {
@@ -1093,7 +1093,7 @@ namespace IKVM.Tools.Importer
 
                 if (replacedMethods != null)
                     for (int i = 0; i < replacedMethods.Length; i++)
-                        list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
+                        list.Add(new ReplacedMethodWrapper(ClassLoader.LoadClassByName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
 
                 if (baseReplacedMethodWrappers != null)
                     list.AddRange(baseReplacedMethodWrappers);

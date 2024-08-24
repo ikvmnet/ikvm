@@ -2,685 +2,1666 @@
     "MainMethodFound": {
         "id": 1,
         "level": "Informational",
-        "message": "Found main method in class \"{0}\""
+        "message": "Found main method in class \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "OutputFileIs": {
         "id": 2,
         "level": "Informational",
-        "message": "Output file is \"{0}\""
+        "message": "Output file is \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "AutoAddRef": {
         "id": 3,
         "level": "Informational",
-        "message": "Automatically adding reference to \"{0}\""
+        "message": "Automatically adding reference to \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MainMethodFromManifest": {
         "id": 4,
         "level": "Informational",
-        "message": "Using main class \"{0}\" based on jar manifest"
+        "message": "Using main class \"{arg0}\" based on jar manifest",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericCompilerInfo": {
         "id": 5,
         "level": "Informational",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericClassLoadingInfo": {
         "id": 6,
         "level": "Informational",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericVerifierInfo": {
         "id": 6,
         "level": "Informational",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericRuntimeInfo": {
         "id": 7,
         "level": "Informational",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericJniInfo": {
         "id": 6,
         "level": "Informational",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "ClassNotFound": {
         "id": 100,
         "level": "Warning",
-        "message": "Class \"{0}\" not found"
+        "message": "Class \"{arg0}\" not found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "ClassFormatError": {
         "id": 101,
         "level": "Warning",
-        "message": "Unable to compile class \"{0}\" \n    (class format error \"{1}\")"
+        "message": "Unable to compile class \"{arg0}\" \n    (class format error \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "DuplicateClassName": {
         "id": 102,
         "level": "Warning",
-        "message": "Duplicate class name: \"{0}\""
+        "message": "Duplicate class name: \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "IllegalAccessError": {
         "id": 103,
         "level": "Warning",
-        "message": "Unable to compile class \"{0}\" \n    (illegal access error \"{1}\")"
+        "message": "Unable to compile class \"{arg0}\" \n    (illegal access error \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "VerificationError": {
         "id": 104,
         "level": "Warning",
-        "message": "Unable to compile class \"{0}\" \n    (verification error \"{1}\")"
+        "message": "Unable to compile class \"{arg0}\" \n    (verification error \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "NoClassDefFoundError": {
         "id": 105,
         "level": "Warning",
-        "message": "Unable to compile class \"{0}\" \n    (missing class \"{1}\")"
+        "message": "Unable to compile class \"{arg0}\" \n    (missing class \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "GenericUnableToCompileError": {
         "id": 106,
         "level": "Warning",
-        "message": "Unable to compile class \"{0}\" \n    (\"{1}\": \"{2}\")"
+        "message": "Unable to compile class \"{arg0}\" \n    (\"{arg1}\": \"{arg2}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "DuplicateResourceName": {
         "id": 107,
         "level": "Warning",
-        "message": "Skipping resource (name clash): \"{0}\""
+        "message": "Skipping resource (name clash): \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "SkippingReferencedClass": {
         "id": 109,
         "level": "Warning",
-        "message": "Skipping class: \"{0}\"\n    (class is already available in referenced assembly \"{1}\")"
+        "message": "Skipping class: \"{arg0}\"\n    (class is already available in referenced assembly \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "NoJniRuntime": {
         "id": 110,
         "level": "Warning",
-        "message": "Unable to load runtime JNI assembly"
+        "message": "Unable to load runtime JNI assembly",
+        "args": []
     },
     "EmittedNoClassDefFoundError": {
         "id": 111,
         "level": "Warning",
-        "message": "Emitted java.lang.NoClassDefFoundError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.NoClassDefFoundError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedIllegalAccessError": {
         "id": 112,
         "level": "Warning",
-        "message": "Emitted java.lang.IllegalAccessError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.IllegalAccessError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedInstantiationError": {
         "id": 113,
         "level": "Warning",
-        "message": "Emitted java.lang.InstantiationError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.InstantiationError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedIncompatibleClassChangeError": {
         "id": 114,
         "level": "Warning",
-        "message": "Emitted java.lang.IncompatibleClassChangeError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.IncompatibleClassChangeError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedNoSuchFieldError": {
         "id": 115,
         "level": "Warning",
-        "message": "Emitted java.lang.NoSuchFieldError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.NoSuchFieldError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedAbstractMethodError": {
         "id": 116,
         "level": "Warning",
-        "message": "Emitted java.lang.AbstractMethodError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.AbstractMethodError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedNoSuchMethodError": {
         "id": 117,
         "level": "Warning",
-        "message": "Emitted java.lang.NoSuchMethodError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.NoSuchMethodError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedLinkageError": {
         "id": 118,
         "level": "Warning",
-        "message": "Emitted java.lang.LinkageError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.LinkageError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedVerificationError": {
         "id": 119,
         "level": "Warning",
-        "message": "Emitted java.lang.VerificationError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.VerificationError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "EmittedClassFormatError": {
         "id": 120,
         "level": "Warning",
-        "message": "Emitted java.lang.ClassFormatError in \"{0}\"\n    (\"{1}\")"
+        "message": "Emitted java.lang.ClassFormatError in \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "InvalidCustomAttribute": {
         "id": 121,
         "level": "Warning",
-        "message": "Error emitting \"{0}\" custom attribute\n    (\"{1}\")"
+        "message": "Error emitting \"{arg0}\" custom attribute\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "IgnoredCustomAttribute": {
         "id": 122,
         "level": "Warning",
-        "message": "Custom attribute \"{0}\" was ignored\n    (\"{1}\")"
+        "message": "Custom attribute \"{arg0}\" was ignored\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "AssumeAssemblyVersionMatch": {
         "id": 123,
         "level": "Warning",
-        "message": "Assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy"
+        "message": "Assuming assembly reference \"{arg0}\" matches \"{arg1}\", you may need to supply runtime policy",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "InvalidDirectoryInLibOptionPath": {
         "id": 124,
         "level": "Warning",
-        "message": "Directory \"{0}\" specified in -lib option is not valid"
+        "message": "Directory \"{arg0}\" specified in -lib option is not valid",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InvalidDirectoryInLibEnvironmentPath": {
         "id": 125,
         "level": "Warning",
-        "message": "Directory \"{0}\" specified in LIB environment is not valid"
+        "message": "Directory \"{arg0}\" specified in LIB environment is not valid",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "LegacySearchRule": {
         "id": 126,
         "level": "Warning",
-        "message": "Found assembly \"{0}\" using legacy search rule, please append '.dll' to the reference"
+        "message": "Found assembly \"{arg0}\" using legacy search rule, please append '.dll' to the reference",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "AssemblyLocationIgnored": {
         "id": 127,
         "level": "Warning",
-        "message": "Assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\""
+        "message": "Assembly \"{arg0}\" is ignored as previously loaded assembly \"{arg1}\" has the same identity \"{arg2}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "InterfaceMethodCantBeInternal": {
         "id": 128,
         "level": "Warning",
-        "message": "Ignoring @ikvm.lang.Internal annotation on interface method\n    (\"{0}.{1}{2}\")"
+        "message": "Ignoring @ikvm.lang.Internal annotation on interface method\n    (\"{arg0}.{arg1}{arg2}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "DuplicateAssemblyReference": {
         "id": 132,
         "level": "Warning",
-        "message": "Duplicate assembly reference \"{0}\""
+        "message": "Duplicate assembly reference \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnableToResolveType": {
         "id": 133,
         "level": "Warning",
-        "message": "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found"
+        "message": "Reference in \"{arg0}\" to type \"{arg1}\" claims it is defined in \"{arg2}\", but it could not be found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "StubsAreDeprecated": {
         "id": 134,
         "level": "Warning",
-        "message": "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead."
+        "message": "Compiling stubs is deprecated. Please add a reference to assembly \"{arg0}\" instead.",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "WrongClassName": {
         "id": 135,
         "level": "Warning",
-        "message": "Unable to compile \"{0}\" (wrong name: \"{1}\")"
+        "message": "Unable to compile \"{arg0}\" (wrong name: \"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "ReflectionCallerClassRequiresCallerID": {
         "id": 136,
         "level": "Warning",
-        "message": "Reflection.getCallerClass() called from non-CallerID method\n    (\"{0}.{1}{2}\")"
+        "message": "Reflection.getCallerClass() called from non-CallerID method\n    (\"{arg0}.{arg1}{arg2}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "LegacyAssemblyAttributesFound": {
         "id": 137,
         "level": "Warning",
-        "message": "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option."
+        "message": "Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.",
+        "args": []
     },
     "UnableToCreateLambdaFactory": {
         "id": 138,
         "level": "Warning",
-        "message": "Unable to create static lambda factory."
+        "message": "Unable to create static lambda factory.",
+        "args": []
     },
     "UnknownWarning": {
         "id": 999,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "DuplicateIkvmLangProperty": {
         "id": 139,
         "level": "Warning",
-        "message": "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}"
+        "message": "Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "MalformedIkvmLangProperty": {
         "id": 140,
         "level": "Warning",
-        "message": "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}"
+        "message": "Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "GenericCompilerWarning": {
         "id": 5,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericClassLoadingWarning": {
         "id": 6,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericVerifierWarning": {
         "id": 6,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericRuntimeWarning": {
         "id": 7,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericJniWarning": {
         "id": 6,
         "level": "Warning",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnableToCreateProxy": {
         "id": 4001,
         "level": "Error",
-        "message": "Unable to create proxy \"{0}\"\n    (\"{1}\")"
+        "message": "Unable to create proxy \"{arg0}\"\n    (\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "DuplicateProxy": {
         "id": 4002,
         "level": "Error",
-        "message": "Duplicate proxy \"{0}\""
+        "message": "Duplicate proxy \"{arg0}\"",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MapXmlUnableToResolveOpCode": {
         "id": 4003,
         "level": "Error",
-        "message": "Unable to resolve opcode in remap file: {0}"
+        "message": "Unable to resolve opcode in remap file: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MapXmlError": {
         "id": 4004,
         "level": "Error",
-        "message": "Error in remap file: {0}"
+        "message": "Error in remap file: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InputFileNotFound": {
         "id": 4005,
         "level": "Error",
-        "message": "Source file '{0}' not found"
+        "message": "Source file '{arg0}' not found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnknownFileType": {
         "id": 4006,
         "level": "Error",
-        "message": "Unknown file type: {0}"
+        "message": "Unknown file type: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnknownElementInMapFile": {
         "id": 4007,
         "level": "Error",
-        "message": "Unknown element {0} in remap file, line {1}, column {2}"
+        "message": "Unknown element {arg0} in remap file, line {arg1}, column {arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "UnknownAttributeInMapFile": {
         "id": 4008,
         "level": "Error",
-        "message": "Unknown attribute {0} in remap file, line {1}, column {2}"
+        "message": "Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "InvalidMemberNameInMapFile": {
         "id": 4009,
         "level": "Error",
-        "message": "Invalid {0} name '{1}' in remap file in class {2}"
+        "message": "Invalid {arg0} name '{arg1}' in remap file in class {arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "InvalidMemberSignatureInMapFile": {
         "id": 4010,
         "level": "Error",
-        "message": "Invalid {0} signature '{3}' in remap file for {0} {1}.{2}"
+        "message": "Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "InvalidPropertyNameInMapFile": {
         "id": 4011,
         "level": "Error",
-        "message": "Invalid property {0} name '{3}' in remap file for property {1}.{2}"
+        "message": "Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "InvalidPropertySignatureInMapFile": {
         "id": 4012,
         "level": "Error",
-        "message": "Invalid property {0} signature '{3}' in remap file for property {1}.{2}"
+        "message": "Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "NonPrimaryAssemblyReference": {
         "id": 4013,
         "level": "Error",
-        "message": "Referenced assembly \"{0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{1}\" instead"
+        "message": "Referenced assembly \"{arg0}\" is not the primary assembly of a shared class loader group, please reference primary assembly \"{arg1}\" instead",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "MissingType": {
         "id": 4014,
         "level": "Error",
-        "message": "Reference to type \"{0}\" claims it is defined in \"{1}\", but it could not be found"
+        "message": "Reference to type \"{arg0}\" claims it is defined in \"{arg1}\", but it could not be found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "MissingReference": {
         "id": 4015,
         "level": "Error",
-        "message": "The type '{0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{1}'"
+        "message": "The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "CallerSensitiveOnUnsupportedMethod": {
         "id": 4016,
         "level": "Error",
-        "message": "CallerSensitive annotation on unsupported method\n    (\"{0}.{1}{2}\")"
+        "message": "CallerSensitive annotation on unsupported method\n    (\"{arg0}.{arg1}{arg2}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "RemappedTypeMissingDefaultInterfaceMethod": {
         "id": 4017,
         "level": "Error",
-        "message": "{0} does not implement default interface method {1}"
+        "message": "{arg0} does not implement default interface method {arg1}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "GenericCompilerError": {
         "id": 4018,
         "level": "Error",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericClassLoadingError": {
         "id": 4019,
         "level": "Error",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericVerifierError": {
         "id": 4020,
         "level": "Error",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericRuntimeError": {
         "id": 4021,
         "level": "Error",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericJniError": {
         "id": 4022,
         "level": "Error",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
+    },
+    "ExportingImportsNotSupported": {
+        "id": 4023,
+        "level": "Error",
+        "message": "Exporting previously imported assemblies is not supported.",
+        "args": []
     },
     "ResponseFileDepthExceeded": {
         "id": 5000,
         "level": "Fatal",
-        "message": "Response file nesting depth exceeded"
+        "message": "Response file nesting depth exceeded",
+        "args": []
     },
     "ErrorReadingFile": {
         "id": 5001,
         "level": "Fatal",
-        "message": "Unable to read file: {0}\n\t({1})"
+        "message": "Unable to read file: {arg0}\n\t({arg1})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "NoTargetsFound": {
         "id": 5002,
         "level": "Fatal",
-        "message": "No targets found"
+        "message": "No targets found",
+        "args": []
     },
     "FileFormatLimitationExceeded": {
         "id": 5003,
         "level": "Fatal",
-        "message": "File format limitation exceeded: {0}"
+        "message": "File format limitation exceeded: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "CannotSpecifyBothKeyFileAndContainer": {
         "id": 5004,
         "level": "Fatal",
-        "message": "You cannot specify both a key file and container"
+        "message": "You cannot specify both a key file and container",
+        "args": []
     },
     "DelaySignRequiresKey": {
         "id": 5005,
         "level": "Fatal",
-        "message": "You cannot delay sign without a key file or container"
+        "message": "You cannot delay sign without a key file or container",
+        "args": []
     },
     "InvalidStrongNameKeyPair": {
         "id": 5006,
         "level": "Fatal",
-        "message": "Invalid key {0} specified.\n\t(\"{1}\")"
+        "message": "Invalid key {arg0} specified.\n\t(\"{arg1}\")",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "ReferenceNotFound": {
         "id": 5007,
         "level": "Fatal",
-        "message": "Reference not found: {0}"
+        "message": "Reference not found: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "OptionsMustPreceedChildLevels": {
         "id": 5008,
         "level": "Fatal",
-        "message": "You can only specify options before any child levels"
+        "message": "You can only specify options before any child levels",
+        "args": []
     },
     "UnrecognizedTargetType": {
         "id": 5009,
         "level": "Fatal",
-        "message": "Invalid value '{0}' for -target option"
+        "message": "Invalid value '{arg0}' for -target option",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnrecognizedPlatform": {
         "id": 5010,
         "level": "Fatal",
-        "message": "Invalid value '{0}' for -platform option"
+        "message": "Invalid value '{arg0}' for -platform option",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "UnrecognizedApartment": {
         "id": 5011,
         "level": "Fatal",
-        "message": "Invalid value '{0}' for -apartment option"
+        "message": "Invalid value '{arg0}' for -apartment option",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MissingFileSpecification": {
         "id": 5012,
         "level": "Fatal",
-        "message": "Missing file specification for '{0}' option"
+        "message": "Missing file specification for '{arg0}' option",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "PathTooLong": {
         "id": 5013,
         "level": "Fatal",
-        "message": "Path too long: {0}"
+        "message": "Path too long: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "PathNotFound": {
         "id": 5014,
         "level": "Fatal",
-        "message": "Path not found: {0}"
+        "message": "Path not found: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InvalidPath": {
         "id": 5015,
         "level": "Fatal",
-        "message": "Invalid path: {0}"
+        "message": "Invalid path: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InvalidOptionSyntax": {
         "id": 5016,
         "level": "Fatal",
-        "message": "Invalid option: {0}"
+        "message": "Invalid option: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "ExternalResourceNotFound": {
         "id": 5017,
         "level": "Fatal",
-        "message": "External resource file does not exist: {0}"
+        "message": "External resource file does not exist: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "ExternalResourceNameInvalid": {
         "id": 5018,
         "level": "Fatal",
-        "message": "External resource file may not include path specification: {0}"
+        "message": "External resource file may not include path specification: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InvalidVersionFormat": {
         "id": 5019,
         "level": "Fatal",
-        "message": "Invalid version specified: {0}"
+        "message": "Invalid version specified: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "InvalidFileAlignment": {
         "id": 5020,
         "level": "Fatal",
-        "message": "Invalid value '{0}' for -filealign option"
+        "message": "Invalid value '{arg0}' for -filealign option",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "ErrorWritingFile": {
         "id": 5021,
         "level": "Fatal",
-        "message": "Unable to write file: {0}\n\t({1})"
+        "message": "Unable to write file: {arg0}\n\t({arg1})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "UnrecognizedOption": {
         "id": 5022,
         "level": "Fatal",
-        "message": "Unrecognized option: {0}"
+        "message": "Unrecognized option: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "NoOutputFileSpecified": {
         "id": 5023,
         "level": "Fatal",
-        "message": "No output file specified"
+        "message": "No output file specified",
+        "args": []
     },
     "SharedClassLoaderCannotBeUsedOnModuleTarget": {
         "id": 5024,
         "level": "Fatal",
-        "message": "Incompatible options: -target:module and -sharedclassloader cannot be combined"
+        "message": "Incompatible options: -target:module and -sharedclassloader cannot be combined",
+        "args": []
     },
     "RuntimeNotFound": {
         "id": 5025,
         "level": "Fatal",
-        "message": "Unable to load runtime assembly"
+        "message": "Unable to load runtime assembly",
+        "args": []
     },
     "MainClassRequiresExe": {
         "id": 5026,
         "level": "Fatal",
-        "message": "Main class cannot be specified for library or module"
+        "message": "Main class cannot be specified for library or module",
+        "args": []
     },
     "ExeRequiresMainClass": {
         "id": 5027,
         "level": "Fatal",
-        "message": "No main method found"
+        "message": "No main method found",
+        "args": []
     },
     "PropertiesRequireExe": {
         "id": 5028,
         "level": "Fatal",
-        "message": "Properties cannot be specified for library or module"
+        "message": "Properties cannot be specified for library or module",
+        "args": []
     },
     "ModuleCannotHaveClassLoader": {
         "id": 5029,
         "level": "Fatal",
-        "message": "Cannot specify assembly class loader for modules"
+        "message": "Cannot specify assembly class loader for modules",
+        "args": []
     },
     "ErrorParsingMapFile": {
         "id": 5030,
         "level": "Fatal",
-        "message": "Unable to parse remap file: {0}\n\t({1})"
+        "message": "Unable to parse remap file: {arg0}\n\t({arg1})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "BootstrapClassesMissing": {
         "id": 5031,
         "level": "Fatal",
-        "message": "Bootstrap classes missing and core assembly not found"
+        "message": "Bootstrap classes missing and core assembly not found",
+        "args": []
     },
     "StrongNameRequiresStrongNamedRefs": {
         "id": 5032,
         "level": "Fatal",
-        "message": "All referenced assemblies must be strong named, to be able to sign the output assembly"
+        "message": "All referenced assemblies must be strong named, to be able to sign the output assembly",
+        "args": []
     },
     "MainClassNotFound": {
         "id": 5033,
         "level": "Fatal",
-        "message": "Main class not found"
+        "message": "Main class not found",
+        "args": []
     },
     "MainMethodNotFound": {
         "id": 5034,
         "level": "Fatal",
-        "message": "Main method not found"
+        "message": "Main method not found",
+        "args": []
     },
     "UnsupportedMainMethod": {
         "id": 5035,
         "level": "Fatal",
-        "message": "Redirected main method not supported"
+        "message": "Redirected main method not supported",
+        "args": []
     },
     "ExternalMainNotAccessible": {
         "id": 5036,
         "level": "Fatal",
-        "message": "External main method must be public and in a public class"
+        "message": "External main method must be public and in a public class",
+        "args": []
     },
     "ClassLoaderNotFound": {
         "id": 5037,
         "level": "Fatal",
-        "message": "Custom assembly class loader class not found"
+        "message": "Custom assembly class loader class not found",
+        "args": []
     },
     "ClassLoaderNotAccessible": {
         "id": 5038,
         "level": "Fatal",
-        "message": "Custom assembly class loader class is not accessible"
+        "message": "Custom assembly class loader class is not accessible",
+        "args": []
     },
     "ClassLoaderIsAbstract": {
         "id": 5039,
         "level": "Fatal",
-        "message": "Custom assembly class loader class is abstract"
+        "message": "Custom assembly class loader class is abstract",
+        "args": []
     },
     "ClassLoaderNotClassLoader": {
         "id": 5040,
         "level": "Fatal",
-        "message": "Custom assembly class loader class does not extend java.lang.ClassLoader"
+        "message": "Custom assembly class loader class does not extend java.lang.ClassLoader",
+        "args": []
     },
     "ClassLoaderConstructorMissing": {
         "id": 5041,
         "level": "Fatal",
-        "message": "Custom assembly class loader constructor is missing"
+        "message": "Custom assembly class loader constructor is missing",
+        "args": []
     },
     "MapFileTypeNotFound": {
         "id": 5042,
         "level": "Fatal",
-        "message": "Type '{0}' referenced in remap file was not found"
+        "message": "Type '{arg0}' referenced in remap file was not found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MapFileClassNotFound": {
         "id": 5043,
         "level": "Fatal",
-        "message": "Class '{0}' referenced in remap file was not found"
+        "message": "Class '{arg0}' referenced in remap file was not found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MaximumErrorCountReached": {
         "id": 5044,
         "level": "Fatal",
-        "message": "Maximum error count reached"
+        "message": "Maximum error count reached",
+        "args": []
     },
     "LinkageError": {
         "id": 5045,
         "level": "Fatal",
-        "message": "Link error: {0}"
+        "message": "Link error: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "RuntimeMismatch": {
         "id": 5046,
         "level": "Fatal",
-        "message": "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version\n\tCurrent runtime: {1}\n\tReferenced assembly runtime: {2}"
+        "message": "Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version\n\tCurrent runtime: {arg1}\n\tReferenced assembly runtime: {arg2}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            }
+        ]
     },
     "RuntimeMismatchStrongName": {
         "id": 5047,
-        "level": "Fatal"
+        "level": "Fatal",
+        "args": []
     },
     "CoreClassesMissing": {
         "id": 5048,
         "level": "Fatal",
-        "message": "Failed to find core classes in core library"
+        "message": "Failed to find core classes in core library",
+        "args": []
     },
     "CriticalClassNotFound": {
         "id": 5049,
         "level": "Fatal",
-        "message": "Unable to load critical class '{0}'"
+        "message": "Unable to load critical class '{arg0}'",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "AssemblyContainsDuplicateClassNames": {
         "id": 5050,
         "level": "Fatal",
-        "message": "Type '{0}' and '{1}' both map to the same name '{2}'\n\t({3})"
+        "message": "Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'\n\t({arg3})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "CallerIDRequiresHasCallerIDAnnotation": {
         "id": 5051,
         "level": "Fatal",
-        "message": "CallerID.getCallerID() requires a HasCallerID annotation"
+        "message": "CallerID.getCallerID() requires a HasCallerID annotation",
+        "args": []
     },
     "UnableToResolveInterface": {
         "id": 5052,
         "level": "Fatal",
-        "message": "Unable to resolve interface '{0}' on type '{1}'"
+        "message": "Unable to resolve interface '{arg0}' on type '{arg1}'",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "MissingBaseType": {
         "id": 5053,
         "level": "Fatal",
-        "message": "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved"
+        "message": "The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "MissingBaseTypeReference": {
         "id": 5054,
         "level": "Fatal",
-        "message": "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'"
+        "message": "The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "FileNotFound": {
         "id": 5055,
         "level": "Fatal",
-        "message": "File not found: {0}"
+        "message": "File not found: {arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "RuntimeMethodMissing": {
         "id": 5056,
         "level": "Fatal",
-        "message": "Runtime method '{0}' not found"
+        "message": "Runtime method '{arg0}' not found",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "MapFileFieldNotFound": {
         "id": 5057,
         "level": "Fatal",
-        "message": "Field '{0}' referenced in remap file was not found in class '{1}'"
+        "message": "Field '{arg0}' referenced in remap file was not found in class '{arg1}'",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
     },
     "GhostInterfaceMethodMissing": {
         "id": 5058,
         "level": "Fatal",
-        "message": "Remapped class '{0}' does not implement ghost interface method\n\t({1}.{2}{3})"
+        "message": "Remapped class '{arg0}' does not implement ghost interface method\n\t({arg1}.{arg2}{arg3})",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
     },
     "ModuleInitializerMethodRequirements": {
         "id": 5059,
         "level": "Fatal",
-        "message": "Method '{1}.{2}{3}' does not meet the requirements of a module initializer."
+        "message": "Method '{arg1}.{arg2}{arg3}' does not meet the requirements of a module initializer.",
+        "args": [
+            {
+                "name": "arg1",
+                "type": "string"
+            },
+            {
+                "name": "arg2",
+                "type": "string"
+            },
+            {
+                "name": "arg3",
+                "type": "string"
+            }
+        ]
+    },
+    "InvalidZip": {
+        "id": 5060,
+        "level": "Fatal",
+        "message": "Invalid zip: {name}",
+        "args": [
+            {
+                "name": "name",
+                "type": "string"
+            }
+        ]
     },
     "GenericRuntimeTrace": {
         "id": 6000,
         "level": "Trace",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericJniTrace": {
         "id": 6001,
         "level": "Trace",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     },
     "GenericCompilerTrace": {
         "id": 6002,
         "level": "Trace",
-        "message": "{0}"
+        "message": "{arg0}",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            }
+        ]
     }
 }

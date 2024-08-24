@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -87,6 +88,11 @@ namespace IKVM.Runtime
         /// Gets a reference to the <see cref="RuntimeContext"/> this <see cref="RuntimeJavaType"/> is hosted within.
         /// </summary>
         public RuntimeContext Context => context;
+
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> where events related to this type should be sent.
+        /// </summary>
+        public virtual IDiagnosticHandler Diagnostics => Context.Diagnostics;
 
 #if EMITTERS
 
@@ -685,7 +691,10 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract RuntimeClassLoader GetClassLoader();
+        /// <summary>
+        /// Gets the associated <see cref="RuntimeClassLoader"/>.
+        /// </summary>
+        internal abstract RuntimeClassLoader ClassLoader { get; }
 
         /// <summary>
         /// Searches for the <see cref="RuntimeJavaField"/> with the specified name and signature.
@@ -878,7 +887,7 @@ namespace IKVM.Runtime
 
         internal bool InternalsVisibleTo(RuntimeJavaType wrapper)
         {
-            return GetClassLoader().InternalsVisibleToImpl(this, wrapper);
+            return ClassLoader.InternalsVisibleToImpl(this, wrapper);
         }
 
         internal virtual bool IsPackageAccessibleFrom(RuntimeJavaType wrapper)
@@ -886,15 +895,15 @@ namespace IKVM.Runtime
             if (MatchingPackageNames(name, wrapper.name))
             {
 #if IMPORTER
-                CompilerClassLoader ccl = GetClassLoader() as CompilerClassLoader;
+                CompilerClassLoader ccl = ClassLoader as CompilerClassLoader;
                 if (ccl != null)
                 {
                     // this is a hack for multi target -sharedclassloader compilation
                     // (during compilation we have multiple CompilerClassLoader instances to represent the single shared runtime class loader)
-                    return ccl.IsEquivalentTo(wrapper.GetClassLoader());
+                    return ccl.IsEquivalentTo(wrapper.ClassLoader);
                 }
 #endif
-                return GetClassLoader() == wrapper.GetClassLoader();
+                return ClassLoader == wrapper.ClassLoader;
             }
             else
             {
@@ -1030,11 +1039,11 @@ namespace IKVM.Runtime
                     case '[':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().TryLoadClassByName(name.Substring(1));
+                        return ClassLoader.TryLoadClassByName(name.Substring(1));
                     case 'L':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().TryLoadClassByName(name.Substring(2, name.Length - 3));
+                        return ClassLoader.TryLoadClassByName(name.Substring(2, name.Length - 3));
                     case 'Z':
                         return context.PrimitiveJavaTypeFactory.BOOLEAN;
                     case 'B':
@@ -1061,7 +1070,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(rank != 0);
             // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-            return GetClassLoader().TryLoadClassByName(new String('[', rank) + this.SigName);
+            return ClassLoader.TryLoadClassByName(new String('[', rank) + this.SigName);
         }
 
         internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
@@ -1514,7 +1523,7 @@ namespace IKVM.Runtime
                 object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
                 if (attr.Length == 1)
                 {
-                    return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
+                    return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
                 }
             }
             return null;

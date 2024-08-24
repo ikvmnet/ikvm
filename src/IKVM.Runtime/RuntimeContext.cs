@@ -76,7 +76,7 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="resolver"></param>
-        /// <param name="diagnostics"/>
+        /// <param name="diagnostics"></param>
         /// <param name="bootstrap"></param>
         /// <param name="staticCompiler"></param>
         public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
@@ -94,7 +94,7 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="options"></param>
-        /// <param name="diagnostics"/>
+        /// <param name="diagnostics"></param>
         /// <param name="resolver"></param>
         /// <param name="bootstrap"></param>
         public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, IManagedTypeResolver resolver, bool bootstrap)
@@ -106,6 +106,11 @@ namespace IKVM.Runtime
         }
 
 #endif
+
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> where events should be sent.
+        /// </summary>
+        public IDiagnosticHandler Diagnostics => diagnostics;
 
         /// <summary>
         /// Gets or creates a new instance in a thread safe manner.
@@ -281,19 +286,6 @@ namespace IKVM.Runtime
         public ProxyGenerator ProxyGenerator => GetOrCreateSingleton(ref proxyGenerator, () => new ProxyGenerator(this));
 
 #endif
-
-        /// <summary>
-        /// Reports a <see cref="DiagnosticEvent"/>.
-        /// </summary>
-        /// <param name="evt"></param>
-        public void ReportEvent(in DiagnosticEvent evt) => diagnostics.ReportEvent(evt);
-
-        /// <summary>
-        /// Returns <c>true</c> if the diagnostic is enabled.
-        /// </summary>
-        /// <param name="diagnostic"></param>
-        /// <returns></returns>
-        public bool IsDiagnosticEnabled(Diagnostic diagnostic) => diagnostics.IsDiagnosticEnabled(diagnostic);
 
     }
 

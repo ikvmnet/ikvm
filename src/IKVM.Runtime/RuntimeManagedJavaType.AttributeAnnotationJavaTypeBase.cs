@@ -45,10 +45,7 @@ namespace IKVM.Runtime
 
             }
 
-            internal sealed override RuntimeClassLoader GetClassLoader()
-            {
-                return DeclaringTypeWrapper.GetClassLoader();
-            }
+            internal sealed override RuntimeClassLoader ClassLoader => DeclaringTypeWrapper.ClassLoader;
 
             internal sealed override RuntimeJavaType[] Interfaces => new RuntimeJavaType[] { Context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName("java.lang.annotation.Annotation") };
 

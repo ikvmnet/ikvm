@@ -66,7 +66,7 @@ namespace IKVM.Runtime
                     return mw;
                 }
 
-                DeclaringType.Context.ReportEvent(Diagnostic.GenericCompilerError.Event([$"Property '{Name}' accessor '{name}' not found in class '{DeclaringType.Name}'"]));
+                DeclaringType.ClassLoader.Diagnostics.GenericCompilerError($"Property '{Name}' accessor '{name}' not found in class '{DeclaringType.Name}'");
             }
 
             return null;
@@ -144,7 +144,7 @@ namespace IKVM.Runtime
         internal static void EmitThrowNoSuchMethodErrorForGetter(CodeEmitter ilgen, RuntimeJavaType type, RuntimeJavaMember member)
         {
 #if IMPORTER
-            type.Context.StaticCompiler.ReportEvent(Diagnostic.EmittedNoSuchMethodError.Event(["<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature]));
+            type.ClassLoader.Diagnostics.EmittedNoSuchMethodError("<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
             CodeEmitterLabel label = ilgen.DefineLabel();
@@ -189,7 +189,7 @@ namespace IKVM.Runtime
         internal static void EmitThrowNoSuchMethodErrorForSetter(CodeEmitter ilgen, RuntimeJavaMember member)
         {
 #if IMPORTER
-            member.DeclaringType.Context.ReportEvent(Diagnostic.EmittedNoSuchMethodError.Event(["<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature]));
+            member.DeclaringType.ClassLoader.Diagnostics.EmittedNoSuchMethodError("<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
             CodeEmitterLabel label = ilgen.DefineLabel();

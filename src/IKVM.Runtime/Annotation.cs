@@ -25,8 +25,6 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using System.Runtime.CompilerServices;
-using IKVM.CoreLib.Diagnostics;
 
 
 
@@ -102,7 +100,7 @@ namespace IKVM.Runtime
 
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
-                RuntimeJavaType tw = owner.GetClassLoader().RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
+                var tw = owner.ClassLoader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
                 // Java allows inaccessible annotations to be used, so when the annotation isn't visible
                 // we fall back to using the DynamicAnnotationAttribute.
                 if (!tw.IsUnloadable && tw.IsAccessibleFrom(owner))
@@ -111,7 +109,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            owner.Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Unable to load annotation class {annotationClass}"]));
+            owner.Diagnostics.GenericCompilerWarning($"Unable to load annotation class {annotationClass}");
 #if IMPORTER
             return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else

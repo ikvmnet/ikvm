@@ -27,33 +27,38 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
     {
 
 <#
-foreach (var i in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Diagnostic.json"))))
+foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Diagnostic.json"))))
 {
-    var desc = i.Value.Description;
+    var desc = kvp.Value.Description;
     if (string.IsNullOrWhiteSpace(desc))
-        desc = $"The '{i.Key}' diagnostic.";
+        desc = $"The '{kvp.Key}' diagnostic.";
 
-    var message = i.Value.Message;
-    if (string.IsNullOrWhiteSpace(message))
-        message = "";
+    var level = kvp.Value.Level;
+    if (level == "Fatal")
+        level = "Critical";
+    if (level == "Trace")
+        level = "Verbose";
 
-    var format = CompositeFormat.Parse(message);
+    var message = new List<string>();
+    var index = 0;
+    foreach (var segment in CompositeFormat.Parse(kvp.Value.Message ?? "").Segments)
+        message.Add(segment.Literal != null ? segment.Literal : $"{{{kvp.Value.Args.FindIndex(i => i.Name == segment.Arg)}}}");
 
     var argDecl = new List<string>();
-    for (int j = 0; j < format.MinimumArgumentCount; j++)
-        argDecl.Add("object arg" + (j+1).ToString());
+    foreach (var arg in kvp.Value.Args)
+        argDecl.Add($"{arg.Type} {arg.Name}");
 
     var argList = new List<string>();
-    argList.Add(i.Value.Id.ToString());
-    for (int j = 0; j < format.MinimumArgumentCount; j++)
-        argList.Add("arg" + (j+1).ToString());
+    argList.Add(kvp.Value.Id.ToString());
+    foreach (var arg in kvp.Value.Args)
+        argList.Add($"{arg.Name}");
 
 #>
         /// <summary>
         /// <#= desc #>
         /// </summary>
-        [Event(<#= i.Value.Id #>, Message = <#= message #>, Level = EventLevel.<#= i.Value.Level.ToString() #>)]
-        public void <#= i.Key #>(<#= string.Join(", ", argDecl) #>) => WriteEvent(<#= string.Join(", ", argList) #>);
+        [Event(<#= kvp.Value.Id #>, Message = <#= Util.ToStringLiteral(string.Join("", message)) #>, Level = EventLevel.<#= level #>)]
+        public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => WriteEvent(<#= string.Join(", ", argList) #>);
 
 <#
 }
@@ -61,4 +66,3 @@ foreach (var i in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Diagn
     }
 
 }
-

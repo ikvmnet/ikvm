@@ -270,7 +270,7 @@ namespace IKVM.Runtime
             DelegateInnerClassCheck(iface != null);
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);
-            DelegateInnerClassCheck(iface.GetClassLoader() == classLoader);
+            DelegateInnerClassCheck(iface.ClassLoader == classLoader);
             RuntimeJavaMethod[] methods = iface.GetMethods();
             DelegateInnerClassCheck(methods.Length == 1 && methods[0].Name == "Invoke");
             if (methods[0].Signature != invoke.Signature)
@@ -317,10 +317,7 @@ namespace IKVM.Runtime
             get { return baseTypeWrapper; }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return classLoader;
-        }
+        internal override RuntimeClassLoader ClassLoader => classLoader;
 
         internal override Modifiers ReflectiveModifiers
         {
@@ -841,7 +838,7 @@ namespace IKVM.Runtime
             if (definitions == null)
                 return null;
 
-            var loader = GetClassLoader().GetJavaClassLoader();
+            var loader = ClassLoader.GetJavaClassLoader();
             var annotations = new List<object>();
 
             for (int i = 0; i < definitions.Length; i++)
@@ -921,7 +918,7 @@ namespace IKVM.Runtime
                     object defVal = impl.GetMethodDefaultValue(i);
                     if (defVal != null)
                     {
-                        return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
+                        return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
                     }
                     return null;
                 }
@@ -958,7 +955,7 @@ namespace IKVM.Runtime
 
         private Type[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
         {
-            return GetModOpt(GetClassLoader().GetTypeWrapperFactory(), tw, mustBePublic);
+            return GetModOpt(ClassLoader.GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
         internal static Type[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
@@ -1061,15 +1058,15 @@ namespace IKVM.Runtime
         internal void EmitLevel4Warning(HardError error, string message)
         {
 #if IMPORTER
-            if (GetClassLoader().WarningLevelHigh)
+            if (ClassLoader.WarningLevelHigh)
             {
                 switch (error)
                 {
                     case HardError.AbstractMethodError:
-                        GetClassLoader().Report(Diagnostic.EmittedAbstractMethodError.Event([this.Name, message]));
+                        ClassLoader.Diagnostics.EmittedAbstractMethodError(this.Name, message);
                         break;
                     case HardError.IncompatibleClassChangeError:
-                        GetClassLoader().Report(Diagnostic.EmittedIncompatibleClassChangeError.Event([this.Name, message]));
+                        ClassLoader.Diagnostics.EmittedIncompatibleClassChangeError(this.Name, message);
                         break;
                     default:
                         throw new InvalidOperationException();

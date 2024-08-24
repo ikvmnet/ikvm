@@ -1615,11 +1615,11 @@ namespace IKVM.Runtime
                                     }
                                     else if (!tw.IsAccessibleFrom(wrapper))
                                     {
-                                        SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
+                                        SetHardError(wrapper.ClassLoader, ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
                                     }
                                     else if (tw.IsAbstract)
                                     {
-                                        SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.InstantiationError, "{0}", tw.Name);
+                                        SetHardError(wrapper.ClassLoader, ref instructions[i], HardError.InstantiationError, "{0}", tw.Name);
                                     }
                                     break;
                                 }
@@ -1633,7 +1633,7 @@ namespace IKVM.Runtime
                                     }
                                     else if (!tw.IsAccessibleFrom(wrapper))
                                     {
-                                        SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
+                                        SetHardError(wrapper.ClassLoader, ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
                                     }
                                     break;
                                 }
@@ -1650,7 +1650,7 @@ namespace IKVM.Runtime
                                     }
                                     else if (!tw.IsAccessibleFrom(wrapper))
                                     {
-                                        SetHardError(wrapper.GetClassLoader(), ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
+                                        SetHardError(wrapper.ClassLoader, ref instructions[i], HardError.IllegalAccessError, "Try to access class {0} from class {1}", tw.Name, wrapper.Name);
                                     }
                                     break;
                                 }
@@ -1692,7 +1692,7 @@ namespace IKVM.Runtime
             }
             else if (!cpi.GetClassType().IsAccessibleFrom(wrapper))
             {
-                SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
+                SetHardError(wrapper.ClassLoader, ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
             }
             else if (cpi.Kind == MethodHandleKind.InvokeVirtual && cpi.GetClassType() == context.JavaBase.TypeOfJavaLangInvokeMethodHandle && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
             {
@@ -1716,7 +1716,7 @@ namespace IKVM.Runtime
                         msg = cpi.Class + "." + cpi.Name + cpi.Signature;
                         break;
                 }
-                SetHardError(wrapper.GetClassLoader(), ref instr, err, msg, cpi.Class, cpi.Name, SigToString(cpi.Signature));
+                SetHardError(wrapper.ClassLoader, ref instr, err, msg, cpi.Class, cpi.Name, SigToString(cpi.Signature));
             }
             else if (!cpi.Member.IsAccessibleFrom(cpi.GetClassType(), wrapper, cpi.GetClassType()))
             {
@@ -1726,7 +1726,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessException, "member is private: {0}.{1}/{2}/{3}, from {4}", cpi.Class, cpi.Name, SigToString(cpi.Signature), cpi.Kind, wrapper.Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.IllegalAccessException, "member is private: {0}.{1}/{2}/{3}, from {4}", cpi.Class, cpi.Name, SigToString(cpi.Signature), cpi.Kind, wrapper.Name);
                 }
             }
         }
@@ -2475,7 +2475,7 @@ namespace IKVM.Runtime
 
         private void ConditionalPatchNoClassDefFoundError(ref ClassFile.Method.Instruction instruction, RuntimeJavaType tw)
         {
-            RuntimeClassLoader loader = wrapper.GetClassLoader();
+            RuntimeClassLoader loader = wrapper.ClassLoader;
             if (loader.DisableDynamicBinding)
             {
                 SetHardError(loader, ref instruction, HardError.NoClassDefFoundError, "{0}", tw.Name);
@@ -2490,34 +2490,35 @@ namespace IKVM.Runtime
             switch (hardError)
             {
                 case HardError.NoClassDefFoundError:
-                    msg = Diagnostic.EmittedNoClassDefFoundError;
+                    classLoader.Diagnostics.EmittedNoClassDefFoundError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.IllegalAccessError:
-                    msg = Diagnostic.EmittedIllegalAccessError;
+                    classLoader.Diagnostics.EmittedIllegalAccessError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.InstantiationError:
-                    msg = Diagnostic.EmittedIllegalAccessError;
+                    classLoader.Diagnostics.EmittedInstantiationError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.IncompatibleClassChangeError:
+                    classLoader.Diagnostics.EmittedIncompatibleClassChangeError(classFile.Name + "." + method.Name + method.Signature, text);
+                    break;
                 case HardError.IllegalAccessException:
-                    msg = Diagnostic.EmittedIncompatibleClassChangeError;
+                    classLoader.Diagnostics.EmittedIllegalAccessError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.NoSuchFieldError:
-                    msg = Diagnostic.EmittedNoSuchFieldError;
+                    classLoader.Diagnostics.EmittedNoSuchFieldError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.AbstractMethodError:
-                    msg = Diagnostic.EmittedAbstractMethodError;
+                    classLoader.Diagnostics.EmittedAbstractMethodError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.NoSuchMethodError:
-                    msg = Diagnostic.EmittedNoSuchMethodError;
+                    classLoader.Diagnostics.EmittedNoSuchMethodError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 case HardError.LinkageError:
-                    msg = Diagnostic.EmittedLinkageError;
+                    classLoader.Diagnostics.EmittedLinkageError(classFile.Name + "." + method.Name + method.Signature, text);
                     break;
                 default:
                     throw new InvalidOperationException();
             }
-            classLoader.Report(msg.Event([classFile.Name + "." + method.Name + method.Signature, text]));
 #endif
             instruction.SetHardError(hardError, AllocErrorMessage(text));
         }
@@ -2569,9 +2570,9 @@ namespace IKVM.Runtime
 
             if (cpi.GetClassType().IsUnloadable)
             {
-                if (wrapper.GetClassLoader().DisableDynamicBinding)
+                if (wrapper.ClassLoader.DisableDynamicBinding)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
                 }
                 else
                 {
@@ -2603,11 +2604,11 @@ namespace IKVM.Runtime
             }
             else if (invoke == NormalizedByteCode.__invokeinterface && !cpi.GetClassType().IsInterface)
             {
-                SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
+                SetHardError(wrapper.ClassLoader, ref instr, HardError.IncompatibleClassChangeError, "invokeinterface on non-interface");
             }
             else if (cpi.GetClassType().IsInterface && invoke != NormalizedByteCode.__invokeinterface && ((invoke != NormalizedByteCode.__invokestatic && invoke != NormalizedByteCode.__invokespecial) || classFile.MajorVersion < 52))
             {
-                SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError,
+                SetHardError(wrapper.ClassLoader, ref instr, HardError.IncompatibleClassChangeError,
                     classFile.MajorVersion < 52
                         ? "interface method must be invoked using invokeinterface"
                         : "interface method must be invoked using invokeinterface, invokespecial or invokestatic");
@@ -2620,17 +2621,17 @@ namespace IKVM.Runtime
                     string errmsg = CheckLoaderConstraints(cpi, targetMethod);
                     if (errmsg != null)
                     {
-                        SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "{0}", errmsg);
+                        SetHardError(wrapper.ClassLoader, ref instr, HardError.LinkageError, "{0}", errmsg);
                     }
                     else if (targetMethod.IsStatic == (invoke == NormalizedByteCode.__invokestatic))
                     {
                         if (targetMethod.IsAbstract && invoke == NormalizedByteCode.__invokespecial && (targetMethod.GetMethod() == null || targetMethod.GetMethod().IsAbstract))
                         {
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.AbstractMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                            SetHardError(wrapper.ClassLoader, ref instr, HardError.AbstractMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                         }
                         else if (invoke == NormalizedByteCode.__invokeinterface && targetMethod.IsPrivate)
                         {
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "private interface method requires invokespecial, not invokeinterface: method {0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                            SetHardError(wrapper.ClassLoader, ref instr, HardError.IncompatibleClassChangeError, "private interface method requires invokespecial, not invokeinterface: method {0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                         }
                         else if (targetMethod.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
                         {
@@ -2667,17 +2668,17 @@ namespace IKVM.Runtime
                                 instr.PatchOpCode(NormalizedByteCode.__clone_array);
                                 return;
                             }
-                            SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access method {0}.{1}{2} from class {3}", ToSlash(targetMethod.DeclaringType.Name), cpi.Name, ToSlash(cpi.Signature), ToSlash(wrapper.Name));
+                            SetHardError(wrapper.ClassLoader, ref instr, HardError.IllegalAccessError, "tried to access method {0}.{1}{2} from class {3}", ToSlash(targetMethod.DeclaringType.Name), cpi.Name, ToSlash(cpi.Signature), ToSlash(wrapper.Name));
                         }
                     }
                     else
                     {
-                        SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "static call to non-static method (or v.v.)");
+                        SetHardError(wrapper.ClassLoader, ref instr, HardError.IncompatibleClassChangeError, "static call to non-static method (or v.v.)");
                     }
                 }
                 else
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.NoSuchMethodError, "{0}.{1}{2}", cpi.Class, cpi.Name, cpi.Signature);
                 }
             }
         }
@@ -2771,9 +2772,9 @@ namespace IKVM.Runtime
             }
             else if (cpi.GetClassType().IsUnloadable)
             {
-                if (wrapper.GetClassLoader().DisableDynamicBinding)
+                if (wrapper.ClassLoader.DisableDynamicBinding)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.NoClassDefFoundError, "{0}", cpi.GetClassType().Name);
                 }
                 else
                 {
@@ -2802,7 +2803,7 @@ namespace IKVM.Runtime
                 RuntimeJavaField field = cpi.GetField();
                 if (field == null)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.NoSuchFieldError, "{0}.{1}", cpi.Class, cpi.Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.NoSuchFieldError, "{0}.{1}", cpi.Class, cpi.Name);
                     return;
                 }
                 if (false && cpi.GetFieldType() != field.FieldTypeWrapper && !cpi.GetFieldType().IsUnloadable & !field.FieldTypeWrapper.IsUnloadable)
@@ -2810,24 +2811,24 @@ namespace IKVM.Runtime
 #if IMPORTER
                     StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, cpi.GetFieldType(), cpi.GetClassType().Name, cpi.Name, wrapper.Name);
 #endif
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "Loader constraints violated: {0}.{1}", field.DeclaringType.Name, field.Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.LinkageError, "Loader constraints violated: {0}.{1}", field.DeclaringType.Name, field.Name);
                     return;
                 }
                 if (field.IsStatic != isStatic)
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IncompatibleClassChangeError, "Static field access to non-static field (or v.v.)");
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.IncompatibleClassChangeError, "Static field access to non-static field (or v.v.)");
                     return;
                 }
                 if (!field.IsAccessibleFrom(cpi.GetClassType(), wrapper, thisType))
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "Try to access field {0}.{1} from class {2}", field.DeclaringType.Name, field.Name, wrapper.Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.IllegalAccessError, "Try to access field {0}.{1} from class {2}", field.DeclaringType.Name, field.Name, wrapper.Name);
                     return;
                 }
                 // are we trying to mutate a final field? (they are read-only from outside of the defining class)
                 if (write && field.IsFinal
-                    && ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (wrapper.GetClassLoader().StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
+                    && ((isStatic ? wrapper != cpi.GetClassType() : wrapper != thisType) || (wrapper.ClassLoader.StrictFinalFieldSemantics && (isStatic ? (mw != null && mw.Name != "<clinit>") : (mw == null || mw.Name != "<init>")))))
                 {
-                    SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "Field {0}.{1} is final", field.DeclaringType.Name, field.Name);
+                    SetHardError(wrapper.ClassLoader, ref instr, HardError.IllegalAccessError, "Field {0}.{1} is final", field.DeclaringType.Name, field.Name);
                     return;
                 }
             }

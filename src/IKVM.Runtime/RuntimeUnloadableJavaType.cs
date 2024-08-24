@@ -82,10 +82,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper => null;
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return null;
-        }
+        internal override RuntimeClassLoader ClassLoader => null;
 
         internal override RuntimeJavaType EnsureLoadable(RuntimeClassLoader loader)
         {

@@ -64,10 +64,7 @@ namespace IKVM.Runtime
             get { return Context.JavaBase.TypeOfJavaLangObject; }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return ultimateElementTypeWrapper.GetClassLoader();
-        }
+        internal override RuntimeClassLoader ClassLoader => ultimateElementTypeWrapper.ClassLoader;
 
         internal static MethodInfo GetCloneMethod(RuntimeContext context)
         {

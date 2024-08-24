@@ -105,7 +105,7 @@ namespace IKVM.Tools.Importer
 
                 if (wrappers[i] == null)
                 {
-                    loader.Context.ReportEvent(Diagnostic.UnableToCreateProxy.Event([proxy, "unable to load interface " + interfaces[i]]));
+                    loader.Diagnostics.UnableToCreateProxy(proxy, "unable to load interface " + interfaces[i]);
                     return;
                 }
             }
@@ -122,12 +122,12 @@ namespace IKVM.Tools.Importer
             }
             catch (RetargetableJavaException x)
             {
-                loader.Context.ReportEvent(Diagnostic.UnableToCreateProxy.Event([proxy, x.Message]));
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
             catch (ProxyException x)
             {
-                loader.Context.ReportEvent(Diagnostic.UnableToCreateProxy.Event([proxy, x.Message]));
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
 

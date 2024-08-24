@@ -155,7 +155,7 @@ namespace IKVM.Runtime
             {
                 if (propertyGetterSetter != null)
                 {
-                    classFile.context.ReportEvent(Diagnostic.GenericClassLoadingError.Event([$"Ignoring duplicate ikvm.lang.Property annotation on {classFile.Name}.{this.Name}"]));
+                    classFile.diagnostics.GenericClassLoadingError($"Ignoring duplicate ikvm.lang.Property annotation on {classFile.Name}.{this.Name}");
                     return;
                 }
 
@@ -186,7 +186,7 @@ namespace IKVM.Runtime
                 if (propertyGetterSetter == null || propertyGetterSetter[0] == null)
                 {
                     propertyGetterSetter = null;
-                    classFile.context.ReportEvent(Diagnostic.GenericClassLoadingError.Event([$"Ignoring malformed ikvm.lang.Property annotation on {classFile.Name}.{this.Name}"]));
+                    classFile.diagnostics.GenericClassLoadingError($"Ignoring malformed ikvm.lang.Property annotation on {classFile.Name}.{Name}");
                     return;
                 }
             }

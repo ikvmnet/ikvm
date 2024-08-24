@@ -87,7 +87,7 @@ namespace IKVM.Runtime
                         fw.Link(mode);
                     }
                 }
-                RuntimeClassLoader classLoader = thisType.GetClassLoader();
+                RuntimeClassLoader classLoader = thisType.ClassLoader;
                 RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {

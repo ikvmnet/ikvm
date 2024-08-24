@@ -325,9 +325,9 @@ namespace IKVM.Runtime
                     else
                     {
 #if IMPORTER
-                        if (methods[i].GetParameters().Length > MethodHandleUtil.MaxArity && methods[i].RequiresNonVirtualDispatcher && wrapper.GetClassLoader().EmitNoRefEmitHelpers)
+                        if (methods[i].GetParameters().Length > MethodHandleUtil.MaxArity && methods[i].RequiresNonVirtualDispatcher && wrapper.ClassLoader.EmitNoRefEmitHelpers)
                         {
-                            wrapper.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(methods[i].GetParameters().Length, methods[i].ReturnType == context.PrimitiveJavaTypeFactory.VOID);
+                            wrapper.ClassLoader.GetTypeWrapperFactory().DefineDelegate(methods[i].GetParameters().Length, methods[i].ReturnType == context.PrimitiveJavaTypeFactory.VOID);
                         }
 #endif
                         if (m.IsAbstract)
@@ -489,10 +489,10 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    if (wrapper.classLoader.NoJNI)
+                                    if (wrapper.ClassLoader.NoJNI)
                                     {
                                         // since NoJniStubs can only be set when we're statically compiling, it is safe to use the "compiler" trace switch
-                                        Context.ReportEvent(Diagnostic.GenericCompilerWarning.Event([$"Native method not implemented: {classFile.Name}.{m.Name}.{m.Signature}"]));
+                                        wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Native method not implemented: {classFile.Name}.{m.Name}.{m.Signature}");
                                         ilGenerator.EmitThrow("java.lang.UnsatisfiedLinkError", "Native method not implemented (compiled with -nojni): " + classFile.Name + "." + m.Name + m.Signature);
                                     }
                                     else
@@ -634,7 +634,7 @@ namespace IKVM.Runtime
                     if (!wrapper.IsAbstract && wrapper.HasUnsupportedAbstractMethods)
                         AddUnsupportedAbstractMethods();
 
-                    if (!wrapper.GetClassLoader().NoAutomagicSerialization)
+                    if (!wrapper.ClassLoader.NoAutomagicSerialization)
                         wrapper.automagicSerializationCtor = context.Serialization.AddAutomagicSerialization(wrapper, typeBuilder);
                 }
 
@@ -674,8 +674,8 @@ namespace IKVM.Runtime
                             var annotation = Annotation.Load(wrapper, def);
                             if (annotation != null)
                             {
-                                annotation.Apply(wrapper.GetClassLoader(), mb, def);
-                                annotation.ApplyReturnValue(wrapper.GetClassLoader(), mb, ref returnParameter, def);
+                                annotation.Apply(wrapper.ClassLoader, mb, def);
+                                annotation.ApplyReturnValue(wrapper.ClassLoader, mb, ref returnParameter, def);
                             }
                         }
                     }
@@ -704,11 +704,11 @@ namespace IKVM.Runtime
                                     var prop = fields[i] as RuntimeByteCodePropertyJavaField;
                                     if (prop != null)
                                     {
-                                        annotation.Apply(wrapper.GetClassLoader(), prop.GetPropertyBuilder(), def);
+                                        annotation.Apply(wrapper.ClassLoader, prop.GetPropertyBuilder(), def);
                                     }
                                     else
                                     {
-                                        annotation.Apply(wrapper.GetClassLoader(), (FieldBuilder)fields[i].GetField(), def);
+                                        annotation.Apply(wrapper.ClassLoader, (FieldBuilder)fields[i].GetField(), def);
                                     }
                                 }
                             }
@@ -722,7 +722,7 @@ namespace IKVM.Runtime
                     {
                         var annotation = Annotation.Load(wrapper, def);
                         if (annotation != null)
-                            annotation.Apply(wrapper.GetClassLoader(), typeBuilder, def);
+                            annotation.Apply(wrapper.ClassLoader, typeBuilder, def);
                     }
                 }
 
@@ -1011,10 +1011,10 @@ namespace IKVM.Runtime
                 parameterNames = null;
                 ParameterBuilder[] parameterBuilders = null;
 
-                if (wrapper.GetClassLoader().EmitSymbols
+                if (wrapper.ClassLoader.EmitSymbols
 #if IMPORTER
                     || (classFile.IsPublic && (m.IsPublic || m.IsProtected))
-                    || (m.MethodParameters != null && !wrapper.GetClassLoader().NoParameterReflection)
+                    || (m.MethodParameters != null && !wrapper.ClassLoader.NoParameterReflection)
 #endif
                     )
                 {
@@ -1055,7 +1055,7 @@ namespace IKVM.Runtime
                         {
                             var annotation = Annotation.Load(wrapper, def);
                             if (annotation != null)
-                                annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);
+                                annotation.Apply(wrapper.ClassLoader, parameterBuilders[j], def);
                         }
                     }
                 }
@@ -1128,7 +1128,7 @@ namespace IKVM.Runtime
                     tbDefaultMethods = DefineNestedInteropType(NestedTypeName.DefaultMethods);
                 }
 
-                var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
+                var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
                 var ilgen = context.CodeEmitterFactory.Create(mb);
                 if (wrapper.IsGhost)
                 {
@@ -1173,7 +1173,7 @@ namespace IKVM.Runtime
                             if (classFile.IsInterface)
                             {
                                 // if we're an interface with a default miranda method, we need to create a new default method that forwards to the original
-                                mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.GetClassLoader().GetTypeWrapperFactory(),
+                                mb = methods[i].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
                                     typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, typeBuilder, false);
                             }
                             EmitCallDefaultInterfaceMethod(mb, mmw.BaseMethod);
@@ -1941,7 +1941,7 @@ namespace IKVM.Runtime
                         if (!wrapper.IsInterface)
                         {
                             // look for "magic" interfaces that imply a .NET interface
-                            if (iface.GetClassLoader() == context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
+                            if (iface.ClassLoader == context.JavaBase.TypeOfJavaLangObject.ClassLoader)
                             {
                                 if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName))))
                                 {

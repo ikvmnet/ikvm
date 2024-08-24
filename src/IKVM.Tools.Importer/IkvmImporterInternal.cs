@@ -42,6 +42,39 @@ namespace IKVM.Tools.Importer
     class IkvmImporterInternal
     {
 
+        /// <summary>
+        /// <see cref="IDiagnosticHandler"> implementation for nested class loaders.
+        /// </summary>
+        internal class DiagnosticHandler : DiagnosticEventHandler
+        {
+
+            readonly IkvmImporterInternal importer;
+            readonly CompilerOptions options;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="importer"></param>
+            /// <param name="compiler"></param>
+            /// <param name="options"></param>
+            public DiagnosticHandler(IkvmImporterInternal importer, CompilerOptions options)
+            {
+                this.importer = importer ?? throw new ArgumentNullException(nameof(importer));
+                this.options = options ?? throw new ArgumentNullException(nameof(options));
+            }
+
+            public override bool IsEnabled(Diagnostic diagnostic)
+            {
+                return importer.IsDiagnosticEnabled(diagnostic);
+            }
+
+            public override void Report(in DiagnosticEvent @event)
+            {
+                importer.ReportEvent(options, @event);
+            }
+
+        }
+
         bool nonleaf;
         string manifestMainClass;
         string defaultAssemblyName;
@@ -166,18 +199,19 @@ namespace IKVM.Tools.Importer
                 PrintHeader();
             }
 
-            var compiler = new StaticCompiler();
-            var importer = new IkvmImporterInternal();
-            var targets = new List<CompilerOptions>();
             var rootTarget = new CompilerOptions();
-            var context = new RuntimeContext(new RuntimeContextOptions(), compiler, new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var importer = new IkvmImporterInternal();
+            var diagnostics = new DiagnosticHandler(importer, rootTarget);
+            var compiler = new StaticCompiler(diagnostics);
+            var targets = new List<CompilerOptions>();
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
-            importer.ParseCommandLine(context, compiler, argList.GetEnumerator(), targets, rootTarget);
+            importer.ParseCommandLine(context, compiler, diagnostics, argList.GetEnumerator(), targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
-            resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, warning, message, parameters);
+            resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
-            ResolveReferences(compiler, targets);
+            ResolveReferences(compiler, diagnostics, targets);
             ResolveStrongNameKeys(targets);
 
             if (targets.Count == 0)
@@ -191,7 +225,7 @@ namespace IKVM.Tools.Importer
 
             try
             {
-                return CompilerClassLoader.Compile(context, compiler, runtimeAssembly, targets);
+                return CompilerClassLoader.Compile(importer, context, compiler, diagnostics, runtimeAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -199,27 +233,27 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void loader_Warning(StaticCompiler compiler, AssemblyResolver.WarningId warning, string message, string[] parameters)
+        static void loader_Warning(StaticCompiler compiler, IDiagnosticHandler diagnostics, AssemblyResolver.WarningId warning, string message, string[] parameters)
         {
             switch (warning)
             {
                 case AssemblyResolver.WarningId.HigherVersion:
-                    ReportEvent(compiler, Diagnostic.AssumeAssemblyVersionMatch.Event([parameters]));
+                    diagnostics.AssumeAssemblyVersionMatch(parameters[0], parameters[1]);
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryOption:
-                    ReportEvent(compiler, Diagnostic.InvalidDirectoryInLibOptionPath.Event([parameters]));
+                    diagnostics.InvalidDirectoryInLibOptionPath(parameters[0]);
                     break;
                 case AssemblyResolver.WarningId.InvalidLibDirectoryEnvironment:
-                    ReportEvent(compiler, Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event([parameters]));
+                    diagnostics.InvalidDirectoryInLibEnvironmentPath(parameters[0]);
                     break;
                 case AssemblyResolver.WarningId.LegacySearchRule:
-                    ReportEvent(compiler, Diagnostic.LegacySearchRule.Event([parameters]));
+                    diagnostics.LegacySearchRule(parameters[0]);
                     break;
                 case AssemblyResolver.WarningId.LocationIgnored:
-                    ReportEvent(compiler, Diagnostic.AssemblyLocationIgnored.Event([parameters]));
+                    diagnostics.AssemblyLocationIgnored(parameters[0], parameters[1], parameters[2]);
                     break;
                 default:
-                    ReportEvent(compiler, Diagnostic.UnknownWarning.Event([string.Format(message, parameters)]));
+                    diagnostics.UnknownWarning(string.Format(message, parameters));
                     break;
             }
         }
@@ -396,17 +430,17 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("                               class file.");
         }
 
-        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
         {
             options.target = PEFileKinds.ConsoleApplication;
             options.guessFileKind = true;
             options.version = new Version(0, 0, 0, 0);
             options.apartment = ApartmentState.STA;
             options.props = new Dictionary<string, string>();
-            ContinueParseCommandLine(context, compiler, arglist, targets, options);
+            ContinueParseCommandLine(context, compiler, diagnostics, arglist, targets, options);
         }
 
-        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
         {
             var fileNames = new List<string>();
             while (arglist.MoveNext())
@@ -416,13 +450,14 @@ namespace IKVM.Tools.Importer
                 {
                     if (!nonleaf)
                     {
-                        ReadFiles(context, compiler, options, fileNames);
+                        ReadFiles(context, compiler, options, diagnostics, fileNames);
                         nonleaf = true;
                     }
-                    IkvmImporterInternal nestedLevel = new IkvmImporterInternal();
+
+                    var nestedLevel = new IkvmImporterInternal();
                     nestedLevel.manifestMainClass = manifestMainClass;
                     nestedLevel.defaultAssemblyName = defaultAssemblyName;
-                    nestedLevel.ContinueParseCommandLine(context, compiler, arglist, targets, options.Copy());
+                    nestedLevel.ContinueParseCommandLine(context, compiler, diagnostics, arglist, targets, options.Copy());
                 }
                 else if (s == "}")
                 {
@@ -580,7 +615,7 @@ namespace IKVM.Tools.Importer
                         if (exists)
                         {
                             var dir = new DirectoryInfo(spec);
-                            found = Recurse(context, compiler, options, dir, dir, "*");
+                            found = Recurse(context, compiler, options, diagnostics, dir, dir, "*");
                         }
                         else
                         {
@@ -589,11 +624,11 @@ namespace IKVM.Tools.Importer
                                 var dir = new DirectoryInfo(Path.GetDirectoryName(spec));
                                 if (dir.Exists)
                                 {
-                                    found = Recurse(context, compiler, options, dir, dir, Path.GetFileName(spec));
+                                    found = Recurse(context, compiler, options, diagnostics, dir, dir, Path.GetFileName(spec));
                                 }
                                 else
                                 {
-                                    found = RecurseJar(context, compiler, options, spec);
+                                    found = RecurseJar(context, compiler, options, diagnostics, spec);
                                 }
                             }
                             catch (PathTooLongException)
@@ -838,7 +873,7 @@ namespace IKVM.Tools.Importer
                     {
                         var proxy = s.Substring(7);
                         if (options.proxies.Contains(proxy))
-                            ReportEvent(compiler, Diagnostic.DuplicateProxy.Event([proxy]));
+                            diagnostics.DuplicateProxy(proxy);
 
                         options.proxies.Add(proxy);
                     }
@@ -861,7 +896,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
                     {
-                        ProcessAttributeAnnotationsClass(context, ref options.assemblyAttributeAnnotations, s.Substring(20));
+                        ProcessAttributeAnnotationsClass(context, diagnostics, ref options.assemblyAttributeAnnotations, s.Substring(20));
                     }
                     else if (s == "-w4") // undocumented option to always warn if a class isn't found
                     {
@@ -895,7 +930,7 @@ namespace IKVM.Tools.Importer
                 return;
             }
 
-            ReadFiles(context, compiler, options, fileNames);
+            ReadFiles(context, compiler, options, diagnostics, fileNames);
 
             if (options.assembly == null)
             {
@@ -920,7 +955,7 @@ namespace IKVM.Tools.Importer
 
             if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
             {
-                ReportEvent(compiler, options, Diagnostic.MainMethodFromManifest.Event([manifestMainClass]));
+                diagnostics.MainMethodFromManifest(manifestMainClass);
                 options.mainClass = manifestMainClass;
             }
 
@@ -958,7 +993,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, List<string> fileNames)
+        void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, List<string> fileNames)
         {
             foreach (string fileName in fileNames)
             {
@@ -980,22 +1015,28 @@ namespace IKVM.Tools.Importer
                     {
                     }
                 }
+
                 string[] files = null;
                 try
                 {
-                    string path = Path.GetDirectoryName(fileName);
+                    var path = Path.GetDirectoryName(fileName);
                     files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(fileName));
                 }
-                catch { }
+                catch
+                {
+
+                }
+
+
                 if (files == null || files.Length == 0)
                 {
-                    ReportEvent(compiler, Diagnostic.InputFileNotFound.Event([fileName]));
+                    diagnostics.InputFileNotFound(fileName);
                 }
                 else
                 {
                     foreach (string f in files)
                     {
-                        ProcessFile(context, compiler, options, null, f);
+                        ProcessFile(context, compiler, options, diagnostics, null, f);
                     }
                 }
             }
@@ -1060,16 +1101,17 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ResolveReferences(StaticCompiler compiler, List<CompilerOptions> targets)
+        static void ResolveReferences(StaticCompiler compiler, IDiagnosticHandler diagnostics, List<CompilerOptions> targets)
         {
             var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
-            foreach (CompilerOptions target in targets)
+
+            foreach (var target in targets)
             {
                 if (target.unresolvedReferences != null)
                 {
                     foreach (string reference in target.unresolvedReferences)
                     {
-                        foreach (CompilerOptions peer in targets)
+                        foreach (var peer in targets)
                         {
                             if (peer.assembly.Equals(reference, StringComparison.OrdinalIgnoreCase))
                             {
@@ -1087,53 +1129,37 @@ namespace IKVM.Tools.Importer
             }
 
             // verify that we didn't reference any secondary assemblies of a shared class loader group
-            foreach (CompilerOptions target in targets)
+            foreach (var target in targets)
             {
                 if (target.references != null)
                 {
-                    foreach (Assembly asm in target.references)
+                    foreach (var asm in target.references)
                     {
-                        Type forwarder = asm.GetType("__<MainAssembly>");
+                        var forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
-                        {
-                            ReportEvent(compiler, Diagnostic.NonPrimaryAssemblyReference.Event([asm.Location, forwarder.Assembly.GetName().Name]));
-                        }
+                            diagnostics.NonPrimaryAssemblyReference(asm.Location, forwarder.Assembly.GetName().Name);
                     }
                 }
             }
 
             // add legacy references (from stub files)
-            foreach (CompilerOptions target in targets)
-            {
-                foreach (string assemblyName in target.legacyStubReferences.Keys)
-                {
+            foreach (var target in targets)
+                foreach (var assemblyName in target.legacyStubReferences.Keys)
                     ArrayAppend(ref target.references, resolver.LegacyLoad(new AssemblyName(assemblyName), null));
-                }
-            }
 
             // now pre-load the secondary assemblies of any shared class loader groups
-            foreach (CompilerOptions target in targets)
-            {
+            foreach (var target in targets)
                 if (target.references != null)
-                {
-                    foreach (Assembly asm in target.references)
-                    {
+                    foreach (var asm in target.references)
                         RuntimeAssemblyClassLoader.PreloadExportedAssemblies(compiler, asm);
-                    }
-                }
-            }
         }
 
         private static void ArrayAppend<T>(ref T[] array, T element)
         {
             if (array == null)
-            {
-                array = new T[] { element };
-            }
+                array = [element];
             else
-            {
                 array = ArrayUtil.Concat(array, element);
-            }
         }
 
         private static void ArrayAppend<T>(ref T[] array, T[] append)
@@ -1156,17 +1182,16 @@ namespace IKVM.Tools.Importer
             using MemoryStream ms = new MemoryStream();
             using Stream s = ze.Open();
             s.CopyTo(ms);
-
             return ms.ToArray();
         }
 
-        static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, byte[] buf)
+        static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, byte[] buf)
         {
             IKVM.Runtime.ClassFile cf;
 
             try
             {
-                cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
+                cf = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
             {
@@ -1189,26 +1214,26 @@ namespace IKVM.Tools.Importer
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
-                    ReportEvent(compiler, options, Diagnostic.StubsAreDeprecated.Event([m.Groups[1].Value]));
+                    diagnostics.StubsAreDeprecated(m.Groups[1].Value);
                 }
             }
             else
             {
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                ReportEvent(compiler, options, Diagnostic.StubsAreDeprecated.Event([cf.IKVMAssemblyAttribute]));
+                diagnostics.StubsAreDeprecated(cf.IKVMAssemblyAttribute);
             }
 
             return true;
         }
 
-        static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, ZipArchiveEntry ze, byte[] data)
+        static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, ZipArchiveEntry ze, byte[] data)
         {
             if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
                     var name = IKVM.Runtime.ClassFile.GetClassName(data, 0, data.Length, out var stub);
-                    if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, data)))
+                    if (options.IsExcludedClass(name) || (stub && EmitStubWarning(context, compiler, options, diagnostics, data)))
                     {
                         // we use stubs to add references, but otherwise ignore them
                         return true;
@@ -1250,15 +1275,15 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        bool ProcessZipFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, string file, Predicate<ZipArchiveEntry> filter)
+        bool ProcessZipFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, string file, Predicate<ZipArchiveEntry> filter)
         {
             try
             {
-                using ZipArchive zf = ZipFile.OpenRead(file);
+                using var zf = ZipFile.OpenRead(file);
 
                 bool found = false;
                 Jar jar = null;
-                foreach (ZipArchiveEntry ze in zf.Entries)
+                foreach (var ze in zf.Entries)
                 {
                     if (filter != null && !filter(ze))
                     {
@@ -1267,8 +1292,8 @@ namespace IKVM.Tools.Importer
                     else
                     {
                         found = true;
-                        byte[] data = ReadFromZip(ze);
-                        if (IsExcludedOrStubLegacy(context, compiler, options, ze, data))
+                        var data = ReadFromZip(ze);
+                        if (IsExcludedOrStubLegacy(context, compiler, options, diagnostics, ze, data))
                         {
                             continue;
                         }
@@ -1283,11 +1308,13 @@ namespace IKVM.Tools.Importer
                         }
                     }
                 }
+
                 // include empty zip file
                 if (!found)
                 {
                     options.GetJar(file);
                 }
+
                 return found;
             }
             catch (InvalidDataException x)
@@ -1296,12 +1323,12 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, string file)
+        void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, string file)
         {
             var fileInfo = GetFileInfo(file);
             if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                ProcessZipFile(context, compiler, options, file, null);
+                ProcessZipFile(context, compiler, options, diagnostics, file, null);
             }
             else
             {
@@ -1315,7 +1342,7 @@ namespace IKVM.Tools.Importer
                             return;
 
                         // we use stubs to add references, but otherwise ignore them
-                        if (stub && EmitStubWarning(context, compiler, options, data))
+                        if (stub && EmitStubWarning(context, compiler, options, diagnostics, data))
                             return;
 
                         options.GetClassesJar().Add(name.Replace('.', '/') + ".class", data, fileInfo);
@@ -1323,13 +1350,13 @@ namespace IKVM.Tools.Importer
                     }
                     catch (ClassFormatError x)
                     {
-                        ReportEvent(compiler, Diagnostic.ClassFormatError.Event([file, x.Message]));
+                        diagnostics.ClassFormatError(file, x.Message);
                     }
                 }
 
                 if (baseDir == null)
                 {
-                    ReportEvent(compiler, Diagnostic.UnknownFileType.Event([file]));
+                    diagnostics.UnknownFileType(file);
                 }
                 else
                 {
@@ -1342,24 +1369,27 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        bool Recurse(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+        bool Recurse(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
         {
             bool found = false;
-            foreach (FileInfo file in dir.GetFiles(spec))
+
+            foreach (var file in dir.GetFiles(spec))
             {
                 found = true;
-                ProcessFile(context, compiler, options, baseDir, file.FullName);
+                ProcessFile(context, compiler, options, diagnostics, baseDir, file.FullName);
             }
-            foreach (DirectoryInfo sub in dir.GetDirectories())
+
+            foreach (var sub in dir.GetDirectories())
             {
-                found |= Recurse(context, compiler, options, baseDir, sub, spec);
+                found |= Recurse(context, compiler, options, diagnostics, baseDir, sub, spec);
             }
+
             return found;
         }
 
-        bool RecurseJar(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, string path)
+        bool RecurseJar(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, string path)
         {
-            string file = "";
+            var file = "";
             for (; ; )
             {
                 file = Path.Combine(Path.GetFileName(path), file);
@@ -1370,14 +1400,14 @@ namespace IKVM.Tools.Importer
                 }
                 else if (File.Exists(path))
                 {
-                    string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
-                    string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-                    return ProcessZipFile(context, compiler, options, path, delegate (ZipArchiveEntry ze)
+                    var pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
+                    var fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+
+                    return ProcessZipFile(context, compiler, options, diagnostics, path, delegate (ZipArchiveEntry ze)
                     {
                         // MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
-                        string name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
-                        return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
-                            && Regex.IsMatch(Path.GetFileName(ze.FullName), fileFilter);
+                        var name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
+                        return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter) && Regex.IsMatch(Path.GetFileName(ze.FullName), fileFilter);
                     });
                 }
             }
@@ -1389,9 +1419,9 @@ namespace IKVM.Tools.Importer
             try
             {
                 var list = classesToExclude == null ? new List<string>() : new List<string>(classesToExclude);
-                using (StreamReader file = new StreamReader(filename))
+                using (var file = new StreamReader(filename))
                 {
-                    String line;
+                    string line;
                     while ((line = file.ReadLine()) != null)
                     {
                         line = line.Trim();
@@ -1401,6 +1431,7 @@ namespace IKVM.Tools.Importer
                         }
                     }
                 }
+
                 classesToExclude = list.ToArray();
             }
             catch (Exception x)
@@ -1409,12 +1440,12 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ProcessAttributeAnnotationsClass(RuntimeContext context, ref object[] annotations, string filename)
+        static void ProcessAttributeAnnotationsClass(RuntimeContext context, IDiagnosticHandler diagnostics, ref object[] annotations, string filename)
         {
             try
             {
                 using var file = File.OpenRead(filename);
-                var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
+                var cf = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)
@@ -1424,39 +1455,28 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Handles a <see cref="DiagnosticEvent"/>.
-        /// </summary>
-        /// <param name="compiler"></param>
-        /// <param name="evt"></param>
-        internal static void ReportEvent(StaticCompiler compiler, in DiagnosticEvent evt)
-        {
-            ReportEvent(compiler, compiler.rootTarget, evt);
-        }
-
-        /// <summary>
         /// Returns <c>true</c> if the specified diagnostic is enabled.
         /// </summary>
         /// <param name="compiler"></param>
         /// <param name="diagnostic"></param>
         /// <returns></returns>
-        internal static bool IsDiagnosticEnabled(StaticCompiler compiler, Diagnostic diagnostic)
+        bool IsDiagnosticEnabled(Diagnostic diagnostic)
         {
             return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
         }
 
         /// <summary>
-        /// Handles a <see cref="DiagnosticEvent"/>.
+        /// Handles a <see cref="DiagnosticHandler"/>.
         /// </summary>
-        /// <param name="compiler"></param>
         /// <param name="options"></param>
         /// <param name="evt"></param>
         /// <exception cref="FatalCompilerErrorException"></exception>
-        internal static void ReportEvent(StaticCompiler compiler, CompilerOptions options, in DiagnosticEvent evt)
+        void ReportEvent(CompilerOptions options, in DiagnosticEvent evt)
         {
             if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
                 return;
 
-            var key = evt.Diagnostic.Id.Value.ToString();
+            var key = evt.Diagnostic.Id.ToString();
             for (int i = 0; ; i++)
             {
                 if (options.suppressWarnings.ContainsKey(key))
@@ -1480,9 +1500,9 @@ namespace IKVM.Tools.Importer
             var err =
                 evt.Diagnostic.Level is DiagnosticLevel.Error or DiagnosticLevel.Fatal ||
                 evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(key) ||
-                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(evt.Diagnostic.Id.Value.ToString());
+                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(evt.Diagnostic.Id.ToString());
 
-            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id.Value);
+            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id);
             if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
                 Console.Error.Write("Warning as Error: ");
 
@@ -1491,7 +1511,7 @@ namespace IKVM.Tools.Importer
 #else
             Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
 #endif
-            if (options != compiler.rootTarget && options.path != null)
+            if (options.path != null)
                 Console.Error.WriteLine("    (in {0})", options.path);
         }
 
