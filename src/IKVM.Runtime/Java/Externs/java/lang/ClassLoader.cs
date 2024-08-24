@@ -149,7 +149,7 @@ namespace IKVM.Java.Externs.java.lang
             try
             {
                 var runtimeClassLoader = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(self);
-                var classFile = new IKVM.Runtime.ClassFile(JVM.Context, clazz, name, runtimeClassLoader.ClassFileParseOptions, null);
+                var classFile = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, clazz, name, runtimeClassLoader.ClassFileParseOptions, null);
                 if (name != null && classFile.Name != name)
                     throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 

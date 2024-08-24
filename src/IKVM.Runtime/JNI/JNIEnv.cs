@@ -2771,7 +2771,7 @@ namespace IKVM.Runtime.JNI
                     var methodName = DecodeMUTF8(methods[i].name);
                     var methodSig = DecodeMUTF8(methods[i].signature);
 
-                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Registering native method: {wrapper.Name}.{methodName}{methodSig}, fnPtr = 0x{((IntPtr)methods[i].fnPtr).ToInt64():X}"]));
+                    JVM.Context.Diagnostics.GenericJniInfo($"Registering native method: {wrapper.Name}.{methodName}{methodSig}, fnPtr = 0x{((IntPtr)methods[i].fnPtr).ToInt64():X}");
                     FieldInfo fi = null;
 
                     // don't allow dotted names!
@@ -2780,7 +2780,7 @@ namespace IKVM.Runtime.JNI
 
                     if (fi == null)
                     {
-                        JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"Failed to register native method: {wrapper.Name}.{methodName}{methodSig}"]));
+                        JVM.Context.Diagnostics.GenericJniError($"Failed to register native method: {wrapper.Name}.{methodName}{methodSig}");
                         throw new java.lang.NoSuchMethodError(methodName);
                     }
 
@@ -2812,7 +2812,7 @@ namespace IKVM.Runtime.JNI
                     string name = fi.Name;
                     if (name.StartsWith(METHOD_PTR_FIELD_PREFIX))
                     {
-                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Unregistering native method: {wrapper.Name}.{name.Substring(METHOD_PTR_FIELD_PREFIX.Length)}"]));
+                        JVM.Context.Diagnostics.GenericJniInfo($"Unregistering native method: {wrapper.Name}.{name.Substring(METHOD_PTR_FIELD_PREFIX.Length)}");
                         fi.SetValue(null, IntPtr.Zero);
                     }
                 }

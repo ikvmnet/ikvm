@@ -1,4 +1,6 @@
-﻿namespace IKVM.CoreLib.Diagnostics
+﻿#nullable enable
+
+namespace IKVM.CoreLib.Diagnostics
 {
 
     partial interface IDiagnosticHandler
@@ -88,8 +90,7 @@
         /// The 'ClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}" 
-///    (class format error "{arg1}")
+/// Unable to compile class "{arg0}". (class format error "{arg1}")
         /// </remarks>
         void ClassFormatError(string arg0, string arg1);
 
@@ -105,8 +106,7 @@
         /// The 'IllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}" 
-///    (illegal access error "{arg1}")
+/// Unable to compile class "{arg0}". (illegal access error "{arg1}")
         /// </remarks>
         void IllegalAccessError(string arg0, string arg1);
 
@@ -114,8 +114,7 @@
         /// The 'VerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}" 
-///    (verification error "{arg1}")
+/// Unable to compile class "{arg0}". (verification error "{arg1}")
         /// </remarks>
         void VerificationError(string arg0, string arg1);
 
@@ -123,8 +122,7 @@
         /// The 'NoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}" 
-///    (missing class "{arg1}")
+/// Unable to compile class "{arg0}". (missing class "{arg1}")
         /// </remarks>
         void NoClassDefFoundError(string arg0, string arg1);
 
@@ -132,8 +130,7 @@
         /// The 'GenericUnableToCompileError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}" 
-///    ("{arg1}": "{arg2}")
+/// Unable to compile class "{arg0}". ("{arg1}": "{arg2}")
         /// </remarks>
         void GenericUnableToCompileError(string arg0, string arg1, string arg2);
 
@@ -149,8 +146,7 @@
         /// The 'SkippingReferencedClass' diagnostic.
         /// </summary>
         /// <remarks>
-/// Skipping class: "{arg0}"
-///    (class is already available in referenced assembly "{arg1}")
+/// Skipping class: "{arg0}". (class is already available in referenced assembly "{arg1}")
         /// </remarks>
         void SkippingReferencedClass(string arg0, string arg1);
 
@@ -158,7 +154,7 @@
         /// The 'NoJniRuntime' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load runtime JNI assembly
+/// Unable to load runtime JNI assembly.
         /// </remarks>
         void NoJniRuntime();
 
@@ -166,8 +162,7 @@
         /// The 'EmittedNoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoClassDefFoundError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.NoClassDefFoundError in "{arg0}". ("{arg1}").
         /// </remarks>
         void EmittedNoClassDefFoundError(string arg0, string arg1);
 
@@ -175,8 +170,7 @@
         /// The 'EmittedIllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IllegalAccessError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.IllegalAccessError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedIllegalAccessError(string arg0, string arg1);
 
@@ -184,8 +178,7 @@
         /// The 'EmittedInstantiationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.InstantiationError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.InstantiationError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedInstantiationError(string arg0, string arg1);
 
@@ -193,8 +186,7 @@
         /// The 'EmittedIncompatibleClassChangeError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IncompatibleClassChangeError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.IncompatibleClassChangeError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedIncompatibleClassChangeError(string arg0, string arg1);
 
@@ -202,8 +194,7 @@
         /// The 'EmittedNoSuchFieldError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchFieldError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.NoSuchFieldError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedNoSuchFieldError(string arg0, string arg1);
 
@@ -211,8 +202,7 @@
         /// The 'EmittedAbstractMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.AbstractMethodError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.AbstractMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedAbstractMethodError(string arg0, string arg1);
 
@@ -220,8 +210,7 @@
         /// The 'EmittedNoSuchMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchMethodError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.NoSuchMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedNoSuchMethodError(string arg0, string arg1);
 
@@ -229,8 +218,7 @@
         /// The 'EmittedLinkageError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.LinkageError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.LinkageError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedLinkageError(string arg0, string arg1);
 
@@ -238,8 +226,7 @@
         /// The 'EmittedVerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.VerificationError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.VerificationError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedVerificationError(string arg0, string arg1);
 
@@ -247,8 +234,7 @@
         /// The 'EmittedClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.ClassFormatError in "{arg0}"
-///    ("{arg1}")
+/// Emitted java.lang.ClassFormatError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedClassFormatError(string arg0, string arg1);
 
@@ -256,8 +242,7 @@
         /// The 'InvalidCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error emitting "{arg0}" custom attribute
-///    ("{arg1}")
+/// Error emitting "{arg0}" custom attribute. ("{arg1}")
         /// </remarks>
         void InvalidCustomAttribute(string arg0, string arg1);
 
@@ -265,8 +250,7 @@
         /// The 'IgnoredCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom attribute "{arg0}" was ignored
-///    ("{arg1}")
+/// Custom attribute "{arg0}" was ignored. ("{arg1}")
         /// </remarks>
         void IgnoredCustomAttribute(string arg0, string arg1);
 
@@ -282,7 +266,7 @@
         /// The 'InvalidDirectoryInLibOptionPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{arg0}" specified in -lib option is not valid
+/// Directory "{arg0}" specified in -lib option is not valid.
         /// </remarks>
         void InvalidDirectoryInLibOptionPath(string arg0);
 
@@ -290,7 +274,7 @@
         /// The 'InvalidDirectoryInLibEnvironmentPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{arg0}" specified in LIB environment is not valid
+/// Directory "{arg0}" specified in LIB environment is not valid.
         /// </remarks>
         void InvalidDirectoryInLibEnvironmentPath(string arg0);
 
@@ -298,7 +282,7 @@
         /// The 'LegacySearchRule' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference
+/// Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference.
         /// </remarks>
         void LegacySearchRule(string arg0);
 
@@ -306,7 +290,7 @@
         /// The 'AssemblyLocationIgnored' diagnostic.
         /// </summary>
         /// <remarks>
-/// Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}"
+/// Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}".
         /// </remarks>
         void AssemblyLocationIgnored(string arg0, string arg1, string arg2);
 
@@ -314,8 +298,7 @@
         /// The 'InterfaceMethodCantBeInternal' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring @ikvm.lang.Internal annotation on interface method
-///    ("{arg0}.{arg1}{arg2}")
+/// Ignoring @ikvm.lang.Internal annotation on interface method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void InterfaceMethodCantBeInternal(string arg0, string arg1, string arg2);
 
@@ -331,7 +314,7 @@
         /// The 'UnableToResolveType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found
+/// Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found.
         /// </remarks>
         void UnableToResolveType(string arg0, string arg1, string arg2);
 
@@ -355,8 +338,7 @@
         /// The 'ReflectionCallerClassRequiresCallerID' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reflection.getCallerClass() called from non-CallerID method
-///    ("{arg0}.{arg1}{arg2}")
+/// Reflection.getCallerClass() called from non-CallerID method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void ReflectionCallerClassRequiresCallerID(string arg0, string arg1, string arg2);
 
@@ -388,7 +370,7 @@
         /// The 'DuplicateIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}
+/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         void DuplicateIkvmLangProperty(string arg0, string arg1);
 
@@ -396,7 +378,7 @@
         /// The 'MalformedIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}
+/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         void MalformedIkvmLangProperty(string arg0, string arg1);
 
@@ -444,8 +426,7 @@
         /// The 'UnableToCreateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to create proxy "{arg0}"
-///    ("{arg1}")
+/// Unable to create proxy "{arg0}". ("{arg1}")
         /// </remarks>
         void UnableToCreateProxy(string arg0, string arg1);
 
@@ -453,7 +434,7 @@
         /// The 'DuplicateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate proxy "{arg0}"
+/// Duplicate proxy "{arg0}".
         /// </remarks>
         void DuplicateProxy(string arg0);
 
@@ -461,7 +442,7 @@
         /// The 'MapXmlUnableToResolveOpCode' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve opcode in remap file: {arg0}
+/// Unable to resolve opcode in remap file: {arg0}.
         /// </remarks>
         void MapXmlUnableToResolveOpCode(string arg0);
 
@@ -469,7 +450,7 @@
         /// The 'MapXmlError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error in remap file: {arg0}
+/// Error in remap file: {arg0}.
         /// </remarks>
         void MapXmlError(string arg0);
 
@@ -477,7 +458,7 @@
         /// The 'InputFileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Source file '{arg0}' not found
+/// Source file '{arg0}' not found.
         /// </remarks>
         void InputFileNotFound(string arg0);
 
@@ -485,7 +466,7 @@
         /// The 'UnknownFileType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown file type: {arg0}
+/// Unknown file type: {arg0}.
         /// </remarks>
         void UnknownFileType(string arg0);
 
@@ -493,7 +474,7 @@
         /// The 'UnknownElementInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown element {arg0} in remap file, line {arg1}, column {arg2}
+/// Unknown element {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         void UnknownElementInMapFile(string arg0, string arg1, string arg2);
 
@@ -501,7 +482,7 @@
         /// The 'UnknownAttributeInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}
+/// Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         void UnknownAttributeInMapFile(string arg0, string arg1, string arg2);
 
@@ -509,7 +490,7 @@
         /// The 'InvalidMemberNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {arg0} name '{arg1}' in remap file in class {arg2}
+/// Invalid {arg0} name '{arg1}' in remap file in class {arg2}.
         /// </remarks>
         void InvalidMemberNameInMapFile(string arg0, string arg1, string arg2);
 
@@ -517,7 +498,7 @@
         /// The 'InvalidMemberSignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}
+/// Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}.
         /// </remarks>
         void InvalidMemberSignatureInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -525,7 +506,7 @@
         /// The 'InvalidPropertyNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}
+/// Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         void InvalidPropertyNameInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -533,7 +514,7 @@
         /// The 'InvalidPropertySignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}
+/// Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         void InvalidPropertySignatureInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -541,7 +522,7 @@
         /// The 'NonPrimaryAssemblyReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead
+/// Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead.
         /// </remarks>
         void NonPrimaryAssemblyReference(string arg0, string arg1);
 
@@ -549,7 +530,7 @@
         /// The 'MissingType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found
+/// Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found.
         /// </remarks>
         void MissingType(string arg0, string arg1);
 
@@ -557,7 +538,7 @@
         /// The 'MissingReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'
+/// The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         void MissingReference(string arg0, string arg1);
 
@@ -565,8 +546,7 @@
         /// The 'CallerSensitiveOnUnsupportedMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// CallerSensitive annotation on unsupported method
-///    ("{arg0}.{arg1}{arg2}")
+/// CallerSensitive annotation on unsupported method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void CallerSensitiveOnUnsupportedMethod(string arg0, string arg1, string arg2);
 
@@ -574,7 +554,7 @@
         /// The 'RemappedTypeMissingDefaultInterfaceMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0} does not implement default interface method {arg1}
+/// {arg0} does not implement default interface method {arg1}.
         /// </remarks>
         void RemappedTypeMissingDefaultInterfaceMethod(string arg0, string arg1);
 
@@ -630,7 +610,7 @@
         /// The 'ResponseFileDepthExceeded' diagnostic.
         /// </summary>
         /// <remarks>
-/// Response file nesting depth exceeded
+/// Response file nesting depth exceeded.
         /// </remarks>
         void ResponseFileDepthExceeded();
 
@@ -638,8 +618,7 @@
         /// The 'ErrorReadingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to read file: {arg0}
-///	({arg1})
+/// Unable to read file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorReadingFile(string arg0, string arg1);
 
@@ -655,7 +634,7 @@
         /// The 'FileFormatLimitationExceeded' diagnostic.
         /// </summary>
         /// <remarks>
-/// File format limitation exceeded: {arg0}
+/// File format limitation exceeded: {arg0}.
         /// </remarks>
         void FileFormatLimitationExceeded(string arg0);
 
@@ -663,7 +642,7 @@
         /// The 'CannotSpecifyBothKeyFileAndContainer' diagnostic.
         /// </summary>
         /// <remarks>
-/// You cannot specify both a key file and container
+/// You cannot specify both a key file and container.
         /// </remarks>
         void CannotSpecifyBothKeyFileAndContainer();
 
@@ -671,7 +650,7 @@
         /// The 'DelaySignRequiresKey' diagnostic.
         /// </summary>
         /// <remarks>
-/// You cannot delay sign without a key file or container
+/// You cannot delay sign without a key file or container.
         /// </remarks>
         void DelaySignRequiresKey();
 
@@ -679,8 +658,7 @@
         /// The 'InvalidStrongNameKeyPair' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid key {arg0} specified.
-///	("{arg1}")
+/// Invalid key {arg0} specified. ("{arg1}")
         /// </remarks>
         void InvalidStrongNameKeyPair(string arg0, string arg1);
 
@@ -696,7 +674,7 @@
         /// The 'OptionsMustPreceedChildLevels' diagnostic.
         /// </summary>
         /// <remarks>
-/// You can only specify options before any child levels
+/// You can only specify options before any child levels.
         /// </remarks>
         void OptionsMustPreceedChildLevels();
 
@@ -704,7 +682,7 @@
         /// The 'UnrecognizedTargetType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -target option
+/// Invalid value '{arg0}' for -target option.
         /// </remarks>
         void UnrecognizedTargetType(string arg0);
 
@@ -712,7 +690,7 @@
         /// The 'UnrecognizedPlatform' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -platform option
+/// Invalid value '{arg0}' for -platform option.
         /// </remarks>
         void UnrecognizedPlatform(string arg0);
 
@@ -720,7 +698,7 @@
         /// The 'UnrecognizedApartment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -apartment option
+/// Invalid value '{arg0}' for -apartment option.
         /// </remarks>
         void UnrecognizedApartment(string arg0);
 
@@ -728,7 +706,7 @@
         /// The 'MissingFileSpecification' diagnostic.
         /// </summary>
         /// <remarks>
-/// Missing file specification for '{arg0}' option
+/// Missing file specification for '{arg0}' option.
         /// </remarks>
         void MissingFileSpecification(string arg0);
 
@@ -736,7 +714,7 @@
         /// The 'PathTooLong' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path too long: {arg0}
+/// Path too long: {arg0}.
         /// </remarks>
         void PathTooLong(string arg0);
 
@@ -744,7 +722,7 @@
         /// The 'PathNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path not found: {arg0}
+/// Path not found: {arg0}.
         /// </remarks>
         void PathNotFound(string arg0);
 
@@ -752,7 +730,7 @@
         /// The 'InvalidPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid path: {arg0}
+/// Invalid path: {arg0}.
         /// </remarks>
         void InvalidPath(string arg0);
 
@@ -760,7 +738,7 @@
         /// The 'InvalidOptionSyntax' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid option: {arg0}
+/// Invalid option: {arg0}.
         /// </remarks>
         void InvalidOptionSyntax(string arg0);
 
@@ -768,7 +746,7 @@
         /// The 'ExternalResourceNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file does not exist: {arg0}
+/// External resource file does not exist: {arg0}.
         /// </remarks>
         void ExternalResourceNotFound(string arg0);
 
@@ -776,7 +754,7 @@
         /// The 'ExternalResourceNameInvalid' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file may not include path specification: {arg0}
+/// External resource file may not include path specification: {arg0}.
         /// </remarks>
         void ExternalResourceNameInvalid(string arg0);
 
@@ -784,7 +762,7 @@
         /// The 'InvalidVersionFormat' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid version specified: {arg0}
+/// Invalid version specified: {arg0}.
         /// </remarks>
         void InvalidVersionFormat(string arg0);
 
@@ -792,7 +770,7 @@
         /// The 'InvalidFileAlignment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -filealign option
+/// Invalid value '{arg0}' for -filealign option.
         /// </remarks>
         void InvalidFileAlignment(string arg0);
 
@@ -800,8 +778,7 @@
         /// The 'ErrorWritingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to write file: {arg0}
-///	({arg1})
+/// Unable to write file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorWritingFile(string arg0, string arg1);
 
@@ -809,7 +786,7 @@
         /// The 'UnrecognizedOption' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unrecognized option: {arg0}
+/// Unrecognized option: {arg0}.
         /// </remarks>
         void UnrecognizedOption(string arg0);
 
@@ -817,7 +794,7 @@
         /// The 'NoOutputFileSpecified' diagnostic.
         /// </summary>
         /// <remarks>
-/// No output file specified
+/// No output file specified.
         /// </remarks>
         void NoOutputFileSpecified();
 
@@ -825,7 +802,7 @@
         /// The 'SharedClassLoaderCannotBeUsedOnModuleTarget' diagnostic.
         /// </summary>
         /// <remarks>
-/// Incompatible options: -target:module and -sharedclassloader cannot be combined
+/// Incompatible options: -target:module and -sharedclassloader cannot be combined.
         /// </remarks>
         void SharedClassLoaderCannotBeUsedOnModuleTarget();
 
@@ -833,7 +810,7 @@
         /// The 'RuntimeNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load runtime assembly
+/// Unable to load runtime assembly.
         /// </remarks>
         void RuntimeNotFound();
 
@@ -841,7 +818,7 @@
         /// The 'MainClassRequiresExe' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main class cannot be specified for library or module
+/// Main class cannot be specified for library or module.
         /// </remarks>
         void MainClassRequiresExe();
 
@@ -849,7 +826,7 @@
         /// The 'ExeRequiresMainClass' diagnostic.
         /// </summary>
         /// <remarks>
-/// No main method found
+/// No main method found.
         /// </remarks>
         void ExeRequiresMainClass();
 
@@ -857,7 +834,7 @@
         /// The 'PropertiesRequireExe' diagnostic.
         /// </summary>
         /// <remarks>
-/// Properties cannot be specified for library or module
+/// Properties cannot be specified for library or module.
         /// </remarks>
         void PropertiesRequireExe();
 
@@ -865,7 +842,7 @@
         /// The 'ModuleCannotHaveClassLoader' diagnostic.
         /// </summary>
         /// <remarks>
-/// Cannot specify assembly class loader for modules
+/// Cannot specify assembly class loader for modules.
         /// </remarks>
         void ModuleCannotHaveClassLoader();
 
@@ -873,8 +850,7 @@
         /// The 'ErrorParsingMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to parse remap file: {arg0}
-///	({arg1})
+/// Unable to parse remap file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorParsingMapFile(string arg0, string arg1);
 
@@ -882,7 +858,7 @@
         /// The 'BootstrapClassesMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Bootstrap classes missing and core assembly not found
+/// Bootstrap classes missing and core assembly not found.
         /// </remarks>
         void BootstrapClassesMissing();
 
@@ -890,7 +866,7 @@
         /// The 'StrongNameRequiresStrongNamedRefs' diagnostic.
         /// </summary>
         /// <remarks>
-/// All referenced assemblies must be strong named, to be able to sign the output assembly
+/// All referenced assemblies must be strong named, to be able to sign the output assembly.
         /// </remarks>
         void StrongNameRequiresStrongNamedRefs();
 
@@ -898,7 +874,7 @@
         /// The 'MainClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main class not found
+/// Main class not found.
         /// </remarks>
         void MainClassNotFound();
 
@@ -906,7 +882,7 @@
         /// The 'MainMethodNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main method not found
+/// Main method not found.
         /// </remarks>
         void MainMethodNotFound();
 
@@ -914,7 +890,7 @@
         /// The 'UnsupportedMainMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// Redirected main method not supported
+/// Redirected main method not supported.
         /// </remarks>
         void UnsupportedMainMethod();
 
@@ -922,7 +898,7 @@
         /// The 'ExternalMainNotAccessible' diagnostic.
         /// </summary>
         /// <remarks>
-/// External main method must be public and in a public class
+/// External main method must be public and in a public class.
         /// </remarks>
         void ExternalMainNotAccessible();
 
@@ -930,7 +906,7 @@
         /// The 'ClassLoaderNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class not found
+/// Custom assembly class loader class not found.
         /// </remarks>
         void ClassLoaderNotFound();
 
@@ -938,7 +914,7 @@
         /// The 'ClassLoaderNotAccessible' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class is not accessible
+/// Custom assembly class loader class is not accessible.
         /// </remarks>
         void ClassLoaderNotAccessible();
 
@@ -946,7 +922,7 @@
         /// The 'ClassLoaderIsAbstract' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class is abstract
+/// Custom assembly class loader class is abstract.
         /// </remarks>
         void ClassLoaderIsAbstract();
 
@@ -954,7 +930,7 @@
         /// The 'ClassLoaderNotClassLoader' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class does not extend java.lang.ClassLoader
+/// Custom assembly class loader class does not extend java.lang.ClassLoader.
         /// </remarks>
         void ClassLoaderNotClassLoader();
 
@@ -962,7 +938,7 @@
         /// The 'ClassLoaderConstructorMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader constructor is missing
+/// Custom assembly class loader constructor is missing.
         /// </remarks>
         void ClassLoaderConstructorMissing();
 
@@ -970,7 +946,7 @@
         /// The 'MapFileTypeNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{arg0}' referenced in remap file was not found
+/// Type '{arg0}' referenced in remap file was not found.
         /// </remarks>
         void MapFileTypeNotFound(string arg0);
 
@@ -978,7 +954,7 @@
         /// The 'MapFileClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class '{arg0}' referenced in remap file was not found
+/// Class '{arg0}' referenced in remap file was not found.
         /// </remarks>
         void MapFileClassNotFound(string arg0);
 
@@ -986,7 +962,7 @@
         /// The 'MaximumErrorCountReached' diagnostic.
         /// </summary>
         /// <remarks>
-/// Maximum error count reached
+/// Maximum error count reached.
         /// </remarks>
         void MaximumErrorCountReached();
 
@@ -1002,9 +978,7 @@
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version
-///	Current runtime: {arg1}
-///	Referenced assembly runtime: {arg2}
+/// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {arg1}. Referenced assembly runtime: {arg2}
         /// </remarks>
         void RuntimeMismatch(string arg0, string arg1, string arg2);
 
@@ -1020,7 +994,7 @@
         /// The 'CoreClassesMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Failed to find core classes in core library
+/// Failed to find core classes in core library.
         /// </remarks>
         void CoreClassesMissing();
 
@@ -1028,7 +1002,7 @@
         /// The 'CriticalClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load critical class '{arg0}'
+/// Unable to load critical class '{arg0}'.
         /// </remarks>
         void CriticalClassNotFound(string arg0);
 
@@ -1036,8 +1010,7 @@
         /// The 'AssemblyContainsDuplicateClassNames' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'
-///	({arg3})
+/// Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'. ({arg3})
         /// </remarks>
         void AssemblyContainsDuplicateClassNames(string arg0, string arg1, string arg2, string arg3);
 
@@ -1045,7 +1018,7 @@
         /// The 'CallerIDRequiresHasCallerIDAnnotation' diagnostic.
         /// </summary>
         /// <remarks>
-/// CallerID.getCallerID() requires a HasCallerID annotation
+/// CallerID.getCallerID() requires a HasCallerID annotation.
         /// </remarks>
         void CallerIDRequiresHasCallerIDAnnotation();
 
@@ -1053,7 +1026,7 @@
         /// The 'UnableToResolveInterface' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve interface '{arg0}' on type '{arg1}'
+/// Unable to resolve interface '{arg0}' on type '{arg1}'.
         /// </remarks>
         void UnableToResolveInterface(string arg0, string arg1);
 
@@ -1061,7 +1034,7 @@
         /// The 'MissingBaseType' diagnostic.
         /// </summary>
         /// <remarks>
-/// The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved
+/// The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved.
         /// </remarks>
         void MissingBaseType(string arg0, string arg1, string arg2, string arg3);
 
@@ -1069,7 +1042,7 @@
         /// The 'MissingBaseTypeReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'
+/// The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         void MissingBaseTypeReference(string arg0, string arg1);
 
@@ -1077,7 +1050,7 @@
         /// The 'FileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// File not found: {arg0}
+/// File not found: {arg0}.
         /// </remarks>
         void FileNotFound(string arg0);
 
@@ -1085,7 +1058,7 @@
         /// The 'RuntimeMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Runtime method '{arg0}' not found
+/// Runtime method '{arg0}' not found.
         /// </remarks>
         void RuntimeMethodMissing(string arg0);
 
@@ -1093,7 +1066,7 @@
         /// The 'MapFileFieldNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Field '{arg0}' referenced in remap file was not found in class '{arg1}'
+/// Field '{arg0}' referenced in remap file was not found in class '{arg1}'.
         /// </remarks>
         void MapFileFieldNotFound(string arg0, string arg1);
 
@@ -1101,8 +1074,7 @@
         /// The 'GhostInterfaceMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Remapped class '{arg0}' does not implement ghost interface method
-///	({arg1}.{arg2}{arg3})
+/// Remapped class '{arg0}' does not implement ghost interface method. ({arg1}.{arg2}{arg3})
         /// </remarks>
         void GhostInterfaceMethodMissing(string arg0, string arg1, string arg2, string arg3);
 
@@ -1118,7 +1090,7 @@
         /// The 'InvalidZip' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid zip: {name}
+/// Invalid zip: {name}.
         /// </remarks>
         void InvalidZip(string name);
 

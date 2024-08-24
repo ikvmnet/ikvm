@@ -1,4 +1,5 @@
 ﻿<#+
+
 public class DiagnosticFile : Dictionary<string, Diagnostic>
 {
 
@@ -82,7 +83,7 @@ public sealed class CompositeFormat
     /// Every segment represents either a literal or a format hole, based on whether Literal
     /// is non-null or ArgIndex is non-negative.
     /// </remarks>
-    internal readonly (string? Literal, string Arg, int Alignment, string? Format)[] _segments;
+    internal readonly (string Literal, string Arg, int Alignment, string Format)[] _segments;
     /// <summary>The sum of the lengths of all of the literals in <see cref="_segments"/>.</summary>
     internal readonly int _literalLength;
     /// <summary>The number of segments in <see cref="_segments"/> that represent format holes.</summary>
@@ -91,12 +92,12 @@ public sealed class CompositeFormat
     /// <remarks>This is equal to one more than the largest index required by any format hole.</remarks>
     internal readonly int _argsRequired;
 
-    public IReadOnlyList<(string? Literal, string Arg, int Alignment, string? Format)> Segments => _segments;
+    public IReadOnlyList<(string Literal, string Arg, int Alignment, string Format)> Segments => _segments;
 
     /// <summary>Initializes the instance.</summary>
     /// <param name="format">The composite format string that was parsed.</param>
     /// <param name="segments">The parsed segments.</param>
-    private CompositeFormat(string format, (string? Literal, string Arg, int Alignment, string? Format)[] segments)
+    private CompositeFormat(string format, (string Literal, string Arg, int Alignment, string Format)[] segments)
     {
         // Store the format.
         Debug.Assert(format is not null);
@@ -108,7 +109,7 @@ public sealed class CompositeFormat
 
         // Compute derivative information from the segments.
         int literalLength = 0, formattedCount = 0, argsRequired = 0;
-        foreach ((string? Literal, string Arg, int Alignment, string? Format) segment in segments)
+        foreach ((string Literal, string Arg, int Alignment, string Format) segment in segments)
         {
             Debug.Assert((segment.Literal is not null) ^ (segment.Arg is not null), "The segment should represent a literal or a format hole, but not both.");
 
@@ -142,8 +143,7 @@ public sealed class CompositeFormat
         if (format is null)
             throw new ArgumentNullException(nameof(format));
 
-        var segments = new List<(string? Literal, string Arg, int Alignment, string? Format)>();
-        int failureOffset = default;
+        var segments = new List<(string Literal, string Arg, int Alignment, string Format)>();
         if (!TryParseLiterals(format.AsSpan(), segments))
         {
             throw new FormatException();
@@ -175,10 +175,8 @@ public sealed class CompositeFormat
     /// <summary>Parse the composite format string into segments.</summary>
     /// <param name="format">The format string.</param>
     /// <param name="segments">The list into which to store the segments.</param>
-    /// <param name="failureOffset">The offset at which a parsing error occured if <see langword="false"/> is returned.</param>
-    /// <param name="failureReason">The reason for a parsing failure if <see langword="false"/> is returned.</param>
     /// <returns>true if the format string can be parsed successfully; otherwise, false.</returns>
-    private static bool TryParseLiterals(ReadOnlySpan<char> format, List<(string? Literal, string Arg, int Alignment, string? Format)> segments)
+    private static bool TryParseLiterals(ReadOnlySpan<char> format, List<(string Literal, string Arg, int Alignment, string Format)> segments)
     {
         // This parsing logic is copied from string.Format.  It's the same code modified to not format
         // as part of parsing and instead store the parsed literals and argument specifiers (alignment
@@ -244,7 +242,7 @@ public sealed class CompositeFormat
             // an opening brace, an index, an optional width preceded by a comma, and an optional format
             // preceded by a colon, with arbitrary amounts of spaces throughout.
             int width = 0;
-            string? itemFormat = null; // used if itemFormat is null
+            string itemFormat = null; // used if itemFormat is null
 
             // First up is the index parameter, which is of the form:
             //     at least on digit
@@ -418,7 +416,7 @@ public sealed class CompositeFormat
 
 internal ref partial struct ValueStringBuilder
 {
-    private char[]? _arrayToReturnToPool;
+    private char[] _arrayToReturnToPool;
     private Span<char> _chars;
     private int _pos;
 
@@ -550,7 +548,7 @@ internal ref partial struct ValueStringBuilder
         _pos += count;
     }
 
-    public void Insert(int index, string? s)
+    public void Insert(int index, string s)
     {
         if (s == null)
         {
@@ -591,7 +589,7 @@ internal ref partial struct ValueStringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(string? s)
+    public void Append(string s)
     {
         if (s == null)
         {
@@ -701,7 +699,7 @@ internal ref partial struct ValueStringBuilder
 
         _chars.Slice(0, _pos).CopyTo(poolArray);
 
-        char[]? toReturn = _arrayToReturnToPool;
+        char[] toReturn = _arrayToReturnToPool;
         _chars = _arrayToReturnToPool = poolArray;
         if (toReturn != null)
         {
@@ -712,7 +710,7 @@ internal ref partial struct ValueStringBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        char[]? toReturn = _arrayToReturnToPool;
+        char[] toReturn = _arrayToReturnToPool;
         this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
         if (toReturn != null)
         {

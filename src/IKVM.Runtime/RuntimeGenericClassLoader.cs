@@ -109,7 +109,7 @@ namespace IKVM.Runtime
                 var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
                 if (tw != null && !tw.IsArray && !tw.IsDynamic)
                 {
-                    var loader = tw.ClassLoader();
+                    var loader = tw.ClassLoader;
                     if (loader is RuntimeGenericClassLoader)
                         v.add(new java.net.URL("ikvmres", "gen", Context.ClassLoaderFactory.GetGenericClassLoaderId(loader), "/" + name));
                     else if (loader is RuntimeAssemblyClassLoader acl)
@@ -130,7 +130,7 @@ namespace IKVM.Runtime
             if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
             {
                 var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
-                if (tw != null && tw.ClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
+                if (tw != null && tw.ClassLoader == this && !tw.IsArray && !tw.IsDynamic)
                     return new java.net.URL("ikvmres", "gen", Context.ClassLoaderFactory.GetGenericClassLoaderId(this), "/" + name);
             }
 

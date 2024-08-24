@@ -17,6 +17,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Diagnostics\DiagnosticEvent.g.tt">
+        <LastGenOutput>DiagnosticEvent.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
       <None Update="Diagnostics\Diagnostic.g.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Diagnostic.g.cs</LastGenOutput>
@@ -40,6 +44,11 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Update="Diagnostics\DiagnosticEvent.g.cs">
+        <DependentUpon>DiagnosticEvent.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+      </Compile>
       <Compile Update="Diagnostics\Diagnostic.g.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>

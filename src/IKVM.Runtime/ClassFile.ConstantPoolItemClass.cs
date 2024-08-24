@@ -173,7 +173,7 @@ namespace IKVM.Runtime
                     {
                         try
                         {
-                            thisType.ClassLoader().CheckPackageAccess(tw, thisType.ClassObject.pd);
+                            thisType.ClassLoader.CheckPackageAccess(tw, thisType.ClassObject.pd);
                         }
                         catch (java.lang.SecurityException)
                         {

@@ -18,6 +18,8 @@
 <#@ import namespace="Newtonsoft.Json" #>
 <#@ import namespace="Newtonsoft.Json.Linq" #>
 <#@ output extension=".cs" #>
+#nullable enable
+
 namespace IKVM.CoreLib.Diagnostics
 {
 
@@ -31,10 +33,6 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
     if (string.IsNullOrWhiteSpace(desc))
         desc = $"The '{kvp.Key}' diagnostic.";
 
-    var message = kvp.Value.Message;
-    if (string.IsNullOrWhiteSpace(message))
-        message = "";
-
     var argList = new List<string>();
     for (int i = 0; i < kvp.Value.Args.Count; i++)
         argList.Add($"{kvp.Value.Args[i].Type} {kvp.Value.Args[i].Name}");
@@ -43,7 +41,7 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         /// <#= desc #>
         /// </summary>
         /// <remarks>
-<#= Util.ToCommentString(message) #>
+<#= Util.ToCommentString(kvp.Value.Message ?? "") #>
         /// </remarks>
         void <#= kvp.Key #>(<#= string.Join(", ", argList) #>);
 

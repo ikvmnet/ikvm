@@ -45,7 +45,7 @@ namespace IKVM.Java.Externs.sun.invoke.util
                 return null;
             }
 
-            return tw.ClassLoader().GetJavaClassLoader();
+            return tw.ClassLoader.GetJavaClassLoader();
 #endif
         }
 

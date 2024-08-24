@@ -16,15 +16,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public DiagnosticEvent Event(ReadOnlySpan<object?> args) => new DiagnosticEvent(this, args, null);
-
-        /// <summary>
-        /// Creates a new diagnostic event with the specified arguments and <see cref="Exception"/>.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        public DiagnosticEvent Event(Exception e, ReadOnlySpan<object?> args) => new DiagnosticEvent(this, args, e);
+        public DiagnosticEvent Event(ReadOnlySpan<object?> args) => new DiagnosticEvent(this, args);
 
     }
 

@@ -1673,8 +1673,8 @@ namespace IKVM.Java.Externs.sun.misc
             try
             {
                 var tw = RuntimeJavaType.FromClass(hostClass);
-                var cl = tw.ClassLoader();
-                var cf = new IKVM.Runtime.ClassFile(JVM.Context, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cl = tw.ClassLoader;
+                var cf = new IKVM.Runtime.ClassFile(JVM.Context, JVM.Context.Diagnostics, ReadClass(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
 
                 // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                 // make sure the build process includes the original class file as a resource in that case

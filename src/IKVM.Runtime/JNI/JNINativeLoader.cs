@@ -52,7 +52,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         public static long LoadLibrary(string filename, RuntimeJavaType fromClass)
         {
-            JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"loadLibrary: '{filename}' fromClass '{fromClass}'"]));
+            JVM.Context.Diagnostics.GenericJniInfo($"loadLibrary: '{filename}' fromClass '{fromClass}'");
 
             lock (SyncRoot)
             {
@@ -63,17 +63,17 @@ namespace IKVM.Runtime.JNI
                     // attempt to load the native library
                     if ((p = LibJvm.Instance.JVM_LoadLibrary(filename)) == 0)
                     {
-                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', message = {"NULL handle returned."}"]));
+                        JVM.Context.Diagnostics.GenericJniInfo($"Failed to load library: path = '{filename}', message = {"NULL handle returned."}");
                         return 0;
                     }
 
                     // find whether the native library was already loaded
-                    foreach (var h in fromClass.ClassLoader().GetNativeLibraries())
+                    foreach (var h in fromClass.ClassLoader.GetNativeLibraries())
                     {
                         if (h == p)
                         {
                             LibJvm.Instance.JVM_UnloadLibrary(p);
-                            JVM.Context.ReportEvent(Diagnostic.GenericJniWarning.Event(["Library was already loaded, returning same reference"]));
+                            JVM.Context.Diagnostics.GenericJniWarning("Library was already loaded, returning same reference");
                             return p;
                         }
                     }
@@ -82,25 +82,25 @@ namespace IKVM.Runtime.JNI
                     if (loaded.Contains(p))
                     {
                         var msg = $"Native library '{filename}' already loaded in another classloader.";
-                        JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"UnsatisfiedLinkError: {msg}"]));
+                        JVM.Context.Diagnostics.GenericJniError($"UnsatisfiedLinkError: {msg}");
                         throw new java.lang.UnsatisfiedLinkError(msg);
                     }
 
-                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Library loaded: {filename}, handle = 0x{p:X}"]));
+                    JVM.Context.Diagnostics.GenericJniInfo($"Library loaded: {filename}, handle = 0x{p:X}");
 
                     try
                     {
                         var onload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName("JNI_OnLoad", sizeof(nint) + sizeof(nint)));
                         if (onload != 0)
                         {
-                            JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Calling JNI_OnLoad on: {filename}"]));
+                            JVM.Context.Diagnostics.GenericJniInfo($"Calling JNI_OnLoad on: {filename}");
                             var f = new JNIFrame();
                             int v;
                             var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));
                             try
                             {
                                 v = Marshal.GetDelegateForFunctionPointer<JNI_OnLoadFunc>(onload)(JavaVM.pJavaVM, null);
-                                JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"JNI_OnLoad returned: 0x{v:X8}"]));
+                                JVM.Context.Diagnostics.GenericJniInfo($"JNI_OnLoad returned: 0x{v:X8}");
                             }
                             finally
                             {
@@ -110,7 +110,7 @@ namespace IKVM.Runtime.JNI
                             if (JNIVM.IsSupportedJNIVersion(v) == false)
                             {
                                 var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
-                                JVM.Context.ReportEvent(Diagnostic.GenericJniError.Event([$"UnsatisfiedLinkError: {msg}"]));
+                                JVM.Context.Diagnostics.GenericJniError($"UnsatisfiedLinkError: {msg}");
                                 throw new java.lang.UnsatisfiedLinkError(msg);
                             }
                         }
@@ -122,17 +122,17 @@ namespace IKVM.Runtime.JNI
 
                     // record addition of native library
                     loaded.Add(p);
-                    fromClass.ClassLoader().RegisterNativeLibrary(p);
+                    fromClass.ClassLoader.RegisterNativeLibrary(p);
                     return p;
                 }
                 catch (DllNotFoundException e)
                 {
-                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', error = DllNotFoundException, message = {e.Message}"]));
+                    JVM.Context.Diagnostics.GenericJniInfo($"Failed to load library: path = '{filename}', error = DllNotFoundException, message = {e.Message}");
                     return 0;
                 }
                 catch (Exception e)
                 {
-                    JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Failed to load library: path = '{filename}', error = Exception, message = {e.Message}"]));
+                    JVM.Context.Diagnostics.GenericJniInfo($"Failed to load library: path = '{filename}', error = Exception, message = {e.Message}");
                     LibJvm.Instance.JVM_UnloadLibrary(p);
                     throw;
                 }
@@ -150,14 +150,14 @@ namespace IKVM.Runtime.JNI
 
             lock (SyncRoot)
             {
-                JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Unloading library: handle = 0x{handle:X}, class = {fromClass}"]));
+                JVM.Context.Diagnostics.GenericJniInfo($"Unloading library: handle = 0x{handle:X}, class = {fromClass}");
 
                 try
                 {
                     var onunload = LibJvm.Instance.JVM_FindLibraryEntry(p, NativeLibrary.MangleExportName("JNI_OnUnload", sizeof(nint) + sizeof(nint)));
                     if (onunload != 0)
                     {
-                        JVM.Context.ReportEvent(Diagnostic.GenericJniInfo.Event([$"Calling JNI_OnUnload on: handle = 0x{handle:X}"]));
+                        JVM.Context.Diagnostics.GenericJniInfo($"Calling JNI_OnUnload on: handle = 0x{handle:X}");
 
                         var f = new JNIFrame();
                         var w = f.Enter(ikvm.@internal.CallerID.create(fromClass.ClassObject, fromClass.ClassObject.getClassLoader()));
@@ -178,7 +178,7 @@ namespace IKVM.Runtime.JNI
 
                 // remove record of native library
                 loaded.Remove(p);
-                fromClass.ClassLoader().UnregisterNativeLibrary(p);
+                fromClass.ClassLoader.UnregisterNativeLibrary(p);
                 LibJvm.Instance.JVM_UnloadLibrary(p);
             }
         }

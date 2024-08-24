@@ -1,9 +1,11 @@
 ﻿#nullable enable
 
+using System.Text;
+
 namespace IKVM.CoreLib.Diagnostics
 {
 
-    internal abstract partial class DiagnosticEventHandler
+    partial struct DiagnosticEvent
     {
 
         /// <summary>
@@ -12,7 +14,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Found main method in class "{arg0}"
         /// </remarks>
-        public void MainMethodFound(string arg0) => Report(Diagnostic.MainMethodFound.Event([arg0]));
+        public static DiagnosticEvent MainMethodFound(string arg0) => Diagnostic.MainMethodFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'OutputFileIs' diagnostic.
@@ -20,7 +22,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Output file is "{arg0}"
         /// </remarks>
-        public void OutputFileIs(string arg0) => Report(Diagnostic.OutputFileIs.Event([arg0]));
+        public static DiagnosticEvent OutputFileIs(string arg0) => Diagnostic.OutputFileIs.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'AutoAddRef' diagnostic.
@@ -28,7 +30,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Automatically adding reference to "{arg0}"
         /// </remarks>
-        public void AutoAddRef(string arg0) => Report(Diagnostic.AutoAddRef.Event([arg0]));
+        public static DiagnosticEvent AutoAddRef(string arg0) => Diagnostic.AutoAddRef.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MainMethodFromManifest' diagnostic.
@@ -36,7 +38,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Using main class "{arg0}" based on jar manifest
         /// </remarks>
-        public void MainMethodFromManifest(string arg0) => Report(Diagnostic.MainMethodFromManifest.Event([arg0]));
+        public static DiagnosticEvent MainMethodFromManifest(string arg0) => Diagnostic.MainMethodFromManifest.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericCompilerInfo' diagnostic.
@@ -44,7 +46,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericCompilerInfo(string arg0) => Report(Diagnostic.GenericCompilerInfo.Event([arg0]));
+        public static DiagnosticEvent GenericCompilerInfo(string arg0) => Diagnostic.GenericCompilerInfo.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericClassLoadingInfo' diagnostic.
@@ -52,7 +54,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericClassLoadingInfo(string arg0) => Report(Diagnostic.GenericClassLoadingInfo.Event([arg0]));
+        public static DiagnosticEvent GenericClassLoadingInfo(string arg0) => Diagnostic.GenericClassLoadingInfo.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericVerifierInfo' diagnostic.
@@ -60,7 +62,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericVerifierInfo(string arg0) => Report(Diagnostic.GenericVerifierInfo.Event([arg0]));
+        public static DiagnosticEvent GenericVerifierInfo(string arg0) => Diagnostic.GenericVerifierInfo.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericRuntimeInfo' diagnostic.
@@ -68,7 +70,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericRuntimeInfo(string arg0) => Report(Diagnostic.GenericRuntimeInfo.Event([arg0]));
+        public static DiagnosticEvent GenericRuntimeInfo(string arg0) => Diagnostic.GenericRuntimeInfo.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericJniInfo' diagnostic.
@@ -76,7 +78,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericJniInfo(string arg0) => Report(Diagnostic.GenericJniInfo.Event([arg0]));
+        public static DiagnosticEvent GenericJniInfo(string arg0) => Diagnostic.GenericJniInfo.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ClassNotFound' diagnostic.
@@ -84,7 +86,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Class "{arg0}" not found
         /// </remarks>
-        public void ClassNotFound(string arg0) => Report(Diagnostic.ClassNotFound.Event([arg0]));
+        public static DiagnosticEvent ClassNotFound(string arg0) => Diagnostic.ClassNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ClassFormatError' diagnostic.
@@ -92,7 +94,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile class "{arg0}". (class format error "{arg1}")
         /// </remarks>
-        public void ClassFormatError(string arg0, string arg1) => Report(Diagnostic.ClassFormatError.Event([arg0, arg1]));
+        public static DiagnosticEvent ClassFormatError(string arg0, string arg1) => Diagnostic.ClassFormatError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'DuplicateClassName' diagnostic.
@@ -100,7 +102,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Duplicate class name: "{arg0}"
         /// </remarks>
-        public void DuplicateClassName(string arg0) => Report(Diagnostic.DuplicateClassName.Event([arg0]));
+        public static DiagnosticEvent DuplicateClassName(string arg0) => Diagnostic.DuplicateClassName.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'IllegalAccessError' diagnostic.
@@ -108,7 +110,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile class "{arg0}". (illegal access error "{arg1}")
         /// </remarks>
-        public void IllegalAccessError(string arg0, string arg1) => Report(Diagnostic.IllegalAccessError.Event([arg0, arg1]));
+        public static DiagnosticEvent IllegalAccessError(string arg0, string arg1) => Diagnostic.IllegalAccessError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'VerificationError' diagnostic.
@@ -116,7 +118,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile class "{arg0}". (verification error "{arg1}")
         /// </remarks>
-        public void VerificationError(string arg0, string arg1) => Report(Diagnostic.VerificationError.Event([arg0, arg1]));
+        public static DiagnosticEvent VerificationError(string arg0, string arg1) => Diagnostic.VerificationError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'NoClassDefFoundError' diagnostic.
@@ -124,7 +126,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile class "{arg0}". (missing class "{arg1}")
         /// </remarks>
-        public void NoClassDefFoundError(string arg0, string arg1) => Report(Diagnostic.NoClassDefFoundError.Event([arg0, arg1]));
+        public static DiagnosticEvent NoClassDefFoundError(string arg0, string arg1) => Diagnostic.NoClassDefFoundError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'GenericUnableToCompileError' diagnostic.
@@ -132,7 +134,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile class "{arg0}". ("{arg1}": "{arg2}")
         /// </remarks>
-        public void GenericUnableToCompileError(string arg0, string arg1, string arg2) => Report(Diagnostic.GenericUnableToCompileError.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent GenericUnableToCompileError(string arg0, string arg1, string arg2) => Diagnostic.GenericUnableToCompileError.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'DuplicateResourceName' diagnostic.
@@ -140,7 +142,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Skipping resource (name clash): "{arg0}"
         /// </remarks>
-        public void DuplicateResourceName(string arg0) => Report(Diagnostic.DuplicateResourceName.Event([arg0]));
+        public static DiagnosticEvent DuplicateResourceName(string arg0) => Diagnostic.DuplicateResourceName.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'SkippingReferencedClass' diagnostic.
@@ -148,7 +150,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Skipping class: "{arg0}". (class is already available in referenced assembly "{arg1}")
         /// </remarks>
-        public void SkippingReferencedClass(string arg0, string arg1) => Report(Diagnostic.SkippingReferencedClass.Event([arg0, arg1]));
+        public static DiagnosticEvent SkippingReferencedClass(string arg0, string arg1) => Diagnostic.SkippingReferencedClass.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'NoJniRuntime' diagnostic.
@@ -156,7 +158,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to load runtime JNI assembly.
         /// </remarks>
-        public void NoJniRuntime() => Report(Diagnostic.NoJniRuntime.Event([]));
+        public static DiagnosticEvent NoJniRuntime() => Diagnostic.NoJniRuntime.Event((object?[])[]);
 
         /// <summary>
         /// The 'EmittedNoClassDefFoundError' diagnostic.
@@ -164,7 +166,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.NoClassDefFoundError in "{arg0}". ("{arg1}").
         /// </remarks>
-        public void EmittedNoClassDefFoundError(string arg0, string arg1) => Report(Diagnostic.EmittedNoClassDefFoundError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedNoClassDefFoundError(string arg0, string arg1) => Diagnostic.EmittedNoClassDefFoundError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedIllegalAccessError' diagnostic.
@@ -172,7 +174,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.IllegalAccessError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedIllegalAccessError(string arg0, string arg1) => Report(Diagnostic.EmittedIllegalAccessError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedIllegalAccessError(string arg0, string arg1) => Diagnostic.EmittedIllegalAccessError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedInstantiationError' diagnostic.
@@ -180,7 +182,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.InstantiationError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedInstantiationError(string arg0, string arg1) => Report(Diagnostic.EmittedInstantiationError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedInstantiationError(string arg0, string arg1) => Diagnostic.EmittedInstantiationError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedIncompatibleClassChangeError' diagnostic.
@@ -188,7 +190,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.IncompatibleClassChangeError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedIncompatibleClassChangeError(string arg0, string arg1) => Report(Diagnostic.EmittedIncompatibleClassChangeError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedIncompatibleClassChangeError(string arg0, string arg1) => Diagnostic.EmittedIncompatibleClassChangeError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedNoSuchFieldError' diagnostic.
@@ -196,7 +198,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.NoSuchFieldError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedNoSuchFieldError(string arg0, string arg1) => Report(Diagnostic.EmittedNoSuchFieldError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedNoSuchFieldError(string arg0, string arg1) => Diagnostic.EmittedNoSuchFieldError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedAbstractMethodError' diagnostic.
@@ -204,7 +206,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.AbstractMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedAbstractMethodError(string arg0, string arg1) => Report(Diagnostic.EmittedAbstractMethodError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedAbstractMethodError(string arg0, string arg1) => Diagnostic.EmittedAbstractMethodError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedNoSuchMethodError' diagnostic.
@@ -212,7 +214,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.NoSuchMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedNoSuchMethodError(string arg0, string arg1) => Report(Diagnostic.EmittedNoSuchMethodError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedNoSuchMethodError(string arg0, string arg1) => Diagnostic.EmittedNoSuchMethodError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedLinkageError' diagnostic.
@@ -220,7 +222,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.LinkageError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedLinkageError(string arg0, string arg1) => Report(Diagnostic.EmittedLinkageError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedLinkageError(string arg0, string arg1) => Diagnostic.EmittedLinkageError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedVerificationError' diagnostic.
@@ -228,7 +230,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.VerificationError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedVerificationError(string arg0, string arg1) => Report(Diagnostic.EmittedVerificationError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedVerificationError(string arg0, string arg1) => Diagnostic.EmittedVerificationError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'EmittedClassFormatError' diagnostic.
@@ -236,7 +238,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Emitted java.lang.ClassFormatError in "{arg0}". ("{arg1}")
         /// </remarks>
-        public void EmittedClassFormatError(string arg0, string arg1) => Report(Diagnostic.EmittedClassFormatError.Event([arg0, arg1]));
+        public static DiagnosticEvent EmittedClassFormatError(string arg0, string arg1) => Diagnostic.EmittedClassFormatError.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'InvalidCustomAttribute' diagnostic.
@@ -244,7 +246,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Error emitting "{arg0}" custom attribute. ("{arg1}")
         /// </remarks>
-        public void InvalidCustomAttribute(string arg0, string arg1) => Report(Diagnostic.InvalidCustomAttribute.Event([arg0, arg1]));
+        public static DiagnosticEvent InvalidCustomAttribute(string arg0, string arg1) => Diagnostic.InvalidCustomAttribute.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'IgnoredCustomAttribute' diagnostic.
@@ -252,7 +254,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom attribute "{arg0}" was ignored. ("{arg1}")
         /// </remarks>
-        public void IgnoredCustomAttribute(string arg0, string arg1) => Report(Diagnostic.IgnoredCustomAttribute.Event([arg0, arg1]));
+        public static DiagnosticEvent IgnoredCustomAttribute(string arg0, string arg1) => Diagnostic.IgnoredCustomAttribute.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'AssumeAssemblyVersionMatch' diagnostic.
@@ -260,7 +262,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Assuming assembly reference "{arg0}" matches "{arg1}", you may need to supply runtime policy
         /// </remarks>
-        public void AssumeAssemblyVersionMatch(string arg0, string arg1) => Report(Diagnostic.AssumeAssemblyVersionMatch.Event([arg0, arg1]));
+        public static DiagnosticEvent AssumeAssemblyVersionMatch(string arg0, string arg1) => Diagnostic.AssumeAssemblyVersionMatch.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'InvalidDirectoryInLibOptionPath' diagnostic.
@@ -268,7 +270,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Directory "{arg0}" specified in -lib option is not valid.
         /// </remarks>
-        public void InvalidDirectoryInLibOptionPath(string arg0) => Report(Diagnostic.InvalidDirectoryInLibOptionPath.Event([arg0]));
+        public static DiagnosticEvent InvalidDirectoryInLibOptionPath(string arg0) => Diagnostic.InvalidDirectoryInLibOptionPath.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InvalidDirectoryInLibEnvironmentPath' diagnostic.
@@ -276,7 +278,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Directory "{arg0}" specified in LIB environment is not valid.
         /// </remarks>
-        public void InvalidDirectoryInLibEnvironmentPath(string arg0) => Report(Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event([arg0]));
+        public static DiagnosticEvent InvalidDirectoryInLibEnvironmentPath(string arg0) => Diagnostic.InvalidDirectoryInLibEnvironmentPath.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'LegacySearchRule' diagnostic.
@@ -284,7 +286,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference.
         /// </remarks>
-        public void LegacySearchRule(string arg0) => Report(Diagnostic.LegacySearchRule.Event([arg0]));
+        public static DiagnosticEvent LegacySearchRule(string arg0) => Diagnostic.LegacySearchRule.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'AssemblyLocationIgnored' diagnostic.
@@ -292,7 +294,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}".
         /// </remarks>
-        public void AssemblyLocationIgnored(string arg0, string arg1, string arg2) => Report(Diagnostic.AssemblyLocationIgnored.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent AssemblyLocationIgnored(string arg0, string arg1, string arg2) => Diagnostic.AssemblyLocationIgnored.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'InterfaceMethodCantBeInternal' diagnostic.
@@ -300,7 +302,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Ignoring @ikvm.lang.Internal annotation on interface method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
-        public void InterfaceMethodCantBeInternal(string arg0, string arg1, string arg2) => Report(Diagnostic.InterfaceMethodCantBeInternal.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent InterfaceMethodCantBeInternal(string arg0, string arg1, string arg2) => Diagnostic.InterfaceMethodCantBeInternal.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'DuplicateAssemblyReference' diagnostic.
@@ -308,7 +310,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Duplicate assembly reference "{arg0}"
         /// </remarks>
-        public void DuplicateAssemblyReference(string arg0) => Report(Diagnostic.DuplicateAssemblyReference.Event([arg0]));
+        public static DiagnosticEvent DuplicateAssemblyReference(string arg0) => Diagnostic.DuplicateAssemblyReference.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnableToResolveType' diagnostic.
@@ -316,7 +318,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found.
         /// </remarks>
-        public void UnableToResolveType(string arg0, string arg1, string arg2) => Report(Diagnostic.UnableToResolveType.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent UnableToResolveType(string arg0, string arg1, string arg2) => Diagnostic.UnableToResolveType.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'StubsAreDeprecated' diagnostic.
@@ -324,7 +326,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Compiling stubs is deprecated. Please add a reference to assembly "{arg0}" instead.
         /// </remarks>
-        public void StubsAreDeprecated(string arg0) => Report(Diagnostic.StubsAreDeprecated.Event([arg0]));
+        public static DiagnosticEvent StubsAreDeprecated(string arg0) => Diagnostic.StubsAreDeprecated.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'WrongClassName' diagnostic.
@@ -332,7 +334,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to compile "{arg0}" (wrong name: "{arg1}")
         /// </remarks>
-        public void WrongClassName(string arg0, string arg1) => Report(Diagnostic.WrongClassName.Event([arg0, arg1]));
+        public static DiagnosticEvent WrongClassName(string arg0, string arg1) => Diagnostic.WrongClassName.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'ReflectionCallerClassRequiresCallerID' diagnostic.
@@ -340,7 +342,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Reflection.getCallerClass() called from non-CallerID method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
-        public void ReflectionCallerClassRequiresCallerID(string arg0, string arg1, string arg2) => Report(Diagnostic.ReflectionCallerClassRequiresCallerID.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent ReflectionCallerClassRequiresCallerID(string arg0, string arg1, string arg2) => Diagnostic.ReflectionCallerClassRequiresCallerID.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'LegacyAssemblyAttributesFound' diagnostic.
@@ -348,7 +350,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.
         /// </remarks>
-        public void LegacyAssemblyAttributesFound() => Report(Diagnostic.LegacyAssemblyAttributesFound.Event([]));
+        public static DiagnosticEvent LegacyAssemblyAttributesFound() => Diagnostic.LegacyAssemblyAttributesFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'UnableToCreateLambdaFactory' diagnostic.
@@ -356,7 +358,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to create static lambda factory.
         /// </remarks>
-        public void UnableToCreateLambdaFactory() => Report(Diagnostic.UnableToCreateLambdaFactory.Event([]));
+        public static DiagnosticEvent UnableToCreateLambdaFactory() => Diagnostic.UnableToCreateLambdaFactory.Event((object?[])[]);
 
         /// <summary>
         /// The 'UnknownWarning' diagnostic.
@@ -364,7 +366,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void UnknownWarning(string arg0) => Report(Diagnostic.UnknownWarning.Event([arg0]));
+        public static DiagnosticEvent UnknownWarning(string arg0) => Diagnostic.UnknownWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'DuplicateIkvmLangProperty' diagnostic.
@@ -372,7 +374,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
-        public void DuplicateIkvmLangProperty(string arg0, string arg1) => Report(Diagnostic.DuplicateIkvmLangProperty.Event([arg0, arg1]));
+        public static DiagnosticEvent DuplicateIkvmLangProperty(string arg0, string arg1) => Diagnostic.DuplicateIkvmLangProperty.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'MalformedIkvmLangProperty' diagnostic.
@@ -380,7 +382,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
-        public void MalformedIkvmLangProperty(string arg0, string arg1) => Report(Diagnostic.MalformedIkvmLangProperty.Event([arg0, arg1]));
+        public static DiagnosticEvent MalformedIkvmLangProperty(string arg0, string arg1) => Diagnostic.MalformedIkvmLangProperty.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'GenericCompilerWarning' diagnostic.
@@ -388,7 +390,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericCompilerWarning(string arg0) => Report(Diagnostic.GenericCompilerWarning.Event([arg0]));
+        public static DiagnosticEvent GenericCompilerWarning(string arg0) => Diagnostic.GenericCompilerWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericClassLoadingWarning' diagnostic.
@@ -396,7 +398,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericClassLoadingWarning(string arg0) => Report(Diagnostic.GenericClassLoadingWarning.Event([arg0]));
+        public static DiagnosticEvent GenericClassLoadingWarning(string arg0) => Diagnostic.GenericClassLoadingWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericVerifierWarning' diagnostic.
@@ -404,7 +406,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericVerifierWarning(string arg0) => Report(Diagnostic.GenericVerifierWarning.Event([arg0]));
+        public static DiagnosticEvent GenericVerifierWarning(string arg0) => Diagnostic.GenericVerifierWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericRuntimeWarning' diagnostic.
@@ -412,7 +414,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericRuntimeWarning(string arg0) => Report(Diagnostic.GenericRuntimeWarning.Event([arg0]));
+        public static DiagnosticEvent GenericRuntimeWarning(string arg0) => Diagnostic.GenericRuntimeWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericJniWarning' diagnostic.
@@ -420,7 +422,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericJniWarning(string arg0) => Report(Diagnostic.GenericJniWarning.Event([arg0]));
+        public static DiagnosticEvent GenericJniWarning(string arg0) => Diagnostic.GenericJniWarning.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnableToCreateProxy' diagnostic.
@@ -428,7 +430,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to create proxy "{arg0}". ("{arg1}")
         /// </remarks>
-        public void UnableToCreateProxy(string arg0, string arg1) => Report(Diagnostic.UnableToCreateProxy.Event([arg0, arg1]));
+        public static DiagnosticEvent UnableToCreateProxy(string arg0, string arg1) => Diagnostic.UnableToCreateProxy.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'DuplicateProxy' diagnostic.
@@ -436,7 +438,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Duplicate proxy "{arg0}".
         /// </remarks>
-        public void DuplicateProxy(string arg0) => Report(Diagnostic.DuplicateProxy.Event([arg0]));
+        public static DiagnosticEvent DuplicateProxy(string arg0) => Diagnostic.DuplicateProxy.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MapXmlUnableToResolveOpCode' diagnostic.
@@ -444,7 +446,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to resolve opcode in remap file: {arg0}.
         /// </remarks>
-        public void MapXmlUnableToResolveOpCode(string arg0) => Report(Diagnostic.MapXmlUnableToResolveOpCode.Event([arg0]));
+        public static DiagnosticEvent MapXmlUnableToResolveOpCode(string arg0) => Diagnostic.MapXmlUnableToResolveOpCode.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MapXmlError' diagnostic.
@@ -452,7 +454,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Error in remap file: {arg0}.
         /// </remarks>
-        public void MapXmlError(string arg0) => Report(Diagnostic.MapXmlError.Event([arg0]));
+        public static DiagnosticEvent MapXmlError(string arg0) => Diagnostic.MapXmlError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InputFileNotFound' diagnostic.
@@ -460,7 +462,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Source file '{arg0}' not found.
         /// </remarks>
-        public void InputFileNotFound(string arg0) => Report(Diagnostic.InputFileNotFound.Event([arg0]));
+        public static DiagnosticEvent InputFileNotFound(string arg0) => Diagnostic.InputFileNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnknownFileType' diagnostic.
@@ -468,7 +470,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unknown file type: {arg0}.
         /// </remarks>
-        public void UnknownFileType(string arg0) => Report(Diagnostic.UnknownFileType.Event([arg0]));
+        public static DiagnosticEvent UnknownFileType(string arg0) => Diagnostic.UnknownFileType.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnknownElementInMapFile' diagnostic.
@@ -476,7 +478,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unknown element {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
-        public void UnknownElementInMapFile(string arg0, string arg1, string arg2) => Report(Diagnostic.UnknownElementInMapFile.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent UnknownElementInMapFile(string arg0, string arg1, string arg2) => Diagnostic.UnknownElementInMapFile.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'UnknownAttributeInMapFile' diagnostic.
@@ -484,7 +486,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
-        public void UnknownAttributeInMapFile(string arg0, string arg1, string arg2) => Report(Diagnostic.UnknownAttributeInMapFile.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent UnknownAttributeInMapFile(string arg0, string arg1, string arg2) => Diagnostic.UnknownAttributeInMapFile.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'InvalidMemberNameInMapFile' diagnostic.
@@ -492,7 +494,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid {arg0} name '{arg1}' in remap file in class {arg2}.
         /// </remarks>
-        public void InvalidMemberNameInMapFile(string arg0, string arg1, string arg2) => Report(Diagnostic.InvalidMemberNameInMapFile.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent InvalidMemberNameInMapFile(string arg0, string arg1, string arg2) => Diagnostic.InvalidMemberNameInMapFile.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'InvalidMemberSignatureInMapFile' diagnostic.
@@ -500,7 +502,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}.
         /// </remarks>
-        public void InvalidMemberSignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.InvalidMemberSignatureInMapFile.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent InvalidMemberSignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => Diagnostic.InvalidMemberSignatureInMapFile.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'InvalidPropertyNameInMapFile' diagnostic.
@@ -508,7 +510,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
-        public void InvalidPropertyNameInMapFile(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.InvalidPropertyNameInMapFile.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent InvalidPropertyNameInMapFile(string arg0, string arg1, string arg2, string arg3) => Diagnostic.InvalidPropertyNameInMapFile.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'InvalidPropertySignatureInMapFile' diagnostic.
@@ -516,7 +518,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
-        public void InvalidPropertySignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.InvalidPropertySignatureInMapFile.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent InvalidPropertySignatureInMapFile(string arg0, string arg1, string arg2, string arg3) => Diagnostic.InvalidPropertySignatureInMapFile.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'NonPrimaryAssemblyReference' diagnostic.
@@ -524,7 +526,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead.
         /// </remarks>
-        public void NonPrimaryAssemblyReference(string arg0, string arg1) => Report(Diagnostic.NonPrimaryAssemblyReference.Event([arg0, arg1]));
+        public static DiagnosticEvent NonPrimaryAssemblyReference(string arg0, string arg1) => Diagnostic.NonPrimaryAssemblyReference.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'MissingType' diagnostic.
@@ -532,7 +534,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found.
         /// </remarks>
-        public void MissingType(string arg0, string arg1) => Report(Diagnostic.MissingType.Event([arg0, arg1]));
+        public static DiagnosticEvent MissingType(string arg0, string arg1) => Diagnostic.MissingType.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'MissingReference' diagnostic.
@@ -540,7 +542,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
-        public void MissingReference(string arg0, string arg1) => Report(Diagnostic.MissingReference.Event([arg0, arg1]));
+        public static DiagnosticEvent MissingReference(string arg0, string arg1) => Diagnostic.MissingReference.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'CallerSensitiveOnUnsupportedMethod' diagnostic.
@@ -548,7 +550,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// CallerSensitive annotation on unsupported method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
-        public void CallerSensitiveOnUnsupportedMethod(string arg0, string arg1, string arg2) => Report(Diagnostic.CallerSensitiveOnUnsupportedMethod.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent CallerSensitiveOnUnsupportedMethod(string arg0, string arg1, string arg2) => Diagnostic.CallerSensitiveOnUnsupportedMethod.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'RemappedTypeMissingDefaultInterfaceMethod' diagnostic.
@@ -556,7 +558,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0} does not implement default interface method {arg1}.
         /// </remarks>
-        public void RemappedTypeMissingDefaultInterfaceMethod(string arg0, string arg1) => Report(Diagnostic.RemappedTypeMissingDefaultInterfaceMethod.Event([arg0, arg1]));
+        public static DiagnosticEvent RemappedTypeMissingDefaultInterfaceMethod(string arg0, string arg1) => Diagnostic.RemappedTypeMissingDefaultInterfaceMethod.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'GenericCompilerError' diagnostic.
@@ -564,7 +566,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericCompilerError(string arg0) => Report(Diagnostic.GenericCompilerError.Event([arg0]));
+        public static DiagnosticEvent GenericCompilerError(string arg0) => Diagnostic.GenericCompilerError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericClassLoadingError' diagnostic.
@@ -572,7 +574,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericClassLoadingError(string arg0) => Report(Diagnostic.GenericClassLoadingError.Event([arg0]));
+        public static DiagnosticEvent GenericClassLoadingError(string arg0) => Diagnostic.GenericClassLoadingError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericVerifierError' diagnostic.
@@ -580,7 +582,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericVerifierError(string arg0) => Report(Diagnostic.GenericVerifierError.Event([arg0]));
+        public static DiagnosticEvent GenericVerifierError(string arg0) => Diagnostic.GenericVerifierError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericRuntimeError' diagnostic.
@@ -588,7 +590,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericRuntimeError(string arg0) => Report(Diagnostic.GenericRuntimeError.Event([arg0]));
+        public static DiagnosticEvent GenericRuntimeError(string arg0) => Diagnostic.GenericRuntimeError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericJniError' diagnostic.
@@ -596,7 +598,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericJniError(string arg0) => Report(Diagnostic.GenericJniError.Event([arg0]));
+        public static DiagnosticEvent GenericJniError(string arg0) => Diagnostic.GenericJniError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ExportingImportsNotSupported' diagnostic.
@@ -604,7 +606,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Exporting previously imported assemblies is not supported.
         /// </remarks>
-        public void ExportingImportsNotSupported() => Report(Diagnostic.ExportingImportsNotSupported.Event([]));
+        public static DiagnosticEvent ExportingImportsNotSupported() => Diagnostic.ExportingImportsNotSupported.Event((object?[])[]);
 
         /// <summary>
         /// The 'ResponseFileDepthExceeded' diagnostic.
@@ -612,7 +614,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Response file nesting depth exceeded.
         /// </remarks>
-        public void ResponseFileDepthExceeded() => Report(Diagnostic.ResponseFileDepthExceeded.Event([]));
+        public static DiagnosticEvent ResponseFileDepthExceeded() => Diagnostic.ResponseFileDepthExceeded.Event((object?[])[]);
 
         /// <summary>
         /// The 'ErrorReadingFile' diagnostic.
@@ -620,7 +622,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to read file: {arg0}. ({arg1})
         /// </remarks>
-        public void ErrorReadingFile(string arg0, string arg1) => Report(Diagnostic.ErrorReadingFile.Event([arg0, arg1]));
+        public static DiagnosticEvent ErrorReadingFile(string arg0, string arg1) => Diagnostic.ErrorReadingFile.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'NoTargetsFound' diagnostic.
@@ -628,7 +630,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// No targets found
         /// </remarks>
-        public void NoTargetsFound() => Report(Diagnostic.NoTargetsFound.Event([]));
+        public static DiagnosticEvent NoTargetsFound() => Diagnostic.NoTargetsFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'FileFormatLimitationExceeded' diagnostic.
@@ -636,7 +638,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// File format limitation exceeded: {arg0}.
         /// </remarks>
-        public void FileFormatLimitationExceeded(string arg0) => Report(Diagnostic.FileFormatLimitationExceeded.Event([arg0]));
+        public static DiagnosticEvent FileFormatLimitationExceeded(string arg0) => Diagnostic.FileFormatLimitationExceeded.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'CannotSpecifyBothKeyFileAndContainer' diagnostic.
@@ -644,7 +646,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// You cannot specify both a key file and container.
         /// </remarks>
-        public void CannotSpecifyBothKeyFileAndContainer() => Report(Diagnostic.CannotSpecifyBothKeyFileAndContainer.Event([]));
+        public static DiagnosticEvent CannotSpecifyBothKeyFileAndContainer() => Diagnostic.CannotSpecifyBothKeyFileAndContainer.Event((object?[])[]);
 
         /// <summary>
         /// The 'DelaySignRequiresKey' diagnostic.
@@ -652,7 +654,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// You cannot delay sign without a key file or container.
         /// </remarks>
-        public void DelaySignRequiresKey() => Report(Diagnostic.DelaySignRequiresKey.Event([]));
+        public static DiagnosticEvent DelaySignRequiresKey() => Diagnostic.DelaySignRequiresKey.Event((object?[])[]);
 
         /// <summary>
         /// The 'InvalidStrongNameKeyPair' diagnostic.
@@ -660,7 +662,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid key {arg0} specified. ("{arg1}")
         /// </remarks>
-        public void InvalidStrongNameKeyPair(string arg0, string arg1) => Report(Diagnostic.InvalidStrongNameKeyPair.Event([arg0, arg1]));
+        public static DiagnosticEvent InvalidStrongNameKeyPair(string arg0, string arg1) => Diagnostic.InvalidStrongNameKeyPair.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'ReferenceNotFound' diagnostic.
@@ -668,7 +670,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Reference not found: {arg0}
         /// </remarks>
-        public void ReferenceNotFound(string arg0) => Report(Diagnostic.ReferenceNotFound.Event([arg0]));
+        public static DiagnosticEvent ReferenceNotFound(string arg0) => Diagnostic.ReferenceNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'OptionsMustPreceedChildLevels' diagnostic.
@@ -676,7 +678,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// You can only specify options before any child levels.
         /// </remarks>
-        public void OptionsMustPreceedChildLevels() => Report(Diagnostic.OptionsMustPreceedChildLevels.Event([]));
+        public static DiagnosticEvent OptionsMustPreceedChildLevels() => Diagnostic.OptionsMustPreceedChildLevels.Event((object?[])[]);
 
         /// <summary>
         /// The 'UnrecognizedTargetType' diagnostic.
@@ -684,7 +686,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid value '{arg0}' for -target option.
         /// </remarks>
-        public void UnrecognizedTargetType(string arg0) => Report(Diagnostic.UnrecognizedTargetType.Event([arg0]));
+        public static DiagnosticEvent UnrecognizedTargetType(string arg0) => Diagnostic.UnrecognizedTargetType.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnrecognizedPlatform' diagnostic.
@@ -692,7 +694,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid value '{arg0}' for -platform option.
         /// </remarks>
-        public void UnrecognizedPlatform(string arg0) => Report(Diagnostic.UnrecognizedPlatform.Event([arg0]));
+        public static DiagnosticEvent UnrecognizedPlatform(string arg0) => Diagnostic.UnrecognizedPlatform.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'UnrecognizedApartment' diagnostic.
@@ -700,7 +702,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid value '{arg0}' for -apartment option.
         /// </remarks>
-        public void UnrecognizedApartment(string arg0) => Report(Diagnostic.UnrecognizedApartment.Event([arg0]));
+        public static DiagnosticEvent UnrecognizedApartment(string arg0) => Diagnostic.UnrecognizedApartment.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MissingFileSpecification' diagnostic.
@@ -708,7 +710,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Missing file specification for '{arg0}' option.
         /// </remarks>
-        public void MissingFileSpecification(string arg0) => Report(Diagnostic.MissingFileSpecification.Event([arg0]));
+        public static DiagnosticEvent MissingFileSpecification(string arg0) => Diagnostic.MissingFileSpecification.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'PathTooLong' diagnostic.
@@ -716,7 +718,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Path too long: {arg0}.
         /// </remarks>
-        public void PathTooLong(string arg0) => Report(Diagnostic.PathTooLong.Event([arg0]));
+        public static DiagnosticEvent PathTooLong(string arg0) => Diagnostic.PathTooLong.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'PathNotFound' diagnostic.
@@ -724,7 +726,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Path not found: {arg0}.
         /// </remarks>
-        public void PathNotFound(string arg0) => Report(Diagnostic.PathNotFound.Event([arg0]));
+        public static DiagnosticEvent PathNotFound(string arg0) => Diagnostic.PathNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InvalidPath' diagnostic.
@@ -732,7 +734,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid path: {arg0}.
         /// </remarks>
-        public void InvalidPath(string arg0) => Report(Diagnostic.InvalidPath.Event([arg0]));
+        public static DiagnosticEvent InvalidPath(string arg0) => Diagnostic.InvalidPath.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InvalidOptionSyntax' diagnostic.
@@ -740,7 +742,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid option: {arg0}.
         /// </remarks>
-        public void InvalidOptionSyntax(string arg0) => Report(Diagnostic.InvalidOptionSyntax.Event([arg0]));
+        public static DiagnosticEvent InvalidOptionSyntax(string arg0) => Diagnostic.InvalidOptionSyntax.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ExternalResourceNotFound' diagnostic.
@@ -748,7 +750,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// External resource file does not exist: {arg0}.
         /// </remarks>
-        public void ExternalResourceNotFound(string arg0) => Report(Diagnostic.ExternalResourceNotFound.Event([arg0]));
+        public static DiagnosticEvent ExternalResourceNotFound(string arg0) => Diagnostic.ExternalResourceNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ExternalResourceNameInvalid' diagnostic.
@@ -756,7 +758,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// External resource file may not include path specification: {arg0}.
         /// </remarks>
-        public void ExternalResourceNameInvalid(string arg0) => Report(Diagnostic.ExternalResourceNameInvalid.Event([arg0]));
+        public static DiagnosticEvent ExternalResourceNameInvalid(string arg0) => Diagnostic.ExternalResourceNameInvalid.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InvalidVersionFormat' diagnostic.
@@ -764,7 +766,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid version specified: {arg0}.
         /// </remarks>
-        public void InvalidVersionFormat(string arg0) => Report(Diagnostic.InvalidVersionFormat.Event([arg0]));
+        public static DiagnosticEvent InvalidVersionFormat(string arg0) => Diagnostic.InvalidVersionFormat.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'InvalidFileAlignment' diagnostic.
@@ -772,7 +774,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid value '{arg0}' for -filealign option.
         /// </remarks>
-        public void InvalidFileAlignment(string arg0) => Report(Diagnostic.InvalidFileAlignment.Event([arg0]));
+        public static DiagnosticEvent InvalidFileAlignment(string arg0) => Diagnostic.InvalidFileAlignment.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'ErrorWritingFile' diagnostic.
@@ -780,7 +782,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to write file: {arg0}. ({arg1})
         /// </remarks>
-        public void ErrorWritingFile(string arg0, string arg1) => Report(Diagnostic.ErrorWritingFile.Event([arg0, arg1]));
+        public static DiagnosticEvent ErrorWritingFile(string arg0, string arg1) => Diagnostic.ErrorWritingFile.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'UnrecognizedOption' diagnostic.
@@ -788,7 +790,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unrecognized option: {arg0}.
         /// </remarks>
-        public void UnrecognizedOption(string arg0) => Report(Diagnostic.UnrecognizedOption.Event([arg0]));
+        public static DiagnosticEvent UnrecognizedOption(string arg0) => Diagnostic.UnrecognizedOption.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'NoOutputFileSpecified' diagnostic.
@@ -796,7 +798,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// No output file specified.
         /// </remarks>
-        public void NoOutputFileSpecified() => Report(Diagnostic.NoOutputFileSpecified.Event([]));
+        public static DiagnosticEvent NoOutputFileSpecified() => Diagnostic.NoOutputFileSpecified.Event((object?[])[]);
 
         /// <summary>
         /// The 'SharedClassLoaderCannotBeUsedOnModuleTarget' diagnostic.
@@ -804,7 +806,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Incompatible options: -target:module and -sharedclassloader cannot be combined.
         /// </remarks>
-        public void SharedClassLoaderCannotBeUsedOnModuleTarget() => Report(Diagnostic.SharedClassLoaderCannotBeUsedOnModuleTarget.Event([]));
+        public static DiagnosticEvent SharedClassLoaderCannotBeUsedOnModuleTarget() => Diagnostic.SharedClassLoaderCannotBeUsedOnModuleTarget.Event((object?[])[]);
 
         /// <summary>
         /// The 'RuntimeNotFound' diagnostic.
@@ -812,7 +814,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to load runtime assembly.
         /// </remarks>
-        public void RuntimeNotFound() => Report(Diagnostic.RuntimeNotFound.Event([]));
+        public static DiagnosticEvent RuntimeNotFound() => Diagnostic.RuntimeNotFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'MainClassRequiresExe' diagnostic.
@@ -820,7 +822,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Main class cannot be specified for library or module.
         /// </remarks>
-        public void MainClassRequiresExe() => Report(Diagnostic.MainClassRequiresExe.Event([]));
+        public static DiagnosticEvent MainClassRequiresExe() => Diagnostic.MainClassRequiresExe.Event((object?[])[]);
 
         /// <summary>
         /// The 'ExeRequiresMainClass' diagnostic.
@@ -828,7 +830,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// No main method found.
         /// </remarks>
-        public void ExeRequiresMainClass() => Report(Diagnostic.ExeRequiresMainClass.Event([]));
+        public static DiagnosticEvent ExeRequiresMainClass() => Diagnostic.ExeRequiresMainClass.Event((object?[])[]);
 
         /// <summary>
         /// The 'PropertiesRequireExe' diagnostic.
@@ -836,7 +838,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Properties cannot be specified for library or module.
         /// </remarks>
-        public void PropertiesRequireExe() => Report(Diagnostic.PropertiesRequireExe.Event([]));
+        public static DiagnosticEvent PropertiesRequireExe() => Diagnostic.PropertiesRequireExe.Event((object?[])[]);
 
         /// <summary>
         /// The 'ModuleCannotHaveClassLoader' diagnostic.
@@ -844,7 +846,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Cannot specify assembly class loader for modules.
         /// </remarks>
-        public void ModuleCannotHaveClassLoader() => Report(Diagnostic.ModuleCannotHaveClassLoader.Event([]));
+        public static DiagnosticEvent ModuleCannotHaveClassLoader() => Diagnostic.ModuleCannotHaveClassLoader.Event((object?[])[]);
 
         /// <summary>
         /// The 'ErrorParsingMapFile' diagnostic.
@@ -852,7 +854,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to parse remap file: {arg0}. ({arg1})
         /// </remarks>
-        public void ErrorParsingMapFile(string arg0, string arg1) => Report(Diagnostic.ErrorParsingMapFile.Event([arg0, arg1]));
+        public static DiagnosticEvent ErrorParsingMapFile(string arg0, string arg1) => Diagnostic.ErrorParsingMapFile.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'BootstrapClassesMissing' diagnostic.
@@ -860,7 +862,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Bootstrap classes missing and core assembly not found.
         /// </remarks>
-        public void BootstrapClassesMissing() => Report(Diagnostic.BootstrapClassesMissing.Event([]));
+        public static DiagnosticEvent BootstrapClassesMissing() => Diagnostic.BootstrapClassesMissing.Event((object?[])[]);
 
         /// <summary>
         /// The 'StrongNameRequiresStrongNamedRefs' diagnostic.
@@ -868,7 +870,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// All referenced assemblies must be strong named, to be able to sign the output assembly.
         /// </remarks>
-        public void StrongNameRequiresStrongNamedRefs() => Report(Diagnostic.StrongNameRequiresStrongNamedRefs.Event([]));
+        public static DiagnosticEvent StrongNameRequiresStrongNamedRefs() => Diagnostic.StrongNameRequiresStrongNamedRefs.Event((object?[])[]);
 
         /// <summary>
         /// The 'MainClassNotFound' diagnostic.
@@ -876,7 +878,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Main class not found.
         /// </remarks>
-        public void MainClassNotFound() => Report(Diagnostic.MainClassNotFound.Event([]));
+        public static DiagnosticEvent MainClassNotFound() => Diagnostic.MainClassNotFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'MainMethodNotFound' diagnostic.
@@ -884,7 +886,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Main method not found.
         /// </remarks>
-        public void MainMethodNotFound() => Report(Diagnostic.MainMethodNotFound.Event([]));
+        public static DiagnosticEvent MainMethodNotFound() => Diagnostic.MainMethodNotFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'UnsupportedMainMethod' diagnostic.
@@ -892,7 +894,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Redirected main method not supported.
         /// </remarks>
-        public void UnsupportedMainMethod() => Report(Diagnostic.UnsupportedMainMethod.Event([]));
+        public static DiagnosticEvent UnsupportedMainMethod() => Diagnostic.UnsupportedMainMethod.Event((object?[])[]);
 
         /// <summary>
         /// The 'ExternalMainNotAccessible' diagnostic.
@@ -900,7 +902,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// External main method must be public and in a public class.
         /// </remarks>
-        public void ExternalMainNotAccessible() => Report(Diagnostic.ExternalMainNotAccessible.Event([]));
+        public static DiagnosticEvent ExternalMainNotAccessible() => Diagnostic.ExternalMainNotAccessible.Event((object?[])[]);
 
         /// <summary>
         /// The 'ClassLoaderNotFound' diagnostic.
@@ -908,7 +910,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom assembly class loader class not found.
         /// </remarks>
-        public void ClassLoaderNotFound() => Report(Diagnostic.ClassLoaderNotFound.Event([]));
+        public static DiagnosticEvent ClassLoaderNotFound() => Diagnostic.ClassLoaderNotFound.Event((object?[])[]);
 
         /// <summary>
         /// The 'ClassLoaderNotAccessible' diagnostic.
@@ -916,7 +918,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom assembly class loader class is not accessible.
         /// </remarks>
-        public void ClassLoaderNotAccessible() => Report(Diagnostic.ClassLoaderNotAccessible.Event([]));
+        public static DiagnosticEvent ClassLoaderNotAccessible() => Diagnostic.ClassLoaderNotAccessible.Event((object?[])[]);
 
         /// <summary>
         /// The 'ClassLoaderIsAbstract' diagnostic.
@@ -924,7 +926,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom assembly class loader class is abstract.
         /// </remarks>
-        public void ClassLoaderIsAbstract() => Report(Diagnostic.ClassLoaderIsAbstract.Event([]));
+        public static DiagnosticEvent ClassLoaderIsAbstract() => Diagnostic.ClassLoaderIsAbstract.Event((object?[])[]);
 
         /// <summary>
         /// The 'ClassLoaderNotClassLoader' diagnostic.
@@ -932,7 +934,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom assembly class loader class does not extend java.lang.ClassLoader.
         /// </remarks>
-        public void ClassLoaderNotClassLoader() => Report(Diagnostic.ClassLoaderNotClassLoader.Event([]));
+        public static DiagnosticEvent ClassLoaderNotClassLoader() => Diagnostic.ClassLoaderNotClassLoader.Event((object?[])[]);
 
         /// <summary>
         /// The 'ClassLoaderConstructorMissing' diagnostic.
@@ -940,7 +942,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Custom assembly class loader constructor is missing.
         /// </remarks>
-        public void ClassLoaderConstructorMissing() => Report(Diagnostic.ClassLoaderConstructorMissing.Event([]));
+        public static DiagnosticEvent ClassLoaderConstructorMissing() => Diagnostic.ClassLoaderConstructorMissing.Event((object?[])[]);
 
         /// <summary>
         /// The 'MapFileTypeNotFound' diagnostic.
@@ -948,7 +950,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Type '{arg0}' referenced in remap file was not found.
         /// </remarks>
-        public void MapFileTypeNotFound(string arg0) => Report(Diagnostic.MapFileTypeNotFound.Event([arg0]));
+        public static DiagnosticEvent MapFileTypeNotFound(string arg0) => Diagnostic.MapFileTypeNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MapFileClassNotFound' diagnostic.
@@ -956,7 +958,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Class '{arg0}' referenced in remap file was not found.
         /// </remarks>
-        public void MapFileClassNotFound(string arg0) => Report(Diagnostic.MapFileClassNotFound.Event([arg0]));
+        public static DiagnosticEvent MapFileClassNotFound(string arg0) => Diagnostic.MapFileClassNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MaximumErrorCountReached' diagnostic.
@@ -964,7 +966,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Maximum error count reached.
         /// </remarks>
-        public void MaximumErrorCountReached() => Report(Diagnostic.MaximumErrorCountReached.Event([]));
+        public static DiagnosticEvent MaximumErrorCountReached() => Diagnostic.MaximumErrorCountReached.Event((object?[])[]);
 
         /// <summary>
         /// The 'LinkageError' diagnostic.
@@ -972,7 +974,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Link error: {arg0}
         /// </remarks>
-        public void LinkageError(string arg0) => Report(Diagnostic.LinkageError.Event([arg0]));
+        public static DiagnosticEvent LinkageError(string arg0) => Diagnostic.LinkageError.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'RuntimeMismatch' diagnostic.
@@ -980,7 +982,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {arg1}. Referenced assembly runtime: {arg2}
         /// </remarks>
-        public void RuntimeMismatch(string arg0, string arg1, string arg2) => Report(Diagnostic.RuntimeMismatch.Event([arg0, arg1, arg2]));
+        public static DiagnosticEvent RuntimeMismatch(string arg0, string arg1, string arg2) => Diagnostic.RuntimeMismatch.Event((object?[])[arg0, arg1, arg2]);
 
         /// <summary>
         /// The 'RuntimeMismatchStrongName' diagnostic.
@@ -988,7 +990,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 ///
         /// </remarks>
-        public void RuntimeMismatchStrongName() => Report(Diagnostic.RuntimeMismatchStrongName.Event([]));
+        public static DiagnosticEvent RuntimeMismatchStrongName() => Diagnostic.RuntimeMismatchStrongName.Event((object?[])[]);
 
         /// <summary>
         /// The 'CoreClassesMissing' diagnostic.
@@ -996,7 +998,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Failed to find core classes in core library.
         /// </remarks>
-        public void CoreClassesMissing() => Report(Diagnostic.CoreClassesMissing.Event([]));
+        public static DiagnosticEvent CoreClassesMissing() => Diagnostic.CoreClassesMissing.Event((object?[])[]);
 
         /// <summary>
         /// The 'CriticalClassNotFound' diagnostic.
@@ -1004,7 +1006,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to load critical class '{arg0}'.
         /// </remarks>
-        public void CriticalClassNotFound(string arg0) => Report(Diagnostic.CriticalClassNotFound.Event([arg0]));
+        public static DiagnosticEvent CriticalClassNotFound(string arg0) => Diagnostic.CriticalClassNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'AssemblyContainsDuplicateClassNames' diagnostic.
@@ -1012,7 +1014,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'. ({arg3})
         /// </remarks>
-        public void AssemblyContainsDuplicateClassNames(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.AssemblyContainsDuplicateClassNames.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent AssemblyContainsDuplicateClassNames(string arg0, string arg1, string arg2, string arg3) => Diagnostic.AssemblyContainsDuplicateClassNames.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'CallerIDRequiresHasCallerIDAnnotation' diagnostic.
@@ -1020,7 +1022,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// CallerID.getCallerID() requires a HasCallerID annotation.
         /// </remarks>
-        public void CallerIDRequiresHasCallerIDAnnotation() => Report(Diagnostic.CallerIDRequiresHasCallerIDAnnotation.Event([]));
+        public static DiagnosticEvent CallerIDRequiresHasCallerIDAnnotation() => Diagnostic.CallerIDRequiresHasCallerIDAnnotation.Event((object?[])[]);
 
         /// <summary>
         /// The 'UnableToResolveInterface' diagnostic.
@@ -1028,7 +1030,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Unable to resolve interface '{arg0}' on type '{arg1}'.
         /// </remarks>
-        public void UnableToResolveInterface(string arg0, string arg1) => Report(Diagnostic.UnableToResolveInterface.Event([arg0, arg1]));
+        public static DiagnosticEvent UnableToResolveInterface(string arg0, string arg1) => Diagnostic.UnableToResolveInterface.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'MissingBaseType' diagnostic.
@@ -1036,7 +1038,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved.
         /// </remarks>
-        public void MissingBaseType(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.MissingBaseType.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent MissingBaseType(string arg0, string arg1, string arg2, string arg3) => Diagnostic.MissingBaseType.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'MissingBaseTypeReference' diagnostic.
@@ -1044,7 +1046,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
-        public void MissingBaseTypeReference(string arg0, string arg1) => Report(Diagnostic.MissingBaseTypeReference.Event([arg0, arg1]));
+        public static DiagnosticEvent MissingBaseTypeReference(string arg0, string arg1) => Diagnostic.MissingBaseTypeReference.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'FileNotFound' diagnostic.
@@ -1052,7 +1054,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// File not found: {arg0}.
         /// </remarks>
-        public void FileNotFound(string arg0) => Report(Diagnostic.FileNotFound.Event([arg0]));
+        public static DiagnosticEvent FileNotFound(string arg0) => Diagnostic.FileNotFound.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'RuntimeMethodMissing' diagnostic.
@@ -1060,7 +1062,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Runtime method '{arg0}' not found.
         /// </remarks>
-        public void RuntimeMethodMissing(string arg0) => Report(Diagnostic.RuntimeMethodMissing.Event([arg0]));
+        public static DiagnosticEvent RuntimeMethodMissing(string arg0) => Diagnostic.RuntimeMethodMissing.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'MapFileFieldNotFound' diagnostic.
@@ -1068,7 +1070,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Field '{arg0}' referenced in remap file was not found in class '{arg1}'.
         /// </remarks>
-        public void MapFileFieldNotFound(string arg0, string arg1) => Report(Diagnostic.MapFileFieldNotFound.Event([arg0, arg1]));
+        public static DiagnosticEvent MapFileFieldNotFound(string arg0, string arg1) => Diagnostic.MapFileFieldNotFound.Event((object?[])[arg0, arg1]);
 
         /// <summary>
         /// The 'GhostInterfaceMethodMissing' diagnostic.
@@ -1076,7 +1078,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Remapped class '{arg0}' does not implement ghost interface method. ({arg1}.{arg2}{arg3})
         /// </remarks>
-        public void GhostInterfaceMethodMissing(string arg0, string arg1, string arg2, string arg3) => Report(Diagnostic.GhostInterfaceMethodMissing.Event([arg0, arg1, arg2, arg3]));
+        public static DiagnosticEvent GhostInterfaceMethodMissing(string arg0, string arg1, string arg2, string arg3) => Diagnostic.GhostInterfaceMethodMissing.Event((object?[])[arg0, arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'ModuleInitializerMethodRequirements' diagnostic.
@@ -1084,7 +1086,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Method '{arg1}.{arg2}{arg3}' does not meet the requirements of a module initializer.
         /// </remarks>
-        public void ModuleInitializerMethodRequirements(string arg1, string arg2, string arg3) => Report(Diagnostic.ModuleInitializerMethodRequirements.Event([arg1, arg2, arg3]));
+        public static DiagnosticEvent ModuleInitializerMethodRequirements(string arg1, string arg2, string arg3) => Diagnostic.ModuleInitializerMethodRequirements.Event((object?[])[arg1, arg2, arg3]);
 
         /// <summary>
         /// The 'InvalidZip' diagnostic.
@@ -1092,7 +1094,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// Invalid zip: {name}.
         /// </remarks>
-        public void InvalidZip(string name) => Report(Diagnostic.InvalidZip.Event([name]));
+        public static DiagnosticEvent InvalidZip(string name) => Diagnostic.InvalidZip.Event((object?[])[name]);
 
         /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
@@ -1100,7 +1102,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericRuntimeTrace(string arg0) => Report(Diagnostic.GenericRuntimeTrace.Event([arg0]));
+        public static DiagnosticEvent GenericRuntimeTrace(string arg0) => Diagnostic.GenericRuntimeTrace.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericJniTrace' diagnostic.
@@ -1108,7 +1110,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericJniTrace(string arg0) => Report(Diagnostic.GenericJniTrace.Event([arg0]));
+        public static DiagnosticEvent GenericJniTrace(string arg0) => Diagnostic.GenericJniTrace.Event((object?[])[arg0]);
 
         /// <summary>
         /// The 'GenericCompilerTrace' diagnostic.
@@ -1116,7 +1118,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <remarks>
 /// {arg0}
         /// </remarks>
-        public void GenericCompilerTrace(string arg0) => Report(Diagnostic.GenericCompilerTrace.Event([arg0]));
+        public static DiagnosticEvent GenericCompilerTrace(string arg0) => Diagnostic.GenericCompilerTrace.Event((object?[])[arg0]);
 
     }
 

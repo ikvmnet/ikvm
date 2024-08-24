@@ -1,5 +1,5 @@
 ﻿<#@ template debug="false" hostspecific="true" language="C#" compilerOptions="/unsafe" #>
-<#@ include file="..\Diagnostic.t4" #>
+<#@ include file="Diagnostic.t4" #>
 <#@ assembly name="System.CodeDom" #>
 <#@ assembly name="System.Core" #>
 <#@ assembly name="System.Memory" #>
@@ -20,50 +20,36 @@
 <#@ output extension=".cs" #>
 #nullable enable
 
-using System.Diagnostics.Tracing;
+using System.Text;
 
-namespace IKVM.CoreLib.Diagnostics.Tracing
+namespace IKVM.CoreLib.Diagnostics
 {
 
-    public partial class DiagnosticEventSource
+    partial struct DiagnosticEvent
     {
 
 <#
-foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Diagnostic.json"))))
+foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
 {
     var desc = kvp.Value.Description;
     if (string.IsNullOrWhiteSpace(desc))
         desc = $"The '{kvp.Key}' diagnostic.";
-
-    var level = kvp.Value.Level;
-    if (level == "Fatal")
-        level = "Critical";
-    if (level == "Trace")
-        level = "Verbose";
-
-    var message = new List<string>();
-    var index = 0;
-    foreach (var segment in CompositeFormat.Parse(kvp.Value.Message ?? "").Segments)
-        message.Add(segment.Literal != null ? segment.Literal : $"{{{kvp.Value.Args.FindIndex(i => i.Name == segment.Arg)}}}");
 
     var argDecl = new List<string>();
     foreach (var arg in kvp.Value.Args)
         argDecl.Add($"{arg.Type} {arg.Name}");
 
     var argList = new List<string>();
-    argList.Add(kvp.Value.Id.ToString());
     foreach (var arg in kvp.Value.Args)
         argList.Add($"{arg.Name}");
-
 #>
         /// <summary>
         /// <#= desc #>
         /// </summary>
         /// <remarks>
-<#= Util.ToCommentString(string.Join("", message)) #>
+<#= Util.ToCommentString(kvp.Value.Message ?? "") #>
         /// </remarks>
-        [Event(<#= kvp.Value.Id #>, Message = <#= Util.ToStringLiteral(string.Join("", message)) #>, Level = EventLevel.<#= level #>)]
-        public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => WriteEvent(<#= string.Join(", ", argList) #>);
+        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event((object?[])[<#= string.Join(", ", argList) #>]);
 
 <#
 }
