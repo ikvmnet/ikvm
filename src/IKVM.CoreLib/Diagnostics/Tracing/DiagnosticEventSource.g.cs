@@ -5,7 +5,7 @@ using System.Diagnostics.Tracing;
 namespace IKVM.CoreLib.Diagnostics.Tracing
 {
 
-    public partial class DiagnosticEventSource
+    partial class DiagnosticEventSource
     {
 
         /// <summary>
