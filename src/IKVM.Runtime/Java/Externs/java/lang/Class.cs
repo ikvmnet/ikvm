@@ -282,7 +282,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static global::java.lang.ClassLoader getClassLoader0(global::java.lang.Class thisClass)
         {
-            return RuntimeJavaType.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
+            return RuntimeJavaType.FromClass(thisClass).ClassLoader.GetJavaClassLoader();
         }
 
         public static global::java.lang.Class getSuperclass(global::java.lang.Class thisClass)
@@ -345,7 +345,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (enc == null)
                     return null;
 
-                return new object[] { tw.GetClassLoader().LoadClassByName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
+                return [tw.ClassLoader.LoadClassByName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/')];
             }
             catch (RetargetableJavaException x)
             {
@@ -363,7 +363,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (decl == null)
                     return null;
 
-                decl = decl.EnsureLoadable(wrapper.GetClassLoader());
+                decl = decl.EnsureLoadable(wrapper.ClassLoader);
                 if (!decl.IsAccessibleFrom(wrapper))
                     throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 
@@ -371,7 +371,7 @@ namespace IKVM.Java.Externs.java.lang
                 RuntimeJavaType[] declInner = decl.InnerClasses;
                 for (int i = 0; i < declInner.Length; i++)
                 {
-                    if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.GetClassLoader()) == wrapper)
+                    if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.ClassLoader) == wrapper)
                     {
                         return decl.ClassObject;
                     }
@@ -398,7 +398,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 // The protection domain for statically compiled code is created lazily (not at global::java.lang.Class creation time),
                 // to work around boot strap issues.
-                var acl = wrapper.GetClassLoader() as RuntimeAssemblyClassLoader;
+                var acl = wrapper.ClassLoader as RuntimeAssemblyClassLoader;
                 if (acl != null)
                     pd = acl.GetProtectionDomain();
                 else if (wrapper is RuntimeAnonymousJavaType)
@@ -511,7 +511,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 throw x.ToJava();
             }
-            return AnnotationsToMap(wrapper.GetClassLoader(), wrapper.GetDeclaredAnnotations());
+            return AnnotationsToMap(wrapper.ClassLoader, wrapper.GetDeclaredAnnotations());
 #endif
         }
 
@@ -663,7 +663,7 @@ namespace IKVM.Java.Externs.java.lang
                 global::java.lang.Class[] innerclasses = new global::java.lang.Class[wrappers.Length];
                 for (int i = 0; i < innerclasses.Length; i++)
                 {
-                    RuntimeJavaType tw = wrappers[i].EnsureLoadable(wrapper.GetClassLoader());
+                    RuntimeJavaType tw = wrappers[i].EnsureLoadable(wrapper.ClassLoader);
                     if (!tw.IsAccessibleFrom(wrapper))
                     {
                         throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", tw.Name, wrapper.Name));

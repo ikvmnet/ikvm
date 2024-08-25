@@ -67,7 +67,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return ikvm.@internal.CallerID.create(tw.ClassObject, tw.GetClassLoader().GetJavaClassLoader());
+            return ikvm.@internal.CallerID.create(tw.ClassObject, tw.ClassLoader.GetJavaClassLoader());
 #endif
         }
 

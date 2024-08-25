@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
+using IKVM.CoreLib.Diagnostics;
+
+
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
@@ -23,6 +26,7 @@ namespace IKVM.Runtime
     {
 
         readonly RuntimeContextOptions options;
+        readonly IDiagnosticHandler diagnostics;
         readonly IManagedTypeResolver resolver;
         readonly bool bootstrap;
         readonly ConcurrentDictionary<Type, object> singletons = new();
@@ -72,11 +76,13 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="resolver"></param>
+        /// <param name="diagnostics"></param>
         /// <param name="bootstrap"></param>
         /// <param name="staticCompiler"></param>
-        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
             this.staticCompiler = staticCompiler;
@@ -88,16 +94,23 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="options"></param>
+        /// <param name="diagnostics"></param>
         /// <param name="resolver"></param>
         /// <param name="bootstrap"></param>
-        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap)
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, IManagedTypeResolver resolver, bool bootstrap)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
         }
 
 #endif
+
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> where events should be sent.
+        /// </summary>
+        public IDiagnosticHandler Diagnostics => diagnostics;
 
         /// <summary>
         /// Gets or creates a new instance in a thread safe manner.

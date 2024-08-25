@@ -27,6 +27,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
+using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.CoreLib.Diagnostics;
+
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
@@ -40,10 +43,6 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
-
-using IKVM.Runtime.Accessors.Java.Lang;
-
-using System.Text;
 #endif
 
 #if IMPORTER
@@ -92,6 +91,11 @@ namespace IKVM.Runtime
             this.javaClassLoader = (java.lang.ClassLoader)javaClassLoader;
 #endif
         }
+
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> events originated by this class loader should be sent to.
+        /// </summary>
+        public virtual IDiagnosticHandler Diagnostics => Context.Diagnostics;
 
 #if IMPORTER || EXPORTER
 
@@ -371,12 +375,12 @@ namespace IKVM.Runtime
 #if IMPORTER
 
                 if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
-                    IssueMessage(Message.ClassNotFound, name);
+                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
 
 #else
 
                 if (!(name.Length > 1 && name[0] == '['))
-                    Tracer.Error(Tracer.ClassLoading, "Class not found: {0}", name);
+                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
 
 #endif
                 switch (mode & LoadMode.MaskReturn)
@@ -677,7 +681,7 @@ namespace IKVM.Runtime
                 if ((mode & LoadMode.SuppressExceptions) == 0)
                     throw new ClassLoadingException(ikvm.runtime.Util.mapException(x), name);
 
-                if (Tracer.ClassLoading.TraceError)
+                if (Diagnostics.IsEnabled(Diagnostic.GenericClassLoadingError))
                 {
                     var cl = GetJavaClassLoader();
                     if (cl != null)
@@ -691,11 +695,11 @@ namespace IKVM.Runtime
                             cl = cl.getParent();
                         }
 
-                        Tracer.Error(Tracer.ClassLoading, "ClassLoader chain: {0}", sb);
+                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb}");
                     }
 
                     var m = ikvm.runtime.Util.mapException(x);
-                    Tracer.Error(Tracer.ClassLoading, m.ToString() + Environment.NewLine + m.StackTrace);
+                    Diagnostics.GenericClassLoadingError(m.ToString() + Environment.NewLine + m.StackTrace);
                 }
 
                 return null;
@@ -722,7 +726,7 @@ namespace IKVM.Runtime
             Debug.Assert(!elementJavaType.IsUnloadable && !elementJavaType.IsVerifierType && !elementJavaType.IsArray);
             Debug.Assert(dimensions >= 1);
 
-            return elementJavaType.GetClassLoader().RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType.Context, elementJavaType, name));
+            return elementJavaType.ClassLoader.RegisterInitiatingLoader(new RuntimeArrayJavaType(elementJavaType.Context, elementJavaType, name));
         }
 
 #if !IMPORTER && !EXPORTER
@@ -924,8 +928,8 @@ namespace IKVM.Runtime
 
         internal virtual bool InternalsVisibleToImpl(RuntimeJavaType wrapper, RuntimeJavaType friend)
         {
-            Debug.Assert(wrapper.GetClassLoader() == this);
-            return this == friend.GetClassLoader();
+            Debug.Assert(wrapper.ClassLoader == this);
+            return this == friend.ClassLoader;
         }
 
 #if !IMPORTER && !EXPORTER
@@ -940,15 +944,6 @@ namespace IKVM.Runtime
 #endif
         }
 
-#endif
-
-#if IMPORTER
-        internal virtual void IssueMessage(Message msgId, params string[] values)
-        {
-            // it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
-            // but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
-            Context.StaticCompiler.IssueMessage(msgId, values);
-        }
 #endif
 
         internal void CheckPackageAccess(RuntimeJavaType tw, ProtectionDomain pd)

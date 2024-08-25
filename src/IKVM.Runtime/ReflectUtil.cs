@@ -208,9 +208,8 @@ namespace IKVM.Runtime
         internal static Type GetMissingType(Type type)
         {
             while (type.HasElementType)
-            {
                 type = type.GetElementType();
-            }
+
             if (type.__IsMissing)
             {
                 return type;
@@ -219,15 +218,14 @@ namespace IKVM.Runtime
             {
                 if (type.IsGenericType)
                 {
-                    foreach (Type arg in type.GetGenericArguments())
+                    foreach (var arg in type.GetGenericArguments())
                     {
-                        Type t1 = GetMissingType(arg);
+                        var t1 = GetMissingType(arg);
                         if (t1.__IsMissing)
-                        {
                             return t1;
-                        }
                     }
                 }
+
                 throw new NotImplementedException(type.FullName);
             }
             else

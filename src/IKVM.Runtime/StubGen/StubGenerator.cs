@@ -1189,7 +1189,7 @@ namespace IKVM.Runtime.StubGen
 
         string GetAssemblyName(RuntimeJavaType tw)
         {
-            var loader = tw.GetClassLoader();
+            var loader = tw.ClassLoader;
             var acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
                 return acl.GetAssembly(tw).FullName;

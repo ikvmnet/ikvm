@@ -9,6 +9,7 @@ using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime
 {
+    using IKVM.CoreLib.Diagnostics;
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
@@ -178,7 +179,7 @@ namespace IKVM.Runtime
             {
                 if (name == null)
                 {
-                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Missing name argument.");
+                    JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Missing name argument.");
                     return;
                 }
 
@@ -186,7 +187,7 @@ namespace IKVM.Runtime
                 var exceptionClass = RuntimeClassLoader.FromCallerID(callerID).TryLoadClassByName(name.Replace('/', '.'));
                 if (exceptionClass == null)
                 {
-                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Could not find exception class {{0}}.", name);
+                    JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Could not find exception class {name}.");
                     return;
                 }
 
@@ -194,7 +195,7 @@ namespace IKVM.Runtime
                 var ctor = exceptionClass.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
                 if (ctor == null)
                 {
-                    Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception {{0}} missing constructor.", name);
+                    JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception {name} missing constructor.");
                     return;
                 }
 
@@ -203,12 +204,12 @@ namespace IKVM.Runtime
 
                 var ctorMember = (java.lang.reflect.Constructor)ctor.ToMethodOrConstructor(false);
                 var exception = (Exception)ctorMember.newInstance(msg == null ? Array.Empty<object>() : new object[] { msg }, callerID);
-                Tracer.Verbose(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Created exception {{0}} from libjvm.", name);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Created exception {name} from libjvm.");
                 JVM.SetPendingException(exception);
             }
             catch (Exception e)
             {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception occurred creating exception {{0}}: {{1}}", name, e.Message);
+                JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception occurred creating exception {name}: {e.Message}");
                 JVM.SetPendingException(e);
             }
         }
@@ -230,7 +231,7 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                Tracer.Error(Tracer.Runtime, $"{nameof(LibJvm)}.{nameof(JVM_GetThreadInterruptEvent)}: Exception occurred: {{0}}", e.Message);
+                JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_GetThreadInterruptEvent)}: Exception occurred: {e.Message}");
                 JVM.SetPendingException(new global::java.lang.InternalError(e));
                 return 0;
             }
@@ -546,9 +547,9 @@ namespace IKVM.Runtime
         {
             try
             {
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {{0}}", name);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {name}");
                 var h = _JVM_LoadLibrary(name);
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {{0}} => {{1}}", name, h);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_LoadLibrary)}: {name} => {h}");
                 return h;
             }
             finally
@@ -565,9 +566,9 @@ namespace IKVM.Runtime
         {
             try
             {
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: start {{0}}", handle);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: start {handle}");
                 _JVM_UnloadLibrary(handle);
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: finish {{0}} => {{1}}", handle);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_UnloadLibrary)}: finish {handle}");
             }
             finally
             {
@@ -585,9 +586,9 @@ namespace IKVM.Runtime
         {
             try
             {
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {{0}} {{1}}", handle, name);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {handle} {name}");
                 var h = _JVM_FindLibraryEntry(handle, name);
-                Tracer.Verbose(Tracer.Jni, $"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {{0}} {{1}} => {{2}}", handle, name, h);
+                JVM.Context.Diagnostics.GenericJniTrace($"{nameof(LibJvm)}.{nameof(JVM_FindLibraryEntry)}: {handle} {name} => {h}");
                 return h;
             }
             finally

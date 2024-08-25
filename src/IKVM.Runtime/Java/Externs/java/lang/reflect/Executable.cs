@@ -62,7 +62,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
         public static object declaredAnnotationsImpl(global::java.lang.reflect.Executable executable)
         {
             var mw = RuntimeJavaMethod.FromExecutable(executable);
-            return IKVM.Java.Externs.java.lang.Class.AnnotationsToMap(mw.DeclaringType.GetClassLoader(), mw.DeclaringType.GetMethodAnnotations(mw));
+            return IKVM.Java.Externs.java.lang.Class.AnnotationsToMap(mw.DeclaringType.ClassLoader, mw.DeclaringType.GetMethodAnnotations(mw));
         }
 
         public static object[][] sharedGetParameterAnnotationsImpl(global::java.lang.reflect.Executable executable)
@@ -88,7 +88,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
                     }
                     else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
                     {
-                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
+                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
                         if (a != null)
                             list.Add(a);
                     }

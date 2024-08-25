@@ -332,10 +332,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             }
 
-            internal override RuntimeClassLoader GetClassLoader()
-            {
-                return Context.ClassLoaderFactory.GetBootstrapClassLoader();
-            }
+            internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
             internal override Type TypeAsTBD
             {

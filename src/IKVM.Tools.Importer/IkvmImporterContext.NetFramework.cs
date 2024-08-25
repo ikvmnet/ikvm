@@ -64,7 +64,7 @@ namespace IKVM.Tools.Importer
                 false,
                 System.Reflection.BindingFlags.Default,
                 null,
-                new[] { args },
+                [args],
                 null,
                 null);
         }

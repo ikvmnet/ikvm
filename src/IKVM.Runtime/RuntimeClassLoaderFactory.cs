@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using IKVM.Runtime;
+using IKVM.CoreLib.Diagnostics;
 
 #if NETCOREAPP
 using System.Runtime.Loader;
@@ -111,7 +111,7 @@ namespace IKVM.Runtime
                 else
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(Message.CoreClassesMissing);
+                    throw new FatalCompilerErrorException(Diagnostic.CoreClassesMissing.Event([]));
 #else
                     throw new InternalException("Failed to find core classes in core library.");
 #endif
@@ -185,21 +185,18 @@ namespace IKVM.Runtime
 #endif
             Debug.Assert(!type.IsPointer);
             Debug.Assert(!type.IsByRef);
+
             RuntimeJavaType wrapper;
             lock (globalTypeToTypeWrapper)
-            {
                 globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
-            }
 
             if (wrapper != null)
-            {
                 return wrapper;
-            }
 
 #if EXPORTER
             if (type.__IsMissing || type.__ContainsMissingType)
             {
-                wrapper = new RuntimeUnloadableJavaType(context, "Missing/" + type.Assembly.FullName);
+                wrapper = new RuntimeUnloadableJavaType(context, type);
                 globalTypeToTypeWrapper.Add(type, wrapper);
                 return wrapper;
             }
@@ -275,7 +272,7 @@ namespace IKVM.Runtime
             list.Add(context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly));
             foreach (Type arg in type.GetGenericArguments())
             {
-                RuntimeClassLoader loader = GetJavaTypeFromType(arg).GetClassLoader();
+                RuntimeClassLoader loader = GetJavaTypeFromType(arg).ClassLoader;
                 if (!list.Contains(loader) && loader != bootstrapClassLoader)
                 {
                     list.Add(loader);
@@ -292,7 +289,7 @@ namespace IKVM.Runtime
 #if IMPORTER
             var wrapper = GetBootstrapClassLoader().TryLoadClassByName(name);
             if (wrapper == null)
-                throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
+                throw new FatalCompilerErrorException(Diagnostic.CriticalClassNotFound.Event([name]));
 
             return wrapper;
 #else

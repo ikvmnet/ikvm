@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -104,7 +105,7 @@ namespace IKVM.Tools.Importer
 
                 if (wrappers[i] == null)
                 {
-                    loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, "unable to load interface " + interfaces[i]);
+                    loader.Diagnostics.UnableToCreateProxy(proxy, "unable to load interface " + interfaces[i]);
                     return;
                 }
             }
@@ -121,12 +122,12 @@ namespace IKVM.Tools.Importer
             }
             catch (RetargetableJavaException x)
             {
-                loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
             catch (ProxyException x)
             {
-                loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
 

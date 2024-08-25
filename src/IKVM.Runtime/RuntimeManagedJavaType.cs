@@ -316,7 +316,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper => baseTypeWrapper ??= Context.ManagedJavaTypeFactory.GetBaseJavaType(type);
 
-        internal override RuntimeClassLoader GetClassLoader() => type.IsGenericType ? Context.ClassLoaderFactory.GetGenericClassLoader(this) : Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
+        internal override RuntimeClassLoader ClassLoader => type.IsGenericType ? Context.ClassLoaderFactory.GetGenericClassLoader(this) : Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
         internal static string GetDelegateInvokeStubName(Type delegateType)
         {
@@ -748,13 +748,13 @@ namespace IKVM.Runtime
                     list.Add(Context.ClassLoaderFactory.GetJavaTypeFromType(nestedTypes[i]));
 
             if (IsDelegate(Context, type))
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new DelegateInnerClassJavaType(Context, Name + DelegateInterfaceSuffix, type)));
+                list.Add(ClassLoader.RegisterInitiatingLoader(new DelegateInnerClassJavaType(Context, Name + DelegateInterfaceSuffix, type)));
 
             if (IsAttribute(Context, type))
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new AttributeAnnotationJavaType(Context, Name + AttributeAnnotationSuffix, type)));
+                list.Add(ClassLoader.RegisterInitiatingLoader(new AttributeAnnotationJavaType(Context, Name + AttributeAnnotationSuffix, type)));
 
             if (type.IsEnum && type.IsVisible)
-                list.Add(GetClassLoader().RegisterInitiatingLoader(new EnumEnumJavaType(Context, Name + EnumEnumSuffix, type)));
+                list.Add(ClassLoader.RegisterInitiatingLoader(new EnumEnumJavaType(Context, Name + EnumEnumSuffix, type)));
 
             return list.ToArray();
         }

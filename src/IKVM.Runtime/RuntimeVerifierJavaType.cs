@@ -195,10 +195,7 @@ namespace IKVM.Runtime
             get { return null; }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return null;
-        }
+        internal override RuntimeClassLoader ClassLoader => null;
 
         protected override void LazyPublishMembers()
         {

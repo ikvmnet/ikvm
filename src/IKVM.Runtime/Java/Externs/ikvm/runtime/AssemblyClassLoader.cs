@@ -24,6 +24,7 @@
 using System;
 using System.Reflection;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
@@ -64,26 +65,27 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 var tw = wrapper.LoadClass(name);
                 if (tw == null)
                 {
-                    Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+                    JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}");
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
                     throw new global::java.lang.ClassNotFoundException(name);
                 }
-                Tracer.Info(Tracer.ClassLoading, "Loaded class \"{0}\" from {1}", name, _this);
+
+                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Loaded class \"{name}\" from {_this}");
                 return tw.ClassObject;
             }
             catch (ClassNotFoundException x)
             {
-                Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {x.Message}");
                 throw new global::java.lang.ClassNotFoundException(x.Message);
             }
             catch (ClassLoadingException x)
             {
-                Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {x.Message}");
                 throw x.InnerException;
             }
             catch (RetargetableJavaException x)
             {
-                Tracer.Info(Tracer.ClassLoading, "Failed to load class \"{0}\" from {1}", name, _this);
+                JVM.Context.Diagnostics.GenericClassLoadingInfo($"Failed to load class \"{name}\" from {_this}: {x.Message}");
                 throw x.ToJava();
             }
 #endif

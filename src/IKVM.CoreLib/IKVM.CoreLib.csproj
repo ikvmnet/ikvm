@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Tools.Importer" />
+        <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Diagnostics\DiagnosticEvent.g.tt">
+        <LastGenOutput>DiagnosticEvent.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
+      <None Update="Diagnostics\Diagnostic.g.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>Diagnostic.g.cs</LastGenOutput>
+      </None>
+      <None Update="Diagnostics\DiagnosticEventHandler.g.tt">
+        <LastGenOutput>DiagnosticEventHandler.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
+      <None Update="Diagnostics\IDiagnosticHandler.g.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>IDiagnosticHandler.g.cs</LastGenOutput>
+      </None>
+      <None Update="Diagnostics\Tracing\DiagnosticEventSource.g.tt">
+        <LastGenOutput>DiagnosticEventSource.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Diagnostics\DiagnosticEvent.g.cs">
+        <DependentUpon>DiagnosticEvent.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+      </Compile>
+      <Compile Update="Diagnostics\Diagnostic.g.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>Diagnostic.g.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Diagnostics\DiagnosticEventHandler.g.cs">
+        <DependentUpon>DiagnosticEventHandler.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+      </Compile>
+      <Compile Update="Diagnostics\IDiagnosticHandler.g.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>IDiagnosticHandler.g.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Diagnostics\Tracing\DiagnosticEventSource.g.cs">
+        <DependentUpon>DiagnosticEventSource.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+      </Compile>
+    </ItemGroup>
+
+</Project>

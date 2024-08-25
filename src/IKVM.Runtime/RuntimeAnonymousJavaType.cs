@@ -61,10 +61,7 @@ namespace IKVM.Runtime
             return context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetClassLoader();
-        }
+        internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).ClassLoader;
 
         internal override Type TypeAsTBD
         {

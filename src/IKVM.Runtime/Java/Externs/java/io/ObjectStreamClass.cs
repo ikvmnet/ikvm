@@ -281,7 +281,7 @@ namespace IKVM.Java.Externs.java.io
                         RuntimeJavaType fieldType = fw.FieldTypeWrapper;
                         try
                         {
-                            fieldType = fieldType.EnsureLoadable(tw.GetClassLoader());
+                            fieldType = fieldType.EnsureLoadable(tw.ClassLoader);
                             fieldType.Finish();
                         }
                         catch (RetargetableJavaException x)

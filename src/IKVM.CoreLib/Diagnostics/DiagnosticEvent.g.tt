@@ -1,0 +1,59 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" compilerOptions="/unsafe" #>
+<#@ include file="Diagnostic.t4" #>
+<#@ assembly name="System.CodeDom" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Memory" #>
+<#@ assembly name="System.Buffers" #>
+<#@ assembly name="Newtonsoft.Json" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Buffers" #>
+<#@ import namespace="System.CodeDom" #>
+<#@ import namespace="System.CodeDom.Compiler" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Runtime.CompilerServices" #>
+<#@ import namespace="System.Runtime.InteropServices" #>
+<#@ import namespace="Newtonsoft.Json" #>
+<#@ import namespace="Newtonsoft.Json.Linq" #>
+<#@ output extension=".cs" #>
+#nullable enable
+
+using System.Text;
+
+namespace IKVM.CoreLib.Diagnostics
+{
+
+    partial struct DiagnosticEvent
+    {
+
+<#
+foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
+{
+    var desc = kvp.Value.Description;
+    if (string.IsNullOrWhiteSpace(desc))
+        desc = $"The '{kvp.Key}' diagnostic.";
+
+    var argDecl = new List<string>();
+    foreach (var arg in kvp.Value.Args)
+        argDecl.Add($"{arg.Type} {arg.Name}");
+
+    var argList = new List<string>();
+    foreach (var arg in kvp.Value.Args)
+        argList.Add($"{arg.Name}");
+#>
+        /// <summary>
+        /// <#= desc #>
+        /// </summary>
+        /// <remarks>
+<#= Util.ToCommentString(kvp.Value.Message ?? "") #>
+        /// </remarks>
+        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event((object?[])[<#= string.Join(", ", argList) #>]);
+
+<#
+}
+#>
+    }
+
+}

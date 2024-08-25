@@ -75,15 +75,12 @@ namespace IKVM.Runtime
 
             internal override Type TypeAsTBD => type;
 
-            internal override RuntimeClassLoader GetClassLoader()
-            {
-                return Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
-            }
+            internal override RuntimeClassLoader ClassLoader => Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
             protected override void LazyPublishMembers()
             {
-                SetFields(Array.Empty<RuntimeJavaField>());
-                SetMethods(Array.Empty<RuntimeJavaMethod>());
+                SetFields([]);
+                SetMethods([]);
             }
 
         }

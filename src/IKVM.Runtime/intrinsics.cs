@@ -25,6 +25,8 @@
 using System;
 using System.Collections.Generic;
 
+using IKVM.CoreLib.Diagnostics;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -148,7 +150,7 @@ namespace IKVM.Runtime
 
         internal static bool IsIntrinsic(RuntimeJavaMethod mw)
         {
-            return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader();
+            return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.ClassLoader == mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.ClassLoader;
         }
 
         internal static bool Emit(EmitIntrinsicContext context)
@@ -208,7 +210,7 @@ namespace IKVM.Runtime
                 && eic.Match(-1, NormalizedByteCode.__ldc))
             {
                 RuntimeJavaType classLiteral = eic.GetClassLiteral(-1);
-                if (!classLiteral.IsUnloadable && classLiteral.GetClassLoader().RemoveAsserts)
+                if (!classLiteral.IsUnloadable && classLiteral.ClassLoader.RemoveAsserts)
                 {
                     eic.Emitter.Emit(OpCodes.Pop);
                     eic.Emitter.EmitLdc_I4(0);
@@ -353,7 +355,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                eic.Context.TypeWrapper.Context.StaticCompiler.IssueMessage(Message.ReflectionCallerClassRequiresCallerID, eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature);
+                eic.Context.TypeWrapper.ClassLoader.Diagnostics.ReflectionCallerClassRequiresCallerID(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature);
             }
             return false;
         }
@@ -372,7 +374,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new FatalCompilerErrorException(Message.CallerIDRequiresHasCallerIDAnnotation);
+                throw new FatalCompilerErrorException(Diagnostic.CallerIDRequiresHasCallerIDAnnotation.Event([]));
             }
         }
 
@@ -1009,7 +1011,7 @@ namespace IKVM.Runtime
         static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
         {
 #if IMPORTER
-            if (eic.Caller.DeclaringType.GetClassLoader() == eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
+            if (eic.Caller.DeclaringType.ClassLoader == eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangObject.ClassLoader)
             {
                 // we're compiling the core library (which is obviously trusted), so we don't need to check
                 // if we really have an Unsafe instance
@@ -1024,7 +1026,7 @@ namespace IKVM.Runtime
 
         static RuntimeJavaField GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
         {
-            if (eic.Caller.DeclaringType.GetClassLoader() != eic.Method.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetClassLoader())
+            if (eic.Caller.DeclaringType.ClassLoader != eic.Method.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.ClassLoader)
             {
                 // this code does not solve the general problem and assumes non-hostile, well behaved static initializers
                 // so we only support the core class library

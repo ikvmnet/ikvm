@@ -5,8 +5,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Security.Cryptography.Xml;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -21,6 +21,35 @@ namespace IKVM.Tools.Exporter
     /// </summary>
     static class IkvmExporterInternal
     {
+
+        /// <summary>
+        /// Handles diagnostic messages from IKVM.
+        /// </summary>
+        class DiagnosticHandler : DiagnosticEventHandler
+        {
+
+            readonly IkvmExporterOptions options;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="options"></param>
+            public DiagnosticHandler(IkvmExporterOptions options)
+            {
+                this.options = options ?? throw new ArgumentNullException(nameof(options));
+            }
+
+            public override bool IsEnabled(Diagnostic diagnostic)
+            {
+                return IkvmExporterInternal.IsDiagnosticEnabled(options, diagnostic);
+            }
+
+            public override void Report(in DiagnosticEvent @event)
+            {
+                IkvmExporterInternal.ReportEvent(options, @event);
+            }
+
+        }
 
         class ManagedResolver : IManagedTypeResolver
         {
@@ -94,8 +123,7 @@ namespace IKVM.Tools.Exporter
         /// <param name="options"></param>
         public static int Execute(IkvmExporterOptions options)
         {
-            IKVM.Runtime.Tracer.EnableTraceConsoleListener();
-            IKVM.Runtime.Tracer.EnableTraceForDebug();
+            var diagnostics = new DiagnosticHandler(options);
 
             var references = new List<string>();
             if (options.References != null)
@@ -123,7 +151,7 @@ namespace IKVM.Tools.Exporter
             var coreLibName = FindCoreLibName(references, libpaths);
             if (coreLibName == null)
             {
-                Console.Error.WriteLine("Error: core library not found");
+                diagnostics.CoreClassesMissing();
                 return 1;
             }
 
@@ -139,7 +167,7 @@ namespace IKVM.Tools.Exporter
                 Assembly[] dummy = null;
                 if (assemblyResolver.ResolveReference(cache, ref dummy, reference) == false)
                 {
-                    Console.Error.WriteLine("Error: reference not found {0}", reference);
+                    diagnostics.ReferenceNotFound(reference);
                     return 1;
                 }
             }
@@ -149,9 +177,14 @@ namespace IKVM.Tools.Exporter
             {
                 file = new FileInfo(options.Assembly);
             }
+            catch (FileNotFoundException)
+            {
+                diagnostics.InputFileNotFound(options.Assembly);
+                return 1;
+            }
             catch (Exception x)
             {
-                Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", options.Assembly, x.Message);
+                diagnostics.ErrorReadingFile(options.Assembly, x.ToString());
                 return 1;
             }
 
@@ -171,7 +204,7 @@ namespace IKVM.Tools.Exporter
             if (assembly == null)
             {
                 rc = 1;
-                Console.Error.WriteLine("Error: Assembly \"{0}\" not found", options.Assembly);
+                diagnostics.ReferenceNotFound(options.Assembly);
             }
             else
             {
@@ -186,12 +219,12 @@ namespace IKVM.Tools.Exporter
 
                     if (runtimeAssembly == null || runtimeAssembly.__IsMissing)
                     {
-                        Console.Error.WriteLine("Error: IKVM.Runtime not found.");
+                        diagnostics.RuntimeNotFound();
                         return 1;
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -207,22 +240,25 @@ namespace IKVM.Tools.Exporter
 
                     if (runtimeAssembly == null || runtimeAssembly.__IsMissing)
                     {
-                        Console.Error.WriteLine("Error: IKVM.Runtime not found.");
+                        diagnostics.RuntimeNotFound();
                         return 1;
                     }
 
                     if (baseAssembly == null || runtimeAssembly.__IsMissing)
                     {
-                        Console.Error.WriteLine("Error: IKVM.Java not found.");
+                        diagnostics.CoreClassesMissing();
                         return 1;
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), new ManagedResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, baseAssembly), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
-                    Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
+                {
+                    diagnostics.ExportingImportsNotSupported();
+                    return 1;
+                }
 
                 if (options.Output == null)
                     options.Output = assembly.GetName().Name + ".jar";
@@ -256,21 +292,19 @@ namespace IKVM.Tools.Exporter
                                 }
                             }
                         }
-                        catch (System.Exception x)
+                        catch (Exception x)
                         {
-                            Console.Error.WriteLine(x);
-
                             if (options.ContinueOnError == false)
-                                Console.Error.WriteLine("Warning: Assembly reflection encountered an error. Resultant JAR may be incomplete.");
+                                diagnostics.UnknownWarning($"Assembly reflection encountered an error. Resultant JAR may be incomplete. ({x.Message})");
 
                             rc = 1;
                         }
                     }
                 }
-                catch (InvalidDataException x)
+                catch (InvalidDataException e)
                 {
                     rc = 1;
-                    Console.Error.WriteLine("Error: {0}", x.Message);
+                    diagnostics.InvalidZip(options.Output);
                 }
             }
 
@@ -353,14 +387,14 @@ namespace IKVM.Tools.Exporter
         {
             if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
             {
-                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                using (var stream = assembly.GetManifestResourceStream("ikvm.exports"))
                 {
-                    BinaryReader rdr = new BinaryReader(stream);
-                    int assemblyCount = rdr.ReadInt32();
+                    var rdr = new BinaryReader(stream);
+                    var assemblyCount = rdr.ReadInt32();
                     for (int i = 0; i < assemblyCount; i++)
                     {
-                        string name = rdr.ReadString();
-                        int typeCount = rdr.ReadInt32();
+                        var name = rdr.ReadString();
+                        var typeCount = rdr.ReadInt32();
                         if (typeCount > 0)
                         {
                             for (int j = 0; j < typeCount; j++)
@@ -467,24 +501,25 @@ namespace IKVM.Tools.Exporter
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        private static void AddToExportListIfNeeded(RuntimeJavaType tw)
+        private static void AddToExportListIfNeeded(RuntimeJavaType javaType)
         {
-            while (tw.IsArray)
-                tw = tw.ElementTypeWrapper;
+            while (javaType.IsArray)
+                javaType = javaType.ElementTypeWrapper;
 
-            if (tw.IsUnloadable && tw.Name.StartsWith("Missing/"))
+            if (javaType.IsUnloadable && javaType is RuntimeUnloadableJavaType unloadableJavaType)
             {
-                Console.Error.WriteLine("Error: unable to find assembly '{0}'", tw.Name.Substring(8));
+                javaType.Diagnostics.MissingType(unloadableJavaType.MissingType.Name, unloadableJavaType.MissingType.Assembly.FullName);
                 Environment.Exit(1);
                 return;
             }
-            if (tw is RuntimeStubJavaType)
+
+            if (javaType is RuntimeStubJavaType)
             {
                 // skip
             }
-            else if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
+            else if ((javaType.TypeAsTBD != null && javaType.TypeAsTBD.IsGenericType) || IsNonVectorArray(javaType) || !javaType.IsPublic)
             {
-                AddToExportList(tw);
+                AddToExportList(javaType);
             }
         }
 
@@ -528,6 +563,54 @@ namespace IKVM.Tools.Exporter
                     AddToExportListIfNeeded(fw.FieldTypeWrapper);
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified diagnostic is enabled.
+        /// </summary>
+        /// <param name="diagnostic"></param>
+        /// <returns></returns>
+        internal static bool IsDiagnosticEnabled(IkvmExporterOptions options, Diagnostic diagnostic)
+        {
+            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
+        }
+
+        /// <summary>
+        /// Handles a <see cref="DiagnosticEvent"/>.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="evt"></param>
+        internal static void ReportEvent(IkvmExporterOptions options, in DiagnosticEvent evt)
+        {
+            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
+                return;
+
+            // choose output channel
+            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
+
+            // write tag
+            dst.Write(evt.Diagnostic.Level switch
+            {
+                DiagnosticLevel.Trace => "trace",
+                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Warning => "warning",
+                DiagnosticLevel.Error => "error",
+                DiagnosticLevel.Fatal => "error",
+                _ => throw new InvalidOperationException(),
+            });
+
+            // write event ID
+            dst.Write($"IKVM{evt.Diagnostic.Id:D4}: ");
+
+            // write message
+#if NET8_0_OR_GREATER
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
+#else
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
+#endif
+
+            // end of line
+            dst.WriteLine();
         }
 
     }

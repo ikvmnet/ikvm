@@ -56,7 +56,7 @@ namespace IKVM.Runtime
 
         internal MethodBuilder DefineMethod(RuntimeByteCodeJavaType context, TypeBuilder tb, string name, MethodAttributes attribs)
         {
-            return DefineMethod(context.GetClassLoader().GetTypeWrapperFactory(), tb, name, attribs, null, false);
+            return DefineMethod(context.ClassLoader.GetTypeWrapperFactory(), tb, name, attribs, null, false);
         }
 
         internal MethodBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeBuilder tb, string name, MethodAttributes attribs)
@@ -96,7 +96,7 @@ namespace IKVM.Runtime
 
         internal MethodBuilder DefineConstructor(RuntimeByteCodeJavaType context, TypeBuilder tb, MethodAttributes attribs)
         {
-            return DefineConstructor(context.GetClassLoader().GetTypeWrapperFactory(), tb, attribs);
+            return DefineConstructor(context.ClassLoader.GetTypeWrapperFactory(), tb, attribs);
         }
 
         internal MethodBuilder DefineConstructor(RuntimeJavaTypeFactory context, TypeBuilder tb, MethodAttributes attribs)

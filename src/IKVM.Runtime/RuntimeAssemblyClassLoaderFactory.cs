@@ -21,9 +21,9 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
