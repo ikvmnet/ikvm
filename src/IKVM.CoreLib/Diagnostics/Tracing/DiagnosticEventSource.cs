@@ -11,6 +11,19 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
     unsafe partial class DiagnosticEventSource : EventSource, IDiagnosticHandler
     {
 
+        /// <summary>
+        /// Gets the default instance of this event source.
+        /// </summary>
+        public static readonly DiagnosticEventSource Instance = new DiagnosticEventSource();
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        DiagnosticEventSource() : base(EventSourceSettings.EtwSelfDescribingEventFormat | EventSourceSettings.ThrowOnEventWriteErrors)
+        {
+
+        }
+
         /// <inheritdoc />
         [NonEvent]
         bool IDiagnosticHandler.IsEnabled(Diagnostic diagnostic)

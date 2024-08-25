@@ -130,11 +130,6 @@ namespace IKVM.Runtime
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
         /// <summary>
-        /// Gets the JVM diagnostic handler.
-        /// </summary>
-        internal static DiagnosticEventSource Diagnostics = new DiagnosticEventSource();
-
-        /// <summary>
         /// Gets the current <see cref="RuntimeContext"/> of the JVM.
         /// </summary>
         internal static RuntimeContext Context => Internal.context;

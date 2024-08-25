@@ -295,7 +295,7 @@ namespace IKVM.Tools.Exporter
                         catch (Exception x)
                         {
                             if (options.ContinueOnError == false)
-                                diagnostics.UnknownWarning($"Assembly reflection encountered an error. Resultant JAR may be incomplete.\n\n{x.StackTrace}");
+                                diagnostics.UnknownWarning($"Assembly reflection encountered an error. Resultant JAR may be incomplete. ({x.Message})");
 
                             rc = 1;
                         }
@@ -387,14 +387,14 @@ namespace IKVM.Tools.Exporter
         {
             if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
             {
-                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                using (var stream = assembly.GetManifestResourceStream("ikvm.exports"))
                 {
-                    BinaryReader rdr = new BinaryReader(stream);
-                    int assemblyCount = rdr.ReadInt32();
+                    var rdr = new BinaryReader(stream);
+                    var assemblyCount = rdr.ReadInt32();
                     for (int i = 0; i < assemblyCount; i++)
                     {
-                        string name = rdr.ReadString();
-                        int typeCount = rdr.ReadInt32();
+                        var name = rdr.ReadString();
+                        var typeCount = rdr.ReadInt32();
                         if (typeCount > 0)
                         {
                             for (int j = 0; j < typeCount; j++)
@@ -501,24 +501,25 @@ namespace IKVM.Tools.Exporter
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        private static void AddToExportListIfNeeded(RuntimeJavaType tw)
+        private static void AddToExportListIfNeeded(RuntimeJavaType javaType)
         {
-            while (tw.IsArray)
-                tw = tw.ElementTypeWrapper;
+            while (javaType.IsArray)
+                javaType = javaType.ElementTypeWrapper;
 
-            if (tw.IsUnloadable && tw.Name.StartsWith("Missing/"))
+            if (javaType.IsUnloadable && javaType is RuntimeUnloadableJavaType unloadableJavaType)
             {
-                Console.Error.WriteLine("Error: unable to find assembly '{0}'", tw.Name.Substring(8));
+                javaType.Diagnostics.MissingType(unloadableJavaType.MissingType.Name, unloadableJavaType.MissingType.Assembly.FullName);
                 Environment.Exit(1);
                 return;
             }
-            if (tw is RuntimeStubJavaType)
+
+            if (javaType is RuntimeStubJavaType)
             {
                 // skip
             }
-            else if ((tw.TypeAsTBD != null && tw.TypeAsTBD.IsGenericType) || IsNonVectorArray(tw) || !tw.IsPublic)
+            else if ((javaType.TypeAsTBD != null && javaType.TypeAsTBD.IsGenericType) || IsNonVectorArray(javaType) || !javaType.IsPublic)
             {
-                AddToExportList(tw);
+                AddToExportList(javaType);
             }
         }
 
@@ -584,17 +585,32 @@ namespace IKVM.Tools.Exporter
             if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
                 return;
 
-            var err = evt.Diagnostic.Level is DiagnosticLevel.Error or DiagnosticLevel.Fatal;
+            // choose output channel
+            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
 
-            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id);
-            if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
-                Console.Error.Write("Warning as Error: ");
+            // write tag
+            dst.Write(evt.Diagnostic.Level switch
+            {
+                DiagnosticLevel.Trace => "trace",
+                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Warning => "warning",
+                DiagnosticLevel.Error => "error",
+                DiagnosticLevel.Fatal => "error",
+                _ => throw new InvalidOperationException(),
+            });
 
+            // write event ID
+            dst.Write($"IKVM{evt.Diagnostic.Id:D4}: ");
+
+            // write message
 #if NET8_0_OR_GREATER
-            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args));
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
 #else
-            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
 #endif
+
+            // end of line
+            dst.WriteLine();
         }
 
     }

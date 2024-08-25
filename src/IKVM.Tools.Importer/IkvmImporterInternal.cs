@@ -1497,22 +1497,33 @@ namespace IKVM.Tools.Importer
 #else
             var msg = evt.Diagnostic.Message;
 #endif
-            var err =
-                evt.Diagnostic.Level is DiagnosticLevel.Error or DiagnosticLevel.Fatal ||
-                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(key) ||
-                evt.Diagnostic.Level is DiagnosticLevel.Warning && options.errorWarnings.ContainsKey(evt.Diagnostic.Id.ToString());
+            // choose output channel
+            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
 
-            Console.Error.Write("{0} IKVM{1:D4}: ", err ? "error" : evt.Diagnostic.Level is DiagnosticLevel.Informational or DiagnosticLevel.Trace ? "note" : "warning", evt.Diagnostic.Id);
-            if (err && evt.Diagnostic.Level is DiagnosticLevel.Warning)
-                Console.Error.Write("Warning as Error: ");
+            // write tag
+            dst.Write(evt.Diagnostic.Level switch
+            {
+                DiagnosticLevel.Trace => "trace",
+                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Warning when options.errorWarnings.ContainsKey(key) || options.errorWarnings.ContainsKey(evt.Diagnostic.Id.ToString()) => "error",
+                DiagnosticLevel.Warning => "warning",
+                DiagnosticLevel.Error => "error",
+                DiagnosticLevel.Fatal => "error",
+                _ => throw new InvalidOperationException(),
+            });
 
+            // write event ID
+            dst.Write($"IKVM{evt.Diagnostic.Id:D4}: ");
+
+            // write message
 #if NET8_0_OR_GREATER
-            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args));
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
 #else
-            Console.Error.WriteLine(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
+            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
 #endif
-            if (options.path != null)
-                Console.Error.WriteLine("    (in {0})", options.path);
+
+            // end of line, potentially containing option path
+            dst.WriteLine(options.path != null ? $"    (in {options.path})" : "");
         }
 
     }

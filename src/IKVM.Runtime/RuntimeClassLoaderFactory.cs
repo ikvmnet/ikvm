@@ -185,21 +185,18 @@ namespace IKVM.Runtime
 #endif
             Debug.Assert(!type.IsPointer);
             Debug.Assert(!type.IsByRef);
+
             RuntimeJavaType wrapper;
             lock (globalTypeToTypeWrapper)
-            {
                 globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
-            }
 
             if (wrapper != null)
-            {
                 return wrapper;
-            }
 
 #if EXPORTER
             if (type.__IsMissing || type.__ContainsMissingType)
             {
-                wrapper = new RuntimeUnloadableJavaType(context, "Missing/" + type.Assembly.FullName);
+                wrapper = new RuntimeUnloadableJavaType(context, type);
                 globalTypeToTypeWrapper.Add(type, wrapper);
                 return wrapper;
             }
