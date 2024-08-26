@@ -1532,13 +1532,8 @@ namespace IKVM.Tools.Importer
 
                 if (!int.TryParse(parse, out var intResult))
                 {
-                    if (!Enum.TryParse<Message>(parse, out var namedResult))
-                    {
-                        continue; // silently continue
-                    }
-
-                    // Warnings are handled as int.
-                    intResult = (int)namedResult;
+                    // NamedResults aren't supported
+                    continue; // silently continue
                 }
 
                 target.Add($"{intResult}{context}");
