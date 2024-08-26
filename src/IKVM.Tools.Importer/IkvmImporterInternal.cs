@@ -1500,6 +1500,9 @@ namespace IKVM.Tools.Importer
             // choose output channel
             var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
 
+            // option path
+            dst.Write(options.path != null ? $"{options.path} : " : "");
+
             // write tag
             dst.Write(evt.Diagnostic.Level switch
             {
@@ -1522,8 +1525,7 @@ namespace IKVM.Tools.Importer
             dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
 #endif
 
-            // end of line, potentially containing option path
-            dst.WriteLine(options.path != null ? $"    (in {options.path})" : "");
+            dst.WriteLine();
         }
 
     }
