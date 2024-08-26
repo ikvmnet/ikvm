@@ -1515,7 +1515,7 @@ namespace IKVM.Tools.Importer
             foreach (var w in arg.Split(','))
             {
                 // Strip IKVM prefix
-                int prefixStart = w.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) ? 5 : 0;
+                int prefixStart = w.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) ? 4 : 0;
                 int contextIndex = w.IndexOf(':', prefixStart);
                 string context = string.Empty;
                 string parse;
