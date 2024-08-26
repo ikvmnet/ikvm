@@ -3419,8 +3419,8 @@ namespace IKVM.Tools.Importer
         internal uint fileAlignment;
         internal bool highentropyva;
         internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
-        internal Dictionary<string, string> suppressWarnings = new Dictionary<string, string>();
-        internal Dictionary<string, string> errorWarnings = new Dictionary<string, string>();   // treat specific warnings as errors
+        internal HashSet<string> suppressWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        internal HashSet<string> errorWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         internal bool warnaserror; // treat all warnings as errors
         internal FileInfo writeSuppressWarningsFile;
         internal List<string> proxies = new List<string>();
@@ -3442,8 +3442,8 @@ namespace IKVM.Tools.Importer
             {
                 copy.externalResources = new Dictionary<string, string>(externalResources);
             }
-            copy.suppressWarnings = new Dictionary<string, string>(suppressWarnings);
-            copy.errorWarnings = new Dictionary<string, string>(errorWarnings);
+            copy.suppressWarnings = new(suppressWarnings, StringComparer.OrdinalIgnoreCase);
+            copy.errorWarnings = new(errorWarnings, StringComparer.OrdinalIgnoreCase);
             return copy;
         }
 
