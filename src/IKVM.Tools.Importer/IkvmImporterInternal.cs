@@ -1513,7 +1513,7 @@ namespace IKVM.Tools.Importer
             });
 
             // write event ID
-            dst.Write($"IKVM{evt.Diagnostic.Id:D4}: ");
+            dst.Write($" IKVM{evt.Diagnostic.Id:D4}: ");
 
             // write message
 #if NET8_0_OR_GREATER

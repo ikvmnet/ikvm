@@ -600,7 +600,7 @@ namespace IKVM.Tools.Exporter
             });
 
             // write event ID
-            dst.Write($"IKVM{evt.Diagnostic.Id:D4}: ");
+            dst.Write($" IKVM{evt.Diagnostic.Id:D4}: ");
 
             // write message
 #if NET8_0_OR_GREATER
