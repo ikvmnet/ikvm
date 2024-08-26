@@ -58,9 +58,10 @@ namespace IKVM.MSBuild.Tasks
             // Skip these:
             // - StdErr is mapped to Information
             // - StdOut is mapped to Debug.
-            if (@event.Message.Length > 0 && @event.Message[0] is char first
+            if (@event.Message.Length is { } messageLength and > 0
+                && @event.Message[0] is char first
                 && !char.IsWhiteSpace(first)
-                && @event.Message.IndexOf(": ", 0, 18) is { } firstColon and not -1)
+                && @event.Message.IndexOf(": ", 0, Math.Min(messageLength, 18)) is { } firstColon and not -1)
             {
                 structuredLog.Message = @event.Message.Substring(firstColon + 2);
 
