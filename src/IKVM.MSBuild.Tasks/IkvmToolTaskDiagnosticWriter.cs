@@ -40,56 +40,7 @@ namespace IKVM.MSBuild.Tasks
             if (@event == null)
                 return Task.CompletedTask;
 
-            (
-                IkvmToolDiagnosticEventLevel Level,
-                string Code,
-                string Message
-            ) structuredLog;
-
-#pragma warning disable IDE0079 // Unused suppression (net472 doesn't produce IDE0057)
-#pragma warning disable IDE0057 // Suppress net6 & net8 analyzer for range-operations
-            // unspecified format: "Level: Message"
-            // MSBuild Format: "Level IKVM0000: Message"
-            // Longest preamble: "warning IKVM0000: "
-            // Some write """
-            // warning IKVMC0000: Message
-            //     (additional information)
-            // """
-            // Skip these:
-            // - StdErr is mapped to Information
-            // - StdOut is mapped to Debug.
-            if (@event.Message.Length is { } messageLength and > 0
-                && @event.Message[0] is char first
-                && !char.IsWhiteSpace(first)
-                && @event.Message.IndexOf(": ", 0, Math.Min(messageLength, 18)) is { } firstColon and not -1)
-            {
-                structuredLog.Message = @event.Message.Substring(firstColon + 2);
-
-                int levelLength;
-                if (@event.Message.IndexOf("IKVM", 0, firstColon, StringComparison.OrdinalIgnoreCase) is { } codeIndex and not -1)
-                {
-                    levelLength = codeIndex - 1;
-                    structuredLog.Code = @event.Message.Substring(codeIndex, 8 /* IKVM0000 */);
-                }
-                else
-                {
-                    levelLength = firstColon;
-                    structuredLog.Code = "";
-                }
-
-                structuredLog.Level = @event.Message.Substring(0, levelLength).ToUpperInvariant() switch
-                {
-                    "ERROR" => IkvmToolDiagnosticEventLevel.Error,
-                    "WARNING" => IkvmToolDiagnosticEventLevel.Warning,
-                    _ => IkvmToolDiagnosticEventLevel.Information
-                };
-            }
-            else
-            {
-                // Can't figure out level.
-                structuredLog = (@event.Level, null, @event.Message);
-            }
-#pragma warning restore
+            var structuredLog = ParseEvent(@event);
 
             try
             {
@@ -120,6 +71,73 @@ namespace IKVM.MSBuild.Tasks
 
             return Task.CompletedTask;
         }
+
+        internal static StructuredLog ParseEvent(IkvmToolDiagnosticEvent @event)
+        {
+            StructuredLog result;
+
+#pragma warning disable IDE0079 // Unused suppression (net472 doesn't produce IDE0057)
+#pragma warning disable IDE0057 // Suppress net6 & net8 analyzer for range-operations
+            // unspecified format: "Level: Message"
+            // MSBuild Format: "Level IKVM0000: Message"
+            // Longest preamble: "warning IKVM0000: "
+            // Some write """
+            // warning IKVMC0000: Message
+            //     (additional information)
+            // """
+            // Skip these (additional information)
+            // - StdErr is mapped to Warning
+            // - StdOut is mapped to Debug.
+            if (@event.Message.Length is { } messageLength and > 0
+                && @event.Message[0] is char first
+                && !char.IsWhiteSpace(first)
+                && @event.Message.IndexOf(": ", 0, Math.Min(messageLength, 18)) is { } firstColon and not -1)
+            {
+                result = new()
+                {
+                    Message = @event.Message.Substring(firstColon + 2)
+                };
+
+                if (@event.Message.IndexOf("IKVM", 0, firstColon, StringComparison.OrdinalIgnoreCase) is { } codeIndex and not -1
+                    && (@event.Message.Length - codeIndex) >= 8)
+                {
+                    result.Code = @event.Message.Substring(codeIndex, 8 /* IKVM0000 */);
+                }
+                else
+                {
+                    codeIndex = firstColon;
+                    result.Code = "";
+                }
+
+                var eventLevelMixedCase = @event.Message.AsSpan(0, codeIndex).Trim();
+                // eventLevelMixedCase is never longer than 18 chars.
+                Span<char> eventLevel = stackalloc char[eventLevelMixedCase.Length];
+                eventLevelMixedCase.ToUpperInvariant(eventLevel);
+                result.Level = eventLevel switch
+                {
+                    "ERROR" => IkvmToolDiagnosticEventLevel.Error,
+                    "WARNING" => IkvmToolDiagnosticEventLevel.Warning,
+                    "INFO" => IkvmToolDiagnosticEventLevel.Information,
+                    "TRACE" => IkvmToolDiagnosticEventLevel.Debug,
+                    _ => @event.Level // Can't figure out event Level.
+                                      //  Use what's been provided
+                };
+            }
+            else
+            {
+                // Can't figure out level.
+                result = new(@event.Level, null, @event.Message);
+            }
+#pragma warning restore
+
+            return result;
+        }
+
+        internal record struct StructuredLog(
+            IkvmToolDiagnosticEventLevel Level,
+            string Code,
+            string Message
+        );
 
     }
 
