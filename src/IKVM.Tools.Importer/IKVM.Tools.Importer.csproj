@@ -19,6 +19,7 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Core\IKVM.Tools.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>

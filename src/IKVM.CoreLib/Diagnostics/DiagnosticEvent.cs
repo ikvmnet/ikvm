@@ -3,7 +3,7 @@
 namespace IKVM.CoreLib.Diagnostics
 {
 
-    readonly ref partial struct DiagnosticEvent(Diagnostic Diagnostic, ReadOnlySpan<object?> Args)
+    readonly partial struct DiagnosticEvent(Diagnostic Diagnostic, ReadOnlyMemory<object?> Args)
     {
 
         /// <summary>
@@ -14,7 +14,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <summary>
         /// Gets the arguments of the event.
         /// </summary>
-        public readonly ReadOnlySpan<object?> Args = Args;
+        public readonly ReadOnlyMemory<object?> Args = Args;
 
         /// <summary>
         /// Formats the diagnostic event message.

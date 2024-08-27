@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Tracing;
 
-using IKVM.Runtime;
-
 namespace IKVM.ConsoleApp
 {
 
