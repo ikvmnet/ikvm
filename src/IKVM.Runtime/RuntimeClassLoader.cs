@@ -372,28 +372,16 @@ namespace IKVM.Runtime
                 if (javaType != null)
                     return RegisterInitiatingLoader(javaType);
 
-#if IMPORTER
-
                 if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
-                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
+                    Diagnostics.ClassNotFound(name);
 
-#else
-
-                if (!(name.Length > 1 && name[0] == '['))
-                    Diagnostics.GenericClassLoadingError($"Class not found: {name}");
-
-#endif
-                switch (mode & LoadMode.MaskReturn)
+                return (mode & LoadMode.MaskReturn) switch
                 {
-                    case LoadMode.ReturnNull:
-                        return null;
-                    case LoadMode.ReturnUnloadable:
-                        return new RuntimeUnloadableJavaType(context, name);
-                    case LoadMode.ThrowClassNotFound:
-                        throw new ClassNotFoundException(name);
-                    default:
-                        throw new InvalidOperationException();
-                }
+                    LoadMode.ReturnNull => null,
+                    LoadMode.ReturnUnloadable => new RuntimeUnloadableJavaType(context, name),
+                    LoadMode.ThrowClassNotFound => throw new ClassNotFoundException(name),
+                    _ => throw new InvalidOperationException(),
+                };
             }
             finally
             {
@@ -985,8 +973,6 @@ namespace IKVM.Runtime
 
 #endif
 
-#if IMPORTER
-
         internal virtual bool WarningLevelHigh
         {
             get { return false; }
@@ -996,8 +982,6 @@ namespace IKVM.Runtime
         {
             get { return false; }
         }
-
-#endif
 
     }
 
