@@ -76,7 +76,6 @@ readonly struct Range : IEquatable<Range>
 #if !NET35
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-    [CLSCompliant(false)]
     public (int Offset, int Length) GetOffsetAndLength(int length)
     {
         int start = Start.GetOffset(length);
