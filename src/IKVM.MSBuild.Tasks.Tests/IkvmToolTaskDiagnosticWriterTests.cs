@@ -66,9 +66,9 @@ namespace IKVM.MSBuild.Tasks.Tests
         ];
 
         [TestMethod, DynamicData(nameof(ParseEventTestCases))]
-        public void VerifyStructuredLog(IkvmToolDiagnosticEventLevel eventLevel, string eventMessage, ParseEventTestCase testCase)
+        public void VerifyStructuredLog(IkvmToolDiagnosticEventLevel level, string message, ParseEventTestCase testCase)
         {
-            ParseEvent(new(eventLevel, eventMessage)).Should().Be(new ParsedEvent(testCase.Level, testCase.Code, testCase.Message));
+            ParseEvent(new(level, message)).Should().Be(new ParsedEvent(testCase.Level, testCase.Code, testCase.Message));
         }
 
     }
