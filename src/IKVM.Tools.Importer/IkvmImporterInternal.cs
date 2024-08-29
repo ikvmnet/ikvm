@@ -771,15 +771,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-nowarn:"))
                     {
-                        foreach (var w in s.Substring(8).Split(','))
-                        {
-                            // lame way to chop off the leading zeroes
-                            string ws = w;
-                            while (ws.StartsWith("0"))
-                                ws = ws.Substring(1);
-
-                            options.suppressWarnings[ws] = ws;
-                        }
+                        HandleWarnArg(options.suppressWarnings, s.Substring(8));
                     }
                     else if (s == "-warnaserror")
                     {
@@ -787,15 +779,7 @@ namespace IKVM.Tools.Importer
                     }
                     else if (s.StartsWith("-warnaserror:"))
                     {
-                        foreach (string w in s.Substring(13).Split(','))
-                        {
-                            // lame way to chop off the leading zeroes
-                            string ws = w;
-                            while (ws.StartsWith("0"))
-                                ws = ws.Substring(1);
-
-                            options.errorWarnings[ws] = ws;
-                        }
+                        HandleWarnArg(options.errorWarnings, s.Substring(13));
                     }
                     else if (s.StartsWith("-runtime:"))
                     {
@@ -1477,7 +1461,7 @@ namespace IKVM.Tools.Importer
             var key = evt.Diagnostic.Id.ToString();
             for (int i = 0; ; i++)
             {
-                if (options.suppressWarnings.ContainsKey(key))
+                if (options.suppressWarnings.Contains(key))
                     return;
 
                 if (i == evt.Args.Length)
@@ -1486,7 +1470,7 @@ namespace IKVM.Tools.Importer
                 key += ":" + evt.Args.Span[i];
             }
 
-            options.suppressWarnings.Add(key, key);
+            options.suppressWarnings.Add(key);
             if (options.writeSuppressWarningsFile != null)
                 File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
 
@@ -1506,7 +1490,7 @@ namespace IKVM.Tools.Importer
             {
                 DiagnosticLevel.Trace => "trace",
                 DiagnosticLevel.Informational => "info",
-                DiagnosticLevel.Warning when options.errorWarnings.ContainsKey(key) || options.errorWarnings.ContainsKey(evt.Diagnostic.Id.ToString()) => "error",
+                DiagnosticLevel.Warning when options.errorWarnings.Contains(key) || options.errorWarnings.Contains(evt.Diagnostic.Id.ToString()) => "error",
                 DiagnosticLevel.Warning => "warning",
                 DiagnosticLevel.Error => "error",
                 DiagnosticLevel.Fatal => "error",
@@ -1526,6 +1510,35 @@ namespace IKVM.Tools.Importer
             dst.WriteLine();
         }
 
+        internal static void HandleWarnArg(ICollection<string> target, string arg)
+        {
+            foreach (var w in arg.Split(','))
+            {
+                // Strip IKVM prefix
+                int prefixStart = w.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) ? 4 : 0;
+                int contextIndex = w.IndexOf(':', prefixStart);
+                string context = string.Empty;
+                string parse;
+                if(contextIndex != -1)
+                {
+                    // context includes ':' separator
+                    context = w.Substring(contextIndex);
+                    parse = w.Substring(prefixStart, contextIndex - prefixStart);
+                }
+                else
+                {
+                    parse = w.Substring(prefixStart);
+                }
+
+                if (!int.TryParse(parse, out var intResult))
+                {
+                    // NamedResults aren't supported
+                    continue; // silently continue
+                }
+
+                target.Add($"{intResult}{context}");
+            }
+        }
     }
 
 }

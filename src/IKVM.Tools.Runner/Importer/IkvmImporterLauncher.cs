@@ -299,7 +299,7 @@ namespace IKVM.Tools.Runner.Importer
                 await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
                 // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Warning, i)));
                 cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Debug, i)));
 
                 // combine manual cancellation with timeout
