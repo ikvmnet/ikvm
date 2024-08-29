@@ -3,7 +3,7 @@ using IKVM.Tools.Runner;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 
-using StructuredLog = IKVM.MSBuild.Tasks.IkvmToolTaskDiagnosticWriter.StructuredLog;
+using StructuredLog = IKVM.MSBuild.Tasks.IkvmToolTaskDiagnosticWriter.ParsedEvent;
 
 namespace IKVM.MSBuild.Tasks.Tests;
 
