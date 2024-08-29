@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,12 +25,12 @@ namespace IKVM.Tools.Core.Diagnostics
         public IDiagnosticChannel? GetChannel(string spec)
         {
             if (spec.Contains(Path.DirectorySeparatorChar))
-                return new StreamDiagnosticChannel(File.OpenWrite(spec), leaveOpen: false);
+                return new StreamDiagnosticChannel(File.OpenWrite(spec), Encoding.UTF8, leaveOpen: false);
 
             if (spec is "1" or "stdout")
-                return new StreamDiagnosticChannel(Console.OpenStandardOutput(), leaveOpen: false);
+                return new StreamDiagnosticChannel(Console.OpenStandardOutput(), Console.OutputEncoding, leaveOpen: false);
             if (spec is "2" or "stderr")
-                return new StreamDiagnosticChannel(Console.OpenStandardError(), leaveOpen: false);
+                return new StreamDiagnosticChannel(Console.OpenStandardError(), Console.OutputEncoding, leaveOpen: false);
 
             return null;
         }

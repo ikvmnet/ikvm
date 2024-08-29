@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ikvmstub": {
+      "commandName": "Project",
+      "commandLineArgs": "foo.dll -out foo.jar"
+    }
+  }
+}

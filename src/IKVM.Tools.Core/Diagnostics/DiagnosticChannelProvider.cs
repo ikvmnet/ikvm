@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Microsoft.Extensions.DependencyInjection;
-
 namespace IKVM.Tools.Core.Diagnostics
 {
 
@@ -12,16 +10,6 @@ namespace IKVM.Tools.Core.Diagnostics
     /// </summary>
     class DiagnosticChannelProvider
     {
-
-        /// <summary>
-        /// Adds the <see cref="DiagnosticChannelProvider"> to the <see cref="IServiceCollection"/>.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public IServiceCollection Add(IServiceCollection services)
-        {
-            return services.AddSingleton<DiagnosticChannelProvider>();
-        }
 
         readonly IEnumerable<IDiagnosticChannelFactory> _factories;
 

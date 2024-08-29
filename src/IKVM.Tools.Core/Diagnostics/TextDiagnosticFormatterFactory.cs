@@ -1,7 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
-
-using Microsoft.Extensions.DependencyInjection;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
@@ -11,13 +10,6 @@ namespace IKVM.Tools.Core.Diagnostics
     /// </summary>
     class TextDiagnosticFormatterFactory : IDiagnosticFormatterFactory
     {
-
-        public static IServiceCollection Add(IServiceCollection services)
-        {
-            return services
-                .AddTransient(provider => new Func<string, TextDiagnosticFormatter>(spec => ActivatorUtilities.CreateInstance<TextDiagnosticFormatter>(provider, spec)))
-                .AddSingleton<IDiagnosticFormatterFactory, TextDiagnosticFormatterFactory>();
-        }
 
         readonly DiagnosticChannelProvider _channels;
 
@@ -54,8 +46,9 @@ namespace IKVM.Tools.Core.Diagnostics
 
             // split and parse option information
             var opts = new TextDiagnosticFormatterOptions();
+            var chls = new ConcurrentDictionary<string, IDiagnosticChannel?>();
             foreach (var optionSpec in specArray.Skip(1))
-                ParseOption(opts, optionSpec);
+                ParseOption(chls, opts, optionSpec);
 
             // process options and create formatter
             return new TextDiagnosticFormatter(opts);
@@ -64,9 +57,10 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <summary>
         /// Parses a string option into multiple named components.
         /// </summary>
+        /// <param name="cache"></param>
         /// <param name="options"></param>
         /// <param name="spec"></param>
-        void ParseOption(TextDiagnosticFormatterOptions options, string spec)
+        void ParseOption(ConcurrentDictionary<string, IDiagnosticChannel?> cache, TextDiagnosticFormatterOptions options, string spec)
         {
             var a = spec.Split(['='], 2, StringSplitOptions.None);
             var key = a.Length >= 1 ? a[0] : "";
@@ -76,15 +70,15 @@ namespace IKVM.Tools.Core.Diagnostics
                 return;
 
             if (key is "file" or "trace:file")
-                options.TraceChannel = _channels.FindChannel(val);
-            else if (key is "file" or "info:file")
-                options.InformationChannel = _channels.FindChannel(val);
-            else if (key is "file" or "warning:file")
-                options.WarningChannel = _channels.FindChannel(val);
-            else if (key is "file" or "error:file")
-                options.ErrorChannel = _channels.FindChannel(val);
-            else if (key is "file" or "fatal:file")
-                options.FatalChannel = _channels.FindChannel(val);
+                options.TraceChannel = cache.GetOrAdd(val, _channels.FindChannel);
+            if (key is "file" or "info:file")
+                options.InformationChannel = cache.GetOrAdd(val, _channels.FindChannel);
+            if (key is "file" or "warning:file")
+                options.WarningChannel = cache.GetOrAdd(val, _channels.FindChannel);
+            if (key is "file" or "error:file")
+                options.ErrorChannel = cache.GetOrAdd(val, _channels.FindChannel);
+            if (key is "file" or "fatal:file")
+                options.FatalChannel = cache.GetOrAdd(val, _channels.FindChannel);
         }
 
     }

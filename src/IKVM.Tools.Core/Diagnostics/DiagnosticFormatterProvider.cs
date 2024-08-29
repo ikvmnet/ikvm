@@ -40,7 +40,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="spec"></param>
         /// <returns></returns>
-        public IDiagnosticFormatter? FindChannel(string spec)
+        public IDiagnosticFormatter? GetFormatter(string spec)
         {
             return _factories.Select(i => i.GetFormatter(spec)).FirstOrDefault(i => i != null);
         }

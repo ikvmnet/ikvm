@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -16,6 +17,7 @@ namespace IKVM.Tools.Core.Diagnostics
     {
 
         readonly TextDiagnosticFormatterOptions _options;
+        readonly ConcurrentDictionary<IDiagnosticChannel?, TextWriter?> writers = new ConcurrentDictionary<IDiagnosticChannel?, TextWriter?>();
         TextWriter? _traceWriter;
         TextWriter? _infoWriter;
         TextWriter? _warningWriter;
@@ -57,6 +59,9 @@ namespace IKVM.Tools.Core.Diagnostics
                 _ => throw new InvalidOperationException(),
             };
 
+            if (dst == null)
+                return;
+
             // write tag
             await dst.WriteAsync(@event.Diagnostic.Level switch
             {
@@ -79,6 +84,7 @@ namespace IKVM.Tools.Core.Diagnostics
 #endif
 
             await dst.WriteLineAsync();
+            await dst.FlushAsync();
         }
 
         /// <summary>
@@ -87,9 +93,9 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="writer"></param>
         /// <param name="channel"></param>
         /// <returns></returns>
-        TextWriter GetOrCreateWriter(ref TextWriter? writer, IDiagnosticChannel channel)
+        TextWriter? GetOrCreateWriter(ref TextWriter? writer, IDiagnosticChannel? channel)
         {
-            return writer ??= new StreamWriter(channel.Writer.AsStream(true), channel.Encoding ?? Encoding.UTF8);
+            return writer ??= writers.GetOrAdd(channel, c => c != null ? new StreamWriter(c.Writer.AsStream(true), c.Encoding ?? Encoding.UTF8) : null);
         }
 
         /// <summary>
@@ -97,11 +103,8 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         public void Dispose()
         {
-            _traceWriter?.Dispose();
-            _infoWriter?.Dispose();
-            _warningWriter?.Dispose();
-            _errorWriter?.Dispose();
-            _fatalWriter?.Dispose();
+            foreach (var kvp in writers)
+                kvp.Value.Dispose();
         }
 
     }

@@ -34,9 +34,9 @@ namespace IKVM.Tools.Importer
     sealed class AssemblyResolver
     {
 
-        private readonly List<string> libpath = new List<string>();
-        private Universe universe;
-        private Version coreLibVersion;
+        readonly List<string> libpath = new List<string>();
+        Universe universe;
+        Version coreLibVersion;
 
         internal enum WarningId
         {

@@ -23,7 +23,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="encoding"></param>
         public StreamDiagnosticChannel(Stream stream, Encoding? encoding = null, bool leaveOpen = true)
         {
-            _stream = stream;
+            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _writer = PipeWriter.Create(_stream, new StreamPipeWriterOptions(leaveOpen: leaveOpen));
             _encoding = encoding;
         }

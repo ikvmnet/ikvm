@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace IKVM.Tools.Exporter
+﻿namespace IKVM.Tools.Exporter
 {
 
     /// <summary>
     /// Options passed to the exporter.
     /// </summary>
-    [Serializable]
-    public class IkvmExporterOptions
+    class ExportOptions
     {
 
         /// <summary>
@@ -19,17 +15,17 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Assembly references.
         /// </summary>
-        public List<string> References { get; set; } = new List<string>();
+        public string[] References { get; set; } = [];
 
         /// <summary>
         /// Path to directories to search for assembly references.
         /// </summary>
-        public List<string> Libraries { get; set; } = new List<string>();
+        public string[] Libraries { get; set; } = [];
 
         /// <summary>
         /// Set of namespaces to export.
         /// </summary>
-        public List<string> Namespaces { get; set; } = new List<string>();
+        public string[] Namespaces { get; set; } = [];
 
         /// <summary>
         /// Are we doing a shared export.
