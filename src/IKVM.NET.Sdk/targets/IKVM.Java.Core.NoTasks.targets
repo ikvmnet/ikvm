@@ -277,6 +277,9 @@ Value = b.ToString();
             <_IkvmCompilerArgs Include="-nologo" />
             <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
             <_IkvmCompilerArgs Include="-debug:$(DebugType)" Condition=" '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-nowarn:$(NoWarn.Replace(';', ','))" Condition=" '$(NoWarn)' != '' " />
+            <_IkvmCompilerArgs Include="-warnaserror" Condition=" '$(TreatWarningsAsErrors)' == 'true' " />
+            <_IkvmCompilerArgs Include="-warnaserror:$(WarningsAsErrors.Replace(';', ','))" Condition=" '$(TreatWarningsAsErrors)' != 'true' And '$(WarningsAsErrors)' != '' " />
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />

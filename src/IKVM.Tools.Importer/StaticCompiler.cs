@@ -242,7 +242,7 @@ namespace IKVM.Tools.Importer
 
         internal void SuppressWarning(CompilerOptions options, Diagnostic diagnostic, string name)
         {
-            options.suppressWarnings[diagnostic.Id + ":" + name] = null;
+            options.suppressWarnings.Add($"{diagnostic.Id}:{name}");
         }
 
     }
