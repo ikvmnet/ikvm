@@ -73,7 +73,7 @@ namespace IKVM.MSBuild.Tasks
         }
 
         /// <summary>
-        /// Takes a <see cref="IkvmToolDiagnosticEvent"/> and parses it into its component parts
+        /// Takes a <see cref="IkvmToolDiagnosticEvent"/> and parses it into its component parts.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
