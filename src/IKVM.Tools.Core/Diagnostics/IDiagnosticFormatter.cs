@@ -6,7 +6,6 @@ using IKVM.CoreLib.Diagnostics;
 namespace IKVM.Tools.Core.Diagnostics
 {
 
-
     interface IDiagnosticFormatter
     {
 
@@ -14,8 +13,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// Writes the event.
         /// </summary>
         /// <param name="event"></param>
-        /// <param name="cancellationToken"></param>
-        ValueTask WriteAsync(in DiagnosticEvent @event, CancellationToken cancellationToken = default);
+        void Write(in DiagnosticEvent @event);
 
     }
 

@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.IO;
+using System.Buffers;
+using System.Collections.Generic;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Text;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
@@ -17,12 +16,6 @@ namespace IKVM.Tools.Core.Diagnostics
     {
 
         readonly TextDiagnosticFormatterOptions _options;
-        readonly ConcurrentDictionary<IDiagnosticChannel?, TextWriter?> writers = new ConcurrentDictionary<IDiagnosticChannel?, TextWriter?>();
-        TextWriter? _traceWriter;
-        TextWriter? _infoWriter;
-        TextWriter? _warningWriter;
-        TextWriter? _errorWriter;
-        TextWriter? _fatalWriter;
 
         /// <summary>
         /// Initializes a new instance.
@@ -34,68 +27,59 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <inheritdoc />
-        public ValueTask WriteAsync(in DiagnosticEvent @event, CancellationToken cancellationToken)
-        {
-            return WriteAsyncImpl(@event, cancellationToken);
-        }
-
-        /// <summary>
-        /// Accepts a copy of a diagnostic event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        async ValueTask WriteAsyncImpl(DiagnosticEvent @event, CancellationToken cancellationToken)
+        public void Write(in DiagnosticEvent @event)
         {
             // find the writer for the event's level
-            var dst = @event.Diagnostic.Level switch
+            var channel = @event.Diagnostic.Level switch
             {
-                DiagnosticLevel.Trace => GetOrCreateWriter(ref _traceWriter, _options.TraceChannel),
-                DiagnosticLevel.Informational => GetOrCreateWriter(ref _infoWriter, _options.InformationChannel),
-                DiagnosticLevel.Warning => GetOrCreateWriter(ref _warningWriter, _options.WarningChannel),
-                DiagnosticLevel.Error => GetOrCreateWriter(ref _errorWriter, _options.ErrorChannel),
-                DiagnosticLevel.Fatal => GetOrCreateWriter(ref _fatalWriter, _options.FatalChannel),
+                DiagnosticLevel.Trace => _options.TraceChannel,
+                DiagnosticLevel.Informational => _options.InformationChannel,
+                DiagnosticLevel.Warning => _options.WarningChannel,
+                DiagnosticLevel.Error => _options.ErrorChannel,
+                DiagnosticLevel.Fatal => _options.FatalChannel,
                 _ => throw new InvalidOperationException(),
             };
 
-            if (dst == null)
+            if (channel == null)
                 return;
 
-            // write tag
-            await dst.WriteAsync(@event.Diagnostic.Level switch
+            var wrt = channel.Writer;
+            var enc = channel.Encoding ?? Encoding.Default;
+
+            // stage to a string so we can write it in one go
+            var buf = MemoryPool<byte>.Shared.Rent(4096);
+            var utf = new EncodingSpanWriter(enc, buf.Memory.Span);
+
+            try
             {
-                DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
-                DiagnosticLevel.Warning => "warning",
-                DiagnosticLevel.Error => "error",
-                DiagnosticLevel.Fatal => "error",
-                _ => throw new InvalidOperationException(),
-            });
+                // write tag
+                utf.Write(@event.Diagnostic.Level switch
+                {
+                    DiagnosticLevel.Trace => "trace",
+                    DiagnosticLevel.Informational => "info",
+                    DiagnosticLevel.Warning => "warning",
+                    DiagnosticLevel.Error => "error",
+                    DiagnosticLevel.Fatal => "fatal",
+                    _ => throw new InvalidOperationException(),
+                });
 
-            // write event ID
-            await dst.WriteAsync($" IKVM{@event.Diagnostic.Id:D4}: ");
+                // write event ID
+                utf.Write($" IKVM{@event.Diagnostic.Id:D4}: ");
 
-            // write message
+                // write message
 #if NET8_0_OR_GREATER
-            await dst.WriteAsync(string.Format(null, @event.Diagnostic.Message, @event.Args));
+                utf.Write(string.Format(null, @event.Diagnostic.Message, @event.Args));
 #else
-            await dst.WriteAsync(string.Format(null, @event.Diagnostic.Message, @event.Args.ToArray()));
+                utf.Write(string.Format(null, @event.Diagnostic.Message, @event.Args.ToArray()));
 #endif
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // ignore message
+            }
 
-            await dst.WriteLineAsync();
-            await dst.FlushAsync();
-        }
-
-        /// <summary>
-        /// Allocates the text writer for the specified channel.
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="channel"></param>
-        /// <returns></returns>
-        TextWriter? GetOrCreateWriter(ref TextWriter? writer, IDiagnosticChannel? channel)
-        {
-            return writer ??= writers.GetOrAdd(channel, c => c != null ? new StreamWriter(c.Writer.AsStream(true), c.Encoding ?? Encoding.UTF8) : null);
+            channel.Writer.Write(buf, utf.BytesWritten);
+            return;
         }
 
         /// <summary>
@@ -103,8 +87,18 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         public void Dispose()
         {
-            foreach (var kvp in writers)
-                kvp.Value.Dispose();
+            var hs = new HashSet<IDisposable>();
+
+            if (_options.TraceChannel is IDisposable trace && hs.Add(trace))
+                trace.Dispose();
+            if (_options.InformationChannel is IDisposable info && hs.Add(info))
+                info.Dispose();
+            if (_options.WarningChannel is IDisposable warning && hs.Add(warning))
+                warning.Dispose();
+            if (_options.ErrorChannel is IDisposable error && hs.Add(error))
+                error.Dispose();
+            if (_options.FatalChannel is IDisposable fatal && hs.Add(fatal))
+                fatal.Dispose();
         }
 
     }

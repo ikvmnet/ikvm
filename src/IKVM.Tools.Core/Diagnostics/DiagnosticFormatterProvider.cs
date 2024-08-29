@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Microsoft.Extensions.DependencyInjection;
-
 namespace IKVM.Tools.Core.Diagnostics
 {
 
@@ -12,16 +10,6 @@ namespace IKVM.Tools.Core.Diagnostics
     /// </summary>
     class DiagnosticFormatterProvider
     {
-
-        /// <summary>
-        /// Adds the <see cref="DiagnosticFormatterProvider"> to the <see cref="IServiceCollection"/>.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public IServiceCollection Add(IServiceCollection services)
-        {
-            return services.AddSingleton<DiagnosticFormatterProvider>();
-        }
 
         readonly IEnumerable<IDiagnosticFormatterFactory> _factories;
 

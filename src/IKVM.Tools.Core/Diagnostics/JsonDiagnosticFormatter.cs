@@ -1,12 +1,12 @@
 ﻿using System;
-using System.IO;
-using System.IO.Pipelines;
+using System.Buffers;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
+using IKVM.CoreLib.Buffers;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Text;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
@@ -14,14 +14,8 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <summary>
     /// Formats diagnostic events into a stream of JSON objects.
     /// </summary>
-    class JsonDiagnosticFormatter : IDiagnosticFormatter
+    class JsonDiagnosticFormatter : IDiagnosticFormatter, IDisposable
     {
-
-#if NETFRAMEWORK
-
-        readonly static byte[] Utf8Eol = Encoding.UTF8.GetBytes("\n");
-
-#endif
 
         readonly JsonDiagnosticFormatterOptions _options;
 
@@ -35,8 +29,9 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <inheritdoc />
-        public ValueTask WriteAsync(in DiagnosticEvent @event, CancellationToken cancellationToken)
+        public void Write(in DiagnosticEvent @event)
         {
+            // find the writer for the event's level
             var channel = @event.Diagnostic.Level switch
             {
                 DiagnosticLevel.Trace => _options.TraceChannel,
@@ -47,57 +42,79 @@ namespace IKVM.Tools.Core.Diagnostics
                 _ => null,
             };
 
-            // exit immediately if we cannot write
-            if (channel == null || channel.Writer == null)
-                return new ValueTask(Task.CompletedTask);
+            if (channel == null)
+                return;
 
-            var tmp = new MemoryStream(1024);
-            var wrt = new Utf8JsonWriter(tmp);
+            var wrt = channel.Writer;
+            var enc = channel.Encoding ?? Encoding.Default;
 
-            wrt.WriteStartObject();
-            wrt.WriteNumber("id", @event.Diagnostic.Id);
-            wrt.WriteString("name", @event.Diagnostic.Name);
-            wrt.WriteString("level", @event.Diagnostic.Level.ToString());
+            // stage to a buffer so we can write it in one go
+            var mem = MemoryPool<byte>.Shared.Rent(4096);
+            var buf = new MemoryBufferWriter<byte>(mem.Memory);
+            using var json = new Utf8JsonWriter(buf, new JsonWriterOptions() { Indented = false });
+
+            try
+            {
+                json.WriteStartObject();
+                json.WriteNumber("id", @event.Diagnostic.Id);
+                json.WriteString("name", @event.Diagnostic.Name);
+                json.WriteString("level", @event.Diagnostic.Level.ToString());
 #if NET8_0_OR_GREATER
-            wrt.WriteString("message", @event.Diagnostic.Message.Format);
+                json.WriteString("message", @event.Diagnostic.Message.Format);
 #else
-            wrt.WriteString("message", @event.Diagnostic.Message);
+                json.WriteString("message", @event.Diagnostic.Message);
 #endif
-            wrt.WriteStartArray("args");
+                json.WriteStartArray("args");
 
-            // encode each argument
-            foreach (var arg in @event.Args.Span)
-                JsonSerializer.Serialize(wrt, arg, arg?.GetType() ?? typeof(object), JsonSerializerOptions.Default);
+                // encode each argument
+                foreach (var arg in @event.Args.Span)
+                    JsonSerializer.Serialize(json, arg, arg?.GetType() ?? typeof(object), JsonSerializerOptions.Default);
 
-            wrt.WriteEndArray();
-            wrt.WriteEndObject();
-            wrt.Flush();
+                json.WriteEndArray();
+                json.WriteEndObject();
 
-#if NETFRAMEWORK
-            tmp.Write(Utf8Eol, 0, Utf8Eol.Length);
-#else
-            tmp.Write("\n"u8);
-#endif
+                // ensure the JSON is flushed out
+                json.Flush();
+                json.Dispose();
 
-            // we can directly write the UTF8 if allowed, else we need to reencode
-            if (channel.Encoding is null or { EncodingName: "UTF8" })
-                return new ValueTask(tmp.CopyToAsync(channel.Writer, cancellationToken));
-            else
-                return WriteEncodedAsync(tmp, channel.Encoding, channel.Writer, cancellationToken);
+                // destination encoding is not UTF8, so convert
+                if (enc is not UTF8Encoding)
+                {
+                    // decode into chars
+                    using var tmp = MemoryPool<char>.Shared.Rent(Encoding.UTF8.GetCharCount(mem.Memory.Span.Slice(0, buf.WrittenCount)));
+                    var len = Encoding.UTF8.GetChars(mem.Memory.Span.Slice(0, buf.WrittenCount), tmp.Memory.Span);
+
+                    // reencode into target encoding
+                    buf.Clear();
+                    enc.GetBytes(tmp.Memory.Span.Slice(0, len), buf);
+                }
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // ignore large message
+            }
+
+            // write the memory
+            wrt.Write(mem, buf.WrittenCount);
         }
 
         /// <summary>
-        /// Writes the reencoded stream to the output channel.
+        /// Disposes of the instance.
         /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="encoding"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        async ValueTask WriteEncodedAsync(MemoryStream stream, Encoding encoding, PipeWriter writer, CancellationToken cancellationToken)
+        public void Dispose()
         {
-            var str = Encoding.UTF8.GetString(stream.ToArray());
-            var buf = encoding.GetBytes(str);
-            await writer.WriteAsync(buf, cancellationToken);
+            var hs = new HashSet<IDisposable>();
+
+            if (_options.TraceChannel is IDisposable trace && hs.Add(trace))
+                trace.Dispose();
+            if (_options.InformationChannel is IDisposable info && hs.Add(info))
+                info.Dispose();
+            if (_options.WarningChannel is IDisposable warning && hs.Add(warning))
+                warning.Dispose();
+            if (_options.ErrorChannel is IDisposable error && hs.Add(error))
+                error.Dispose();
+            if (_options.FatalChannel is IDisposable fatal && hs.Add(fatal))
+                fatal.Dispose();
         }
 
     }

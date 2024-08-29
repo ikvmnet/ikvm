@@ -2,7 +2,7 @@
   "profiles": {
     "ikvmstub": {
       "commandName": "Project",
-      "commandLineArgs": "foo.dll -out foo.jar"
+      "commandLineArgs": "foo.dll -out foo.jar -log json"
     }
   }
 }

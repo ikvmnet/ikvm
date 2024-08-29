@@ -200,7 +200,7 @@ namespace IKVM.Runtime
             }
             else if (tw.IsUnloadable)
             {
-                throw new FatalCompilerErrorException(Diagnostic.MapFileTypeNotFound.Event([tw.Name]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.MapFileTypeNotFound(tw.Name));
             }
             else if (tw.TypeAsTBD.IsEnum)
             {

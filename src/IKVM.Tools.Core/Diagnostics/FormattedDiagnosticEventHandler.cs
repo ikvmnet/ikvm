@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
 
@@ -9,7 +10,7 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <summary>
     /// <see cref="IDiagnosticHandler"/> implementation that outputs based on a format specification.
     /// </summary>
-    class FormattedDiagnosticEventHandler : DiagnosticEventHandler
+    class FormattedDiagnosticEventHandler : DiagnosticEventHandler, IDisposable
     {
 
         readonly string _spec;
@@ -37,7 +38,13 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <inheritdoc />
         public override void Report(in DiagnosticEvent @event)
         {
-            _formatter.WriteAsync(@event, CancellationToken.None);
+            _formatter.Write(@event);
+        }
+
+        public void Dispose()
+        {
+            if (_formatter is IDisposable disposable)
+                disposable.Dispose();
         }
 
     }

@@ -1,5 +1,4 @@
-﻿using System.IO.Pipelines;
-using System.Text;
+﻿using System.Text;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
@@ -11,10 +10,9 @@ namespace IKVM.Tools.Core.Diagnostics
     {
 
         /// <summary>
-        /// Gets the <see cref="PipeWriter"/> that writes bytes to the channel.
+        /// Gets the writer that allows you to enqueue data to the channel.
         /// </summary>
-        /// <returns></returns>
-        PipeWriter Writer { get; }
+        IDiagnosticChannelWriter Writer { get; }
 
         /// <summary>
         /// Gets the native encoding of the channel if the channel expects text.

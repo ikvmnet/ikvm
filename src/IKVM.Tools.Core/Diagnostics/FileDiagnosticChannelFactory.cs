@@ -8,8 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IKVM.Tools.Core.Diagnostics
 {
 
+    /// <summary>
+    /// Resolves a "file" diagnostic output value.
+    /// </summary>
     class FileDiagnosticChannelFactory : IDiagnosticChannelFactory
     {
+
+        public const string STDOUT = "stdout";
+        public const string STDERR = "stderr";
 
         /// <summary>
         /// Adds the JSON diagnostic formater to the <see cref="IServiceCollection"/>.
@@ -24,15 +30,16 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <inheritdoc />
         public IDiagnosticChannel? GetChannel(string spec)
         {
-            if (spec.Contains(Path.DirectorySeparatorChar))
-                return new StreamDiagnosticChannel(File.OpenWrite(spec), Encoding.UTF8, leaveOpen: false);
+            if (spec is null)
+                throw new ArgumentNullException(nameof(spec));
 
-            if (spec is "1" or "stdout")
-                return new StreamDiagnosticChannel(Console.OpenStandardOutput(), Console.OutputEncoding, leaveOpen: false);
-            if (spec is "2" or "stderr")
-                return new StreamDiagnosticChannel(Console.OpenStandardError(), Console.OutputEncoding, leaveOpen: false);
-
-            return null;
+            return spec switch
+            {
+                "1" or STDOUT => new StreamDiagnosticChannel(Console.OpenStandardOutput(), Console.OutputEncoding, leaveOpen: false),
+                "2" or STDERR => new StreamDiagnosticChannel(Console.OpenStandardError(), Console.OutputEncoding, leaveOpen: false),
+                _ when spec.Contains(Path.DirectorySeparatorChar) => new StreamDiagnosticChannel(File.OpenWrite(spec), Encoding.UTF8, leaveOpen: false),
+                _ => null,
+            };
         }
 
     }
