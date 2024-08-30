@@ -145,7 +145,7 @@ namespace IKVM.Tools.Exporter
                     description: "Continue when errors are encountered.")),
                 (logOption = new Option<string>(
                     aliases: ["--log", "-log"],
-                    getDefaultValue: () => "text,file=stdout,warning:file=stderr,error:file=stderr,fatal:file=stderr",
+                    getDefaultValue: () => "text",
                     description: "Logging options.")),
                 (assemblyArgument = new Argument<string>(
                     name: "assemblyNameOrPath",
@@ -241,7 +241,7 @@ namespace IKVM.Tools.Exporter
             if (string.IsNullOrWhiteSpace(spec))
                 throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
 
-            return ActivatorUtilities.CreateInstance<FormattedDiagnosticEventHandler>(services, spec);
+            return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
         }
 
     }

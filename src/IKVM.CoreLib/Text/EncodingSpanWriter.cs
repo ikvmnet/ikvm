@@ -53,7 +53,7 @@ namespace IKVM.CoreLib.Text
         /// Writes the text to the span, advancing the current position.
         /// </summary>
         /// <param name="text"></param>
-        public void Write(ReadOnlySpan<char> text)
+        public void Write(scoped ReadOnlySpan<char> text)
         {
             var l = _encoding.GetBytes(text, _span);
             _span = _span.Slice(l);

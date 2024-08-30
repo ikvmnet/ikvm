@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Tools.Core.Diagnostics
 {
 
-    class JsonDiagnosticFormatterOptions : FormatterOptionsBase
+    class JsonDiagnosticFormatterOptions : DiagnosticChannelFormatterOptions
     {
 
         /// <summary>

@@ -30,10 +30,10 @@ using System.Threading;
 
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
-using IKVM.Tools.Core.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
+using IKVM.Tools.Core.Diagnostics;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,6 +42,59 @@ namespace IKVM.Tools.Importer
 
     class IkvmImporterInternal
     {
+
+        /// <summary>
+        /// <see cref="IDiagnosticHandler"/> for the importer.
+        /// </summary>
+        class CompilerOptionsDiagnosticHandler : FormattedDiagnosticHandler
+        {
+
+            readonly CompilerOptions _options;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="options"></param>
+            /// <param name="spec"></param>
+            /// <param name="formatters"></param>
+            public CompilerOptionsDiagnosticHandler(CompilerOptions options, string spec, DiagnosticFormatterProvider formatters) :
+                base(spec, formatters)
+            {
+                _options = options ?? throw new ArgumentNullException(nameof(options));
+            }
+
+            /// <inheritdoc />
+            public override bool IsEnabled(Diagnostic diagnostic)
+            {
+                return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
+            }
+
+            /// <inheritdoc />
+            public override void Report(in DiagnosticEvent @event)
+            {
+                if (IsEnabled(@event.Diagnostic) == false)
+                    return;
+
+                var key = @event.Diagnostic.Id.ToString();
+                for (int i = 0; ; i++)
+                {
+                    if (_options.suppressWarnings.Contains(key))
+                        return;
+
+                    if (i == @event.Args.Length)
+                        break;
+
+                    key += ":" + @event.Args[i];
+                }
+
+                _options.suppressWarnings.Add(key);
+                if (_options.writeSuppressWarningsFile != null)
+                    File.AppendAllText(_options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
+
+                base.Report(@event);
+            }
+
+        }
 
         bool nonleaf;
         string manifestMainClass;
@@ -157,16 +210,17 @@ namespace IKVM.Tools.Importer
         /// Generates a diagnostic instance from the diagnostics options.
         /// </summary>
         /// <param name="services"></param>
+        /// <param name="options"></param>
         /// <param name="spec"></param>
         /// <returns></returns>
-        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
+        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, CompilerOptions options, string spec)
         {
             if (services is null)
                 throw new ArgumentNullException(nameof(services));
             if (string.IsNullOrWhiteSpace(spec))
                 throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
 
-            return ActivatorUtilities.CreateInstance<FormattedDiagnosticEventHandler>(services, spec);
+            return ActivatorUtilities.CreateInstance<CompilerOptionsDiagnosticHandler>(services, options, spec);
         }
 
         static int Compile(string[] args)
@@ -183,16 +237,16 @@ namespace IKVM.Tools.Importer
                 PrintHeader();
             }
 
+            var rootTarget = new CompilerOptions();
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
-            services.AddSingleton(p => GetDiagnostics(p, "text"));
+            services.AddSingleton(p => GetDiagnostics(p, rootTarget, "text"));
             services.AddSingleton<IManagedTypeResolver, ManagedResolver>();
             services.AddSingleton<StaticCompiler>();
             using var provider = services.BuildServiceProvider();
 
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
-            var rootTarget = new CompilerOptions();
             var targets = new List<CompilerOptions>();
             var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), argList.Contains("-bootstrap"), compiler);
 
@@ -206,13 +260,10 @@ namespace IKVM.Tools.Importer
             ResolveStrongNameKeys(targets);
 
             if (targets.Count == 0)
-            {
                 throw new FatalCompilerErrorException(DiagnosticEvent.NoTargetsFound());
-            }
+
             if (compiler.errorCount != 0)
-            {
                 return 1;
-            }
 
             try
             {
@@ -1436,80 +1487,6 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        /// <summary>
-        /// Returns <c>true</c> if the specified diagnostic is enabled.
-        /// </summary>
-        /// <param name="compiler"></param>
-        /// <param name="diagnostic"></param>
-        /// <returns></returns>
-        bool IsDiagnosticEnabled(Diagnostic diagnostic)
-        {
-            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
-        }
-
-        /// <summary>
-        /// Handles a <see cref="DiagnosticHandler"/>.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="evt"></param>
-        /// <exception cref="FatalCompilerErrorException"></exception>
-        void ReportEvent(CompilerOptions options, in DiagnosticEvent evt)
-        {
-            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
-                return;
-
-            var key = evt.Diagnostic.Id.ToString();
-            for (int i = 0; ; i++)
-            {
-                if (options.suppressWarnings.Contains(key))
-                    return;
-
-                if (i == evt.Args.Length)
-                    break;
-
-                key += ":" + evt.Args.Span[i];
-            }
-
-            options.suppressWarnings.Add(key);
-            if (options.writeSuppressWarningsFile != null)
-                File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
-
-#if NET8_0_OR_GREATER
-            var msg = evt.Diagnostic.Message.Format;
-#else
-            var msg = evt.Diagnostic.Message;
-#endif
-            // choose output channel
-            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
-
-            // option path
-            dst.Write(options.path != null ? $"{options.path} : " : "");
-
-            // write tag
-            dst.Write(evt.Diagnostic.Level switch
-            {
-                DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
-                DiagnosticLevel.Warning when options.errorWarnings.Contains(key) || options.errorWarnings.Contains(evt.Diagnostic.Id.ToString()) => "error",
-                DiagnosticLevel.Warning => "warning",
-                DiagnosticLevel.Error => "error",
-                DiagnosticLevel.Fatal => "error",
-                _ => throw new InvalidOperationException(),
-            });
-
-            // write event ID
-            dst.Write($" IKVM{evt.Diagnostic.Id:D4}: ");
-
-            // write message
-#if NET8_0_OR_GREATER
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
-#else
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
-#endif
-
-            dst.WriteLine();
-        }
-
         internal static void HandleWarnArg(ICollection<string> target, string arg)
         {
             foreach (var w in arg.Split(','))
@@ -1539,6 +1516,7 @@ namespace IKVM.Tools.Importer
                 target.Add($"{intResult}{context}");
             }
         }
+
     }
 
 }

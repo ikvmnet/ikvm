@@ -18,7 +18,7 @@ namespace IKVM.Tools.Core.Diagnostics
             services.AddSingleton<IDiagnosticChannelFactory, FileDiagnosticChannelFactory>();
             services.AddSingleton<IDiagnosticFormatterFactory, JsonDiagnosticFormatterFactory>();
             services.AddSingleton<IDiagnosticFormatterFactory, TextDiagnosticFormatterFactory>();
-            services.AddSingleton<FormattedDiagnosticEventHandler>();
+            services.AddSingleton<FormattedDiagnosticHandler>();
             return services;
         }
 

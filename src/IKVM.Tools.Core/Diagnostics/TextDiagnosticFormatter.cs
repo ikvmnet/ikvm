@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Text;
 
 using IKVM.CoreLib.Diagnostics;
@@ -12,37 +11,94 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <summary>
     /// Handles writing diagnostic events to text output.
     /// </summary>
-    class TextDiagnosticFormatter : IDiagnosticFormatter, IDisposable
+    class TextDiagnosticFormatter : DiagnosticChannelFormatter<TextDiagnosticFormatterOptions>
     {
-
-        readonly TextDiagnosticFormatterOptions _options;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="options"></param>
-        public TextDiagnosticFormatter(TextDiagnosticFormatterOptions options)
+        public TextDiagnosticFormatter(TextDiagnosticFormatterOptions options) :
+            base(options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+
+        }
+
+        /// <summary>
+        /// Returns the output text for the given <see cref="DiagnosticLevel"/>.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        protected virtual void FormatDiagnosticLevel(ref EncodingSpanWriter writer, DiagnosticLevel level)
+        {
+            writer.Write(level switch
+            {
+                DiagnosticLevel.Trace => "trace",
+                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Warning => "warning",
+                DiagnosticLevel.Error => "error",
+                DiagnosticLevel.Fatal => "fatal",
+                _ => throw new InvalidOperationException(),
+            });
+        }
+
+        /// <summary>
+        /// Formats the output text for the given diagnostic code.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        protected virtual void FormatDiagnosticCode(ref EncodingSpanWriter writer, int code)
+        {
+            writer.Write("IKVM");
+#if NETFRAMEWORK
+            writer.Write($"{code:D4}");
+#else
+            var buf = (Span<char>)stackalloc char[16];
+            if (code.TryFormat(buf, out var l, "D4") == false)
+                throw new InvalidOperationException();
+
+            writer.Write(buf);
+#endif
+        }
+
+        /// <summary>
+        /// Formats the specified message text.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+#if NET8_0_OR_GREATER
+        protected virtual void FormatDiagnosticMessage(ref EncodingSpanWriter writer, CompositeFormat message, ReadOnlySpan<object?> args)
+#else
+        protected virtual void FormatDiagnosticMessage(ref EncodingSpanWriter writer, string message, ReadOnlySpan<object?> args)
+#endif
+        {
+#if NET8_0_OR_GREATER
+            writer.Write(string.Format(null, message, args));
+#else
+            writer.Write(string.Format(null, message, args.ToArray()));
+#endif
+        }
+
+        /// <summary>
+        /// Formats the <see cref="DiagnosticEvent"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="event"></param>
+        protected virtual void FormatDiagnosticEvent(ref EncodingSpanWriter writer, in DiagnosticEvent @event)
+        {
+            FormatDiagnosticLevel(ref writer, @event.Diagnostic.Level);
+            writer.Write(" ");
+            FormatDiagnosticCode(ref writer, @event.Diagnostic.Id);
+            writer.Write(": ");
+            FormatDiagnosticMessage(ref writer, @event.Diagnostic.Message, @event.Args);
+            writer.WriteLine();
         }
 
         /// <inheritdoc />
-        public void Write(in DiagnosticEvent @event)
+        protected override void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel)
         {
-            // find the writer for the event's level
-            var channel = @event.Diagnostic.Level switch
-            {
-                DiagnosticLevel.Trace => _options.TraceChannel,
-                DiagnosticLevel.Informational => _options.InformationChannel,
-                DiagnosticLevel.Warning => _options.WarningChannel,
-                DiagnosticLevel.Error => _options.ErrorChannel,
-                DiagnosticLevel.Fatal => _options.FatalChannel,
-                _ => throw new InvalidOperationException(),
-            };
-
-            if (channel == null)
-                return;
-
             var wrt = channel.Writer;
             var enc = channel.Encoding ?? Encoding.Default;
 
@@ -52,28 +108,7 @@ namespace IKVM.Tools.Core.Diagnostics
 
             try
             {
-                // write tag
-                utf.Write(@event.Diagnostic.Level switch
-                {
-                    DiagnosticLevel.Trace => "trace",
-                    DiagnosticLevel.Informational => "info",
-                    DiagnosticLevel.Warning => "warning",
-                    DiagnosticLevel.Error => "error",
-                    DiagnosticLevel.Fatal => "fatal",
-                    _ => throw new InvalidOperationException(),
-                });
-
-                // write event ID
-                utf.Write($" IKVM{@event.Diagnostic.Id:D4}: ");
-
-                // write message
-#if NET8_0_OR_GREATER
-                utf.Write(string.Format(null, @event.Diagnostic.Message, @event.Args));
-#else
-                utf.Write(string.Format(null, @event.Diagnostic.Message, @event.Args.ToArray()));
-#endif
-
-                utf.WriteLine();
+                FormatDiagnosticEvent(ref utf, @event);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -82,25 +117,6 @@ namespace IKVM.Tools.Core.Diagnostics
 
             channel.Writer.Write(buf, utf.BytesWritten);
             return;
-        }
-
-        /// <summary>
-        /// Disposes of the instance.
-        /// </summary>
-        public void Dispose()
-        {
-            var hs = new HashSet<IDisposable>();
-
-            if (_options.TraceChannel is IDisposable trace && hs.Add(trace))
-                trace.Dispose();
-            if (_options.InformationChannel is IDisposable info && hs.Add(info))
-                info.Dispose();
-            if (_options.WarningChannel is IDisposable warning && hs.Add(warning))
-                warning.Dispose();
-            if (_options.ErrorChannel is IDisposable error && hs.Add(error))
-                error.Dispose();
-            if (_options.FatalChannel is IDisposable fatal && hs.Add(fatal))
-                fatal.Dispose();
         }
 
     }

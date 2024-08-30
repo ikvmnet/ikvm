@@ -2087,7 +2087,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {arg1}. Referenced assembly runtime: {arg2}
+/// Referenced assembly {location} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
         /// </remarks>
 #if NET8_0_OR_GREATER
         public static readonly Diagnostic RuntimeMismatch = new Diagnostic(5046, nameof(RuntimeMismatch), CompositeFormat.Parse("Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version. C" +

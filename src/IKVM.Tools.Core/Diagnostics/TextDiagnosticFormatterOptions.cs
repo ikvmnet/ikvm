@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Tools.Core.Diagnostics
 {
 
-    class TextDiagnosticFormatterOptions : FormatterOptionsBase
+    class TextDiagnosticFormatterOptions : DiagnosticChannelFormatterOptions
     {
 
         /// <summary>

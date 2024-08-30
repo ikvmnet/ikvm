@@ -1110,11 +1110,11 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {arg0} was compiled with an incompatible IKVM.Runtime version. Current runtime: {arg1}. Referenced assembly runtime: {arg2}
+/// Referenced assembly {location} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
         /// </remarks>
         [Event(5046, Message = "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version. C" +
     "urrent runtime: {1}. Referenced assembly runtime: {2}", Level = EventLevel.Critical)]
-        public void RuntimeMismatch(string arg0, string arg1, string arg2) => WriteEvent(5046, arg0, arg1, arg2);
+        public void RuntimeMismatch(string location, string runtimeAssemblyName, string referencedAssemblyName) => WriteEvent(5046, location, runtimeAssemblyName, referencedAssemblyName);
 
         /// <summary>
         /// The 'RuntimeMismatchStrongName' diagnostic.

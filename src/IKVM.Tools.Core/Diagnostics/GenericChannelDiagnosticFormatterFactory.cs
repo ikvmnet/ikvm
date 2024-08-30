@@ -12,7 +12,7 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <typeparam name="TOptions"></typeparam>
     abstract class GenericChannelDiagnosticFormatterFactory<TFormatter, TOptions> : IDiagnosticFormatterFactory
         where TFormatter : IDiagnosticFormatter
-        where TOptions : FormatterOptionsBase, new()
+        where TOptions : DiagnosticChannelFormatterOptions, new()
     {
 
         readonly DiagnosticChannelProvider _channels;

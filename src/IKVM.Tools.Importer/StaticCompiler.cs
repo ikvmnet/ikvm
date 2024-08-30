@@ -79,7 +79,7 @@ namespace IKVM.Tools.Importer
             var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, libpaths);
             if (coreLibName == null)
             {
-                Console.Error.WriteLine("Core library not found. Make sure the appropriate reference assemblies for the target environment are included.");
+                diagnostics.CoreClassesMissing();
                 throw new Exception();
             }
 

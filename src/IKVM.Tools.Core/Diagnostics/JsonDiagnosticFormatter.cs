@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
@@ -14,37 +13,22 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <summary>
     /// Formats diagnostic events into a stream of JSON objects.
     /// </summary>
-    class JsonDiagnosticFormatter : IDiagnosticFormatter, IDisposable
+    class JsonDiagnosticFormatter : DiagnosticChannelFormatter<JsonDiagnosticFormatterOptions>
     {
-
-        readonly JsonDiagnosticFormatterOptions _options;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="options"></param>
-        public JsonDiagnosticFormatter(JsonDiagnosticFormatterOptions options)
+        public JsonDiagnosticFormatter(JsonDiagnosticFormatterOptions options) :
+            base(options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+
         }
 
         /// <inheritdoc />
-        public void Write(in DiagnosticEvent @event)
+        protected override void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel)
         {
-            // find the writer for the event's level
-            var channel = @event.Diagnostic.Level switch
-            {
-                DiagnosticLevel.Trace => _options.TraceChannel,
-                DiagnosticLevel.Informational => _options.InformationChannel,
-                DiagnosticLevel.Warning => _options.WarningChannel,
-                DiagnosticLevel.Error => _options.ErrorChannel,
-                DiagnosticLevel.Fatal => _options.FatalChannel,
-                _ => null,
-            };
-
-            if (channel == null)
-                return;
-
             var wrt = channel.Writer;
             var enc = channel.Encoding ?? Encoding.Default;
 
@@ -67,7 +51,7 @@ namespace IKVM.Tools.Core.Diagnostics
                 json.WriteStartArray("args");
 
                 // encode each argument
-                foreach (var arg in @event.Args.Span)
+                foreach (var arg in @event.Args)
                     JsonSerializer.Serialize(json, arg, arg?.GetType() ?? typeof(object), JsonSerializerOptions.Default);
 
                 json.WriteEndArray();
@@ -99,25 +83,6 @@ namespace IKVM.Tools.Core.Diagnostics
 
             // write the memory
             wrt.Write(mem, buf.WrittenCount);
-        }
-
-        /// <summary>
-        /// Disposes of the instance.
-        /// </summary>
-        public void Dispose()
-        {
-            var hs = new HashSet<IDisposable>();
-
-            if (_options.TraceChannel is IDisposable trace && hs.Add(trace))
-                trace.Dispose();
-            if (_options.InformationChannel is IDisposable info && hs.Add(info))
-                info.Dispose();
-            if (_options.WarningChannel is IDisposable warning && hs.Add(warning))
-                warning.Dispose();
-            if (_options.ErrorChannel is IDisposable error && hs.Add(error))
-                error.Dispose();
-            if (_options.FatalChannel is IDisposable fatal && hs.Add(fatal))
-                fatal.Dispose();
         }
 
     }

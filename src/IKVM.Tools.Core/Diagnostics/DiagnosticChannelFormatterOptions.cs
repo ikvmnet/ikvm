@@ -1,15 +1,17 @@
-﻿using IKVM.CoreLib.Diagnostics;
+﻿using System;
+
+using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
 
-    abstract class FormatterOptionsBase
+    abstract class DiagnosticChannelFormatterOptions
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public FormatterOptionsBase()
+        public DiagnosticChannelFormatterOptions()
         {
 
         }
@@ -18,7 +20,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// Initializes a new instance.
         /// </summary>
         /// <param name="defaultChannel"></param>
-        public FormatterOptionsBase(IDiagnosticChannel defaultChannel)
+        public DiagnosticChannelFormatterOptions(IDiagnosticChannel defaultChannel)
         {
             TraceChannel = defaultChannel;
             InformationChannel = defaultChannel;
@@ -30,27 +32,27 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Trace"/> messages.
         /// </summary>
-         public IDiagnosticChannel? TraceChannel { get; set; }
+        public IDiagnosticChannel? TraceChannel { get; set; }
 
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Informational"/> messages.
         /// </summary>
-         public IDiagnosticChannel? InformationChannel { get; set; }
+        public IDiagnosticChannel? InformationChannel { get; set; }
 
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Warning"/> messages.
         /// </summary>
-         public IDiagnosticChannel? WarningChannel { get; set; }
+        public IDiagnosticChannel? WarningChannel { get; set; }
 
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Error"/> messages.
         /// </summary>
-         public IDiagnosticChannel? ErrorChannel { get; set; }
+        public IDiagnosticChannel? ErrorChannel { get; set; }
 
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Fatal"/> messages.
         /// </summary>
-         public IDiagnosticChannel? FatalChannel { get; set; }
+        public IDiagnosticChannel? FatalChannel { get; set; }
 
     }
 
