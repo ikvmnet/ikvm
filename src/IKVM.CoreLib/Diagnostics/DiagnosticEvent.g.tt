@@ -39,6 +39,8 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
     foreach (var arg in kvp.Value.Args)
         argDecl.Add($"{arg.Type} {arg.Name}");
 
+    argDecl.Add("DiagnosticLocation location = default");
+
     var argList = new List<string>();
     foreach (var arg in kvp.Value.Args)
         argList.Add($"{arg.Name}");
@@ -49,7 +51,7 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         /// <remarks>
 <#= Util.ToCommentString(kvp.Value.Message ?? "") #>
         /// </remarks>
-        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>]);
+        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>], location);
 
 <#
 }

@@ -978,9 +978,9 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {location} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
+/// Referenced assembly {referencedAssemblyPath} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
         /// </remarks>
-        public void RuntimeMismatch(string location, string runtimeAssemblyName, string referencedAssemblyName) => Report(Diagnostic.RuntimeMismatch.Event([location, runtimeAssemblyName, referencedAssemblyName]));
+        public void RuntimeMismatch(string referencedAssemblyPath, string runtimeAssemblyName, string referencedAssemblyName) => Report(Diagnostic.RuntimeMismatch.Event([referencedAssemblyPath, runtimeAssemblyName, referencedAssemblyName]));
 
         /// <summary>
         /// The 'RuntimeMismatchStrongName' diagnostic.

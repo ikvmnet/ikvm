@@ -1421,10 +1421,10 @@
     "RuntimeMismatch": {
         "id": 5046,
         "level": "Fatal",
-        "message": "Referenced assembly {location} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}",
+        "message": "Referenced assembly {referencedAssemblyPath} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}",
         "args": [
             {
-                "name": "location",
+                "name": "referencedAssemblyPath",
                 "type": "string"
             },
             {
