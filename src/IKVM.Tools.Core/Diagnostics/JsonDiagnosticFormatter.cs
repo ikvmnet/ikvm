@@ -77,6 +77,9 @@ namespace IKVM.Tools.Core.Diagnostics
                 json.Flush();
                 json.Dispose();
 
+                // write EOL
+                enc.GetBytes(Environment.NewLine.AsSpan(), buf);
+
                 // destination encoding is not UTF8, so convert
                 if (enc is not UTF8Encoding)
                 {

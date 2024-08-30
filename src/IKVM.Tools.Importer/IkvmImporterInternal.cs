@@ -30,48 +30,18 @@ using System.Threading;
 
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.Tools.Core.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IKVM.Tools.Importer
 {
 
     class IkvmImporterInternal
     {
-
-        /// <summary>
-        /// <see cref="IDiagnosticHandler"> implementation for nested class loaders.
-        /// </summary>
-        internal class DiagnosticHandler : DiagnosticEventHandler
-        {
-
-            readonly IkvmImporterInternal importer;
-            readonly CompilerOptions options;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="importer"></param>
-            /// <param name="compiler"></param>
-            /// <param name="options"></param>
-            public DiagnosticHandler(IkvmImporterInternal importer, CompilerOptions options)
-            {
-                this.importer = importer ?? throw new ArgumentNullException(nameof(importer));
-                this.options = options ?? throw new ArgumentNullException(nameof(options));
-            }
-
-            public override bool IsEnabled(Diagnostic diagnostic)
-            {
-                return importer.IsDiagnosticEnabled(diagnostic);
-            }
-
-            public override void Report(in DiagnosticEvent @event)
-            {
-                importer.ReportEvent(options, @event);
-            }
-
-        }
 
         bool nonleaf;
         string manifestMainClass;
@@ -183,6 +153,22 @@ namespace IKVM.Tools.Importer
             }
         }
 
+        /// <summary>
+        /// Generates a diagnostic instance from the diagnostics options.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="spec"></param>
+        /// <returns></returns>
+        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
+        {
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
+            if (string.IsNullOrWhiteSpace(spec))
+                throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
+
+            return ActivatorUtilities.CreateInstance<FormattedDiagnosticEventHandler>(services, spec);
+        }
+
         static int Compile(string[] args)
         {
             var argList = GetArgs(args);
@@ -197,14 +183,21 @@ namespace IKVM.Tools.Importer
                 PrintHeader();
             }
 
+            var services = new ServiceCollection();
+            services.AddToolsDiagnostics();
+            services.AddSingleton(p => GetDiagnostics(p, "text"));
+            services.AddSingleton<IManagedTypeResolver, ManagedResolver>();
+            services.AddSingleton<StaticCompiler>();
+            using var provider = services.BuildServiceProvider();
+
+            var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
+            var compiler = provider.GetRequiredService<StaticCompiler>();
             var rootTarget = new CompilerOptions();
-            var importer = new IkvmImporterInternal();
-            var diagnostics = new DiagnosticHandler(importer, rootTarget);
-            var compiler = new StaticCompiler(diagnostics);
             var targets = new List<CompilerOptions>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
+            var importer = new IkvmImporterInternal();
             importer.ParseCommandLine(context, compiler, diagnostics, argList.GetEnumerator(), targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
@@ -426,6 +419,7 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("-static                        Disable dynamic binding");
             Console.Error.WriteLine("-assemblyattributes:<file>     Read assembly custom attributes from specified");
             Console.Error.WriteLine("                               class file.");
+            Console.Error.WriteLine("-log <format>                  Log format (text or json).");
         }
 
         void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -892,6 +886,10 @@ namespace IKVM.Tools.Importer
                     {
                         options.bootstrap = true;
                     }
+                    else if (s == "-log:")
+                    {
+                        options.log = s.Substring(5);
+                    }
                     else
                     {
                         throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedOption(s));
@@ -977,7 +975,7 @@ namespace IKVM.Tools.Importer
 
         void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, List<string> fileNames)
         {
-            foreach (string fileName in fileNames)
+            foreach (var fileName in fileNames)
             {
                 if (defaultAssemblyName == null)
                 {
@@ -992,9 +990,11 @@ namespace IKVM.Tools.Importer
                     }
                     catch (NotSupportedException)
                     {
+
                     }
                     catch (PathTooLongException)
                     {
+
                     }
                 }
 
@@ -1016,7 +1016,7 @@ namespace IKVM.Tools.Importer
                 }
                 else
                 {
-                    foreach (string f in files)
+                    foreach (var f in files)
                     {
                         ProcessFile(context, compiler, options, diagnostics, null, f);
                     }
@@ -1519,7 +1519,7 @@ namespace IKVM.Tools.Importer
                 int contextIndex = w.IndexOf(':', prefixStart);
                 string context = string.Empty;
                 string parse;
-                if(contextIndex != -1)
+                if (contextIndex != -1)
                 {
                     // context includes ':' separator
                     context = w.Substring(contextIndex);

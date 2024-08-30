@@ -27,10 +27,9 @@ namespace IKVM.Tools.Importer
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
+        Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
         {
-            using var context = new IkvmImporterContext(args);
-            return await context.ExecuteAsync(cancellationToken);
+            return Task.FromResult(IkvmImporterInternal.Execute(args));
         }
 
     }

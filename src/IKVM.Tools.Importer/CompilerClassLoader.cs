@@ -2507,7 +2507,7 @@ namespace IKVM.Tools.Importer
             var loaders = new List<CompilerClassLoader>();
             foreach (var options in optionsList)
             {
-                int rc = CreateCompiler(context, compiler, new IkvmImporterInternal.DiagnosticHandler(importer, options), options, out var loader);
+                int rc = CreateCompiler(context, compiler, diagnostics, options, out var loader);
                 if (rc != 0)
                     return rc;
 
@@ -3428,6 +3428,7 @@ namespace IKVM.Tools.Importer
         internal bool warningLevelHigh;
         internal bool noParameterReflection;
         internal bool bootstrap;
+        internal string log;
 
         internal CompilerOptions Copy()
         {

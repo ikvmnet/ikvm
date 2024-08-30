@@ -72,6 +72,8 @@ namespace IKVM.Tools.Core.Diagnostics
 #else
                 utf.Write(string.Format(null, @event.Diagnostic.Message, @event.Args.ToArray()));
 #endif
+
+                utf.WriteLine();
             }
             catch (ArgumentOutOfRangeException)
             {

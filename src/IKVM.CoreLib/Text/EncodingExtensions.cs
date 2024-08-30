@@ -2,6 +2,8 @@
 using System.Buffers;
 using System.Text;
 
+using static System.Net.Mime.MediaTypeNames;
+
 namespace IKVM.CoreLib.Text
 {
 
