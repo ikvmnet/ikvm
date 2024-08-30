@@ -35,7 +35,7 @@ namespace IKVM.Tools.Importer.Tests
 
             var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmImporterTests.java")).ReadToEnd();
             var f = new InMemoryCodeUnit("ikvm.tools.importer.tests.IkvmImporterTests", s);
-            var c = new InMemoryCompiler(new[] { f });
+            var c = new InMemoryCompiler([f]);
             c.Compile();
             var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
             c.WriteJar(j);

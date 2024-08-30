@@ -10,7 +10,7 @@ namespace ikvmstub
 
         public static Task Main(string[] args)
         {
-            return ExportTool.MainAsync(args);
+            return ExportTool.InvokeAsync(args);
         }
 
     }

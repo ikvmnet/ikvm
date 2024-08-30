@@ -1,4 +1,6 @@
-﻿namespace IKVM.Tools.Exporter
+﻿using System.Collections.Generic;
+
+namespace IKVM.Tools.Exporter
 {
 
     /// <summary>
@@ -15,17 +17,17 @@
         /// <summary>
         /// Assembly references.
         /// </summary>
-        public string[] References { get; set; } = [];
+        public List<string> References { get; set; } = [];
 
         /// <summary>
         /// Path to directories to search for assembly references.
         /// </summary>
-        public string[] Libraries { get; set; } = [];
+        public List<string> Libraries { get; set; } = [];
 
         /// <summary>
         /// Set of namespaces to export.
         /// </summary>
-        public string[] Namespaces { get; set; } = [];
+        public List<string> Namespaces { get; set; } = [];
 
         /// <summary>
         /// Are we doing a shared export.

@@ -18,7 +18,7 @@ namespace IKVM.Tools.Exporter
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
-    public class ExportTool
+    class ExportTool
     {
 
         /// <summary>
@@ -27,20 +27,9 @@ namespace IKVM.Tools.Exporter
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static async Task<int> MainAsync(string[] args, CancellationToken cancellationToken = default)
+        public static async Task<int> InvokeAsync(string[] args, CancellationToken cancellationToken = default)
         {
-            return await new ExportTool().ExecuteAsync(args, cancellationToken);
-        }
-
-        /// <summary>
-        /// Executes the exporter.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        static Task<int> MainAsync(ExportOptions options, IDiagnosticHandler diagnostics, CancellationToken cancellationToken = default)
-        {
-            return MainAsync(options, _ => diagnostics, cancellationToken);
+            return await new ExportTool().InvokeImplAsync(args, cancellationToken);
         }
 
         /// <summary>
@@ -50,7 +39,19 @@ namespace IKVM.Tools.Exporter
         /// <param name="diagnostics"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static Task<int> MainAsync(ExportOptions options, Func<IServiceProvider, IDiagnosticHandler> diagnostics, CancellationToken cancellationToken)
+        public static Task<int> ExecuteAsync(ExportOptions options, IDiagnosticHandler diagnostics, CancellationToken cancellationToken = default)
+        {
+            return ExecuteImplAsync(options, _ => diagnostics, cancellationToken);
+        }
+
+        /// <summary>
+        /// Executes the exporter.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="diagnostics"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        static Task<int> ExecuteImplAsync(ExportOptions options, Func<IServiceProvider, IDiagnosticHandler> diagnostics, CancellationToken cancellationToken)
         {
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
@@ -78,6 +79,51 @@ namespace IKVM.Tools.Exporter
 
             var exporter = services.GetRequiredService<ExportImpl>();
             return Task.FromResult(exporter.Execute());
+        }
+
+        /// <summary>
+        /// Executes the program.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        static Task ExecuteAsync(ExportCommandOptions options, CancellationToken cancellationToken)
+        {
+            if (options is null)
+                throw new ArgumentNullException(nameof(options));
+
+            return ExecuteImplAsync(new ExportOptions()
+            {
+                Output = options.Output,
+                References = [.. options.References],
+                Libraries = [.. options.Libraries],
+                IncludeNonPublicTypes = options.IncludeNonPublicTypes,
+                IncludeNonPublicInterfaces = options.IncludeNonPublicInterfaces,
+                IncludeNonPublicMembers = options.IncludeNonPublicMembers,
+                IncludeParameterNames = options.IncludeParameterNames,
+                Forwarders = options.Forwarders,
+                NoStdLib = options.NoStdLib,
+                Shared = options.Shared,
+                Bootstrap = options.Bootstrap,
+                ContinueOnError = options.ContinueOnError,
+                Assembly = options.Assembly
+            }, p => GetDiagnostics(p, options.Log), cancellationToken);
+        }
+
+        /// <summary>
+        /// Generates a diagnostic instance from the diagnostics options.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="spec"></param>
+        /// <returns></returns>
+        static FormattedDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
+        {
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
+            if (string.IsNullOrWhiteSpace(spec))
+                throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
+
+            return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
         }
 
         readonly RootCommand command;
@@ -152,7 +198,7 @@ namespace IKVM.Tools.Exporter
                     description: "Path or name of assembly to export.")),
             };
 
-            command.SetHandler(ExecuteAsync);
+            command.SetHandler(ExecuteImplAsync);
         }
 
         /// <summary>
@@ -161,7 +207,7 @@ namespace IKVM.Tools.Exporter
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
+        async Task<int> InvokeImplAsync(string[] args, CancellationToken cancellationToken)
         {
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
@@ -174,7 +220,7 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        async Task ExecuteAsync(InvocationContext context)
+        async Task ExecuteImplAsync(InvocationContext context)
         {
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
@@ -197,51 +243,6 @@ namespace IKVM.Tools.Exporter
                 Assembly = context.ParseResult.GetValueForArgument(assemblyArgument),
                 Log = context.ParseResult.GetValueForOption(logOption)
             }, context.GetCancellationToken());
-        }
-
-        /// <summary>
-        /// Executes the program.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        Task ExecuteAsync(ExportCommandOptions options, CancellationToken cancellationToken)
-        {
-            if (options is null)
-                throw new ArgumentNullException(nameof(options));
-
-            return MainAsync(new ExportOptions()
-            {
-                Output = options.Output,
-                References = options.References,
-                Libraries = options.Libraries,
-                IncludeNonPublicTypes = options.IncludeNonPublicTypes,
-                IncludeNonPublicInterfaces = options.IncludeNonPublicInterfaces,
-                IncludeNonPublicMembers = options.IncludeNonPublicMembers,
-                IncludeParameterNames = options.IncludeParameterNames,
-                Forwarders = options.Forwarders,
-                NoStdLib = options.NoStdLib,
-                Shared = options.Shared,
-                Bootstrap = options.Bootstrap,
-                ContinueOnError = options.ContinueOnError,
-                Assembly = options.Assembly
-            }, p => GetDiagnostics(p, options.Log), cancellationToken);
-        }
-
-        /// <summary>
-        /// Generates a diagnostic instance from the diagnostics options.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="spec"></param>
-        /// <returns></returns>
-        IDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
-        {
-            if (services is null)
-                throw new ArgumentNullException(nameof(services));
-            if (string.IsNullOrWhiteSpace(spec))
-                throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
-
-            return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
         }
 
     }
