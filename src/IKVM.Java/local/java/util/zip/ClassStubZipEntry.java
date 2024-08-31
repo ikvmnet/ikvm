@@ -84,7 +84,7 @@ final class ClassStubZipEntry extends ZipEntry
             }
             return crc.getValue();
         }
-        catch (IOException _)
+        catch (IOException e)
         {
             return 0;
         }

@@ -96,7 +96,7 @@ public final class ClassPathAssemblyClassLoader extends URLClassLoader
 			{
 				file = file.getCanonicalFile();
 			}
-			catch (java.io.IOException _)
+			catch (java.io.IOException e)
 			{
 				
 			}

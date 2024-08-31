@@ -151,7 +151,7 @@ class Thread implements Runnable {
         dummy.setContextClassLoader(ClassLoader.DUMMY);
     }
 
-    private Thread(Void _) {
+    private Thread(Void unknown) {
         // body replaced in map.xml
     }
 
@@ -359,7 +359,7 @@ class Thread implements Runnable {
                             // so we waste a time slice... sigh.
                             t.Join(1);
                         }
-                        catch (cli.System.Threading.ThreadInterruptedException _) {
+                        catch (cli.System.Threading.ThreadInterruptedException e) {
                         }
                     }
 
@@ -413,7 +413,7 @@ class Thread implements Runnable {
             }
             cli.System.Threading.Thread.Sleep((int)(millis % Integer.MAX_VALUE));
         }
-        catch (cli.System.Threading.ThreadInterruptedException _) {
+        catch (cli.System.Threading.ThreadInterruptedException e) {
         }
         finally {
             c.leaveInterruptableWait();
@@ -1813,8 +1813,7 @@ class Thread implements Runnable {
             // so we abuse Pulse to check if we own the monitor.
             cli.System.Threading.Monitor.Pulse(obj);
             return true;
-        }
-        catch (cli.System.Threading.SynchronizationLockException _) {
+        } catch (cli.System.Threading.SynchronizationLockException e) {
             return false;
         }
     }
@@ -2398,7 +2397,7 @@ class Thread implements Runnable {
                 if (false) throw new cli.System.Threading.ThreadStateException();
                 nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
             }
-            catch (cli.System.Threading.ThreadStateException _) {
+            catch (cli.System.Threading.ThreadStateException e) {
             }
         }
     }
@@ -2433,7 +2432,7 @@ class Thread implements Runnable {
                     if (false) throw new cli.System.Threading.ThreadStateException();
                     nativeThread.Abort(x);
                 }
-                catch (cli.System.Threading.ThreadStateException _) {
+                catch (cli.System.Threading.ThreadStateException e) {
                     // .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
                     // (but it does record the Abort request)
                 }
@@ -2444,7 +2443,8 @@ class Thread implements Runnable {
                         nativeThread.Resume();
                     }
                 }
-                catch (cli.System.Threading.ThreadStateException _) {
+                catch (cli.System.Threading.ThreadStateException e) {
+                    
                 }
             }
         }
@@ -2458,7 +2458,8 @@ class Thread implements Runnable {
                 nativeThread.Suspend();
             }
         }
-        catch (cli.System.Threading.ThreadStateException _) {
+        catch (cli.System.Threading.ThreadStateException e) {
+            
         }
     }
 
@@ -2470,7 +2471,8 @@ class Thread implements Runnable {
                 nativeThread.Resume();
             }
         }
-        catch (cli.System.Threading.ThreadStateException _) {
+        catch (cli.System.Threading.ThreadStateException e) {
+            
         }
     }
 
@@ -2531,7 +2533,8 @@ class Thread implements Runnable {
             try {
                 getUncaughtExceptionHandler().uncaughtException(this, x);
             }
-            catch (Throwable _) {
+            catch (Throwable e) {
+                
             }
         }
     }
@@ -2576,7 +2579,8 @@ class Thread implements Runnable {
                 cli.System.Threading.Monitor.Wait(o, (int)Math.min(timeout, Integer.MAX_VALUE));
             }
         }
-        catch (cli.System.Threading.ThreadInterruptedException _) {
+        catch (cli.System.Threading.ThreadInterruptedException e) {
+            
         }
         finally {
             t.leaveInterruptableWait();
@@ -2589,7 +2593,8 @@ class Thread implements Runnable {
             try {
                 if (false) throw new cli.System.InvalidOperationException();
                 thread.set_Name(name);
-            } catch (cli.System.InvalidOperationException _) {
+            } catch (cli.System.InvalidOperationException e) {
+                
             }
         }
     }

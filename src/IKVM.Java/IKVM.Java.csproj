@@ -28,4 +28,7 @@
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
+    <ItemGroup>
+      <None Remove="D:\ikvm\src\IKVM.Java\local\AssemblyInfo.java" />
+    </ItemGroup>
 </Project>
