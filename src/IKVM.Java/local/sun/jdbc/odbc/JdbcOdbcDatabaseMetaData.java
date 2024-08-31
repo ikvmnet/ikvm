@@ -429,11 +429,12 @@ public class JdbcOdbcDatabaseMetaData implements DatabaseMetaData{
             DataRowCollection rows1 = dt1.get_Rows();
             DataRowCollection rows2 = dt2.get_Rows();
             for(int i = 0; i < rows2.get_Count(); i++){
-                DataRow row = rows2.get_Item(i);
-                rows1.Add(row.get_ItemArray());
+                DataRow row = (DataRow)(rows2.get_Item(i));
+                Object[] items = row.get_ItemArray();
+                rows1.Add(items);
             }
             return new JdbcOdbcDTResultSet(dt1);
-        }catch(Throwable th){
+        } catch(Throwable th) {
             throw JdbcOdbcUtils.createSQLException(th);
         }
     }
