@@ -20,5 +20,9 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="CommandLine\" />
+    </ItemGroup>
 
 </Project>

@@ -17,17 +17,17 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Assembly references.
         /// </summary>
-        public List<string> References { get; set; } = [];
+        public List<string> References { get; } = [];
 
         /// <summary>
         /// Path to directories to search for assembly references.
         /// </summary>
-        public List<string> Libraries { get; set; } = [];
+        public List<string> Libraries { get; } = [];
 
         /// <summary>
         /// Set of namespaces to export.
         /// </summary>
-        public List<string> Namespaces { get; set; } = [];
+        public List<string> Namespaces { get; } = [];
 
         /// <summary>
         /// Are we doing a shared export.

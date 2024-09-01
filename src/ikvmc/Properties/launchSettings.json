@@ -1,8 +1,8 @@
 {
-  "profiles": {
-    "ikvmc": {
-      "commandName": "Project",
-      "commandLineArgs": "foo.jar -out:foo.dll"
+    "profiles": {
+        "ikvmc": {
+            "commandName": "Project",
+            "commandLineArgs": "-resource foo=C:\\bar -resource"
+        }
     }
-  }
 }

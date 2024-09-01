@@ -11,7 +11,7 @@ namespace ikvmc
 
         public static Task<int> Main(string[] args)
         {
-            return IkvmImporterTool.Main(args, CancellationToken.None);
+            return ImportTool.InvokeAsync(args, CancellationToken.None);
         }
 
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace IKVM.Tools.Exporter
 {
@@ -13,17 +14,17 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Output JAR file.
         /// </summary>
-        public string Output { get; set; }
+        public FileInfo Output { get; set; }
 
         /// <summary>
         /// Assembly references.
         /// </summary>
-        public string[] References { get; set; } = [];
+        public FileInfo[] References { get; set; } = [];
 
         /// <summary>
         /// Path to directories to search for assembly references.
         /// </summary>
-        public string[] Libraries { get; set; } = [];
+        public DirectoryInfo[] Libraries { get; set; } = [];
 
         /// <summary>
         /// Set of namespaces to export.
@@ -83,7 +84,7 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Paths to assembly to export.
         /// </summary>
-        public string Assembly { get; set; }
+        public FileInfo Assembly { get; set; }
 
         /// <summary>
         /// Gets the various logging configurations.
