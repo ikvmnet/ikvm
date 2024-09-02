@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.Tools.Core.CommandLine;
 using IKVM.Tools.Core.Diagnostics;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -116,7 +117,7 @@ namespace IKVM.Tools.Importer
             _command = new ImportCommand();
             _command.SetHandler((options) => ExecuteAsync(options), new ImportOptionsBinding());
 
-            _parser = new CommandLineBuilder(_command).UseDefaults().Build();
+            _parser = new CommandLineBuilder(_command).UseDefaults().UseCommandExceptionHandler().Build();
         }
 
         /// <summary>

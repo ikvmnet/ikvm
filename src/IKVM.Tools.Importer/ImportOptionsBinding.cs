@@ -9,6 +9,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
+using IKVM.Tools.Core.CommandLine;
+
 namespace IKVM.Tools.Importer
 {
 
@@ -37,8 +39,8 @@ namespace IKVM.Tools.Importer
                 Platform = GetEnumValueForOption(context, command.PlatformOption, ImportPlatform.Unspecified),
                 Apartment = GetEnumValueForOption(context, command.ApartmentOption, ImportApartment.Unspecified),
                 NoGlobbing = context.ParseResult.GetValueForOption(command.NoGlobbingOption),
-                EnableAssertions = context.ParseResult.GetValueForOption(command.EnableAssertionsOption),
-                DisableAssertions = context.ParseResult.GetValueForOption(command.DisableAssertionsOption),
+                EnableAssertions = ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null),
+                DisableAssertions = ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null),
                 Properties = GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, ""),
                 RemoveAssertions = context.ParseResult.GetValueForOption(command.RemoveAssertionsOption),
                 Main = context.ParseResult.GetValueForOption(command.MainClassOption),
@@ -48,8 +50,8 @@ namespace IKVM.Tools.Importer
                 ExternalResources = GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null),
                 NoJNI = context.ParseResult.GetValueForOption(command.NoJNIOption),
                 Exclude = context.ParseResult.GetValueForOption(command.ExcludeOption),
-                Version = context.ParseResult.GetValueForOption(command.VersionOption),
-                FileVersion = context.ParseResult.GetValueForOption(command.FileVersionOption),
+                Version = ParseStringForOption<Version?>(context, command.VersionOption, null),
+                FileVersion = ParseStringForOption<Version?>(context, command.FileVersionOption, null),
                 Win32Icon = context.ParseResult.GetValueForOption(command.Win32IconOption),
                 Win32Manifest = context.ParseResult.GetValueForOption(command.Win32ManifestOption),
                 KeyFile = context.ParseResult.GetValueForOption(command.KeyFileOption),
@@ -66,8 +68,8 @@ namespace IKVM.Tools.Importer
                 StrictFinalFieldSemantics = context.ParseResult.GetValueForOption(command.StrictFinalFieldSemanticsOption),
                 PrivatePackages = context.ParseResult.GetValueForOption(command.PrivatePackageOption) ?? [],
                 PublicPackages = context.ParseResult.GetValueForOption(command.PublicPackageOption) ?? [],
-                NoWarn = context.ParseResult.GetValueForOption(command.NoWarnOption),
-                WarnAsError = context.ParseResult.GetValueForOption(command.WarnAsErrorOption),
+                NoWarn = context.ParseResult.GetValueForOption(command.NoWarnOption) ?? [],
+                WarnAsError = context.ParseResult.GetValueForOption(command.WarnAsErrorOption) ?? [],
                 Runtime = context.ParseResult.GetValueForOption(command.RuntimeOption),
                 Time = context.ParseResult.GetValueForOption(command.TimeOption),
                 ClassLoader = context.ParseResult.GetValueForOption(command.ClassLoaderOption),
@@ -90,6 +92,62 @@ namespace IKVM.Tools.Importer
                 Bootstrap = context.ParseResult.GetValueForOption(command.BootstrapOption),
                 Log = context.ParseResult.GetValueForOption(command.LogOption),
             };
+        }
+
+        /// <summary>
+        /// Parses the specified string option as a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="option"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        T ParseStringForOption<T>(BindingContext context, Option<string?> option, T defaultValue)
+        {
+            return context.ParseResult.GetValueForOption(option) is string v ? Parse<T>(v) ?? defaultValue : defaultValue;
+        }
+
+        /// <summary>
+        /// Parses the specified string option as a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="option"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        string[]? ParseStringToStringArrayForOption(BindingContext context, Option<string?> option, char[] separator, string[]? defaultValue)
+        {
+            return context.ParseResult.GetValueForOption(option) is string v ? v.Split(separator, StringSplitOptions.RemoveEmptyEntries) : defaultValue;
+        }
+
+        /// <summary>
+        /// Parses the specified string option as a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="option"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        int[]? ParseDiagnosticIdListForOption(BindingContext context, Option<string?> option, char[] separator, int[]? defaultValue)
+        {
+            return context.ParseResult.GetValueForOption(option) is string v ? v.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(SafeParseDiagnosticId).Where(i => i != null).OfType<int>().ToArray() : defaultValue;
+        }
+
+        /// <summary>
+        /// Parses a string value into a Diagnostic ID.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        int? SafeParseDiagnosticId(string value)
+        {
+            if (int.TryParse(value, out var i))
+                return i;
+
+            if (value.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase))
+                return SafeParseDiagnosticId(value["IKVM".Length..]);
+
+            return null;
         }
 
         /// <summary>
@@ -116,7 +174,7 @@ namespace IKVM.Tools.Importer
         IReadOnlyDictionary<TKey, TValue> GetDictionaryValueForOption<TKey, TValue>(BindingContext context, Option<string[]> option, TValue? defaultValue)
             where TKey : notnull
         {
-            return context.ParseResult.GetValueForOption(option) is string[] v ? ParseDictionaryValues<TKey, TValue>(context, v, defaultValue) : ImmutableDictionary<TKey, TValue>.Empty;
+            return context.ParseResult.GetValueForOption(option) is string[] v ? ParseDictionaryValues<TKey, TValue>(context, option, v, defaultValue) : ImmutableDictionary<TKey, TValue>.Empty;
         }
 
         /// <summary>
@@ -128,10 +186,20 @@ namespace IKVM.Tools.Importer
         /// <param name="values"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        IReadOnlyDictionary<TKey, TValue> ParseDictionaryValues<TKey, TValue>(BindingContext context, string[] values, TValue? defaultValue)
+        IReadOnlyDictionary<TKey, TValue> ParseDictionaryValues<TKey, TValue>(BindingContext context, Option option, string[] values, TValue? defaultValue)
             where TKey : notnull
         {
-            return values.Select(i => ParseDictionaryValue<TKey, TValue>(context, i)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value ?? defaultValue ?? throw new InvalidOperationException());
+            var dict = new Dictionary<TKey, TValue>();
+
+            foreach (var kvp in values.Select(i => ParseDictionaryValue<TKey, TValue>(context, i)))
+            {
+                if (dict.ContainsKey(kvp.Key))
+                    throw new CommandErrorException($"Option name '{option.Name}' contains multiple values for key '{kvp.Key}'.");
+
+                dict[kvp.Key] = kvp.Value ?? defaultValue ?? throw new InvalidOperationException();
+            }
+
+            return dict;
         }
 
         /// <summary>
@@ -178,8 +246,14 @@ namespace IKVM.Tools.Importer
             if (typeof(T) == typeof(DirectoryInfo))
                 return string.IsNullOrWhiteSpace(source) == false ? (T)(object)new DirectoryInfo(source) : default;
 
+            if (typeof(T) == typeof(Version))
+                return (T)(object)Version.Parse(source);
+
+            if (typeof(T) == typeof(string[]))
+                return (T)(object)source.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
+
             // fall back to type converter
-            if (TypeDescriptor.GetConverter(typeof(T)) is TypeConverter c)
+            if (TypeDescriptor.GetConverter(typeof(T)) is TypeConverter c && c.CanConvertFrom(typeof(string)))
                 return (T?)c.ConvertFromString(source);
 
             throw new InvalidOperationException();

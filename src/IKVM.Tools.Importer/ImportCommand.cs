@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Tools.Core;
 
 namespace IKVM.Tools.Importer
@@ -37,7 +38,8 @@ namespace IKVM.Tools.Importer
                     description: "Specify assembly name.")),
                 (TargetOption = new Option<string?>(
                     name: "-target",
-                    description: "Specifies the format of the output file.")
+                    description: "Specifies the format of the output file.",
+                    getDefaultValue: () => null)
                     .FromAmong("exe", "winexe", "library", "module")),
                 (PlatformOption = new Option<string?>(
                     name: "-platform",
@@ -53,14 +55,14 @@ namespace IKVM.Tools.Importer
                 (PropertiesOption = new Option<string[]>(
                     name: "-D",
                     description: "Set system property (at runtime).")),
-                (EnableAssertionsOption = new Option<string[]?>(
+                (EnableAssertionsOption = new Option<string?>(
                     aliases: [ "-enableassertions", "-ea"],
-                    parseArgument: ParseOptionalStringArray,
+                    parseArgument: ParseOptionalString,
                     isDefault: true,
                     description: "Set system property to enable assertions.") { Arity = ArgumentArity.ZeroOrMore, IsRequired = false }),
-                (DisableAssertionsOption = new Option<string[]?>(
+                (DisableAssertionsOption = new Option<string?>(
                     aliases: [ "-disableassertions", "-da"],
-                    parseArgument: ParseOptionalStringArray,
+                    parseArgument: ParseOptionalString,
                     isDefault: true,
                     description: "Set system property to disable assertions.") { Arity = ArgumentArity.ZeroOrMore, IsRequired = false }),
                 (RemoveAssertionsOption = new Option<bool>(
@@ -88,10 +90,10 @@ namespace IKVM.Tools.Importer
                     name: "-exclude",
                     description: "A file containing a list of classes to exclude.")
                     .LegalFilePathsOnly()),
-                (VersionOption = new Option<Version?>(
+                (VersionOption = new Option<string?>(
                     name: "-version",
                     description: "Specify assembly version.")),
-                (FileVersionOption = new Option<Version?>(
+                (FileVersionOption = new Option<string?>(
                     name: "-fileversion",
                     description: "File version.")),
                 (Win32IconOption = new Option<FileInfo?>(
@@ -148,14 +150,14 @@ namespace IKVM.Tools.Importer
                 (PublicPackageOption = new Option<string[]>(
                     aliases: ["-publicpackage"],
                     description: "Mark all classes with a package name starting with <prefix> as public to the assembly.")),
-                (NoWarnOption = new Option<string[]?>(
+                (NoWarnOption = new Option<Diagnostic[]>(
                     aliases: ["-nowarn"],
-                    parseArgument: ParseOptionalStringArray,
-                    description: "Disable specific warning messages.")),
-                (WarnAsErrorOption = new Option<string[]?>(
+                    description: "Disable specific warning messages.",
+                    parseArgument: ParseDiagnosticArray)),
+                (WarnAsErrorOption = new Option<Diagnostic[]>(
                     aliases: ["-warnaserror"],
-                    parseArgument: ParseOptionalStringArray,
-                    description: "Report all warnings as errors.")),
+                    description: "Report all warnings as errors.",
+                    parseArgument: ParseDiagnosticArray)),
                 (RuntimeOption = new Option<FileInfo?>(
                     aliases: ["-runtime"],
                     description: "Path to the IKVM.Runtime assembly.")
@@ -230,15 +232,30 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Validates the -resource option.
+        /// Parse an option set of Diagnostic ID values.
         /// </summary>
-        /// <param name="symbolResult"></param>
-        void ValidateResource(OptionResult symbolResult)
+        /// <param name="result"></param>
+        /// <returns></returns>
+        Diagnostic[] ParseDiagnosticArray(ArgumentResult result)
         {
+            var l = new List<Diagnostic>();
 
+            foreach (var i in result.Tokens)
+            {
+                foreach (var j in i.Value.Split([';',','], StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (int.TryParse(j, out var id) && Diagnostic.GetById(id) is { } diagnostic)
+                        l.Add(diagnostic);
+
+                    if (j.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) && int.TryParse(j["IKVM".Length..], out var id2) && Diagnostic.GetById(id2) is { } diagnostic2)
+                        l.Add(diagnostic2);
+                }
+            }
+
+            return l.ToArray();
         }
 
-        string[]? ParseOptionalStringArray(ArgumentResult result)
+        string? ParseOptionalString(ArgumentResult result)
         {
             if (result.Tokens.Count == 0)
             {
@@ -247,7 +264,7 @@ namespace IKVM.Tools.Importer
                     return null;
 
                 // argument specified but no items
-                return [];
+                return "";
             }
 
             // items
@@ -255,7 +272,16 @@ namespace IKVM.Tools.Importer
             for (int i = 0; i < result.Tokens.Count; i++)
                 l[i] = result.Tokens[i].Value;
 
-            return l;
+            return string.Join(";", l);
+        }
+
+        /// <summary>
+        /// Validates the -resource option.
+        /// </summary>
+        /// <param name="symbolResult"></param>
+        void ValidateResource(OptionResult symbolResult)
+        {
+
         }
 
         public Argument<FileInfo[]> InputsArgument { get; set; }
@@ -274,9 +300,9 @@ namespace IKVM.Tools.Importer
 
         public Option<string[]> PropertiesOption { get; set; }
 
-        public Option<string[]?> EnableAssertionsOption { get; set; }
+        public Option<string?> EnableAssertionsOption { get; set; }
 
-        public Option<string[]?> DisableAssertionsOption { get; set; }
+        public Option<string?> DisableAssertionsOption { get; set; }
 
         public Option<bool> RemoveAssertionsOption { get; set; }
 
@@ -294,9 +320,9 @@ namespace IKVM.Tools.Importer
 
         public Option<FileInfo?> ExcludeOption { get; set; }
 
-        public Option<Version?> VersionOption { get; set; }
+        public Option<string?> VersionOption { get; set; }
 
-        public Option<Version?> FileVersionOption { get; set; }
+        public Option<string?> FileVersionOption { get; set; }
 
         public Option<FileInfo?> Win32IconOption { get; set; }
 
@@ -330,9 +356,9 @@ namespace IKVM.Tools.Importer
 
         public Option<string[]> PublicPackageOption { get; set; }
 
-        public Option<string[]?> NoWarnOption { get; set; }
+        public Option<Diagnostic[]> NoWarnOption { get; set; }
 
-        public Option<string[]?> WarnAsErrorOption { get; set; }
+        public Option<Diagnostic[]> WarnAsErrorOption { get; set; }
 
         public Option<FileInfo?> RuntimeOption { get; set; }
 

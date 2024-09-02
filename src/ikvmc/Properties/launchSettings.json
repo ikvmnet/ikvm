@@ -2,7 +2,7 @@
     "profiles": {
         "ikvmc": {
             "commandName": "Project",
-            "commandLineArgs": "-resource foo=C:\\bar -resource"
+            "commandLineArgs": "@D:\\ikvm\\src\\IKVM.Java\\obj\\Debug\\net472\\IKVM.Java.ikvmc.rsp"
         }
     }
 }

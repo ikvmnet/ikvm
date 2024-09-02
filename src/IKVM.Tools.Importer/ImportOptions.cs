@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 
+using IKVM.CoreLib.Diagnostics;
+
 namespace IKVM.Tools.Importer
 {
 
@@ -122,9 +124,9 @@ namespace IKVM.Tools.Importer
 
         public bool StrictFinalFieldSemantics { get; set; } = false;
 
-        public string[]? NoWarn { get; set; }
+        public Diagnostic[]? NoWarn { get; set; }
 
-        public string[]? WarnAsError { get; set; }
+        public Diagnostic[]? WarnAsError { get; set; }
 
         public string? Main { get; set; }
 
