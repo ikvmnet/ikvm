@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Tools.Importer" />
+        <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
+        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
+    </ItemGroup>
+
+</Project>

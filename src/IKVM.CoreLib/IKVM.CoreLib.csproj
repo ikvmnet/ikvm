@@ -8,12 +8,19 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Tools.Core" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
+        <InternalsVisibleTo Include="IKVM.Tools.Importer.Tests" />
         <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
+        <InternalsVisibleTo Include="IKVM.Tools.Exporter.Tests" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -24,6 +31,10 @@
       <None Update="Diagnostics\Diagnostic.g.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Diagnostic.g.cs</LastGenOutput>
+      </None>
+      <None Update="Diagnostics\NullDiagnosticHandler.g.tt">
+        <LastGenOutput>NullDiagnosticHandler.g.cs</LastGenOutput>
+        <Generator>TextTemplatingFileGenerator</Generator>
       </None>
       <None Update="Diagnostics\DiagnosticEventHandler.g.tt">
         <LastGenOutput>DiagnosticEventHandler.g.cs</LastGenOutput>
@@ -53,6 +64,11 @@
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>
         <DependentUpon>Diagnostic.g.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Diagnostics\NullDiagnosticHandler.g.cs">
+        <DependentUpon>NullDiagnosticHandler.g.tt</DependentUpon>
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
       </Compile>
       <Compile Update="Diagnostics\DiagnosticEventHandler.g.cs">
         <DependentUpon>DiagnosticEventHandler.g.tt</DependentUpon>

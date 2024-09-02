@@ -1,4 +1,4 @@
-﻿#if NETFRAMEWORK
+#if NETFRAMEWORK
 
 using System;
 using System.Threading;
@@ -74,7 +74,6 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
             return await Task.Run(dispatcher.Execute);

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.CoreLib.Diagnostics;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -16,19 +18,19 @@ namespace IKVM.Tools.Exporter.Tests
 {
 
     [TestClass]
-    public class IkvmExporterTests
+    public class ExportToolTests
     {
 
         [TestMethod]
         public async Task CanStubCoreLibrary()
         {
-            var options = new IkvmExporterOptions()
+            var options = new ExportOptions()
             {
                 NoStdLib = true,
                 References =
                 {
-                    Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterTests).Assembly.Location), "IKVM.Runtime.dll"),
-                    Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterTests).Assembly.Location), "IKVM.Java.dll"),
+                    Path.Combine(Path.GetDirectoryName(typeof(ExportToolTests).Assembly.Location), "IKVM.Runtime.dll"),
+                    Path.Combine(Path.GetDirectoryName(typeof(ExportToolTests).Assembly.Location), "IKVM.Java.dll"),
                 }
             };
 
@@ -42,7 +44,7 @@ namespace IKVM.Tools.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
-            var ret = await IkvmExporterTool.ExecuteAsync(options, CancellationToken.None);
+            var ret = await ExportTool.ExecuteAsync(options, new NullDiagnosticHandler(), CancellationToken.None);
             ret.Should().Be(0);
             File.Exists(options.Output).Should().BeTrue();
         }

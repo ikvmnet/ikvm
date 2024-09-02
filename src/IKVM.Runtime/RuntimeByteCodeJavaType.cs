@@ -99,10 +99,10 @@ namespace IKVM.Runtime
                     Type mt = ReflectUtil.GetMissingType(missing.MissingType);
                     if (mt.Assembly.__IsMissing)
                     {
-                        throw new FatalCompilerErrorException(Diagnostic.MissingBaseTypeReference.Event([mt.FullName, mt.Assembly.FullName]));
+                        throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseTypeReference(mt.FullName, mt.Assembly.FullName));
                     }
 
-                    throw new FatalCompilerErrorException(Diagnostic.MissingBaseType.Event([mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseType(mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name));
                 }
                 foreach (RuntimeJavaType iface in tw.Interfaces)
                 {

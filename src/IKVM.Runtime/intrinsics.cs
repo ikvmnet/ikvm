@@ -374,7 +374,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new FatalCompilerErrorException(Diagnostic.CallerIDRequiresHasCallerIDAnnotation.Event([]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.CallerIDRequiresHasCallerIDAnnotation());
             }
         }
 
