@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Binding;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -17,12 +19,16 @@ namespace IKVM.Tools.Importer
     class ImportOptionsBinding : BinderBase<ImportOptions>
     {
 
+        readonly ImportArgLevel[] _levels;
+        readonly ImportOptions _parent;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public ImportOptionsBinding()
+        public ImportOptionsBinding(ImportArgLevel[] nested, ImportOptions parent)
         {
-
+            _levels = nested ?? throw new ArgumentNullException(nameof(nested));
+            _parent = parent;
         }
 
         /// <inheritdoc />
@@ -30,68 +36,78 @@ namespace IKVM.Tools.Importer
         {
             var command = (ImportCommand)context.ParseResult.CommandResult.Command;
 
-            return new ImportOptions()
+            var options = _parent?.Clone() ?? new ImportOptions();
+            options.Inputs = context.ParseResult.GetValueForArgument(command.InputsArgument);
+            options.Output = context.ParseResult.GetValueForOption(command.OutputOption);
+            options.AssemblyName = context.ParseResult.GetValueForOption(command.AssemblyNameOption);
+            options.Target = GetEnumValueForOption(context, command.TargetOption, ImportTarget.Unspecified);
+            options.Platform = GetEnumValueForOption(context, command.PlatformOption, ImportPlatform.Unspecified);
+            options.Apartment = GetEnumValueForOption(context, command.ApartmentOption, ImportApartment.Unspecified);
+            options.NoGlobbing = context.ParseResult.GetValueForOption(command.NoGlobbingOption);
+            options.EnableAssertions = ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null);
+            options.DisableAssertions = ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null);
+            options.Properties = GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, "");
+            options.RemoveAssertions = context.ParseResult.GetValueForOption(command.RemoveAssertionsOption);
+            options.Main = context.ParseResult.GetValueForOption(command.MainClassOption);
+            options.References = context.ParseResult.GetValueForOption(command.ReferenceOption) ?? [];
+            options.Recurse = context.ParseResult.GetValueForOption(command.RecurseOption) ?? [];
+            options.Resources = GetDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null);
+            options.ExternalResources = GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null);
+            options.NoJNI = context.ParseResult.GetValueForOption(command.NoJNIOption);
+            options.Exclude = context.ParseResult.GetValueForOption(command.ExcludeOption);
+            options.Version = ParseStringForOption<Version?>(context, command.VersionOption, null);
+            options.FileVersion = ParseStringForOption<Version?>(context, command.FileVersionOption, null);
+            options.Win32Icon = context.ParseResult.GetValueForOption(command.Win32IconOption);
+            options.Win32Manifest = context.ParseResult.GetValueForOption(command.Win32ManifestOption);
+            options.KeyFile = context.ParseResult.GetValueForOption(command.KeyFileOption);
+            options.Key = context.ParseResult.GetValueForOption(command.KeyOption);
+            options.DelaySign = context.ParseResult.GetValueForOption(command.DelaySignOption);
+            options.Debug = GetEnumValueForOption(context, command.DebugOption, ImportDebug.Unspecified);
+            options.Deterministic = context.ParseResult.GetValueForOption(command.DeterministicOption);
+            options.Optimize = context.ParseResult.GetValueForOption(command.OptimizeOption);
+            options.SourcePath = context.ParseResult.GetValueForOption(command.SourcePathOption);
+            options.Remap = context.ParseResult.GetValueForOption(command.RemapOption);
+            options.NoStackTraceInfo = context.ParseResult.GetValueForOption(command.NoStackTraceInfoOption);
+            options.RemoveUnusedPrivateFields = context.ParseResult.GetValueForOption(command.RemoveUnusedPrivateFieldsOption);
+            options.CompressResources = context.ParseResult.GetValueForOption(command.CompressResourcesOption);
+            options.StrictFinalFieldSemantics = context.ParseResult.GetValueForOption(command.StrictFinalFieldSemanticsOption);
+            options.PrivatePackages = context.ParseResult.GetValueForOption(command.PrivatePackageOption) ?? [];
+            options.PublicPackages = context.ParseResult.GetValueForOption(command.PublicPackageOption) ?? [];
+            options.NoWarn = context.ParseResult.GetValueForOption(command.NoWarnOption) ?? [];
+            options.WarnAsError = context.ParseResult.GetValueForOption(command.WarnAsErrorOption) ?? [];
+            options.Runtime = context.ParseResult.GetValueForOption(command.RuntimeOption);
+            options.Time = context.ParseResult.GetValueForOption(command.TimeOption);
+            options.ClassLoader = context.ParseResult.GetValueForOption(command.ClassLoaderOption);
+            options.SharedClassLoader = context.ParseResult.GetValueForOption(command.SharedClassLoaderOption);
+            options.BaseAddress = context.ParseResult.GetValueForOption(command.BaseAddressOption);
+            options.FileAlign = context.ParseResult.GetValueForOption(command.FileAlignOption);
+            options.NoPeerCrossReference = context.ParseResult.GetValueForOption(command.NoPeerCrossReferenceOption);
+            options.NoStdLib = context.ParseResult.GetValueForOption(command.NoStdLibOption);
+            options.Libraries = context.ParseResult.GetValueForOption(command.LibraryOption) ?? [];
+            options.NoAutoSerialization = context.ParseResult.GetValueForOption(command.NoAutoSerializationOption);
+            options.HighEntropyVA = context.ParseResult.GetValueForOption(command.HighEntropyVAOption);
+            options.Proxies = context.ParseResult.GetValueForOption(command.ProxyOption) ?? [];
+            options.NoLogo = context.ParseResult.GetValueForOption(command.NoLogoOption);
+            options.AllowNonVirtualCalls = context.ParseResult.GetValueForOption(command.AllowNonVirtualCallsOption);
+            options.Static = context.ParseResult.GetValueForOption(command.StaticOption);
+            options.NoJarStubs = context.ParseResult.GetValueForOption(command.NoJarStubsOption);
+            options.AssemblyAttributes = context.ParseResult.GetValueForOption(command.AssemblyAttributesOption) ?? [];
+            options.WarningLevel4Option = context.ParseResult.GetValueForOption(command.WarningLevel4Option);
+            options.NoParameterReflection = context.ParseResult.GetValueForOption(command.NoParameterReflectionOption);
+            options.Bootstrap = context.ParseResult.GetValueForOption(command.BootstrapOption);
+            options.Log = context.ParseResult.GetValueForOption(command.LogOption);
+
+            // for each nested level, run a command to capture the options, but otherwise does nothing
+            foreach (var level in _levels)
             {
-                Inputs = context.ParseResult.GetValueForArgument(command.InputsArgument),
-                Output = context.ParseResult.GetValueForOption(command.OutputOption),
-                AssemblyName = context.ParseResult.GetValueForOption(command.AssemblyNameOption),
-                Target = GetEnumValueForOption(context, command.TargetOption, ImportTarget.Unspecified),
-                Platform = GetEnumValueForOption(context, command.PlatformOption, ImportPlatform.Unspecified),
-                Apartment = GetEnumValueForOption(context, command.ApartmentOption, ImportApartment.Unspecified),
-                NoGlobbing = context.ParseResult.GetValueForOption(command.NoGlobbingOption),
-                EnableAssertions = ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null),
-                DisableAssertions = ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null),
-                Properties = GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, ""),
-                RemoveAssertions = context.ParseResult.GetValueForOption(command.RemoveAssertionsOption),
-                Main = context.ParseResult.GetValueForOption(command.MainClassOption),
-                References = context.ParseResult.GetValueForOption(command.ReferenceOption) ?? [],
-                Recurse = context.ParseResult.GetValueForOption(command.RecurseOption) ?? [],
-                Resources = GetDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null),
-                ExternalResources = GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null),
-                NoJNI = context.ParseResult.GetValueForOption(command.NoJNIOption),
-                Exclude = context.ParseResult.GetValueForOption(command.ExcludeOption),
-                Version = ParseStringForOption<Version?>(context, command.VersionOption, null),
-                FileVersion = ParseStringForOption<Version?>(context, command.FileVersionOption, null),
-                Win32Icon = context.ParseResult.GetValueForOption(command.Win32IconOption),
-                Win32Manifest = context.ParseResult.GetValueForOption(command.Win32ManifestOption),
-                KeyFile = context.ParseResult.GetValueForOption(command.KeyFileOption),
-                Key = context.ParseResult.GetValueForOption(command.KeyOption),
-                DelaySign = context.ParseResult.GetValueForOption(command.DelaySignOption),
-                Debug = GetEnumValueForOption(context, command.DebugOption, ImportDebug.Unspecified),
-                Deterministic = context.ParseResult.GetValueForOption(command.DeterministicOption),
-                Optimize = context.ParseResult.GetValueForOption(command.OptimizeOption),
-                SourcePath = context.ParseResult.GetValueForOption(command.SourcePathOption),
-                Remap = context.ParseResult.GetValueForOption(command.RemapOption),
-                NoStackTraceInfo = context.ParseResult.GetValueForOption(command.NoStackTraceInfoOption),
-                RemoveUnusedPrivateFields = context.ParseResult.GetValueForOption(command.RemoveUnusedPrivateFieldsOption),
-                CompressResources = context.ParseResult.GetValueForOption(command.CompressResourcesOption),
-                StrictFinalFieldSemantics = context.ParseResult.GetValueForOption(command.StrictFinalFieldSemanticsOption),
-                PrivatePackages = context.ParseResult.GetValueForOption(command.PrivatePackageOption) ?? [],
-                PublicPackages = context.ParseResult.GetValueForOption(command.PublicPackageOption) ?? [],
-                NoWarn = context.ParseResult.GetValueForOption(command.NoWarnOption) ?? [],
-                WarnAsError = context.ParseResult.GetValueForOption(command.WarnAsErrorOption) ?? [],
-                Runtime = context.ParseResult.GetValueForOption(command.RuntimeOption),
-                Time = context.ParseResult.GetValueForOption(command.TimeOption),
-                ClassLoader = context.ParseResult.GetValueForOption(command.ClassLoaderOption),
-                SharedClassLoader = context.ParseResult.GetValueForOption(command.SharedClassLoaderOption),
-                BaseAddress = context.ParseResult.GetValueForOption(command.BaseAddressOption),
-                FileAlign = context.ParseResult.GetValueForOption(command.FileAlignOption),
-                NoPeerCrossReference = context.ParseResult.GetValueForOption(command.NoPeerCrossReferenceOption),
-                NoStdLib = context.ParseResult.GetValueForOption(command.NoStdLibOption),
-                Libraries = context.ParseResult.GetValueForOption(command.LibraryOption) ?? [],
-                NoAutoSerialization = context.ParseResult.GetValueForOption(command.NoAutoSerializationOption),
-                HighEntropyVA = context.ParseResult.GetValueForOption(command.HighEntropyVAOption),
-                Proxies = context.ParseResult.GetValueForOption(command.ProxyOption) ?? [],
-                NoLogo = context.ParseResult.GetValueForOption(command.NoLogoOption),
-                AllowNonVirtualCalls = context.ParseResult.GetValueForOption(command.AllowNonVirtualCallsOption),
-                Static = context.ParseResult.GetValueForOption(command.StaticOption),
-                NoJarStubs = context.ParseResult.GetValueForOption(command.NoJarStubsOption),
-                AssemblyAttributes = context.ParseResult.GetValueForOption(command.AssemblyAttributesOption) ?? [],
-                WarningLevel4Option = context.ParseResult.GetValueForOption(command.WarningLevel4Option),
-                NoParameterReflection = context.ParseResult.GetValueForOption(command.NoParameterReflectionOption),
-                Bootstrap = context.ParseResult.GetValueForOption(command.BootstrapOption),
-                Log = context.ParseResult.GetValueForOption(command.LogOption),
-            };
+                var nestedCommand = new ImportCommand();
+                var nestedOptions = new List<ImportOptions>(level.Args.Count);
+                nestedCommand.SetHandler(nestedOptions.Add, new ImportOptionsBinding(level.Nested.ToArray(), options));
+                nestedCommand.Invoke(level.Args.ToArray());
+                options.Nested = nestedOptions.ToArray();
+            }
+
+            return options;
         }
 
         /// <summary>

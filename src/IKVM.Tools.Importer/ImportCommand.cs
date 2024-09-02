@@ -5,11 +5,8 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Diagnostics;
-using IKVM.Tools.Core;
 
 namespace IKVM.Tools.Importer
 {
@@ -20,6 +17,7 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="treatUnmatchedTokensAsErrors"></param>
         public ImportCommand()
         {
             Add(InputsArgument = new Argument<FileInfo[]>(
@@ -242,7 +240,7 @@ namespace IKVM.Tools.Importer
 
             foreach (var i in result.Tokens)
             {
-                foreach (var j in i.Value.Split([';',','], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var j in i.Value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (int.TryParse(j, out var id) && Diagnostic.GetById(id) is { } diagnostic)
                         l.Add(diagnostic);
@@ -255,6 +253,12 @@ namespace IKVM.Tools.Importer
             return l.ToArray();
         }
 
+        /// <summary>
+        /// Parses an optional string option. An optional string argument represents three states: not present (null),
+        /// empty (present with no values) or specified (present with values).
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
         string? ParseOptionalString(ArgumentResult result)
         {
             if (result.Tokens.Count == 0)

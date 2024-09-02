@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +19,7 @@ namespace IKVM.Tools.Importer
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
-    public class ImportTool
+    public partial class ImportTool
     {
 
         /// <summary>
@@ -106,18 +108,12 @@ namespace IKVM.Tools.Importer
             return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
         }
 
-        readonly RootCommand _command;
-        readonly Parser _parser;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public ImportTool()
         {
-            _command = new ImportCommand();
-            _command.SetHandler((options) => ExecuteAsync(options), new ImportOptionsBinding());
 
-            _parser = new CommandLineBuilder(_command).UseDefaults().UseCommandExceptionHandler().Build();
         }
 
         /// <summary>
@@ -131,7 +127,42 @@ namespace IKVM.Tools.Importer
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
 
-            return await _parser.InvokeAsync(args);
+            var stack = new Stack<ImportArgLevel>();
+            var level = new ImportArgLevel(0);
+
+            foreach (var token in new Parser().Parse(args).Tokens)
+            {
+                // open new level, set as current
+                if (token.Value == "{")
+                {
+                    stack.Push(level);
+                    level = new ImportArgLevel(level.Depth + 1);
+                    continue;
+                }
+
+                // close current level, parent becomes current
+                if (token.Value == "}")
+                {
+                    var parent = stack.Pop();
+                    parent.Nested.Add(level);
+                    level = parent;
+                    continue;
+                }
+
+                // add arg to current level
+                level.Args.Add(token.Value);
+            }
+
+            // root command binds the first level, and accepts the nested levels
+            var command = new ImportCommand();
+            command.SetHandler(options => ExecuteAsync(options), new ImportOptionsBinding(level.Nested.ToArray(), null));
+
+            // execute command
+            return await new CommandLineBuilder(command)
+                .UseDefaults()
+                .UseCommandErrorExceptionHandler()
+                .Build()
+                .InvokeAsync(level.Args.ToArray());
         }
 
     }

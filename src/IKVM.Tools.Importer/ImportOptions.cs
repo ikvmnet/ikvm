@@ -10,7 +10,8 @@ using IKVM.CoreLib.Diagnostics;
 namespace IKVM.Tools.Importer
 {
 
-    class ImportOptions
+    [Serializable]
+    class ImportOptions : ICloneable
     {
 
         /// <summary>
@@ -108,32 +109,68 @@ namespace IKVM.Tools.Importer
         /// </summary>
         public ImportDebug Debug { get; set; } = ImportDebug.Unspecified;
 
+        /// <summary>
+        /// Whether to disable auto generation of serialization capabilities.
+        /// </summary>
         public bool NoAutoSerialization { get; set; } = false;
 
+        /// <summary>
+        /// Disables globbing of Java command line arguments in the generated assembly.
+        /// </summary>
         public bool NoGlobbing { get; set; } = false;
 
+        /// <summary>
+        /// Disables the usage of JNI in the generated assembly.
+        /// </summary>
         public bool NoJNI { get; set; } = false;
 
+        /// <summary>
+        /// Enables removing unused fields from Java classes.
+        /// </summary>
         public bool RemoveUnusedPrivateFields { get; set; } = false;
 
+        /// <summary>
+        /// If null, no assertions are enabled. If an empty array, all assertions are enabled. Else only assertions of the specified granularity are enabled.
+        /// </summary>
         public string[]? EnableAssertions { get; set; }
 
+        /// <summary>
+        /// If null, no assertions are disables. If an empty array, all assertions are disabled. Else only assertions of the specified granularity are disabled.
+        /// </summary>
         public string[]? DisableAssertions { get; set; }
 
+        /// <summary>
+        /// Removes assertions.
+        /// </summary>
         public bool RemoveAssertions { get; set; } = false;
 
         public bool StrictFinalFieldSemantics { get; set; } = false;
 
+        /// <summary>
+        /// List of warning Diagnostic types that should not issue warnings.
+        /// </summary>
         public Diagnostic[]? NoWarn { get; set; }
 
+        /// <summary>
+        /// List of warning Diagnostic types that should be elevated to an error.
+        /// </summary>
         public Diagnostic[]? WarnAsError { get; set; }
 
+        /// <summary>
+        /// Name of the main entry point class.
+        /// </summary>
         public string? Main { get; set; }
 
+        /// <summary>
+        /// Root of the original source file path for debugging information.
+        /// </summary>
         public DirectoryInfo? SourcePath { get; set; }
 
         public ImportApartment Apartment { get; set; } = ImportApartment.Unspecified;
 
+        /// <summary>
+        /// Properties to be set in the JVM upon entry of the executable assembly.
+        /// </summary>
         public IReadOnlyDictionary<string, string> Properties { get; set; } = ImmutableDictionary<string, string>.Empty;
 
         public bool NoStackTraceInfo { get; set; }
@@ -142,8 +179,14 @@ namespace IKVM.Tools.Importer
 
         public string[] PublicPackages { get; set; } = [];
 
+        /// <summary>
+        /// Set the name of a custom class loader for this assembly.
+        /// </summary>
         public string? ClassLoader { get; set; }
 
+        /// <summary>
+        /// Enable the shared class loader.
+        /// </summary>
         public bool SharedClassLoader { get; set; } = false;
 
         public string? BaseAddress { get; set; }
@@ -152,17 +195,21 @@ namespace IKVM.Tools.Importer
 
         public bool NoPeerCrossReference { get; set; } = false;
 
-        public bool NoStdLib { get; set; } = false;
+        /// <summary>
+        /// Disables lookup of the standard library. This option is irrelevent since lookup of the standard library is unsupported.
+        /// </summary>
+        public bool NoStdLib { get; set; } = true;
 
         public DirectoryInfo[] Libraries { get; set; } = [];
 
         public bool HighEntropyVA { get; set; } = false;
 
+        /// <summary>
+        /// Enable static mode. This prevents generation of dynamic invocation delegates for missing classes.
+        /// </summary>
         public bool Static { get; set; } = false;
 
         public FileInfo[] AssemblyAttributes { get; set; } = [];
-
-        public FileInfo? Runtime { get; set; }
 
         public bool WarningLevel4Option { get; set; } = false;
 
@@ -180,13 +227,47 @@ namespace IKVM.Tools.Importer
 
         public bool NoJarStubs { get; set; } = false;
 
-        public string? Log { get; set; }
+        /// <summary>
+        /// Path to the IKVM.Runtime assembly.
+        /// </summary>
+        public FileInfo? Runtime { get; set; }
 
+        /// <summary>
+        /// Hidden option to enable bootstrap mode for compiling the BCL.
+        /// </summary>
         public bool Bootstrap { get; set; } = false;
 
+        public string? Log { get; set; }
+
+        /// <summary>
+        /// Enables optimizations.
+        /// </summary>
         public bool Optimize { get; set; } = false;
 
-        public bool Deterministic { get; set; } = false;
+        /// <summary>
+        /// Enables a deterministic assembly.
+        /// </summary>
+        public bool Deterministic { get; set; } = true;
+
+        /// <summary>
+        /// Set of nested options when compiling multiple assemblies using the shared class loader.
+        /// </summary>
+        public ImportOptions[] Nested { get; set; } = [];
+
+        /// <inheritdoc />
+        public ImportOptions Clone()
+        {
+            return (ImportOptions)MemberwiseClone();
+        }
+
+        /// <summary>
+        /// Creates a clone of this object.
+        /// </summary>
+        /// <returns></returns>
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
 
     }
 

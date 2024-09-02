@@ -11,7 +11,7 @@ namespace IKVM.Tools.Core.CommandLine
     static class CommandLineBuilderExtensions
     {
 
-        public static CommandLineBuilder UseCommandExceptionHandler(this CommandLineBuilder builder)
+        public static CommandLineBuilder UseCommandErrorExceptionHandler(this CommandLineBuilder builder)
         {
             return builder.UseExceptionHandler(OnException, 1);
         }
