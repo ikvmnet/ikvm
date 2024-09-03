@@ -59,7 +59,7 @@ namespace IKVM.Tools.Importer.Tests
             args.Add(j);
 
             // initiate the import
-            var ret = await ImportTool.Main(args.ToArray(), CancellationToken.None);
+            var ret = await ImportTool.InvokeAsync(args.ToArray(), CancellationToken.None);
             ret.Should().Be(0);
             File.Exists(asm).Should().BeTrue();
             new FileInfo(asm).Length.Should().BeGreaterThanOrEqualTo(128);
