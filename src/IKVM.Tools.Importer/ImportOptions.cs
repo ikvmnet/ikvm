@@ -101,7 +101,7 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Whether resources should be compressed.
         /// </summary>
-        public bool CompressResources { get; set; }
+        public bool CompressResources { get; set; } = false;
 
         /// <summary>
         /// How debug symbols should be produced along with the assembly.

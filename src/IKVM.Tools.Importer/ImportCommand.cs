@@ -114,7 +114,8 @@ namespace IKVM.Tools.Importer
                     description: "Delay-sign the assembly.")),
                 (DebugOption = new Option<string?>(
                     aliases: ["-debug"],
-                    description: "Specify debugging type ('portable' is default)\n'portable' is a cross-platform format,\n'embedded' is a cross-platform format embedded into the target.dll or.exe")
+                    description: "Specify debugging type ('portable' is default)\n'portable' is a cross-platform format,\n'embedded' is a cross-platform format embedded into the target dll or exe.",
+                    getDefaultValue: () => "portable")
                     .FromAmong("none", "portable", "embedded")),
                 (DeterministicOption = new Option<bool>(
                     aliases: ["-deterministic"],

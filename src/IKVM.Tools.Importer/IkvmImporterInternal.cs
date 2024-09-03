@@ -95,7 +95,6 @@ namespace IKVM.Tools.Importer
 
         }
 
-        bool nonleaf;
         string manifestMainClass;
         string defaultAssemblyName;
         static bool time;
@@ -109,7 +108,7 @@ namespace IKVM.Tools.Importer
         public static int Execute(ImportOptions options)
         {
             DateTime start = DateTime.Now;
-            System.Threading.Thread.CurrentThread.Name = "compiler";
+            Thread.CurrentThread.Name = "compiler";
 
             try
             {
@@ -120,9 +119,8 @@ namespace IKVM.Tools.Importer
                 catch (TypeInitializationException x)
                 {
                     if (x.InnerException is FatalCompilerErrorException)
-                    {
                         throw x.InnerException;
-                    }
+
                     throw;
                 }
             }
@@ -435,31 +433,31 @@ namespace IKVM.Tools.Importer
             if (options.AssemblyName != null)
                 compilerOptions.assembly = options.AssemblyName;
 
-                switch (options.Target)
-                {
-                    case ImportTarget.Unspecified:
-                        break;
-                    case ImportTarget.Exe:
-                        compilerOptions.target = PEFileKinds.ConsoleApplication;
-                        compilerOptions.guessFileKind = false;
-                        break;
-                    case ImportTarget.WinExe:
-                        compilerOptions.target = PEFileKinds.WindowApplication;
-                        compilerOptions.guessFileKind = false;
-                        break;
-                    case ImportTarget.Module:
-                        compilerOptions.targetIsModule = true;
-                        compilerOptions.target = PEFileKinds.Dll;
-                        compilerOptions.guessFileKind = false;
-                        nonDeterministicOutput = true;
-                        break;
-                    case ImportTarget.Library:
-                        compilerOptions.target = PEFileKinds.Dll;
-                        compilerOptions.guessFileKind = false;
-                        break;
-                    default:
-                        throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedTargetType(options.Target.ToString()));
-                }
+            switch (options.Target)
+            {
+                case ImportTarget.Unspecified:
+                    break;
+                case ImportTarget.Exe:
+                    compilerOptions.target = PEFileKinds.ConsoleApplication;
+                    compilerOptions.guessFileKind = false;
+                    break;
+                case ImportTarget.WinExe:
+                    compilerOptions.target = PEFileKinds.WindowApplication;
+                    compilerOptions.guessFileKind = false;
+                    break;
+                case ImportTarget.Module:
+                    compilerOptions.targetIsModule = true;
+                    compilerOptions.target = PEFileKinds.Dll;
+                    compilerOptions.guessFileKind = false;
+                    nonDeterministicOutput = true;
+                    break;
+                case ImportTarget.Library:
+                    compilerOptions.target = PEFileKinds.Dll;
+                    compilerOptions.guessFileKind = false;
+                    break;
+                default:
+                    throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedTargetType(options.Target.ToString()));
+            }
 
             switch (options.Platform)
             {
@@ -642,23 +640,22 @@ namespace IKVM.Tools.Importer
             if (options.DelaySign)
                 compilerOptions.delaysign = true;
 
-            if (options.Debug != ImportDebug.Unspecified)
+            switch (options.Debug)
             {
-                switch (options.Debug)
-                {
-                    case ImportDebug.Full:
-                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
-                        compilerOptions.debugMode = DebugMode.Full;
-                        break;
-                    case ImportDebug.Portable:
-                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
-                        compilerOptions.debugMode = DebugMode.Portable;
-                        break;
-                    case ImportDebug.Embedded:
-                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
-                        compilerOptions.debugMode = DebugMode.Embedded;
-                        break;
-                }
+                case ImportDebug.Unspecified:
+                    break;
+                case ImportDebug.Full:
+                    compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                    compilerOptions.debugMode = DebugMode.Full;
+                    break;
+                case ImportDebug.Portable:
+                    compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                    compilerOptions.debugMode = DebugMode.Portable;
+                    break;
+                case ImportDebug.Embedded:
+                    compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                    compilerOptions.debugMode = DebugMode.Embedded;
+                    break;
             }
 
             if (options.Deterministic == false)
