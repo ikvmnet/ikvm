@@ -7,6 +7,7 @@ using System.CommandLine;
 using System.CommandLine.Binding;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using System.CommandLine.Rendering;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -103,7 +104,7 @@ namespace IKVM.Tools.Importer
                 var nestedCommand = new ImportCommand();
                 var nestedOptions = new List<ImportOptions>(level.Args.Count);
                 nestedCommand.SetHandler(nestedOptions.Add, new ImportOptionsBinding(level.Nested.ToArray(), options));
-                nestedCommand.Invoke(level.Args.ToArray());
+                new CommandLineBuilder(new ImportCommand()).Build().Invoke(level.Args.ToArray());
                 options.Nested = nestedOptions.ToArray();
             }
 

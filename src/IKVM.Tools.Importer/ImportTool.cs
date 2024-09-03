@@ -19,7 +19,7 @@ namespace IKVM.Tools.Importer
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
-    public partial class ImportTool
+    public class ImportTool
     {
 
         /// <summary>
@@ -29,6 +29,18 @@ namespace IKVM.Tools.Importer
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public static async Task<int> InvokeAsync(string[] args, CancellationToken cancellationToken = default)
+        {
+            using var context = new IkvmImporterContext(args);
+            return await context.ExecuteAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Executes the importer against a set of command line options.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        internal static async Task<int> ExecuteInContext(string[] args, CancellationToken cancellationToken = default)
         {
             return await new ImportTool().InvokeImplAsync(args, cancellationToken);
         }
@@ -75,7 +87,7 @@ namespace IKVM.Tools.Importer
                 throw new ArgumentNullException(nameof(services));
 
             var importer = services.GetRequiredService<ImportImpl>();
-            return Task.FromResult(importer.Execute(options));
+            return importer.ExecuteAsync(options, cancellationToken);
         }
 
         /// <summary>
@@ -159,7 +171,13 @@ namespace IKVM.Tools.Importer
 
             // execute command
             return await new CommandLineBuilder(command)
-                .UseDefaults()
+                .UseVersionOption()
+                .UseHelp()
+                .UseParseDirective()
+                .UseTypoCorrections()
+                .UseParseErrorReporting()
+                .UseExceptionHandler()
+                .CancelOnProcessTermination()
                 .UseCommandErrorExceptionHandler()
                 .Build()
                 .InvokeAsync(level.Args.ToArray());

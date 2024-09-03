@@ -83,7 +83,6 @@ namespace IKVM.Tools.Importer
         internal HashSet<string> suppressWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> errorWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         internal bool warnaserror; // treat all warnings as errors
-        internal FileInfo writeSuppressWarningsFile;
         internal List<string> proxies = new List<string>();
         internal object[] assemblyAttributeAnnotations;
         internal bool warningLevelHigh;

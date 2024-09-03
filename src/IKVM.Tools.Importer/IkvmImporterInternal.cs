@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -88,8 +89,6 @@ namespace IKVM.Tools.Importer
                 }
 
                 _options.suppressWarnings.Add(key);
-                if (_options.writeSuppressWarningsFile != null)
-                    File.AppendAllText(_options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
 
                 base.Report(@event);
             }
@@ -107,53 +106,7 @@ namespace IKVM.Tools.Importer
         static readonly List<string> libpaths = new List<string>();
         internal static readonly AssemblyResolver resolver = new AssemblyResolver();
 
-        static void AddArg(List<string> arglist, string s, int depth)
-        {
-            if (s.StartsWith("@"))
-            {
-                if (depth++ > 16)
-                {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ResponseFileDepthExceeded());
-                }
-                try
-                {
-                    using (StreamReader sr = new StreamReader(s.Substring(1)))
-                    {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            string arg = line.Trim();
-                            if (arg != "" && !arg.StartsWith("#"))
-                            {
-                                AddArg(arglist, arg, depth);
-                            }
-                        }
-                    }
-                }
-                catch (FatalCompilerErrorException)
-                {
-                    throw;
-                }
-                catch (Exception x)
-                {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(s.Substring(1), x.Message));
-                }
-            }
-            else
-            {
-                arglist.Add(s);
-            }
-        }
-
-        static List<string> GetArgs(string[] args)
-        {
-            var arglist = new List<string>();
-            foreach (string s in args)
-                AddArg(arglist, s, 0);
-            return arglist;
-        }
-
-        public static int Execute(string[] args)
+        public static int Execute(ImportOptions options)
         {
             DateTime start = DateTime.Now;
             System.Threading.Thread.CurrentThread.Name = "compiler";
@@ -162,7 +115,7 @@ namespace IKVM.Tools.Importer
             {
                 try
                 {
-                    return Compile(args);
+                    return Compile(options);
                 }
                 catch (TypeInitializationException x)
                 {
@@ -223,19 +176,10 @@ namespace IKVM.Tools.Importer
             return ActivatorUtilities.CreateInstance<CompilerOptionsDiagnosticHandler>(services, options, spec);
         }
 
-        static int Compile(string[] args)
+        static int Compile(ImportOptions options)
         {
-            var argList = GetArgs(args);
-            if (argList.Count == 0 || argList.Contains("-?") || argList.Contains("-help"))
-            {
-                PrintHelp();
-                return 0;
-            }
-
-            if (!argList.Contains("-nologo"))
-            {
+            if (options.NoLogo == false)
                 PrintHeader();
-            }
 
             var rootTarget = new CompilerOptions();
             var services = new ServiceCollection();
@@ -248,11 +192,11 @@ namespace IKVM.Tools.Importer
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<CompilerOptions>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), options.Bootstrap, compiler);
 
             compiler.rootTarget = rootTarget;
             var importer = new IkvmImporterInternal();
-            importer.ParseCommandLine(context, compiler, diagnostics, argList.GetEnumerator(), targets, rootTarget);
+            importer.ParseCommandLine(context, compiler, diagnostics, options, targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
             resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
@@ -473,524 +417,425 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("-log <format>                  Log format (text or json).");
         }
 
-        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<CompilerOptions> targets, CompilerOptions compilerOptions)
         {
-            options.target = PEFileKinds.ConsoleApplication;
-            options.guessFileKind = true;
-            options.version = new Version(0, 0, 0, 0);
-            options.apartment = ApartmentState.STA;
-            options.props = new Dictionary<string, string>();
-            ContinueParseCommandLine(context, compiler, diagnostics, arglist, targets, options);
+            compilerOptions.target = PEFileKinds.ConsoleApplication;
+            compilerOptions.guessFileKind = true;
+            compilerOptions.version = new Version(0, 0, 0, 0);
+            compilerOptions.apartment = ApartmentState.STA;
+            compilerOptions.props = new Dictionary<string, string>();
+            ContinueParseCommandLine(context, compiler, diagnostics, options, targets, compilerOptions);
         }
 
-        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
+        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<CompilerOptions> targets, CompilerOptions compilerOptions)
         {
-            var fileNames = new List<string>();
-            while (arglist.MoveNext())
-            {
-                var s = arglist.Current;
-                if (s == "{")
+            if (options.Output != null)
+                compilerOptions.path = options.Output;
+
+            if (options.AssemblyName != null)
+                compilerOptions.assembly = options.AssemblyName;
+
+                switch (options.Target)
                 {
-                    if (!nonleaf)
-                    {
-                        ReadFiles(context, compiler, options, diagnostics, fileNames);
-                        nonleaf = true;
-                    }
-
-                    var nestedLevel = new IkvmImporterInternal();
-                    nestedLevel.manifestMainClass = manifestMainClass;
-                    nestedLevel.defaultAssemblyName = defaultAssemblyName;
-                    nestedLevel.ContinueParseCommandLine(context, compiler, diagnostics, arglist, targets, options.Copy());
-                }
-                else if (s == "}")
-                {
-                    break;
-                }
-                else if (nonleaf)
-                {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.OptionsMustPreceedChildLevels());
-                }
-                else if (s[0] == '-')
-                {
-                    if (s.StartsWith("-out:"))
-                    {
-                        options.path = GetFileInfo(s.Substring(5));
-                    }
-                    else if (s.StartsWith("-assembly:"))
-                    {
-                        options.assembly = s.Substring(10);
-                    }
-                    else if (s.StartsWith("-target:"))
-                    {
-                        switch (s)
-                        {
-                            case "-target:exe":
-                                options.target = PEFileKinds.ConsoleApplication;
-                                options.guessFileKind = false;
-                                break;
-                            case "-target:winexe":
-                                options.target = PEFileKinds.WindowApplication;
-                                options.guessFileKind = false;
-                                break;
-                            case "-target:module":
-                                options.targetIsModule = true;
-                                options.target = PEFileKinds.Dll;
-                                options.guessFileKind = false;
-                                nonDeterministicOutput = true;
-                                break;
-                            case "-target:library":
-                                options.target = PEFileKinds.Dll;
-                                options.guessFileKind = false;
-                                break;
-                            default:
-                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedTargetType(s.Substring(8)));
-                        }
-                    }
-                    else if (s.StartsWith("-platform:"))
-                    {
-                        switch (s)
-                        {
-                            case "-platform:x86":
-                                options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Required32Bit;
-                                options.imageFileMachine = ImageFileMachine.I386;
-                                break;
-                            case "-platform:x64":
-                                options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
-                                options.imageFileMachine = ImageFileMachine.AMD64;
-                                break;
-                            case "-platform:arm":
-                                options.pekind = PortableExecutableKinds.ILOnly;
-                                options.imageFileMachine = ImageFileMachine.ARM;
-                                break;
-                            case "-platform:arm64":
-                                options.pekind = PortableExecutableKinds.ILOnly;
-                                options.imageFileMachine = ImageFileMachine.ARM64;
-                                break;
-                            case "-platform:anycpu32bitpreferred":
-                                options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
-                                options.imageFileMachine = ImageFileMachine.UNKNOWN;
-                                break;
-                            case "-platform:anycpu":
-                                options.pekind = PortableExecutableKinds.ILOnly;
-                                options.imageFileMachine = ImageFileMachine.UNKNOWN;
-                                break;
-                            default:
-                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedPlatform(s.Substring(10)));
-                        }
-                    }
-                    else if (s.StartsWith("-apartment:"))
-                    {
-                        switch (s)
-                        {
-                            case "-apartment:sta":
-                                options.apartment = ApartmentState.STA;
-                                break;
-                            case "-apartment:mta":
-                                options.apartment = ApartmentState.MTA;
-                                break;
-                            case "-apartment:none":
-                                options.apartment = ApartmentState.Unknown;
-                                break;
-                            default:
-                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedApartment(s.Substring(11)));
-                        }
-                    }
-                    else if (s == "-noglobbing")
-                    {
-                        options.noglobbing = true;
-                    }
-                    else if (s.StartsWith("-D"))
-                    {
-                        var keyvalue = s.Substring(2).Split('=');
-                        if (keyvalue.Length != 2)
-                            keyvalue = new string[] { keyvalue[0], "" };
-
-                        options.props[keyvalue[0]] = keyvalue[1];
-                    }
-                    else if (s == "-ea" || s == "-enableassertions")
-                    {
-                        options.props["ikvm.assert.default"] = "true";
-                    }
-                    else if (s == "-da" || s == "-disableassertions")
-                    {
-                        options.props["ikvm.assert.default"] = "false";
-                    }
-                    else if (s.StartsWith("-ea:") || s.StartsWith("-enableassertions:"))
-                    {
-                        options.props["ikvm.assert.enable"] = s.Substring(s.IndexOf(':') + 1);
-                    }
-                    else if (s.StartsWith("-da:") || s.StartsWith("-disableassertions:"))
-                    {
-                        options.props["ikvm.assert.disable"] = s.Substring(s.IndexOf(':') + 1);
-                    }
-                    else if (s == "-removeassertions")
-                    {
-                        options.codegenoptions |= CodeGenOptions.RemoveAsserts;
-                    }
-                    else if (s.StartsWith("-main:"))
-                    {
-                        options.mainClass = s.Substring(6);
-                    }
-                    else if (s.StartsWith("-reference:") || s.StartsWith("-r:"))
-                    {
-                        var r = s.Substring(s.IndexOf(':') + 1);
-                        if (r == "")
-                            throw new FatalCompilerErrorException(DiagnosticEvent.MissingFileSpecification(s));
-
-                        ArrayAppend(ref options.unresolvedReferences, r);
-                    }
-                    else if (s.StartsWith("-recurse:"))
-                    {
-                        var spec = s.Substring(9);
-                        var exists = false;
-
-                        // MONOBUG On Mono 1.0.2, Directory.Exists throws an exception if we pass an invalid directory name
-                        try
-                        {
-                            exists = Directory.Exists(spec);
-                        }
-                        catch (IOException)
-                        {
-
-                        }
-
-                        bool found;
-                        if (exists)
-                        {
-                            var dir = new DirectoryInfo(spec);
-                            found = Recurse(context, compiler, options, diagnostics, dir, dir, "*");
-                        }
-                        else
-                        {
-                            try
-                            {
-                                var dir = new DirectoryInfo(Path.GetDirectoryName(spec));
-                                if (dir.Exists)
-                                {
-                                    found = Recurse(context, compiler, options, diagnostics, dir, dir, Path.GetFileName(spec));
-                                }
-                                else
-                                {
-                                    found = RecurseJar(context, compiler, options, diagnostics, spec);
-                                }
-                            }
-                            catch (PathTooLongException)
-                            {
-                                throw new FatalCompilerErrorException(DiagnosticEvent.PathTooLong(spec));
-                            }
-                            catch (DirectoryNotFoundException)
-                            {
-                                throw new FatalCompilerErrorException(DiagnosticEvent.PathNotFound(spec));
-                            }
-                            catch (ArgumentException)
-                            {
-                                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(spec));
-                            }
-                        }
-
-                        if (!found)
-                            throw new FatalCompilerErrorException(DiagnosticEvent.FileNotFound(spec));
-                    }
-                    else if (s.StartsWith("-resource:"))
-                    {
-                        var spec = s.Substring(10).Split('=');
-                        if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidOptionSyntax(s));
-
-                        var fileInfo = GetFileInfo(spec[1]);
-                        var fileName = spec[0].TrimStart('/').TrimEnd('/');
-                        options.GetResourcesJar().Add(fileName, ReadAllBytes(fileInfo), fileInfo);
-                    }
-                    else if (s.StartsWith("-externalresource:"))
-                    {
-                        var spec = s.Substring(18).Split('=');
-                        if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidOptionSyntax(s));
-                        if (!File.Exists(spec[1]))
-                            throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNotFound(spec[1]));
-                        if (Path.GetFileName(spec[1]) != spec[1])
-                            throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNameInvalid(spec[1]));
-
-                        // TODO resource name clashes should be tested
-                        options.externalResources ??= new Dictionary<string, string>();
-                        options.externalResources.Add(spec[0], spec[1]);
-                    }
-                    else if (s == "-nojni")
-                    {
-                        options.codegenoptions |= CodeGenOptions.NoJNI;
-                    }
-                    else if (s.StartsWith("-exclude:"))
-                    {
-                        ProcessExclusionFile(ref options.classesToExclude, s.Substring(9));
-                    }
-                    else if (s.StartsWith("-version:"))
-                    {
-                        var str = s.Substring(9);
-                        if (!TryParseVersion(s.Substring(9), out options.version))
-                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidVersionFormat(str));
-                    }
-                    else if (s.StartsWith("-fileversion:"))
-                    {
-                        options.fileversion = s.Substring(13);
-                    }
-                    else if (s.StartsWith("-win32icon:"))
-                    {
-                        options.iconfile = GetFileInfo(s.Substring(11));
-                    }
-                    else if (s.StartsWith("-win32manifest:"))
-                    {
-                        options.manifestFile = GetFileInfo(s.Substring(15));
-                    }
-                    else if (s.StartsWith("-keyfile:"))
-                    {
-                        options.keyfile = GetFileInfo(s.Substring(9));
-                    }
-                    else if (s.StartsWith("-key:"))
-                    {
-                        options.keycontainer = s.Substring(5);
-                    }
-                    else if (s == "-delaysign")
-                    {
-                        options.delaysign = true;
-                    }
-                    else if (s.StartsWith("-debug"))
-                    {
-                        var mode = s.Substring(6);
-                        if (mode == "" || mode == "+" || mode == ":full")
-                        {
-                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
-                            options.debugMode = DebugMode.Full;
-                        }
-                        else if (mode == ":portable")
-                        {
-                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
-                            options.debugMode = DebugMode.Portable;
-                        }
-                        else if (mode == ":embedded")
-                        {
-                            options.codegenoptions |= CodeGenOptions.EmitSymbols;
-                            options.debugMode = DebugMode.Embedded;
-                        }
-                    }
-                    else if (s == "-deterministic-")
-                    {
+                    case ImportTarget.Unspecified:
+                        break;
+                    case ImportTarget.Exe:
+                        compilerOptions.target = PEFileKinds.ConsoleApplication;
+                        compilerOptions.guessFileKind = false;
+                        break;
+                    case ImportTarget.WinExe:
+                        compilerOptions.target = PEFileKinds.WindowApplication;
+                        compilerOptions.guessFileKind = false;
+                        break;
+                    case ImportTarget.Module:
+                        compilerOptions.targetIsModule = true;
+                        compilerOptions.target = PEFileKinds.Dll;
+                        compilerOptions.guessFileKind = false;
                         nonDeterministicOutput = true;
-                    }
-                    else if (s == "-optimize-")
-                    {
-                        options.codegenoptions |= CodeGenOptions.DisableOptimizations;
-                    }
-                    else if (s.StartsWith("-srcpath:"))
-                    {
-                        options.sourcepath = s.Substring(9);
-                    }
-                    else if (s.StartsWith("-remap:"))
-                    {
-                        options.remapfile = GetFileInfo(s.Substring(7));
-                    }
-                    else if (s == "-nostacktraceinfo")
-                    {
-                        options.codegenoptions |= CodeGenOptions.NoStackTraceInfo;
-                    }
-                    else if (s == "-opt:fields")
-                    {
-                        options.codegenoptions |= CodeGenOptions.RemoveUnusedFields;
-                    }
-                    else if (s == "-compressresources")
-                    {
-                        options.compressedResources = true;
-                    }
-                    else if (s == "-strictfinalfieldsemantics")
-                    {
-                        options.codegenoptions |= CodeGenOptions.StrictFinalFieldSemantics;
-                    }
-                    else if (s.StartsWith("-privatepackage:"))
-                    {
-                        var prefix = s.Substring(16);
-                        ArrayAppend(ref options.privatePackages, prefix);
-                    }
-                    else if (s.StartsWith("-publicpackage:"))
-                    {
-                        var prefix = s.Substring(15);
-                        ArrayAppend(ref options.publicPackages, prefix);
-                    }
-                    else if (s.StartsWith("-nowarn:"))
-                    {
-                        HandleWarnArg(options.suppressWarnings, s.Substring(8));
-                    }
-                    else if (s == "-warnaserror")
-                    {
-                        options.warnaserror = true;
-                    }
-                    else if (s.StartsWith("-warnaserror:"))
-                    {
-                        HandleWarnArg(options.errorWarnings, s.Substring(13));
-                    }
-                    else if (s.StartsWith("-runtime:"))
-                    {
-                        // NOTE this is an undocumented option
-                        runtimeAssembly = s.Substring(9);
-                    }
-                    else if (s == "-time")
-                    {
-                        time = true;
-                    }
-                    else if (s.StartsWith("-classloader:"))
-                    {
-                        options.classLoader = s.Substring(13);
-                    }
-                    else if (s == "-sharedclassloader")
-                    {
-                        options.sharedclassloader ??= new List<CompilerClassLoader>();
-                    }
-                    else if (s.StartsWith("-baseaddress:"))
-                    {
-                        var baseAddress = s.Substring(13);
-                        ulong baseAddressParsed;
-                        if (baseAddress.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                            baseAddressParsed = ulong.Parse(baseAddress.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                        else
-                            baseAddressParsed = ulong.Parse(baseAddress); // note that unlike CSC we don't support octal
+                        break;
+                    case ImportTarget.Library:
+                        compilerOptions.target = PEFileKinds.Dll;
+                        compilerOptions.guessFileKind = false;
+                        break;
+                    default:
+                        throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedTargetType(options.Target.ToString()));
+                }
 
-                        options.baseAddress = (baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
-                    }
-                    else if (s.StartsWith("-filealign:"))
-                    {
-                        if (!uint.TryParse(s.Substring(11), out var filealign) || filealign < 512 || filealign > 8192 || (filealign & (filealign - 1)) != 0)
-                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidFileAlignment(s.Substring(11)));
+            switch (options.Platform)
+            {
+                case ImportPlatform.Unspecified:
+                    break;
+                case ImportPlatform.X86:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Required32Bit;
+                    compilerOptions.imageFileMachine = ImageFileMachine.I386;
+                    break;
+                case ImportPlatform.X64:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
+                    compilerOptions.imageFileMachine = ImageFileMachine.AMD64;
+                    break;
+                case ImportPlatform.ARM:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = ImageFileMachine.ARM;
+                    break;
+                case ImportPlatform.ARM64:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = ImageFileMachine.ARM64;
+                    break;
+                case ImportPlatform.AnyCpu32BitPreferred:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
+                    compilerOptions.imageFileMachine = ImageFileMachine.UNKNOWN;
+                    break;
+                case ImportPlatform.AnyCpu:
+                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = ImageFileMachine.UNKNOWN;
+                    break;
+                default:
+                    throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedPlatform(options.Platform.ToString()));
+            }
 
-                        options.fileAlignment = filealign;
-                    }
-                    else if (s == "-nopeercrossreference")
-                    {
-                        options.crossReferenceAllPeers = false;
-                    }
-                    else if (s == "-nostdlib")
-                    {
-                        // this is a global option
-                        nostdlib = true;
-                    }
-                    else if (s.StartsWith("-lib:"))
-                    {
-                        // this is a global option
-                        libpaths.Add(s.Substring(5));
-                    }
-                    else if (s == "-noautoserialization")
-                    {
-                        options.codegenoptions |= CodeGenOptions.NoAutomagicSerialization;
-                    }
-                    else if (s == "-highentropyva")
-                    {
-                        options.highentropyva = true;
-                    }
-                    else if (s.StartsWith("-writeSuppressWarningsFile:"))
-                    {
-                        options.writeSuppressWarningsFile = GetFileInfo(s.Substring(27));
+            switch (options.Apartment)
+            {
+                case ImportApartment.Unspecified:
+                    break;
+                case ImportApartment.STA:
+                    compilerOptions.apartment = ApartmentState.STA;
+                    break;
+                case ImportApartment.MTA:
+                    compilerOptions.apartment = ApartmentState.MTA;
+                    break;
+                case ImportApartment.None:
+                    compilerOptions.apartment = ApartmentState.Unknown;
+                    break;
+                default:
+                    throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedApartment(options.Apartment.ToString()));
+            }
 
-                        try
-                        {
-                            options.writeSuppressWarningsFile.Delete();
-                        }
-                        catch (Exception x)
-                        {
-                            throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(options.writeSuppressWarningsFile.FullName, x.Message));
-                        }
-                    }
-                    else if (s.StartsWith("-proxy:")) // currently undocumented!
-                    {
-                        var proxy = s.Substring(7);
-                        if (options.proxies.Contains(proxy))
-                            diagnostics.DuplicateProxy(proxy);
+            if (options.NoGlobbing)
+                compilerOptions.noglobbing = true;
 
-                        options.proxies.Add(proxy);
-                    }
-                    else if (s == "-nologo")
-                    {
-                        // Ignore. This is handled earlier.
-                    }
-                    else if (s == "-XX:+AllowNonVirtualCalls")
-                    {
-                        JVM.AllowNonVirtualCalls = true;
-                    }
-                    else if (s == "-static")
-                    {
-                        // we abuse -static to also enable support for NoRefEmit scenarios
-                        options.codegenoptions |= CodeGenOptions.DisableDynamicBinding | CodeGenOptions.NoRefEmitHelpers;
-                    }
-                    else if (s == "-nojarstubs")    // undocumented temporary option to mitigate risk
-                    {
-                        options.nojarstubs = true;
-                    }
-                    else if (s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
-                    {
-                        ProcessAttributeAnnotationsClass(context, diagnostics, ref options.assemblyAttributeAnnotations, s.Substring(20));
-                    }
-                    else if (s == "-w4") // undocumented option to always warn if a class isn't found
-                    {
-                        options.warningLevelHigh = true;
-                    }
-                    else if (s == "-noparameterreflection") // undocumented option to compile core class libraries with, to disable MethodParameter attribute
-                    {
-                        options.noParameterReflection = true;
-                    }
-                    else if (s == "-bootstrap")
-                    {
-                        options.bootstrap = true;
-                    }
-                    else if (s == "-log:")
-                    {
-                        options.log = s.Substring(5);
-                    }
-                    else
-                    {
-                        throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedOption(s));
-                    }
+            if (options.Properties.Count > 0)
+                foreach (var kvp in options.Properties)
+                    compilerOptions.props[kvp.Key] = kvp.Value;
+
+            if (options.EnableAssertions != null)
+            {
+                if (options.EnableAssertions.Length == 0)
+                    compilerOptions.props["ikvm.assert.default"] = "true";
+                else
+                    compilerOptions.props["ikvm.assert.enable"] = string.Join(";", options.EnableAssertions);
+            }
+
+            if (options.DisableAssertions != null)
+            {
+                if (options.DisableAssertions.Length == 0)
+                    compilerOptions.props["ikvm.assert.default"] = "false";
+                else
+                    compilerOptions.props["ikvm.assert.disable"] = string.Join(";", options.DisableAssertions);
+            }
+
+            if (options.RemoveAssertions)
+                compilerOptions.codegenoptions |= CodeGenOptions.RemoveAsserts;
+
+            if (options.Main != null)
+                compilerOptions.mainClass = options.Main;
+
+            foreach (var reference in options.References)
+                ArrayAppend(ref compilerOptions.unresolvedReferences, reference);
+
+            foreach (var spec in options.Recurse)
+            {
+                var exists = false;
+
+                // MONOBUG On Mono 1.0.2, Directory.Exists throws an exception if we pass an invalid directory name
+                try
+                {
+                    exists = Directory.Exists((string)spec);
+                }
+                catch (IOException)
+                {
+
+                }
+
+                var found = false;
+                if (exists)
+                {
+                    var dir = new DirectoryInfo(spec);
+                    found = Recurse(context, compiler, compilerOptions, diagnostics, dir, dir, "*");
                 }
                 else
                 {
-                    fileNames.Add(s);
+                    try
+                    {
+                        var dir = new DirectoryInfo(Path.GetDirectoryName(spec));
+                        if (dir.Exists)
+                        {
+                            found = Recurse(context, compiler, compilerOptions, diagnostics, dir, dir, Path.GetFileName(spec));
+                        }
+                        else
+                        {
+                            found = RecurseJar(context, compiler, compilerOptions, diagnostics, spec);
+                        }
+                    }
+                    catch (PathTooLongException)
+                    {
+                        throw new FatalCompilerErrorException(DiagnosticEvent.PathTooLong(spec));
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        throw new FatalCompilerErrorException(DiagnosticEvent.PathNotFound(spec));
+                    }
+                    catch (ArgumentException)
+                    {
+                        throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(spec));
+                    }
                 }
-                if (options.targetIsModule && options.sharedclassloader != null)
+
+                if (!found)
+                    throw new FatalCompilerErrorException(DiagnosticEvent.FileNotFound(spec));
+            }
+
+            foreach (var kvp in options.Resources)
+            {
+                var fileInfo = GetFileInfo(kvp.Value.FullName);
+                var fileName = kvp.Key.TrimStart('/').TrimEnd('/');
+                compilerOptions.GetResourcesJar().Add(fileName, ReadAllBytes(fileInfo), fileInfo);
+            }
+
+            foreach (var kvp in options.ExternalResources)
+            {
+                if (!File.Exists(kvp.Value.FullName))
+                    throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNotFound(kvp.Value.FullName));
+                if (Path.GetFileName(kvp.Value.FullName) != kvp.Value.FullName)
+                    throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNameInvalid(kvp.Value.FullName));
+
+                // TODO resource name clashes should be tested
+                compilerOptions.externalResources ??= new Dictionary<string, string>();
+                compilerOptions.externalResources.Add(kvp.Key, kvp.Value.FullName);
+            }
+
+            if (options.NoJNI)
+                compilerOptions.codegenoptions |= CodeGenOptions.NoJNI;
+
+            if (options.Exclude != null)
+                ProcessExclusionFile(ref compilerOptions.classesToExclude, options.Exclude.FullName);
+
+            if (options.Version != null)
+                compilerOptions.version = options.Version;
+
+            if (options.FileVersion != null)
+                compilerOptions.fileversion = options.FileVersion.ToString();
+
+            if (options.Win32Icon != null)
+            {
+                compilerOptions.iconfile = GetFileInfo(options.Win32Icon.FullName);
+            }
+
+            if (options.Win32Manifest != null)
+                compilerOptions.manifestFile = GetFileInfo(options.Win32Manifest.FullName);
+
+            if (options.KeyFile != null)
+                compilerOptions.keyfile = GetFileInfo(options.KeyFile.FullName);
+
+            if (options.Key != null)
+                compilerOptions.keycontainer = options.Key;
+
+            if (options.DelaySign)
+                compilerOptions.delaysign = true;
+
+            if (options.Debug != ImportDebug.Unspecified)
+            {
+                switch (options.Debug)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.SharedClassLoaderCannotBeUsedOnModuleTarget());
+                    case ImportDebug.Full:
+                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                        compilerOptions.debugMode = DebugMode.Full;
+                        break;
+                    case ImportDebug.Portable:
+                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                        compilerOptions.debugMode = DebugMode.Portable;
+                        break;
+                    case ImportDebug.Embedded:
+                        compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
+                        compilerOptions.debugMode = DebugMode.Embedded;
+                        break;
                 }
             }
 
-            if (nonleaf)
+            if (options.Deterministic == false)
+                nonDeterministicOutput = true;
+
+            if (options.Optimize == false)
+                compilerOptions.codegenoptions |= CodeGenOptions.DisableOptimizations;
+
+            if (options.SourcePath != null)
+                compilerOptions.sourcepath = options.SourcePath.FullName;
+
+            if (options.Remap != null)
+                compilerOptions.remapfile = GetFileInfo(options.Remap.FullName);
+
+            if (options.NoStackTraceInfo)
+                compilerOptions.codegenoptions |= CodeGenOptions.NoStackTraceInfo;
+
+            if (options.RemoveUnusedPrivateFields)
+                compilerOptions.codegenoptions |= CodeGenOptions.RemoveUnusedFields;
+
+            if (options.CompressResources)
+                compilerOptions.compressedResources = true;
+
+            if (options.StrictFinalFieldSemantics)
+                compilerOptions.codegenoptions |= CodeGenOptions.StrictFinalFieldSemantics;
+
+            if (options.PrivatePackages != null)
+                foreach (var prefix in options.PrivatePackages)
+                    ArrayAppend(ref compilerOptions.privatePackages, prefix);
+
+            if (options.PublicPackages != null)
+                foreach (var prefix in options.PublicPackages)
+                    ArrayAppend(ref compilerOptions.publicPackages, prefix);
+
+            if (options.NoWarn != null)
+                foreach (var diagnostic in options.NoWarn)
+                    compilerOptions.suppressWarnings.Add($"IKVM{diagnostic.Id:D4}");
+
+            // TODO handle specific diagnostic IDs
+            if (options.WarnAsError != null)
             {
-                return;
+                if (options.WarnAsError.Length == 0)
+                    compilerOptions.warnaserror = true;
+                else
+                    foreach (var i in options.WarnAsError)
+                        compilerOptions.errorWarnings.Add($"IKVM{i.Id:D4}");
             }
 
-            ReadFiles(context, compiler, options, diagnostics, fileNames);
+            if (options.Runtime != null)
+                runtimeAssembly = options.Runtime.FullName;
 
-            if (options.assembly == null)
+            if (options.Time)
+                time = true;
+
+            if (options.ClassLoader != null)
+                compilerOptions.classLoader = options.ClassLoader;
+
+            if (options.SharedClassLoader)
+                compilerOptions.sharedclassloader ??= new List<CompilerClassLoader>();
+
+            if (options.BaseAddress != null)
             {
-                var basename = options.path == null ? defaultAssemblyName : options.path.Name;
+                var baseAddress = options.BaseAddress;
+                ulong baseAddressParsed;
+                if (baseAddress.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                    baseAddressParsed = ulong.Parse(baseAddress.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                else
+                    baseAddressParsed = ulong.Parse(baseAddress); // note that unlike CSC we don't support octal
+
+                compilerOptions.baseAddress = (baseAddressParsed & 0xFFFFFFFFFFFF0000UL);
+            }
+
+            if (options.FileAlign != null)
+            {
+                if (!uint.TryParse(options.FileAlign, out var filealign) || filealign < 512 || filealign > 8192 || (filealign & (filealign - 1)) != 0)
+                    throw new FatalCompilerErrorException(DiagnosticEvent.InvalidFileAlignment(options.FileAlign));
+
+                compilerOptions.fileAlignment = filealign;
+            }
+
+            if (options.NoPeerCrossReference)
+                compilerOptions.crossReferenceAllPeers = false;
+
+            if (options.NoStdLib)
+                nostdlib = true;
+
+            if (options.Libraries != null)
+                foreach (var lib in options.Libraries)
+                    libpaths.Add(lib.FullName);
+
+            if (options.NoAutoSerialization)
+                compilerOptions.codegenoptions |= CodeGenOptions.NoAutomagicSerialization;
+
+            if (options.HighEntropyVA)
+            {
+                compilerOptions.highentropyva = true;
+            }
+
+            if (options.Proxies != null)
+            {
+                foreach (var proxy in options.Proxies)
+                {
+                    if (compilerOptions.proxies.Contains(proxy))
+                        diagnostics.DuplicateProxy(proxy);
+
+                    compilerOptions.proxies.Add(proxy);
+                }
+            }
+
+            if (options.AllowNonVirtualCalls)
+                JVM.AllowNonVirtualCalls = true;
+
+            if (options.Static)
+            {
+                // we abuse -static to also enable support for NoRefEmit scenarios
+                compilerOptions.codegenoptions |= CodeGenOptions.DisableDynamicBinding | CodeGenOptions.NoRefEmitHelpers;
+            }
+
+            if (options.NoJarStubs)    // undocumented temporary option to mitigate risk
+            {
+                compilerOptions.nojarstubs = true;
+            }
+
+            if (options.AssemblyAttributes != null)
+                foreach (var i in options.AssemblyAttributes)
+                    ProcessAttributeAnnotationsClass(context, diagnostics, ref compilerOptions.assemblyAttributeAnnotations, i.FullName);
+
+            if (options.WarningLevel4Option) // undocumented option to always warn if a class isn't found
+                compilerOptions.warningLevelHigh = true;
+
+            if (options.NoParameterReflection) // undocumented option to compile core class libraries with, to disable MethodParameter attribute
+                compilerOptions.noParameterReflection = true;
+
+            if (options.Bootstrap)
+                compilerOptions.bootstrap = true;
+
+            if (compilerOptions.targetIsModule && compilerOptions.sharedclassloader != null)
+                throw new FatalCompilerErrorException(DiagnosticEvent.SharedClassLoaderCannotBeUsedOnModuleTarget());
+
+            ReadFiles(context, compiler, compilerOptions, diagnostics, options.Inputs.Select(i => i.FullName).ToList());
+
+            foreach (var nested in options.Nested)
+            {
+                var nestedLevel = new IkvmImporterInternal();
+                nestedLevel.manifestMainClass = manifestMainClass;
+                nestedLevel.defaultAssemblyName = defaultAssemblyName;
+                nestedLevel.ContinueParseCommandLine(context, compiler, diagnostics, nested, targets, compilerOptions.Copy());
+            }
+
+            if (compilerOptions.assembly == null)
+            {
+                var basename = compilerOptions.path == null ? defaultAssemblyName : compilerOptions.path.Name;
                 if (basename == null)
                     throw new FatalCompilerErrorException(DiagnosticEvent.NoOutputFileSpecified());
 
                 int idx = basename.LastIndexOf('.');
                 if (idx > 0)
-                    options.assembly = basename.Substring(0, idx);
+                    compilerOptions.assembly = basename.Substring(0, idx);
                 else
-                    options.assembly = basename;
+                    compilerOptions.assembly = basename;
             }
 
-            if (options.path != null && options.guessFileKind)
+            if (compilerOptions.path != null && compilerOptions.guessFileKind)
             {
-                if (options.path.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
-                    options.target = PEFileKinds.Dll;
+                if (compilerOptions.path.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
+                    compilerOptions.target = PEFileKinds.Dll;
 
-                options.guessFileKind = false;
+                compilerOptions.guessFileKind = false;
             }
 
-            if (options.mainClass == null && manifestMainClass != null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+            if (compilerOptions.mainClass == null && manifestMainClass != null && (compilerOptions.guessFileKind || compilerOptions.target != PEFileKinds.Dll))
             {
                 diagnostics.MainMethodFromManifest(manifestMainClass);
-                options.mainClass = manifestMainClass;
+                compilerOptions.mainClass = manifestMainClass;
             }
 
-            targets.Add(options);
+            targets.Add(compilerOptions);
         }
 
         internal static FileInfo GetFileInfo(string path)

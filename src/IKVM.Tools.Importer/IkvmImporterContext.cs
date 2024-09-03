@@ -8,7 +8,7 @@ namespace IKVM.Tools.Importer
     /// <summary>
     /// Imports a Java classpath into a .NET assembly.
     /// </summary>
-    public partial class IkvmImporterContext : IDisposable
+    partial class IkvmImporterContext : IDisposable
     {
 
         /// <summary>

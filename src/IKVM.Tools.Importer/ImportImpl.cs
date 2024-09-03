@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace IKVM.Tools.Importer
 {
@@ -6,9 +7,9 @@ namespace IKVM.Tools.Importer
     class ImportImpl
     {
 
-        public int Execute(ImportOptions options)
+        public async Task<int> ExecuteAsync(ImportOptions options, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await Task.Run(() => IkvmImporterInternal.Execute(options));
         }
 
     }

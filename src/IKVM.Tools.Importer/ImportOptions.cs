@@ -10,7 +10,6 @@ using IKVM.CoreLib.Diagnostics;
 namespace IKVM.Tools.Importer
 {
 
-    [Serializable]
     class ImportOptions : ICloneable
     {
 

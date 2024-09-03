@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace IKVM.Tools.Importer
 {
 
-    public partial class IkvmImporterContext
+    partial class IkvmImporterContext
     {
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace IKVM.Tools.Importer
         class IkvmImporterDispatcher : MarshalByRefObject
         {
 
-            readonly string[] args;
+            readonly string[] _args;
 
             /// <summary>
             /// Initializes a new instance.
@@ -25,7 +25,7 @@ namespace IKVM.Tools.Importer
             /// <exception cref="ArgumentNullException"></exception>
             public IkvmImporterDispatcher(string[] args)
             {
-                this.args = args ?? throw new ArgumentNullException(nameof(args));
+                _args = args ?? throw new ArgumentNullException(nameof(args));
             }
 
             /// <summary>
@@ -34,7 +34,7 @@ namespace IKVM.Tools.Importer
             /// <exception cref="NotImplementedException"></exception>
             public int Execute()
             {
-                return IkvmImporterInternal.Execute(args);
+                return Task.Run(() => ImportTool.ExecuteInContext(_args)).GetAwaiter().GetResult();
             }
 
         }
@@ -45,7 +45,7 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="options"></param>
+        /// <param name="args"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public IkvmImporterContext(string[] args)
         {
