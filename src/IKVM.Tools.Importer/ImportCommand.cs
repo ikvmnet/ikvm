@@ -42,7 +42,7 @@ namespace IKVM.Tools.Importer
                 (PlatformOption = new Option<string?>(
                     name: "-platform",
                     description: "Limit which platforms this code can run on: x86, x64, arm, anycpu32bitpreferred, or anycpu.\nThe default is anycpu.")
-                    .FromAmong("x86", "x64", "arm", "anycpu32bitpreferred", "anycpu")),
+                    .FromAmong("x86", "x64", "arm", "arm64", "anycpu32bitpreferred", "anycpu")),
                 (ApartmentOption = new Option<string?>(
                     name: "-apartment",
                     description: "Apply STAThreadAttribute to main.")
