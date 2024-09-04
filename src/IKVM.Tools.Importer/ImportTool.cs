@@ -171,7 +171,7 @@ namespace IKVM.Tools.Importer
 
             // execute command
             return await new CommandLineBuilder(command)
-                .UseVersionOption()
+                .UseVersionOption(["-version", "-version"])
                 .UseHelp()
                 .UseParseDirective()
                 .UseTypoCorrections()
