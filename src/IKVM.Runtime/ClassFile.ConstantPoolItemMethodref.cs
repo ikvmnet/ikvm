@@ -45,28 +45,24 @@ namespace IKVM.Runtime
 
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            internal override void Link(RuntimeJavaType thisJavaType, LoadMode mode)
             {
-                base.Link(thisType, mode);
-                var wrapper = GetClassType();
-                if (wrapper != null && !wrapper.IsUnloadable)
+                base.Link(thisJavaType, mode);
+
+                var javaType = GetClassType();
+                if (javaType != null && javaType.IsUnloadable == false)
                 {
-                    method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
-                    if (method != null)
+                    method = javaType.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
+                    method?.Link(mode);
+
+                    if (Name != StringConstants.INIT &&
+                        thisJavaType.IsInterface == false &&
+                        (JVM.AllowNonVirtualCalls == false || (thisJavaType.Modifiers & Modifiers.Super) == Modifiers.Super) &&
+                        thisJavaType != javaType &&
+                        thisJavaType.IsSubTypeOf(javaType))
                     {
-                        method.Link(mode);
-                    }
-                    if (Name != StringConstants.INIT
-                        && !thisType.IsInterface
-                        && (!JVM.AllowNonVirtualCalls || (thisType.Modifiers & Modifiers.Super) == Modifiers.Super)
-                        && thisType != wrapper
-                        && thisType.IsSubTypeOf(wrapper))
-                    {
-                        invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
-                        if (invokespecialMethod != null)
-                        {
-                            invokespecialMethod.Link(mode);
-                        }
+                        invokespecialMethod = thisJavaType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
+                        invokespecialMethod?.Link(mode);
                     }
                 }
             }

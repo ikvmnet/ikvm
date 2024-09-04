@@ -3,15 +3,14 @@
 using System;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using System.Text.Json;
 
 namespace IKVM.Tools.Importer
 {
 
-    public partial class IkvmImporterContext
+    partial class IkvmImporterContext
     {
 
         /// <summary>
@@ -20,7 +19,7 @@ namespace IKVM.Tools.Importer
         class IkvmImporterDispatcher
         {
 
-            readonly string[] args;
+            readonly string[] _args;
 
             /// <summary>
             /// Initializes a new instance.
@@ -32,7 +31,7 @@ namespace IKVM.Tools.Importer
                 if (args is null)
                     throw new ArgumentNullException(nameof(args));
 
-                this.args = JsonSerializer.Deserialize<string[]>(args);
+                _args = JsonSerializer.Deserialize<string[]>(args);
             }
 
             /// <summary>
@@ -41,7 +40,7 @@ namespace IKVM.Tools.Importer
             /// <returns></returns>
             public int Execute()
             {
-                return IkvmImporterInternal.Execute(args);
+                return Task.Run(() => ImportTool.ExecuteInContext(_args)).GetAwaiter().GetResult();
             }
 
         }
@@ -52,7 +51,7 @@ namespace IKVM.Tools.Importer
         class IsolatedAssemblyLoadContext : AssemblyLoadContext
         {
 
-            readonly AssemblyDependencyResolver resolver;
+            readonly AssemblyDependencyResolver _resolver;
 
             /// <summary>
             /// Initializes a new instance.
@@ -62,18 +61,18 @@ namespace IKVM.Tools.Importer
             public IsolatedAssemblyLoadContext(string name, bool isCollectible = true) :
                 base(name, isCollectible)
             {
-                resolver = new AssemblyDependencyResolver(Assembly.GetEntryAssembly().Location);
+                _resolver = new AssemblyDependencyResolver(Assembly.GetEntryAssembly().Location);
             }
 
             protected override Assembly Load(AssemblyName assemblyName)
             {
-                return resolver.ResolveAssemblyToPath(assemblyName) is string p ? base.LoadFromAssemblyPath(p) : base.Load(assemblyName);
+                return _resolver.ResolveAssemblyToPath(assemblyName) is string p ? base.LoadFromAssemblyPath(p) : base.Load(assemblyName);
             }
 
         }
 
-        IsolatedAssemblyLoadContext context;
-        object dispatcher;
+        IsolatedAssemblyLoadContext _context;
+        object _dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -83,10 +82,10 @@ namespace IKVM.Tools.Importer
         public IkvmImporterContext(string[] args)
         {
             // load the importer in a nested assembly context
-            context = new IsolatedAssemblyLoadContext("IkvmImporter", true);
-            var asm = context.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
+            _context = new IsolatedAssemblyLoadContext("IkvmImporter", true);
+            var asm = _context.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmImporterDispatcher).FullName);
-            dispatcher = Activator.CreateInstance(typ, new[] { JsonSerializer.Serialize(args) });
+            _dispatcher = Activator.CreateInstance(typ, [JsonSerializer.Serialize(args)]);
         }
 
         /// <summary>
@@ -97,7 +96,7 @@ namespace IKVM.Tools.Importer
         /// <exception cref="NotImplementedException"></exception>
         public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return await Task.Run(() => (int)dispatcher.GetType().GetMethod(nameof(IkvmImporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
+            return await Task.Run(() => (int)_dispatcher.GetType().GetMethod(nameof(IkvmImporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(_dispatcher, []));
         }
 
         /// <summary>
@@ -107,13 +106,13 @@ namespace IKVM.Tools.Importer
         {
             try
             {
-                dispatcher = null;
-                if (context != null)
-                    context.Unload();
+                _dispatcher = null;
+                if (_context != null)
+                    _context.Unload();
             }
             finally
             {
-                context = null;
+                _context = null;
             }
 
             GC.SuppressFinalize(this);

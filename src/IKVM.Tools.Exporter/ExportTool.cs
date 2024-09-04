@@ -84,30 +84,36 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Executes the program.
         /// </summary>
-        /// <param name="options"></param>
+        /// <param name="commandOptions"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static Task ExecuteAsync(ExportCommandOptions options, CancellationToken cancellationToken)
+        static Task ExecuteAsync(ExportCommandOptions commandOptions, CancellationToken cancellationToken)
         {
-            if (options is null)
-                throw new ArgumentNullException(nameof(options));
+            if (commandOptions is null)
+                throw new ArgumentNullException(nameof(commandOptions));
 
-            return ExecuteImplAsync(new ExportOptions()
+            var options = new ExportOptions()
             {
-                Output = options.Output,
-                References = [.. options.References],
-                Libraries = [.. options.Libraries],
-                IncludeNonPublicTypes = options.IncludeNonPublicTypes,
-                IncludeNonPublicInterfaces = options.IncludeNonPublicInterfaces,
-                IncludeNonPublicMembers = options.IncludeNonPublicMembers,
-                IncludeParameterNames = options.IncludeParameterNames,
-                Forwarders = options.Forwarders,
-                NoStdLib = options.NoStdLib,
-                Shared = options.Shared,
-                Bootstrap = options.Bootstrap,
-                ContinueOnError = options.ContinueOnError,
-                Assembly = options.Assembly
-            }, p => GetDiagnostics(p, options.Log), cancellationToken);
+                Output = commandOptions.Output.FullName,
+                IncludeNonPublicTypes = commandOptions.IncludeNonPublicTypes,
+                IncludeNonPublicInterfaces = commandOptions.IncludeNonPublicInterfaces,
+                IncludeNonPublicMembers = commandOptions.IncludeNonPublicMembers,
+                IncludeParameterNames = commandOptions.IncludeParameterNames,
+                Forwarders = commandOptions.Forwarders,
+                NoStdLib = commandOptions.NoStdLib,
+                Shared = commandOptions.Shared,
+                Bootstrap = commandOptions.Bootstrap,
+                ContinueOnError = commandOptions.ContinueOnError,
+                Assembly = commandOptions.Assembly?.FullName,
+            };
+
+            foreach (var i in commandOptions.References)
+                options.References.Add(i.FullName);
+
+            foreach (var i in commandOptions.Libraries)
+                options.Libraries.Add(i.FullName);
+
+            return ExecuteImplAsync(options, p => GetDiagnostics(p, commandOptions.Log), cancellationToken);
         }
 
         /// <summary>
@@ -127,10 +133,10 @@ namespace IKVM.Tools.Exporter
         }
 
         readonly RootCommand command;
-        readonly Argument<string> assemblyArgument;
+        readonly Argument<FileInfo> assemblyArgument;
         readonly Option<FileInfo> outputOption;
         readonly Option<FileInfo[]> referenceOption;
-        readonly Option<FileInfo[]> libraryOption;
+        readonly Option<DirectoryInfo[]> libraryOption;
         readonly Option<string[]> namespaceOption;
         readonly Option<bool> includeNonPublicTypesOption;
         readonly Option<bool> includeNonPublicInterfacesOption;
@@ -156,7 +162,7 @@ namespace IKVM.Tools.Exporter
                 (referenceOption = new Option<FileInfo[]>(
                     aliases: ["--reference", "-reference", "-r"],
                     description: "Reference an assembly.")),
-                (libraryOption = new Option<FileInfo[]>(
+                (libraryOption = new Option<DirectoryInfo[]>(
                     aliases: ["--lib", "-lib", "-l"],
                     description: "Additional directories to search for references.")),
                 (namespaceOption = new Option<string[]>(
@@ -193,7 +199,7 @@ namespace IKVM.Tools.Exporter
                     aliases: ["--log", "-log"],
                     getDefaultValue: () => "text",
                     description: "Logging options.")),
-                (assemblyArgument = new Argument<string>(
+                (assemblyArgument = new Argument<FileInfo>(
                     name: "assemblyNameOrPath",
                     description: "Path or name of assembly to export.")),
             };
@@ -220,16 +226,16 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        async Task ExecuteImplAsync(InvocationContext context)
+        Task ExecuteImplAsync(InvocationContext context)
         {
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
-            await ExecuteAsync(new ExportCommandOptions()
+            var options = new ExportCommandOptions()
             {
-                Output = context.ParseResult.GetValueForOption(outputOption).FullName,
-                References = context.ParseResult.GetValueForOption(referenceOption).Select(i => i.FullName).ToArray(),
-                Libraries = context.ParseResult.GetValueForOption(libraryOption).Select(i => i.FullName).ToArray(),
+                Output = context.ParseResult.GetValueForOption(outputOption),
+                References = context.ParseResult.GetValueForOption(referenceOption),
+                Libraries = context.ParseResult.GetValueForOption(libraryOption),
                 Namespaces = context.ParseResult.GetValueForOption(namespaceOption).ToArray(),
                 IncludeNonPublicTypes = context.ParseResult.GetValueForOption(includeNonPublicTypesOption),
                 IncludeNonPublicInterfaces = context.ParseResult.GetValueForOption(includeNonPublicInterfacesOption),
@@ -242,7 +248,9 @@ namespace IKVM.Tools.Exporter
                 ContinueOnError = context.ParseResult.GetValueForOption(continueOnErrorOption),
                 Assembly = context.ParseResult.GetValueForArgument(assemblyArgument),
                 Log = context.ParseResult.GetValueForOption(logOption)
-            }, context.GetCancellationToken());
+            };
+
+            return ExecuteAsync(options, context.GetCancellationToken());
         }
 
     }

@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
-using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;

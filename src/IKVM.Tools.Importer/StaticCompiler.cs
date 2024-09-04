@@ -87,7 +87,7 @@ namespace IKVM.Tools.Importer
             universe.ResolvedMissingMember += ResolvedMissingMember;
 
             // enable embedded symbol writer
-            if (debug != DebugMode.None)
+            if (debug == DebugMode.Portable)
                 universe.SetSymbolWriterFactory(module => new PortablePdbSymbolWriter(module));
         }
 

@@ -20,10 +20,32 @@
 <#@ output extension=".cs" #>
 #nullable enable
 
+using System;
 using System.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {
+
+    partial record class Diagnostic
+    {
+
+        public static Diagnostic? GetById(int id)
+        {
+            switch (id)
+            {
+<#
+foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
+{
+#>
+                case <#= kvp.Value.Id #>:
+                    return <#= kvp.Key #>;
+<#
+}
+#>
+                default:
+                    return null;
+            }
+        }
 
 <#
 foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnostic.json"))))
@@ -37,9 +59,6 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         message.Add(segment.Literal != null ? segment.Literal : $"{{{kvp.Value.Args.FindIndex(i => i.Name == segment.Arg)}}}");
 
 #>
-    partial record class Diagnostic
-    {
-
         /// <summary>
         /// <#= desc #>
         /// </summary>
@@ -52,10 +71,9 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         public static readonly Diagnostic <#= kvp.Key #> = new Diagnostic(<#= kvp.Value.Id #>, nameof(<#= kvp.Key #>), <#= Util.ToStringLiteral(string.Join("", message)) #>, DiagnosticLevel.<#= kvp.Value.Level #>);
 #endif
 
-    }
-
 <#
 }
 #>
+    }
 
 }

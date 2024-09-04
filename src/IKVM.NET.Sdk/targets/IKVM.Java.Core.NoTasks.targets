@@ -273,39 +273,38 @@ Value = b.ToString();
 
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
-            <_IkvmCompilerArgs Include="-nologo" />
             <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
-            <_IkvmCompilerArgs Include="-debug:$(DebugType)" Condition=" '$(DebugType)' != 'none' " />
-            <_IkvmCompilerArgs Include="-nowarn:$(NoWarn.Replace(';', ','))" Condition=" '$(NoWarn)' != '' " />
+            <_IkvmCompilerArgs Include="-debug $(DebugType)" Condition=" '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-nowarn $(NoWarn.Replace(';', ','))" Condition=" '$(NoWarn)' != '' " />
             <_IkvmCompilerArgs Include="-warnaserror" Condition=" '$(TreatWarningsAsErrors)' == 'true' " />
-            <_IkvmCompilerArgs Include="-warnaserror:$(WarningsAsErrors.Replace(';', ','))" Condition=" '$(TreatWarningsAsErrors)' != 'true' And '$(WarningsAsErrors)' != '' " />
-            <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
-            <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
-            <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
-            <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
-            <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
+            <_IkvmCompilerArgs Include="-warnaserror $(WarningsAsErrors.Replace(';', ','))" Condition=" '$(TreatWarningsAsErrors)' != 'true' And '$(WarningsAsErrors)' != '' " />
+            <_IkvmCompilerArgs Include="-assembly $(AssemblyName)" />
+            <_IkvmCompilerArgs Include="-version $(AssemblyVersion)" />
+            <_IkvmCompilerArgs Include="-runtime &quot;$(IkvmRuntimeAssembly)&quot;" />
+            <_IkvmCompilerArgs Include="-keyfile &quot;$(KeyOriginatorFile)&quot;" Condition=" '$(KeyOriginatorFile)' != '' " />
+            <_IkvmCompilerArgs Include="@(MapFile->'-remap &quot;%(FullPath)&quot;')" Condition=" '@(MapFile)' != '' " />
             <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />
             <_IkvmCompilerArgs Include="-opt:fields" />
             <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
-            <_IkvmCompilerArgs Include="-target:$(_Target)" Condition=" '$(_Target)' != '' " />
-            <_IkvmCompilerArgs Include="-platform:$(PlatformTarget.ToLowerInvariant())" Condition=" '$(PlatformTarget)' != '' " />
-            <_IkvmCompilerArgs Include="-main:$(StartupObject)" Condition=" '$(StartupObject)' != '' " />
+            <_IkvmCompilerArgs Include="-target $(_Target)" Condition=" '$(_Target)' != '' " />
+            <_IkvmCompilerArgs Include="-platform $(PlatformTarget.ToLowerInvariant())" Condition=" '$(PlatformTarget)' != '' " />
+            <_IkvmCompilerArgs Include="-main $(StartupObject)" Condition=" '$(StartupObject)' != '' " />
             <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
             <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
             <_IkvmCompilerArgs Include="-w$(WarningLevel)" />
             <_IkvmCompilerArgs Include="-noparameterreflection" Condition=" '$(NoParameterReflection)' == 'true' " />
             <_IkvmCompilerArgs Include="-static" Condition=" '$(Static)' == 'true' " />
-            <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)') And '@(ExcludeRegex)' != '' " />
-            <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
+            <_IkvmCompilerArgs Include="-exclude &quot;$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))&quot;" Condition="Exists('$(_ExcludeFilePath)') And '@(ExcludeRegex)' != '' " />
+            <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes &quot;%(FullPath)&quot;')" />
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
             <_IkvmCompilerReferencePath Include="@(_IkvmCompilerReferencePathWithRefAssemblies)" Condition=" '%(_IkvmCompilerReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference &quot;%(FullPath)&quot;')" />
             <_IkvmCompilerResourceItem Remove="@(_IkvmCompilerResourceItem)" />
             <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="%(_IkvmCompilerJavaResource.ResourcePath)" Condition=" '%(Identity)' != '' And '%(_IkvmCompilerJavaResource.ResourcePath)' != '' " />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
-            <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource &quot;%(ResourcePath)=%(FullPath)&quot;')" />
+            <_IkvmCompilerArgs Include="-out:&quot;$(_AssemblyTempPath)$(TargetName)$(TargetExt)&quot;" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'&quot;%(FullPath)&quot;')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 

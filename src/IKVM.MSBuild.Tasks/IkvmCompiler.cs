@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -115,11 +116,9 @@ namespace IKVM.MSBuild.Tasks
 
         public string NoWarn { get; set; }
 
-        public bool WarnAsError { get; set; }
+        public bool TreatWarningsAsErrors { get; set; }
 
-        public string WarnAsErrorWarnings { get; set; }
-
-        public string WriteSuppressWarningsFile { get; set; }
+        public string WarningsAsErrors { get; set; }
 
         public string Main { get; set; }
 
@@ -313,16 +312,26 @@ namespace IKVM.MSBuild.Tasks
             options.StrictFinalFieldSemantics = StrictFinalFieldSemantics;
 
             if (NoWarn != null)
-                foreach (var i in NoWarn.Split(';'))
+            {
+                foreach (var i in NoWarn.Split([';', ',']))
+                {
+                    options.NoWarn ??= new List<string>();
                     options.NoWarn.Add(i);
+                }
+            }
 
-            options.WarnAsError = WarnAsError;
+            if (TreatWarningsAsErrors)
+                options.WarningsAsErrors = new List<string>();
 
-            if (WarnAsErrorWarnings != null)
-                foreach (var i in WarnAsErrorWarnings.Split(';'))
-                    options.WarnAsErrorWarnings.Add(i);
+            if (WarningsAsErrors != null)
+            {
+                foreach (var i in WarningsAsErrors.Split([';', ',']))
+                {
+                    options.WarningsAsErrors ??= new List<string>();
+                    options.WarningsAsErrors.Add(i);
+                }
+            }
 
-            options.WriteSuppressWarningsFile = WriteSuppressWarningsFile;
             options.Main = Main;
             options.SrcPath = SrcPath;
             options.Apartment = Apartment;
@@ -370,7 +379,6 @@ namespace IKVM.MSBuild.Tasks
 
             options.NoParameterReflection = NoParameterReflection;
             options.Remap = Remap;
-            options.NoLogo = true;
 
             if (Input != null)
                 foreach (var i in Input)
