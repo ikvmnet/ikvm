@@ -65,7 +65,7 @@ namespace IKVM.Tools.Runner.Importer
             using var w = new StringWriter();
 
             if (options.Output is not null)
-                w.WriteLine($"-out:{options.Output}");
+                w.WriteLine($"-out:\"{options.Output}\"");
 
             if (options.Assembly is not null)
                 w.WriteLine($"-assembly:{options.Assembly}");
@@ -96,7 +96,7 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine($"-platform:{options.Platform.ToString().ToLowerInvariant()}");
 
             if (options.KeyFile is not null)
-                w.WriteLine($"-keyfile:{options.KeyFile}");
+                w.WriteLine($"-keyfile:\"{options.KeyFile}\"");
 
             if (options.Key is not null)
                 w.WriteLine($"-key:{options.Key}");
@@ -106,14 +106,14 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.References is not null)
                 foreach (var reference in options.References)
-                    w.WriteLine($"-reference:{reference}");
+                    w.WriteLine($"-reference:\"{reference}\"");
 
             if (options.Recurse is not null)
                 foreach (var recurse in options.Recurse)
-                    w.WriteLine($"-recurse:{recurse}");
+                    w.WriteLine($"-recurse:\"{recurse}\"");
 
             if (options.Exclude is not null)
-                w.WriteLine($"-exclude:{options.Exclude}");
+                w.WriteLine($"-exclude:\"{options.Exclude}\"");
 
             if (options.FileVersion is not null)
                 w.WriteLine($"-fileversion:{options.FileVersion}");
@@ -126,11 +126,11 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.Resources is not null)
                 foreach (var resource in options.Resources)
-                    w.WriteLine($"-resource:{resource.ResourcePath}={resource.FilePath}");
+                    w.WriteLine($"-resource:\"{resource.ResourcePath}={resource.FilePath}\"");
 
             if (options.ExternalResources is not null)
                 foreach (var resource in options.ExternalResources)
-                    w.WriteLine($"-externalresource:{resource.ResourcePath}={resource.FilePath}");
+                    w.WriteLine($"-externalresource:\"{resource.ResourcePath}={resource.FilePath}\"");
 
             if (options.CompressResources)
                 w.WriteLine("-compressresources");
@@ -161,18 +161,20 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine("-strictfinalfieldsemantics");
 
             if (options.NoWarn is not null)
-                foreach (var i in options.NoWarn)
-                    w.WriteLine($"-nowarn:{i}");
+            {
+                if (options.NoWarn.Count == 0)
+                    w.WriteLine("-warnaserror");
+                else
+                    w.WriteLine($"-nowarn:{string.Join(",", options.NoWarn)}");
+            }
 
-            if (options.WarnAsError)
-                w.WriteLine("-warnaserror");
-
-            if (options.WarnAsErrorWarnings is not null)
-                foreach (var i in options.WarnAsErrorWarnings)
-                    w.WriteLine($"-warnaserror:{i}");
-
-            if (options.WriteSuppressWarningsFile is not null)
-                w.WriteLine($"-writesupresswarningsfile:{options.WriteSuppressWarningsFile}");
+            if (options.WarnAsError is not null)
+            {
+                if (options.WarnAsError.Count == 0)
+                    w.WriteLine("-warnaserror");
+                else
+                    w.WriteLine($"-warnaserror:{string.Join(",", options.WarnAsError)}");
+            }
 
             if (options.Main is not null)
                 w.WriteLine($"-main:{options.Main}");
@@ -185,18 +187,10 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.SetProperties is not null)
                 foreach (var kvp in options.SetProperties)
-                    w.WriteLine($"-D{kvp.Key}={kvp.Value}");
+                    w.WriteLine($"-D \"{kvp.Key}={kvp.Value}\"");
 
             if (options.NoStackTraceInfo)
                 w.WriteLine("-nostacktraceinfo");
-
-            if (options.XTrace is not null)
-                foreach (var i in options.XTrace)
-                    w.WriteLine($"-Xtrace:{i}");
-
-            if (options.XMethodTrace is not null)
-                foreach (var i in options.XMethodTrace)
-                    w.WriteLine($"-Xmethodtrace:{i}");
 
             if (options.PrivatePackages is not null)
                 foreach (var i in options.PrivatePackages)
@@ -222,7 +216,7 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.Lib is not null)
                 foreach (var i in options.Lib)
-                    w.WriteLine($"-lib:{i}");
+                    w.WriteLine($"-lib:\"{i}\"");
 
             if (options.HighEntropyVA)
                 w.WriteLine("-highentropyva");
@@ -232,10 +226,10 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.AssemblyAttributes is not null)
                 foreach (var i in options.AssemblyAttributes)
-                    w.WriteLine($"-assemblyattributes:{i}");
+                    w.WriteLine($"-assemblyattributes:\"{i}\"");
 
             if (options.Runtime is not null)
-                w.WriteLine($"-runtime:{options.Runtime}");
+                w.WriteLine($"-runtime:\"{options.Runtime}\"");
 
             if (options.WarningLevel is not null)
                 w.WriteLine($"-w{options.WarningLevel}");
@@ -244,14 +238,14 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine($"-noparameterreflection");
 
             if (options.Remap is not null)
-                w.WriteLine($"-remap:{options.Remap}");
+                w.WriteLine($"-remap:\"{options.Remap}\"");
 
             if (options.NoLogo)
                 w.WriteLine($"-nologo");
 
             if (options.Input != null)
                 foreach (var i in options.Input)
-                    w.WriteLine(i);
+                    w.Write($"\"{i}\"");
 
             // prepare path to response file
             var response = string.IsNullOrWhiteSpace(options.ResponseFile) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();

@@ -119,11 +119,7 @@ namespace IKVM.Tools.Runner.Importer
 
         public IList<string> NoWarn { get; } = new List<string>();
 
-        public bool WarnAsError { get; set; }
-
-        public IList<string> WarnAsErrorWarnings { get; } = new List<string>();
-
-        public string WriteSuppressWarningsFile { get; set; }
+        public IList<string> WarnAsError { get; set; } = new List<string>();
 
         public string Main { get; set; }
 
