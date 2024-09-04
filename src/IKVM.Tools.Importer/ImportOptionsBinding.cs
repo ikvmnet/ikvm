@@ -20,6 +20,9 @@ namespace IKVM.Tools.Importer
     class ImportOptionsBinding : BinderBase<ImportOptions>
     {
 
+        readonly static char[] LIST_SEPARATOR = [',', ';'];
+        readonly static char[] KVP_SEPARATOR = ['='];
+
         readonly ImportArgLevel[] _levels;
         readonly ImportOptions _parent;
 
@@ -384,7 +387,7 @@ namespace IKVM.Tools.Importer
         KeyValuePair<TKey, TValue?> ParseDictionaryValue<TKey, TValue>(BindingContext context, string opt)
             where TKey : notnull
         {
-            var c = opt.Split(['='], 2, StringSplitOptions.None);
+            var c = opt.Split(KVP_SEPARATOR, 2, StringSplitOptions.None);
 
             // parse key value
             var k = ParseStringValue<TKey>(c[0].Trim());
@@ -421,7 +424,7 @@ namespace IKVM.Tools.Importer
                 return (T)(object)Version.Parse(source);
 
             if (typeof(T) == typeof(string[]))
-                return (T)(object)source.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
+                return (T)(object)source.Split(LIST_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
 
             // fall back to type converter
             if (TypeDescriptor.GetConverter(typeof(T)) is TypeConverter c && c.CanConvertFrom(typeof(string)))

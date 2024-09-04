@@ -14,6 +14,8 @@ namespace IKVM.Tools.Importer
     class ImportCommand : RootCommand
     {
 
+        readonly static char[] LIST_SEPARATOR = [';', ','];
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -240,7 +242,7 @@ namespace IKVM.Tools.Importer
 
             foreach (var i in result.Tokens)
             {
-                foreach (var j in i.Value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var j in i.Value.Split(LIST_SEPARATOR, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (int.TryParse(j, out var id) && Diagnostic.GetById(id) is { } diagnostic)
                         l.Add(diagnostic);
