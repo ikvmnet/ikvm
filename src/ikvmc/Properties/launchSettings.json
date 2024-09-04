@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ikvmc": {
+      "commandName": "Project",
+      "commandLineArgs": "foo.jar -out:foo.dll"
+    }
+  }
+}

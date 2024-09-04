@@ -179,7 +179,7 @@ namespace IKVM.Runtime
             var mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
             if (mi == null)
 #if IMPORTER
-			    throw new FatalCompilerErrorException(Diagnostic.RuntimeMethodMissing.Event([method]));
+			    throw new FatalCompilerErrorException(DiagnosticEvent.RuntimeMethodMissing(method));
 #else
                 throw new InternalException("Missing ByteCodeHelper method in runtime.");
 #endif

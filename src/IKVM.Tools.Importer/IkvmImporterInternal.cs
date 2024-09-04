@@ -33,8 +33,9 @@ using IKVM.CoreLib.Diagnostics;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
+using IKVM.Tools.Core.Diagnostics;
 
-using Type = IKVM.Reflection.Type;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IKVM.Tools.Importer
 {
@@ -43,34 +44,54 @@ namespace IKVM.Tools.Importer
     {
 
         /// <summary>
-        /// <see cref="IDiagnosticHandler"> implementation for nested class loaders.
+        /// <see cref="IDiagnosticHandler"/> for the importer.
         /// </summary>
-        internal class DiagnosticHandler : DiagnosticEventHandler
+        class CompilerOptionsDiagnosticHandler : FormattedDiagnosticHandler
         {
 
-            readonly IkvmImporterInternal importer;
-            readonly CompilerOptions options;
+            readonly CompilerOptions _options;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="importer"></param>
-            /// <param name="compiler"></param>
             /// <param name="options"></param>
-            public DiagnosticHandler(IkvmImporterInternal importer, CompilerOptions options)
+            /// <param name="spec"></param>
+            /// <param name="formatters"></param>
+            public CompilerOptionsDiagnosticHandler(CompilerOptions options, string spec, DiagnosticFormatterProvider formatters) :
+                base(spec, formatters)
             {
-                this.importer = importer ?? throw new ArgumentNullException(nameof(importer));
-                this.options = options ?? throw new ArgumentNullException(nameof(options));
+                _options = options ?? throw new ArgumentNullException(nameof(options));
             }
 
+            /// <inheritdoc />
             public override bool IsEnabled(Diagnostic diagnostic)
             {
-                return importer.IsDiagnosticEnabled(diagnostic);
+                return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
             }
 
+            /// <inheritdoc />
             public override void Report(in DiagnosticEvent @event)
             {
-                importer.ReportEvent(options, @event);
+                if (IsEnabled(@event.Diagnostic) == false)
+                    return;
+
+                var key = @event.Diagnostic.Id.ToString();
+                for (int i = 0; ; i++)
+                {
+                    if (_options.suppressWarnings.Contains(key))
+                        return;
+
+                    if (i == @event.Args.Length)
+                        break;
+
+                    key += ":" + @event.Args[i];
+                }
+
+                _options.suppressWarnings.Add(key);
+                if (_options.writeSuppressWarningsFile != null)
+                    File.AppendAllText(_options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
+
+                base.Report(@event);
             }
 
         }
@@ -92,7 +113,7 @@ namespace IKVM.Tools.Importer
             {
                 if (depth++ > 16)
                 {
-                    throw new FatalCompilerErrorException(Diagnostic.ResponseFileDepthExceeded.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.ResponseFileDepthExceeded());
                 }
                 try
                 {
@@ -115,7 +136,7 @@ namespace IKVM.Tools.Importer
                 }
                 catch (Exception x)
                 {
-                    throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([s.Substring(1), x.Message]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(s.Substring(1), x.Message));
                 }
             }
             else
@@ -185,6 +206,23 @@ namespace IKVM.Tools.Importer
             }
         }
 
+        /// <summary>
+        /// Generates a diagnostic instance from the diagnostics options.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="options"></param>
+        /// <param name="spec"></param>
+        /// <returns></returns>
+        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, CompilerOptions options, string spec)
+        {
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
+            if (string.IsNullOrWhiteSpace(spec))
+                throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
+
+            return ActivatorUtilities.CreateInstance<CompilerOptionsDiagnosticHandler>(services, options, spec);
+        }
+
         static int Compile(string[] args)
         {
             var argList = GetArgs(args);
@@ -200,13 +238,20 @@ namespace IKVM.Tools.Importer
             }
 
             var rootTarget = new CompilerOptions();
-            var importer = new IkvmImporterInternal();
-            var diagnostics = new DiagnosticHandler(importer, rootTarget);
-            var compiler = new StaticCompiler(diagnostics);
+            var services = new ServiceCollection();
+            services.AddToolsDiagnostics();
+            services.AddSingleton(p => GetDiagnostics(p, rootTarget, "text"));
+            services.AddSingleton<IManagedTypeResolver, ManagedResolver>();
+            services.AddSingleton<StaticCompiler>();
+            using var provider = services.BuildServiceProvider();
+
+            var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
+            var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<CompilerOptions>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler), argList.Contains("-bootstrap"), compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), argList.Contains("-bootstrap"), compiler);
 
             compiler.rootTarget = rootTarget;
+            var importer = new IkvmImporterInternal();
             importer.ParseCommandLine(context, compiler, diagnostics, argList.GetEnumerator(), targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
@@ -215,13 +260,10 @@ namespace IKVM.Tools.Importer
             ResolveStrongNameKeys(targets);
 
             if (targets.Count == 0)
-            {
-                throw new FatalCompilerErrorException(Diagnostic.NoTargetsFound.Event([]));
-            }
+                throw new FatalCompilerErrorException(DiagnosticEvent.NoTargetsFound());
+
             if (compiler.errorCount != 0)
-            {
                 return 1;
-            }
 
             try
             {
@@ -229,7 +271,7 @@ namespace IKVM.Tools.Importer
             }
             catch (FileFormatLimitationExceededException x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.FileFormatLimitationExceeded.Event([x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.FileFormatLimitationExceeded(x.Message));
             }
         }
 
@@ -263,10 +305,10 @@ namespace IKVM.Tools.Importer
             foreach (var options in targets)
             {
                 if (options.keyfile != null && options.keycontainer != null)
-                    throw new FatalCompilerErrorException(Diagnostic.CannotSpecifyBothKeyFileAndContainer.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.CannotSpecifyBothKeyFileAndContainer());
 
                 if (options.keyfile == null && options.keycontainer == null && options.delaysign)
-                    throw new FatalCompilerErrorException(Diagnostic.DelaySignRequiresKey.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.DelaySignRequiresKey());
 
                 if (options.keyfile != null)
                 {
@@ -310,7 +352,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([path.ToString(), x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(path.ToString(), x.Message));
             }
         }
 
@@ -428,6 +470,7 @@ namespace IKVM.Tools.Importer
             Console.Error.WriteLine("-static                        Disable dynamic binding");
             Console.Error.WriteLine("-assemblyattributes:<file>     Read assembly custom attributes from specified");
             Console.Error.WriteLine("                               class file.");
+            Console.Error.WriteLine("-log <format>                  Log format (text or json).");
         }
 
         void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, IEnumerator<string> arglist, List<CompilerOptions> targets, CompilerOptions options)
@@ -465,7 +508,7 @@ namespace IKVM.Tools.Importer
                 }
                 else if (nonleaf)
                 {
-                    throw new FatalCompilerErrorException(Diagnostic.OptionsMustPreceedChildLevels.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.OptionsMustPreceedChildLevels());
                 }
                 else if (s[0] == '-')
                 {
@@ -500,7 +543,7 @@ namespace IKVM.Tools.Importer
                                 options.guessFileKind = false;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedTargetType.Event([s.Substring(8)]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedTargetType(s.Substring(8)));
                         }
                     }
                     else if (s.StartsWith("-platform:"))
@@ -532,7 +575,7 @@ namespace IKVM.Tools.Importer
                                 options.imageFileMachine = ImageFileMachine.UNKNOWN;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedPlatform.Event([s.Substring(10)]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedPlatform(s.Substring(10)));
                         }
                     }
                     else if (s.StartsWith("-apartment:"))
@@ -549,7 +592,7 @@ namespace IKVM.Tools.Importer
                                 options.apartment = ApartmentState.Unknown;
                                 break;
                             default:
-                                throw new FatalCompilerErrorException(Diagnostic.UnrecognizedApartment.Event([s.Substring(11)]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedApartment(s.Substring(11)));
                         }
                     }
                     else if (s == "-noglobbing")
@@ -592,7 +635,7 @@ namespace IKVM.Tools.Importer
                     {
                         var r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
-                            throw new FatalCompilerErrorException(Diagnostic.MissingFileSpecification.Event([s]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.MissingFileSpecification(s));
 
                         ArrayAppend(ref options.unresolvedReferences, r);
                     }
@@ -633,26 +676,26 @@ namespace IKVM.Tools.Importer
                             }
                             catch (PathTooLongException)
                             {
-                                throw new FatalCompilerErrorException(Diagnostic.PathTooLong.Event([spec]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.PathTooLong(spec));
                             }
                             catch (DirectoryNotFoundException)
                             {
-                                throw new FatalCompilerErrorException(Diagnostic.PathNotFound.Event([spec]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.PathNotFound(spec));
                             }
                             catch (ArgumentException)
                             {
-                                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([spec]));
+                                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(spec));
                             }
                         }
 
                         if (!found)
-                            throw new FatalCompilerErrorException(Diagnostic.FileNotFound.Event([spec]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.FileNotFound(spec));
                     }
                     else if (s.StartsWith("-resource:"))
                     {
                         var spec = s.Substring(10).Split('=');
                         if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(Diagnostic.InvalidOptionSyntax.Event([s]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidOptionSyntax(s));
 
                         var fileInfo = GetFileInfo(spec[1]);
                         var fileName = spec[0].TrimStart('/').TrimEnd('/');
@@ -662,11 +705,11 @@ namespace IKVM.Tools.Importer
                     {
                         var spec = s.Substring(18).Split('=');
                         if (spec.Length != 2)
-                            throw new FatalCompilerErrorException(Diagnostic.InvalidOptionSyntax.Event([s]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidOptionSyntax(s));
                         if (!File.Exists(spec[1]))
-                            throw new FatalCompilerErrorException(Diagnostic.ExternalResourceNotFound.Event([spec[1]]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNotFound(spec[1]));
                         if (Path.GetFileName(spec[1]) != spec[1])
-                            throw new FatalCompilerErrorException(Diagnostic.ExternalResourceNameInvalid.Event([spec[1]]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.ExternalResourceNameInvalid(spec[1]));
 
                         // TODO resource name clashes should be tested
                         options.externalResources ??= new Dictionary<string, string>();
@@ -684,7 +727,7 @@ namespace IKVM.Tools.Importer
                     {
                         var str = s.Substring(9);
                         if (!TryParseVersion(s.Substring(9), out options.version))
-                            throw new FatalCompilerErrorException(Diagnostic.InvalidVersionFormat.Event([str]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidVersionFormat(str));
                     }
                     else if (s.StartsWith("-fileversion:"))
                     {
@@ -814,7 +857,7 @@ namespace IKVM.Tools.Importer
                     else if (s.StartsWith("-filealign:"))
                     {
                         if (!uint.TryParse(s.Substring(11), out var filealign) || filealign < 512 || filealign > 8192 || (filealign & (filealign - 1)) != 0)
-                            throw new FatalCompilerErrorException(Diagnostic.InvalidFileAlignment.Event([s.Substring(11)]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.InvalidFileAlignment(s.Substring(11)));
 
                         options.fileAlignment = filealign;
                     }
@@ -850,7 +893,7 @@ namespace IKVM.Tools.Importer
                         }
                         catch (Exception x)
                         {
-                            throw new FatalCompilerErrorException(Diagnostic.ErrorWritingFile.Event([options.writeSuppressWarningsFile, x.Message]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(options.writeSuppressWarningsFile.FullName, x.Message));
                         }
                     }
                     else if (s.StartsWith("-proxy:")) // currently undocumented!
@@ -894,9 +937,13 @@ namespace IKVM.Tools.Importer
                     {
                         options.bootstrap = true;
                     }
+                    else if (s == "-log:")
+                    {
+                        options.log = s.Substring(5);
+                    }
                     else
                     {
-                        throw new FatalCompilerErrorException(Diagnostic.UnrecognizedOption.Event([s]));
+                        throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedOption(s));
                     }
                 }
                 else
@@ -905,7 +952,7 @@ namespace IKVM.Tools.Importer
                 }
                 if (options.targetIsModule && options.sharedclassloader != null)
                 {
-                    throw new FatalCompilerErrorException(Diagnostic.SharedClassLoaderCannotBeUsedOnModuleTarget.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.SharedClassLoaderCannotBeUsedOnModuleTarget());
                 }
             }
 
@@ -920,7 +967,7 @@ namespace IKVM.Tools.Importer
             {
                 var basename = options.path == null ? defaultAssemblyName : options.path.Name;
                 if (basename == null)
-                    throw new FatalCompilerErrorException(Diagnostic.NoOutputFileSpecified.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.NoOutputFileSpecified());
 
                 int idx = basename.LastIndexOf('.');
                 if (idx > 0)
@@ -954,32 +1001,32 @@ namespace IKVM.Tools.Importer
                 if (fileInfo.Directory == null)
                 {
                     // this happens with an incorrect unc path (e.g. "\\foo\bar")
-                    throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(path));
                 }
                 return fileInfo;
             }
             catch (ArgumentException)
             {
-                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(path));
             }
             catch (NotSupportedException)
             {
-                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(path));
             }
             catch (PathTooLongException)
             {
-                throw new FatalCompilerErrorException(Diagnostic.PathTooLong.Event([path]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.PathTooLong(path));
             }
             catch (UnauthorizedAccessException)
             {
                 // this exception does not appear to be possible
-                throw new FatalCompilerErrorException(Diagnostic.InvalidPath.Event([path]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidPath(path));
             }
         }
 
         void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, List<string> fileNames)
         {
-            foreach (string fileName in fileNames)
+            foreach (var fileName in fileNames)
             {
                 if (defaultAssemblyName == null)
                 {
@@ -994,9 +1041,11 @@ namespace IKVM.Tools.Importer
                     }
                     catch (NotSupportedException)
                     {
+
                     }
                     catch (PathTooLongException)
                     {
+
                     }
                 }
 
@@ -1018,7 +1067,7 @@ namespace IKVM.Tools.Importer
                 }
                 else
                 {
-                    foreach (string f in files)
+                    foreach (var f in files)
                     {
                         ProcessFile(context, compiler, options, diagnostics, null, f);
                     }
@@ -1081,7 +1130,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.InvalidStrongNameKeyPair.Event([keyFile != null ? "file" : "container", x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.InvalidStrongNameKeyPair(keyFile != null ? "file" : "container", x.Message));
             }
         }
 
@@ -1105,7 +1154,7 @@ namespace IKVM.Tools.Importer
                         }
                         if (!resolver.ResolveReference(cache, ref target.references, reference))
                         {
-                            throw new FatalCompilerErrorException(Diagnostic.ReferenceNotFound.Event([reference]));
+                            throw new FatalCompilerErrorException(DiagnosticEvent.ReferenceNotFound(reference));
                         }
                     next_reference:;
                     }
@@ -1303,7 +1352,7 @@ namespace IKVM.Tools.Importer
             }
             catch (InvalidDataException x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([file, x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(file, x.Message));
             }
         }
 
@@ -1420,7 +1469,7 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([filename, x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(filename, x.Message));
             }
         }
 
@@ -1434,82 +1483,8 @@ namespace IKVM.Tools.Importer
             }
             catch (Exception x)
             {
-                throw new FatalCompilerErrorException(Diagnostic.ErrorReadingFile.Event([filename, x.Message]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(filename, x.Message));
             }
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if the specified diagnostic is enabled.
-        /// </summary>
-        /// <param name="compiler"></param>
-        /// <param name="diagnostic"></param>
-        /// <returns></returns>
-        bool IsDiagnosticEnabled(Diagnostic diagnostic)
-        {
-            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
-        }
-
-        /// <summary>
-        /// Handles a <see cref="DiagnosticHandler"/>.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="evt"></param>
-        /// <exception cref="FatalCompilerErrorException"></exception>
-        void ReportEvent(CompilerOptions options, in DiagnosticEvent evt)
-        {
-            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
-                return;
-
-            var key = evt.Diagnostic.Id.ToString();
-            for (int i = 0; ; i++)
-            {
-                if (options.suppressWarnings.Contains(key))
-                    return;
-
-                if (i == evt.Args.Length)
-                    break;
-
-                key += ":" + evt.Args[i];
-            }
-
-            options.suppressWarnings.Add(key);
-            if (options.writeSuppressWarningsFile != null)
-                File.AppendAllText(options.writeSuppressWarningsFile.FullName, "-nowarn:" + key + Environment.NewLine);
-
-#if NET8_0_OR_GREATER
-            var msg = evt.Diagnostic.Message.Format;
-#else
-            var msg = evt.Diagnostic.Message;
-#endif
-            // choose output channel
-            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
-
-            // option path
-            dst.Write(options.path != null ? $"{options.path} : " : "");
-
-            // write tag
-            dst.Write(evt.Diagnostic.Level switch
-            {
-                DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
-                DiagnosticLevel.Warning when options.errorWarnings.Contains(key) || options.errorWarnings.Contains(evt.Diagnostic.Id.ToString()) => "error",
-                DiagnosticLevel.Warning => "warning",
-                DiagnosticLevel.Error => "error",
-                DiagnosticLevel.Fatal => "error",
-                _ => throw new InvalidOperationException(),
-            });
-
-            // write event ID
-            dst.Write($" IKVM{evt.Diagnostic.Id:D4}: ");
-
-            // write message
-#if NET8_0_OR_GREATER
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
-#else
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
-#endif
-
-            dst.WriteLine();
         }
 
         internal static void HandleWarnArg(ICollection<string> target, string arg)
@@ -1521,7 +1496,7 @@ namespace IKVM.Tools.Importer
                 int contextIndex = w.IndexOf(':', prefixStart);
                 string context = string.Empty;
                 string parse;
-                if(contextIndex != -1)
+                if (contextIndex != -1)
                 {
                     // context includes ':' separator
                     context = w.Substring(contextIndex);
@@ -1541,6 +1516,7 @@ namespace IKVM.Tools.Importer
                 target.Add($"{intResult}{context}");
             }
         }
+
     }
 
 }

@@ -9,14 +9,33 @@ namespace IKVM.Tools.Importer
     {
 
         /// <summary>
+        /// Returns the output text for the given <see cref="DiagnosticLevel"/>.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static string FormatDiagnosticLevel(DiagnosticLevel level)
+        {
+            return level switch
+            {
+                DiagnosticLevel.Trace => "trace",
+                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Warning => "warning",
+                DiagnosticLevel.Error => "error",
+                DiagnosticLevel.Fatal => "fatal",
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="evt"></param>
         internal FatalCompilerErrorException(in DiagnosticEvent evt) :
 #if NET8_0_OR_GREATER
-            base($"fatal error IKVM{evt.Diagnostic.Id}: {string.Format(null, evt.Diagnostic.Message, evt.Args)}")
+            base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args)}")
 #else
-            base($"fatal error IKVM{evt.Diagnostic.Id}: {string.Format(evt.Diagnostic.Message, evt.Args.ToArray())}")
+            base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray())}")
 #endif
         {
 

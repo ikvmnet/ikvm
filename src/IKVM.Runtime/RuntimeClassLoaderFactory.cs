@@ -111,7 +111,7 @@ namespace IKVM.Runtime
                 else
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(Diagnostic.CoreClassesMissing.Event([]));
+                    throw new FatalCompilerErrorException(DiagnosticEvent.CoreClassesMissing());
 #else
                     throw new InternalException("Failed to find core classes in core library.");
 #endif
@@ -289,7 +289,7 @@ namespace IKVM.Runtime
 #if IMPORTER
             var wrapper = GetBootstrapClassLoader().TryLoadClassByName(name);
             if (wrapper == null)
-                throw new FatalCompilerErrorException(Diagnostic.CriticalClassNotFound.Event([name]));
+                throw new FatalCompilerErrorException(DiagnosticEvent.CriticalClassNotFound(name));
 
             return wrapper;
 #else

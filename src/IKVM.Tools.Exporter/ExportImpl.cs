@@ -17,114 +17,34 @@ namespace IKVM.Tools.Exporter
 {
 
     /// <summary>
-    /// Internal implementation of the IkvmExporter.
+    /// Main entry point for the application.
     /// </summary>
-    static class IkvmExporterInternal
+    class ExportImpl
     {
 
+        readonly ExportOptions options;
+        readonly IDiagnosticHandler diagnostics;
+
+        readonly Dictionary<string, string> done = new Dictionary<string, string>();
+        readonly Dictionary<string, RuntimeJavaType> todo = new Dictionary<string, RuntimeJavaType>();
+        ZipArchive zipFile;
+        FileInfo file;
+
         /// <summary>
-        /// Handles diagnostic messages from IKVM.
+        /// Initializes a new instance.
         /// </summary>
-        class DiagnosticHandler : DiagnosticEventHandler
+        /// <param name="options"></param>
+        public ExportImpl(ExportOptions options, IDiagnosticHandler diagnostics)
         {
-
-            readonly IkvmExporterOptions options;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="options"></param>
-            public DiagnosticHandler(IkvmExporterOptions options)
-            {
-                this.options = options ?? throw new ArgumentNullException(nameof(options));
-            }
-
-            public override bool IsEnabled(Diagnostic diagnostic)
-            {
-                return IkvmExporterInternal.IsDiagnosticEnabled(options, diagnostic);
-            }
-
-            public override void Report(in DiagnosticEvent @event)
-            {
-                IkvmExporterInternal.ReportEvent(options, @event);
-            }
-
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
         }
-
-        class ManagedResolver : IManagedTypeResolver
-        {
-
-            readonly StaticCompiler compiler;
-            readonly Assembly baseAssembly;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="compiler"></param>
-            /// <param name="baseAssembly"></param>
-            public ManagedResolver(StaticCompiler compiler, Assembly baseAssembly)
-            {
-                this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-                this.baseAssembly = baseAssembly;
-            }
-
-            /// <summary>
-            /// Attempts to resolve the base Java assembly.
-            /// </summary>
-            /// <returns></returns>
-            public Assembly ResolveBaseAssembly()
-            {
-                return baseAssembly;
-            }
-
-            /// <summary>
-            /// Attempts to resolve an assembly from one of the assembly sources.
-            /// </summary>
-            /// <param name="assemblyName"></param>
-            /// <returns></returns>
-            public Assembly ResolveAssembly(string assemblyName)
-            {
-                return compiler.Load(assemblyName);
-            }
-
-            /// <summary>
-            /// Attempts to resolve a type from one of the assembly sources.
-            /// </summary>
-            /// <param name="typeName"></param>
-            /// <returns></returns>
-            public Type ResolveCoreType(string typeName)
-            {
-                foreach (var assembly in compiler.Universe.GetAssemblies())
-                    if (assembly.GetType(typeName) is Type t)
-                        return t;
-
-                return null;
-            }
-
-            /// <summary>
-            /// Attempts to resolve a type from the IKVM runtime assembly.
-            /// </summary>
-            /// <param name="typeName"></param>
-            /// <returns></returns>
-            public Type ResolveRuntimeType(string typeName)
-            {
-                return compiler.GetRuntimeType(typeName);
-            }
-        }
-
-        static ZipArchive zipFile;
-        static Dictionary<string, string> done = new Dictionary<string, string>();
-        static Dictionary<string, RuntimeJavaType> todo = new Dictionary<string, RuntimeJavaType>();
-        static FileInfo file;
 
         /// <summary>
         /// Executes the exporter.
         /// </summary>
-        /// <param name="options"></param>
-        public static int Execute(IkvmExporterOptions options)
+        public int Execute()
         {
-            var diagnostics = new DiagnosticHandler(options);
-
             var references = new List<string>();
             if (options.References != null)
                 foreach (var reference in options.References)
@@ -224,7 +144,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, null), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -251,7 +171,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, baseAssembly), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
@@ -277,14 +197,14 @@ namespace IKVM.Tools.Exporter
 
                             foreach (var asm in assemblies)
                             {
-                                if (ProcessTypes(context, options, asm.GetTypes()) != 0)
+                                if (ProcessTypes(context, asm.GetTypes()) != 0)
                                 {
                                     rc = 1;
                                     if (options.ContinueOnError == false)
                                         break;
                                 }
 
-                                if (options.Forwarders && ProcessTypes(context, options, asm.ManifestModule.__GetExportedTypes()) != 0)
+                                if (options.Forwarders && ProcessTypes(context, asm.ManifestModule.__GetExportedTypes()) != 0)
                                 {
                                     rc = 1;
                                     if (options.ContinueOnError == false)
@@ -415,16 +335,16 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        static void WriteClass(IkvmExporterOptions options, RuntimeJavaType tw)
+        void WriteClass(RuntimeJavaType javaType)
         {
-            var entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
+            var entry = zipFile.CreateEntry(javaType.Name.Replace('.', '/') + ".class");
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             using Stream stream = entry.Open();
 
-            tw.Context.StubGenerator.Write(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
+            javaType.Context.StubGenerator.Write(stream, javaType, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
-        static bool ExportNamespace(IList<string> namespaces, Type type)
+        bool ExportNamespace(IList<string> namespaces, Type type)
         {
             if (namespaces.Count == 0)
                 return true;
@@ -437,7 +357,7 @@ namespace IKVM.Tools.Exporter
             return false;
         }
 
-        private static int ProcessTypes(RuntimeContext context, IkvmExporterOptions options, Type[] types)
+        int ProcessTypes(RuntimeContext context, Type[] types)
         {
             int rc = 0;
             foreach (var t in types)
@@ -469,7 +389,7 @@ namespace IKVM.Tools.Exporter
                         try
                         {
                             ProcessClass(c);
-                            WriteClass(options, c);
+                            WriteClass(c);
                         }
                         catch (Exception x)
                         {
@@ -491,17 +411,17 @@ namespace IKVM.Tools.Exporter
             return rc;
         }
 
-        private static void AddToExportList(RuntimeJavaType c)
+        void AddToExportList(RuntimeJavaType c)
         {
             todo[c.Name] = c;
         }
 
-        private static bool IsNonVectorArray(RuntimeJavaType tw)
+        bool IsNonVectorArray(RuntimeJavaType tw)
         {
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        private static void AddToExportListIfNeeded(RuntimeJavaType javaType)
+        void AddToExportListIfNeeded(RuntimeJavaType javaType)
         {
             while (javaType.IsArray)
                 javaType = javaType.ElementTypeWrapper;
@@ -523,13 +443,13 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        private static void AddToExportListIfNeeded(RuntimeJavaType[] types)
+        void AddToExportListIfNeeded(RuntimeJavaType[] types)
         {
             foreach (var tw in types)
                 AddToExportListIfNeeded(tw);
         }
 
-        private static void ProcessClass(RuntimeJavaType tw)
+        void ProcessClass(RuntimeJavaType tw)
         {
             RuntimeJavaType superclass = tw.BaseTypeWrapper;
             if (superclass != null)
@@ -563,54 +483,6 @@ namespace IKVM.Tools.Exporter
                     AddToExportListIfNeeded(fw.FieldTypeWrapper);
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if the specified diagnostic is enabled.
-        /// </summary>
-        /// <param name="diagnostic"></param>
-        /// <returns></returns>
-        internal static bool IsDiagnosticEnabled(IkvmExporterOptions options, Diagnostic diagnostic)
-        {
-            return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
-        }
-
-        /// <summary>
-        /// Handles a <see cref="DiagnosticEvent"/>.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="evt"></param>
-        internal static void ReportEvent(IkvmExporterOptions options, in DiagnosticEvent evt)
-        {
-            if (evt.Diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Informational)
-                return;
-
-            // choose output channel
-            var dst = evt.Diagnostic.Level is DiagnosticLevel.Fatal or DiagnosticLevel.Error or DiagnosticLevel.Warning ? Console.Error : Console.Out;
-
-            // write tag
-            dst.Write(evt.Diagnostic.Level switch
-            {
-                DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
-                DiagnosticLevel.Warning => "warning",
-                DiagnosticLevel.Error => "error",
-                DiagnosticLevel.Fatal => "error",
-                _ => throw new InvalidOperationException(),
-            });
-
-            // write event ID
-            dst.Write($" IKVM{evt.Diagnostic.Id:D4}: ");
-
-            // write message
-#if NET8_0_OR_GREATER
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args));
-#else
-            dst.Write(string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray()));
-#endif
-
-            // end of line
-            dst.WriteLine();
         }
 
     }
