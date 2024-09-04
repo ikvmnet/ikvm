@@ -196,9 +196,6 @@ namespace IKVM.Tools.Importer
                 (ProxyOption = new Option<string[]>(
                     aliases: ["-proxy"],
                     description: "Generate proxies for specified class.")),
-                (NoLogoOption = new Option<bool>(
-                    aliases: ["-nologo"],
-                    description: "Suppress compiler copyright message.")),
                 (AllowNonVirtualCallsOption = new Option<bool>(
                     aliases: ["-XX:+AllowNonVirtualCalls"],
                     description: "Allow non-virtual calls.")),
@@ -390,8 +387,6 @@ namespace IKVM.Tools.Importer
         public Option<bool> HighEntropyVAOption { get; set; }
 
         public Option<string[]> ProxyOption { get; set; }
-
-        public Option<bool> NoLogoOption { get; set; }
 
         public Option<bool> AllowNonVirtualCallsOption { get; set; }
 

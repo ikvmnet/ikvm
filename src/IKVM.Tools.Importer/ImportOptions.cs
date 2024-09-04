@@ -216,8 +216,6 @@ namespace IKVM.Tools.Importer
 
         public FileInfo? Remap { get; set; }
 
-        public bool NoLogo { get; set; } = false;
-
         public bool Time { get; set; } = false;
 
         public string[] Proxies { get; set; } = [];

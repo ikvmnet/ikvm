@@ -117,9 +117,9 @@ namespace IKVM.Tools.Runner.Importer
 
         public bool StrictFinalFieldSemantics { get; set; }
 
-        public IList<string> NoWarn { get; } = new List<string>();
+        public IList<string> NoWarn { get; set; }
 
-        public IList<string> WarnAsError { get; set; } = new List<string>();
+        public IList<string> WarningsAsErrors { get; set; }
 
         public string Main { get; set; }
 
@@ -164,8 +164,6 @@ namespace IKVM.Tools.Runner.Importer
         public bool NoParameterReflection { get; set; }
 
         public string Remap { get; set; }
-
-        public bool NoLogo { get; set; }
 
     }
 

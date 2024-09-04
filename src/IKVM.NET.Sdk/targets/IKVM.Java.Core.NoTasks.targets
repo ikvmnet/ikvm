@@ -273,7 +273,6 @@ Value = b.ToString();
 
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
-            <_IkvmCompilerArgs Include="-nologo" />
             <_IkvmCompilerArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
             <_IkvmCompilerArgs Include="-debug $(DebugType)" Condition=" '$(DebugType)' != 'none' " />
             <_IkvmCompilerArgs Include="-nowarn $(NoWarn.Replace(';', ','))" Condition=" '$(NoWarn)' != '' " />

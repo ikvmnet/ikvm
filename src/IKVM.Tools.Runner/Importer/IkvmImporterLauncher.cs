@@ -163,17 +163,17 @@ namespace IKVM.Tools.Runner.Importer
             if (options.NoWarn is not null)
             {
                 if (options.NoWarn.Count == 0)
-                    w.WriteLine("-warnaserror");
+                    w.WriteLine("-nowarn");
                 else
                     w.WriteLine($"-nowarn:{string.Join(",", options.NoWarn)}");
             }
 
-            if (options.WarnAsError is not null)
+            if (options.WarningsAsErrors is not null)
             {
-                if (options.WarnAsError.Count == 0)
+                if (options.WarningsAsErrors.Count == 0)
                     w.WriteLine("-warnaserror");
                 else
-                    w.WriteLine($"-warnaserror:{string.Join(",", options.WarnAsError)}");
+                    w.WriteLine($"-warnaserror:{string.Join(",", options.WarningsAsErrors)}");
             }
 
             if (options.Main is not null)
@@ -239,9 +239,6 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.Remap is not null)
                 w.WriteLine($"-remap:\"{options.Remap}\"");
-
-            if (options.NoLogo)
-                w.WriteLine($"-nologo");
 
             if (options.Input != null)
                 foreach (var i in options.Input)

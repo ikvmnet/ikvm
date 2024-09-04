@@ -192,9 +192,6 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.ProxyOption) is string[] _proxies)
                 options.Proxies = _proxies;
 
-            if (context.ParseResult.GetValueForOption(command.NoLogoOption) is true)
-                options.NoLogo = true;
-
             if (context.ParseResult.GetValueForOption(command.AllowNonVirtualCallsOption) is true)
                 options.AllowNonVirtualCalls = true;
 
