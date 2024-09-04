@@ -15,6 +15,8 @@ namespace IKVM.Tools.Core.Diagnostics
         where TOptions : DiagnosticChannelFormatterOptions, new()
     {
 
+        static readonly char[] SEPARATOR = ['='];
+
         readonly DiagnosticChannelProvider _channels;
         readonly string _format;
         readonly string _formatPrefix;
@@ -74,7 +76,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="spec"></param>
         void ParseOption(ConcurrentDictionary<string, IDiagnosticChannel?> cache, TOptions options, string spec)
         {
-            var a = spec.Split(['='], 2, StringSplitOptions.None);
+            var a = spec.Split(SEPARATOR, 2, StringSplitOptions.None);
             var key = a.Length >= 1 ? a[0] : "";
             var val = a.Length >= 2 ? a[1] : "";
 
