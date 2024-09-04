@@ -222,7 +222,7 @@ namespace IKVM.Tools.Importer
                 var nestedCommand = new ImportCommand(false);
                 var nestedOptions = new List<ImportOptions>(level.Args.Count);
                 nestedCommand.SetHandler(nestedOptions.Add, new ImportOptionsBinding(level.Nested.ToArray(), options));
-                new CommandLineBuilder(new ImportCommand(false)).Build().Invoke(level.Args.ToArray());
+                new CommandLineBuilder(nestedCommand).Build().Invoke(level.Args.ToArray());
                 options.Nested = nestedOptions.ToArray();
             }
 
