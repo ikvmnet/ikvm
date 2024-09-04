@@ -33,8 +33,10 @@ using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer
 {
+
     sealed class CompilerOptions
     {
+
         internal List<Jar> jars = new List<Jar>();
         private Dictionary<string, int> jarMap = new Dictionary<string, int>();
         internal int classesJar = -1;
