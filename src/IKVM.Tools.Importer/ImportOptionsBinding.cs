@@ -48,10 +48,10 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.AssemblyAttributesOption) is FileInfo[] _assemblyAttributes)
                 options.AssemblyAttributes = AppendArray(options.AssemblyAttributes, _assemblyAttributes);
 
-            if (GetDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _resources)
+            if (GetParsedDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _resources)
                 options.Resources = AppendDictionaries(options.Resources, _resources);
 
-            if (GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _externalresources)
+            if (GetParsedDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _externalresources)
                 options.ExternalResources = AppendDictionaries(options.ExternalResources, _externalresources);
 
             if (context.ParseResult.GetValueForOption(command.OutputOption) is FileInfo _output)
@@ -60,25 +60,25 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.AssemblyNameOption) is string _assemblyName)
                 options.AssemblyName = _assemblyName;
 
-            if (GetEnumValueForOption(context, command.TargetOption, ImportTarget.Unspecified) is ImportTarget _target and not ImportTarget.Unspecified)
+            if (GetParsedEnumValueForOption(context, command.TargetOption, ImportTarget.Unspecified) is ImportTarget _target and not ImportTarget.Unspecified)
                 options.Target = _target;
 
-            if (GetEnumValueForOption(context, command.PlatformOption, ImportPlatform.Unspecified) is ImportPlatform _platform and not ImportPlatform.Unspecified)
+            if (GetParsedEnumValueForOption(context, command.PlatformOption, ImportPlatform.Unspecified) is ImportPlatform _platform and not ImportPlatform.Unspecified)
                 options.Platform = _platform;
 
-            if (GetEnumValueForOption(context, command.ApartmentOption, ImportApartment.Unspecified) is ImportApartment _apartment and not ImportApartment.Unspecified)
+            if (GetParsedEnumValueForOption(context, command.ApartmentOption, ImportApartment.Unspecified) is ImportApartment _apartment and not ImportApartment.Unspecified)
                 options.Apartment = _apartment;
 
             if (context.ParseResult.GetValueForOption(command.NoGlobbingOption) is true)
                 options.NoGlobbing = true;
 
-            if (ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null) is string[] _ea)
+            if (GetParsedValueForOption<string[]?>(context, command.EnableAssertionsOption, null) is string[] _ea)
                 options.EnableAssertions = _ea;
 
-            if (ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null) is string[] _da)
+            if (GetParsedValueForOption<string[]?>(context, command.DisableAssertionsOption, null) is string[] _da)
                 options.DisableAssertions = _da;
 
-            if (GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, "") is IReadOnlyDictionary<string, string> _properties)
+            if (GetParsedDictionaryValueForOption<string, string>(context, command.PropertiesOption, "") is IReadOnlyDictionary<string, string> _properties)
                 options.Properties = AppendDictionaries(options.Properties, _properties);
 
             if (context.ParseResult.GetValueForOption(command.RemoveAssertionsOption) is true)
@@ -96,10 +96,10 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.ExcludeOption) is FileInfo _exclude)
                 options.Exclude = _exclude;
 
-            if (ParseStringForOption<Version?>(context, command.VersionOption, null) is Version _version)
+            if (GetParsedValueForOption<Version?>(context, command.VersionOption, null) is Version _version)
                 options.Version = _version;
 
-            if (ParseStringForOption<Version?>(context, command.FileVersionOption, null) is Version _fileversion)
+            if (GetParsedValueForOption<Version?>(context, command.FileVersionOption, null) is Version _fileversion)
                 options.FileVersion = _fileversion;
 
             if (context.ParseResult.GetValueForOption(command.Win32IconOption) is FileInfo _win32icon)
@@ -117,7 +117,7 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.DelaySignOption) is true)
                 options.DelaySign = true;
 
-            if (GetEnumValueForOption(context, command.DebugOption, ImportDebug.Unspecified) is ImportDebug _debug and not ImportDebug.Unspecified)
+            if (GetParsedEnumValueForOption(context, command.DebugOption, ImportDebug.Unspecified) is ImportDebug _debug and not ImportDebug.Unspecified)
                 options.Debug = _debug;
 
             if (context.ParseResult.GetValueForOption(command.DeterministicOption) is false)
@@ -230,19 +230,18 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Returns a new dictionary with the first and second values where the second values replace the first.
+        /// Returns a new array which contains the concat.
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="first"></param>
-        /// <param name="second"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
         /// <returns></returns>
-        T[] AppendArray<T>(T[] first, T[] second)
+        T[] AppendArray<T>(T[] a, T[] b)
         {
-            var a = new T[first.Length + second.Length];
-            Array.Copy(first, 0, a, 0, first.Length);
-            Array.Copy(second, 0, a, first.Length, second.Length);
-            return a;
+            var tmp = new T[a.Length + b.Length];
+            a.CopyTo(tmp, 0);
+            b.CopyTo(tmp, a.Length);
+            return tmp;
         }
 
         /// <summary>
@@ -275,15 +274,14 @@ namespace IKVM.Tools.Importer
         /// <param name="option"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        T ParseStringForOption<T>(BindingContext context, Option<string?> option, T defaultValue)
+        T GetParsedValueForOption<T>(BindingContext context, Option<string?> option, T defaultValue)
         {
-            return context.ParseResult.GetValueForOption(option) is string v ? Parse<T>(v) ?? defaultValue : defaultValue;
+            return context.ParseResult.GetValueForOption(option) is string v ? ParseStringValue<T>(v) ?? defaultValue : defaultValue;
         }
 
         /// <summary>
         /// Parses the specified string option as a value.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="context"></param>
         /// <param name="option"></param>
         /// <param name="defaultValue"></param>
@@ -296,14 +294,16 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Parses the specified string option as a value.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="context"></param>
         /// <param name="option"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
         int[]? ParseDiagnosticIdListForOption(BindingContext context, Option<string?> option, char[] separator, int[]? defaultValue)
         {
-            return context.ParseResult.GetValueForOption(option) is string v ? v.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(SafeParseDiagnosticId).Where(i => i != null).OfType<int>().ToArray() : defaultValue;
+            if (context.ParseResult.GetValueForOption(option) is string v)
+                return (int[]?)v.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(SafeParseDiagnosticId).Where(i => i != null).OfType<int>().ToArray();
+            else
+                return defaultValue;
         }
 
         /// <summary>
@@ -311,7 +311,6 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         int? SafeParseDiagnosticId(string value)
         {
             if (int.TryParse(value, out var i))
@@ -331,20 +330,22 @@ namespace IKVM.Tools.Importer
         /// <param name="option"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        T GetEnumValueForOption<T>(BindingContext context, Option<string?> option, T defaultValue)
+        T GetParsedEnumValueForOption<T>(BindingContext context, Option<string?> option, T defaultValue)
             where T : notnull, Enum
         {
             return context.ParseResult.GetValueForOption(option) is string v ? (T)Enum.Parse(typeof(T), v, true) : defaultValue;
         }
 
         /// <summary>
-        /// Gets the value for the string option parsed as an enum.
+        /// Gets the value for the string option as a separted string.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <param name="context"></param>
         /// <param name="option"></param>
+        /// <param name="defaultValue"></param>
         /// <returns></returns>
-        IReadOnlyDictionary<TKey, TValue> GetDictionaryValueForOption<TKey, TValue>(BindingContext context, Option<string[]> option, TValue? defaultValue)
+        IReadOnlyDictionary<TKey, TValue> GetParsedDictionaryValueForOption<TKey, TValue>(BindingContext context, Option<string[]> option, TValue? defaultValue)
             where TKey : notnull
         {
             return context.ParseResult.GetValueForOption(option) is string[] v ? ParseDictionaryValues<TKey, TValue>(context, option, v, defaultValue) : ImmutableDictionary<TKey, TValue>.Empty;
@@ -389,12 +390,12 @@ namespace IKVM.Tools.Importer
             var c = opt.Split(['='], 2, StringSplitOptions.None);
 
             // parse key value
-            var k = Parse<TKey>(c[0].Trim());
+            var k = ParseStringValue<TKey>(c[0].Trim());
             if (k == null)
                 throw new InvalidOperationException();
 
             if (c.Length == 2)
-                return new KeyValuePair<TKey, TValue?>(k, Parse<TValue>(c[1]));
+                return new KeyValuePair<TKey, TValue?>(k, ParseStringValue<TValue>(c[1]));
 
             if (c.Length == 1)
                 return new KeyValuePair<TKey, TValue?>(k, default);
@@ -408,7 +409,7 @@ namespace IKVM.Tools.Importer
         /// <typeparam name="T"></typeparam>
         /// <param name="source"></param>
         /// <returns></returns>
-        T? Parse<T>(string source)
+        T? ParseStringValue<T>(string source)
         {
             if (source is T t)
                 return t;
