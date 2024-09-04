@@ -39,14 +39,25 @@ namespace IKVM.Tools.Importer
 
             var options = _parent?.Clone() ?? new ImportOptions();
 
-            options.Inputs = context.ParseResult.GetValueForArgument(command.InputsArgument);
-            options.Recurse = context.ParseResult.GetValueForOption(command.RecurseOption) ?? [];
-            options.AssemblyAttributes = context.ParseResult.GetValueForOption(command.AssemblyAttributesOption) ?? [];
-            options.Resources = GetDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null);
-            options.ExternalResources = GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null);
-            options.Output = context.ParseResult.GetValueForOption(command.OutputOption);
+            if (context.ParseResult.GetValueForArgument(command.InputsArgument) is FileInfo[] _inputs)
+                options.Inputs = AppendArray(options.Inputs, _inputs);
 
-            if (context.ParseResult.GetValueForOption(command.AssemblyNameOption) is string _assemblyName and not null)
+            if (context.ParseResult.GetValueForOption(command.RecurseOption) is string[] _recurse)
+                options.Recurse = AppendArray(options.Recurse, _recurse);
+
+            if (context.ParseResult.GetValueForOption(command.AssemblyAttributesOption) is FileInfo[] _assemblyAttributes)
+                options.AssemblyAttributes = AppendArray(options.AssemblyAttributes, _assemblyAttributes);
+
+            if (GetDictionaryValueForOption<string, FileInfo>(context, command.ResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _resources)
+                options.Resources = AppendDictionaries(options.Resources, _resources);
+
+            if (GetDictionaryValueForOption<string, FileInfo>(context, command.ExternalResourceOption, null) is IReadOnlyDictionary<string, FileInfo> _externalresources)
+                options.ExternalResources = AppendDictionaries(options.ExternalResources, _externalresources);
+
+            if (context.ParseResult.GetValueForOption(command.OutputOption) is FileInfo _output)
+                options.Output = _output;
+
+            if (context.ParseResult.GetValueForOption(command.AssemblyNameOption) is string _assemblyName)
                 options.AssemblyName = _assemblyName;
 
             if (GetEnumValueForOption(context, command.TargetOption, ImportTarget.Unspecified) is ImportTarget _target and not ImportTarget.Unspecified)
@@ -61,22 +72,22 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.NoGlobbingOption) is true)
                 options.NoGlobbing = true;
 
-            if (ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null) is { } _ea and not null)
+            if (ParseStringForOption<string[]?>(context, command.EnableAssertionsOption, null) is string[] _ea)
                 options.EnableAssertions = _ea;
 
-            if (ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null) is { } _da and not null)
+            if (ParseStringForOption<string[]?>(context, command.DisableAssertionsOption, null) is string[] _da)
                 options.DisableAssertions = _da;
 
-            if (GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, "") is { } _properties)
-                options.Properties = MergeDictionaries(options.Properties, _properties);
+            if (GetDictionaryValueForOption<string, string>(context, command.PropertiesOption, "") is IReadOnlyDictionary<string, string> _properties)
+                options.Properties = AppendDictionaries(options.Properties, _properties);
 
             if (context.ParseResult.GetValueForOption(command.RemoveAssertionsOption) is true)
                 options.RemoveAssertions = true;
 
-            if (context.ParseResult.GetValueForOption(command.MainClassOption) is { } _main and not null)
+            if (context.ParseResult.GetValueForOption(command.MainClassOption) is string _main)
                 options.Main = _main;
 
-            if (context.ParseResult.GetValueForOption(command.ReferenceOption) is string[] _references and not null)
+            if (context.ParseResult.GetValueForOption(command.ReferenceOption) is string[] _references)
                 options.References = AppendArray(options.References, _references);
 
             if (context.ParseResult.GetValueForOption(command.NoJNIOption) is true)
@@ -208,10 +219,10 @@ namespace IKVM.Tools.Importer
             // for each nested level, run a command to capture the options, but otherwise does nothing
             foreach (var level in _levels)
             {
-                var nestedCommand = new ImportCommand();
+                var nestedCommand = new ImportCommand(false);
                 var nestedOptions = new List<ImportOptions>(level.Args.Count);
                 nestedCommand.SetHandler(nestedOptions.Add, new ImportOptionsBinding(level.Nested.ToArray(), options));
-                new CommandLineBuilder(new ImportCommand()).Build().Invoke(level.Args.ToArray());
+                new CommandLineBuilder(new ImportCommand(false)).Build().Invoke(level.Args.ToArray());
                 options.Nested = nestedOptions.ToArray();
             }
 
@@ -242,7 +253,7 @@ namespace IKVM.Tools.Importer
         /// <param name="first"></param>
         /// <param name="second"></param>
         /// <returns></returns>
-        IReadOnlyDictionary<TKey, TValue> MergeDictionaries<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> first, IReadOnlyDictionary<TKey, TValue> second)
+        IReadOnlyDictionary<TKey, TValue> AppendDictionaries<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> first, IReadOnlyDictionary<TKey, TValue> second)
             where TKey : notnull
         {
             var d = new Dictionary<TKey, TValue>();

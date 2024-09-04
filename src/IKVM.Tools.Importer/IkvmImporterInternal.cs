@@ -435,8 +435,6 @@ namespace IKVM.Tools.Importer
 
             switch (options.Target)
             {
-                case ImportTarget.Unspecified:
-                    break;
                 case ImportTarget.Exe:
                     compilerOptions.target = PEFileKinds.ConsoleApplication;
                     compilerOptions.guessFileKind = false;
@@ -461,8 +459,6 @@ namespace IKVM.Tools.Importer
 
             switch (options.Platform)
             {
-                case ImportPlatform.Unspecified:
-                    break;
                 case ImportPlatform.X86:
                     compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Required32Bit;
                     compilerOptions.imageFileMachine = ImageFileMachine.I386;
@@ -493,8 +489,6 @@ namespace IKVM.Tools.Importer
 
             switch (options.Apartment)
             {
-                case ImportApartment.Unspecified:
-                    break;
                 case ImportApartment.STA:
                     compilerOptions.apartment = ApartmentState.STA;
                     break;
@@ -642,8 +636,6 @@ namespace IKVM.Tools.Importer
 
             switch (options.Debug)
             {
-                case ImportDebug.Unspecified:
-                    break;
                 case ImportDebug.Full:
                     compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
                     compilerOptions.debugMode = DebugMode.Full;
@@ -832,7 +824,9 @@ namespace IKVM.Tools.Importer
                 compilerOptions.mainClass = manifestMainClass;
             }
 
-            targets.Add(compilerOptions);
+            // schedule run if leaf-node
+            if (options.Nested == null || options.Nested.Length == 0)
+                targets.Add(compilerOptions);
         }
 
         internal static FileInfo GetFileInfo(string path)

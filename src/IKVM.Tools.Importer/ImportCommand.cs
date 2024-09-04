@@ -17,8 +17,8 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="treatUnmatchedTokensAsErrors"></param>
-        public ImportCommand()
+        /// <param name="enableDefaults"></param>
+        public ImportCommand(bool enableDefaults = true)
         {
             Add(InputsArgument = new Argument<FileInfo[]>(
                 name: "classOrJar",
@@ -37,15 +37,17 @@ namespace IKVM.Tools.Importer
                 (TargetOption = new Option<string?>(
                     name: "-target",
                     description: "Specifies the format of the output file.",
-                    getDefaultValue: () => null)
+                    getDefaultValue: () => enableDefaults ? "library" : null)
                     .FromAmong("exe", "winexe", "library", "module")),
                 (PlatformOption = new Option<string?>(
                     name: "-platform",
-                    description: "Limit which platforms this code can run on: x86, x64, arm, anycpu32bitpreferred, or anycpu.\nThe default is anycpu.")
+                    description: "Limit which platforms this code can run on: x86, x64, arm, anycpu32bitpreferred, or anycpu.\nThe default is anycpu.",
+                    getDefaultValue: () => enableDefaults ? "anycpu" : null)
                     .FromAmong("x86", "x64", "arm", "arm64", "anycpu32bitpreferred", "anycpu")),
                 (ApartmentOption = new Option<string?>(
                     name: "-apartment",
-                    description: "Apply STAThreadAttribute to main.")
+                    description: "Apply STAThreadAttribute to main.",
+                    getDefaultValue: () => enableDefaults ? "none" : null)
                     .FromAmong("sta", "mta", "none")),
                 (NoGlobbingOption = new Option<bool>(
                     name: "-noglobbing",
@@ -54,7 +56,7 @@ namespace IKVM.Tools.Importer
                     name: "-D",
                     description: "Set system property (at runtime).")),
                 (EnableAssertionsOption = new Option<string?>(
-                    aliases: [ "-enableassertions", "-ea"],
+                    aliases: [ "-enableassertions", "-ea" ],
                     parseArgument: ParseOptionalString,
                     isDefault: true,
                     description: "Set system property to enable assertions.") { Arity = ArgumentArity.ZeroOrMore, IsRequired = false }),
@@ -98,11 +100,11 @@ namespace IKVM.Tools.Importer
                     name: "-win32icon",
                     description: "Embed specified icon in output.")
                     .LegalFilePathsOnly()),
-                (Win32ManifestOption = new Option<FileInfo>(
+                (Win32ManifestOption = new Option<FileInfo?>(
                     name: "-win32manifest",
                     description: "Specify a Win32 manifest file (.xml).")
                     .LegalFilePathsOnly()),
-                (KeyFileOption = new Option<FileInfo>(
+                (KeyFileOption = new Option<FileInfo?>(
                     aliases: ["-keyfile"],
                     description: "Use keyfile to sign the assembly.")
                     .LegalFilePathsOnly()),
@@ -115,7 +117,7 @@ namespace IKVM.Tools.Importer
                 (DebugOption = new Option<string?>(
                     aliases: ["-debug"],
                     description: "Specify debugging type ('portable' is default)\n'portable' is a cross-platform format,\n'embedded' is a cross-platform format embedded into the target dll or exe.",
-                    getDefaultValue: () => "portable")
+                    getDefaultValue: () => enableDefaults ? "portable" : null)
                     .FromAmong("none", "portable", "embedded")),
                 (DeterministicOption = new Option<bool>(
                     aliases: ["-deterministic"],
@@ -331,9 +333,9 @@ namespace IKVM.Tools.Importer
 
         public Option<FileInfo?> Win32IconOption { get; set; }
 
-        public Option<FileInfo> Win32ManifestOption { get; set; }
+        public Option<FileInfo?> Win32ManifestOption { get; set; }
 
-        public Option<FileInfo> KeyFileOption { get; set; }
+        public Option<FileInfo?> KeyFileOption { get; set; }
 
         public Option<string?> KeyOption { get; set; }
 
