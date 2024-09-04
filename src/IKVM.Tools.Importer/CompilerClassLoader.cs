@@ -3008,6 +3008,7 @@ namespace IKVM.Tools.Importer
                 {
                     ApartmentState.STA => Context.Resolver.ResolveCoreType(typeof(STAThreadAttribute).FullName),
                     ApartmentState.MTA => Context.Resolver.ResolveCoreType(typeof(MTAThreadAttribute).FullName),
+                    ApartmentState.Unknown => null,
                     _ => throw new NotImplementedException(),
                 };
 
