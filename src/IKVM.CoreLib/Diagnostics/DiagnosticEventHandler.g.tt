@@ -47,7 +47,11 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         /// <remarks>
 <#= Util.ToCommentString(kvp.Value.Message ?? "") #>
         /// </remarks>
-        public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Report(Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>]));
+        public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>)
+        {
+            if (IsEnabled(Diagnostic.<#= kvp.Key #>))
+                Report(Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>]));
+        }
 
 <#
 }

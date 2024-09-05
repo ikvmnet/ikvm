@@ -895,7 +895,7 @@ namespace IKVM.Runtime
             if (MatchingPackageNames(name, wrapper.name))
             {
 #if IMPORTER
-                CompilerClassLoader ccl = ClassLoader as CompilerClassLoader;
+                ImportClassLoader ccl = ClassLoader as ImportClassLoader;
                 if (ccl != null)
                 {
                     // this is a hack for multi target -sharedclassloader compilation

@@ -1110,7 +1110,7 @@ namespace IKVM.Runtime
             }
             AssemblyName otherName;
 #if IMPORTER
-            CompilerClassLoader ccl = other as CompilerClassLoader;
+            ImportClassLoader ccl = other as ImportClassLoader;
             if (ccl == null)
             {
                 return false;

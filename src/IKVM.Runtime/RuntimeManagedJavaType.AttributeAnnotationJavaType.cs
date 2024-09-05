@@ -586,7 +586,7 @@ namespace IKVM.Runtime
                     {
                         string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         Version version;
-                        if (IkvmImporterInternal.TryParseVersion(str, out version))
+                        if (ImportContext.TryParseVersion(str, out version))
                         {
                             ab.__SetAssemblyVersion(version);
                         }

@@ -618,7 +618,7 @@ namespace IKVM.Runtime
 
             private void AddCliEnum()
             {
-                CompilerClassLoader ccl = wrapper.classLoader;
+                ImportClassLoader ccl = wrapper.classLoader;
                 string name = "__Enum";
                 while (!ccl.ReserveName(classFile.Name + "$" + name))
                 {

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {
@@ -14,9 +15,10 @@ namespace IKVM.CoreLib.Diagnostics
         /// Creates a new diagnostic event with the specified arguments.
         /// </summary>
         /// <param name="args"></param>
+        /// <param name="exception"></param>
         /// <param name="location"></param>
         /// <returns></returns>
-        public DiagnosticEvent Event(object?[] args, DiagnosticLocation location = default) => new DiagnosticEvent(this, args, location);
+        public DiagnosticEvent Event(object?[] args, Exception? exception = null, DiagnosticLocation location = default) => new DiagnosticEvent(this, args, exception, location);
 
     }
 

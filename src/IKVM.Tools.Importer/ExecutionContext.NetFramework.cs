@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace IKVM.Tools.Importer
 {
 
-    partial class IkvmImporterContext
+    partial class ExecutionContext
     {
 
         /// <summary>
-        /// Encapsulates a <see cref="IkvmImporterInternal"/> in a remote <see cref="AppDomain"/>.
+        /// Encapsulates a <see cref="ImportContext"/> in a remote <see cref="AppDomain"/>.
         /// </summary>
-        class IkvmImporterDispatcher : MarshalByRefObject
+        class ExecutionContextDispatcher : MarshalByRefObject
         {
 
             readonly string[] _args;
@@ -23,7 +23,7 @@ namespace IKVM.Tools.Importer
             /// </summary>
             /// <param name="args"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            public IkvmImporterDispatcher(string[] args)
+            public ExecutionContextDispatcher(string[] args)
             {
                 _args = args ?? throw new ArgumentNullException(nameof(args));
             }
@@ -40,14 +40,14 @@ namespace IKVM.Tools.Importer
         }
 
         AppDomain appDomain;
-        IkvmImporterDispatcher dispatcher;
+        ExecutionContextDispatcher dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="args"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmImporterContext(string[] args)
+        public ExecutionContext(string[] args)
         {
             appDomain = AppDomain.CreateDomain(
                 "IkvmImporter",
@@ -58,9 +58,9 @@ namespace IKVM.Tools.Importer
                     ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
                 });
 
-            dispatcher = (IkvmImporterDispatcher)appDomain.CreateInstanceAndUnwrap(
-                typeof(IkvmImporterDispatcher).Assembly.GetName().FullName,
-                typeof(IkvmImporterDispatcher).FullName,
+            dispatcher = (ExecutionContextDispatcher)appDomain.CreateInstanceAndUnwrap(
+                typeof(ExecutionContextDispatcher).Assembly.GetName().FullName,
+                typeof(ExecutionContextDispatcher).FullName,
                 false,
                 System.Reflection.BindingFlags.Default,
                 null,

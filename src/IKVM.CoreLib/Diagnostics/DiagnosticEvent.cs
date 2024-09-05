@@ -3,7 +3,7 @@
 namespace IKVM.CoreLib.Diagnostics
 {
 
-    readonly ref partial struct DiagnosticEvent(Diagnostic Diagnostic, ReadOnlySpan<object?> Args, Exception? Exception = null, DiagnosticLocation Location = default)
+    readonly partial struct DiagnosticEvent(Diagnostic Diagnostic, object?[] Args, Exception? Exception = null, DiagnosticLocation Location = default)
     {
 
         /// <summary>
@@ -14,7 +14,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <summary>
         /// Gets the arguments of the event.
         /// </summary>
-        public readonly ReadOnlySpan<object?> Args = Args;
+        public readonly object?[] Args = Args;
 
         /// <summary>
         /// Gets the exception of the event.
@@ -35,7 +35,7 @@ namespace IKVM.CoreLib.Diagnostics
 #if NET8_0_OR_GREATER
             return string.Format(null, Diagnostic.Message, Args);
 #else
-            return string.Format(Diagnostic.Message, Args.ToArray());
+            return string.Format(Diagnostic.Message, Args);
 #endif
         }
 

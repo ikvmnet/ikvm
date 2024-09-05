@@ -19,13 +19,13 @@
 <#@ import namespace="Newtonsoft.Json.Linq" #>
 <#@ output extension=".cs" #>
 #nullable enable
-
+using System;
 using System.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {
 
-    readonly ref partial struct DiagnosticEvent
+    readonly partial struct DiagnosticEvent
     {
 
 <#
@@ -38,7 +38,8 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
     var argDecl = new List<string>();
     foreach (var arg in kvp.Value.Args)
         argDecl.Add($"{arg.Type} {arg.Name}");
-
+        
+    argDecl.Add("Exception? exception = null");
     argDecl.Add("DiagnosticLocation location = default");
 
     var argList = new List<string>();
@@ -51,7 +52,7 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         /// <remarks>
 <#= Util.ToCommentString(kvp.Value.Message ?? "") #>
         /// </remarks>
-        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>], location);
+        public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>], exception, location);
 
 <#
 }

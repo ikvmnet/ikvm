@@ -27,6 +27,8 @@ namespace IKVM.Tools.Importer
             };
         }
 
+        readonly DiagnosticEvent _event;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -35,11 +37,16 @@ namespace IKVM.Tools.Importer
 #if NET8_0_OR_GREATER
             base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args)}")
 #else
-            base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args.ToArray())}")
+            base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args)}")
 #endif
         {
-
+            _event = evt;
         }
+
+        /// <summary>
+        /// Gets the event that triggered this exception.
+        /// </summary>
+        public DiagnosticEvent Event => _event;
 
     }
 

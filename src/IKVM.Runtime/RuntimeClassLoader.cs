@@ -952,7 +952,7 @@ namespace IKVM.Runtime
                 var cfp = ClassFileParseOptions.LocalVariableTable;
                 if (EmitStackTraceInfo)
                     cfp |= ClassFileParseOptions.LineNumberTable;
-                if (context.ClassLoaderFactory.bootstrapClassLoader is CompilerClassLoader)
+                if (context.ClassLoaderFactory.bootstrapClassLoader is ImportClassLoader)
                     cfp |= ClassFileParseOptions.TrustedAnnotations;
                 if (RemoveAsserts)
                     cfp |= ClassFileParseOptions.RemoveAssertions;

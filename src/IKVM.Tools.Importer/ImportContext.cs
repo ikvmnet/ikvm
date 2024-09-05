@@ -41,7 +41,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace IKVM.Tools.Importer
 {
 
-    class IkvmImporterInternal
+    /// <summary>
+    /// Represents the context of an import operation outputing a single assembly.
+    /// </summary>
+    class ImportContext
     {
 
         /// <summary>
@@ -50,7 +53,7 @@ namespace IKVM.Tools.Importer
         class CompilerOptionsDiagnosticHandler : FormattedDiagnosticHandler
         {
 
-            readonly CompilerOptions _options;
+            readonly ImportState _options;
 
             /// <summary>
             /// Initializes a new instance.
@@ -58,7 +61,7 @@ namespace IKVM.Tools.Importer
             /// <param name="options"></param>
             /// <param name="spec"></param>
             /// <param name="formatters"></param>
-            public CompilerOptionsDiagnosticHandler(CompilerOptions options, string spec, DiagnosticFormatterProvider formatters) :
+            public CompilerOptionsDiagnosticHandler(ImportState options, string spec, DiagnosticFormatterProvider formatters) :
                 base(spec, formatters)
             {
                 _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -95,6 +98,7 @@ namespace IKVM.Tools.Importer
 
         }
 
+        readonly ImportOptions _options;
         string manifestMainClass;
         string defaultAssemblyName;
         static bool time;
@@ -164,7 +168,7 @@ namespace IKVM.Tools.Importer
         /// <param name="options"></param>
         /// <param name="spec"></param>
         /// <returns></returns>
-        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, CompilerOptions options, string spec)
+        static IDiagnosticHandler GetDiagnostics(IServiceProvider services, ImportState options, string spec)
         {
             if (services is null)
                 throw new ArgumentNullException(nameof(services));
@@ -176,7 +180,7 @@ namespace IKVM.Tools.Importer
 
         static int Compile(ImportOptions options)
         {
-            var rootTarget = new CompilerOptions();
+            var rootTarget = new ImportState();
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
             services.AddSingleton(p => GetDiagnostics(p, rootTarget, "text"));
@@ -186,11 +190,11 @@ namespace IKVM.Tools.Importer
 
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
-            var targets = new List<CompilerOptions>();
+            var targets = new List<ImportState>();
             var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), options.Bootstrap, compiler);
 
             compiler.rootTarget = rootTarget;
-            var importer = new IkvmImporterInternal();
+            var importer = new ImportContext();
             importer.ParseCommandLine(context, compiler, diagnostics, options, targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
@@ -206,7 +210,7 @@ namespace IKVM.Tools.Importer
 
             try
             {
-                return CompilerClassLoader.Compile(importer, context, compiler, diagnostics, runtimeAssembly, targets);
+                return ImportClassLoader.Compile(importer, context, compiler, diagnostics, runtimeAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -239,7 +243,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ResolveStrongNameKeys(List<CompilerOptions> targets)
+        static void ResolveStrongNameKeys(List<ImportState> targets)
         {
             foreach (var options in targets)
             {
@@ -295,7 +299,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<CompilerOptions> targets, CompilerOptions compilerOptions)
+        void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<ImportState> targets, ImportState compilerOptions)
         {
             compilerOptions.target = PEFileKinds.ConsoleApplication;
             compilerOptions.guessFileKind = true;
@@ -305,7 +309,7 @@ namespace IKVM.Tools.Importer
             ContinueParseCommandLine(context, compiler, diagnostics, options, targets, compilerOptions);
         }
 
-        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<CompilerOptions> targets, CompilerOptions compilerOptions)
+        void ContinueParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<ImportState> targets, ImportState compilerOptions)
         {
             if (options.Output != null)
                 compilerOptions.path = options.Output;
@@ -586,7 +590,7 @@ namespace IKVM.Tools.Importer
                 compilerOptions.classLoader = options.ClassLoader;
 
             if (options.SharedClassLoader)
-                compilerOptions.sharedclassloader ??= new List<CompilerClassLoader>();
+                compilerOptions.sharedclassloader ??= new List<ImportClassLoader>();
 
             if (options.BaseAddress != null)
             {
@@ -671,7 +675,7 @@ namespace IKVM.Tools.Importer
 
             foreach (var nested in options.Nested)
             {
-                var nestedLevel = new IkvmImporterInternal();
+                var nestedLevel = new ImportContext();
                 nestedLevel.manifestMainClass = manifestMainClass;
                 nestedLevel.defaultAssemblyName = defaultAssemblyName;
                 nestedLevel.ContinueParseCommandLine(context, compiler, diagnostics, nested, targets, compilerOptions.Copy());
@@ -740,7 +744,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        void ReadFiles(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, List<string> fileNames)
+        void ReadFiles(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, List<string> fileNames)
         {
             foreach (var fileName in fileNames)
             {
@@ -850,7 +854,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        static void ResolveReferences(StaticCompiler compiler, IDiagnosticHandler diagnostics, List<CompilerOptions> targets)
+        static void ResolveReferences(StaticCompiler compiler, IDiagnosticHandler diagnostics, List<ImportState> targets)
         {
             var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
 
@@ -934,7 +938,7 @@ namespace IKVM.Tools.Importer
             return ms.ToArray();
         }
 
-        static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, byte[] buf)
+        static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, byte[] buf)
         {
             IKVM.Runtime.ClassFile cf;
 
@@ -975,7 +979,7 @@ namespace IKVM.Tools.Importer
             return true;
         }
 
-        static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, ZipArchiveEntry ze, byte[] data)
+        static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, ZipArchiveEntry ze, byte[] data)
         {
             if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
             {
@@ -997,7 +1001,7 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        void ProcessManifest(StaticCompiler compiler, CompilerOptions options, ZipArchiveEntry ze)
+        void ProcessManifest(StaticCompiler compiler, ImportState options, ZipArchiveEntry ze)
         {
             if (manifestMainClass == null)
             {
@@ -1024,7 +1028,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        bool ProcessZipFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, string file, Predicate<ZipArchiveEntry> filter)
+        bool ProcessZipFile(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, string file, Predicate<ZipArchiveEntry> filter)
         {
             try
             {
@@ -1072,7 +1076,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        void ProcessFile(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, string file)
+        void ProcessFile(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, string file)
         {
             var fileInfo = GetFileInfo(file);
             if (fileInfo.Extension.Equals(".jar", StringComparison.OrdinalIgnoreCase) || fileInfo.Extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
@@ -1118,7 +1122,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        bool Recurse(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
+        bool Recurse(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, DirectoryInfo baseDir, DirectoryInfo dir, string spec)
         {
             bool found = false;
 
@@ -1136,7 +1140,7 @@ namespace IKVM.Tools.Importer
             return found;
         }
 
-        bool RecurseJar(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, IDiagnosticHandler diagnostics, string path)
+        bool RecurseJar(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, string path)
         {
             var file = "";
             for (; ; )

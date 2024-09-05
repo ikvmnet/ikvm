@@ -61,7 +61,7 @@ namespace IKVM.Runtime
 #endif
 
 #if IMPORTER
-        protected readonly CompilerClassLoader classLoader;
+        protected readonly ImportClassLoader classLoader;
 #else
         protected readonly RuntimeClassLoader classLoader;
 #endif
@@ -116,7 +116,7 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
+        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, ImportClassLoader classLoader, ProtectionDomain pd)
 #else
         internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain pd)
 #endif

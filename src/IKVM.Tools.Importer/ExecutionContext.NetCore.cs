@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 namespace IKVM.Tools.Importer
 {
 
-    partial class IkvmImporterContext
+    partial class ExecutionContext
     {
 
         /// <summary>
         /// Invokes the static instance on the internal type.
         /// </summary>
-        class IkvmImporterDispatcher
+        class ExecutionContextDispatcher
         {
 
             readonly string[] _args;
@@ -26,7 +26,7 @@ namespace IKVM.Tools.Importer
             /// </summary>
             /// <param name="args"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            public IkvmImporterDispatcher(string args)
+            public ExecutionContextDispatcher(string args)
             {
                 if (args is null)
                     throw new ArgumentNullException(nameof(args));
@@ -79,12 +79,12 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="args"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmImporterContext(string[] args)
+        public ExecutionContext(string[] args)
         {
             // load the importer in a nested assembly context
             _context = new IsolatedAssemblyLoadContext("IkvmImporter", true);
-            var asm = _context.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
-            var typ = asm.GetType(typeof(IkvmImporterDispatcher).FullName);
+            var asm = _context.LoadFromAssemblyName(typeof(ExecutionContextDispatcher).Assembly.GetName());
+            var typ = asm.GetType(typeof(ExecutionContextDispatcher).FullName);
             _dispatcher = Activator.CreateInstance(typ, [JsonSerializer.Serialize(args)]);
         }
 
@@ -96,7 +96,7 @@ namespace IKVM.Tools.Importer
         /// <exception cref="NotImplementedException"></exception>
         public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return await Task.Run(() => (int)_dispatcher.GetType().GetMethod(nameof(IkvmImporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(_dispatcher, []));
+            return await Task.Run(() => (int)_dispatcher.GetType().GetMethod(nameof(ExecutionContextDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(_dispatcher, []));
         }
 
         /// <summary>

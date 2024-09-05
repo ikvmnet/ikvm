@@ -11,17 +11,32 @@ namespace IKVM.CoreLib.Diagnostics
     /// <param name="StartColumn"></param>
     /// <param name="EndLine"></param>
     /// <param name="EndColumn"></param>
-    readonly ref struct DiagnosticLocation(ReadOnlySpan<char> Path, int StartLine, int StartColumn, int EndLine, int EndColumn)
+    readonly struct DiagnosticLocation(string Path, int StartLine, int StartColumn, int EndLine, int EndColumn)
     {
 
-        public readonly ReadOnlySpan<char> Path = Path;
+        /// <summary>
+        /// Gets the path to the file that the diagnostic refers to.
+        /// </summary>
+        public readonly string Path = Path;
 
+        /// <summary>
+        /// Gets the starting line that the diagnostic refers to. If no position, -1.
+        /// </summary>
         public readonly int StartLine = StartLine;
 
+        /// <summary>
+        /// Gets the starting column that the diagnostic refers to. If no position, -1.
+        /// </summary>
         public readonly int StartColumn = StartColumn;
 
+        /// <summary>
+        /// Gets the ending line that the diagnostic refers to. If no position, -1.
+        /// </summary>
         public readonly int EndLine = EndLine;
 
+        /// <summary>
+        /// Gets the ending column that the diagnostic refers to. If no position, -1.
+        /// </summary>
         public readonly int EndColumn = EndColumn;
 
     }

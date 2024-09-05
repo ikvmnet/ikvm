@@ -48,7 +48,7 @@ namespace IKVM.Tools.Importer
         internal Universe universe;
         internal Assembly runtimeAssembly;
         internal Assembly baseAssembly;
-        internal CompilerOptions rootTarget;
+        internal ImportState rootTarget;
         internal int errorCount;
 
         internal Universe Universe => universe;
@@ -198,7 +198,7 @@ namespace IKVM.Tools.Importer
 
         internal Type GetType(RuntimeClassLoader loader, string name)
         {
-            var ccl = (CompilerClassLoader)loader;
+            var ccl = (ImportClassLoader)loader;
             return ccl.GetTypeFromReferencedAssembly(name);
         }
 
@@ -224,7 +224,7 @@ namespace IKVM.Tools.Importer
             if (acl != null)
                 return javaType.Name + ", " + acl.GetAssembly(javaType).FullName;
 
-            var ccl = loader as CompilerClassLoader;
+            var ccl = loader as ImportClassLoader;
             if (ccl != null)
                 return javaType.Name + ", " + ccl.GetTypeWrapperFactory().ModuleBuilder.Assembly.FullName;
 
@@ -240,7 +240,7 @@ namespace IKVM.Tools.Importer
                 diagnostics.MissingType(type.FullName, type.Assembly.FullName);
         }
 
-        internal void SuppressWarning(CompilerOptions options, Diagnostic diagnostic, string name)
+        internal void SuppressWarning(ImportState options, Diagnostic diagnostic, string name)
         {
             options.suppressWarnings.Add($"{diagnostic.Id}:{name}");
         }

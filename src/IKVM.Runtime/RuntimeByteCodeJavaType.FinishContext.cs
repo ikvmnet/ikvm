@@ -1095,7 +1095,7 @@ namespace IKVM.Runtime
 
             private TypeBuilder DefineNestedInteropType(string name)
             {
-                CompilerClassLoader ccl = wrapper.classLoader;
+                ImportClassLoader ccl = wrapper.classLoader;
                 while (!ccl.ReserveName(classFile.Name + "$" + name))
                 {
                     name += "_";

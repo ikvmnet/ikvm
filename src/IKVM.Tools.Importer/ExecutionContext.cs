@@ -6,9 +6,10 @@ namespace IKVM.Tools.Importer
 {
 
     /// <summary>
-    /// Imports a Java classpath into a .NET assembly.
+    /// Communicates command line arguments across either an <see cref="AppDomain"/> or <see cref="AssemblyLoadContext"/>
+    /// boundary. Needed because the compiler infrastructure still makes use of some static data structures.
     /// </summary>
-    partial class IkvmImporterContext : IDisposable
+    partial class ExecutionContext : IDisposable
     {
 
         /// <summary>
@@ -21,7 +22,7 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// Finalizes the instance.
         /// </summary>
-        ~IkvmImporterContext()
+        ~ExecutionContext()
         {
             Dispose();
         }

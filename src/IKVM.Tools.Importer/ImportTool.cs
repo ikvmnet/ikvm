@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
-using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +29,7 @@ namespace IKVM.Tools.Importer
         /// <returns></returns>
         public static async Task<int> InvokeAsync(string[] args, CancellationToken cancellationToken = default)
         {
-            using var context = new IkvmImporterContext(args);
+            using var context = new ExecutionContext(args);
             return await context.ExecuteAsync(cancellationToken);
         }
 
@@ -70,7 +69,6 @@ namespace IKVM.Tools.Importer
             services.AddToolsDiagnostics();
             services.AddSingleton(options);
             services.AddSingleton(diagnostics);
-            services.AddSingleton<ImportImpl>();
             using var provider = services.BuildServiceProvider();
             return ExecuteImplAsync(options, provider, cancellationToken);
         }
@@ -86,8 +84,7 @@ namespace IKVM.Tools.Importer
             if (services is null)
                 throw new ArgumentNullException(nameof(services));
 
-            var importer = services.GetRequiredService<ImportImpl>();
-            return importer.ExecuteAsync(options, cancellationToken);
+            return Task.Run(() => ImportContext.Execute(options));
         }
 
         /// <summary>

@@ -58,7 +58,7 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="f"></param>
         /// <param name="loader"></param>
-        internal RuntimeImportByteCodeJavaType(ClassFile f, CompilerClassLoader loader) :
+        internal RuntimeImportByteCodeJavaType(ClassFile f, ImportClassLoader loader) :
             base(null, f, loader, null)
         {
 
@@ -511,7 +511,7 @@ namespace IKVM.Tools.Importer
                                 if (setmodifiers)
                                     Context.AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
 
-                                CompilerClassLoader.AddDeclaredExceptions(Context, cb, constructor.Throws);
+                                ImportClassLoader.AddDeclaredExceptions(Context, cb, constructor.Throws);
                                 var ilgen = Context.CodeEmitterFactory.Create(cb);
                                 constructor.Emit(classLoader, ilgen);
                                 ilgen.DoEmit();
@@ -568,7 +568,7 @@ namespace IKVM.Tools.Importer
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
 
-                                CompilerClassLoader.AddDeclaredExceptions(Context, mb, method.Throws);
+                                ImportClassLoader.AddDeclaredExceptions(Context, mb, method.Throws);
                                 if (method.Body != null)
                                 {
                                     CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
@@ -1085,7 +1085,7 @@ namespace IKVM.Tools.Importer
 
         internal override RuntimeJavaMethod[] GetReplacedMethodsFor(RuntimeJavaMethod mw)
         {
-            var replacedMethods = ((CompilerClassLoader)ClassLoader).GetReplacedMethodsFor(mw);
+            var replacedMethods = ((ImportClassLoader)ClassLoader).GetReplacedMethodsFor(mw);
             var baseReplacedMethodWrappers = base.GetReplacedMethodsFor(mw);
             if (replacedMethods != null || baseReplacedMethodWrappers != null || this.replacedMethods != null)
             {

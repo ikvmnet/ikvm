@@ -125,7 +125,7 @@ namespace IKVM.Runtime
         {
 #if IMPORTER
             // importer uses only one class loader, and we can just return a single dynamic class loader
-            return new DynamicClassLoader(context, loader.Diagnostics, ((CompilerClassLoader)loader).CreateModuleBuilder(), false);
+            return new DynamicClassLoader(context, loader.Diagnostics, ((ImportClassLoader)loader).CreateModuleBuilder(), false);
 #else
             // each assembly class loader gets its own dynamic class loader
             if (loader is RuntimeAssemblyClassLoader acl)
@@ -252,7 +252,7 @@ namespace IKVM.Runtime
         internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain)
         {
 #if IMPORTER
-            var type = new RuntimeImportByteCodeJavaType(f, (CompilerClassLoader)classLoader);
+            var type = new RuntimeImportByteCodeJavaType(f, (ImportClassLoader)classLoader);
             type.CreateStep1();
             types[f.Name] = type;
             return type;

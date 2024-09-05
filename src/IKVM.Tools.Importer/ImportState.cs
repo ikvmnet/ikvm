@@ -34,7 +34,10 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer
 {
 
-    sealed class CompilerOptions
+    /// <summary>
+    /// Holds some state for an instance of <see cref="ImportContext"/>.
+    /// </summary>
+    sealed class ImportState
     {
 
         internal List<Jar> jars = new List<Jar>();
@@ -81,7 +84,7 @@ namespace IKVM.Tools.Importer
         internal ulong baseAddress;
         internal uint fileAlignment;
         internal bool highentropyva;
-        internal List<CompilerClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
+        internal List<ImportClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
         internal HashSet<string> suppressWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> errorWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         internal bool warnaserror; // treat all warnings as errors
@@ -92,9 +95,9 @@ namespace IKVM.Tools.Importer
         internal bool bootstrap;
         internal string log;
 
-        internal CompilerOptions Copy()
+        internal ImportState Copy()
         {
-            CompilerOptions copy = (CompilerOptions)MemberwiseClone();
+            ImportState copy = (ImportState)MemberwiseClone();
             copy.jars = Copy(jars);
             copy.jarMap = new Dictionary<string, int>(jarMap);
             if (props != null)
@@ -122,21 +125,19 @@ namespace IKVM.Tools.Importer
 
         internal Jar GetJar(string file)
         {
-            int existingJar;
-            if (jarMap.TryGetValue(file, out existingJar))
-            {
+            if (jarMap.TryGetValue(file, out var existingJar))
                 return jars[existingJar];
-            }
+
             jarMap.Add(file, jars.Count);
             return CreateJar(Path.GetFileName(file));
         }
 
-        private Jar CreateJar(string jarName)
+        Jar CreateJar(string jarName)
         {
             int count = 0;
-            string name = jarName;
+            var name = jarName;
         retry:
-            foreach (Jar jar in jars)
+            foreach (var jar in jars)
             {
                 if (jar.Name == name)
                 {
@@ -144,7 +145,8 @@ namespace IKVM.Tools.Importer
                     goto retry;
                 }
             }
-            Jar newJar = new Jar(name);
+
+            var newJar = new Jar(name);
             jars.Add(newJar);
             return newJar;
         }
@@ -156,6 +158,7 @@ namespace IKVM.Tools.Importer
                 classesJar = jars.Count;
                 CreateJar("classes.jar");
             }
+
             return jars[classesJar];
         }
 
@@ -183,17 +186,13 @@ namespace IKVM.Tools.Importer
         internal bool IsExcludedClass(string className)
         {
             if (classesToExclude != null)
-            {
                 for (int i = 0; i < classesToExclude.Length; i++)
-                {
                     if (Regex.IsMatch(className, classesToExclude[i]))
-                    {
                         return true;
-                    }
-                }
-            }
+
             return false;
         }
+
     }
 
 }
