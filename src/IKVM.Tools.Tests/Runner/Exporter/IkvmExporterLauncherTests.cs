@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -64,7 +65,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
                 rid = "osx-arm64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.Args); }));
             var o = new IkvmExporterOptions()
             {
                 NoStdLib = true,
@@ -79,7 +80,11 @@ namespace IKVM.Tools.Tests.Runner.Exporter
                     if (DotNetSdkUtil.IsAssembly(dll))
                         o.References.Add(dll);
 
+            if (File.Exists(p))
+                File.Delete(p);
+
             var exitCode = await l.ExecuteAsync(o);
+            e.Count(i => i.Level >= IkvmToolDiagnosticEventLevel.Error).Should().Be(0);
             File.Exists(p).Should().BeTrue();
             new FileInfo(p).Length.Should().BeGreaterThanOrEqualTo(64);
             exitCode.Should().Be(0);
