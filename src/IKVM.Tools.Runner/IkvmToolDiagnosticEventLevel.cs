@@ -7,10 +7,11 @@
     public enum IkvmToolDiagnosticEventLevel
     {
 
-        Debug,
+        Trace,
         Information,
         Warning,
         Error,
+        Fatal,
 
     }
 

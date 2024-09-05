@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IKVM.Tools.Runner
@@ -32,16 +35,59 @@ namespace IKVM.Tools.Runner
         /// <summary>
         /// Logs an event if a listener is provided.
         /// </summary>
+        /// <param name="evt"></param>
+        /// <returns></returns>
+        protected Task LogEvent(IkvmToolDiagnosticEvent evt)
+        {
+            if (evt != null)
+                return listener.ReceiveAsync(evt);
+            else
+                return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Logs an anonymous event if a listener is provided.
+        /// </summary>
         /// <param name="level"></param>
         /// <param name="message"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        protected Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params object[] args)
+        protected Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params string[] args)
         {
-            if (message != null && listener != null)
-                return listener.ReceiveAsync(new IkvmToolDiagnosticEvent(level, message, args));
-            else
-                return Task.CompletedTask;
+            return LogEvent(new IkvmToolDiagnosticEvent(level, -1, message, args));
+        }
+
+        /// <summary>
+        /// Parses the line and logs it.
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        protected Task ParseAndLogEvent(string line, CancellationToken token)
+        {
+            return LogEvent(ParseEvent(line));
+        }
+
+        /// <summary>
+        /// Parse a line of JSON tool output into a diagnostic event.
+        /// </summary>
+        /// <param name="line"></param>
+        /// <returns></returns>
+        protected IkvmToolDiagnosticEvent ParseEvent(string line)
+        {
+            try
+            {
+                var buffer = Encoding.UTF8.GetBytes(line);
+                var reader = new Utf8JsonReader(buffer);
+                if (reader.Read() == false)
+                    throw new JsonException();
+
+                return IkvmToolDiagnosticEvent.ReadJson(ref reader);
+            }
+            catch (JsonException)
+            {
+                throw new IkvmToolException("Unable to parse message from tool.");
+            }
         }
 
         /// <summary>
