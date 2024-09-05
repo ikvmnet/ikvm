@@ -41,7 +41,16 @@ namespace IKVM.Tools.Core.Diagnostics
                 json.WriteStartObject();
                 json.WriteNumber("id", @event.Diagnostic.Id);
                 json.WriteString("name", @event.Diagnostic.Name);
-                json.WriteString("level", @event.Diagnostic.Level.ToString());
+                json.WriteString("level", @event.Diagnostic.Level switch
+                {
+                    DiagnosticLevel.Trace => "trace",
+                    DiagnosticLevel.Informational => "informational",
+                    DiagnosticLevel.Warning => "warning",
+                    DiagnosticLevel.Error => "error",
+                    DiagnosticLevel.Fatal => "fatal",
+                    _ => throw new NotImplementedException(),
+                });
+
 #if NET8_0_OR_GREATER
                 json.WriteString("message", @event.Diagnostic.Message.Format);
 #else
