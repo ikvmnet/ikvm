@@ -68,15 +68,28 @@ namespace IKVM.Tools.Runner.Exporter
             var args = new List<string>();
 
             if (options.Output is not null)
-                args.Add($"--out:{options.Output}");
+            {
+                args.Add("--out");
+                args.Add(options.Output);
+            }
 
             if (options.References is not null)
+            {
                 foreach (var reference in options.References)
-                    args.Add($"--reference:{reference}");
+                {
+                    args.Add("--reference");
+                    args.Add(reference);
+                }
+            }
 
             if (options.Namespaces is not null)
+            {
                 foreach (var ns in options.Namespaces)
-                    args.Add($"--ns:{ns}");
+                {
+                    args.Add("--ns");
+                    args.Add(ns);
+                }
+            }
 
             if (options.Shared)
                 args.Add("--shared");
@@ -103,11 +116,19 @@ namespace IKVM.Tools.Runner.Exporter
                 args.Add("--bootstrap");
 
             if (options.Lib is not null)
+            {
                 foreach (var i in options.Lib)
-                    args.Add($"--lib:{i}");
+                {
+                    args.Add("--lib");
+                    args.Add(i);
+                }
+            }
 
             if (options.ContinueOnError)
                 args.Add("--skiperror");
+
+            args.Add("--log");
+            args.Add("json,file=stderr");
 
             if (options.Input is not null)
                 args.Add(options.Input);
@@ -142,11 +163,10 @@ namespace IKVM.Tools.Runner.Exporter
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
-                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
+                await LogEvent(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
-                // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
-                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Debug, i)));
+                // send output to MSBuild (TODO, replace with binary reading)
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(ParseAndLogEvent));
 
                 // combine manual cancellation with timeout
                 var ctk = cts.Token;

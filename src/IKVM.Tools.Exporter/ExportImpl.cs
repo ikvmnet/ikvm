@@ -50,7 +50,7 @@ namespace IKVM.Tools.Exporter
                 foreach (var reference in options.References)
                     references.Add(reference);
 
-            var libpaths = new List<string>();
+            var libpaths = new List<DirectoryInfo>();
             if (options.Libraries != null)
                 foreach (var library in options.Libraries)
                     libpaths.Add(library);
