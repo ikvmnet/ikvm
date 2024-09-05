@@ -5,11 +5,11 @@
     {
 
         /// <summary>
-        /// Returns a <see cref="IDiagnosticFormatter"/> if the given format can be handled by this factory.
+        /// Returns a <see cref="IDiagnosticFormatter"/> if the given spec can be handled by this factory.
         /// </summary>
-        /// <param name="format"></param>
+        /// <param name="spec"></param>
         /// <returns></returns>
-        IDiagnosticFormatter? GetFormatter(string format);
+        IDiagnosticFormatter? GetFormatter(string spec);
 
     }
 

@@ -3,7 +3,7 @@
 namespace IKVM.CoreLib.Diagnostics
 {
 
-    readonly ref partial struct DiagnosticEvent(Diagnostic Diagnostic, ReadOnlySpan<object?> Args, DiagnosticLocation Location = default)
+    readonly ref partial struct DiagnosticEvent(Diagnostic Diagnostic, ReadOnlySpan<object?> Args, Exception? Exception = null, DiagnosticLocation Location = default)
     {
 
         /// <summary>
@@ -15,6 +15,11 @@ namespace IKVM.CoreLib.Diagnostics
         /// Gets the arguments of the event.
         /// </summary>
         public readonly ReadOnlySpan<object?> Args = Args;
+
+        /// <summary>
+        /// Gets the exception of the event.
+        /// </summary>
+        public readonly Exception? Exception = Exception;
 
         /// <summary>
         /// Gets the location of the event.
