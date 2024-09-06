@@ -28,7 +28,10 @@ namespace IKVM.Tools.Core.CommandLine
             terminal.ForegroundColor = ConsoleColor.Red;
 
             foreach (var error in context.ParseResult.Errors)
-                terminal.Error.WriteLine(error.Message);
+                if (error.SymbolResult != null)
+                    terminal.Error.WriteLine($"{error.SymbolResult.Symbol}: {error.Message}");
+                else
+                    terminal.Error.WriteLine(error.Message);
 
             terminal.Error.WriteLine();
 
