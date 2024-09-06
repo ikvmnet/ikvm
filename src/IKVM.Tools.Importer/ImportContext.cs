@@ -183,7 +183,7 @@ namespace IKVM.Tools.Importer
             var rootTarget = new ImportState();
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
-            services.AddSingleton(p => GetDiagnostics(p, rootTarget, "text"));
+            services.AddSingleton(p => GetDiagnostics(p, rootTarget, options.Log));
             services.AddSingleton<IManagedTypeResolver, ManagedResolver>();
             services.AddSingleton<StaticCompiler>();
             using var provider = services.BuildServiceProvider();

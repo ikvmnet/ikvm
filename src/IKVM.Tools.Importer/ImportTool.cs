@@ -171,10 +171,10 @@ namespace IKVM.Tools.Importer
                 .UseHelp()
                 .UseParseDirective()
                 .UseTypoCorrections()
-                .UseParseErrorReporting()
+                .UseToolParseError()
                 .UseExceptionHandler()
                 .CancelOnProcessTermination()
-                .UseCommandErrorExceptionHandler()
+                .UseToolErrorExceptionHandler()
                 .Build()
                 .InvokeAsync(level.Args.ToArray());
         }

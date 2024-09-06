@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.Tools.Core.CommandLine;
 using IKVM.Tools.Core.Diagnostics;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -218,7 +220,17 @@ namespace IKVM.Tools.Exporter
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
 
-            return await command.InvokeAsync(args);
+            // execute command
+            return await new CommandLineBuilder(command)
+                .UseHelp()
+                .UseParseDirective()
+                .UseTypoCorrections()
+                .UseToolParseError()
+                .UseExceptionHandler()
+                .CancelOnProcessTermination()
+                .UseToolErrorExceptionHandler()
+                .Build()
+                .InvokeAsync(args);
         }
 
         /// <summary>

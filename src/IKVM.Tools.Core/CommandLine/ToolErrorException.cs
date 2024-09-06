@@ -3,14 +3,14 @@
 namespace IKVM.Tools.Core.CommandLine
 {
 
-    class CommandErrorException : Exception
+    class ToolErrorException : Exception
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="message"></param>
-        public CommandErrorException(string message) : base(message)
+        public ToolErrorException(string message) : base(message)
         {
 
         }
@@ -20,7 +20,7 @@ namespace IKVM.Tools.Core.CommandLine
         /// </summary>
         /// <param name="message"></param>
         /// <param name="innerException"></param>
-        public CommandErrorException(string message, Exception innerException) :
+        public ToolErrorException(string message, Exception innerException) :
             base(message, innerException)
         {
 

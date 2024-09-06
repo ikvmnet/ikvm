@@ -159,17 +159,16 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.WarnAsErrorOption) is Diagnostic[] _warnaserror)
                 options.WarnAsError = options.WarnAsError != null ? AppendArray(options.WarnAsError, _warnaserror) : _warnaserror;
 
-            if (context.ParseResult.GetValueForOption(command.RuntimeOption) is FileInfo _runtime)
-                options.Runtime = _runtime;
-
-            if (context.ParseResult.GetValueForOption(command.TimeOption) is true)
-                options.Time = true;
+            if (command.RuntimeOption != null)
+                if (context.ParseResult.GetValueForOption(command.RuntimeOption) is FileInfo _runtime)
+                    options.Runtime = _runtime;
 
             if (context.ParseResult.GetValueForOption(command.ClassLoaderOption) is string _classloader)
                 options.ClassLoader = _classloader;
 
-            if (context.ParseResult.GetValueForOption(command.SharedClassLoaderOption) is true)
-                options.SharedClassLoader = true;
+            if (command.SharedClassLoaderOption != null)
+                if (context.ParseResult.GetValueForOption(command.SharedClassLoaderOption) is true)
+                    options.SharedClassLoader = true;
 
             if (context.ParseResult.GetValueForOption(command.BaseAddressOption) is string _baseaddress)
                 options.BaseAddress = _baseaddress;
@@ -210,11 +209,13 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.NoParameterReflectionOption) is true)
                 options.NoParameterReflection = true;
 
-            if (context.ParseResult.GetValueForOption(command.BootstrapOption) is true)
-                options.Bootstrap = true;
+            if (command.BootstrapOption != null)
+                if (context.ParseResult.GetValueForOption(command.BootstrapOption) is true)
+                    options.Bootstrap = true;
 
-            if (context.ParseResult.GetValueForOption(command.LogOption) is string _log)
-                options.Log = _log;
+            if (command.LogOption != null)
+                if (context.ParseResult.GetValueForOption(command.LogOption) is string _log)
+                    options.Log = _log;
 
             // for each nested level, run a command to capture the options, but otherwise does nothing
             foreach (var level in _levels)
@@ -368,7 +369,7 @@ namespace IKVM.Tools.Importer
             foreach (var kvp in values.Select(i => ParseDictionaryValue<TKey, TValue>(context, i)))
             {
                 if (dict.ContainsKey(kvp.Key))
-                    throw new CommandErrorException($"Option name '{option.Name}' contains multiple values for key '{kvp.Key}'.");
+                    throw new ToolErrorException($"Option name '{option.Name}' contains multiple values for key '{kvp.Key}'.");
 
                 dict[kvp.Key] = kvp.Value ?? defaultValue ?? throw new InvalidOperationException();
             }
