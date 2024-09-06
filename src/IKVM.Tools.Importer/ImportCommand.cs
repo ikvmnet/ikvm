@@ -25,8 +25,7 @@ namespace IKVM.Tools.Importer
             Add(InputsArgument = new Argument<FileInfo[]>(
                 name: "classOrJar",
                 description: "Path or name of class or JAR file to import.")
-                .LegalFilePathsOnly()
-                .ExistingOnly());
+                .LegalFilePathsOnly());
 
             foreach (var option in new Option[] {
                 (OutputOption = new Option<FileInfo?>(
@@ -210,8 +209,7 @@ namespace IKVM.Tools.Importer
                 (AssemblyAttributesOption = new Option<FileInfo[]>(
                     aliases: ["-assemblyattributes"],
                     description: "Read assembly custom attributes from specified class file.")
-                    .LegalFilePathsOnly()
-                    .ExistingOnly()),
+                    .LegalFilePathsOnly()),
                 (WarningLevel4Option = new Option<bool>(
                     aliases: ["-w4"],
                     description: "Undocumented option to always warn if a class isn't found.")),
