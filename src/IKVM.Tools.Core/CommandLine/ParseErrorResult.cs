@@ -33,9 +33,8 @@ namespace IKVM.Tools.Core.CommandLine
                 else
                     terminal.Error.WriteLine(error.Message);
 
-            terminal.Error.WriteLine();
+            terminal.ResetColor();
 
-            context.Console.GetTerminal().ResetColor();
             context.ExitCode = _errorExitCode ?? 1;
         }
 
