@@ -66,7 +66,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 rid = "osx-arm64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "ikvmc", ikvmTool, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "ikvmc", ikvmTool, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.Args); }));
             var z = libPaths.Append(ikvmLibs).ToArray();
             var o = new IkvmImporterOptions()
             {
