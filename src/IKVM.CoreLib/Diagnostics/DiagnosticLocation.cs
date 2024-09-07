@@ -20,22 +20,22 @@ namespace IKVM.CoreLib.Diagnostics
         public readonly string Path = Path;
 
         /// <summary>
-        /// Gets the starting line that the diagnostic refers to. If no position, -1.
+        /// Gets the starting line that the diagnostic refers to. If no position, 0.
         /// </summary>
         public readonly int StartLine = StartLine;
 
         /// <summary>
-        /// Gets the starting column that the diagnostic refers to. If no position, -1.
+        /// Gets the starting column that the diagnostic refers to. If no position, 0.
         /// </summary>
         public readonly int StartColumn = StartColumn;
 
         /// <summary>
-        /// Gets the ending line that the diagnostic refers to. If no position, -1.
+        /// Gets the ending line that the diagnostic refers to. If no position, 0.
         /// </summary>
         public readonly int EndLine = EndLine;
 
         /// <summary>
-        /// Gets the ending column that the diagnostic refers to. If no position, -1.
+        /// Gets the ending column that the diagnostic refers to. If no position, 0.
         /// </summary>
         public readonly int EndColumn = EndColumn;
 

@@ -44,7 +44,7 @@ namespace IKVM.Tools.Core.Diagnostics
                 json.WriteString("level", @event.Diagnostic.Level switch
                 {
                     DiagnosticLevel.Trace => "trace",
-                    DiagnosticLevel.Informational => "informational",
+                    DiagnosticLevel.Info => "info",
                     DiagnosticLevel.Warning => "warning",
                     DiagnosticLevel.Error => "error",
                     DiagnosticLevel.Fatal => "fatal",
@@ -63,6 +63,20 @@ namespace IKVM.Tools.Core.Diagnostics
                     JsonSerializer.Serialize(json, arg, arg?.GetType() ?? typeof(object), JsonSerializerOptions.Default);
 
                 json.WriteEndArray();
+
+                if (@event.Location.StartLine != 0 ||
+                    @event.Location.StartColumn != 0 ||
+                    @event.Location.EndLine != 0 ||
+                    @event.Location.EndColumn != 0)
+                {
+                    json.WriteStartArray("location");
+                    json.WriteNumberValue(@event.Location.StartLine);
+                    json.WriteNumberValue(@event.Location.StartColumn);
+                    json.WriteNumberValue(@event.Location.EndLine);
+                    json.WriteNumberValue(@event.Location.EndColumn);
+                    json.WriteEndArray();
+                }
+
                 json.WriteEndObject();
 
                 // ensure the JSON is flushed out

@@ -28,7 +28,7 @@ namespace IKVM.Tools.Core.Diagnostics
             var channel = @event.Diagnostic.Level switch
             {
                 DiagnosticLevel.Trace => _options.TraceChannel,
-                DiagnosticLevel.Informational => _options.InformationChannel,
+                DiagnosticLevel.Info => _options.InfoChannel,
                 DiagnosticLevel.Warning => _options.WarningChannel,
                 DiagnosticLevel.Error => _options.ErrorChannel,
                 DiagnosticLevel.Fatal => _options.FatalChannel,
@@ -58,7 +58,7 @@ namespace IKVM.Tools.Core.Diagnostics
 
             if (_options.TraceChannel is IDisposable trace && hs.Add(trace))
                 trace.Dispose();
-            if (_options.InformationChannel is IDisposable info && hs.Add(info))
+            if (_options.InfoChannel is IDisposable info && hs.Add(info))
                 info.Dispose();
             if (_options.WarningChannel is IDisposable warning && hs.Add(warning))
                 warning.Dispose();

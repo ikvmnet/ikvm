@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using IKVM.Tools.Runner.Diagnostics;
+
 namespace IKVM.Tools.Runner
 {
 
@@ -35,14 +37,11 @@ namespace IKVM.Tools.Runner
         /// <summary>
         /// Logs an event if a listener is provided.
         /// </summary>
-        /// <param name="evt"></param>
+        /// <param name="event"></param>
         /// <returns></returns>
-        protected Task LogEvent(IkvmToolDiagnosticEvent evt)
+        protected ValueTask LogEventAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
-            if (evt != null)
-                return listener.ReceiveAsync(evt);
-            else
-                return Task.CompletedTask;
+            return listener.ReceiveAsync(@event, cancellationToken);
         }
 
         /// <summary>
@@ -52,20 +51,20 @@ namespace IKVM.Tools.Runner
         /// <param name="message"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        protected Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params string[] args)
+        protected ValueTask LogEventAsync(IkvmToolDiagnosticEventLevel level, string message, string[] args, CancellationToken cancellationToken)
         {
-            return LogEvent(new IkvmToolDiagnosticEvent(level, -1, message, args));
+            return LogEventAsync(new IkvmToolDiagnosticEvent(-1, level, message, args), cancellationToken);
         }
 
         /// <summary>
         /// Parses the line and logs it.
         /// </summary>
         /// <param name="line"></param>
-        /// <param name="token"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected Task ParseAndLogEvent(string line, CancellationToken token)
+        protected ValueTask ParseAndLogEventAsync(string line, CancellationToken cancellationToken)
         {
-            return LogEvent(ParseEvent(line));
+            return LogEventAsync(ParseEvent(line), cancellationToken);
         }
 
         /// <summary>
@@ -86,7 +85,7 @@ namespace IKVM.Tools.Runner
             }
             catch (JsonException)
             {
-                return new IkvmToolDiagnosticEvent(IkvmToolDiagnosticEventLevel.Fatal, -1, "Unable to parse tool output: {0}", [line]);
+                return new IkvmToolDiagnosticEvent(-1, IkvmToolDiagnosticEventLevel.Fatal, "Unable to parse tool output: {0}", [line]);
             }
         }
 

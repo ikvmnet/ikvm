@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using CliWrap;
 
+using IKVM.Tools.Runner.Diagnostics;
 using IKVM.Tools.Runner.Importer;
 using IKVM.Tools.Runner.Internal;
 
@@ -48,7 +49,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="toolPath"></param>
         public IkvmExporterLauncher(string toolPath) :
-            this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
+            this(toolPath, new IkvmToolDelegateDiagnosticListener((evt, cancellationToken) => Task.CompletedTask))
         {
 
         }
@@ -136,6 +137,11 @@ namespace IKVM.Tools.Runner.Exporter
             // path to the temporary response file
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
 
+            // combine manual cancellation with timeout
+            var ctk = cts.Token;
+            if (options.Timeout != Timeout.Infinite)
+                ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
+
             try
             {
                 // locate EXE file
@@ -163,15 +169,10 @@ namespace IKVM.Tools.Runner.Exporter
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
-                await LogEvent(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
+                await LogEventAsync(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", [cli.TargetFilePath, cli.Arguments], ctk);
 
                 // send output to MSBuild (TODO, replace with binary reading)
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(ParseAndLogEvent));
-
-                // combine manual cancellation with timeout
-                var ctk = cts.Token;
-                if (options.Timeout != Timeout.Infinite)
-                    ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(l => ParseAndLogEventAsync(l, cancellationToken).AsTask()));
 
                 // execute command
                 var pid = cli.ExecuteAsync(ctk);
@@ -185,7 +186,7 @@ namespace IKVM.Tools.Runner.Exporter
                     }
                     catch
                     {
-                        await LogEvent(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.");
+                        await LogEventAsync(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.", [], ctk);
                     }
 
                 // wait for the execution to finish

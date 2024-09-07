@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace IKVM.Tools.Runner
+namespace IKVM.Tools.Runner.Diagnostics
 {
 
     /// <summary>
@@ -10,14 +11,14 @@ namespace IKVM.Tools.Runner
     public class IkvmToolDelegateDiagnosticListener : IIkvmToolDiagnosticEventListener
     {
 
-        readonly Func<IkvmToolDiagnosticEvent, Task> func;
+        readonly Func<IkvmToolDiagnosticEvent, CancellationToken, Task> func;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="func"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmToolDelegateDiagnosticListener(Func<IkvmToolDiagnosticEvent, Task> func)
+        public IkvmToolDelegateDiagnosticListener(Func<IkvmToolDiagnosticEvent, CancellationToken, Task> func)
         {
             this.func = func ?? throw new ArgumentNullException(nameof(func));
         }
@@ -28,14 +29,15 @@ namespace IKVM.Tools.Runner
         /// <param name="action"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public IkvmToolDelegateDiagnosticListener(Action<IkvmToolDiagnosticEvent> action) :
-            this(evt => { action(evt); return Task.CompletedTask; })
+            this((evt, cancellationToken) => { action(evt); return Task.CompletedTask; })
         {
 
         }
 
-        public Task ReceiveAsync(IkvmToolDiagnosticEvent @event)
+        /// <inheritdoc />
+        public ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
-            return func(@event);
+            return new ValueTask(func(@event, cancellationToken));
         }
 
     }

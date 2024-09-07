@@ -7,7 +7,7 @@
     {
 
         Trace,
-        Informational,
+        Info,
         Warning,
         Error,
         Fatal,

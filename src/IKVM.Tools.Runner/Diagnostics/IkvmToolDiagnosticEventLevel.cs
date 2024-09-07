@@ -1,4 +1,4 @@
-﻿namespace IKVM.Tools.Runner
+﻿namespace IKVM.Tools.Runner.Diagnostics
 {
 
     /// <summary>
@@ -8,7 +8,7 @@
     {
 
         Trace,
-        Information,
+        Info,
         Warning,
         Error,
         Fatal,

@@ -43,7 +43,7 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
             return level switch
             {
                 DiagnosticLevel.Trace => EventLevel.Verbose,
-                DiagnosticLevel.Informational => EventLevel.Informational,
+                DiagnosticLevel.Info => EventLevel.Informational,
                 DiagnosticLevel.Warning => EventLevel.Warning,
                 DiagnosticLevel.Error => EventLevel.Error,
                 DiagnosticLevel.Fatal => EventLevel.Critical,

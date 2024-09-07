@@ -52,7 +52,7 @@ namespace IKVM.Tools.Core.Diagnostics
 
             // set default channel if missing
             opts.TraceChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDOUT);
-            opts.InformationChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDOUT);
+            opts.InfoChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDOUT);
             opts.WarningChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
             opts.ErrorChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
             opts.FatalChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
@@ -86,7 +86,7 @@ namespace IKVM.Tools.Core.Diagnostics
             if (key is "file" or "trace:file")
                 options.TraceChannel = GetOrCreateChannel(cache, val);
             if (key is "file" or "info:file")
-                options.InformationChannel = GetOrCreateChannel(cache, val);
+                options.InfoChannel = GetOrCreateChannel(cache, val);
             if (key is "file" or "warning:file")
                 options.WarningChannel = GetOrCreateChannel(cache, val);
             if (key is "file" or "error:file")

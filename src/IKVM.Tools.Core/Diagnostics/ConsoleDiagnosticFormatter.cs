@@ -56,7 +56,7 @@ namespace IKVM.Tools.Core.Diagnostics
             return level switch
             {
                 DiagnosticLevel.Trace => TRACE,
-                DiagnosticLevel.Informational => INFO,
+                DiagnosticLevel.Info => INFO,
                 DiagnosticLevel.Warning => WARNING,
                 DiagnosticLevel.Error => ERROR,
                 DiagnosticLevel.Fatal => FATAL,

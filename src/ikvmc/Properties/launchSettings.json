@@ -2,7 +2,7 @@
     "profiles": {
         "ikvmc": {
             "commandName": "Project",
-            "commandLineArgs": "@D:\\ikvm\\src\\IKVM.Java\\obj\\Debug\\net472\\IKVM.Java.ikvmc.rsp"
+            "commandLineArgs": "@C:\\Users\\jhaltom\\AppData\\Local\\Temp\\31187b7c-3061-4bf2-96d0-c1cb9fa41ecb\\helloworld\\ikvmc.rsp"
         }
     }
 }

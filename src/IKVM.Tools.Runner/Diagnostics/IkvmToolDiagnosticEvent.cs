@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json;
 
-namespace IKVM.Tools.Runner
+namespace IKVM.Tools.Runner.Diagnostics
 {
 
     /// <summary>
     /// Describes an event emitted from a tool.
     /// </summary>
-    public class IkvmToolDiagnosticEvent
+    public readonly record struct IkvmToolDiagnosticEvent(int Id, IkvmToolDiagnosticEventLevel Level, string Message, object?[] Args, IkvmToolDiagnosticEventLocation Location = default)
     {
 
         /// <summary>
@@ -19,15 +18,25 @@ namespace IKVM.Tools.Runner
         /// <exception cref="JsonException"></exception>
         public static IkvmToolDiagnosticEvent ReadJson(ref Utf8JsonReader reader)
         {
-            if (reader.TokenType != JsonTokenType.StartObject)
-                throw new JsonException();
-
             IkvmToolDiagnosticEventLevel? level = null;
             int? id = null;
-            string? name = null;
             string? message = null;
             List<object?>? args = null;
 
+            int startLine = 0;
+            int startColumn = 0;
+            int endLine = 0;
+            int endColumn = 0;
+
+            // advance to first actual JSON node
+            while (reader.TokenType == JsonTokenType.None && reader.Read())
+                continue;
+
+            // first JSON node should be an object
+            if (reader.TokenType != JsonTokenType.StartObject)
+                throw new JsonException("Could not locate JSON object.");
+
+            // read until end of object
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
@@ -35,17 +44,7 @@ namespace IKVM.Tools.Runner
 
                 if (reader.TokenType == JsonTokenType.PropertyName)
                 {
-                    if (reader.ValueTextEquals("level"))
-                    {
-                        reader.Skip();
-                        if (reader.TokenType != JsonTokenType.String)
-                            throw new JsonException();
-
-                        level = ParseLevel(ref reader);
-                        continue;
-                    }
-
-                    if (reader.ValueTextEquals("id"))
+                    if (id == null && reader.ValueTextEquals("id"))
                     {
                         reader.Skip();
                         if (reader.TokenType != JsonTokenType.Number)
@@ -55,17 +54,17 @@ namespace IKVM.Tools.Runner
                         continue;
                     }
 
-                    if (reader.ValueTextEquals("name"))
+                    if (level == null && reader.ValueTextEquals("level"))
                     {
                         reader.Skip();
                         if (reader.TokenType != JsonTokenType.String)
                             throw new JsonException();
 
-                        name = reader.GetString();
+                        level = ParseLevel(ref reader);
                         continue;
                     }
 
-                    if (reader.ValueTextEquals("message"))
+                    if (message == null && reader.ValueTextEquals("message"))
                     {
                         reader.Skip();
                         if (reader.TokenType != JsonTokenType.String)
@@ -75,19 +74,17 @@ namespace IKVM.Tools.Runner
                         continue;
                     }
 
-                    if (reader.ValueTextEquals("args"))
+                    if (args == null && reader.ValueTextEquals("args"))
                     {
-                        if (reader.Read() == false)
-                            throw new JsonException();
-                        if (reader.TokenType != JsonTokenType.StartArray)
-                            throw new JsonException();
+                        args ??= [];
+
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.StartArray)
+                            throw new JsonException("Expected array for 'args'.");
 
                         while (reader.Read())
                         {
                             if (reader.TokenType == JsonTokenType.EndArray)
                                 break;
-
-                            args ??= [];
 
                             switch (reader.TokenType)
                             {
@@ -111,13 +108,37 @@ namespace IKVM.Tools.Runner
 
                         continue;
                     }
+
+                    if (reader.ValueTextEquals("location"))
+                    {
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.StartArray)
+                            throw new JsonException("Expected array for 'location' property.");
+
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startLine) == false)
+                            throw new JsonException("Could not read start line.");
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startColumn) == false)
+                            throw new JsonException("Could not read start column.");
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endLine) == false)
+                            throw new JsonException("Could not read end line.");
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endColumn) == false)
+                            throw new JsonException("Could not read end column.");
+
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.EndArray)
+                            throw new JsonException("Expected end of array.");
+
+                        continue;
+                    }
                 }
             }
 
-            if (level == null || id == null || message == null)
-                throw new JsonException();
+            if (id == null)
+                throw new JsonException("Missing 'id' property.");
+            if (level == null)
+                throw new JsonException("Missing 'level' property.");
+            if (message == null)
+                throw new JsonException("Missing 'message' property.");
 
-            return new IkvmToolDiagnosticEvent(level.Value, id.Value, message, args?.ToArray() ?? []);
+            return new IkvmToolDiagnosticEvent(id.Value, level.Value, message, args?.ToArray() ?? [], new IkvmToolDiagnosticEventLocation(startLine, startColumn, endLine, endColumn));
         }
 
         /// <summary>
@@ -126,12 +147,12 @@ namespace IKVM.Tools.Runner
         /// <param name="value"></param>
         /// <returns></returns>
         /// <exception cref="JsonException"></exception>
-        static IkvmToolDiagnosticEventLevel ParseLevel(ref Utf8JsonReader reader)
+        internal static IkvmToolDiagnosticEventLevel ParseLevel(ref Utf8JsonReader reader)
         {
             if (reader.ValueTextEquals("trace"))
                 return IkvmToolDiagnosticEventLevel.Trace;
-            if (reader.ValueTextEquals("information"))
-                return IkvmToolDiagnosticEventLevel.Information;
+            if (reader.ValueTextEquals("info"))
+                return IkvmToolDiagnosticEventLevel.Info;
             if (reader.ValueTextEquals("warning"))
                 return IkvmToolDiagnosticEventLevel.Warning;
             if (reader.ValueTextEquals("error"))
@@ -147,7 +168,7 @@ namespace IKVM.Tools.Runner
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        static object ParseNumber(ref Utf8JsonReader reader)
+        internal static object ParseNumber(ref Utf8JsonReader reader)
         {
             if (reader.TryGetInt16(out var _short))
                 return _short;
@@ -164,39 +185,29 @@ namespace IKVM.Tools.Runner
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the ID of the event.
         /// </summary>
-        /// <param name="level"></param>
-        /// <param name="id"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        public IkvmToolDiagnosticEvent(IkvmToolDiagnosticEventLevel level, int id, string message, object?[] args)
-        {
-            Level = level;
-            Id = id;
-            Message = message ?? throw new ArgumentNullException(nameof(message));
-            Args = args ?? throw new ArgumentNullException(nameof(args));
-        }
+        public int Id { get; } = Id;
 
         /// <summary>
         /// Gets the level of the event.
         /// </summary>
-        public IkvmToolDiagnosticEventLevel Level { get; }
-
-        /// <summary>
-        /// Gets the ID of the event.
-        /// </summary>
-        public int Id { get; }
+        public IkvmToolDiagnosticEventLevel Level { get; } = Level;
 
         /// <summary>
         /// Message format string.
         /// </summary>
-        public string Message { get; }
+        public string Message { get; } = Message;
 
         /// <summary>
         /// Objects to include with format string.
         /// </summary>
-        public object?[] Args { get; }
+        public object?[] Args { get; } = Args;
+
+        /// <summary>
+        /// Location of the event.
+        /// </summary>
+        public IkvmToolDiagnosticEventLocation Location { get; } = Location;
 
     }
 

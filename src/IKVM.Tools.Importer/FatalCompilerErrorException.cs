@@ -19,7 +19,7 @@ namespace IKVM.Tools.Importer
             return level switch
             {
                 DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Info => "info",
                 DiagnosticLevel.Warning => "warning",
                 DiagnosticLevel.Error => "error",
                 DiagnosticLevel.Fatal => "fatal",

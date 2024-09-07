@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using FluentAssertions;
 
 using IKVM.Tests.Util;
-using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Diagnostics;
 using IKVM.Tools.Runner.Importer;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;

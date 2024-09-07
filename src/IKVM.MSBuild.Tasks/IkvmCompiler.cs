@@ -130,10 +130,6 @@ namespace IKVM.MSBuild.Tasks
 
         public bool NoStackTraceInfo { get; set; }
 
-        public string XTrace { get; set; }
-
-        public string XMethodTrace { get; set; }
-
         public string PrivatePackages { get; set; }
 
         public string ClassLoader { get; set; }
@@ -315,19 +311,19 @@ namespace IKVM.MSBuild.Tasks
             {
                 foreach (var i in NoWarn.Split([';', ',']))
                 {
-                    options.NoWarn ??= new List<string>();
+                    options.NoWarn ??= [];
                     options.NoWarn.Add(i);
                 }
             }
 
             if (TreatWarningsAsErrors)
-                options.WarningsAsErrors = new List<string>();
+                options.WarningsAsErrors = [];
 
             if (WarningsAsErrors != null)
             {
                 foreach (var i in WarningsAsErrors.Split([';', ',']))
                 {
-                    options.WarningsAsErrors ??= new List<string>();
+                    options.WarningsAsErrors ??= [];
                     options.WarningsAsErrors.Add(i);
                 }
             }
@@ -337,18 +333,10 @@ namespace IKVM.MSBuild.Tasks
             options.Apartment = Apartment;
 
             if (SetProperties != null)
-                foreach (var p in SetProperties.Split(new[] { ';' }).Select(i => i.Split(new[] { '=' }, 2)))
+                foreach (var p in SetProperties.Split(';').Select(i => i.Split(['='], 2)))
                     options.SetProperties[p[0]] = p.Length == 2 ? p[1] : "";
 
             options.NoStackTraceInfo = NoStackTraceInfo;
-
-            if (XTrace != null)
-                foreach (var i in XTrace.Split(';'))
-                    options.XTrace.Add(i);
-
-            if (XMethodTrace != null)
-                foreach (var i in XMethodTrace.Split(';'))
-                    options.XMethodTrace.Add(i);
 
             if (PrivatePackages != null)
                 foreach (var i in PrivatePackages.Split(';'))

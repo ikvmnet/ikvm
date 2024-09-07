@@ -303,9 +303,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// Found main method in class "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), CompositeFormat.Parse("Found main method in class \"{0}\"."), DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), CompositeFormat.Parse("Found main method in class \"{0}\"."), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), "Found main method in class \"{0}\".", DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFound = new Diagnostic(1, nameof(MainMethodFound), "Found main method in class \"{0}\".", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -315,9 +315,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// Output file is "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), CompositeFormat.Parse("Output file is \"{0}\"."), DiagnosticLevel.Informational);
+        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), CompositeFormat.Parse("Output file is \"{0}\"."), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), "Output file is \"{0}\".", DiagnosticLevel.Informational);
+        public static readonly Diagnostic OutputFileIs = new Diagnostic(2, nameof(OutputFileIs), "Output file is \"{0}\".", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -327,9 +327,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// Automatically adding reference to "{arg0}".
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), CompositeFormat.Parse("Automatically adding reference to \"{0}\"."), DiagnosticLevel.Informational);
+        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), CompositeFormat.Parse("Automatically adding reference to \"{0}\"."), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), "Automatically adding reference to \"{0}\".", DiagnosticLevel.Informational);
+        public static readonly Diagnostic AutoAddRef = new Diagnostic(3, nameof(AutoAddRef), "Automatically adding reference to \"{0}\".", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -339,9 +339,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// Using main class "{arg0}" based on jar manifest.
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), CompositeFormat.Parse("Using main class \"{0}\" based on jar manifest."), DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), CompositeFormat.Parse("Using main class \"{0}\" based on jar manifest."), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), "Using main class \"{0}\" based on jar manifest.", DiagnosticLevel.Informational);
+        public static readonly Diagnostic MainMethodFromManifest = new Diagnostic(4, nameof(MainMethodFromManifest), "Using main class \"{0}\" based on jar manifest.", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -351,9 +351,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericCompilerInfo = new Diagnostic(5, nameof(GenericCompilerInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericCompilerInfo = new Diagnostic(5, nameof(GenericCompilerInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic GenericCompilerInfo = new Diagnostic(5, nameof(GenericCompilerInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericCompilerInfo = new Diagnostic(5, nameof(GenericCompilerInfo), "{0}", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -363,9 +363,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericClassLoadingInfo = new Diagnostic(6, nameof(GenericClassLoadingInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericClassLoadingInfo = new Diagnostic(6, nameof(GenericClassLoadingInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic GenericClassLoadingInfo = new Diagnostic(6, nameof(GenericClassLoadingInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericClassLoadingInfo = new Diagnostic(6, nameof(GenericClassLoadingInfo), "{0}", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -375,9 +375,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericVerifierInfo = new Diagnostic(7, nameof(GenericVerifierInfo), "{0}", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -387,9 +387,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericRuntimeInfo = new Diagnostic(8, nameof(GenericRuntimeInfo), "{0}", DiagnosticLevel.Info);
 #endif
 
         /// <summary>
@@ -399,9 +399,9 @@ namespace IKVM.CoreLib.Diagnostics
 /// {arg0}
         /// </remarks>
 #if NET8_0_OR_GREATER
-        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), CompositeFormat.Parse("{0}"), DiagnosticLevel.Info);
 #else
-        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), "{0}", DiagnosticLevel.Informational);
+        public static readonly Diagnostic GenericJniInfo = new Diagnostic(9, nameof(GenericJniInfo), "{0}", DiagnosticLevel.Info);
 #endif
 
         /// <summary>

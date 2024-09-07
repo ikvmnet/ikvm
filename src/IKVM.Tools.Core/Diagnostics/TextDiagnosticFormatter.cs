@@ -30,12 +30,12 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="level"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        protected virtual void FormatDiagnosticLevel(ref EncodingSpanWriter writer, DiagnosticLevel level)
+        protected virtual void WriteDiagnosticLevel(ref EncodingSpanWriter writer, DiagnosticLevel level)
         {
             writer.Write(level switch
             {
                 DiagnosticLevel.Trace => "trace",
-                DiagnosticLevel.Informational => "info",
+                DiagnosticLevel.Info => "info",
                 DiagnosticLevel.Warning => "warning",
                 DiagnosticLevel.Error => "error",
                 DiagnosticLevel.Fatal => "fatal",
@@ -48,7 +48,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        protected virtual void FormatDiagnosticCode(ref EncodingSpanWriter writer, int code)
+        protected virtual void WriteDiagnosticCode(ref EncodingSpanWriter writer, int code)
         {
             writer.Write("IKVM");
 #if NETFRAMEWORK
@@ -69,9 +69,9 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="message"></param>
         /// <param name="args"></param>
 #if NET8_0_OR_GREATER
-        protected virtual void FormatDiagnosticMessage(ref EncodingSpanWriter writer, CompositeFormat message, ReadOnlySpan<object?> args)
+        protected virtual void WriteDiagnosticMessage(ref EncodingSpanWriter writer, CompositeFormat message, ReadOnlySpan<object?> args)
 #else
-        protected virtual void FormatDiagnosticMessage(ref EncodingSpanWriter writer, string message, ReadOnlySpan<object?> args)
+        protected virtual void WriteDiagnosticMessage(ref EncodingSpanWriter writer, string message, ReadOnlySpan<object?> args)
 #endif
         {
 #if NET8_0_OR_GREATER
@@ -82,33 +82,82 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <summary>
+        /// Formats the specified message text.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="location"></param>
+        protected virtual void WriteDiagnosticLocation(ref EncodingSpanWriter writer, in DiagnosticLocation location)
+        {
+            var any = false;
+
+            if (location.Path != null)
+            {
+                writer.Write(location.Path);
+                any = true;
+            }
+
+            if (location.StartLine > 0)
+            {
+                any = true;
+
+                if (location.StartColumn > 0)
+                {
+                    if (location.EndColumn > 0)
+                    {
+                        if (location.EndLine > 0)
+                        {
+                            writer.Write($"({location.StartLine},{location.StartColumn},{location.EndLine},{location.EndColumn})");
+                        }
+                        else
+                        {
+                            writer.Write($"({location.StartLine},{location.StartColumn}-{location.EndColumn})");
+                        }
+                    }
+                    else
+                    {
+                        writer.Write($"({location.StartLine},{location.StartColumn})");
+                    }
+                }
+                else if (location.EndLine > 0)
+                {
+                    writer.Write($"({location.StartLine}-{location.EndLine})");
+                }
+                else
+                {
+                    writer.Write($"({location.StartLine})");
+                }
+            }
+
+            if (any)
+                writer.Write(" : ");
+        }
+
+        /// <summary>
         /// Formats the <see cref="DiagnosticEvent"/>.
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="event"></param>
-        protected virtual void FormatDiagnosticEvent(ref EncodingSpanWriter writer, in DiagnosticEvent @event)
+        protected virtual void WriteDiagnosticEvent(ref EncodingSpanWriter writer, in DiagnosticEvent @event)
         {
-            FormatDiagnosticLevel(ref writer, @event.Diagnostic.Level);
+            WriteDiagnosticLocation(ref writer, @event.Location);
+            WriteDiagnosticLevel(ref writer, @event.Diagnostic.Level);
             writer.Write(" ");
-            FormatDiagnosticCode(ref writer, @event.Diagnostic.Id);
+            WriteDiagnosticCode(ref writer, @event.Diagnostic.Id);
             writer.Write(": ");
-            FormatDiagnosticMessage(ref writer, @event.Diagnostic.Message, @event.Args);
+            WriteDiagnosticMessage(ref writer, @event.Diagnostic.Message, @event.Args);
             writer.WriteLine();
         }
 
         /// <inheritdoc />
         protected override void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel)
         {
-            var wrt = channel.Writer;
-            var enc = channel.Encoding ?? Encoding.Default;
-
             // stage to a string so we can write it in one go
             var buf = MemoryPool<byte>.Shared.Rent(4096);
-            var utf = new EncodingSpanWriter(enc, buf.Memory.Span);
+            var utf = new EncodingSpanWriter(channel.Encoding ?? Encoding.Default, buf.Memory.Span);
 
             try
             {
-                FormatDiagnosticEvent(ref utf, @event);
+                WriteDiagnosticEvent(ref utf, @event);
             }
             catch (ArgumentOutOfRangeException)
             {

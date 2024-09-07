@@ -23,7 +23,7 @@ namespace IKVM.Tools.Core.Diagnostics
         public DiagnosticChannelFormatterOptions(IDiagnosticChannel defaultChannel)
         {
             TraceChannel = defaultChannel;
-            InformationChannel = defaultChannel;
+            InfoChannel = defaultChannel;
             WarningChannel = defaultChannel;
             ErrorChannel = defaultChannel;
             FatalChannel = defaultChannel;
@@ -35,9 +35,9 @@ namespace IKVM.Tools.Core.Diagnostics
         public IDiagnosticChannel? TraceChannel { get; set; }
 
         /// <summary>
-        /// Gets the channel into which to direct <see cref="DiagnosticLevel.Informational"/> messages.
+        /// Gets the channel into which to direct <see cref="DiagnosticLevel.Info"/> messages.
         /// </summary>
-        public IDiagnosticChannel? InformationChannel { get; set; }
+        public IDiagnosticChannel? InfoChannel { get; set; }
 
         /// <summary>
         /// Gets the channel into which to direct <see cref="DiagnosticLevel.Warning"/> messages.

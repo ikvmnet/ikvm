@@ -70,7 +70,7 @@ namespace IKVM.Tools.Importer
             /// <inheritdoc />
             public override bool IsEnabled(Diagnostic diagnostic)
             {
-                return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Informational;
+                return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Info;
             }
 
             /// <inheritdoc />

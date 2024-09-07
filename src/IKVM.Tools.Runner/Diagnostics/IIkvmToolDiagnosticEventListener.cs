@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
-namespace IKVM.Tools.Runner
+namespace IKVM.Tools.Runner.Diagnostics
 {
 
     /// <summary>
@@ -13,8 +14,9 @@ namespace IKVM.Tools.Runner
         /// Receives a diagnostic event.
         /// </summary>
         /// <param name="event"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task ReceiveAsync(IkvmToolDiagnosticEvent @event);
+        ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken);
 
     }
 
