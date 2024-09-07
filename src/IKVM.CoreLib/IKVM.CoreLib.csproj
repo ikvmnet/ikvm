@@ -14,6 +14,7 @@
         <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
         <InternalsVisibleTo Include="IKVM.Tools.Exporter.Tests" />
         <InternalsVisibleTo Include="IKVM.Tools.Runner" />
+        <InternalsVisibleTo Include="IKVM.Tools.Tests" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">

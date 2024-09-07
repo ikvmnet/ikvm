@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Buffers;
 using System.IO;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Diagnostics;
 
 using Microsoft.Build.Framework;
 
@@ -36,12 +35,10 @@ namespace IKVM.MSBuild.Tasks
         /// Receives a diagnostic event and logs it to MSBuild.
         /// </summary>
         /// <param name="event"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task ReceiveAsync(IkvmToolDiagnosticEvent @event)
+        public ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
-            if (@event == null)
-                return Task.CompletedTask;
-
             try
             {
                 var text = new StringWriter();
@@ -50,23 +47,23 @@ namespace IKVM.MSBuild.Tasks
                 switch (@event.Level)
                 {
                     case IkvmToolDiagnosticEventLevel.Trace:
-                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.StartLine, @event.StartColumn, @event.EndLine, @event.EndColumn, MessageImportance.Low, @event.Message, @event.Args);
+                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Low, @event.Message, @event.Args);
                         writer?.WriteLine(text.ToString());
                         break;
                     case IkvmToolDiagnosticEventLevel.Info:
-                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.StartLine, @event.StartColumn, @event.EndLine, @event.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
+                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
                         writer?.WriteLine(text.ToString());
                         break;
                     case IkvmToolDiagnosticEventLevel.Warning:
-                        logger.LogWarning(null, $"{@event.Id:D4}", null, null, @event.StartLine, @event.StartColumn, @event.EndLine, @event.EndColumn, @event.Message, @event.Args);
+                        logger.LogWarning(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         writer?.WriteLine(text.ToString());
                         break;
                     case IkvmToolDiagnosticEventLevel.Error:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.StartLine, @event.StartColumn, @event.EndLine, @event.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
+                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
                         writer?.WriteLine(text.ToString());
                         break;
                     case IkvmToolDiagnosticEventLevel.Fatal:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.StartLine, @event.StartColumn, @event.EndLine, @event.EndColumn, MessageImportance.High, @event.Message, @event.Args);
+                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.High, @event.Message, @event.Args);
                         writer?.WriteLine(text.ToString());
                         break;
                 }
@@ -76,11 +73,11 @@ namespace IKVM.MSBuild.Tasks
                 // ignore failure to log, not much we can do
             }
 
-            return Task.CompletedTask;
+            return new ValueTask(Task.CompletedTask);
         }
 
         /// <summary>
-        /// Returns the output text for the given <see cref="DiagnosticLevel"/>.
+        /// Returns the output text for the given <see cref="IkvmToolDiagnosticEventLevel"/>.
         /// </summary>
         /// <param name="level"></param>
         /// <returns></returns>
@@ -113,7 +110,7 @@ namespace IKVM.MSBuild.Tasks
             if (code.TryFormat(buf, out var l, "D4") == false)
                 throw new InvalidOperationException();
 
-            writer.Write(buf);
+            writer.Write(buf[..l]);
 #endif
         }
 
@@ -133,7 +130,7 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="event"></param>
-        protected virtual void FormatDiagnosticEvent(StringWriter writer , IkvmToolDiagnosticEvent @event)
+        protected virtual void FormatDiagnosticEvent(StringWriter writer, in IkvmToolDiagnosticEvent @event)
         {
             FormatDiagnosticLevel(writer, @event.Level);
             writer.Write(" ");
