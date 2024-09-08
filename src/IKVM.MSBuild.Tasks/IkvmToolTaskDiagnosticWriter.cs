@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
-using IKVM.Tools.Core.Diagnostics;
 using IKVM.Tools.Runner.Diagnostics;
 
 using Microsoft.Build.Framework;
