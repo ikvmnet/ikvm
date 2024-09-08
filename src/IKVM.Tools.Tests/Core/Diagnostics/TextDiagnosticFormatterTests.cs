@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 using FluentAssertions;
@@ -25,8 +26,9 @@ namespace IKVM.Tools.Tests.Core.Diagnostics
             wrt.Dispose();
 
             var txt = Encoding.UTF8.GetString(mem.ToArray());
-            txt.Should().Be("error IKVM4019: ERROR\r\n");
+            txt.Should().Be("error IKVM4019: ERROR" + Environment.NewLine);
         }
 
     }
+
 }
