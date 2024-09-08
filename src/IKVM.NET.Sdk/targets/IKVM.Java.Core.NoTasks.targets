@@ -192,7 +192,6 @@ Value = b.ToString();
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
             <_JavaCompilerArgs Include="-h" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
-            <!--<_JavaCompilerArgs Include="-verbose" />-->
             <_JavaCompilerArgs Include="@(_JavaCompilerArgsCompile->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />

@@ -262,7 +262,7 @@ namespace IKVM.Tools.Runner.Importer
             {
                 // create response file
                 Directory.CreateDirectory(Path.GetDirectoryName(response));
-                File.WriteAllText(options.ResponseFile, w.ToString());
+                File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
                 var exe = GetToolExe();
