@@ -16,7 +16,7 @@ namespace IKVM.Tools.Runner.Diagnostics
         /// <param name="event"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken);
+        ValueTask ReceiveAsync(IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken);
 
     }
 

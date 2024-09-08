@@ -11,14 +11,14 @@ namespace IKVM.Tools.Runner.Diagnostics
     public class IkvmToolDelegateDiagnosticListener : IIkvmToolDiagnosticEventListener
     {
 
-        readonly Func<IkvmToolDiagnosticEvent, CancellationToken, Task> func;
+        readonly Func<IkvmToolDiagnosticEvent, CancellationToken, ValueTask> func;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="func"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmToolDelegateDiagnosticListener(Func<IkvmToolDiagnosticEvent, CancellationToken, Task> func)
+        public IkvmToolDelegateDiagnosticListener(Func<IkvmToolDiagnosticEvent, CancellationToken, ValueTask> func)
         {
             this.func = func ?? throw new ArgumentNullException(nameof(func));
         }
@@ -29,15 +29,15 @@ namespace IKVM.Tools.Runner.Diagnostics
         /// <param name="action"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public IkvmToolDelegateDiagnosticListener(Action<IkvmToolDiagnosticEvent> action) :
-            this((evt, cancellationToken) => { action(evt); return Task.CompletedTask; })
+            this((evt, cancellationToken) => { action(evt); return new ValueTask(Task.CompletedTask); })
         {
 
         }
 
         /// <inheritdoc />
-        public ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
+        public ValueTask ReceiveAsync(IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
-            return new ValueTask(func(@event, cancellationToken));
+            return func(@event, cancellationToken);
         }
 
     }

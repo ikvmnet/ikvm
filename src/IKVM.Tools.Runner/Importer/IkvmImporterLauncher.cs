@@ -20,6 +20,7 @@ namespace IKVM.Tools.Runner.Importer
     {
 
         static readonly string TOOLNAME = "ikvmc";
+        static readonly string TOOLPATH = typeof(IkvmImporterLauncher).Assembly.Location is string s ? Path.GetDirectoryName(s) ?? "" : "";
 
         /// <summary>
         /// Initializes a new instance.
@@ -37,7 +38,7 @@ namespace IKVM.Tools.Runner.Importer
         /// </summary>
         /// <param name="listener"></param>
         public IkvmImporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
+            this(TOOLPATH, listener)
         {
 
         }
@@ -47,7 +48,7 @@ namespace IKVM.Tools.Runner.Importer
         /// </summary>
         /// <param name="toolPath"></param>
         public IkvmImporterLauncher(string toolPath) :
-            this(toolPath, new IkvmToolDelegateDiagnosticListener((evt, cancellationToken) => Task.CompletedTask))
+            this(toolPath, new IkvmToolNullDiagnosticListener())
         {
 
         }

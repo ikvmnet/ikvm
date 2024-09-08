@@ -38,7 +38,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="event"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public ValueTask ReceiveAsync(in IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
+        public async ValueTask ReceiveAsync(IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
             try
             {
@@ -46,54 +46,41 @@ namespace IKVM.MSBuild.Tasks
                 {
                     case IkvmToolDiagnosticEventLevel.Trace:
                         logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Low, @event.Message, @event.Args);
-                        writer?.WriteLine(GetLogMessage(@event));
                         break;
                     case IkvmToolDiagnosticEventLevel.Info:
                         logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
-                        writer?.WriteLine(GetLogMessage(@event));
                         break;
                     case IkvmToolDiagnosticEventLevel.Warning:
                         logger.LogWarning(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
-                        writer?.WriteLine(GetLogMessage(@event));
                         break;
                     case IkvmToolDiagnosticEventLevel.Error:
                         logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
-                        writer?.WriteLine(GetLogMessage(@event));
                         break;
                     case IkvmToolDiagnosticEventLevel.Fatal:
                         logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.High, @event.Message, @event.Args);
-                        writer?.WriteLine(GetLogMessage(@event));
                         break;
                 }
+
+                if (writer != null)
+                    await WriteLogsync(writer, @event, cancellationToken);
             }
-            catch
+            catch (Exception e)
             {
-                // ignore failure to log, not much we can do
+                logger.LogErrorFromException(e);
             }
-
-            return new ValueTask(Task.CompletedTask);
         }
 
         /// <summary>
-        /// Gets the log message for the event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        string GetLogMessage(in IkvmToolDiagnosticEvent @event)
-        {
-            var text = new StringWriter();
-            FormatDiagnosticEvent(text, @event);
-            return text.ToString();
-        }
-
-        /// <summary>
-        /// Formats the <see cref="IkvmToolDiagnosticEvent"/>.
+        /// Writes the log message for the event.
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="event"></param>
-        protected virtual void FormatDiagnosticEvent(StringWriter writer, in IkvmToolDiagnosticEvent @event)
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async Task WriteLogsync(TextWriter writer, IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
-            TextDiagnosticFormat.Write(@event.Id, Convert(@event.Level), @event.Message, @event.Args, null, Convert(@event.Location), writer);
+            await TextDiagnosticFormat.WriteAsync(@event.Id, Convert(@event.Level), @event.Message, @event.Args, null, Convert(@event.Location), writer, cancellationToken);
+            await writer.WriteLineAsync();
         }
 
         /// <summary>

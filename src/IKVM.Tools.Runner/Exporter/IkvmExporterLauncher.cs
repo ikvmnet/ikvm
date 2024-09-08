@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using CliWrap;
 
 using IKVM.Tools.Runner.Diagnostics;
-using IKVM.Tools.Runner.Importer;
 using IKVM.Tools.Runner.Internal;
 
 namespace IKVM.Tools.Runner.Exporter
@@ -22,6 +21,7 @@ namespace IKVM.Tools.Runner.Exporter
     {
 
         static readonly string TOOLNAME = "ikvmstub";
+        static readonly string TOOLPATH = typeof(IkvmExporterLauncher).Assembly.Location is string s ? Path.GetDirectoryName(s) ?? "" : "";
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,7 +39,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="listener"></param>
         public IkvmExporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
+            this(TOOLPATH, listener)
         {
 
         }
@@ -49,7 +49,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="toolPath"></param>
         public IkvmExporterLauncher(string toolPath) :
-            this(toolPath, new IkvmToolDelegateDiagnosticListener((evt, cancellationToken) => Task.CompletedTask))
+            this(toolPath, new IkvmToolNullDiagnosticListener())
         {
 
         }
