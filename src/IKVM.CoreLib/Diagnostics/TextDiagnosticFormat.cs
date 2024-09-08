@@ -61,10 +61,16 @@ namespace IKVM.CoreLib.Diagnostics
         }
 
         /// <summary>
-        /// Formats the <see cref="DiagnosticEvent"/>.
+        /// Writes the given event data.
         /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
         /// <param name="writer"></param>
-        /// <param name="event"></param>
+        /// <param name="id"></param>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+        /// <param name="exception"></param>
+        /// <param name="location"></param>
         static void WriteDiagnosticEvent<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location)
             where TWriter : IBufferWriter<byte>
         {
@@ -74,7 +80,6 @@ namespace IKVM.CoreLib.Diagnostics
             WriteDiagnosticCode(ref writer, id);
             writer.Write(": ");
             WriteDiagnosticMessage(ref writer, message, args);
-            writer.WriteLine();
         }
 
         /// <summary>

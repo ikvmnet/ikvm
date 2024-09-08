@@ -135,12 +135,6 @@ namespace IKVM.CoreLib.Diagnostics
                 {
                     // ignore large message
                 }
-
-                // append a newline to the end of the buffer
-                var nlLen = encoding.GetByteCount(Environment.NewLine);
-                var nlBuf = (Span<byte>)stackalloc byte[nlLen];
-                encoding.GetBytes(Environment.NewLine, nlBuf);
-                writer.Write(nlBuf);
             }
             finally
             {
