@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace IKVM.Tools.Runner.Diagnostics
 {
@@ -23,6 +24,7 @@ namespace IKVM.Tools.Runner.Diagnostics
             string? message = null;
             List<object?>? args = null;
 
+            string? path = null;
             int startLine = 0;
             int startColumn = 0;
             int endLine = 0;
@@ -31,6 +33,7 @@ namespace IKVM.Tools.Runner.Diagnostics
             // advance to first actual JSON node
             while (reader.TokenType == JsonTokenType.None && reader.Read())
                 continue;
+
 
             // first JSON node should be an object
             if (reader.TokenType != JsonTokenType.StartObject)
@@ -111,22 +114,48 @@ namespace IKVM.Tools.Runner.Diagnostics
 
                     if (reader.ValueTextEquals("location"))
                     {
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.StartArray)
-                            throw new JsonException("Expected array for 'location' property.");
+                        if (reader.Read() == false || reader.TokenType != JsonTokenType.StartObject)
+                            throw new JsonException("Expected JSON object for 'location'.");
 
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startLine) == false)
-                            throw new JsonException("Could not read start line.");
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startColumn) == false)
-                            throw new JsonException("Could not read start column.");
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endLine) == false)
-                            throw new JsonException("Could not read end line.");
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endColumn) == false)
-                            throw new JsonException("Could not read end column.");
+                        // read until end of object
+                        while (reader.Read())
+                        {
+                            if (reader.TokenType == JsonTokenType.EndObject)
+                                break;
 
-                        if (reader.Read() == false || reader.TokenType != JsonTokenType.EndArray)
-                            throw new JsonException("Expected end of array.");
+                            if (reader.TokenType == JsonTokenType.PropertyName)
+                            {
+                                if (path == null && reader.ValueTextEquals("path"))
+                                {
+                                    reader.Skip();
+                                    if (reader.TokenType != JsonTokenType.String)
+                                        throw new JsonException();
 
-                        continue;
+                                    path = reader.GetString();
+                                    continue;
+                                }
+
+                                if (reader.ValueTextEquals("position"))
+                                {
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.StartArray)
+                                        throw new JsonException("Expected array for 'location/position' property.");
+
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startLine) == false)
+                                        throw new JsonException("Could not read start line.");
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out startColumn) == false)
+                                        throw new JsonException("Could not read start column.");
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endLine) == false)
+                                        throw new JsonException("Could not read end line.");
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.Number || reader.TryGetInt32(out endColumn) == false)
+                                        throw new JsonException("Could not read end column.");
+
+                                    if (reader.Read() == false || reader.TokenType != JsonTokenType.EndArray)
+                                        throw new JsonException("Expected end of array.");
+
+                                    continue;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -138,7 +167,7 @@ namespace IKVM.Tools.Runner.Diagnostics
             if (message == null)
                 throw new JsonException("Missing 'message' property.");
 
-            return new IkvmToolDiagnosticEvent(id.Value, level.Value, message, args?.ToArray() ?? [], new IkvmToolDiagnosticEventLocation(startLine, startColumn, endLine, endColumn));
+            return new IkvmToolDiagnosticEvent(id.Value, level.Value, message, args?.ToArray() ?? [], new IkvmToolDiagnosticEventLocation(path, startLine, startColumn, endLine, endColumn));
         }
 
         /// <summary>

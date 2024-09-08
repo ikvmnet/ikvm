@@ -3,6 +3,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
+using IKVM.CoreLib.Diagnostics;
+using IKVM.Tools.Core.Diagnostics;
 using IKVM.Tools.Runner.Diagnostics;
 
 using Microsoft.Build.Framework;
@@ -77,67 +79,42 @@ namespace IKVM.MSBuild.Tasks
         }
 
         /// <summary>
-        /// Returns the output text for the given <see cref="IkvmToolDiagnosticEventLevel"/>.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        protected virtual void FormatDiagnosticLevel(StringWriter writer, IkvmToolDiagnosticEventLevel level)
-        {
-            writer.Write(level switch
-            {
-                IkvmToolDiagnosticEventLevel.Trace => "trace",
-                IkvmToolDiagnosticEventLevel.Info => "info",
-                IkvmToolDiagnosticEventLevel.Warning => "warning",
-                IkvmToolDiagnosticEventLevel.Error => "error",
-                IkvmToolDiagnosticEventLevel.Fatal => "fatal",
-                _ => throw new InvalidOperationException(),
-            });
-        }
-
-        /// <summary>
-        /// Formats the output text for the given diagnostic code.
-        /// </summary>
-        /// <param name="code"></param>
-        /// <returns></returns>
-        protected virtual void FormatDiagnosticCode(StringWriter writer, int code)
-        {
-            writer.Write("IKVM");
-#if NETFRAMEWORK
-            writer.Write($"{code:D4}");
-#else
-            var buf = (Span<char>)stackalloc char[16];
-            if (code.TryFormat(buf, out var l, "D4") == false)
-                throw new InvalidOperationException();
-
-            writer.Write(buf[..l]);
-#endif
-        }
-
-        /// <summary>
-        /// Formats the specified message text.
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        protected virtual void FormatDiagnosticMessage(StringWriter writer, string message, object?[] args)
-        {
-            writer.Write(string.Format(null, message, args));
-        }
-
-        /// <summary>
         /// Formats the <see cref="IkvmToolDiagnosticEvent"/>.
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="event"></param>
         protected virtual void FormatDiagnosticEvent(StringWriter writer, in IkvmToolDiagnosticEvent @event)
         {
-            FormatDiagnosticLevel(writer, @event.Level);
-            writer.Write(" ");
-            FormatDiagnosticCode(writer, @event.Id);
-            writer.Write(": ");
-            FormatDiagnosticMessage(writer, @event.Message, @event.Args);
-            writer.WriteLine();
+            TextDiagnosticFormat.Write(@event.Id, Convert(@event.Level), @event.Message, @event.Args, null, Convert(@event.Location), writer);
+        }
+
+        /// <summary>
+        /// Converts to a <see cref="DiagnosticLevel"/>.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        DiagnosticLevel Convert(IkvmToolDiagnosticEventLevel level)
+        {
+            return level switch
+            {
+                IkvmToolDiagnosticEventLevel.Trace => DiagnosticLevel.Trace,
+                IkvmToolDiagnosticEventLevel.Info => DiagnosticLevel.Info,
+                IkvmToolDiagnosticEventLevel.Warning => DiagnosticLevel.Warning,
+                IkvmToolDiagnosticEventLevel.Error => DiagnosticLevel.Error,
+                IkvmToolDiagnosticEventLevel.Fatal => DiagnosticLevel.Fatal,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        /// <summary>
+        /// Converts to a <see cref="DiagnosticLocation"/>.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        DiagnosticLocation Convert(IkvmToolDiagnosticEventLocation location)
+        {
+            return new DiagnosticLocation(location.Path, location.StartLine, location.StartColumn, location.EndLine, location.EndColumn);
         }
 
     }

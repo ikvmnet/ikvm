@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 using IKVM.CoreLib.Diagnostics;
 
@@ -80,17 +79,9 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="message"></param>
         /// <param name="args"></param>
-#if NET8_0_OR_GREATER
-        protected virtual void WriteDiagnosticMessage(CompositeFormat message, ReadOnlySpan<object?> args)
-#else
         protected virtual void WriteDiagnosticMessage(string message, ReadOnlySpan<object?> args)
-#endif
         {
-#if NET8_0_OR_GREATER
-            AnsiConsole.MarkupInterpolated(FormattableStringFactory.Create(message.Format, args.ToArray()));
-#else
             AnsiConsole.MarkupInterpolated(FormattableStringFactory.Create(message, args.ToArray()));
-#endif
         }
 
         /// <summary>

@@ -1,7 +1,7 @@
 ﻿{
     "MainMethodFound": {
         "id": 1,
-        "level": "Informational",
+        "level": "Info",
         "message": "Found main method in class \"{arg0}\".",
         "args": [
             {
@@ -12,7 +12,7 @@
     },
     "OutputFileIs": {
         "id": 2,
-        "level": "Informational",
+        "level": "Info",
         "message": "Output file is \"{arg0}\".",
         "args": [
             {
@@ -23,7 +23,7 @@
     },
     "AutoAddRef": {
         "id": 3,
-        "level": "Informational",
+        "level": "Info",
         "message": "Automatically adding reference to \"{arg0}\".",
         "args": [
             {
@@ -34,7 +34,7 @@
     },
     "MainMethodFromManifest": {
         "id": 4,
-        "level": "Informational",
+        "level": "Info",
         "message": "Using main class \"{arg0}\" based on jar manifest.",
         "args": [
             {
@@ -45,7 +45,7 @@
     },
     "GenericCompilerInfo": {
         "id": 5,
-        "level": "Informational",
+        "level": "Info",
         "message": "{arg0}",
         "args": [
             {
@@ -56,7 +56,7 @@
     },
     "GenericClassLoadingInfo": {
         "id": 6,
-        "level": "Informational",
+        "level": "Info",
         "message": "{arg0}",
         "args": [
             {
@@ -67,7 +67,7 @@
     },
     "GenericVerifierInfo": {
         "id": 7,
-        "level": "Informational",
+        "level": "Info",
         "message": "{arg0}",
         "args": [
             {
@@ -78,7 +78,7 @@
     },
     "GenericRuntimeInfo": {
         "id": 8,
-        "level": "Informational",
+        "level": "Info",
         "message": "{arg0}",
         "args": [
             {
@@ -89,7 +89,7 @@
     },
     "GenericJniInfo": {
         "id": 9,
-        "level": "Informational",
+        "level": "Info",
         "message": "{arg0}",
         "args": [
             {

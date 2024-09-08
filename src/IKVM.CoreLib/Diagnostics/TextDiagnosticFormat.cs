@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Text;
 
+using IKVM.CoreLib.Buffers;
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Text;
 
@@ -14,11 +16,49 @@ namespace IKVM.Tools.Core.Diagnostics
     static class TextDiagnosticFormat
     {
 
-        /// <inheritdoc />
-        public static void Write(in DiagnosticEvent @event, IBufferWriter<byte> writer, Encoding? encoding = null)
+        /// <summary>
+        /// Writes the given event data to the specified <see cref="StringWriter"/>.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+        /// <param name="exception"></param>
+        /// <param name="location"></param>
+        /// <param name="writer"></param>
+        public static void Write(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, StringWriter writer)
         {
-            var w = new EncodingByteBufferWriter(encoding ?? Encoding.UTF8, writer);
-            WriteDiagnosticEvent(ref w, @event);
+            var buffer = MemoryPool<byte>.Shared.Rent(8192);
+
+            try
+            {
+                var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
+                Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
+                writer.Write(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
+            }
+            finally
+            {
+                buffer.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Writes the given event data to the specified <see cref="IBufferWriter{byte}"/>.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+        /// <param name="exception"></param>
+        /// <param name="location"></param>
+        /// <param name="writer"></param>
+        /// <param name="encoding"></param>
+        public static void Write<TWriter>(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, ref TWriter writer, Encoding? encoding = null)
+            where TWriter : IBufferWriter<byte>
+        {
+            var encoder = new EncodingByteBufferWriter<TWriter>(encoding ?? Encoding.UTF8, ref writer);
+            WriteDiagnosticEvent(ref encoder, id, level, message, args, exception, location);
         }
 
         /// <summary>
@@ -26,14 +66,15 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="event"></param>
-        static void WriteDiagnosticEvent(ref EncodingByteBufferWriter writer, in DiagnosticEvent @event)
+        static void WriteDiagnosticEvent<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location)
+            where TWriter : IBufferWriter<byte>
         {
-            WriteDiagnosticLocation(ref writer, @event.Location);
-            WriteDiagnosticLevel(ref writer, @event.Diagnostic.Level);
+            WriteDiagnosticLocation(ref writer, location);
+            WriteDiagnosticLevel(ref writer, level);
             writer.Write(" ");
-            WriteDiagnosticCode(ref writer, @event.Diagnostic.Id);
+            WriteDiagnosticCode(ref writer, id);
             writer.Write(": ");
-            WriteDiagnosticMessage(ref writer, @event.Diagnostic.Message, @event.Args);
+            WriteDiagnosticMessage(ref writer, message, args);
             writer.WriteLine();
         }
 
@@ -42,7 +83,8 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="location"></param>
-        static void WriteDiagnosticLocation(ref EncodingByteBufferWriter writer, in DiagnosticLocation location)
+        static void WriteDiagnosticLocation<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, in DiagnosticLocation location)
+            where TWriter : IBufferWriter<byte>
         {
             var any = false;
 
@@ -94,7 +136,8 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="level"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        static void WriteDiagnosticLevel(ref EncodingByteBufferWriter writer, DiagnosticLevel level)
+        static void WriteDiagnosticLevel<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, DiagnosticLevel level)
+            where TWriter : IBufferWriter<byte>
         {
             writer.Write(level switch
             {
@@ -112,7 +155,8 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        static void WriteDiagnosticCode(ref EncodingByteBufferWriter writer, int code)
+        static void WriteDiagnosticCode<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, int code)
+            where TWriter : IBufferWriter<byte>
         {
             writer.Write("IKVM");
 #if NETFRAMEWORK
@@ -132,17 +176,10 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="writer"></param>
         /// <param name="message"></param>
         /// <param name="args"></param>
-#if NET8_0_OR_GREATER
-        static void WriteDiagnosticMessage(ref EncodingByteBufferWriter writer, CompositeFormat message, ReadOnlySpan<object?> args)
-#else
-        static void WriteDiagnosticMessage(ref EncodingByteBufferWriter writer, string message, ReadOnlySpan<object?> args)
-#endif
+        static void WriteDiagnosticMessage<TWriter>(ref EncodingByteBufferWriter<TWriter> writer, string message, object?[] args)
+            where TWriter : IBufferWriter<byte>
         {
-#if NET8_0_OR_GREATER
             writer.Write(string.Format(null, message, args));
-#else
-            writer.Write(string.Format(null, message, args.ToArray()));
-#endif
         }
 
     }

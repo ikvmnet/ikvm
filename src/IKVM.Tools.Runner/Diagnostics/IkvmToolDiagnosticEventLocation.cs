@@ -8,8 +8,13 @@
     /// <param name="StartColumn"></param>
     /// <param name="EndLine"></param>
     /// <param name="EndColumn"></param>
-    public readonly record struct IkvmToolDiagnosticEventLocation(int StartLine, int StartColumn, int EndLine, int EndColumn)
+    public readonly record struct IkvmToolDiagnosticEventLocation(string? Path, int StartLine, int StartColumn, int EndLine, int EndColumn)
     {
+
+        /// <summary>
+        /// Path to the document that contains the effected region.
+        /// </summary>
+        public string? Path { get; } = Path;
 
         /// <summary>
         /// Start line of the effected region.

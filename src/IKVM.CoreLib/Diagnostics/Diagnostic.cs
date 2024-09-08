@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {
 
-#if NET8_0_OR_GREATER
-    internal partial record class Diagnostic(int Id, string Name, CompositeFormat Message, DiagnosticLevel Level)
-#else
     internal partial record class Diagnostic(int Id, string Name, string Message, DiagnosticLevel Level)
-#endif
     {
 
         /// <summary>

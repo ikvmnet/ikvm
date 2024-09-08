@@ -23,7 +23,10 @@ namespace IKVM.Tools.Tests.Runner.Diagnostics
               "level": "warning",
               "message": "Message {0}",
               "args": [ "hi" ],
-              "location": [ 1, 2, 3, 4 ]
+              "location": {
+                "path": "file.txt",
+                "position": [ 1, 2, 3, 4 ]
+              }
             }
             """u8);
 
@@ -33,6 +36,7 @@ namespace IKVM.Tools.Tests.Runner.Diagnostics
             e.Message.Should().Be("Message {0}");
             e.Args.Should().HaveCount(1);
             e.Args[0].Should().Be("hi");
+            e.Location.Path.Should().Be("file.txt");
             e.Location.StartLine.Should().Be(1);
             e.Location.StartColumn.Should().Be(2);
             e.Location.EndLine.Should().Be(3);
@@ -48,7 +52,10 @@ namespace IKVM.Tools.Tests.Runner.Diagnostics
               "level": "warning",
               "message": "Message {0}",
               "args": [ "hi" ],
-              "location": [ 1, 2, 3, 4 ]
+              "location": {
+                "path": "file.txt",
+                "position": [ 1, 2, 3, 4 ]
+              }
             }
             """u8);
 
@@ -58,6 +65,7 @@ namespace IKVM.Tools.Tests.Runner.Diagnostics
             e.Message.Should().Be("Message {0}");
             e.Args.Should().HaveCount(1);
             e.Args[0].Should().Be("hi");
+            e.Location.Path.Should().Be("file.txt");
             e.Location.StartLine.Should().Be(1);
             e.Location.StartColumn.Should().Be(2);
             e.Location.EndLine.Should().Be(3);

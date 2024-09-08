@@ -8,11 +8,12 @@ namespace IKVM.CoreLib.Text
     /// <summary>
     /// Provides an interface to write text to a <see cref="IBufferWriter{byte}"/>.
     /// </summary>
-    struct EncodingByteBufferWriter
+    struct EncodingByteBufferWriter<TWriter>
+        where TWriter : IBufferWriter<byte>
     {
 
         readonly Encoding _encoding;
-        IBufferWriter<byte> _buffer;
+        TWriter _buffer;
         int _bytesWritten;
         int _charsWritten;
 
@@ -21,7 +22,7 @@ namespace IKVM.CoreLib.Text
         /// </summary>
         /// <param name="encoding"></param>
         /// <param name="buffer"></param>
-        public EncodingByteBufferWriter(Encoding encoding, IBufferWriter<byte> buffer)
+        public EncodingByteBufferWriter(Encoding encoding, ref TWriter buffer)
         {
             _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
             _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));

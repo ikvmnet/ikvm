@@ -104,6 +104,18 @@ namespace System.Text
             }
         }
 
+        public static unsafe string GetString(this Encoding self, ReadOnlySpan<byte> bytes)
+        {
+            if (self is null)
+                throw new ArgumentNullException(nameof(self));
+
+            if (bytes.IsEmpty)
+                return string.Empty;
+
+            fixed (byte* bytesPtr = bytes)
+                return self.GetString(bytesPtr, bytes.Length);
+        }
+
         /// <summary>
         /// Converts a <see cref="ReadOnlySpan{Char}"/> to bytes using <paramref name="encoder"/> and writes the result to <paramref name="writer"/>.
         /// </summary>

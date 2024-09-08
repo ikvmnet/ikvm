@@ -28,7 +28,7 @@ namespace IKVM.Tools.Core.Diagnostics
             // stage string in buffer so we can write it to the channel in one call
             using var buffer = MemoryPool<byte>.Shared.Rent(8192);
             var writer = new MemoryBufferWriter<byte>(buffer.Memory);
-            JsonDiagnosticFormat.Write(@event, writer, channel.Encoding);
+            JsonDiagnosticFormat.Write(@event.Diagnostic.Id, @event.Diagnostic.Level, @event.Diagnostic.Message, @event.Args, @event.Exception, @event.Location, ref writer, channel.Encoding);
             channel.Writer.Write(buffer, writer.WrittenCount);
             return;
         }
