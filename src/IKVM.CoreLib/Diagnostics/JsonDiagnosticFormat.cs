@@ -5,9 +5,8 @@ using System.Text;
 using System.Text.Json;
 
 using IKVM.CoreLib.Buffers;
-using IKVM.CoreLib.Diagnostics;
 
-namespace IKVM.Tools.Core.Diagnostics
+namespace IKVM.CoreLib.Diagnostics
 {
 
     /// <summary>
@@ -43,9 +42,15 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <summary>
-        /// Writes the <see cref="DiagnosticEvent"/> in the common JSON format to the specified writer.
+        /// Writes the given event data to the specified <typeparamref name="TWriter"/>.
         /// </summary>
-        /// <param name="event"></param>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <param name="args"></param>
+        /// <param name="exception"></param>
+        /// <param name="location"></param>
         /// <param name="writer"></param>
         /// <param name="encoding"></param>
         /// <exception cref="NotImplementedException"></exception>

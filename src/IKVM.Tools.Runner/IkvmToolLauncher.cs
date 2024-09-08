@@ -85,7 +85,7 @@ namespace IKVM.Tools.Runner
             }
             catch (JsonException)
             {
-                return new IkvmToolDiagnosticEvent(-1, IkvmToolDiagnosticEventLevel.Fatal, "Unable to parse tool output: {0}", [line]);
+                return new IkvmToolDiagnosticEvent(0, IkvmToolDiagnosticEventLevel.Fatal, "Unable to parse tool output: {0}", [line]);
             }
         }
 
