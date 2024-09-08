@@ -24,7 +24,7 @@ namespace IKVM.Tools.Tests.Core.Diagnostics
             wrt.Write(DiagnosticEvent.GenericClassLoadingError("ERROR"));
             wrt.Dispose();
 
-            var txt = (Encoding.UTF8.GetString(mem.ToArray()));
+            var txt = Encoding.UTF8.GetString(mem.ToArray());
             txt.Should().Be("error IKVM4019: ERROR\r\n");
         }
 

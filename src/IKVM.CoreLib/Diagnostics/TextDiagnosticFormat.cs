@@ -199,7 +199,7 @@ namespace IKVM.CoreLib.Diagnostics
             if (code.TryFormat(buf, out var l, "D4") == false)
                 throw new InvalidOperationException();
 
-            writer.Write(buf);
+            writer.Write(buf[..l]);
 #endif
         }
 
