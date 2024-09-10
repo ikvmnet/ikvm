@@ -128,6 +128,13 @@ namespace IKVM.Runtime
                     if (Directory.Exists(Path.GetFullPath(Path.Combine(ikvmHomeEntry.BasePath, ikvmHomeEntry.Value))))
                         return Path.GetFullPath(Path.Combine(ikvmHomeEntry.BasePath, ikvmHomeEntry.Value));
 
+#if NET
+                // specified home directory in runtime.json, where path is relative to application
+                if (AppContext.GetData("IKVM.Home") is string confHome && !string.IsNullOrWhiteSpace(confHome))
+                    if (Directory.Exists(Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHome))))
+                        return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHome));
+#endif
+
 #if NETFRAMEWORK
                 // attempt to find settings in legacy app.config
                 try
@@ -152,6 +159,13 @@ namespace IKVM.Runtime
                 if (Ikvm.TryGetValue("ikvm.home.root", out var ikvmHomeRootEntry) && !string.IsNullOrWhiteSpace(ikvmHomeRootEntry.Value))
                     if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(ikvmHomeRootEntry.BasePath, ikvmHomeRootEntry.Value))) is string ikvmHomeRootPath)
                         return ikvmHomeRootPath;
+
+#if NET
+                // specified home root directory in runtime.json, where path is relative to application
+                if (AppContext.GetData("IKVM.Home.Root") is string confHomeRoot && !string.IsNullOrWhiteSpace(confHomeRoot))
+                    if (ResolveHomePathFromRoot(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, confHomeRoot)) is string confHomeRootPath)
+                        return confHomeRootPath;
+#endif
 
 #if NETFRAMEWORK
                 // attempt to find settings in legacy app.config
