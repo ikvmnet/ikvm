@@ -1,99 +1,40 @@
 ﻿using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    /// <summary>
-    /// Represents a parameter of a method or property.
-    /// </summary>
-    interface IParameterSymbol : ISymbol
-    {
+	interface IParameterSymbol : ICustomAttributeSymbolProvider
+	{
 
-        /// <summary>
-        /// Whether the parameter passed by value or by reference.
-        /// </summary>
-        RefKind RefKind { get; }
+		ParameterAttributes Attributes { get; }
 
-        /// <summary>
-        /// Returns the scoped kind of the parameter.
-        /// </summary>
-        ScopedKind ScopedKind { get; }
+		ImmutableArray<ICustomAttributeSymbol> CustomAttributes { get; }
 
-        /// <summary>
-        /// Returns true if the parameter was declared as a parameter array or as a parameter collection. 
-        /// </summary>
-        bool IsParams { get; }
+		object? DefaultValue { get; }
 
-        /// <summary>
-        /// Returns true if the parameter was declared as a parameter array. 
-        /// </summary>
-        bool IsParamsArray { get; }
+		bool HasDefaultValue { get; }
 
-        /// <summary>
-        /// Returns true if the parameter was declared as a parameter collection. 
-        /// </summary>
-        bool IsParamsCollection { get; }
+		bool IsIn { get; }
 
-        /// <summary>
-        /// Returns true if the parameter is optional.
-        /// </summary>
-        bool IsOptional { get; }
+		bool IsLcid { get; }
 
-        /// <summary>
-        /// Returns true if the parameter is the hidden 'this' ('Me' in Visual Basic) parameter.
-        /// </summary>
-        bool IsThis { get; }
+		bool IsOptional { get; }
 
-        /// <summary>
-        /// Returns true if the parameter is a discard parameter.
-        /// </summary>
-        bool IsDiscard { get; }
+		bool IsOut { get; }
 
-        /// <summary>
-        /// Gets the type of the parameter.
-        /// </summary>
-        ITypeSymbol Type { get; }
+		bool IsRetval { get; }
 
-        /// <summary>
-        /// Custom modifiers associated with the parameter type, or an empty array if there are none.
-        /// </summary>
-        ImmutableArray<CustomModifier> CustomModifiers { get; }
+		IMemberSymbol Member { get; }
 
-        /// <summary>
-        /// Custom modifiers associated with the ref modifier, or an empty array if there are none.
-        /// </summary>
-        ImmutableArray<CustomModifier> RefCustomModifiers { get; }
+		int MetadataToken { get; }
 
-        /// <summary>
-        /// Gets the ordinal position of the parameter. The first parameter has ordinal zero.
-        /// The 'this' parameter ('Me' in Visual Basic) has ordinal -1.
-        /// </summary>
-        int Ordinal { get; }
+		string? Name { get; }
 
-        /// <summary>
-        /// Returns true if the parameter specifies a default value to be passed
-        /// when no value is provided as an argument to a call. The default value
-        /// can be obtained with the <see cref="ExplicitDefaultValue"/> property.
-        /// </summary>
-        bool HasExplicitDefaultValue { get; }
+		ITypeSymbol ParameterType { get; }
 
-        /// <summary>
-        /// Returns the default value of the parameter. 
-        /// </summary>
-        /// <remarks>
-        /// Returns null if the parameter type is a struct and the default value of the parameter
-        /// is the default value of the struct type.
-        /// </remarks>
-        /// <exception cref="System.InvalidOperationException">The parameter has no default value.</exception>
-        object? ExplicitDefaultValue { get; }
+		int Position { get; }
 
-        /// <summary>
-        /// Get the original definition of this symbol. If this symbol is derived from another
-        /// symbol by (say) type substitution, this gets the original symbol, as it was defined in
-        /// source or metadata.
-        /// </summary>
-        new IParameterSymbol OriginalDefinition { get; }
-
-    }
+	}
 
 }

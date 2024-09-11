@@ -1,0 +1,14 @@
+﻿<Project Sdk="MSTest.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentAssertions" Version="6.8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.CoreLib.Tests" />
         <InternalsVisibleTo Include="IKVM.Runtime" />
         <InternalsVisibleTo Include="IKVM.Tools.Core" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
@@ -94,10 +95,6 @@
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Symbols\Metadata\" />
     </ItemGroup>
 
 </Project>

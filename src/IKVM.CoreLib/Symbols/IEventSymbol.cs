@@ -1,56 +1,41 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using System.Reflection;
+
+namespace IKVM.CoreLib.Symbols
 {
 
-    /// <summary>
-    /// Represents an event.
-    /// </summary>
-    /// <remarks>
-    /// This interface is reserved for implementation by its associated APIs. We reserve the right to
-    /// change it in the future.
-    /// </remarks>
-    interface IEventSymbol : ISymbol
-    {
+	interface IEventSymbol : IMemberSymbol
+	{
 
-        /// <summary>
-        /// The type of the event. 
-        /// </summary>
-        ITypeSymbol Type { get; }
+		IMethodSymbol? AddMethod { get; }
 
-        /// <summary>
-        /// The 'add' accessor of the event.  Null only in error scenarios.
-        /// </summary>
-        IMethodSymbol? AddMethod { get; }
+		EventAttributes Attributes { get; }
 
-        /// <summary>
-        /// The 'remove' accessor of the event.  Null only in error scenarios.
-        /// </summary>
-        IMethodSymbol? RemoveMethod { get; }
+		ITypeSymbol? EventHandlerType { get; }
 
-        /// <summary>
-        /// The 'raise' accessor of the event.  Null if there is no raise method.
-        /// </summary>
-        IMethodSymbol? RaiseMethod { get; }
+		bool IsMulticast { get; }
 
-        /// <summary>
-        /// The original definition of the event. If the event is constructed from another
-        /// symbol by type substitution, OriginalDefinition gets the original symbol, as it was 
-        /// defined in source or metadata.
-        /// </summary>
-        new IEventSymbol OriginalDefinition { get; }
+		bool IsSpecialName { get; }
 
-        /// <summary>
-        /// Returns the overridden event, or null.
-        /// </summary>
-        IEventSymbol? OverriddenEvent { get; }
+		IMethodSymbol? RaiseMethod { get; }
 
-        /// <summary>
-        /// Returns interface properties explicitly implemented by this event.
-        /// </summary>
-        /// <remarks>
-        /// Properties imported from metadata can explicitly implement more than one event.
-        /// </remarks>
-        ImmutableArray<IEventSymbol> ExplicitInterfaceImplementations { get; }
+		IMethodSymbol? RemoveMethod { get; }
 
-    }
+		IMethodSymbol? GetAddMethod();
+
+		IMethodSymbol? GetAddMethod(bool nonPublic);
+
+		IMethodSymbol[] GetOtherMethods();
+
+		IMethodSymbol[] GetOtherMethods(bool nonPublic);
+
+		IMethodSymbol? GetRaiseMethod();
+
+		IMethodSymbol? GetRaiseMethod(bool nonPublic);
+
+		IMethodSymbol? GetRemoveMethod(bool nonPublic);
+
+		IMethodSymbol? GetRemoveMethod();
+
+	}
 
 }

@@ -1,88 +1,54 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    /// <summary>
-    /// Represents a .NET assembly, consisting of one or more modules.
-    /// </summary>
-    /// <remarks>
-    /// This interface is reserved for implementation by its associated APIs. We reserve the right to
-    /// change it in the future.
-    /// </remarks>
-    interface IAssemblySymbol : ISymbol
-    {
+	interface IAssemblySymbol : ISymbol, ICustomAttributeSymbolProvider
+	{
 
-        /// <summary>
-        /// True if the assembly contains interactive code.
-        /// </summary>
-        bool IsInteractive { get; }
+		ImmutableArray<ICustomAttributeSymbol> CustomAttributes { get; }
 
-        /// <summary>
-        /// Gets the name of this assembly.
-        /// </summary>
-        AssemblyIdentity Identity { get; }
+		ImmutableArray<ITypeSymbol> DefinedTypes { get; }
 
-        /// <summary>
-        /// Gets the merged root namespace that contains all namespaces and types defined in the modules
-        /// of this assembly. If there is just one module in this assembly, this property just returns the 
-        /// GlobalNamespace of that module.
-        /// </summary>
-        INamespaceSymbol GlobalNamespace { get; }
+		IMethodSymbol? EntryPoint { get; }
 
-        /// <summary>
-        /// Gets the modules in this assembly. (There must be at least one.) The first one is the main module
-        /// that holds the assembly manifest.
-        /// </summary>
-        IEnumerable<IModuleSymbol> Modules { get; }
+		ImmutableArray<ITypeSymbol> ExportedTypes { get; }
 
-        /// <summary>
-        /// Gets the set of type identifiers from this assembly.
-        /// </summary>
-        ICollection<string> TypeNames { get; }
+		string? FullName { get; }
 
-        /// <summary>
-        /// Gets the set of namespace names from this assembly.
-        /// </summary>
-        ICollection<string> NamespaceNames { get; }
+		string ImageRuntimeVersion { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether this assembly gives 
-        /// <paramref name="toAssembly"/> access to internal symbols</summary>
-        bool GivesAccessTo(IAssemblySymbol toAssembly);
+		IModuleSymbol ManifestModule { get; }
 
-        /// <summary>
-        /// Lookup a type within the assembly using the canonical CLR metadata name of the type.
-        /// </summary>
-        /// <param name="fullyQualifiedMetadataName">Type name.</param>
-        /// <returns>Symbol for the type or null if type cannot be found or is ambiguous. </returns>
-        INamedTypeSymbol? GetTypeByMetadataName(string fullyQualifiedMetadataName);
+		ImmutableArray<IModuleSymbol> Modules { get; }
 
-        /// <summary>
-        /// Determines if the assembly might contain extension methods.
-        /// If false, the assembly does not contain extension methods.
-        /// </summary>
-        bool MightContainExtensionMethods { get; }
+		ImmutableArray<ICustomAttributeSymbol> GetCustomAttributesData();
 
-        /// <summary>
-        /// Returns the type symbol for a forwarded type based its canonical CLR metadata name.
-        /// The name should refer to a non-nested type. If type with this name is not forwarded,
-        /// null is returned.
-        /// </summary>
-        INamedTypeSymbol? ResolveForwardedType(string fullyQualifiedMetadataName);
+		ImmutableArray<ITypeSymbol> GetExportedTypes();
 
-        /// <summary>
-        /// Returns type symbols for top-level (non-nested) types forwarded by this assembly.
-        /// </summary>
-        ImmutableArray<INamedTypeSymbol> GetForwardedTypes();
+		ImmutableArray<ITypeSymbol> GetForwardedTypes();
 
-        /// <summary>
-        /// If this symbol represents a metadata assembly returns the underlying <see cref="AssemblyMetadata"/>.
-        /// 
-        /// Otherwise, this returns <see langword="null"/>.
-        /// </summary>
-        AssemblyMetadata? GetMetadata();
+		IModuleSymbol? GetModule(string name);
 
-    }
+		ImmutableArray<IModuleSymbol> GetModules();
+
+		ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules);
+
+		AssemblyName GetName();
+
+		AssemblyName GetName(bool copiedName);
+
+		ImmutableArray<AssemblyName> GetReferencedAssemblies();
+
+		ITypeSymbol? GetType(string name, bool throwOnError);
+
+		ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
+
+		ITypeSymbol? GetType(string name);
+
+		ImmutableArray<ITypeSymbol> GetTypes();
+
+	}
 
 }

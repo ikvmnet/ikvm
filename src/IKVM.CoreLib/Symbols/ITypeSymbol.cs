@@ -1,130 +1,247 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    /// <summary>
-    /// Represents a type.
-    /// </summary>
-    interface ITypeSymbol : INamespaceOrTypeSymbol
-    {
+	interface ITypeSymbol : IMemberSymbol
+	{
 
-        /// <summary>
-        /// An enumerated value that identifies whether this type is an array, pointer, enum, and so on.
-        /// </summary>
-        TypeKind TypeKind { get; }
+		IAssemblySymbol Assembly { get; }
 
-        /// <summary>
-        /// The declared base type of this type, or null. The object type, interface types,
-        /// and pointer types do not have a base type. The base type of a type parameter
-        /// is its effective base class.
-        /// </summary>
-        INamedTypeSymbol? BaseType { get; }
+		string? AssemblyQualifiedName { get; }
 
-        /// <summary>
-        /// Gets the set of interfaces that this type directly implements. This set does not include
-        /// interfaces that are base interfaces of directly implemented interfaces. This does
-        /// include the interfaces declared as constraints on type parameters.
-        /// </summary>
-        ImmutableArray<INamedTypeSymbol> Interfaces { get; }
+		TypeAttributes Attributes { get; }
 
-        /// <summary>
-        /// The list of all interfaces of which this type is a declared subtype, excluding this type
-        /// itself. This includes all declared base interfaces, all declared base interfaces of base
-        /// types, and all declared base interfaces of those results (recursively). This also is the effective
-        /// interface set of a type parameter. Each result
-        /// appears exactly once in the list. This list is topologically sorted by the inheritance
-        /// relationship: if interface type A extends interface type B, then A precedes B in the
-        /// list. This is not quite the same as "all interfaces of which this type is a proper
-        /// subtype" because it does not take into account variance: AllInterfaces for
-        /// IEnumerable&lt;string&gt; will not include IEnumerable&lt;object&gt;.
-        /// </summary>
-        ImmutableArray<INamedTypeSymbol> AllInterfaces { get; }
+		ITypeSymbol? BaseType { get; }
 
-        /// <summary>
-        /// True if this type is known to be a reference type. It is never the case that
-        /// <see cref="IsReferenceType"/> and <see cref="IsValueType"/> both return true. However, for an unconstrained type
-        /// parameter, <see cref="IsReferenceType"/> and <see cref="IsValueType"/> will both return false.
-        /// </summary>
-        bool IsReferenceType { get; }
+		bool ContainsGenericParameters { get; }
 
-        /// <summary>
-        /// True if this type is known to be a value type. It is never the case that
-        /// <see cref="IsReferenceType"/> and <see cref="IsValueType"/> both return true. However, for an unconstrained type
-        /// parameter, <see cref="IsReferenceType"/> and <see cref="IsValueType"/> will both return false.
-        /// </summary>
-        bool IsValueType { get; }
+		IMethodBaseSymbol? DeclaringMethod { get; }
 
-        /// <summary>
-        /// Is this a symbol for an anonymous type (including anonymous VB delegate).
-        /// </summary>
-        bool IsAnonymousType { get; }
+		string? FullName { get; }
 
-        /// <summary>
-        /// Is this a symbol for a tuple .
-        /// </summary>
-        bool IsTupleType { get; }
+		GenericParameterAttributes GenericParameterAttributes { get; }
 
-        /// <summary>
-        /// True if the type represents a native integer. In C#, the types represented
-        /// by language keywords 'nint' and 'nuint'.
-        /// </summary>
-        bool IsNativeIntegerType { get; }
+		int GenericParameterPosition { get; }
 
-        /// <summary>
-        /// The original definition of this symbol. If this symbol is constructed from another
-        /// symbol by type substitution then <see cref="OriginalDefinition"/> gets the original symbol as it was defined in
-        /// source or metadata.
-        /// </summary>
-        new ITypeSymbol OriginalDefinition { get; }
+		ImmutableArray<ITypeSymbol> GenericTypeArguments { get; }
 
-        /// <summary>
-        /// An enumerated value that identifies certain 'special' types such as <see cref="System.Object"/>. 
-        /// Returns <see cref="Microsoft.CodeAnalysis.SpecialType.None"/> if the type is not special.
-        /// </summary>
-        SpecialType SpecialType { get; }
+		bool HasElementType { get; }
 
-        /// <summary>
-        /// Returns the corresponding symbol in this type or a base type that implements 
-        /// interfaceMember (either implicitly or explicitly), or null if no such symbol exists
-        /// (which might be either because this type doesn't implement the container of
-        /// interfaceMember, or this type doesn't supply a member that successfully implements
-        /// interfaceMember).
-        /// </summary>
-        /// <param name="interfaceMember">
-        /// Must be a non-null interface property, method, or event.
-        /// </param>
-        ISymbol? FindImplementationForInterfaceMember(ISymbol interfaceMember);
+		bool IsAbstract { get; }
 
-        /// <summary>
-        /// True if the type is ref-like, meaning it follows rules similar to CLR by-ref variables. False if the type
-        /// is not ref-like or if the language has no concept of ref-like types.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="Span{T}" /> is a commonly used ref-like type.
-        /// </remarks>
-        bool IsRefLikeType { get; }
+		bool IsArray { get; }
 
-        /// <summary>
-        /// True if the type is unmanaged according to language rules. False if managed or if the language
-        /// has no concept of unmanaged types.
-        /// </summary>
-        bool IsUnmanagedType { get; }
+		bool IsAutoLayout { get; }
 
-        /// <summary>
-        /// True if the type is readonly.
-        /// </summary>
-        bool IsReadOnly { get; }
+		bool IsByRef { get; }
 
-        /// <summary>
-        /// For source symbols, true if the type is a record.
-        /// For metadata symbols, true if the type is a record and a reference type.
-        /// </summary>
-        /// <remarks>
-        /// Returns false for record structs in metadata since they don't have any distinctive marker.
-        /// </remarks>
-        bool IsRecord { get; }
+		bool IsByRefLike { get; }
 
-    }
+		bool IsClass { get; }
+
+		bool IsConstructedGenericType { get; }
+
+		bool IsEnum { get; }
+
+		bool IsExplicitLayout { get; }
+
+		bool IsFunctionPointer { get; }
+
+		bool IsGenericMethodParameter { get; }
+
+		bool IsGenericParameter { get; }
+
+		bool IsGenericType { get; }
+
+		bool IsInterface { get; }
+
+		bool IsLayoutSequential { get; }
+
+		bool IsNested { get; }
+
+		bool IsNestedAssembly { get; }
+
+		bool IsNestedFamANDAssem { get; }
+
+		bool IsNestedFamily { get; }
+
+		bool IsNestedPrivate { get; }
+
+		bool IsNestedPublic { get; }
+
+		bool IsNotPublic { get; }
+
+		bool IsPointer { get; }
+
+		bool IsPrimitive { get; }
+
+		bool IsPublic { get; }
+
+		bool IsSealed { get; }
+
+		bool IsSecurityCritical { get; }
+
+		bool IsSecuritySafeCritical { get; }
+
+		bool IsSecurityTransparent { get; }
+
+		bool IsSerializable { get; }
+
+		bool IsSignatureType { get; }
+
+		bool IsSZArray { get; }
+
+		bool IsTypeDefinition { get; }
+
+		bool IsUnmanagedFunctionPointer { get; }
+
+		bool IsValueType { get; }
+
+		bool IsVariableBoundArray { get; }
+
+		bool IsVisible { get; }
+
+		string? Namespace { get; }
+
+		IConstructorSymbol? TypeInitializer { get; }
+
+		int GetArrayRank();
+
+		System.Reflection.TypeAttributes GetAttributeFlagsImpl();
+
+		IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types);
+
+		IConstructorSymbol? GetConstructor(ITypeSymbol[] types);
+
+		IConstructorSymbol[] GetConstructors();
+
+		IMemberSymbol[] GetDefaultMembers();
+
+		ITypeSymbol? GetElementType();
+
+		string? GetEnumName(object value);
+
+		string[] GetEnumNames();
+
+		ITypeSymbol GetEnumUnderlyingType();
+
+		Array GetEnumValues();
+
+		Array GetEnumValuesAsUnderlyingType();
+
+		IEventSymbol? GetEvent(string name, BindingFlags bindingAttr);
+
+		IEventSymbol? GetEvent(string name);
+
+		IEventSymbol[] GetEvents();
+
+		IEventSymbol[] GetEvents(BindingFlags bindingAttr);
+
+		IFieldSymbol? GetField(string name);
+
+		IFieldSymbol? GetField(string name, BindingFlags bindingAttr);
+
+		IFieldSymbol[] GetFields();
+
+		IFieldSymbol[] GetFields(BindingFlags bindingAttr);
+
+		ITypeSymbol[] GetFunctionPointerCallingConventions();
+
+		ITypeSymbol[] GetFunctionPointerParameterTypes();
+
+		ITypeSymbol GetFunctionPointerReturnType();
+
+		ITypeSymbol[] GetGenericArguments();
+
+		ITypeSymbol[] GetGenericParameterConstraints();
+
+		ITypeSymbol GetGenericTypeDefinition();
+
+		ITypeSymbol? GetInterface(string name);
+
+		ITypeSymbol? GetInterface(string name, bool ignoreCase);
+
+		InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType);
+
+		ITypeSymbol[] GetInterfaces();
+
+		IMemberSymbol[] GetMember(string name);
+
+		IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr);
+
+		IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, BindingFlags bindingAttr);
+
+		IMemberSymbol[] GetMembers(BindingFlags bindingAttr);
+
+		IMemberSymbol[] GetMembers();
+
+		IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr);
+
+		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types);
+
+		IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types);
+
+		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
+
+		IMethodSymbol? GetMethod(string name);
+
+		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+		IMethodSymbol[] GetMethods(BindingFlags bindingAttr);
+
+		IMethodSymbol[] GetMethods();
+
+		ITypeSymbol? GetNestedType(string name);
+
+		ITypeSymbol? GetNestedType(string name, BindingFlags bindingAttr);
+
+		ITypeSymbol[] GetNestedTypes();
+
+		ITypeSymbol[] GetNestedTypes(BindingFlags bindingAttr);
+
+		ITypeSymbol[] GetOptionalCustomModifiers();
+
+		IPropertySymbol[] GetProperties();
+
+		IPropertySymbol[] GetProperties(BindingFlags bindingAttr);
+
+		IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+		IPropertySymbol? GetProperty(string name, ITypeSymbol[] types);
+
+		IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types);
+
+		IPropertySymbol? GetProperty(string name, BindingFlags bindingAttr);
+
+		IPropertySymbol? GetProperty(string name);
+
+		IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType);
+
+		ITypeSymbol[] GetRequiredCustomModifiers();
+
+		bool IsAssignableFrom(ITypeSymbol? c);
+
+		bool IsAssignableTo(ITypeSymbol? targetType);
+
+		bool IsEnumDefined(object value);
+
+		bool IsSubclassOf(ITypeSymbol c);
+
+		ITypeSymbol MakeArrayType();
+
+		ITypeSymbol MakeArrayType(int rank);
+
+		ITypeSymbol MakeByRefType();
+
+		ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments);
+
+		ITypeSymbol MakePointerType();
+
+	}
 
 }
