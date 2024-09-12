@@ -18,9 +18,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 	class IkvmReflectionModuleSymbol : IkvmReflectionSymbol, IModuleSymbol
 	{
 
+		/// <summary>
+		/// Returns <c>true</c> if the given <see cref="Type"/> is a TypeDef. That is, not a modified or substituted or generic parameter type.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
 		static bool IsTypeDefinition(Type type)
 		{
-			return type.HasElementType == false && type.IsConstructedGenericType == false;
+			return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
 		}
 
 		readonly Module _module;

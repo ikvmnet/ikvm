@@ -14,12 +14,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
 	class ReflectionModuleSymbol : ReflectionSymbol, IModuleSymbol
 	{
 
+		/// <summary>
+		/// Returns <c>true</c> if the given <see cref="Type"/> is a TypeDef. That is, not a modified or substituted or generic parameter type.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
 		static bool IsTypeDefinition(Type type)
 		{
 #if NET
 			return type.IsTypeDefinition;
 #else
-			return type.HasElementType == false && type.IsConstructedGenericType == false;
+			return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
 #endif
 		}
 
@@ -79,6 +84,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 			// index of current record is specified row - base
 			var idx = row - _typesBaseRow;
+			if (idx < 0)
+				throw new Exception();
+
 			Debug.Assert(idx >= 0);
 			Debug.Assert(idx < _typesSource.Length);
 
