@@ -38,8 +38,6 @@
 
 		bool IsStatic { get; }
 
-		ITypeSymbol GetModifiedFieldType();
-
 		ITypeSymbol[] GetOptionalCustomModifiers();
 
 		object? GetRawConstantValue();

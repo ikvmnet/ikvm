@@ -4,12 +4,10 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-	interface IParameterSymbol : ICustomAttributeSymbolProvider
+	interface IParameterSymbol : ISymbol, ICustomAttributeSymbolProvider
 	{
 
 		ParameterAttributes Attributes { get; }
-
-		ImmutableArray<ICustomAttributeSymbol> CustomAttributes { get; }
 
 		object? DefaultValue { get; }
 

@@ -9,8 +9,6 @@ namespace IKVM.CoreLib.Symbols
 
 		IAssemblySymbol Assembly { get; }
 
-		ImmutableArray<ICustomAttributeSymbol> CustomAttributes { get; }
-
 		string FullyQualifiedName { get; }
 
 		int MetadataToken { get; }
@@ -34,8 +32,6 @@ namespace IKVM.CoreLib.Symbols
 		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
 
 		IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers);
-
-		IMethodSymbol? GetMethodImpl(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.Binder? binder, System.Reflection.CallingConventions callConvention, ITypeSymbol[]? types, System.Reflection.ParameterModifier[]? modifiers);
 
 		IMethodSymbol[] GetMethods();
 

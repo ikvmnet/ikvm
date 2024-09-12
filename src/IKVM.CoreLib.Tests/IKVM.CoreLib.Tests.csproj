@@ -1,6 +1,8 @@
 ﻿<Project Sdk="MSTest.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>

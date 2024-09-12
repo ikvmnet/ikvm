@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -7,10 +7,9 @@ using System.Runtime.CompilerServices;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-	class ReflectionAssemblySymbol : IAssemblySymbol
+	class ReflectionAssemblySymbol : ReflectionSymbol, IAssemblySymbol
 	{
 
-		readonly ReflectionSymbolContext _context;
 		readonly Assembly _assembly;
 		readonly ConditionalWeakTable<Module, ReflectionModuleSymbol> _modules = new();
 
@@ -19,9 +18,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="context"></param>
 		/// <param name="assembly"></param>
-		public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly assembly)
+		public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly assembly) :
+			base(context)
 		{
-			_context = context ?? throw new ArgumentNullException(nameof(context));
 			_assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
 		}
 
@@ -34,50 +33,26 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		internal ReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
 		{
 			Debug.Assert(module.Assembly == _assembly);
-			return _modules.GetValue(module, _ => new ReflectionModuleSymbol(_context, _));
+			return _modules.GetValue(module, _ => new ReflectionModuleSymbol(Context, _));
 		}
 
-		public ImmutableArray<ICustomAttributeSymbol> CustomAttributes => throw new System.NotImplementedException();
+		public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
 
-		public ImmutableArray<ITypeSymbol> DefinedTypes => throw new System.NotImplementedException();
+		public IMethodSymbol? EntryPoint => _assembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
 
-		public IMethodSymbol? EntryPoint => throw new System.NotImplementedException();
-
-		public ImmutableArray<ITypeSymbol> ExportedTypes => throw new System.NotImplementedException();
+		public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_assembly.ExportedTypes);
 
 		public string? FullName => _assembly.FullName;
 
 		public string ImageRuntimeVersion => _assembly.ImageRuntimeVersion;
 
-		public IModuleSymbol ManifestModule => throw new System.NotImplementedException();
+		public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
 
-		public ImmutableArray<IModuleSymbol> Modules => throw new System.NotImplementedException();
+		public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_assembly.Modules);
 
-		public bool IsMissing => throw new System.NotImplementedException();
-
-		public ImmutableArray<ICustomAttributeSymbol> GetCustomAttributes(bool inherit)
+		public ITypeSymbol[] GetExportedTypes()
 		{
-			throw new System.NotImplementedException();
-		}
-
-		public ImmutableArray<ICustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public ImmutableArray<ICustomAttributeSymbol> GetCustomAttributesData()
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public ImmutableArray<ITypeSymbol> GetExportedTypes()
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public ImmutableArray<ITypeSymbol> GetForwardedTypes()
-		{
-			throw new System.NotImplementedException();
+			return ResolveTypeSymbols(_assembly.GetExportedTypes());
 		}
 
 		public IModuleSymbol? GetModule(string name)
@@ -85,14 +60,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _assembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
 		}
 
-		public ImmutableArray<IModuleSymbol> GetModules()
+		public IModuleSymbol[] GetModules()
 		{
-			throw new System.NotImplementedException();
+			return ResolveModuleSymbols(_assembly.GetModules());
 		}
 
-		public ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules)
+		public IModuleSymbol[] GetModules(bool getResourceModules)
 		{
-			throw new System.NotImplementedException();
+			return ResolveModuleSymbols(_assembly.GetModules(getResourceModules));
 		}
 
 		public AssemblyName GetName()
@@ -105,27 +80,37 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _assembly.GetName(copiedName);
 		}
 
-		public ImmutableArray<AssemblyName> GetReferencedAssemblies()
+		public AssemblyName[] GetReferencedAssemblies()
 		{
-			throw new System.NotImplementedException();
+			return _assembly.GetReferencedAssemblies();
 		}
 
 		public ITypeSymbol? GetType(string name, bool throwOnError)
 		{
-			return _assembly.GetType(name, throwOnError) is Type t ? _context.GetOrCreateTypeSymbol(t) : null;
+			return _assembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
 		}
 
 		public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
 		{
-			return _assembly.GetType(name, throwOnError, ignoreCase) is Type t ? _context.GetOrCreateTypeSymbol(t) : null;
+			return _assembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
 		}
 
 		public ITypeSymbol? GetType(string name)
 		{
-			return _assembly.GetType(name) is Type t ? _context.GetOrCreateTypeSymbol(t) : null;
+			return _assembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
 		}
 
-		public ImmutableArray<ITypeSymbol> GetTypes()
+		public ITypeSymbol[] GetTypes()
+		{
+			return ResolveTypeSymbols(_assembly.GetTypes());
+		}
+
+		public ICustomAttributeSymbol[] GetCustomAttributes(bool inherit)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
 		{
 			throw new System.NotImplementedException();
 		}

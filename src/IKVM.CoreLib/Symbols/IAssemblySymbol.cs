@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -7,13 +7,11 @@ namespace IKVM.CoreLib.Symbols
 	interface IAssemblySymbol : ISymbol, ICustomAttributeSymbolProvider
 	{
 
-		ImmutableArray<ICustomAttributeSymbol> CustomAttributes { get; }
-
-		ImmutableArray<ITypeSymbol> DefinedTypes { get; }
+		IEnumerable<ITypeSymbol> DefinedTypes { get; }
 
 		IMethodSymbol? EntryPoint { get; }
 
-		ImmutableArray<ITypeSymbol> ExportedTypes { get; }
+		IEnumerable<ITypeSymbol> ExportedTypes { get; }
 
 		string? FullName { get; }
 
@@ -21,25 +19,21 @@ namespace IKVM.CoreLib.Symbols
 
 		IModuleSymbol ManifestModule { get; }
 
-		ImmutableArray<IModuleSymbol> Modules { get; }
+		IEnumerable<IModuleSymbol> Modules { get; }
 
-		ImmutableArray<ICustomAttributeSymbol> GetCustomAttributesData();
-
-		ImmutableArray<ITypeSymbol> GetExportedTypes();
-
-		ImmutableArray<ITypeSymbol> GetForwardedTypes();
+		ITypeSymbol[] GetExportedTypes();
 
 		IModuleSymbol? GetModule(string name);
 
-		ImmutableArray<IModuleSymbol> GetModules();
+		IModuleSymbol[] GetModules();
 
-		ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules);
+		IModuleSymbol[] GetModules(bool getResourceModules);
 
 		AssemblyName GetName();
 
 		AssemblyName GetName(bool copiedName);
 
-		ImmutableArray<AssemblyName> GetReferencedAssemblies();
+		AssemblyName[] GetReferencedAssemblies();
 
 		ITypeSymbol? GetType(string name, bool throwOnError);
 
@@ -47,7 +41,7 @@ namespace IKVM.CoreLib.Symbols
 
 		ITypeSymbol? GetType(string name);
 
-		ImmutableArray<ITypeSymbol> GetTypes();
+		ITypeSymbol[] GetTypes();
 
 	}
 

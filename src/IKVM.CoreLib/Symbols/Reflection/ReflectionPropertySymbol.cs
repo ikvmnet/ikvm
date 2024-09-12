@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-	class ReflectionPropertySymbol : IPropertySymbol
+	class ReflectionPropertySymbol : ReflectionMemberSymbol, IPropertySymbol
 	{
 
-		readonly ReflectionSymbolContext _context;
-		readonly ReflectionTypeSymbol _type;
 		readonly PropertyInfo _property;
 
 		/// <summary>
@@ -18,53 +15,25 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <param name="context"></param>
 		/// <param name="type"></param>
 		/// <param name="property"></param>
-		public ReflectionPropertySymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, PropertyInfo property)
+		public ReflectionPropertySymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, PropertyInfo property) :
+			base(context, type.ContainingModule, type, property)
 		{
-			_context = context ?? throw new ArgumentNullException(nameof(context));
-			_type = type ?? throw new ArgumentNullException(nameof(type));
 			_property = property ?? throw new ArgumentNullException(nameof(property));
 		}
 
-		public PropertyAttributes Attributes => throw new NotImplementedException();
+		public PropertyAttributes Attributes => _property.Attributes;
 
-		public bool CanRead => throw new NotImplementedException();
+		public bool CanRead => _property.CanRead;
 
-		public bool CanWrite => throw new NotImplementedException();
+		public bool CanWrite => _property.CanWrite;
 
-		public IMethodSymbol? GetMethod => throw new NotImplementedException();
+		public bool IsSpecialName => _property.IsSpecialName;
 
-		public bool IsSpecialName => throw new NotImplementedException();
+		public ITypeSymbol PropertyType => ResolveTypeSymbol(_property.PropertyType);
 
-		public ITypeSymbol PropertyType => throw new NotImplementedException();
+		public IMethodSymbol? GetMethod => _property.GetMethod is { } m ? ResolveMethodSymbol(m) : null;
 
-		public IMethodSymbol? SetMethod => throw new NotImplementedException();
-
-		public ITypeSymbol? DeclaringType => throw new NotImplementedException();
-
-		public MemberTypes MemberType => throw new NotImplementedException();
-
-		public int MetadataToken => throw new NotImplementedException();
-
-		public IModuleSymbol Module => throw new NotImplementedException();
-
-		public string Name => throw new NotImplementedException();
-
-		public bool IsMissing => throw new NotImplementedException();
-
-		public ImmutableArray<ICustomAttributeSymbol> GetCustomAttributes(bool inherit)
-		{
-			throw new NotImplementedException();
-		}
-
-		public ImmutableArray<ICustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool IsDefined(ITypeSymbol attributeType, bool inherit)
-		{
-			throw new NotImplementedException();
-		}
+		public IMethodSymbol? SetMethod => _property.SetMethod is { } m ? ResolveMethodSymbol(m) : null;
 
 	}
 

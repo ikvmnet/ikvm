@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Symbols
 
 		int GenericParameterPosition { get; }
 
-		ImmutableArray<ITypeSymbol> GenericTypeArguments { get; }
+		ITypeSymbol[] GenericTypeArguments { get; }
 
 		bool HasElementType { get; }
 
@@ -38,8 +38,6 @@ namespace IKVM.CoreLib.Symbols
 
 		bool IsByRef { get; }
 
-		bool IsByRefLike { get; }
-
 		bool IsClass { get; }
 
 		bool IsConstructedGenericType { get; }
@@ -47,10 +45,6 @@ namespace IKVM.CoreLib.Symbols
 		bool IsEnum { get; }
 
 		bool IsExplicitLayout { get; }
-
-		bool IsFunctionPointer { get; }
-
-		bool IsGenericMethodParameter { get; }
 
 		bool IsGenericParameter { get; }
 
@@ -90,17 +84,7 @@ namespace IKVM.CoreLib.Symbols
 
 		bool IsSerializable { get; }
 
-		bool IsSignatureType { get; }
-
-		bool IsSZArray { get; }
-
-		bool IsTypeDefinition { get; }
-
-		bool IsUnmanagedFunctionPointer { get; }
-
 		bool IsValueType { get; }
-
-		bool IsVariableBoundArray { get; }
 
 		bool IsVisible { get; }
 
@@ -109,8 +93,6 @@ namespace IKVM.CoreLib.Symbols
 		IConstructorSymbol? TypeInitializer { get; }
 
 		int GetArrayRank();
-
-		System.Reflection.TypeAttributes GetAttributeFlagsImpl();
 
 		IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types);
 
@@ -130,8 +112,6 @@ namespace IKVM.CoreLib.Symbols
 
 		Array GetEnumValues();
 
-		Array GetEnumValuesAsUnderlyingType();
-
 		IEventSymbol? GetEvent(string name, BindingFlags bindingAttr);
 
 		IEventSymbol? GetEvent(string name);
@@ -147,12 +127,6 @@ namespace IKVM.CoreLib.Symbols
 		IFieldSymbol[] GetFields();
 
 		IFieldSymbol[] GetFields(BindingFlags bindingAttr);
-
-		ITypeSymbol[] GetFunctionPointerCallingConventions();
-
-		ITypeSymbol[] GetFunctionPointerParameterTypes();
-
-		ITypeSymbol GetFunctionPointerReturnType();
 
 		ITypeSymbol[] GetGenericArguments();
 
@@ -172,19 +146,13 @@ namespace IKVM.CoreLib.Symbols
 
 		IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr);
 
-		IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, BindingFlags bindingAttr);
+		IMemberSymbol[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr);
 
 		IMemberSymbol[] GetMembers(BindingFlags bindingAttr);
 
 		IMemberSymbol[] GetMembers();
 
-		IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, ParameterModifier[]? modifiers);
-
 		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr);
-
-		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types);
-
-		IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types);
 
 		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
 
@@ -204,8 +172,6 @@ namespace IKVM.CoreLib.Symbols
 
 		ITypeSymbol[] GetNestedTypes(BindingFlags bindingAttr);
 
-		ITypeSymbol[] GetOptionalCustomModifiers();
-
 		IPropertySymbol[] GetProperties();
 
 		IPropertySymbol[] GetProperties(BindingFlags bindingAttr);
@@ -222,11 +188,7 @@ namespace IKVM.CoreLib.Symbols
 
 		IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType);
 
-		ITypeSymbol[] GetRequiredCustomModifiers();
-
 		bool IsAssignableFrom(ITypeSymbol? c);
-
-		bool IsAssignableTo(ITypeSymbol? targetType);
 
 		bool IsEnumDefined(object value);
 
