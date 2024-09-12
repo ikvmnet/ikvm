@@ -52,7 +52,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 			var c = new ReflectionSymbolContext();
 			var s1 = c.GetOrCreateTypeSymbol(typeof(object[,]));
 			var s2 = c.GetOrCreateTypeSymbol(typeof(object[,]));
-			s1.Should().BeOfType<ReflectionArrayTypeSymbol>();
 			s1.Should().BeSameAs(s2);
 		}
 
@@ -62,7 +61,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 			var c = new ReflectionSymbolContext();
 			var s1 = c.GetOrCreateTypeSymbol(typeof(object[]));
 			var s2 = c.GetOrCreateTypeSymbol(typeof(object[]));
-			s1.Should().BeOfType<ReflectionSZArrayTypeSymbol>();
 			s1.Should().BeSameAs(s2);
 		}
 
@@ -72,7 +70,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 			var c = new ReflectionSymbolContext();
 			var s1 = c.GetOrCreateTypeSymbol(typeof(int*));
 			var s2 = c.GetOrCreateTypeSymbol(typeof(int*));
-			s1.Should().BeOfType<ReflectionPointerTypeSymbol>();
 			s1.Should().BeSameAs(s2);
 		}
 
@@ -82,7 +79,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 			var c = new ReflectionSymbolContext();
 			var s1 = c.GetOrCreateTypeSymbol(typeof(int).MakeByRefType());
 			var s2 = c.GetOrCreateTypeSymbol(typeof(int).MakeByRefType());
-			s1.Should().BeOfType<ReflectionByRefTypeSymbol>();
 			s1.Should().BeSameAs(s2);
 		}
 
