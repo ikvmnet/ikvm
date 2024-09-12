@@ -33,10 +33,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		int _eventsBaseRow;
 		ReflectionEventSymbol?[]? _events;
 
-		ReflectionArrayTypeSymbol?[]? _asArray;
-		ReflectionSZArrayTypeSymbol? _asSZArray;
-		ReflectionPointerTypeSymbol? _asPointer;
-		ReflectionByRefTypeSymbol? _asByRef;
+		ReflectionTypeSymbol?[]? _asArray;
+		ReflectionTypeSymbol? _asSZArray;
+		ReflectionTypeSymbol? _asPointer;
+		ReflectionTypeSymbol? _asByRef;
 
 		Type[]? _genericParametersSource;
 		ReflectionTypeSymbol?[]? _genericParameters;
@@ -790,7 +790,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public ITypeSymbol MakeArrayType()
 		{
 			if (_asSZArray == null)
-				Interlocked.CompareExchange(ref _asSZArray, new ReflectionSZArrayTypeSymbol(Context, ContainingModule, _type.MakeArrayType(), this), null);
+				Interlocked.CompareExchange(ref _asSZArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType()), null);
 
 			return _asSZArray;
 		}
@@ -801,11 +801,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				return MakeArrayType();
 
 			if (_asArray == null)
-				Interlocked.CompareExchange(ref _asArray, new ReflectionArrayTypeSymbol?[32], null);
+				Interlocked.CompareExchange(ref _asArray, new ReflectionTypeSymbol?[32], null);
 
 			ref var asArray = ref _asArray[rank];
 			if (asArray == null)
-				Interlocked.CompareExchange(ref asArray, new ReflectionArrayTypeSymbol(Context, ContainingModule, _type.MakeArrayType(rank), this), null);
+				Interlocked.CompareExchange(ref asArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType(rank)), null);
 
 			return asArray;
 		}
@@ -813,7 +813,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public ITypeSymbol MakeByRefType()
 		{
 			if (_asByRef == null)
-				Interlocked.CompareExchange(ref _asByRef, new ReflectionByRefTypeSymbol(Context, ContainingModule, _type.MakeByRefType(), this), null);
+				Interlocked.CompareExchange(ref _asByRef, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeByRefType()), null);
 
 			return _asByRef;
 		}
@@ -826,7 +826,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public ITypeSymbol MakePointerType()
 		{
 			if (_asPointer == null)
-				Interlocked.CompareExchange(ref _asPointer, new ReflectionPointerTypeSymbol(Context, ContainingModule, _type.MakePointerType(), this), null);
+				Interlocked.CompareExchange(ref _asPointer, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakePointerType()), null);
 
 			return _asPointer;
 		}
