@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -8,8 +7,6 @@ namespace IKVM.CoreLib.Symbols
 	{
 
 		ParameterAttributes Attributes { get; }
-
-		object? DefaultValue { get; }
 
 		bool HasDefaultValue { get; }
 

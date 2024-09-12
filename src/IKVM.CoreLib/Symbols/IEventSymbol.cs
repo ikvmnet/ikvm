@@ -12,8 +12,6 @@ namespace IKVM.CoreLib.Symbols
 
 		ITypeSymbol? EventHandlerType { get; }
 
-		bool IsMulticast { get; }
-
 		bool IsSpecialName { get; }
 
 		IMethodSymbol? RaiseMethod { get; }

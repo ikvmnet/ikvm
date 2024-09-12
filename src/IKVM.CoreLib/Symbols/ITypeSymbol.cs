@@ -76,12 +76,6 @@ namespace IKVM.CoreLib.Symbols
 
 		bool IsSealed { get; }
 
-		bool IsSecurityCritical { get; }
-
-		bool IsSecuritySafeCritical { get; }
-
-		bool IsSecurityTransparent { get; }
-
 		bool IsSerializable { get; }
 
 		bool IsValueType { get; }
@@ -109,8 +103,6 @@ namespace IKVM.CoreLib.Symbols
 		string[] GetEnumNames();
 
 		ITypeSymbol GetEnumUnderlyingType();
-
-		Array GetEnumValues();
 
 		IEventSymbol? GetEvent(string name, BindingFlags bindingAttr);
 

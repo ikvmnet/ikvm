@@ -1,25 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace IKVM.CoreLib.Symbols.Reflection
+using Assembly = IKVM.Reflection.Assembly;
+using AssemblyName = IKVM.Reflection.AssemblyName;
+using Module = IKVM.Reflection.Module;
+using Type = IKVM.Reflection.Type;
+
+namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-	class ReflectionAssemblySymbol : ReflectionSymbol, IAssemblySymbol
+	class IkvmReflectionAssemblySymbol : IkvmReflectionSymbol, IAssemblySymbol
 	{
 
 		readonly Assembly _assembly;
-		readonly ConditionalWeakTable<Module, ReflectionModuleSymbol> _modules = new();
+		readonly ConditionalWeakTable<Module, IkvmReflectionModuleSymbol> _modules = new();
+
+		System.Reflection.AssemblyName? _assemblyName;
 
 		/// <summary>
 		/// Initializes a new instance.
 		/// </summary>
 		/// <param name="context"></param>
 		/// <param name="assembly"></param>
-		public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly assembly) :
+		public IkvmReflectionAssemblySymbol(IkvmReflectionSymbolContext context, Assembly assembly) :
 			base(context)
 		{
 			_assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
@@ -31,10 +36,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <param name="module"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+		internal IkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
 		{
 			Debug.Assert(module.Assembly == _assembly);
-			return _modules.GetValue(module, _ => new ReflectionModuleSymbol(Context, _));
+			return _modules.GetValue(module, _ => new IkvmReflectionModuleSymbol(Context, _));
 		}
 
 		public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
@@ -50,6 +55,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
 
 		public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_assembly.Modules);
+
+		public override bool IsMissing => _assembly.__IsMissing;
 
 		public ITypeSymbol[] GetExportedTypes()
 		{
@@ -71,19 +78,39 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveModuleSymbols(_assembly.GetModules(getResourceModules));
 		}
 
-		public AssemblyName GetName()
+		System.Reflection.AssemblyName ToName(AssemblyName src)
 		{
-			return _assembly.GetName();
+#pragma warning disable SYSLIB0037 // Type or member is obsolete
+			return new System.Reflection.AssemblyName()
+			{
+				Name = src.Name,
+				Version = src.Version,
+				CultureName = src.CultureName,
+				HashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
+				Flags = (System.Reflection.AssemblyNameFlags)src.Flags,
+				ContentType = (System.Reflection.AssemblyContentType)src.ContentType,
+			};
+#pragma warning restore SYSLIB0037 // Type or member is obsolete
 		}
 
-		public AssemblyName GetName(bool copiedName)
+		public System.Reflection.AssemblyName GetName()
 		{
-			return _assembly.GetName(copiedName);
+			return _assemblyName ??= ToName(_assembly.GetName());
 		}
 
-		public AssemblyName[] GetReferencedAssemblies()
+		public System.Reflection.AssemblyName GetName(bool copiedName)
 		{
-			return _assembly.GetReferencedAssemblies();
+			return ToName(_assembly.GetName());
+		}
+
+		public System.Reflection.AssemblyName[] GetReferencedAssemblies()
+		{
+			var l = _assembly.GetReferencedAssemblies();
+			var a = new System.Reflection.AssemblyName[l.Length];
+			for (int i = 0; i < l.Length; i++)
+				a[i] = ToName(l[i]);
+
+			return a;
 		}
 
 		public ITypeSymbol? GetType(string name, bool throwOnError)
@@ -113,12 +140,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
-			return ResolveCustomAttributes(_assembly.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+			return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false));
 		}
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _assembly.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionType);
+			return _assembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false);
 		}
 
 	}

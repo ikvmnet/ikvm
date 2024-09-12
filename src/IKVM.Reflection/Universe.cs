@@ -35,10 +35,10 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    /// <summary>
-    /// Provides a view of the types available to the reflection infrastructure.
-    /// </summary>
-    public sealed class Universe : IDisposable
+	/// <summary>
+	/// Provides a view of the types available to the reflection infrastructure.
+	/// </summary>
+	public sealed class Universe : IDisposable
     {
 
         public static readonly string NetCoreLibName = "System.Runtime";
@@ -603,42 +603,7 @@ namespace IKVM.Reflection
             if (asm != null)
                 return asm;
 
-#if NETFRAMEWORK
-
-            string fileName;
-            if (throwOnError)
-            {
-                try
-                {
-                    fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
-                }
-                catch (System.BadImageFormatException x)
-                {
-                    throw new BadImageFormatException(x.Message, x);
-                }
-            }
-            else
-            {
-                try
-                {
-                    fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
-                }
-                catch (System.BadImageFormatException x)
-                {
-                    throw new BadImageFormatException(x.Message, x);
-                }
-                catch (FileNotFoundException)
-                {
-                    // we intentionally only swallow the FileNotFoundException, if the file exists but isn't a valid assembly,
-                    // we should throw an exception
-                    return null;
-                }
-            }
-
-            return LoadFile(fileName);
-#else
             return null;
-#endif
         }
 
         public Type GetType(string assemblyQualifiedTypeName)

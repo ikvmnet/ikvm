@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Reflection;
 
-namespace IKVM.CoreLib.Symbols.Reflection
+using FieldInfo = IKVM.Reflection.FieldInfo;
+
+namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-	class ReflectionFieldSymbol : ReflectionMemberSymbol, IFieldSymbol
+	class IkvmReflectionFieldSymbol : IkvmReflectionMemberSymbol, IFieldSymbol
 	{
 
 		readonly FieldInfo _field;
@@ -15,13 +16,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <param name="context"></param>
 		/// <param name="type"></param>
 		/// <param name="field"></param>
-		public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, FieldInfo field) :
+		public IkvmReflectionFieldSymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol type, FieldInfo field) :
 			base(context, type.ContainingModule, type, field)
 		{
 			_field = field ?? throw new ArgumentNullException(nameof(field));
 		}
 
-		public FieldAttributes Attributes => _field.Attributes;
+		public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)_field.Attributes;
 
 		public ITypeSymbol FieldType => ResolveTypeSymbol(_field.FieldType);
 

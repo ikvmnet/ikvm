@@ -1,19 +1,20 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Reflection;
 using System.Threading;
 
-namespace IKVM.CoreLib.Symbols.Reflection
+using MethodBase = IKVM.Reflection.MethodBase;
+using ParameterInfo = IKVM.Reflection.ParameterInfo;
+
+namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-	abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IMethodBaseSymbol
+	abstract class IkvmReflectionMethodBaseSymbol : IkvmReflectionMemberSymbol, IMethodBaseSymbol
 	{
 
 		readonly MethodBase _method;
 
 		ParameterInfo[]? _parametersSource;
-		ReflectionParameterSymbol?[]? _parameters;
+		IkvmReflectionParameterSymbol?[]? _parameters;
 
 		/// <summary>
 		/// Initializes a new instance.
@@ -22,18 +23,18 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <param name="module"></param>
 		/// <param name="type"></param>
 		/// <param name="method"></param>
-		public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodBase method) :
+		public IkvmReflectionMethodBaseSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol? type, MethodBase method) :
 			base(context, module, type, method)
 		{
 			_method = method ?? throw new ArgumentNullException(nameof(method));
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
+		/// Gets or creates the <see cref="IkvmReflectionMethodSymbol"/> cached for the type by method.
 		/// </summary>
 		/// <param name="parameter"></param>
 		/// <returns></returns>
-		internal ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+		internal IkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
 		{
 			if (parameter is null)
 				throw new ArgumentNullException(nameof(parameter));
@@ -42,7 +43,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 			// initialize source and cache table
 			_parametersSource ??= _method.GetParameters();
-			_parameters ??= new ReflectionParameterSymbol?[_parametersSource.Length];
+			_parameters ??= new IkvmReflectionParameterSymbol?[_parametersSource.Length];
 
 			// index of current record
 			var idx = parameter.Position;
@@ -56,18 +57,18 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
 			ref var rec = ref _parameters[idx];
 			if (rec == null)
-				Interlocked.CompareExchange(ref rec, new ReflectionParameterSymbol(Context, this, parameter), null);
+				Interlocked.CompareExchange(ref rec, new IkvmReflectionParameterSymbol(Context, this, parameter), null);
 
 			// this should never happen
-			if (rec is not ReflectionParameterSymbol sym)
+			if (rec is not IkvmReflectionParameterSymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
-		public MethodAttributes Attributes => _method.Attributes;
+		public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)_method.Attributes;
 
-		public CallingConventions CallingConvention => _method.CallingConvention;
+		public System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)_method.CallingConvention;
 
 		public bool ContainsGenericParameters => _method.ContainsGenericParameters;
 
@@ -101,18 +102,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsVirtual => _method.IsVirtual;
 
-		public MethodImplAttributes MethodImplementationFlags => _method.MethodImplementationFlags;
-
-		public ImmutableArray<CustomAttributeSymbol> CustomAttributes => throw new NotImplementedException();
+		public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)_method.MethodImplementationFlags;
 
 		public ITypeSymbol[] GetGenericArguments()
 		{
 			return ResolveTypeSymbols(_method.GetGenericArguments());
 		}
 
-		public MethodImplAttributes GetMethodImplementationFlags()
+		public System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
 		{
-			return _method.GetMethodImplementationFlags();
+			return (System.Reflection.MethodImplAttributes)_method.GetMethodImplementationFlags();
 		}
 
 		public IParameterSymbol[] GetParameters()

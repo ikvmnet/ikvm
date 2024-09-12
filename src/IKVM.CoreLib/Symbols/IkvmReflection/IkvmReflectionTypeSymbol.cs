@@ -2,14 +2,23 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
-namespace IKVM.CoreLib.Symbols.Reflection
+using IKVM.Reflection;
+
+using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
+using EventInfo = IKVM.Reflection.EventInfo;
+using FieldInfo = IKVM.Reflection.FieldInfo;
+using MethodBase = IKVM.Reflection.MethodBase;
+using MethodInfo = IKVM.Reflection.MethodInfo;
+using PropertyInfo = IKVM.Reflection.PropertyInfo;
+using Type = IKVM.Reflection.Type;
+
+namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-	class ReflectionTypeSymbol : ReflectionMemberSymbol, ITypeSymbol
+	class IkvmReflectionTypeSymbol : IkvmReflectionMemberSymbol, ITypeSymbol
 	{
 
 		const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
@@ -18,28 +27,28 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		MethodBase[]? _methodsSource;
 		int _methodsBaseRow;
-		ReflectionMethodBaseSymbol?[]? _methods;
+		IkvmReflectionMethodBaseSymbol?[]? _methods;
 
 		FieldInfo[]? _fieldsSource;
 		int _fieldsBaseRow;
-		ReflectionFieldSymbol?[]? _fields;
+		IkvmReflectionFieldSymbol?[]? _fields;
 
 		PropertyInfo[]? _propertiesSource;
 		int _propertiesBaseRow;
-		ReflectionPropertySymbol?[]? _properties;
+		IkvmReflectionPropertySymbol?[]? _properties;
 
 		EventInfo[]? _eventsSource;
 		int _eventsBaseRow;
-		ReflectionEventSymbol?[]? _events;
+		IkvmReflectionEventSymbol?[]? _events;
 
-		ReflectionTypeSymbol?[]? _asArray;
-		ReflectionTypeSymbol? _asSZArray;
-		ReflectionTypeSymbol? _asPointer;
-		ReflectionTypeSymbol? _asByRef;
+		IkvmReflectionTypeSymbol?[]? _asArray;
+		IkvmReflectionTypeSymbol? _asSZArray;
+		IkvmReflectionTypeSymbol? _asPointer;
+		IkvmReflectionTypeSymbol? _asByRef;
 
 		Type[]? _genericParametersSource;
-		ReflectionTypeSymbol?[]? _genericParameters;
-		List<(Type[] Arguments, ReflectionTypeSymbol Symbol)>? _genericTypes;
+		IkvmReflectionTypeSymbol?[]? _genericParameters;
+		List<(Type[] Arguments, IkvmReflectionTypeSymbol Symbol)>? _genericTypes;
 
 		/// <summary>
 		/// Initializes a new instance.
@@ -47,7 +56,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <param name="context"></param>
 		/// <param name="module"></param>
 		/// <param name="type"></param>
-		public ReflectionTypeSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, Type type) :
+		public IkvmReflectionTypeSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, Type type) :
 			base(context, module, null, type)
 		{
 			Debug.Assert(module.ReflectionModule == type.Module);
@@ -55,31 +64,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
+		/// Gets or creates the <see cref="IkvmReflectionMethodSymbol"/> cached for the type by method.
 		/// </summary>
 		/// <param name="method"></param>
 		/// <returns></returns>
-		internal ReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+		internal IkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
 		{
-			return (ReflectionMethodSymbol)GetOrCreateMethodBaseSymbol(method);
+			return (IkvmReflectionMethodSymbol)GetOrCreateMethodBaseSymbol(method);
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionConstructorSymbol"/> cached for the type by ctor.
+		/// Gets or creates the <see cref="IkvmReflectionConstructorSymbol"/> cached for the type by ctor.
 		/// </summary>
 		/// <param name="method"></param>
 		/// <returns></returns>
-		internal ReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+		internal IkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
 		{
-			return (ReflectionConstructorSymbol)GetOrCreateMethodBaseSymbol(ctor);
+			return (IkvmReflectionConstructorSymbol)GetOrCreateMethodBaseSymbol(ctor);
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
+		/// Gets or creates the <see cref="IkvmReflectionMethodSymbol"/> cached for the type by method.
 		/// </summary>
 		/// <param name="method"></param>
 		/// <returns></returns>
-		internal ReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+		internal IkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
 		{
 			if (method is null)
 				throw new ArgumentNullException(nameof(method));
@@ -97,7 +106,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			}
 
 			// initialize cache table
-			_methods ??= new ReflectionMethodSymbol?[_methodsSource.Length];
+			_methods ??= new IkvmReflectionMethodSymbol?[_methodsSource.Length];
 
 			// index of current record is specified row - base
 			var idx = row - _methodsBaseRow;
@@ -115,28 +124,28 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				switch (method)
 				{
 					case ConstructorInfo c:
-						Interlocked.CompareExchange(ref rec, new ReflectionConstructorSymbol(Context, ContainingModule, this, c), null);
+						Interlocked.CompareExchange(ref rec, new IkvmReflectionConstructorSymbol(Context, ContainingModule, this, c), null);
 						break;
 					case MethodInfo m:
-						Interlocked.CompareExchange(ref rec, new ReflectionMethodSymbol(Context, ContainingModule, this, m), null);
+						Interlocked.CompareExchange(ref rec, new IkvmReflectionMethodSymbol(Context, ContainingModule, this, m), null);
 						break;
 				}
 			}
 
 			// this should never happen
-			if (rec is not ReflectionMethodBaseSymbol sym)
+			if (rec is not IkvmReflectionMethodBaseSymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionFieldSymbol"/> cached for the type by field.
+		/// Gets or creates the <see cref="IkvmReflectionFieldSymbol"/> cached for the type by field.
 		/// </summary>
 		/// <param name="field"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+		internal IkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
 		{
 			if (field is null)
 				throw new ArgumentNullException(nameof(field));
@@ -154,7 +163,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			}
 
 			// initialize cache table
-			_fields ??= new ReflectionFieldSymbol?[_fieldsSource.Length];
+			_fields ??= new IkvmReflectionFieldSymbol?[_fieldsSource.Length];
 
 			// index of current field is specified row - base
 			var idx = row - _fieldsBaseRow;
@@ -168,22 +177,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
 			ref var rec = ref _fields[idx];
 			if (rec == null)
-				Interlocked.CompareExchange(ref rec, new ReflectionFieldSymbol(Context, this, field), null);
+				Interlocked.CompareExchange(ref rec, new IkvmReflectionFieldSymbol(Context, this, field), null);
 
 			// this should never happen
-			if (rec is not ReflectionFieldSymbol sym)
+			if (rec is not IkvmReflectionFieldSymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionPropertySymbol"/> cached for the type by property.
+		/// Gets or creates the <see cref="IkvmReflectionPropertySymbol"/> cached for the type by property.
 		/// </summary>
 		/// <param name="property"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+		internal IkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
 		{
 			if (property is null)
 				throw new ArgumentNullException(nameof(property));
@@ -201,7 +210,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			}
 
 			// initialize cache table
-			_properties ??= new ReflectionPropertySymbol?[_propertiesSource.Length];
+			_properties ??= new IkvmReflectionPropertySymbol?[_propertiesSource.Length];
 
 			// index of current property is specified row - base
 			var idx = row - _propertiesBaseRow;
@@ -215,22 +224,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
 			ref var rec = ref _properties[idx];
 			if (rec == null)
-				Interlocked.CompareExchange(ref rec, new ReflectionPropertySymbol(Context, this, property), null);
+				Interlocked.CompareExchange(ref rec, new IkvmReflectionPropertySymbol(Context, this, property), null);
 
 			// this should never happen
-			if (rec is not ReflectionPropertySymbol sym)
+			if (rec is not IkvmReflectionPropertySymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionEventSymbol"/> cached for the type by event.
+		/// Gets or creates the <see cref="IkvmReflectionEventSymbol"/> cached for the type by event.
 		/// </summary>
 		/// <param name="event"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+		internal IkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
 		{
 			if (@event is null)
 				throw new ArgumentNullException(nameof(@event));
@@ -248,7 +257,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			}
 
 			// initialize cache table
-			_events ??= new ReflectionEventSymbol?[_eventsSource.Length];
+			_events ??= new IkvmReflectionEventSymbol?[_eventsSource.Length];
 
 			// index of current event is specified row - base
 			var idx = row - _eventsBaseRow;
@@ -262,22 +271,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
 			ref var rec = ref _events[idx];
 			if (rec == null)
-				Interlocked.CompareExchange(ref rec, new ReflectionEventSymbol(Context, this, @event), null);
+				Interlocked.CompareExchange(ref rec, new IkvmReflectionEventSymbol(Context, this, @event), null);
 
 			// this should never happen
-			if (rec is not ReflectionEventSymbol sym)
+			if (rec is not IkvmReflectionEventSymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the generic parameter type.
+		/// Gets or creates the <see cref="IkvmReflectionTypeSymbol"/> cached for the generic parameter type.
 		/// </summary>
 		/// <param name="genericTypeParameterType"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericTypeParameterType)
+		internal IkvmReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericTypeParameterType)
 		{
 			if (genericTypeParameterType is null)
 				throw new ArgumentNullException(nameof(genericTypeParameterType));
@@ -286,7 +295,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 			// initialize tables
 			_genericParametersSource ??= _type.GetGenericArguments();
-			_genericParameters ??= new ReflectionTypeSymbol?[_genericParametersSource.Length];
+			_genericParameters ??= new IkvmReflectionTypeSymbol?[_genericParametersSource.Length];
 
 			// position of the parameter in the list
 			var idx = genericTypeParameterType.GenericParameterPosition;
@@ -298,22 +307,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
 			ref var rec = ref _genericParameters[idx];
 			if (rec == null)
-				Interlocked.CompareExchange(ref rec, new ReflectionTypeSymbol(Context, ContainingModule, genericTypeParameterType), null);
+				Interlocked.CompareExchange(ref rec, new IkvmReflectionTypeSymbol(Context, ContainingModule, genericTypeParameterType), null);
 
 			// this should never happen
-			if (rec is not ReflectionTypeSymbol sym)
+			if (rec is not IkvmReflectionTypeSymbol sym)
 				throw new InvalidOperationException();
 
 			return sym;
 		}
 
 		/// <summary>
-		/// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the generic parameter type.
+		/// Gets or creates the <see cref="IkvmReflectionTypeSymbol"/> cached for the generic parameter type.
 		/// </summary>
 		/// <param name="genericTypeArguments"></param>
 		/// <returns></returns>
 		/// <exception cref="IndexOutOfRangeException"></exception>
-		internal ReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeArguments)
+		internal IkvmReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeArguments)
 		{
 			if (genericTypeArguments is null)
 				throw new ArgumentNullException(nameof(genericTypeArguments));
@@ -336,7 +345,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 						return i.Symbol;
 
 				// generate new symbol
-				var sym = new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
+				var sym = new IkvmReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
 				_genericTypes.Add((genericTypeArguments, sym));
 				return sym;
 			}
@@ -347,7 +356,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		protected internal override ReflectionTypeSymbol ResolveTypeSymbol(Type type)
+		protected internal override IkvmReflectionTypeSymbol ResolveTypeSymbol(Type type)
 		{
 			if (type == _type)
 				return this;
@@ -360,7 +369,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="ctor"></param>
 		/// <returns></returns>
-		protected internal override ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
+		protected internal override IkvmReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
 		{
 			if (ctor.DeclaringType == _type)
 				return GetOrCreateConstructorSymbol(ctor);
@@ -373,7 +382,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="method"></param>
 		/// <returns></returns>
-		protected internal override ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
+		protected internal override IkvmReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
 		{
 			if (method.DeclaringType == _type)
 				return GetOrCreateMethodSymbol(method);
@@ -386,7 +395,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="field"></param>
 		/// <returns></returns>
-		protected internal override ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
+		protected internal override IkvmReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
 		{
 			if (field.DeclaringType == _type)
 				return GetOrCreateFieldSymbol(field);
@@ -399,7 +408,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="property"></param>
 		/// <returns></returns>
-		protected internal override ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
+		protected internal override IkvmReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
 		{
 			if (property.DeclaringType == _type)
 				return GetOrCreatePropertySymbol(property);
@@ -412,7 +421,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// </summary>
 		/// <param name="event"></param>
 		/// <returns></returns>
-		protected internal override ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
+		protected internal override IkvmReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
 		{
 			if (@event.DeclaringType == _type)
 				return GetOrCreateEventSymbol(@event);
@@ -423,13 +432,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <summary>
 		/// Gets the wrapped <see cref="Type"/>.
 		/// </summary>
-		internal Type ReflectionType => _type;
+		internal Type IkvmReflectionType => _type;
 
 		public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_type.Assembly);
 
 		public string? AssemblyQualifiedName => _type.AssemblyQualifiedName;
 
-		public TypeAttributes Attributes => _type.Attributes;
+		public System.Reflection.TypeAttributes Attributes => (System.Reflection.TypeAttributes)(int)_type.Attributes;
 
 		public ITypeSymbol? BaseType => _type.BaseType != null ? ResolveTypeSymbol(_type.BaseType) : null;
 
@@ -439,7 +448,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public string? FullName => _type.FullName;
 
-		public GenericParameterAttributes GenericParameterAttributes => _type.GenericParameterAttributes;
+		public System.Reflection.GenericParameterAttributes GenericParameterAttributes => (System.Reflection.GenericParameterAttributes)(int)_type.GenericParameterAttributes;
 
 		public int GenericParameterPosition => _type.GenericParameterPosition;
 
@@ -512,9 +521,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _type.GetArrayRank();
 		}
 
-		public IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types)
+		public IConstructorSymbol? GetConstructor(System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
 		{
-			return _type.GetConstructor(bindingAttr, binder: null, UnpackTypeSymbols(types), modifiers: null) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
+			return _type.GetConstructor((BindingFlags)bindingAttr, binder: null, UnpackTypeSymbols(types), modifiers: null) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
 		}
 
 		public IConstructorSymbol? GetConstructor(ITypeSymbol[] types)
@@ -552,14 +561,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveTypeSymbol(_type.GetEnumUnderlyingType());
 		}
 
-		public Array GetEnumValues()
+		public IEventSymbol? GetEvent(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return _type.GetEnumValues();
-		}
-
-		public IEventSymbol? GetEvent(string name, BindingFlags bindingAttr)
-		{
-			throw new NotImplementedException();
+			return _type.GetEvent(name, (BindingFlags)bindingAttr) is { } f ? ResolveEventSymbol(f) : null;
 		}
 
 		public IEventSymbol? GetEvent(string name)
@@ -572,9 +576,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveEventSymbols(_type.GetEvents());
 		}
 
-		public IEventSymbol[] GetEvents(BindingFlags bindingAttr)
+		public IEventSymbol[] GetEvents(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveEventSymbols(_type.GetEvents(bindingAttr));
+			return ResolveEventSymbols(_type.GetEvents((BindingFlags)bindingAttr));
 		}
 
 		public IFieldSymbol? GetField(string name)
@@ -582,9 +586,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _type.GetField(name) is FieldInfo f ? ResolveFieldSymbol(f) : null;
 		}
 
-		public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
+		public IFieldSymbol? GetField(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return _type.GetField(name, bindingAttr) is FieldInfo f ? ResolveFieldSymbol(f) : null;
+			return _type.GetField(name, (BindingFlags)bindingAttr) is FieldInfo f ? ResolveFieldSymbol(f) : null;
 		}
 
 		public IFieldSymbol[] GetFields()
@@ -592,9 +596,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveFieldSymbols(_type.GetFields());
 		}
 
-		public IFieldSymbol[] GetFields(BindingFlags bindingAttr)
+		public IFieldSymbol[] GetFields(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveFieldSymbols(_type.GetFields(bindingAttr));
+			return ResolveFieldSymbols(_type.GetFields((BindingFlags)bindingAttr));
 		}
 
 		public ITypeSymbol[] GetGenericArguments()
@@ -637,19 +641,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveMemberSymbols(_type.GetMember(name));
 		}
 
-		public IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr)
+		public IMemberSymbol[] GetMember(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveMemberSymbols(_type.GetMember(name, bindingAttr));
+			return ResolveMemberSymbols(_type.GetMember(name, (BindingFlags)bindingAttr));
 		}
 
-		public IMemberSymbol[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
+		public IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveMemberSymbols(_type.GetMember(name, type, bindingAttr));
+			return ResolveMemberSymbols(_type.GetMember(name, (MemberTypes)type, (BindingFlags)bindingAttr));
 		}
 
-		public IMemberSymbol[] GetMembers(BindingFlags bindingAttr)
+		public IMemberSymbol[] GetMembers(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveMemberSymbols(_type.GetMembers(bindingAttr));
+			return ResolveMemberSymbols(_type.GetMembers((BindingFlags)bindingAttr));
 		}
 
 		public IMemberSymbol[] GetMembers()
@@ -657,9 +661,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveMemberSymbols(_type.GetMembers());
 		}
 
-		public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr)
+		public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return _type.GetMethod(name, bindingAttr) is { } m ? ResolveMethodSymbol(m) : null;
+			return _type.GetMethod(name, (BindingFlags)bindingAttr) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
 		public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
@@ -672,14 +676,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _type.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
-		public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+		public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
 		{
-			return _type.GetMethod(name, UnpackTypeSymbols(types), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+			if (modifiers != null)
+				throw new NotImplementedException();
+
+			return _type.GetMethod(name, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
-		public IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
+		public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveMethodSymbols(_type.GetMethods(bindingAttr));
+			return ResolveMethodSymbols(_type.GetMethods((BindingFlags)bindingAttr));
 		}
 
 		public IMethodSymbol[] GetMethods()
@@ -692,9 +699,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _type.GetNestedType(name) is Type t ? ResolveTypeSymbol(t) : null;
 		}
 
-		public ITypeSymbol? GetNestedType(string name, BindingFlags bindingAttr)
+		public ITypeSymbol? GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return _type.GetNestedType(name, bindingAttr) is Type t ? ResolveTypeSymbol(t) : null;
+			return _type.GetNestedType(name, (BindingFlags)bindingAttr) is Type t ? ResolveTypeSymbol(t) : null;
 		}
 
 		public ITypeSymbol[] GetNestedTypes()
@@ -702,9 +709,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveTypeSymbols(_type.GetNestedTypes());
 		}
 
-		public ITypeSymbol[] GetNestedTypes(BindingFlags bindingAttr)
+		public ITypeSymbol[] GetNestedTypes(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolveTypeSymbols(_type.GetNestedTypes(bindingAttr));
+			return ResolveTypeSymbols(_type.GetNestedTypes((BindingFlags)bindingAttr));
 		}
 
 		public IPropertySymbol[] GetProperties()
@@ -712,15 +719,18 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolvePropertySymbols(_type.GetProperties());
 		}
 
-		public IPropertySymbol[] GetProperties(BindingFlags bindingAttr)
+		public IPropertySymbol[] GetProperties(System.Reflection.BindingFlags bindingAttr)
 		{
-			return ResolvePropertySymbols(_type.GetProperties(bindingAttr));
+			return ResolvePropertySymbols(_type.GetProperties((BindingFlags)bindingAttr));
 		}
 
-		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
 		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
-			return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types), modifiers) is { } p ? ResolvePropertySymbol(p) : null;
+			if (modifiers != null)
+				throw new NotImplementedException();
+
+			var _returnType = returnType != null ? ((IkvmReflectionTypeSymbol)returnType).IkvmReflectionType : null;
+			return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types), null) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol[] types)
@@ -730,13 +740,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types)
 		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
+			var _returnType = returnType != null ? ((IkvmReflectionTypeSymbol)returnType).IkvmReflectionType : null;
 			return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
-		public IPropertySymbol? GetProperty(string name, BindingFlags bindingAttr)
+		public IPropertySymbol? GetProperty(string name, System.Reflection.BindingFlags bindingAttr)
 		{
-			return _type.GetProperty(name, bindingAttr) is { } p ? ResolvePropertySymbol(p) : null;
+			return _type.GetProperty(name, (BindingFlags)bindingAttr) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
 		public IPropertySymbol? GetProperty(string name)
@@ -746,14 +756,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType)
 		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
+			var _returnType = returnType != null ? ((IkvmReflectionTypeSymbol)returnType).IkvmReflectionType : null;
 
 			return _type.GetProperty(name, _returnType) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
 		public bool IsAssignableFrom(ITypeSymbol? c)
 		{
-			return _type.IsAssignableFrom(c != null ? ((ReflectionTypeSymbol)c).ReflectionType : null);
+			return _type.IsAssignableFrom(c != null ? ((IkvmReflectionTypeSymbol)c).IkvmReflectionType : null);
 		}
 
 		public bool IsEnumDefined(object value)
@@ -763,13 +773,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsSubclassOf(ITypeSymbol c)
 		{
-			return _type.IsSubclassOf(((ReflectionTypeSymbol)c).ReflectionType);
+			return _type.IsSubclassOf(((IkvmReflectionTypeSymbol)c).IkvmReflectionType);
 		}
 
 		public ITypeSymbol MakeArrayType()
 		{
 			if (_asSZArray == null)
-				Interlocked.CompareExchange(ref _asSZArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType()), null);
+				Interlocked.CompareExchange(ref _asSZArray, new IkvmReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType()), null);
 
 			return _asSZArray;
 		}
@@ -780,11 +790,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				return MakeArrayType();
 
 			if (_asArray == null)
-				Interlocked.CompareExchange(ref _asArray, new ReflectionTypeSymbol?[32], null);
+				Interlocked.CompareExchange(ref _asArray, new IkvmReflectionTypeSymbol?[32], null);
 
 			ref var asArray = ref _asArray[rank];
 			if (asArray == null)
-				Interlocked.CompareExchange(ref asArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType(rank)), null);
+				Interlocked.CompareExchange(ref asArray, new IkvmReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType(rank)), null);
 
 			return asArray;
 		}
@@ -792,7 +802,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public ITypeSymbol MakeByRefType()
 		{
 			if (_asByRef == null)
-				Interlocked.CompareExchange(ref _asByRef, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeByRefType()), null);
+				Interlocked.CompareExchange(ref _asByRef, new IkvmReflectionTypeSymbol(Context, ContainingModule, _type.MakeByRefType()), null);
 
 			return _asByRef;
 		}
@@ -805,7 +815,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		public ITypeSymbol MakePointerType()
 		{
 			if (_asPointer == null)
-				Interlocked.CompareExchange(ref _asPointer, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakePointerType()), null);
+				Interlocked.CompareExchange(ref _asPointer, new IkvmReflectionTypeSymbol(Context, ContainingModule, _type.MakePointerType()), null);
 
 			return _asPointer;
 		}

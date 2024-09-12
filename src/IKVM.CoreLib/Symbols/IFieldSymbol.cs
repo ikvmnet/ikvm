@@ -28,12 +28,6 @@
 
 		bool IsPublic { get; }
 
-		bool IsSecurityCritical { get; }
-
-		bool IsSecuritySafeCritical { get; }
-
-		bool IsSecurityTransparent { get; }
-
 		bool IsSpecialName { get; }
 
 		bool IsStatic { get; }
