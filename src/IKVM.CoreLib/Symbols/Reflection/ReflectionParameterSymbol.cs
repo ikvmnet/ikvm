@@ -51,12 +51,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public int Position => _parameter.Position;
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(bool inherit)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
 		{
 			throw new NotImplementedException();
 		}

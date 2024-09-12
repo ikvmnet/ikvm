@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
@@ -330,6 +331,83 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				a[i] = ResolveEventSymbol(events[i]);
 
 			return a;
+		}
+
+		/// <summary>
+		/// Transforms a custom set of custom attribute data records to a symbol record.
+		/// </summary>
+		/// <param name="attributes"></param>
+		/// <returns></returns>
+		protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
+		{
+			var a = new CustomAttributeSymbol[attributes.Count];
+			for (int i = 0; i < attributes.Count; i++)
+				a[i] = ResolveCustomAttribute(attributes[i]);
+
+			return a;
+		}
+
+		/// <summary>
+		/// Transforms a custom attribute data record to a symbol record.
+		/// </summary>
+		/// <param name="customAttributeData"></param>
+		/// <returns></returns>
+		/// <exception cref="NotImplementedException"></exception>
+		protected internal CustomAttributeSymbol ResolveCustomAttribute(CustomAttributeData customAttributeData)
+		{
+			return new CustomAttributeSymbol(
+				ResolveTypeSymbol(customAttributeData.AttributeType),
+				ResolveConstructorSymbol(customAttributeData.Constructor),
+				ResolveCustomAttributeTypedArguments(customAttributeData.ConstructorArguments),
+				ResolveCustomAttributeNamedArguments(customAttributeData.NamedArguments));
+		}
+
+		/// <summary>
+		/// Transforms a list of <see cref="CustomAttributeTypedArgument"/> values into symbols.
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
+		ImmutableArray<CustomAttributeSymbolTypedArgument> ResolveCustomAttributeTypedArguments(IList<CustomAttributeTypedArgument> args)
+		{
+			var a = new CustomAttributeSymbolTypedArgument[args.Count];
+			for (int i = 0; i < args.Count; i++)
+				a[i] = ResolveCustomAttributeTypedArgument(args[i]);
+
+			return a.ToImmutableArray();
+		}
+
+		/// <summary>
+		/// Transforms a <see cref="CustomAttributeTypedArgument"/> values into a symbol.
+		/// </summary>
+		/// <param name="arg"></param>
+		/// <returns></returns>
+		CustomAttributeSymbolTypedArgument ResolveCustomAttributeTypedArgument(CustomAttributeTypedArgument arg)
+		{
+			return new CustomAttributeSymbolTypedArgument(ResolveTypeSymbol(arg.ArgumentType), arg.Value);
+		}
+
+		/// <summary>
+		/// Transforms a list of <see cref="CustomAttributeNamedArgument"/> values into symbols.
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
+		ImmutableArray<CustomAttributeSymbolNamedArgument> ResolveCustomAttributeNamedArguments(IList<CustomAttributeNamedArgument> args)
+		{
+			var a = new CustomAttributeSymbolNamedArgument[args.Count];
+			for (int i = 0; i < args.Count; i++)
+				a[i] = ResolveCustomAttributeNamedArgument(args[i]);
+
+			return a.ToImmutableArray();
+		}
+
+		/// <summary>
+		/// Transforms a <see cref="CustomAttributeNamedArgument"/> values into a symbol.
+		/// </summary>
+		/// <param name="arg"></param>
+		/// <returns></returns>
+		CustomAttributeSymbolNamedArgument ResolveCustomAttributeNamedArgument(CustomAttributeNamedArgument arg)
+		{
+			return new CustomAttributeSymbolNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
 		}
 
 	}

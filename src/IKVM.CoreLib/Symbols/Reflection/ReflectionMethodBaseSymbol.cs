@@ -109,7 +109,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public MethodImplAttributes MethodImplementationFlags => _method.MethodImplementationFlags;
 
-		public ImmutableArray<ICustomAttributeSymbol> CustomAttributes => throw new NotImplementedException();
+		public ImmutableArray<CustomAttributeSymbol> CustomAttributes => throw new NotImplementedException();
 
 		public ITypeSymbol[] GetGenericArguments()
 		{

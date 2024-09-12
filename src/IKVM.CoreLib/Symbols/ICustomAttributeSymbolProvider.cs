@@ -6,9 +6,9 @@ namespace IKVM.CoreLib.Symbols
 	interface ICustomAttributeSymbolProvider
 	{
 
-		ICustomAttributeSymbol[] GetCustomAttributes(bool inherit);
+		CustomAttributeSymbol[] GetCustomAttributes(bool inherit);
 
-		ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit);
+		CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit);
 
 		bool IsDefined(ITypeSymbol attributeType, bool inherit);
 

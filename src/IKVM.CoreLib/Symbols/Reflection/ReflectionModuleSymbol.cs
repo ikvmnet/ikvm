@@ -291,12 +291,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveTypeSymbol(_module.ResolveType(metadataToken, _genericTypeArguments, _genericMethodArguments));
 		}
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(bool inherit)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
 		{
 			throw new NotImplementedException();
 		}

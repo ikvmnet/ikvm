@@ -105,12 +105,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveTypeSymbols(_assembly.GetTypes());
 		}
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(bool inherit)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		public ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
+		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
 		{
 			throw new System.NotImplementedException();
 		}

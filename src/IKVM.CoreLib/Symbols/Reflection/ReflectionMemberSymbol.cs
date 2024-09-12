@@ -134,14 +134,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public virtual string Name => _member.Name;
 
-		public virtual ICustomAttributeSymbol[] GetCustomAttributes(bool inherit)
+		public virtual CustomAttributeSymbol[] GetCustomAttributes(bool inherit)
 		{
-			throw new NotImplementedException();
+			return ResolveCustomAttributes(_member.GetCustomAttributesData(inherit));
 		}
 
-		public virtual ICustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
+		public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit)
 		{
-			throw new NotImplementedException();
+			return ResolveCustomAttributes(_member.GetCustomAttributesData(attributeType, inherit));
 		}
 
 		public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit) => _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionType, inherit);
