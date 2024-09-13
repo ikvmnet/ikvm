@@ -243,7 +243,7 @@ jobs:
     - name: Package Tests (IKVM.CoreLib.Tests)
       run: tar czvf /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
       working-directory: dist
-    - name: Upload Tests (IKVM.Reflection.Tests)
+    - name: Upload Tests (IKVM.CoreLib.Tests)
       uses: actions/upload-artifact@v4
       with:
         name: tests--IKVM.CoreLib.Tests

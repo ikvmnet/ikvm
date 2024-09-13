@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {

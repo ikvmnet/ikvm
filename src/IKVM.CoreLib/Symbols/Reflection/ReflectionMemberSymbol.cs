@@ -5,6 +5,9 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
+	/// <summary>
+	/// Obtains information about the attributes of a member and provides access to member metadata.
+	/// </summary>
 	abstract class ReflectionMemberSymbol : ReflectionSymbol, IMemberSymbol
 	{
 
@@ -119,32 +122,49 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				return base.ResolveEventSymbol(@event);
 		}
 
+		/// <summary>
+		/// Gets the underlying <see cref="MemberInfo"/> wrapped by this symbol.
+		/// </summary>
 		internal MemberInfo ReflectionObject => _member;
 
+		/// <summary>
+		/// Gets the <see cref="ReflectionModuleSymbol" /> which contains the metadata of this member.
+		/// </summary>
 		internal ReflectionModuleSymbol ContainingModule => _module;
 
+		/// <summary>
+		/// Gets the <see cref="ReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
+		/// </summary>
 		internal ReflectionTypeSymbol? ContainingType => _type;
 
-		public virtual ITypeSymbol? DeclaringType => _member.DeclaringType is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
-
-		public virtual MemberTypes MemberType => _member.MemberType;
-
-		public virtual int MetadataToken => _member.MetadataToken;
-
+		/// <inheritdoc />
 		public virtual IModuleSymbol Module => Context.GetOrCreateModuleSymbol(_member.Module);
 
+		/// <inheritdoc />
+		public virtual ITypeSymbol? DeclaringType => _member.DeclaringType is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+
+		/// <inheritdoc />
+		public virtual MemberTypes MemberType => _member.MemberType;
+
+		/// <inheritdoc />
+		public virtual int MetadataToken => _member.MetadataToken;
+
+		/// <inheritdoc />
 		public virtual string Name => _member.Name;
 
+		/// <inheritdoc />
 		public virtual CustomAttributeSymbol[] GetCustomAttributes()
 		{
 			return ResolveCustomAttributes(_member.GetCustomAttributesData());
 		}
 
+		/// <inheritdoc />
 		public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
 			return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
 		}
 
+		/// <inheritdoc />
 		public virtual bool IsDefined(ITypeSymbol attributeType)
 		{
 			return _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
