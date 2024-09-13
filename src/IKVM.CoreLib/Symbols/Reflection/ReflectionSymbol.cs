@@ -6,6 +6,9 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
+	/// <summary>
+	/// Base class for managed symbols.
+	/// </summary>
 	abstract class ReflectionSymbol : ISymbol
 	{
 
@@ -397,7 +400,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			for (int i = 0; i < args.Count; i++)
 				a[i] = ResolveCustomAttributeNamedArgument(args[i]);
 
-			return a.ToImmutableArray();
+			return ImmutableArray.Create(a);
 		}
 
 		/// <summary>

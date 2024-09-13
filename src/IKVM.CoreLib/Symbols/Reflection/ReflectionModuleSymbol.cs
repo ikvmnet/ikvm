@@ -159,93 +159,115 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			throw new InvalidOperationException();
 		}
 
+		/// <inheritdoc />
 		public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_module.Assembly);
 
+		/// <inheritdoc />
 		public string FullyQualifiedName => _module.FullyQualifiedName;
 
+		/// <inheritdoc />
 		public int MetadataToken => _module.MetadataToken;
 
+		/// <inheritdoc />
 		public Guid ModuleVersionId => _module.ModuleVersionId;
 
+		/// <inheritdoc />
 		public string Name => _module.Name;
 
+		/// <inheritdoc />
 		public string ScopeName => _module.ScopeName;
 
+		/// <inheritdoc />
 		public IFieldSymbol? GetField(string name)
 		{
 			return _module.GetField(name) is { } f ? ResolveFieldSymbol(f) : null;
 		}
 
+		/// <inheritdoc />
 		public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
 		{
 			return _module.GetField(name, bindingAttr) is { } f ? ResolveFieldSymbol(f) : null;
 		}
 
+		/// <inheritdoc />
 		public IFieldSymbol[] GetFields(BindingFlags bindingFlags)
 		{
 			return ResolveFieldSymbols(_module.GetFields(bindingFlags));
 		}
 
+		/// <inheritdoc />
 		public IFieldSymbol[] GetFields()
 		{
 			return ResolveFieldSymbols(_module.GetFields());
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol? GetMethod(string name)
 		{
 			return _module.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
 		{
 			return _module.GetMethod(name, UnpackTypeSymbols(types)) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
-		public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, Binder? binder, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+		/// <inheritdoc />
+		public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
 		{
-			return _module.GetMethod(name, bindingAttr, binder, callConvention, UnpackTypeSymbols(types), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+			return _module.GetMethod(name, bindingAttr, null, callConvention, UnpackTypeSymbols(types), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol[] GetMethods()
 		{
 			return ResolveMethodSymbols(_module.GetMethods());
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol[] GetMethods(BindingFlags bindingFlags)
 		{
 			return ResolveMethodSymbols(_module.GetMethods(bindingFlags));
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol? GetType(string className)
 		{
 			return _module.GetType(className) is { } t ? ResolveTypeSymbol(t) : null;
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol? GetType(string className, bool ignoreCase)
 		{
 			return _module.GetType(className, ignoreCase) is { } t ? ResolveTypeSymbol(t) : null;
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol? GetType(string className, bool throwOnError, bool ignoreCase)
 		{
 			return _module.GetType(className, throwOnError, ignoreCase) is { } t ? ResolveTypeSymbol(t) : null;
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol[] GetTypes()
 		{
 			return ResolveTypeSymbols(_module.GetTypes());
 		}
 
+		/// <inheritdoc />
 		public bool IsResource()
 		{
 			return _module.IsResource();
 		}
 
+		/// <inheritdoc />
 		public IFieldSymbol? ResolveField(int metadataToken)
 		{
 			return _module.ResolveField(metadataToken) is { } f ? ResolveFieldSymbol(f) : null;
 		}
 
+		/// <inheritdoc />
 		public IFieldSymbol? ResolveField(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
 		{
 			var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
@@ -253,11 +275,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _module.ResolveField(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } f ? ResolveFieldSymbol(f) : null;
 		}
 
+		/// <inheritdoc />
 		public IMemberSymbol? ResolveMember(int metadataToken)
 		{
 			return _module.ResolveMember(metadataToken) is { } m ? ResolveMemberSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public IMemberSymbol? ResolveMember(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
 		{
 			var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
@@ -265,6 +289,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _module.ResolveMember(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } m ? ResolveMemberSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public IMethodBaseSymbol? ResolveMethod(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
 		{
 			var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
@@ -272,26 +297,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _module.ResolveMethod(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } m ? ResolveMethodBaseSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public IMethodBaseSymbol? ResolveMethod(int metadataToken)
 		{
 			return _module.ResolveMethod(metadataToken) is { } m ? ResolveMethodBaseSymbol(m) : null;
 		}
 
+		/// <inheritdoc />
 		public byte[] ResolveSignature(int metadataToken)
 		{
 			return _module.ResolveSignature(metadataToken);
 		}
 
+		/// <inheritdoc />
 		public string ResolveString(int metadataToken)
 		{
 			return _module.ResolveString(metadataToken);
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol ResolveType(int metadataToken)
 		{
 			return ResolveTypeSymbol(_module.ResolveType(metadataToken));
 		}
 
+		/// <inheritdoc />
 		public ITypeSymbol ResolveType(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
 		{
 			var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
@@ -299,16 +329,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveTypeSymbol(_module.ResolveType(metadataToken, _genericTypeArguments, _genericMethodArguments));
 		}
 
+		/// <inheritdoc />
 		public CustomAttributeSymbol[] GetCustomAttributes()
 		{
 			return ResolveCustomAttributes(_module.GetCustomAttributesData());
 		}
 
+		/// <inheritdoc />
 		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
 			return ResolveCustomAttributes(_module.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
 		}
 
+		/// <inheritdoc />
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
 			return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);

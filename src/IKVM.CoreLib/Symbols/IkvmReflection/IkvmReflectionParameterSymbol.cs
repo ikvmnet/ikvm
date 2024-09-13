@@ -28,6 +28,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)_parameter.Attributes;
 
+		public object DefaultValue => _parameter.RawDefaultValue;
+
 		public bool HasDefaultValue => _parameter.HasDefaultValue;
 
 		public bool IsIn => _parameter.IsIn;

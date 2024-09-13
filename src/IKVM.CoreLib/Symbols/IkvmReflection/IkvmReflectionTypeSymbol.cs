@@ -60,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		public IkvmReflectionTypeSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, Type type) :
 			base(context, module, null, type)
 		{
-			Debug.Assert(module.ReflectionModule == type.Module);
+			Debug.Assert(module.ReflectionObject == type.Module);
 			_type = type ?? throw new ArgumentNullException(nameof(type));
 		}
 
@@ -514,6 +514,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		public bool IsNestedAssembly => _type.IsNestedAssembly;
 
 		public bool IsNestedFamANDAssem => _type.IsNestedFamANDAssem;
+
+		public bool IsNestedFamORAssem => _type.IsNestedFamORAssem;
 
 		public bool IsNestedFamily => _type.IsNestedFamily;
 

@@ -508,6 +508,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsNestedFamANDAssem => _type.IsNestedFamANDAssem;
 
+		public bool IsNestedFamORAssem => _type.IsNestedFamORAssem;
+
 		public bool IsNestedFamily => _type.IsNestedFamily;
 
 		public bool IsNestedPrivate => _type.IsNestedPrivate;

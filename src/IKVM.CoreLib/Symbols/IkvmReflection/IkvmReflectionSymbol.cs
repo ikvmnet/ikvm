@@ -84,7 +84,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		{
 			var a = new Module[modules.Length];
 			for (int i = 0; i < modules.Length; i++)
-				a[i] = ((IkvmReflectionModuleSymbol)modules[i]).ReflectionModule;
+				a[i] = ((IkvmReflectionModuleSymbol)modules[i]).ReflectionObject;
 
 			return a;
 		}

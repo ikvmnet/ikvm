@@ -104,24 +104,33 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			}
 		}
 
-		internal new MethodInfo ReflectionObject => (MethodInfo)base.ReflectionObject;
+		/// <summary>
+		/// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
+		/// </summary>
+		internal new MethodInfo ReflectionObject => _method;
 
+		/// <inheritdoc />
 		public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
 
+		/// <inheritdoc />
 		public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
 
+		/// <inheritdoc />
 		public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
 
+		/// <inheritdoc />
 		public IMethodSymbol GetBaseDefinition()
 		{
 			return ResolveMethodSymbol(_method.GetBaseDefinition());
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol GetGenericMethodDefinition()
 		{
 			return ResolveMethodSymbol(_method.GetGenericMethodDefinition());
 		}
 
+		/// <inheritdoc />
 		public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
 		{
 			return ResolveMethodSymbol(_method.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
