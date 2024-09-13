@@ -558,6 +558,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolveConstructorSymbols(_type.GetConstructors());
 		}
 
+		public IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr)
+		{
+			return ResolveConstructorSymbols(_type.GetConstructors(bindingAttr));
+		}
+
 		public IMemberSymbol[] GetDefaultMembers()
 		{
 			return ResolveMemberSymbols(_type.GetDefaultMembers());
