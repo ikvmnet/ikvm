@@ -240,6 +240,16 @@ jobs:
         path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Delete Tests (IKVM.Reflection.Tests)
       run: rm /tmp/tests--IKVM.Reflection.Tests.tar.gz
+    - name: Package Tests (IKVM.CoreLib.Tests)
+      run: tar czvf /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
+      working-directory: dist
+    - name: Upload Tests (IKVM.Reflection.Tests)
+      uses: actions/upload-artifact@v4
+      with:
+        name: tests--IKVM.CoreLib.Tests
+        path: /tmp/tests--IKVM.CoreLib.Tests.tar.gz
+    - name: Delete Tests (IKVM.CoreLib.Tests)
+      run: rm /tmp/tests--IKVM.CoreLib.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
       run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
@@ -378,8 +388,9 @@ jobs:
           $tfm += @( "net6.0" )
         }
 
-        $run = @(
+        $run = 
           "IKVM.Reflection.Tests",
+          "IKVM.CoreLib.Tests",
           "IKVM.Tests",
           "IKVM.Java.Tests",
           "IKVM.Tools.Exporter.Tests",
