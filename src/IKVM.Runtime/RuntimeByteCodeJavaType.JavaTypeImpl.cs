@@ -45,24 +45,24 @@ using RuntimeDynamicOrImportJavaType = IKVM.Runtime.RuntimeByteCodeJavaType;
 namespace IKVM.Runtime
 {
 
-	partial class RuntimeByteCodeJavaType
-	{
+    partial class RuntimeByteCodeJavaType
+    {
 
-		private sealed partial class JavaTypeImpl : DynamicImpl
-		{
+        private sealed partial class JavaTypeImpl : DynamicImpl
+        {
 
-			readonly RuntimeJavaType host;
-			readonly ClassFile classFile;
-			readonly RuntimeDynamicOrImportJavaType wrapper;
-			TypeBuilder typeBuilder;
-			RuntimeJavaMethod[] methods;
-			RuntimeJavaMethod[][] baseMethods;
-			RuntimeJavaField[] fields;
-			FinishedTypeImpl finishedType;
-			bool finishInProgress;
-			MethodBuilder clinitMethod;
-			MethodBuilder finalizeMethod;
-			int recursionCount;
+            readonly RuntimeJavaType host;
+            readonly ClassFile classFile;
+            readonly RuntimeDynamicOrImportJavaType wrapper;
+            TypeBuilder typeBuilder;
+            RuntimeJavaMethod[] methods;
+            RuntimeJavaMethod[][] baseMethods;
+            RuntimeJavaField[] fields;
+            FinishedTypeImpl finishedType;
+            bool finishInProgress;
+            MethodBuilder clinitMethod;
+            MethodBuilder finalizeMethod;
+            int recursionCount;
 #if IMPORTER
 			RuntimeByteCodeJavaType enclosingClassWrapper;
 			AnnotationBuilder annotationBuilder;
@@ -71,26 +71,26 @@ namespace IKVM.Runtime
 			ConcurrentDictionary<string, RuntimeJavaType> nestedTypeNames;  // only keys are used, values are always null
 #endif
 
-			internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
-			{
-				wrapper.ClassLoader.Diagnostics.GenericCompilerInfo("constructing JavaTypeImpl for " + f.Name);
-				this.host = host;
-				this.classFile = f;
-				this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;
-			}
+            internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
+            {
+                wrapper.ClassLoader.Diagnostics.GenericCompilerInfo("constructing JavaTypeImpl for " + f.Name);
+                this.host = host;
+                this.classFile = f;
+                this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;
+            }
 
-			internal void CreateStep1()
-			{
-				// process all methods (needs to be done first, because property fields depend on being able to lookup the accessor methods)
-				var hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
-				methods = new RuntimeJavaMethod[classFile.Methods.Length];
-				baseMethods = new RuntimeJavaMethod[classFile.Methods.Length][];
-				for (int i = 0; i < methods.Length; i++)
-				{
-					var flags = MemberFlags.None;
-					var m = classFile.Methods[i];
-					if (m.IsClassInitializer)
-					{
+            internal void CreateStep1()
+            {
+                // process all methods (needs to be done first, because property fields depend on being able to lookup the accessor methods)
+                var hasclinit = wrapper.BaseTypeWrapper == null ? false : wrapper.BaseTypeWrapper.HasStaticInitializer;
+                methods = new RuntimeJavaMethod[classFile.Methods.Length];
+                baseMethods = new RuntimeJavaMethod[classFile.Methods.Length][];
+                for (int i = 0; i < methods.Length; i++)
+                {
+                    var flags = MemberFlags.None;
+                    var m = classFile.Methods[i];
+                    if (m.IsClassInitializer)
+                    {
 #if IMPORTER
 						if (IsSideEffectFreeStaticInitializerOrNoop(m, out var noop))
 						{
@@ -104,10 +104,10 @@ namespace IKVM.Runtime
 #else
                         hasclinit = true;
 #endif
-					}
+                    }
 
-					if (m.IsInternal)
-						flags |= MemberFlags.InternalAccess;
+                    if (m.IsInternal)
+                        flags |= MemberFlags.InternalAccess;
 
 #if IMPORTER
 					if (m.IsCallerSensitive && SupportsCallerID(m))
@@ -118,82 +118,82 @@ namespace IKVM.Runtime
 						flags |= MemberFlags.ModuleInitializer;
 #endif
 
-					if (wrapper.IsGhost && m.IsVirtual)
-					{
-						// note that a GhostMethodWrapper can also represent a default interface method
-						methods[i] = new RuntimeGhostJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
-					}
-					else if (m.IsConstructor && wrapper.IsDelegate)
-					{
-						methods[i] = new DelegateConstructorMethodWrapper(wrapper, m);
-					}
-					else if (classFile.IsInterface && !m.IsStatic && !m.IsPublic)
-					{
-						// we can't use callvirt to call interface private instance methods (because we have to compile them as static methods,
-						// since the CLR doesn't support interface instance methods), so need a special MethodWrapper
-						methods[i] = new RuntimePrivateInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
-					}
-					else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
-					{
-						// note that a GhostMethodWrapper can also represent a default interface method
-						methods[i] = new RuntimeDefaultInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
-					}
-					else
-					{
-						if (!classFile.IsInterface && m.IsVirtual)
-						{
-							baseMethods[i] = FindBaseMethods(m, out var explicitOverride);
-							if (explicitOverride)
-								flags |= MemberFlags.ExplicitOverride;
-						}
+                    if (wrapper.IsGhost && m.IsVirtual)
+                    {
+                        // note that a GhostMethodWrapper can also represent a default interface method
+                        methods[i] = new RuntimeGhostJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+                    }
+                    else if (m.IsConstructor && wrapper.IsDelegate)
+                    {
+                        methods[i] = new DelegateConstructorMethodWrapper(wrapper, m);
+                    }
+                    else if (classFile.IsInterface && !m.IsStatic && !m.IsPublic)
+                    {
+                        // we can't use callvirt to call interface private instance methods (because we have to compile them as static methods,
+                        // since the CLR doesn't support interface instance methods), so need a special MethodWrapper
+                        methods[i] = new RuntimePrivateInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+                    }
+                    else if (classFile.IsInterface && m.IsVirtual && !m.IsAbstract)
+                    {
+                        // note that a GhostMethodWrapper can also represent a default interface method
+                        methods[i] = new RuntimeDefaultInterfaceJavaMethod(wrapper, m.Name, m.Signature, null, null, null, null, m.Modifiers, flags);
+                    }
+                    else
+                    {
+                        if (!classFile.IsInterface && m.IsVirtual)
+                        {
+                            baseMethods[i] = FindBaseMethods(m, out var explicitOverride);
+                            if (explicitOverride)
+                                flags |= MemberFlags.ExplicitOverride;
+                        }
 
-						methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
-					}
-				}
+                        methods[i] = new RuntimeTypicalJavaMethod(wrapper, m.Name, m.Signature, null, null, null, m.Modifiers, flags);
+                    }
+                }
 
-				if (hasclinit)
-					wrapper.SetHasStaticInitializer();
+                if (hasclinit)
+                    wrapper.SetHasStaticInitializer();
 
-				if (!wrapper.IsInterface || wrapper.IsPublic)
-				{
-					var methodsArray = new List<RuntimeJavaMethod>(methods);
-					var baseMethodsArray = new List<RuntimeJavaMethod[]>(baseMethods);
-					AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
-					methods = methodsArray.ToArray();
-					baseMethods = baseMethodsArray.ToArray();
-				}
+                if (!wrapper.IsInterface || wrapper.IsPublic)
+                {
+                    var methodsArray = new List<RuntimeJavaMethod>(methods);
+                    var baseMethodsArray = new List<RuntimeJavaMethod[]>(baseMethods);
+                    AddMirandaMethods(methodsArray, baseMethodsArray, wrapper);
+                    methods = methodsArray.ToArray();
+                    baseMethods = baseMethodsArray.ToArray();
+                }
 
-				if (!wrapper.IsInterface)
-					AddDelegateInvokeStubs(wrapper, ref methods);
+                if (!wrapper.IsInterface)
+                    AddDelegateInvokeStubs(wrapper, ref methods);
 
-				wrapper.SetMethods(methods);
+                wrapper.SetMethods(methods);
 
-				fields = new RuntimeJavaField[classFile.Fields.Length];
-				for (int i = 0; i < fields.Length; i++)
-				{
-					var fld = classFile.Fields[i];
-					if (fld.IsStaticFinalConstant)
-					{
-						RuntimeJavaType fieldType = null;
+                fields = new RuntimeJavaField[classFile.Fields.Length];
+                for (int i = 0; i < fields.Length; i++)
+                {
+                    var fld = classFile.Fields[i];
+                    if (fld.IsStaticFinalConstant)
+                    {
+                        RuntimeJavaType fieldType = null;
 #if !IMPORTER
                         fieldType = wrapper.Context.ClassLoaderFactory.GetBootstrapClassLoader().FieldTypeWrapperFromSig(fld.Signature, LoadMode.LoadOrThrow);
 #endif
-						fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
-					}
-					else if (fld.IsProperty)
-					{
-						fields[i] = new RuntimeByteCodePropertyJavaField(wrapper, fld);
-					}
-					else
-					{
-						fields[i] = RuntimeJavaField.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
-					}
-				}
+                        fields[i] = new RuntimeConstantJavaField(wrapper, fieldType, fld.Name, fld.Signature, fld.Modifiers, null, fld.ConstantValue, MemberFlags.None);
+                    }
+                    else if (fld.IsProperty)
+                    {
+                        fields[i] = new RuntimeByteCodePropertyJavaField(wrapper, fld);
+                    }
+                    else
+                    {
+                        fields[i] = RuntimeJavaField.Create(wrapper, null, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal));
+                    }
+                }
 #if IMPORTER
 				wrapper.AddMapXmlFields(ref fields);
 #endif
-				wrapper.SetFields(fields);
-			}
+                wrapper.SetFields(fields);
+            }
 
 #if IMPORTER
 
@@ -251,8 +251,8 @@ namespace IKVM.Runtime
 			}
 #endif
 
-			internal void CreateStep2()
-			{
+            internal void CreateStep2()
+            {
 #if IMPORTER
 				if (typeBuilder != null)
 				{
@@ -264,20 +264,20 @@ namespace IKVM.Runtime
 				}
 #endif
 
-				// this method is not allowed to throw exceptions (if it does, the runtime will abort)
-				var hasclinit = wrapper.HasStaticInitializer;
-				var mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
-				var f = classFile;
+                // this method is not allowed to throw exceptions (if it does, the runtime will abort)
+                var hasclinit = wrapper.HasStaticInitializer;
+                var mangledTypeName = wrapper.classLoader.GetTypeWrapperFactory().AllocMangledName(wrapper);
+                var f = classFile;
 
-				try
-				{
-					TypeAttributes typeAttribs = 0;
-					if (f.IsAbstract)
-						typeAttribs |= TypeAttributes.Abstract;
-					if (f.IsFinal)
-						typeAttribs |= TypeAttributes.Sealed;
-					if (!hasclinit)
-						typeAttribs |= TypeAttributes.BeforeFieldInit;
+                try
+                {
+                    TypeAttributes typeAttribs = 0;
+                    if (f.IsAbstract)
+                        typeAttribs |= TypeAttributes.Abstract;
+                    if (f.IsFinal)
+                        typeAttribs |= TypeAttributes.Sealed;
+                    if (!hasclinit)
+                        typeAttribs |= TypeAttributes.BeforeFieldInit;
 #if IMPORTER
 
 					bool cantNest = false;
@@ -401,9 +401,9 @@ namespace IKVM.Runtime
                         typeAttribs |= TypeAttributes.Public;
                     }
 #endif // IMPORTER
-					if (f.IsInterface)
-					{
-						typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
+                    if (f.IsInterface)
+                    {
+                        typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if IMPORTER
 						// if any "meaningless" bits are set, preserve them
 						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
@@ -436,10 +436,10 @@ namespace IKVM.Runtime
 #else // IMPORTER
                         typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 #endif // IMPORTER
-					}
-					else
-					{
-						typeAttribs |= TypeAttributes.Class;
+                    }
+                    else
+                    {
+                        typeAttribs |= TypeAttributes.Class;
 #if IMPORTER
 						// if any "meaningless" bits are set, preserve them
 						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
@@ -453,10 +453,10 @@ namespace IKVM.Runtime
 						}
 						else
 #endif // IMPORTER
-						{
-							typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
-						}
-					}
+                        {
+                            typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
+                        }
+                    }
 
 #if IMPORTER
 					// When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
@@ -567,20 +567,20 @@ namespace IKVM.Runtime
 						wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
 					}
 #endif // IMPORTER
-					if (hasclinit)
-					{
-						AddClinitTrigger();
-					}
-					if (HasStructLayoutAttributeAnnotation(classFile))
-					{
-						// when we have a StructLayoutAttribute, field order is significant,
-						// so we link all fields here to make sure they are created in class file order.
-						foreach (RuntimeJavaField fw in fields)
-						{
-							fw.Link();
-						}
-					}
-				}
+                    if (hasclinit)
+                    {
+                        AddClinitTrigger();
+                    }
+                    if (HasStructLayoutAttributeAnnotation(classFile))
+                    {
+                        // when we have a StructLayoutAttribute, field order is significant,
+                        // so we link all fields here to make sure they are created in class file order.
+                        foreach (RuntimeJavaField fw in fields)
+                        {
+                            fw.Link();
+                        }
+                    }
+                }
 #if IMPORTER
 				finally { }
 #else
@@ -589,7 +589,7 @@ namespace IKVM.Runtime
                     throw new InternalException("Exception during JavaTypeImpl.CreateStep2", x);
                 }
 #endif
-			}
+            }
 
 #if IMPORTER
 
@@ -639,51 +639,51 @@ namespace IKVM.Runtime
 			}
 #endif
 
-			void AddClinitTrigger()
-			{
-				// We create a empty method that we can use to trigger our .cctor
-				// (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
-				var attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
-				if (classFile.IsAbstract)
-				{
-					var hasfields = false;
+            void AddClinitTrigger()
+            {
+                // We create a empty method that we can use to trigger our .cctor
+                // (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
+                var attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
+                if (classFile.IsAbstract)
+                {
+                    var hasfields = false;
 
-					// If we have any public static fields, the cctor trigger must (and may) be public as well
-					foreach (ClassFile.Field fld in classFile.Fields)
-					{
-						if (fld.IsPublic && fld.IsStatic)
-						{
-							hasfields = true;
-							break;
-						}
-					}
+                    // If we have any public static fields, the cctor trigger must (and may) be public as well
+                    foreach (ClassFile.Field fld in classFile.Fields)
+                    {
+                        if (fld.IsPublic && fld.IsStatic)
+                        {
+                            hasfields = true;
+                            break;
+                        }
+                    }
 
-					attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-				}
-				else
-				{
-					attribs |= MethodAttributes.Public;
-				}
+                    attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+                }
+                else
+                {
+                    attribs |= MethodAttributes.Public;
+                }
 
-				clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
-				clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
-				clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags());
-			}
+                clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
+                clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
+                clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags());
+            }
 
-			private static bool HasStructLayoutAttributeAnnotation(ClassFile c)
-			{
-				if (c.Annotations != null)
-				{
-					foreach (object[] annot in c.Annotations)
-					{
-						if ("Lcli/System/Runtime/InteropServices/StructLayoutAttribute$Annotation;".Equals(annot[1]))
-						{
-							return true;
-						}
-					}
-				}
-				return false;
-			}
+            private static bool HasStructLayoutAttributeAnnotation(ClassFile c)
+            {
+                if (c.Annotations != null)
+                {
+                    foreach (object[] annot in c.Annotations)
+                    {
+                        if ("Lcli/System/Runtime/InteropServices/StructLayoutAttribute$Annotation;".Equals(annot[1]))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
 
 #if IMPORTER
 			private ClassFile.InnerClass getOuterClass()
@@ -792,91 +792,91 @@ namespace IKVM.Runtime
 			}
 #endif // IMPORTER
 
-			private RuntimeJavaMethod GetMethodWrapperDuringCtor(RuntimeJavaType lookup, IList<RuntimeJavaMethod> methods, string name, string sig)
-			{
-				if (lookup == wrapper)
-				{
-					foreach (RuntimeJavaMethod mw in methods)
-					{
-						if (mw.Name == name && mw.Signature == sig)
-						{
-							return mw;
-						}
-					}
-					if (lookup.BaseTypeWrapper == null)
-					{
-						return null;
-					}
-					else
-					{
-						return lookup.BaseTypeWrapper.GetMethodWrapper(name, sig, true);
-					}
-				}
-				else
-				{
-					return lookup.GetMethodWrapper(name, sig, true);
-				}
-			}
+            private RuntimeJavaMethod GetMethodWrapperDuringCtor(RuntimeJavaType lookup, IList<RuntimeJavaMethod> methods, string name, string sig)
+            {
+                if (lookup == wrapper)
+                {
+                    foreach (RuntimeJavaMethod mw in methods)
+                    {
+                        if (mw.Name == name && mw.Signature == sig)
+                        {
+                            return mw;
+                        }
+                    }
+                    if (lookup.BaseTypeWrapper == null)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        return lookup.BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                    }
+                }
+                else
+                {
+                    return lookup.GetMethodWrapper(name, sig, true);
+                }
+            }
 
-			private void AddMirandaMethods(List<RuntimeJavaMethod> methods, List<RuntimeJavaMethod[]> baseMethods, RuntimeJavaType tw)
-			{
-				foreach (RuntimeJavaType iface in tw.Interfaces)
-				{
-					if (iface.IsPublic && this.wrapper.IsInterface)
-					{
-						// for interfaces, we only need miranda methods for non-public interfaces that we extend
-						continue;
-					}
-					AddMirandaMethods(methods, baseMethods, iface);
-					foreach (RuntimeJavaMethod ifmethod in iface.GetMethods())
-					{
-						// skip <clinit> and non-virtual interface methods introduced in Java 8
-						if (ifmethod.IsVirtual)
-						{
-							RuntimeJavaType lookup = wrapper;
-							while (lookup != null)
-							{
-								RuntimeJavaMethod mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
-								if (mw == null || (mw.IsMirandaMethod && mw.DeclaringType != wrapper))
-								{
-									mw = RuntimeMirandaJavaMethod.Create(wrapper, ifmethod);
-									methods.Add(mw);
-									baseMethods.Add(new RuntimeJavaMethod[] { ifmethod });
-									break;
-								}
-								if (mw.IsMirandaMethod && mw.DeclaringType == wrapper)
-								{
-									methods[methods.IndexOf(mw)] = ((RuntimeMirandaJavaMethod)mw).Update(ifmethod);
-									break;
-								}
-								if (!mw.IsStatic || mw.DeclaringType == wrapper)
-								{
-									break;
-								}
-								lookup = mw.DeclaringType.BaseTypeWrapper;
-							}
-						}
-					}
-				}
-			}
+            private void AddMirandaMethods(List<RuntimeJavaMethod> methods, List<RuntimeJavaMethod[]> baseMethods, RuntimeJavaType tw)
+            {
+                foreach (RuntimeJavaType iface in tw.Interfaces)
+                {
+                    if (iface.IsPublic && this.wrapper.IsInterface)
+                    {
+                        // for interfaces, we only need miranda methods for non-public interfaces that we extend
+                        continue;
+                    }
+                    AddMirandaMethods(methods, baseMethods, iface);
+                    foreach (RuntimeJavaMethod ifmethod in iface.GetMethods())
+                    {
+                        // skip <clinit> and non-virtual interface methods introduced in Java 8
+                        if (ifmethod.IsVirtual)
+                        {
+                            RuntimeJavaType lookup = wrapper;
+                            while (lookup != null)
+                            {
+                                RuntimeJavaMethod mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
+                                if (mw == null || (mw.IsMirandaMethod && mw.DeclaringType != wrapper))
+                                {
+                                    mw = RuntimeMirandaJavaMethod.Create(wrapper, ifmethod);
+                                    methods.Add(mw);
+                                    baseMethods.Add(new RuntimeJavaMethod[] { ifmethod });
+                                    break;
+                                }
+                                if (mw.IsMirandaMethod && mw.DeclaringType == wrapper)
+                                {
+                                    methods[methods.IndexOf(mw)] = ((RuntimeMirandaJavaMethod)mw).Update(ifmethod);
+                                    break;
+                                }
+                                if (!mw.IsStatic || mw.DeclaringType == wrapper)
+                                {
+                                    break;
+                                }
+                                lookup = mw.DeclaringType.BaseTypeWrapper;
+                            }
+                        }
+                    }
+                }
+            }
 
-			private void AddDelegateInvokeStubs(RuntimeJavaType tw, ref RuntimeJavaMethod[] methods)
-			{
-				foreach (RuntimeJavaType iface in tw.Interfaces)
-				{
-					if (iface.IsFakeNestedType
-						&& iface.GetMethods().Length == 1
-						&& iface.GetMethods()[0].IsDelegateInvokeWithByRefParameter)
-					{
-						RuntimeJavaMethod mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
-						if (GetMethodWrapperDuringCtor(wrapper, methods, mw.Name, mw.Signature) == null)
-						{
-							methods = ArrayUtil.Concat(methods, mw);
-						}
-					}
-					AddDelegateInvokeStubs(iface, ref methods);
-				}
-			}
+            private void AddDelegateInvokeStubs(RuntimeJavaType tw, ref RuntimeJavaMethod[] methods)
+            {
+                foreach (RuntimeJavaType iface in tw.Interfaces)
+                {
+                    if (iface.IsFakeNestedType
+                        && iface.GetMethods().Length == 1
+                        && iface.GetMethods()[0].IsDelegateInvokeWithByRefParameter)
+                    {
+                        RuntimeJavaMethod mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
+                        if (GetMethodWrapperDuringCtor(wrapper, methods, mw.Name, mw.Signature) == null)
+                        {
+                            methods = ArrayUtil.Concat(methods, mw);
+                        }
+                    }
+                    AddDelegateInvokeStubs(iface, ref methods);
+                }
+            }
 
 #if IMPORTER
 			private static bool CheckInnerOuterNames(string inner, string outer)
@@ -894,86 +894,86 @@ namespace IKVM.Runtime
 
 #endif
 
-			private int GetMethodIndex(RuntimeJavaMethod mw)
-			{
-				for (int i = 0; i < methods.Length; i++)
-				{
-					if (methods[i] == mw)
-					{
-						return i;
-					}
-				}
+            private int GetMethodIndex(RuntimeJavaMethod mw)
+            {
+                for (int i = 0; i < methods.Length; i++)
+                {
+                    if (methods[i] == mw)
+                    {
+                        return i;
+                    }
+                }
 
-				throw new InvalidOperationException();
-			}
+                throw new InvalidOperationException();
+            }
 
-			private static void CheckLoaderConstraints(RuntimeJavaMethod mw, RuntimeJavaMethod baseMethod)
-			{
-				if (mw.ReturnType != baseMethod.ReturnType)
-				{
-					if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable)
-					{
-						// unloadable types can never cause a loader constraint violation
-						if (mw.ReturnType.IsUnloadable && baseMethod.ReturnType.IsUnloadable)
-						{
-							((RuntimeUnloadableJavaType)mw.ReturnType).SetCustomModifier(((RuntimeUnloadableJavaType)baseMethod.ReturnType).CustomModifier);
-						}
-					}
-					else
-					{
+            private static void CheckLoaderConstraints(RuntimeJavaMethod mw, RuntimeJavaMethod baseMethod)
+            {
+                if (mw.ReturnType != baseMethod.ReturnType)
+                {
+                    if (mw.ReturnType.IsUnloadable || baseMethod.ReturnType.IsUnloadable)
+                    {
+                        // unloadable types can never cause a loader constraint violation
+                        if (mw.ReturnType.IsUnloadable && baseMethod.ReturnType.IsUnloadable)
+                        {
+                            ((RuntimeUnloadableJavaType)mw.ReturnType).SetCustomModifier(((RuntimeUnloadableJavaType)baseMethod.ReturnType).CustomModifier);
+                        }
+                    }
+                    else
+                    {
 #if IMPORTER
 						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
                         throw new LinkageError("Loader constraints violated");
 #endif
-					}
-				}
-				RuntimeJavaType[] here = mw.GetParameters();
-				RuntimeJavaType[] there = baseMethod.GetParameters();
-				for (int i = 0; i < here.Length; i++)
-				{
-					if (here[i] != there[i])
-					{
-						if (here[i].IsUnloadable || there[i].IsUnloadable)
-						{
-							// unloadable types can never cause a loader constraint violation
-							if (here[i].IsUnloadable && there[i].IsUnloadable)
-							{
-								((RuntimeUnloadableJavaType)here[i]).SetCustomModifier(((RuntimeUnloadableJavaType)there[i]).CustomModifier);
-							}
-						}
-						else
-						{
+                    }
+                }
+                RuntimeJavaType[] here = mw.GetParameters();
+                RuntimeJavaType[] there = baseMethod.GetParameters();
+                for (int i = 0; i < here.Length; i++)
+                {
+                    if (here[i] != there[i])
+                    {
+                        if (here[i].IsUnloadable || there[i].IsUnloadable)
+                        {
+                            // unloadable types can never cause a loader constraint violation
+                            if (here[i].IsUnloadable && there[i].IsUnloadable)
+                            {
+                                ((RuntimeUnloadableJavaType)here[i]).SetCustomModifier(((RuntimeUnloadableJavaType)there[i]).CustomModifier);
+                            }
+                        }
+                        else
+                        {
 #if IMPORTER
 							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
                             throw new LinkageError("Loader constraints violated");
 #endif
-						}
-					}
-				}
-			}
+                        }
+                    }
+                }
+            }
 
-			private int GetFieldIndex(RuntimeJavaField fw)
-			{
-				for (int i = 0; i < fields.Length; i++)
-				{
-					if (fields[i] == fw)
-					{
-						return i;
-					}
-				}
-				throw new InvalidOperationException();
-			}
+            private int GetFieldIndex(RuntimeJavaField fw)
+            {
+                for (int i = 0; i < fields.Length; i++)
+                {
+                    if (fields[i] == fw)
+                    {
+                        return i;
+                    }
+                }
+                throw new InvalidOperationException();
+            }
 
-			internal override FieldInfo LinkField(RuntimeJavaField fw)
-			{
-				if (fw is RuntimeByteCodePropertyJavaField)
-				{
-					((RuntimeByteCodePropertyJavaField)fw).DoLink(typeBuilder);
-					return null;
-				}
-				int fieldIndex = GetFieldIndex(fw);
+            internal override FieldInfo LinkField(RuntimeJavaField fw)
+            {
+                if (fw is RuntimeByteCodePropertyJavaField)
+                {
+                    ((RuntimeByteCodePropertyJavaField)fw).DoLink(typeBuilder);
+                    return null;
+                }
+                int fieldIndex = GetFieldIndex(fw);
 #if IMPORTER
 				if (wrapper.ClassLoader.RemoveUnusedFields
 					&& fw.IsPrivate
@@ -1033,55 +1033,55 @@ namespace IKVM.Runtime
 					return DefineField(fw.Name, fw.FieldTypeWrapper, fieldAttribs, fw.IsVolatile);
 				}
 #endif // IMPORTER
-				FieldBuilder field;
-				ClassFile.Field fld = classFile.Fields[fieldIndex];
-				FieldAttributes attribs = 0;
-				string realFieldName = UnicodeUtil.EscapeInvalidSurrogates(fld.Name);
-				if (!ReferenceEquals(realFieldName, fld.Name))
-				{
-					attribs |= FieldAttributes.SpecialName;
-				}
-				MethodAttributes methodAttribs = MethodAttributes.HideBySig;
+                FieldBuilder field;
+                ClassFile.Field fld = classFile.Fields[fieldIndex];
+                FieldAttributes attribs = 0;
+                string realFieldName = UnicodeUtil.EscapeInvalidSurrogates(fld.Name);
+                if (!ReferenceEquals(realFieldName, fld.Name))
+                {
+                    attribs |= FieldAttributes.SpecialName;
+                }
+                MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if IMPORTER
 				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
-				if (fld.IsPrivate)
-				{
-					attribs |= FieldAttributes.Private;
-				}
-				else if (fld.IsProtected)
-				{
-					attribs |= FieldAttributes.FamORAssem;
-					methodAttribs |= MethodAttributes.FamORAssem;
-				}
-				else if (fld.IsPublic)
-				{
-					attribs |= FieldAttributes.Public;
-					methodAttribs |= MethodAttributes.Public;
-				}
-				else
-				{
-					attribs |= FieldAttributes.Assembly;
-					methodAttribs |= MethodAttributes.Assembly;
-				}
+                if (fld.IsPrivate)
+                {
+                    attribs |= FieldAttributes.Private;
+                }
+                else if (fld.IsProtected)
+                {
+                    attribs |= FieldAttributes.FamORAssem;
+                    methodAttribs |= MethodAttributes.FamORAssem;
+                }
+                else if (fld.IsPublic)
+                {
+                    attribs |= FieldAttributes.Public;
+                    methodAttribs |= MethodAttributes.Public;
+                }
+                else
+                {
+                    attribs |= FieldAttributes.Assembly;
+                    methodAttribs |= MethodAttributes.Assembly;
+                }
 
-				if (fld.IsStatic)
-				{
-					attribs |= FieldAttributes.Static;
-					methodAttribs |= MethodAttributes.Static;
-				}
-				// NOTE "constant" static finals are converted into literals
-				// TODO it would be possible for Java code to change the value of a non-blank static final, but I don't
-				// know if we want to support this (since the Java JITs don't really support it either)
-				if (fld.IsStaticFinalConstant)
-				{
-					Profiler.Count("Static Final Constant");
-					attribs |= FieldAttributes.Literal;
-					field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, false);
-					field.SetConstant(fld.ConstantValue);
-				}
-				else
-				{
+                if (fld.IsStatic)
+                {
+                    attribs |= FieldAttributes.Static;
+                    methodAttribs |= MethodAttributes.Static;
+                }
+                // NOTE "constant" static finals are converted into literals
+                // TODO it would be possible for Java code to change the value of a non-blank static final, but I don't
+                // know if we want to support this (since the Java JITs don't really support it either)
+                if (fld.IsStaticFinalConstant)
+                {
+                    Profiler.Count("Static Final Constant");
+                    attribs |= FieldAttributes.Literal;
+                    field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, false);
+                    field.SetConstant(fld.ConstantValue);
+                }
+                else
+                {
 #if IMPORTER
 					if (wrapper.IsPublic && wrapper.NeedsType2AccessStub(fw))
 					{
@@ -1112,13 +1112,13 @@ namespace IKVM.Runtime
                     }
 #endif
 
-					field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
-				}
-				if (fld.IsTransient)
-				{
-					var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
-					field.SetCustomAttribute(transientAttrib);
-				}
+                    field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
+                }
+                if (fld.IsTransient)
+                {
+                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
+                    field.SetCustomAttribute(transientAttrib);
+                }
 #if IMPORTER
 				{
 					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
@@ -1137,126 +1137,126 @@ namespace IKVM.Runtime
 				}
 #endif
 
-				return field;
-			}
+                return field;
+            }
 
-			FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
-			{
-				var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : Type.EmptyTypes;
-				return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
-			}
+            FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
+            {
+                var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : Type.EmptyTypes;
+                return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
+            }
 
-			internal override void EmitRunClassConstructor(CodeEmitter ilgen)
-			{
-				if (clinitMethod != null)
-					ilgen.Emit(OpCodes.Call, clinitMethod);
-			}
+            internal override void EmitRunClassConstructor(CodeEmitter ilgen)
+            {
+                if (clinitMethod != null)
+                    ilgen.Emit(OpCodes.Call, clinitMethod);
+            }
 
-			internal override DynamicImpl Finish()
-			{
-				var baseTypeWrapper = wrapper.BaseTypeWrapper;
-				if (baseTypeWrapper != null)
-				{
-					baseTypeWrapper.Finish();
-					baseTypeWrapper.LinkAll();
-				}
+            internal override DynamicImpl Finish()
+            {
+                var baseTypeWrapper = wrapper.BaseTypeWrapper;
+                if (baseTypeWrapper != null)
+                {
+                    baseTypeWrapper.Finish();
+                    baseTypeWrapper.LinkAll();
+                }
 
-				// NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
-				// causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
-				// The Name in the ResolveEventArgs contains only the nested type name, not the full type name,
-				// for example, if the type being resolved is "MyOuterType+MyInnerType", then the event only
-				// receives "MyInnerType" as the name. Since we only compile inner classes as nested types
-				// when we're statically compiling, we can only run into this bug when we're statically compiling.
-				// NOTE To work around this bug, we have to make sure that all types that are going to be
-				// required in finished form, are finished explicitly here. It isn't clear what other types are
-				// required to be finished. I instrumented a static compilation of classpath.dll and this
-				// turned up no other cases of the TypeResolve event firing.
-				foreach (RuntimeJavaType iface in wrapper.interfaces)
-				{
-					iface.Finish();
-					iface.LinkAll();
-				}
+                // NOTE there is a bug in the CLR (.NET 1.0 & 1.1 [1.2 is not yet available]) that
+                // causes the AppDomain.TypeResolve event to receive the incorrect type name for nested types.
+                // The Name in the ResolveEventArgs contains only the nested type name, not the full type name,
+                // for example, if the type being resolved is "MyOuterType+MyInnerType", then the event only
+                // receives "MyInnerType" as the name. Since we only compile inner classes as nested types
+                // when we're statically compiling, we can only run into this bug when we're statically compiling.
+                // NOTE To work around this bug, we have to make sure that all types that are going to be
+                // required in finished form, are finished explicitly here. It isn't clear what other types are
+                // required to be finished. I instrumented a static compilation of classpath.dll and this
+                // turned up no other cases of the TypeResolve event firing.
+                foreach (RuntimeJavaType iface in wrapper.interfaces)
+                {
+                    iface.Finish();
+                    iface.LinkAll();
+                }
 
-				// make sure all classes are loaded, before we start finishing the type. During finishing, we
-				// may not run any Java code, because that might result in a request to finish the type that we
-				// are in the process of finishing, and this would be a problem.
-				// Prevent infinity recursion for broken class loaders by keeping a recursion count and falling
-				// back to late binding if we recurse more than twice.
-				var mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2 || (JVM.DisableEagerClassLoading && wrapper.Name != "sun.reflect.misc.Trampoline")
-					? LoadMode.ReturnUnloadable
-					: LoadMode.Link;
-				try
-				{
-					classFile.Link(wrapper, mode);
+                // make sure all classes are loaded, before we start finishing the type. During finishing, we
+                // may not run any Java code, because that might result in a request to finish the type that we
+                // are in the process of finishing, and this would be a problem.
+                // Prevent infinity recursion for broken class loaders by keeping a recursion count and falling
+                // back to late binding if we recurse more than twice.
+                var mode = System.Threading.Interlocked.Increment(ref recursionCount) > 2 || (JVM.DisableEagerClassLoading && wrapper.Name != "sun.reflect.misc.Trampoline")
+                    ? LoadMode.ReturnUnloadable
+                    : LoadMode.Link;
+                try
+                {
+                    classFile.Link(wrapper, mode);
 
-					for (int i = 0; i < fields.Length; i++)
-						fields[i].Link(mode);
+                    for (int i = 0; i < fields.Length; i++)
+                        fields[i].Link(mode);
 
-					for (int i = 0; i < methods.Length; i++)
-						methods[i].Link(mode);
-				}
-				finally
-				{
-					System.Threading.Interlocked.Decrement(ref recursionCount);
-				}
+                    for (int i = 0; i < methods.Length; i++)
+                        methods[i].Link(mode);
+                }
+                finally
+                {
+                    System.Threading.Interlocked.Decrement(ref recursionCount);
+                }
 
-				// this is the correct lock, FinishCore doesn't call any user code and mutates global state,
-				// so it needs to be protected by a lock.
-				lock (this)
-				{
-					FinishedTypeImpl impl;
-					try
-					{
-						// call FinishCore in the finally to avoid Thread.Abort interrupting the thread
-					}
-					finally
-					{
-						impl = FinishCore();
-					}
-					return impl;
-				}
-			}
+                // this is the correct lock, FinishCore doesn't call any user code and mutates global state,
+                // so it needs to be protected by a lock.
+                lock (this)
+                {
+                    FinishedTypeImpl impl;
+                    try
+                    {
+                        // call FinishCore in the finally to avoid Thread.Abort interrupting the thread
+                    }
+                    finally
+                    {
+                        impl = FinishCore();
+                    }
+                    return impl;
+                }
+            }
 
-			FinishedTypeImpl FinishCore()
-			{
-				// it is possible that the loading of the referenced classes triggered a finish of us,
-				// if that happens, we just return
-				if (finishedType != null)
-					return finishedType;
+            FinishedTypeImpl FinishCore()
+            {
+                // it is possible that the loading of the referenced classes triggered a finish of us,
+                // if that happens, we just return
+                if (finishedType != null)
+                    return finishedType;
 
-				if (finishInProgress)
-					throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
+                if (finishInProgress)
+                    throw new InvalidOperationException("Recursive finish attempt for " + wrapper.Name);
 
-				finishInProgress = true;
-				wrapper.ClassLoader.Diagnostics.GenericCompilerTrace($"Finishing: {wrapper.Name}");
-				Profiler.Enter("JavaTypeImpl.Finish.Core");
+                finishInProgress = true;
+                wrapper.ClassLoader.Diagnostics.GenericCompilerTrace($"Finishing: {wrapper.Name}");
+                Profiler.Enter("JavaTypeImpl.Finish.Core");
 
-				try
-				{
-					RuntimeJavaType declaringTypeWrapper = null;
-					var innerClassesTypeWrappers = Array.Empty<RuntimeJavaType>();
+                try
+                {
+                    RuntimeJavaType declaringTypeWrapper = null;
+                    var innerClassesTypeWrappers = Array.Empty<RuntimeJavaType>();
 
-					// if we're an inner class, we need to attach an InnerClass attribute
-					ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
-					if (innerclasses != null)
-					{
-						// TODO consider not pre-computing innerClassesTypeWrappers and declaringTypeWrapper here
-						var wrappers = new List<RuntimeJavaType>();
-						for (int i = 0; i < innerclasses.Length; i++)
-						{
-							if (innerclasses[i].innerClass.IsNotNil && innerclasses[i].outerClass.IsNotNil)
-							{
-								if (classFile.GetConstantPoolClassType(innerclasses[i].outerClass) == wrapper)
-								{
-									wrappers.Add(classFile.GetConstantPoolClassType(innerclasses[i].innerClass));
-								}
-								if (classFile.GetConstantPoolClassType(innerclasses[i].innerClass) == wrapper)
-								{
-									declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass);
-								}
-							}
-						}
-						innerClassesTypeWrappers = wrappers.ToArray();
+                    // if we're an inner class, we need to attach an InnerClass attribute
+                    ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+                    if (innerclasses != null)
+                    {
+                        // TODO consider not pre-computing innerClassesTypeWrappers and declaringTypeWrapper here
+                        var wrappers = new List<RuntimeJavaType>();
+                        for (int i = 0; i < innerclasses.Length; i++)
+                        {
+                            if (innerclasses[i].innerClass.IsNotNil && innerclasses[i].outerClass.IsNotNil)
+                            {
+                                if (classFile.GetConstantPoolClassType(innerclasses[i].outerClass) == wrapper)
+                                {
+                                    wrappers.Add(classFile.GetConstantPoolClassType(innerclasses[i].innerClass));
+                                }
+                                if (classFile.GetConstantPoolClassType(innerclasses[i].innerClass) == wrapper)
+                                {
+                                    declaringTypeWrapper = classFile.GetConstantPoolClassType(innerclasses[i].outerClass);
+                                }
+                            }
+                        }
+                        innerClassesTypeWrappers = wrappers.ToArray();
 #if IMPORTER
 						// before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
 						foreach (var tw in innerClassesTypeWrappers)
@@ -1271,7 +1271,7 @@ namespace IKVM.Runtime
 							}
 						}
 #endif
-					}
+                    }
 #if IMPORTER
 
 					if (annotationBuilder != null)
@@ -1289,8 +1289,8 @@ namespace IKVM.Runtime
 					}
 #endif
 
-					var context = new FinishContext(wrapper.Context, host, classFile, wrapper, typeBuilder);
-					var type = context.FinishImpl();
+                    var context = new FinishContext(wrapper.Context, host, classFile, wrapper, typeBuilder);
+                    var type = context.FinishImpl();
 
 #if IMPORTER
 					if (annotationBuilder != null)
@@ -1306,7 +1306,7 @@ namespace IKVM.Runtime
 						privateInterfaceMethods.CreateType();
 					}
 #endif
-					var finishedClinitMethod = (MethodInfo)clinitMethod;
+                    var finishedClinitMethod = (MethodInfo)clinitMethod;
 #if !IMPORTER
                     if (finishedClinitMethod != null)
                     {
@@ -1316,20 +1316,20 @@ namespace IKVM.Runtime
                     }
 #endif
 
-					finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod, host);
-					return finishedType;
-				}
+                    finishedType = new FinishedTypeImpl(type, innerClassesTypeWrappers, declaringTypeWrapper, wrapper.ReflectiveModifiers, Metadata.Create(classFile), finishedClinitMethod, finalizeMethod, host);
+                    return finishedType;
+                }
 #if !IMPORTER
                 catch (Exception x)
                 {
                     throw new InternalException($"Exception during finishing of: {wrapper.Name}", x);
                 }
 #endif
-				finally
-				{
-					Profiler.Leave("JavaTypeImpl.Finish.Core");
-				}
-			}
+                finally
+                {
+                    Profiler.Leave("JavaTypeImpl.Finish.Core");
+                }
+            }
 
 #if IMPORTER
 
@@ -1894,566 +1894,566 @@ namespace IKVM.Runtime
 			}
 #endif // IMPORTER
 
-			internal override RuntimeJavaType[] InnerClasses
-			{
-				get
-				{
-					throw new InvalidOperationException("InnerClasses is only available for finished types");
-				}
-			}
+            internal override RuntimeJavaType[] InnerClasses
+            {
+                get
+                {
+                    throw new InvalidOperationException("InnerClasses is only available for finished types");
+                }
+            }
 
-			internal override RuntimeJavaType DeclaringTypeWrapper
-			{
-				get
-				{
-					throw new InvalidOperationException("DeclaringTypeWrapper is only available for finished types");
-				}
-			}
+            internal override RuntimeJavaType DeclaringTypeWrapper
+            {
+                get
+                {
+                    throw new InvalidOperationException("DeclaringTypeWrapper is only available for finished types");
+                }
+            }
 
-			internal override Modifiers ReflectiveModifiers
-			{
-				get
-				{
-					Modifiers mods;
-					ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
-					if (innerclasses != null)
-					{
-						for (int i = 0; i < innerclasses.Length; i++)
-						{
-							if (innerclasses[i].innerClass.IsNotNil)
-							{
-								if (classFile.GetConstantPoolClass(innerclasses[i].innerClass) == wrapper.Name)
-								{
-									// the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
-									// (minus ACC_SUPER)
-									mods = innerclasses[i].accessFlags & (Modifiers)0x761F;
-									if (classFile.IsInterface)
-									{
-										mods |= Modifiers.Abstract;
-									}
-									return mods;
-								}
-							}
-						}
-					}
-					// the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
-					// (minus ACC_SUPER)
-					mods = classFile.Modifiers & (Modifiers)0x7611;
-					if (classFile.IsInterface)
-					{
-						mods |= Modifiers.Abstract;
-					}
-					return mods;
-				}
-			}
+            internal override Modifiers ReflectiveModifiers
+            {
+                get
+                {
+                    Modifiers mods;
+                    ClassFile.InnerClass[] innerclasses = classFile.InnerClasses;
+                    if (innerclasses != null)
+                    {
+                        for (int i = 0; i < innerclasses.Length; i++)
+                        {
+                            if (innerclasses[i].innerClass.IsNotNil)
+                            {
+                                if (classFile.GetConstantPoolClass(innerclasses[i].innerClass) == wrapper.Name)
+                                {
+                                    // the mask comes from RECOGNIZED_INNER_CLASS_MODIFIERS in src/hotspot/share/vm/classfile/classFileParser.cpp
+                                    // (minus ACC_SUPER)
+                                    mods = innerclasses[i].accessFlags & (Modifiers)0x761F;
+                                    if (classFile.IsInterface)
+                                    {
+                                        mods |= Modifiers.Abstract;
+                                    }
+                                    return mods;
+                                }
+                            }
+                        }
+                    }
+                    // the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
+                    // (minus ACC_SUPER)
+                    mods = classFile.Modifiers & (Modifiers)0x7611;
+                    if (classFile.IsInterface)
+                    {
+                        mods |= Modifiers.Abstract;
+                    }
+                    return mods;
+                }
+            }
 
-			/// <summary>
-			/// Finds all methods that the specified name/sig is going to be overriding
-			/// </summary>
-			/// <param name="m"></param>
-			/// <param name="explicitOverride"></param>
-			/// <returns></returns>
-			private RuntimeJavaMethod[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
-			{
-				Debug.Assert(!classFile.IsInterface);
-				Debug.Assert(m.Name != "<init>");
+            /// <summary>
+            /// Finds all methods that the specified name/sig is going to be overriding
+            /// </summary>
+            /// <param name="m"></param>
+            /// <param name="explicitOverride"></param>
+            /// <returns></returns>
+            private RuntimeJavaMethod[] FindBaseMethods(ClassFile.Method m, out bool explicitOverride)
+            {
+                Debug.Assert(!classFile.IsInterface);
+                Debug.Assert(m.Name != "<init>");
 
-				// starting with Java 7 the algorithm changed
-				return classFile.MajorVersion >= 51 ? FindBaseMethods7(m.Name, m.Signature, m.IsFinal && !m.IsPublic && !m.IsProtected, out explicitOverride) : FindBaseMethodsLegacy(m.Name, m.Signature, out explicitOverride);
-			}
+                // starting with Java 7 the algorithm changed
+                return classFile.MajorVersion >= 51 ? FindBaseMethods7(m.Name, m.Signature, m.IsFinal && !m.IsPublic && !m.IsProtected, out explicitOverride) : FindBaseMethodsLegacy(m.Name, m.Signature, out explicitOverride);
+            }
 
-			RuntimeJavaMethod[] FindBaseMethods7(string name, string sig, bool packageFinal, out bool explicitOverride)
-			{
-				// NOTE this implements the (completely broken) OpenJDK 7 b147 HotSpot behavior,
-				// not the algorithm specified in section 5.4.5 of the JavaSE7 JVM spec
-				// see http://weblog.ikvm.net/PermaLink.aspx?guid=bde44d8b-7ba9-4e0e-b3a6-b735627118ff and subsequent posts
-				// UPDATE as of JDK 7u65 and JDK 8u11, the algorithm changed again to handle package private methods differently
-				// this code has not been updated to reflect these changes (we're still at JDK 8 GA level)
-				explicitOverride = false;
-				RuntimeJavaMethod topPublicOrProtectedMethod = null;
-				var tw = wrapper.BaseTypeWrapper;
-				while (tw != null)
-				{
-					var baseMethod = tw.GetMethodWrapper(name, sig, true);
-					if (baseMethod == null)
-						break;
-					else if (baseMethod.IsAccessStub)
-					{
-						// ignore
-					}
-					else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
-						topPublicOrProtectedMethod = baseMethod;
-					tw = baseMethod.DeclaringType.BaseTypeWrapper;
-				}
-				tw = wrapper.BaseTypeWrapper;
-				while (tw != null)
-				{
-					var baseMethod = tw.GetMethodWrapper(name, sig, true);
-					if (baseMethod == null)
-					{
-						break;
-					}
-					else if (baseMethod.IsAccessStub)
-					{
-						// ignore
-					}
-					else if (baseMethod.IsPrivate)
-					{
-						// skip
-					}
-					else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || IsAccessibleInternal(baseMethod) || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
-					{
-						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
-					}
-					else if (baseMethod.IsStatic)
-					{
-						// skip
-					}
-					else if (topPublicOrProtectedMethod == null && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
-					{
-						// this is a package private method that we're not overriding (unless its vtable stream interleaves ours, which is a case we handle below)
-						explicitOverride = true;
-					}
-					else if (topPublicOrProtectedMethod != null && baseMethod.IsFinal && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
-					{
-						// this is package private final method that we would override had it not been final, but which is ignored by HotSpot (instead of throwing a VerifyError)
-						explicitOverride = true;
-					}
-					else if (topPublicOrProtectedMethod == null)
-					{
-						if (explicitOverride)
-						{
-							var list = new List<RuntimeJavaMethod>();
-							list.Add(baseMethod);
-							// we might still have to override package methods from another package if the vtable streams are interleaved with ours
-							tw = wrapper.BaseTypeWrapper;
-							while (tw != null)
-							{
-								var baseMethod2 = tw.GetMethodWrapper(name, sig, true);
-								if (baseMethod2 == null || baseMethod2 == baseMethod)
-								{
-									break;
-								}
-								var baseMethod3 = GetPackageBaseMethod(baseMethod.DeclaringType.BaseTypeWrapper, name, sig, baseMethod2.DeclaringType);
-								if (baseMethod3 != null)
-								{
-									if (baseMethod2.IsFinal)
-									{
-										baseMethod2 = baseMethod3;
-									}
-									bool found = false;
-									foreach (var mw in list)
-									{
-										if (mw.DeclaringType.IsPackageAccessibleFrom(baseMethod2.DeclaringType))
-										{
-											// we should only add each package once
-											found = true;
-											break;
-										}
-									}
-									if (!found)
-									{
-										list.Add(baseMethod2);
-									}
-								}
-								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
-							}
-							return list.ToArray();
-						}
-						else
-						{
-							return new RuntimeJavaMethod[] { baseMethod };
-						}
-					}
-					else
-					{
-						if (packageFinal)
-						{
-							// when a package final method overrides a public or protected method, HotSpot does not mark that vtable slot as final,
-							// so we need an explicit override to force the MethodAttributes.NewSlot flag, otherwise the CLR won't allow us
-							// to override the original method in subsequent derived types
-							explicitOverride = true;
-						}
+            RuntimeJavaMethod[] FindBaseMethods7(string name, string sig, bool packageFinal, out bool explicitOverride)
+            {
+                // NOTE this implements the (completely broken) OpenJDK 7 b147 HotSpot behavior,
+                // not the algorithm specified in section 5.4.5 of the JavaSE7 JVM spec
+                // see http://weblog.ikvm.net/PermaLink.aspx?guid=bde44d8b-7ba9-4e0e-b3a6-b735627118ff and subsequent posts
+                // UPDATE as of JDK 7u65 and JDK 8u11, the algorithm changed again to handle package private methods differently
+                // this code has not been updated to reflect these changes (we're still at JDK 8 GA level)
+                explicitOverride = false;
+                RuntimeJavaMethod topPublicOrProtectedMethod = null;
+                var tw = wrapper.BaseTypeWrapper;
+                while (tw != null)
+                {
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    if (baseMethod == null)
+                        break;
+                    else if (baseMethod.IsAccessStub)
+                    {
+                        // ignore
+                    }
+                    else if (!baseMethod.IsStatic && (baseMethod.IsPublic || baseMethod.IsProtected))
+                        topPublicOrProtectedMethod = baseMethod;
+                    tw = baseMethod.DeclaringType.BaseTypeWrapper;
+                }
+                tw = wrapper.BaseTypeWrapper;
+                while (tw != null)
+                {
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    if (baseMethod == null)
+                    {
+                        break;
+                    }
+                    else if (baseMethod.IsAccessStub)
+                    {
+                        // ignore
+                    }
+                    else if (baseMethod.IsPrivate)
+                    {
+                        // skip
+                    }
+                    else if (baseMethod.IsFinal && (baseMethod.IsPublic || baseMethod.IsProtected || IsAccessibleInternal(baseMethod) || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+                    {
+                        throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                    }
+                    else if (baseMethod.IsStatic)
+                    {
+                        // skip
+                    }
+                    else if (topPublicOrProtectedMethod == null && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+                    {
+                        // this is a package private method that we're not overriding (unless its vtable stream interleaves ours, which is a case we handle below)
+                        explicitOverride = true;
+                    }
+                    else if (topPublicOrProtectedMethod != null && baseMethod.IsFinal && !baseMethod.IsPublic && !baseMethod.IsProtected && !IsAccessibleInternal(baseMethod) && !baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+                    {
+                        // this is package private final method that we would override had it not been final, but which is ignored by HotSpot (instead of throwing a VerifyError)
+                        explicitOverride = true;
+                    }
+                    else if (topPublicOrProtectedMethod == null)
+                    {
+                        if (explicitOverride)
+                        {
+                            var list = new List<RuntimeJavaMethod>();
+                            list.Add(baseMethod);
+                            // we might still have to override package methods from another package if the vtable streams are interleaved with ours
+                            tw = wrapper.BaseTypeWrapper;
+                            while (tw != null)
+                            {
+                                var baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+                                if (baseMethod2 == null || baseMethod2 == baseMethod)
+                                {
+                                    break;
+                                }
+                                var baseMethod3 = GetPackageBaseMethod(baseMethod.DeclaringType.BaseTypeWrapper, name, sig, baseMethod2.DeclaringType);
+                                if (baseMethod3 != null)
+                                {
+                                    if (baseMethod2.IsFinal)
+                                    {
+                                        baseMethod2 = baseMethod3;
+                                    }
+                                    bool found = false;
+                                    foreach (var mw in list)
+                                    {
+                                        if (mw.DeclaringType.IsPackageAccessibleFrom(baseMethod2.DeclaringType))
+                                        {
+                                            // we should only add each package once
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found)
+                                    {
+                                        list.Add(baseMethod2);
+                                    }
+                                }
+                                tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+                            }
+                            return list.ToArray();
+                        }
+                        else
+                        {
+                            return new RuntimeJavaMethod[] { baseMethod };
+                        }
+                    }
+                    else
+                    {
+                        if (packageFinal)
+                        {
+                            // when a package final method overrides a public or protected method, HotSpot does not mark that vtable slot as final,
+                            // so we need an explicit override to force the MethodAttributes.NewSlot flag, otherwise the CLR won't allow us
+                            // to override the original method in subsequent derived types
+                            explicitOverride = true;
+                        }
 
-						int majorVersion = 0;
-						if (!baseMethod.IsPublic && !baseMethod.IsProtected &&
-							((TryGetClassFileVersion(baseMethod.DeclaringType, ref majorVersion) && majorVersion < 51)
-							// if TryGetClassFileVersion fails, we know that it is safe to call GetMethod() so we look at the actual method attributes here,
-							// because access widing ensures that if the method had overridden the top level method it would also be public or protected
-							|| (majorVersion == 0 && (LinkAndGetMethod(baseMethod).Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly)))
-						{
-							// the method we're overriding is not public or protected, but there is a public or protected top level method,
-							// this means that baseMethod is part of a class with a major version < 51, so we have to explicitly override the top level method as well
-							// (we don't need to look for another package method to override, because by necessity baseMethod is already in our package)
-							return new RuntimeJavaMethod[] { baseMethod, topPublicOrProtectedMethod };
-						}
-						else if (!topPublicOrProtectedMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
-						{
-							// check if there is another method (in the same package) that we should override
-							tw = topPublicOrProtectedMethod.DeclaringType.BaseTypeWrapper;
-							while (tw != null)
-							{
-								RuntimeJavaMethod baseMethod2 = tw.GetMethodWrapper(name, sig, true);
-								if (baseMethod2 == null)
-								{
-									break;
-								}
-								if (baseMethod2.IsAccessStub)
-								{
-									// ignore
-								}
-								else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
-								{
-									if (baseMethod2.IsFinal)
-									{
-										throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
-									}
-									if (!baseMethod2.IsStatic)
-									{
-										if (baseMethod2.IsPublic || baseMethod2.IsProtected)
-										{
-											break;
-										}
-										return new RuntimeJavaMethod[] { baseMethod, baseMethod2 };
-									}
-								}
-								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
-							}
-						}
-						return new RuntimeJavaMethod[] { baseMethod };
-					}
-					tw = baseMethod.DeclaringType.BaseTypeWrapper;
-				}
-				return null;
-			}
+                        int majorVersion = 0;
+                        if (!baseMethod.IsPublic && !baseMethod.IsProtected &&
+                            ((TryGetClassFileVersion(baseMethod.DeclaringType, ref majorVersion) && majorVersion < 51)
+                            // if TryGetClassFileVersion fails, we know that it is safe to call GetMethod() so we look at the actual method attributes here,
+                            // because access widing ensures that if the method had overridden the top level method it would also be public or protected
+                            || (majorVersion == 0 && (LinkAndGetMethod(baseMethod).Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly)))
+                        {
+                            // the method we're overriding is not public or protected, but there is a public or protected top level method,
+                            // this means that baseMethod is part of a class with a major version < 51, so we have to explicitly override the top level method as well
+                            // (we don't need to look for another package method to override, because by necessity baseMethod is already in our package)
+                            return new RuntimeJavaMethod[] { baseMethod, topPublicOrProtectedMethod };
+                        }
+                        else if (!topPublicOrProtectedMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+                        {
+                            // check if there is another method (in the same package) that we should override
+                            tw = topPublicOrProtectedMethod.DeclaringType.BaseTypeWrapper;
+                            while (tw != null)
+                            {
+                                RuntimeJavaMethod baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+                                if (baseMethod2 == null)
+                                {
+                                    break;
+                                }
+                                if (baseMethod2.IsAccessStub)
+                                {
+                                    // ignore
+                                }
+                                else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+                                {
+                                    if (baseMethod2.IsFinal)
+                                    {
+                                        throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                                    }
+                                    if (!baseMethod2.IsStatic)
+                                    {
+                                        if (baseMethod2.IsPublic || baseMethod2.IsProtected)
+                                        {
+                                            break;
+                                        }
+                                        return new RuntimeJavaMethod[] { baseMethod, baseMethod2 };
+                                    }
+                                }
+                                tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+                            }
+                        }
+                        return new RuntimeJavaMethod[] { baseMethod };
+                    }
+                    tw = baseMethod.DeclaringType.BaseTypeWrapper;
+                }
+                return null;
+            }
 
-			bool IsAccessibleInternal(RuntimeJavaMethod mw)
-			{
-				return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
-			}
+            bool IsAccessibleInternal(RuntimeJavaMethod mw)
+            {
+                return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
+            }
 
-			static MethodBase LinkAndGetMethod(RuntimeJavaMethod mw)
-			{
-				mw.Link();
-				return mw.GetMethod();
-			}
+            static MethodBase LinkAndGetMethod(RuntimeJavaMethod mw)
+            {
+                mw.Link();
+                return mw.GetMethod();
+            }
 
-			static bool TryGetClassFileVersion(RuntimeJavaType tw, ref int majorVersion)
-			{
-				RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
-				if (dtw != null)
-				{
-					JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
-					if (impl != null)
-					{
-						majorVersion = impl.classFile.MajorVersion;
-						return true;
-					}
-				}
-				return false;
-			}
+            static bool TryGetClassFileVersion(RuntimeJavaType tw, ref int majorVersion)
+            {
+                RuntimeByteCodeJavaType dtw = tw as RuntimeByteCodeJavaType;
+                if (dtw != null)
+                {
+                    JavaTypeImpl impl = dtw.impl as JavaTypeImpl;
+                    if (impl != null)
+                    {
+                        majorVersion = impl.classFile.MajorVersion;
+                        return true;
+                    }
+                }
+                return false;
+            }
 
-			static RuntimeJavaMethod GetPackageBaseMethod(RuntimeJavaType tw, string name, string sig, RuntimeJavaType package)
-			{
-				while (tw != null)
-				{
-					var mw = tw.GetMethodWrapper(name, sig, true);
-					if (mw == null)
-						break;
+            static RuntimeJavaMethod GetPackageBaseMethod(RuntimeJavaType tw, string name, string sig, RuntimeJavaType package)
+            {
+                while (tw != null)
+                {
+                    var mw = tw.GetMethodWrapper(name, sig, true);
+                    if (mw == null)
+                        break;
 
-					if (mw.DeclaringType.IsPackageAccessibleFrom(package))
-						return mw.IsFinal ? null : mw;
+                    if (mw.DeclaringType.IsPackageAccessibleFrom(package))
+                        return mw.IsFinal ? null : mw;
 
-					tw = mw.DeclaringType.BaseTypeWrapper;
-				}
+                    tw = mw.DeclaringType.BaseTypeWrapper;
+                }
 
-				return null;
-			}
+                return null;
+            }
 
-			RuntimeJavaMethod[] FindBaseMethodsLegacy(string name, string sig, out bool explicitOverride)
-			{
-				explicitOverride = false;
-				var tw = wrapper.BaseTypeWrapper;
-				while (tw != null)
-				{
-					var baseMethod = tw.GetMethodWrapper(name, sig, true);
-					if (baseMethod == null)
-					{
-						return null;
-					}
-					else if (baseMethod.IsAccessStub)
-					{
-						// ignore
-					}
+            RuntimeJavaMethod[] FindBaseMethodsLegacy(string name, string sig, out bool explicitOverride)
+            {
+                explicitOverride = false;
+                var tw = wrapper.BaseTypeWrapper;
+                while (tw != null)
+                {
+                    var baseMethod = tw.GetMethodWrapper(name, sig, true);
+                    if (baseMethod == null)
+                    {
+                        return null;
+                    }
+                    else if (baseMethod.IsAccessStub)
+                    {
+                        // ignore
+                    }
 
-					// here are the complex rules for determining whether this method overrides the method we found
-					// RULE 1: final methods may not be overridden
-					// (note that we intentionally not check IsStatic here!)
-					else if (baseMethod.IsFinal && !baseMethod.IsPrivate && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
-					{
-						throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
-					}
-					// RULE 1a: static methods are ignored (other than the RULE 1 check)
-					else if (baseMethod.IsStatic)
-					{
-					}
-					// RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
-					// (by public, protected & *package* methods [even if they are in a different package])
-					else if (baseMethod.IsPublic || baseMethod.IsProtected)
-					{
-						// if we already encountered a package method, we cannot override the base method of
-						// that package method
-						if (explicitOverride)
-						{
-							explicitOverride = false;
-							return null;
-						}
-						if (!baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
-						{
-							// check if there is another method (in the same package) that we should override
-							tw = baseMethod.DeclaringType.BaseTypeWrapper;
-							while (tw != null)
-							{
-								RuntimeJavaMethod baseMethod2 = tw.GetMethodWrapper(name, sig, true);
-								if (baseMethod2 == null)
-								{
-									break;
-								}
-								if (baseMethod2.IsAccessStub)
-								{
-									// ignore
-								}
-								else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
-								{
-									if (baseMethod2.IsFinal)
-									{
-										throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
-									}
-									if (!baseMethod2.IsStatic)
-									{
-										if (baseMethod2.IsPublic || baseMethod2.IsProtected)
-										{
-											break;
-										}
-										return new RuntimeJavaMethod[] { baseMethod, baseMethod2 };
-									}
-								}
-								tw = baseMethod2.DeclaringType.BaseTypeWrapper;
-							}
-						}
-						return new RuntimeJavaMethod[] { baseMethod };
-					}
-					// RULE 3: private and static methods are ignored
-					else if (!baseMethod.IsPrivate)
-					{
-						// RULE 4: package methods can only be overridden in the same package
-						if (baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper) || (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
-						{
-							return new RuntimeJavaMethod[] { baseMethod };
-						}
-						// since we encountered a method with the same name/signature that we aren't overriding,
-						// we need to specify an explicit override
-						// NOTE we only do this if baseMethod isn't private, because if it is, Reflection.Emit
-						// will complain about the explicit MethodOverride (possibly a bug)
-						explicitOverride = true;
-					}
-					tw = baseMethod.DeclaringType.BaseTypeWrapper;
-				}
+                    // here are the complex rules for determining whether this method overrides the method we found
+                    // RULE 1: final methods may not be overridden
+                    // (note that we intentionally not check IsStatic here!)
+                    else if (baseMethod.IsFinal && !baseMethod.IsPrivate && (baseMethod.IsPublic || baseMethod.IsProtected || baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+                    {
+                        throw new VerifyError("final method " + baseMethod.Name + baseMethod.Signature + " in " + baseMethod.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                    }
+                    // RULE 1a: static methods are ignored (other than the RULE 1 check)
+                    else if (baseMethod.IsStatic)
+                    {
+                    }
+                    // RULE 2: public & protected methods can be overridden (package methods are handled by RULE 4)
+                    // (by public, protected & *package* methods [even if they are in a different package])
+                    else if (baseMethod.IsPublic || baseMethod.IsProtected)
+                    {
+                        // if we already encountered a package method, we cannot override the base method of
+                        // that package method
+                        if (explicitOverride)
+                        {
+                            explicitOverride = false;
+                            return null;
+                        }
+                        if (!baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper))
+                        {
+                            // check if there is another method (in the same package) that we should override
+                            tw = baseMethod.DeclaringType.BaseTypeWrapper;
+                            while (tw != null)
+                            {
+                                RuntimeJavaMethod baseMethod2 = tw.GetMethodWrapper(name, sig, true);
+                                if (baseMethod2 == null)
+                                {
+                                    break;
+                                }
+                                if (baseMethod2.IsAccessStub)
+                                {
+                                    // ignore
+                                }
+                                else if (baseMethod2.DeclaringType.IsPackageAccessibleFrom(wrapper) && !baseMethod2.IsPrivate)
+                                {
+                                    if (baseMethod2.IsFinal)
+                                    {
+                                        throw new VerifyError("final method " + baseMethod2.Name + baseMethod2.Signature + " in " + baseMethod2.DeclaringType.Name + " is overridden in " + wrapper.Name);
+                                    }
+                                    if (!baseMethod2.IsStatic)
+                                    {
+                                        if (baseMethod2.IsPublic || baseMethod2.IsProtected)
+                                        {
+                                            break;
+                                        }
+                                        return new RuntimeJavaMethod[] { baseMethod, baseMethod2 };
+                                    }
+                                }
+                                tw = baseMethod2.DeclaringType.BaseTypeWrapper;
+                            }
+                        }
+                        return new RuntimeJavaMethod[] { baseMethod };
+                    }
+                    // RULE 3: private and static methods are ignored
+                    else if (!baseMethod.IsPrivate)
+                    {
+                        // RULE 4: package methods can only be overridden in the same package
+                        if (baseMethod.DeclaringType.IsPackageAccessibleFrom(wrapper) || (baseMethod.IsInternal && baseMethod.DeclaringType.InternalsVisibleTo(wrapper)))
+                        {
+                            return new RuntimeJavaMethod[] { baseMethod };
+                        }
+                        // since we encountered a method with the same name/signature that we aren't overriding,
+                        // we need to specify an explicit override
+                        // NOTE we only do this if baseMethod isn't private, because if it is, Reflection.Emit
+                        // will complain about the explicit MethodOverride (possibly a bug)
+                        explicitOverride = true;
+                    }
+                    tw = baseMethod.DeclaringType.BaseTypeWrapper;
+                }
 
-				return null;
-			}
+                return null;
+            }
 
-			static MethodInfo GetBaseFinalizeMethod(RuntimeJavaType wrapper)
-			{
-				for (; ; )
-				{
-					// HACK we get called during method linking (which is probably a bad idea) and
-					// it is possible for the base type not to be finished yet, so we look at the
-					// private state of the unfinished base types to find the finalize method.
-					var dtw = wrapper as RuntimeByteCodeJavaType;
-					if (dtw == null)
-						break;
+            static MethodInfo GetBaseFinalizeMethod(RuntimeJavaType wrapper)
+            {
+                for (; ; )
+                {
+                    // HACK we get called during method linking (which is probably a bad idea) and
+                    // it is possible for the base type not to be finished yet, so we look at the
+                    // private state of the unfinished base types to find the finalize method.
+                    var dtw = wrapper as RuntimeByteCodeJavaType;
+                    if (dtw == null)
+                        break;
 
-					var mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
-					if (mw != null)
-						mw.Link();
+                    var mw = dtw.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, false);
+                    if (mw != null)
+                        mw.Link();
 
-					var finalizeImpl = dtw.impl.GetFinalizeMethod();
-					if (finalizeImpl != null)
-						return finalizeImpl;
+                    var finalizeImpl = dtw.impl.GetFinalizeMethod();
+                    if (finalizeImpl != null)
+                        return finalizeImpl;
 
-					wrapper = wrapper.BaseTypeWrapper;
-				}
+                    wrapper = wrapper.BaseTypeWrapper;
+                }
 
-				if (wrapper == wrapper.Context.JavaBase.TypeOfJavaLangObject || wrapper == wrapper.Context.JavaBase.TypeOfjavaLangThrowable)
-				{
-					return wrapper.Context.Types.Object.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Instance);
-				}
+                if (wrapper == wrapper.Context.JavaBase.TypeOfJavaLangObject || wrapper == wrapper.Context.JavaBase.TypeOfjavaLangThrowable)
+                {
+                    return wrapper.Context.Types.Object.GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Instance);
+                }
 
-				var type = wrapper.TypeAsBaseType;
-				var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-				if (baseFinalize != null)
-					return baseFinalize;
+                var type = wrapper.TypeAsBaseType;
+                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                if (baseFinalize != null)
+                    return baseFinalize;
 
-				while (type != null)
-				{
-					foreach (MethodInfo m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-					{
-						if (m.Name == "Finalize"
-							&& m.ReturnType == wrapper.Context.Types.Void
-							&& m.GetParameters().Length == 0)
-						{
-							if (m.GetBaseDefinition().DeclaringType == wrapper.Context.Types.Object)
-							{
-								return m;
-							}
-						}
-					}
-					type = type.BaseType;
-				}
-				return null;
-			}
+                while (type != null)
+                {
+                    foreach (MethodInfo m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                    {
+                        if (m.Name == "Finalize"
+                            && m.ReturnType == wrapper.Context.Types.Void
+                            && m.GetParameters().Length == 0)
+                        {
+                            if (m.GetBaseDefinition().DeclaringType == wrapper.Context.Types.Object)
+                            {
+                                return m;
+                            }
+                        }
+                    }
+                    type = type.BaseType;
+                }
+                return null;
+            }
 
-			MethodAttributes GetPropertyAccess(RuntimeJavaMethod mw)
-			{
-				var sig = mw.ReturnType.SigName;
-				if (sig == "V")
-					sig = mw.GetParameters()[0].SigName;
+            MethodAttributes GetPropertyAccess(RuntimeJavaMethod mw)
+            {
+                var sig = mw.ReturnType.SigName;
+                if (sig == "V")
+                    sig = mw.GetParameters()[0].SigName;
 
-				int access = -1;
-				foreach (var field in classFile.Fields)
-				{
-					if (field.IsProperty && field.IsStatic == mw.IsStatic && field.Signature == sig && (field.PropertyGetter == mw.Name || field.PropertySetter == mw.Name))
-					{
-						int nacc;
-						if (field.IsPublic)
-						{
-							nacc = 3;
-						}
-						else if (field.IsProtected)
-						{
-							nacc = 2;
-						}
-						else if (field.IsPrivate)
-						{
-							nacc = 0;
-						}
-						else
-						{
-							nacc = 1;
-						}
-						if (nacc > access)
-						{
-							access = nacc;
-						}
-					}
-				}
+                int access = -1;
+                foreach (var field in classFile.Fields)
+                {
+                    if (field.IsProperty && field.IsStatic == mw.IsStatic && field.Signature == sig && (field.PropertyGetter == mw.Name || field.PropertySetter == mw.Name))
+                    {
+                        int nacc;
+                        if (field.IsPublic)
+                        {
+                            nacc = 3;
+                        }
+                        else if (field.IsProtected)
+                        {
+                            nacc = 2;
+                        }
+                        else if (field.IsPrivate)
+                        {
+                            nacc = 0;
+                        }
+                        else
+                        {
+                            nacc = 1;
+                        }
+                        if (nacc > access)
+                        {
+                            access = nacc;
+                        }
+                    }
+                }
 
-				switch (access)
-				{
-					case 0:
-						return MethodAttributes.Private;
-					case 1:
-						return MethodAttributes.Assembly;
-					case 2:
-						return MethodAttributes.FamORAssem;
-					case 3:
-						return MethodAttributes.Public;
-					default:
-						throw new InvalidOperationException();
-				}
-			}
+                switch (access)
+                {
+                    case 0:
+                        return MethodAttributes.Private;
+                    case 1:
+                        return MethodAttributes.Assembly;
+                    case 2:
+                        return MethodAttributes.FamORAssem;
+                    case 3:
+                        return MethodAttributes.Public;
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
 
-			internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
-			{
-				Debug.Assert(mw != null);
+            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
+            {
+                Debug.Assert(mw != null);
 
-				if (mw is DelegateConstructorMethodWrapper dcmw)
-				{
-					dcmw.DoLink(typeBuilder);
-					return null;
-				}
+                if (mw is DelegateConstructorMethodWrapper dcmw)
+                {
+                    dcmw.DoLink(typeBuilder);
+                    return null;
+                }
 
-				if (mw is DelegateInvokeStubMethodWrapper stub)
-				{
-					return stub.DoLink(typeBuilder);
-				}
+                if (mw is DelegateInvokeStubMethodWrapper stub)
+                {
+                    return stub.DoLink(typeBuilder);
+                }
 
-				if (mw.IsClassInitializer && mw.IsNoOp && (!wrapper.IsSerializable || HasSerialVersionUID))
-				{
-					// we don't need to emit the <clinit>, because it is empty and we're not serializable or have an explicit serialVersionUID
-					// (because we cannot affect serialVersionUID computation (which is the only way the presence of a <clinit> can surface)
-					// we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID)
-					return null;
-				}
+                if (mw.IsClassInitializer && mw.IsNoOp && (!wrapper.IsSerializable || HasSerialVersionUID))
+                {
+                    // we don't need to emit the <clinit>, because it is empty and we're not serializable or have an explicit serialVersionUID
+                    // (because we cannot affect serialVersionUID computation (which is the only way the presence of a <clinit> can surface)
+                    // we cannot do this optimization if the class is serializable but doesn't have a serialVersionUID)
+                    return null;
+                }
 
-				int index = GetMethodIndex(mw);
-				if (baseMethods[index] != null)
-				{
-					foreach (var baseMethod in baseMethods[index])
-					{
-						baseMethod.Link();
-						CheckLoaderConstraints(mw, baseMethod);
-					}
-				}
+                int index = GetMethodIndex(mw);
+                if (baseMethods[index] != null)
+                {
+                    foreach (var baseMethod in baseMethods[index])
+                    {
+                        baseMethod.Link();
+                        CheckLoaderConstraints(mw, baseMethod);
+                    }
+                }
 
-				Debug.Assert(mw.GetMethod() == null);
-				methods[index].AssertLinked();
-				Profiler.Enter("JavaTypeImpl.GenerateMethod");
+                Debug.Assert(mw.GetMethod() == null);
+                methods[index].AssertLinked();
+                Profiler.Enter("JavaTypeImpl.GenerateMethod");
 
-				try
-				{
-					// index is outside the range of methods declared on class file
-					if (index >= classFile.Methods.Length)
-					{
-						// method is a miranda method
-						if (methods[index].IsMirandaMethod)
-						{
-							// we're a Miranda method or we're an inherited default interface method
-							Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
+                try
+                {
+                    // index is outside the range of methods declared on class file
+                    if (index >= classFile.Methods.Length)
+                    {
+                        // method is a miranda method
+                        if (methods[index].IsMirandaMethod)
+                        {
+                            // we're a Miranda method or we're an inherited default interface method
+                            Debug.Assert(baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface);
 
-							var mmw = (RuntimeMirandaJavaMethod)methods[index];
-							var attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+                            var mmw = (RuntimeMirandaJavaMethod)methods[index];
+                            var attr = MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
 
-							RuntimeJavaMethod baseMiranda = null;
-							bool baseMirandaOverrideStub = false;
+                            RuntimeJavaMethod baseMiranda = null;
+                            bool baseMirandaOverrideStub = false;
 
-							if (wrapper.BaseTypeWrapper == null || (baseMiranda = wrapper.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true)) == null || !baseMiranda.IsMirandaMethod)
-							{
-								// we're not overriding a miranda method in a base class, so can we set the newslot flag
-								attr |= MethodAttributes.NewSlot;
-							}
-							else
-							{
-								baseMiranda.Link();
-								if (CheckRequireOverrideStub(methods[index], baseMiranda))
-								{
-									baseMirandaOverrideStub = true;
-									attr |= MethodAttributes.NewSlot;
-								}
-							}
+                            if (wrapper.BaseTypeWrapper == null || (baseMiranda = wrapper.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true)) == null || !baseMiranda.IsMirandaMethod)
+                            {
+                                // we're not overriding a miranda method in a base class, so can we set the newslot flag
+                                attr |= MethodAttributes.NewSlot;
+                            }
+                            else
+                            {
+                                baseMiranda.Link();
+                                if (CheckRequireOverrideStub(methods[index], baseMiranda))
+                                {
+                                    baseMirandaOverrideStub = true;
+                                    attr |= MethodAttributes.NewSlot;
+                                }
+                            }
 
-							if (wrapper.IsInterface || (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null))
-							{
-								attr |= MethodAttributes.Abstract;
-							}
+                            if (wrapper.IsInterface || (wrapper.IsAbstract && mmw.BaseMethod.IsAbstract && mmw.Error == null))
+                            {
+                                attr |= MethodAttributes.Abstract;
+                            }
 
-							var mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
-							wrapper.Context.AttributeHelper.HideFromReflection(mb);
+                            var mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, methods[index].Name, attr);
+                            wrapper.Context.AttributeHelper.HideFromReflection(mb);
 
-							if (baseMirandaOverrideStub)
-							{
-								wrapper.GenerateOverrideStub(typeBuilder, baseMiranda, mb, methods[index]);
-							}
+                            if (baseMirandaOverrideStub)
+                            {
+                                wrapper.GenerateOverrideStub(typeBuilder, baseMiranda, mb, methods[index]);
+                            }
 
-							if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
-							{
-								var message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
-								var ilgen = wrapper.Context.CodeEmitterFactory.Create(mb);
-								ilgen.EmitThrow(mmw.IsConflictError ? "java.lang.IncompatibleClassChangeError" : "java.lang.AbstractMethodError", message);
-								ilgen.DoEmit();
-								wrapper.EmitLevel4Warning(mmw.IsConflictError ? HardError.IncompatibleClassChangeError : HardError.AbstractMethodError, message);
-							}
+                            if ((!wrapper.IsAbstract && mmw.BaseMethod.IsAbstract) || (!wrapper.IsInterface && mmw.Error != null))
+                            {
+                                var message = mmw.Error ?? (wrapper.Name + "." + methods[index].Name + methods[index].Signature);
+                                var ilgen = wrapper.Context.CodeEmitterFactory.Create(mb);
+                                ilgen.EmitThrow(mmw.IsConflictError ? "java.lang.IncompatibleClassChangeError" : "java.lang.AbstractMethodError", message);
+                                ilgen.DoEmit();
+                                wrapper.EmitLevel4Warning(mmw.IsConflictError ? HardError.IncompatibleClassChangeError : HardError.AbstractMethodError, message);
+                            }
 #if IMPORTER
 							if (wrapper.IsInterface && !mmw.IsAbstract)
 							{
@@ -2461,45 +2461,45 @@ namespace IKVM.Runtime
 								wrapper.Context.AttributeHelper.SetModifiers(mb, mmw.Modifiers, false);
 							}
 #endif
-							return mb;
-						}
-						else
-						{
-							throw new InvalidOperationException();
-						}
-					}
+                            return mb;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException();
+                        }
+                    }
 
-					var m = classFile.Methods[index];
-					MethodBuilder method;
-					bool setModifiers = false;
+                    var m = classFile.Methods[index];
+                    MethodBuilder method;
+                    bool setModifiers = false;
 
-					if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
-					{
-						// the implicit callerID parameter was added at the end so that means we shouldn't use ParamArrayAttribute,
-						// so we need to explicitly record that the method is varargs
-						setModifiers = true;
-					}
+                    if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
+                    {
+                        // the implicit callerID parameter was added at the end so that means we shouldn't use ParamArrayAttribute,
+                        // so we need to explicitly record that the method is varargs
+                        setModifiers = true;
+                    }
 
-					if (m.IsConstructor)
-					{
-						method = GenerateConstructor(methods[index]);
+                    if (m.IsConstructor)
+                    {
+                        method = GenerateConstructor(methods[index]);
 
-						// strictfp is the only modifier that a constructor can have
-						if (m.IsStrictfp)
-							setModifiers = true;
-					}
-					else if (m.IsClassInitializer)
-					{
-						method = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
-					}
-					else
-					{
-						method = GenerateMethod(index, m, ref setModifiers);
-					}
+                        // strictfp is the only modifier that a constructor can have
+                        if (m.IsStrictfp)
+                            setModifiers = true;
+                    }
+                    else if (m.IsClassInitializer)
+                    {
+                        method = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
+                    }
+                    else
+                    {
+                        method = GenerateMethod(index, m, ref setModifiers);
+                    }
 
-					// apply 'throws' Exceptions as attributes
-					var exceptions = m.ExceptionsAttribute;
-					methods[index].SetDeclaredExceptions(exceptions);
+                    // apply 'throws' Exceptions as attributes
+                    var exceptions = m.ExceptionsAttribute;
+                    methods[index].SetDeclaredExceptions(exceptions);
 
 #if IMPORTER
 					wrapper.Context.AttributeHelper.SetThrowsAttribute(method, exceptions);
@@ -2556,112 +2556,112 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-					return method;
-				}
-				finally
-				{
-					Profiler.Leave("JavaTypeImpl.GenerateMethod");
-				}
-			}
+                    return method;
+                }
+                finally
+                {
+                    Profiler.Leave("JavaTypeImpl.GenerateMethod");
+                }
+            }
 
-			private bool HasSerialVersionUID
-			{
-				get
-				{
-					foreach (var field in fields)
-						if (field.IsSerialVersionUID)
-							return true;
+            private bool HasSerialVersionUID
+            {
+                get
+                {
+                    foreach (var field in fields)
+                        if (field.IsSerialVersionUID)
+                            return true;
 
-					return false;
-				}
-			}
+                    return false;
+                }
+            }
 
-			MethodBuilder GenerateConstructor(RuntimeJavaMethod mw)
-			{
-				return mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
-			}
+            MethodBuilder GenerateConstructor(RuntimeJavaMethod mw)
+            {
+                return mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
+            }
 
-			MethodBuilder GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
-			{
-				var attribs = MethodAttributes.HideBySig;
-				if (m.IsNative)
-				{
-					if (wrapper.IsPInvokeMethod(m))
-					{
-						// this doesn't appear to be necessary, but we use the flag in Finish to know
-						// that we shouldn't emit a method body
-						attribs |= MethodAttributes.PinvokeImpl;
-					}
-					else
-					{
-						setModifiers = true;
-					}
-				}
-				if (methods[index].IsPropertyAccessor)
-				{
-					attribs |= GetPropertyAccess(methods[index]);
-					attribs |= MethodAttributes.SpecialName;
-					setModifiers = true;
-				}
-				else
-				{
-					attribs |= GetMethodAccess(methods[index]);
-				}
+            MethodBuilder GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
+            {
+                var attribs = MethodAttributes.HideBySig;
+                if (m.IsNative)
+                {
+                    if (wrapper.IsPInvokeMethod(m))
+                    {
+                        // this doesn't appear to be necessary, but we use the flag in Finish to know
+                        // that we shouldn't emit a method body
+                        attribs |= MethodAttributes.PinvokeImpl;
+                    }
+                    else
+                    {
+                        setModifiers = true;
+                    }
+                }
+                if (methods[index].IsPropertyAccessor)
+                {
+                    attribs |= GetPropertyAccess(methods[index]);
+                    attribs |= MethodAttributes.SpecialName;
+                    setModifiers = true;
+                }
+                else
+                {
+                    attribs |= GetMethodAccess(methods[index]);
+                }
 
-				if (m.IsAbstract || (!m.IsStatic && m.IsPublic && classFile.IsInterface))
-				{
-					// only if the classfile is abstract, we make the CLR method abstract, otherwise,
-					// we have to generate a method that throws an AbstractMethodError (because the JVM
-					// allows abstract methods in non-abstract classes)
-					if (classFile.IsAbstract)
-					{
-						if (classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
-						{
-							setModifiers = true;
-						}
-						else
-						{
-							if (!m.IsAbstract)
-							{
-								setModifiers = true;
-							}
-							attribs |= MethodAttributes.Abstract;
-						}
-					}
-					else
-					{
-						setModifiers = true;
-					}
-				}
-				if (m.IsFinal)
-				{
-					if (m.IsVirtual)
-					{
-						attribs |= MethodAttributes.Final;
-					}
-					else
-					{
-						setModifiers = true;
-					}
-				}
-				if (m.IsStatic)
-				{
-					attribs |= MethodAttributes.Static;
-					if (m.IsSynchronized)
-					{
-						setModifiers = true;
-					}
-				}
-				else if (!m.IsPrivate)
-				{
-					attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
-				}
-				string name = UnicodeUtil.EscapeInvalidSurrogates(m.Name);
-				if (!ReferenceEquals(name, m.Name))
-				{
-					// mark as specialname to remind us to unescape the name
-					attribs |= MethodAttributes.SpecialName;
-				}
+                if (m.IsAbstract || (!m.IsStatic && m.IsPublic && classFile.IsInterface))
+                {
+                    // only if the classfile is abstract, we make the CLR method abstract, otherwise,
+                    // we have to generate a method that throws an AbstractMethodError (because the JVM
+                    // allows abstract methods in non-abstract classes)
+                    if (classFile.IsAbstract)
+                    {
+                        if (classFile.IsPublic && !classFile.IsFinal && !(m.IsPublic || m.IsProtected))
+                        {
+                            setModifiers = true;
+                        }
+                        else
+                        {
+                            if (!m.IsAbstract)
+                            {
+                                setModifiers = true;
+                            }
+                            attribs |= MethodAttributes.Abstract;
+                        }
+                    }
+                    else
+                    {
+                        setModifiers = true;
+                    }
+                }
+                if (m.IsFinal)
+                {
+                    if (m.IsVirtual)
+                    {
+                        attribs |= MethodAttributes.Final;
+                    }
+                    else
+                    {
+                        setModifiers = true;
+                    }
+                }
+                if (m.IsStatic)
+                {
+                    attribs |= MethodAttributes.Static;
+                    if (m.IsSynchronized)
+                    {
+                        setModifiers = true;
+                    }
+                }
+                else if (!m.IsPrivate)
+                {
+                    attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
+                }
+                string name = UnicodeUtil.EscapeInvalidSurrogates(m.Name);
+                if (!ReferenceEquals(name, m.Name))
+                {
+                    // mark as specialname to remind us to unescape the name
+                    attribs |= MethodAttributes.SpecialName;
+                }
 #if IMPORTER
 				if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
 				{
@@ -2678,185 +2678,185 @@ namespace IKVM.Runtime
 					}
 				}
 #endif
-				if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
-				{
-					if (baseMethods[index] == null || (baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface))
-					{
-						// we need to set NewSlot here, to prevent accidentally overriding methods
-						// (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
-						// to override System.Object.Equals)
-						attribs |= MethodAttributes.NewSlot;
-					}
-					else
-					{
-						// if we have a method overriding a more accessible method (the JVM allows this), we need to make the
-						// method more accessible, because otherwise the CLR will complain that we're reducing access
-						bool hasPublicBaseMethod = false;
-						foreach (RuntimeJavaMethod baseMethodWrapper in baseMethods[index])
-						{
-							MethodBase baseMethod = baseMethodWrapper.GetMethod();
-							if ((baseMethod.IsPublic && !m.IsPublic) ||
-								((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
-								(!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
-							{
-								hasPublicBaseMethod |= baseMethod.IsPublic;
-								attribs &= ~MethodAttributes.MemberAccessMask;
-								attribs |= hasPublicBaseMethod ? MethodAttributes.Public : MethodAttributes.FamORAssem;
-								setModifiers = true;
-							}
-						}
-					}
-				}
-				MethodBuilder mb = null;
+                if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
+                {
+                    if (baseMethods[index] == null || (baseMethods[index].Length == 1 && baseMethods[index][0].DeclaringType.IsInterface))
+                    {
+                        // we need to set NewSlot here, to prevent accidentally overriding methods
+                        // (for example, if a Java class has a method "boolean Equals(object)", we don't want that method
+                        // to override System.Object.Equals)
+                        attribs |= MethodAttributes.NewSlot;
+                    }
+                    else
+                    {
+                        // if we have a method overriding a more accessible method (the JVM allows this), we need to make the
+                        // method more accessible, because otherwise the CLR will complain that we're reducing access
+                        bool hasPublicBaseMethod = false;
+                        foreach (RuntimeJavaMethod baseMethodWrapper in baseMethods[index])
+                        {
+                            MethodBase baseMethod = baseMethodWrapper.GetMethod();
+                            if ((baseMethod.IsPublic && !m.IsPublic) ||
+                                ((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
+                                (!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
+                            {
+                                hasPublicBaseMethod |= baseMethod.IsPublic;
+                                attribs &= ~MethodAttributes.MemberAccessMask;
+                                attribs |= hasPublicBaseMethod ? MethodAttributes.Public : MethodAttributes.FamORAssem;
+                                setModifiers = true;
+                            }
+                        }
+                    }
+                }
+                MethodBuilder mb = null;
 #if IMPORTER
 				mb = wrapper.DefineGhostMethod(typeBuilder, name, attribs, methods[index]);
 #endif
-				if (mb == null)
-				{
-					bool needFinalize = false;
-					bool needDispatch = false;
-					MethodInfo baseFinalize = null;
-					if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
-					{
-						baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
-						if (baseMethods[index][0].DeclaringType == wrapper.Context.JavaBase.TypeOfJavaLangObject)
-						{
-							// This type is the first type in the hierarchy to introduce a finalize method
-							// (other than the one in java.lang.Object obviously), so we need to override
-							// the real Finalize method and emit a dispatch call to our finalize method.
-							needFinalize = true;
-							needDispatch = true;
-						}
-						else if (m.IsFinal)
-						{
-							// One of our base classes already has a  finalize method, so we already are
-							// hooked into the real Finalize, but we need to override it again, to make it
-							// final (so that non-Java types cannot override it either).
-							needFinalize = true;
-							needDispatch = false;
-							// If the base class finalize was optimized away, we need a dispatch call after all.
-							if (baseFinalize.DeclaringType == wrapper.Context.Types.Object)
-							{
-								needDispatch = true;
-							}
-						}
-						else
-						{
-							// One of our base classes already has a finalize method, but it may have been an empty
-							// method so that the hookup to the real Finalize was optimized away, we need to check
-							// for that.
-							if (baseFinalize.DeclaringType == wrapper.Context.Types.Object)
-							{
-								needFinalize = true;
-								needDispatch = true;
-							}
-						}
-						if (needFinalize &&
-							!m.IsAbstract && !m.IsNative &&
-							(!m.IsFinal || classFile.IsFinal) &&
-							m.Instructions.Length > 0 &&
-							m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
-						{
-							// we've got an empty finalize method, so we don't need to override the real finalizer
-							// (not having a finalizer makes a huge perf difference)
-							needFinalize = false;
-						}
-					}
-					bool newslot = baseMethods[index] != null
-						&& (methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name || CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
-						&& !needFinalize;
-					if (newslot)
-					{
-						attribs |= MethodAttributes.NewSlot;
-					}
-					if (classFile.IsInterface && !m.IsPublic && !wrapper.IsGhost)
-					{
-						var tb = typeBuilder;
-						if (m.IsStatic)
-						{
-							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, tb, name, attribs);
-						}
-						else
-						{
-							// the CLR doesn't allow (non-virtual) instance methods in interfaces,
-							// so we need to turn it into a static method
-							mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
-								tb, NamePrefix.PrivateInterfaceInstanceMethod + name, attribs | MethodAttributes.Static | MethodAttributes.SpecialName,
-								typeBuilder, false);
+                if (mb == null)
+                {
+                    bool needFinalize = false;
+                    bool needDispatch = false;
+                    MethodInfo baseFinalize = null;
+                    if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
+                    {
+                        baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
+                        if (baseMethods[index][0].DeclaringType == wrapper.Context.JavaBase.TypeOfJavaLangObject)
+                        {
+                            // This type is the first type in the hierarchy to introduce a finalize method
+                            // (other than the one in java.lang.Object obviously), so we need to override
+                            // the real Finalize method and emit a dispatch call to our finalize method.
+                            needFinalize = true;
+                            needDispatch = true;
+                        }
+                        else if (m.IsFinal)
+                        {
+                            // One of our base classes already has a  finalize method, so we already are
+                            // hooked into the real Finalize, but we need to override it again, to make it
+                            // final (so that non-Java types cannot override it either).
+                            needFinalize = true;
+                            needDispatch = false;
+                            // If the base class finalize was optimized away, we need a dispatch call after all.
+                            if (baseFinalize.DeclaringType == wrapper.Context.Types.Object)
+                            {
+                                needDispatch = true;
+                            }
+                        }
+                        else
+                        {
+                            // One of our base classes already has a finalize method, but it may have been an empty
+                            // method so that the hookup to the real Finalize was optimized away, we need to check
+                            // for that.
+                            if (baseFinalize.DeclaringType == wrapper.Context.Types.Object)
+                            {
+                                needFinalize = true;
+                                needDispatch = true;
+                            }
+                        }
+                        if (needFinalize &&
+                            !m.IsAbstract && !m.IsNative &&
+                            (!m.IsFinal || classFile.IsFinal) &&
+                            m.Instructions.Length > 0 &&
+                            m.Instructions[0].NormalizedOpCode == NormalizedByteCode.__return)
+                        {
+                            // we've got an empty finalize method, so we don't need to override the real finalizer
+                            // (not having a finalizer makes a huge perf difference)
+                            needFinalize = false;
+                        }
+                    }
+                    bool newslot = baseMethods[index] != null
+                        && (methods[index].IsExplicitOverride || baseMethods[index][0].RealName != name || CheckRequireOverrideStub(methods[index], baseMethods[index][0]))
+                        && !needFinalize;
+                    if (newslot)
+                    {
+                        attribs |= MethodAttributes.NewSlot;
+                    }
+                    if (classFile.IsInterface && !m.IsPublic && !wrapper.IsGhost)
+                    {
+                        var tb = typeBuilder;
+                        if (m.IsStatic)
+                        {
+                            mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, tb, name, attribs);
+                        }
+                        else
+                        {
+                            // the CLR doesn't allow (non-virtual) instance methods in interfaces,
+                            // so we need to turn it into a static method
+                            mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
+                                tb, NamePrefix.PrivateInterfaceInstanceMethod + name, attribs | MethodAttributes.Static | MethodAttributes.SpecialName,
+                                typeBuilder, false);
 #if IMPORTER
 							wrapper.Context.AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
 #endif
-						}
-						setModifiers = true;
-					}
-					else
-					{
-						mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
-					}
-					if (baseMethods[index] != null && !needFinalize)
-					{
-						bool subsequent = false;
-						foreach (RuntimeJavaMethod baseMethod in baseMethods[index])
-						{
-							if (CheckRequireOverrideStub(methods[index], baseMethod))
-							{
-								wrapper.GenerateOverrideStub(typeBuilder, baseMethod, mb, methods[index]);
-							}
-							else if (subsequent || methods[index].IsExplicitOverride || baseMethod.RealName != name)
-							{
-								typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
-							}
+                        }
+                        setModifiers = true;
+                    }
+                    else
+                    {
+                        mb = methods[index].GetDefineMethodHelper().DefineMethod(wrapper, typeBuilder, name, attribs);
+                    }
+                    if (baseMethods[index] != null && !needFinalize)
+                    {
+                        bool subsequent = false;
+                        foreach (RuntimeJavaMethod baseMethod in baseMethods[index])
+                        {
+                            if (CheckRequireOverrideStub(methods[index], baseMethod))
+                            {
+                                wrapper.GenerateOverrideStub(typeBuilder, baseMethod, mb, methods[index]);
+                            }
+                            else if (subsequent || methods[index].IsExplicitOverride || baseMethod.RealName != name)
+                            {
+                                typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
+                            }
 
-							// the non-primary base methods always need an explicit method override
-							subsequent = true;
-						}
-					}
-					// if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
-					// or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
-					if (needFinalize)
-					{
-						var finalizeName = baseFinalize.Name;
-						var mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
-						if (mwClash != null && mwClash.GetMethod() != baseFinalize)
-							finalizeName = "__<Finalize>";
+                            // the non-primary base methods always need an explicit method override
+                            subsequent = true;
+                        }
+                    }
+                    // if we're overriding java.lang.Object.finalize we need to emit a stub to override System.Object.Finalize,
+                    // or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
+                    if (needFinalize)
+                    {
+                        var finalizeName = baseFinalize.Name;
+                        var mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
+                        if (mwClash != null && mwClash.GetMethod() != baseFinalize)
+                            finalizeName = "__<Finalize>";
 
-						var attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
-						attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
-						if (m.IsFinal)
-							attr |= MethodAttributes.Final;
+                        var attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
+                        attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
+                        if (m.IsFinal)
+                            attr |= MethodAttributes.Final;
 
-						finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, wrapper.Context.Types.Void, Type.EmptyTypes);
-						if (finalizeName != baseFinalize.Name)
-							typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
+                        finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, wrapper.Context.Types.Void, Type.EmptyTypes);
+                        if (finalizeName != baseFinalize.Name)
+                            typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
 
-						wrapper.Context.AttributeHelper.HideFromJava(finalizeMethod);
+                        wrapper.Context.AttributeHelper.HideFromJava(finalizeMethod);
 
-						var ilgen = wrapper.Context.CodeEmitterFactory.Create(finalizeMethod);
-						ilgen.EmitLdarg(0);
-						ilgen.Emit(OpCodes.Call, wrapper.Context.ByteCodeHelperMethods.SkipFinalizerOf);
-						var skip = ilgen.DefineLabel();
-						ilgen.EmitBrtrue(skip);
+                        var ilgen = wrapper.Context.CodeEmitterFactory.Create(finalizeMethod);
+                        ilgen.EmitLdarg(0);
+                        ilgen.Emit(OpCodes.Call, wrapper.Context.ByteCodeHelperMethods.SkipFinalizerOf);
+                        var skip = ilgen.DefineLabel();
+                        ilgen.EmitBrtrue(skip);
 
-						if (needDispatch)
-						{
-							ilgen.BeginExceptionBlock();
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Callvirt, mb);
-							ilgen.EmitLeave(skip);
-							ilgen.BeginCatchBlock(wrapper.Context.Types.Object);
-							ilgen.EmitLeave(skip);
-							ilgen.EndExceptionBlock();
-						}
-						else
-						{
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Call, baseFinalize);
-						}
+                        if (needDispatch)
+                        {
+                            ilgen.BeginExceptionBlock();
+                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(OpCodes.Callvirt, mb);
+                            ilgen.EmitLeave(skip);
+                            ilgen.BeginCatchBlock(wrapper.Context.Types.Object);
+                            ilgen.EmitLeave(skip);
+                            ilgen.EndExceptionBlock();
+                        }
+                        else
+                        {
+                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(OpCodes.Call, baseFinalize);
+                        }
 
-						ilgen.MarkLabel(skip);
-						ilgen.Emit(OpCodes.Ret);
-						ilgen.DoEmit();
-					}
+                        ilgen.MarkLabel(skip);
+                        ilgen.Emit(OpCodes.Ret);
+                        ilgen.DoEmit();
+                    }
 #if IMPORTER
 					if (classFile.Methods[index].AnnotationDefault != null)
 					{
@@ -2864,60 +2864,60 @@ namespace IKVM.Runtime
 						mb.SetCustomAttribute(cab);
 					}
 #endif
-				}
+                }
 
-				// method is a synchronized method
-				if ((methods[index].Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
-					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
+                // method is a synchronized method
+                if ((methods[index].Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
+                    mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
 
-				// java method specifies to force inline, the best we can do is set aggressive inlining
-				if (classFile.Methods[index].IsForceInline)
-					mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.AggressiveInlining);
+                // java method specifies to force inline, the best we can do is set aggressive inlining
+                if (classFile.Methods[index].IsForceInline)
+                    mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.AggressiveInlining);
 
-				if (classFile.Methods[index].IsLambdaFormCompiled || classFile.Methods[index].IsLambdaFormHidden)
-				{
-					var flags = HideFromJavaFlags.None;
-					if (classFile.Methods[index].IsLambdaFormCompiled)
-						flags |= HideFromJavaFlags.StackWalk;
-					if (classFile.Methods[index].IsLambdaFormHidden)
-						flags |= HideFromJavaFlags.StackTrace;
+                if (classFile.Methods[index].IsLambdaFormCompiled || classFile.Methods[index].IsLambdaFormHidden)
+                {
+                    var flags = HideFromJavaFlags.None;
+                    if (classFile.Methods[index].IsLambdaFormCompiled)
+                        flags |= HideFromJavaFlags.StackWalk;
+                    if (classFile.Methods[index].IsLambdaFormHidden)
+                        flags |= HideFromJavaFlags.StackTrace;
 
-					wrapper.Context.AttributeHelper.HideFromJava(mb, flags);
-				}
+                    wrapper.Context.AttributeHelper.HideFromJava(mb, flags);
+                }
 
-				if (classFile.IsInterface && methods[index].IsVirtual && !methods[index].IsAbstract)
-				{
-					if (wrapper.IsGhost)
-					{
-						RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
-							typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.SpecialName,
-							null, false));
-					}
-					else
-					{
-						RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
-							typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName,
-							typeBuilder, false));
-					}
-				}
+                if (classFile.IsInterface && methods[index].IsVirtual && !methods[index].IsAbstract)
+                {
+                    if (wrapper.IsGhost)
+                    {
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
+                            typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.SpecialName,
+                            null, false));
+                    }
+                    else
+                    {
+                        RuntimeDefaultInterfaceJavaMethod.SetImpl(methods[index], methods[index].GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(),
+                            typeBuilder, NamePrefix.DefaultMethod + mb.Name, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName,
+                            typeBuilder, false));
+                    }
+                }
 
-				return mb;
-			}
+                return mb;
+            }
 
-			private static MethodAttributes GetMethodAccess(RuntimeJavaMethod mw)
-			{
-				switch (mw.Modifiers & Modifiers.AccessMask)
-				{
-					case Modifiers.Private:
-						return MethodAttributes.Private;
-					case Modifiers.Protected:
-						return MethodAttributes.FamORAssem;
-					case Modifiers.Public:
-						return MethodAttributes.Public;
-					default:
-						return MethodAttributes.Assembly;
-				}
-			}
+            private static MethodAttributes GetMethodAccess(RuntimeJavaMethod mw)
+            {
+                switch (mw.Modifiers & Modifiers.AccessMask)
+                {
+                    case Modifiers.Private:
+                        return MethodAttributes.Private;
+                    case Modifiers.Protected:
+                        return MethodAttributes.FamORAssem;
+                    case Modifiers.Public:
+                        return MethodAttributes.Public;
+                    default:
+                        return MethodAttributes.Assembly;
+                }
+            }
 
 #if IMPORTER
 			// The classic example of an access bridge is StringBuilder.length(), the JDK 6 compiler
@@ -2944,110 +2944,110 @@ namespace IKVM.Runtime
 			}
 #endif // IMPORTER
 
-			internal override Type Type
-			{
-				get
-				{
-					return typeBuilder;
-				}
-			}
+            internal override Type Type
+            {
+                get
+                {
+                    return typeBuilder;
+                }
+            }
 
-			internal override string GetGenericSignature()
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override string GetGenericSignature()
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override string[] GetEnclosingMethod()
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override string[] GetEnclosingMethod()
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override string GetGenericMethodSignature(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override string GetGenericMethodSignature(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override string GetGenericFieldSignature(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override string GetGenericFieldSignature(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override object[] GetDeclaredAnnotations()
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object[] GetDeclaredAnnotations()
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override object GetMethodDefaultValue(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object GetMethodDefaultValue(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override object[] GetMethodAnnotations(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object[] GetMethodAnnotations(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override object[][] GetParameterAnnotations(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object[][] GetParameterAnnotations(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override MethodParametersEntry[] GetMethodParameters(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override MethodParametersEntry[] GetMethodParameters(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override object[] GetFieldAnnotations(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object[] GetFieldAnnotations(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override MethodInfo GetFinalizeMethod()
-			{
-				return finalizeMethod;
-			}
+            internal override MethodInfo GetFinalizeMethod()
+            {
+                return finalizeMethod;
+            }
 
-			internal override object[] GetConstantPool()
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override object[] GetConstantPool()
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override byte[] GetRawTypeAnnotations()
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override byte[] GetRawTypeAnnotations()
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override byte[] GetMethodRawTypeAnnotations(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override byte[] GetMethodRawTypeAnnotations(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override byte[] GetFieldRawTypeAnnotations(int index)
-			{
-				Debug.Fail("Unreachable code");
-				return null;
-			}
+            internal override byte[] GetFieldRawTypeAnnotations(int index)
+            {
+                Debug.Fail("Unreachable code");
+                return null;
+            }
 
-			internal override RuntimeJavaType Host
-			{
-				get { return host; }
-			}
+            internal override RuntimeJavaType Host
+            {
+                get { return host; }
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

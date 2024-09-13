@@ -50,13 +50,13 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-	/// <summary>
-	/// Provides methods to help in generating IKVM attributes.
-	/// </summary>
-	class AttributeHelper
-	{
+    /// <summary>
+    /// Provides methods to help in generating IKVM attributes.
+    /// </summary>
+    class AttributeHelper
+    {
 
-		readonly RuntimeContext context;
+        readonly RuntimeContext context;
 
 #if IMPORTER
 
@@ -84,32 +84,32 @@ namespace IKVM.Runtime
 
 #endif
 
-		Type typeofRemappedClassAttribute;
-		Type typeofRemappedTypeAttribute;
-		Type typeofModifiersAttribute;
-		Type typeofRemappedInterfaceMethodAttribute;
-		Type typeofNameSigAttribute;
-		Type typeofJavaModuleAttribute;
-		Type typeofSignatureAttribute;
-		Type typeofInnerClassAttribute;
-		Type typeofImplementsAttribute;
-		Type typeofGhostInterfaceAttribute;
-		Type typeofExceptionIsUnsafeForMappingAttribute;
-		Type typeofThrowsAttribute;
-		Type typeofHideFromJavaAttribute;
-		Type typeofHideFromJavaFlags;
-		Type typeofNoPackagePrefixAttribute;
-		Type typeofAnnotationAttributeAttribute;
-		Type typeofNonNestedInnerClassAttribute;
-		Type typeofNonNestedOuterClassAttribute;
-		Type typeofEnclosingMethodAttribute;
-		Type typeofMethodParametersAttribute;
-		Type typeofRuntimeVisibleTypeAnnotationsAttribute;
-		Type typeofConstantPoolAttribute;
-		Type typeofDebuggableAttribute;
-		CustomAttributeBuilder hideFromJavaAttribute;
-		CustomAttributeBuilder hideFromReflection;
-		ConstructorInfo debuggableAttribute;
+        Type typeofRemappedClassAttribute;
+        Type typeofRemappedTypeAttribute;
+        Type typeofModifiersAttribute;
+        Type typeofRemappedInterfaceMethodAttribute;
+        Type typeofNameSigAttribute;
+        Type typeofJavaModuleAttribute;
+        Type typeofSignatureAttribute;
+        Type typeofInnerClassAttribute;
+        Type typeofImplementsAttribute;
+        Type typeofGhostInterfaceAttribute;
+        Type typeofExceptionIsUnsafeForMappingAttribute;
+        Type typeofThrowsAttribute;
+        Type typeofHideFromJavaAttribute;
+        Type typeofHideFromJavaFlags;
+        Type typeofNoPackagePrefixAttribute;
+        Type typeofAnnotationAttributeAttribute;
+        Type typeofNonNestedInnerClassAttribute;
+        Type typeofNonNestedOuterClassAttribute;
+        Type typeofEnclosingMethodAttribute;
+        Type typeofMethodParametersAttribute;
+        Type typeofRuntimeVisibleTypeAnnotationsAttribute;
+        Type typeofConstantPoolAttribute;
+        Type typeofDebuggableAttribute;
+        CustomAttributeBuilder hideFromJavaAttribute;
+        CustomAttributeBuilder hideFromReflection;
+        ConstructorInfo debuggableAttribute;
 
 #if IMPORTER
 
@@ -121,74 +121,74 @@ namespace IKVM.Runtime
 
 #endif
 
-		Type TypeOfRemappedClassAttribute => typeofRemappedClassAttribute ??= LoadType(typeof(RemappedClassAttribute));
+        Type TypeOfRemappedClassAttribute => typeofRemappedClassAttribute ??= LoadType(typeof(RemappedClassAttribute));
 
-		Type TypeOfRemappedTypeAttribute => typeofRemappedTypeAttribute ??= LoadType(typeof(RemappedTypeAttribute));
+        Type TypeOfRemappedTypeAttribute => typeofRemappedTypeAttribute ??= LoadType(typeof(RemappedTypeAttribute));
 
-		Type TypeOfModifiersAttribute => typeofModifiersAttribute ??= LoadType(typeof(ModifiersAttribute));
+        Type TypeOfModifiersAttribute => typeofModifiersAttribute ??= LoadType(typeof(ModifiersAttribute));
 
-		Type TypeOfRemappedInterfaceMethodAttribute => typeofRemappedInterfaceMethodAttribute ??= LoadType(typeof(RemappedInterfaceMethodAttribute));
+        Type TypeOfRemappedInterfaceMethodAttribute => typeofRemappedInterfaceMethodAttribute ??= LoadType(typeof(RemappedInterfaceMethodAttribute));
 
-		Type TypeOfNameSigAttribute => typeofNameSigAttribute ??= LoadType(typeof(NameSigAttribute));
+        Type TypeOfNameSigAttribute => typeofNameSigAttribute ??= LoadType(typeof(NameSigAttribute));
 
-		Type TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= LoadType(typeof(JavaModuleAttribute));
+        Type TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= LoadType(typeof(JavaModuleAttribute));
 
-		Type TypeOfSignatureAttribute => typeofSignatureAttribute ??= LoadType(typeof(IKVM.Attributes.SignatureAttribute));
+        Type TypeOfSignatureAttribute => typeofSignatureAttribute ??= LoadType(typeof(IKVM.Attributes.SignatureAttribute));
 
-		Type TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= LoadType(typeof(InnerClassAttribute));
+        Type TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= LoadType(typeof(InnerClassAttribute));
 
-		Type TypeOfImplementsAttribute => typeofImplementsAttribute ??= LoadType(typeof(ImplementsAttribute));
+        Type TypeOfImplementsAttribute => typeofImplementsAttribute ??= LoadType(typeof(ImplementsAttribute));
 
-		Type TypeOfGhostInterfaceAttribute => typeofGhostInterfaceAttribute ??= LoadType(typeof(GhostInterfaceAttribute));
+        Type TypeOfGhostInterfaceAttribute => typeofGhostInterfaceAttribute ??= LoadType(typeof(GhostInterfaceAttribute));
 
-		Type TypeOfExceptionIsUnsafeForMappingAttribute => typeofExceptionIsUnsafeForMappingAttribute ??= LoadType(typeof(ExceptionIsUnsafeForMappingAttribute));
+        Type TypeOfExceptionIsUnsafeForMappingAttribute => typeofExceptionIsUnsafeForMappingAttribute ??= LoadType(typeof(ExceptionIsUnsafeForMappingAttribute));
 
-		Type TypeOfThrowsAttribute => typeofThrowsAttribute ??= LoadType(typeof(ThrowsAttribute));
+        Type TypeOfThrowsAttribute => typeofThrowsAttribute ??= LoadType(typeof(ThrowsAttribute));
 
-		Type TypeOfHideFromJavaAttribute => typeofHideFromJavaAttribute ??= LoadType(typeof(HideFromJavaAttribute));
+        Type TypeOfHideFromJavaAttribute => typeofHideFromJavaAttribute ??= LoadType(typeof(HideFromJavaAttribute));
 
-		Type TypeOfHideFromJavaFlags => typeofHideFromJavaFlags ??= LoadType(typeof(HideFromJavaFlags));
+        Type TypeOfHideFromJavaFlags => typeofHideFromJavaFlags ??= LoadType(typeof(HideFromJavaFlags));
 
-		Type TypeOfNoPackagePrefixAttribute => typeofNoPackagePrefixAttribute ??= LoadType(typeof(NoPackagePrefixAttribute));
+        Type TypeOfNoPackagePrefixAttribute => typeofNoPackagePrefixAttribute ??= LoadType(typeof(NoPackagePrefixAttribute));
 
-		Type TypeOfAnnotationAttributeAttribute => typeofAnnotationAttributeAttribute ??= LoadType(typeof(AnnotationAttributeAttribute));
+        Type TypeOfAnnotationAttributeAttribute => typeofAnnotationAttributeAttribute ??= LoadType(typeof(AnnotationAttributeAttribute));
 
-		Type TypeOfNonNestedInnerClassAttribute => typeofNonNestedInnerClassAttribute ??= LoadType(typeof(NonNestedInnerClassAttribute));
+        Type TypeOfNonNestedInnerClassAttribute => typeofNonNestedInnerClassAttribute ??= LoadType(typeof(NonNestedInnerClassAttribute));
 
-		Type TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= LoadType(typeof(NonNestedOuterClassAttribute));
+        Type TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= LoadType(typeof(NonNestedOuterClassAttribute));
 
-		Type TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= LoadType(typeof(IKVM.Attributes.EnclosingMethodAttribute));
+        Type TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= LoadType(typeof(IKVM.Attributes.EnclosingMethodAttribute));
 
-		Type TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= LoadType(typeof(IKVM.Attributes.MethodParametersAttribute));
+        Type TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= LoadType(typeof(IKVM.Attributes.MethodParametersAttribute));
 
-		Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute));
+        Type TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute));
 
-		Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
+        Type TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
 
-		Type TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName).AsReflection();
+        Type TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName).AsReflection();
 
-		CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+        CustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>());
 
-		CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
+        CustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new[] { TypeOfHideFromJavaFlags }), new object[] { HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk });
 
-		/// <summary>
-		/// Loads the given managed type from the runtime assembly.
-		/// </summary>
-		/// <param name="t"></param>
-		/// <returns></returns>
-		Type LoadType(System.Type t)
-		{
-			return context.Resolver.ResolveRuntimeType(t.FullName).AsReflection();
-		}
+        /// <summary>
+        /// Loads the given managed type from the runtime assembly.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        Type LoadType(System.Type t)
+        {
+            return context.Resolver.ResolveRuntimeType(t.FullName).AsReflection();
+        }
 
-		/// <summary>
-		/// Initializes a new instance.
-		/// </summary>
-		/// <param name="context"></param>
-		public AttributeHelper(RuntimeContext context)
-		{
-			this.context = context ?? throw new ArgumentNullException(nameof(context));
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public AttributeHelper(RuntimeContext context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
 
 #if IMPORTER
 
@@ -503,41 +503,41 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-		internal void HideFromReflection(MethodBuilder mb)
-		{
-			mb.SetCustomAttribute(HideFromReflectionBuilder);
-		}
+        internal void HideFromReflection(MethodBuilder mb)
+        {
+            mb.SetCustomAttribute(HideFromReflectionBuilder);
+        }
 
-		internal void HideFromReflection(FieldBuilder fb)
-		{
-			fb.SetCustomAttribute(HideFromReflectionBuilder);
-		}
+        internal void HideFromReflection(FieldBuilder fb)
+        {
+            fb.SetCustomAttribute(HideFromReflectionBuilder);
+        }
 
-		internal void HideFromReflection(PropertyBuilder pb)
-		{
-			pb.SetCustomAttribute(HideFromReflectionBuilder);
-		}
+        internal void HideFromReflection(PropertyBuilder pb)
+        {
+            pb.SetCustomAttribute(HideFromReflectionBuilder);
+        }
 
-		internal void HideFromJava(TypeBuilder typeBuilder)
-		{
-			typeBuilder.SetCustomAttribute(HideFromJavaAttributeBuilder);
-		}
+        internal void HideFromJava(TypeBuilder typeBuilder)
+        {
+            typeBuilder.SetCustomAttribute(HideFromJavaAttributeBuilder);
+        }
 
-		internal void HideFromJava(MethodBuilder mb)
-		{
-			mb.SetCustomAttribute(HideFromJavaAttributeBuilder);
-		}
+        internal void HideFromJava(MethodBuilder mb)
+        {
+            mb.SetCustomAttribute(HideFromJavaAttributeBuilder);
+        }
 
-		internal void HideFromJava(MethodBuilder mb, HideFromJavaFlags flags)
-		{
-			CustomAttributeBuilder cab = new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { flags });
-			mb.SetCustomAttribute(cab);
-		}
+        internal void HideFromJava(MethodBuilder mb, HideFromJavaFlags flags)
+        {
+            CustomAttributeBuilder cab = new CustomAttributeBuilder(TypeOfHideFromJavaAttribute.GetConstructor(new Type[] { TypeOfHideFromJavaFlags }), new object[] { flags });
+            mb.SetCustomAttribute(cab);
+        }
 
-		internal void HideFromJava(FieldBuilder fb)
-		{
-			fb.SetCustomAttribute(HideFromJavaAttributeBuilder);
-		}
+        internal void HideFromJava(FieldBuilder fb)
+        {
+            fb.SetCustomAttribute(HideFromJavaAttributeBuilder);
+        }
 
 #if IMPORTER
 
@@ -548,29 +548,29 @@ namespace IKVM.Runtime
 
 #endif
 
-		internal bool IsHideFromJava(Type type)
-		{
-			return type.IsDefined(TypeOfHideFromJavaAttribute, false) || (type.IsNested && (type.DeclaringType.IsDefined(TypeOfHideFromJavaAttribute, false) || type.Name.StartsWith("__<", StringComparison.Ordinal)));
-		}
+        internal bool IsHideFromJava(Type type)
+        {
+            return type.IsDefined(TypeOfHideFromJavaAttribute, false) || (type.IsNested && (type.DeclaringType.IsDefined(TypeOfHideFromJavaAttribute, false) || type.Name.StartsWith("__<", StringComparison.Ordinal)));
+        }
 
-		internal bool IsHideFromJava(MemberInfo mi)
-		{
-			return (GetHideFromJavaFlags(mi) & HideFromJavaFlags.Code) != 0;
-		}
+        internal bool IsHideFromJava(MemberInfo mi)
+        {
+            return (GetHideFromJavaFlags(mi) & HideFromJavaFlags.Code) != 0;
+        }
 
-		internal HideFromJavaFlags GetHideFromJavaFlags(MemberInfo mi)
-		{
-			// NOTE all privatescope fields and methods are "hideFromJava"
-			// because Java cannot deal with the potential name clashes
-			var fi = mi as FieldInfo;
-			if (fi != null && (fi.Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.PrivateScope)
-				return HideFromJavaFlags.All;
+        internal HideFromJavaFlags GetHideFromJavaFlags(MemberInfo mi)
+        {
+            // NOTE all privatescope fields and methods are "hideFromJava"
+            // because Java cannot deal with the potential name clashes
+            var fi = mi as FieldInfo;
+            if (fi != null && (fi.Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.PrivateScope)
+                return HideFromJavaFlags.All;
 
-			var mb = mi as MethodBase;
-			if (mb != null && (mb.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.PrivateScope)
-				return HideFromJavaFlags.All;
-			if (mi.Name.StartsWith("__<", StringComparison.Ordinal))
-				return HideFromJavaFlags.All;
+            var mb = mi as MethodBase;
+            if (mb != null && (mb.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.PrivateScope)
+                return HideFromJavaFlags.All;
+            if (mi.Name.StartsWith("__<", StringComparison.Ordinal))
+                return HideFromJavaFlags.All;
 
 #if !IMPORTER && !EXPORTER
 
@@ -590,8 +590,8 @@ namespace IKVM.Runtime
 			}
 #endif
 
-			return HideFromJavaFlags.None;
-		}
+            return HideFromJavaFlags.None;
+        }
 
 #if IMPORTER
 
@@ -609,23 +609,23 @@ namespace IKVM.Runtime
 
 #endif
 
-		internal bool IsGhostInterface(Type type)
-		{
-			return type.IsDefined(TypeOfGhostInterfaceAttribute, false);
-		}
+        internal bool IsGhostInterface(Type type)
+        {
+            return type.IsDefined(TypeOfGhostInterfaceAttribute, false);
+        }
 
-		internal bool IsRemappedType(Type type)
-		{
-			return type.IsDefined(TypeOfRemappedTypeAttribute, false);
-		}
+        internal bool IsRemappedType(Type type)
+        {
+            return type.IsDefined(TypeOfRemappedTypeAttribute, false);
+        }
 
-		internal bool IsExceptionIsUnsafeForMapping(Type type)
-		{
-			return type.IsDefined(TypeOfExceptionIsUnsafeForMappingAttribute, false);
-		}
+        internal bool IsExceptionIsUnsafeForMapping(Type type)
+        {
+            return type.IsDefined(TypeOfExceptionIsUnsafeForMappingAttribute, false);
+        }
 
-		internal ModifiersAttribute GetModifiersAttribute(MemberInfo member)
-		{
+        internal ModifiersAttribute GetModifiersAttribute(MemberInfo member)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = member.GetCustomAttributes(typeof(ModifiersAttribute), false);
             return attr.Length == 1 ? (ModifiersAttribute)attr[0] : null;
@@ -642,124 +642,124 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
-		{
-			var attr = GetModifiersAttribute(mb);
-			if (attr != null)
-				return new ExModifiers(attr.Modifiers, attr.IsInternal);
+        internal ExModifiers GetModifiers(MethodBase mb, bool assemblyIsPrivate)
+        {
+            var attr = GetModifiersAttribute(mb);
+            if (attr != null)
+                return new ExModifiers(attr.Modifiers, attr.IsInternal);
 
-			Modifiers modifiers = 0;
+            Modifiers modifiers = 0;
 
-			if (mb.IsPublic)
-			{
-				modifiers |= Modifiers.Public;
-			}
-			else if (mb.IsPrivate)
-			{
-				modifiers |= Modifiers.Private;
-			}
-			else if (mb.IsFamily || mb.IsFamilyOrAssembly)
-			{
-				modifiers |= Modifiers.Protected;
-			}
-			else if (assemblyIsPrivate)
-			{
-				modifiers |= Modifiers.Private;
-			}
+            if (mb.IsPublic)
+            {
+                modifiers |= Modifiers.Public;
+            }
+            else if (mb.IsPrivate)
+            {
+                modifiers |= Modifiers.Private;
+            }
+            else if (mb.IsFamily || mb.IsFamilyOrAssembly)
+            {
+                modifiers |= Modifiers.Protected;
+            }
+            else if (assemblyIsPrivate)
+            {
+                modifiers |= Modifiers.Private;
+            }
 
-			// NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
-			// non-virtual methods to approximate the semantics
-			if ((mb.IsFinal || (!mb.IsVirtual && ((modifiers & Modifiers.Private) == 0))) && !mb.IsStatic && !mb.IsConstructor)
-			{
-				modifiers |= Modifiers.Final;
-			}
+            // NOTE Java doesn't support non-virtual methods, but we set the Final modifier for
+            // non-virtual methods to approximate the semantics
+            if ((mb.IsFinal || (!mb.IsVirtual && ((modifiers & Modifiers.Private) == 0))) && !mb.IsStatic && !mb.IsConstructor)
+            {
+                modifiers |= Modifiers.Final;
+            }
 
-			if (mb.IsAbstract)
-			{
-				modifiers |= Modifiers.Abstract;
-			}
-			else
-			{
-				// Some .NET interfaces (like System._AppDomain) have synchronized methods,
-				// Java doesn't allow synchronized on an abstract methods, so we ignore it for
-				// abstract methods.
-				if ((mb.GetMethodImplementationFlags() & MethodImplAttributes.Synchronized) != 0)
-				{
-					modifiers |= Modifiers.Synchronized;
-				}
-			}
+            if (mb.IsAbstract)
+            {
+                modifiers |= Modifiers.Abstract;
+            }
+            else
+            {
+                // Some .NET interfaces (like System._AppDomain) have synchronized methods,
+                // Java doesn't allow synchronized on an abstract methods, so we ignore it for
+                // abstract methods.
+                if ((mb.GetMethodImplementationFlags() & MethodImplAttributes.Synchronized) != 0)
+                {
+                    modifiers |= Modifiers.Synchronized;
+                }
+            }
 
-			if (mb.IsStatic)
-			{
-				modifiers |= Modifiers.Static;
-			}
+            if (mb.IsStatic)
+            {
+                modifiers |= Modifiers.Static;
+            }
 
-			if ((mb.Attributes & MethodAttributes.PinvokeImpl) != 0)
-			{
-				modifiers |= Modifiers.Native;
-			}
+            if ((mb.Attributes & MethodAttributes.PinvokeImpl) != 0)
+            {
+                modifiers |= Modifiers.Native;
+            }
 
-			var parameters = mb.GetParameters();
-			if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
-				modifiers |= Modifiers.VarArgs;
+            var parameters = mb.GetParameters();
+            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
+                modifiers |= Modifiers.VarArgs;
 
-			return new ExModifiers(modifiers, false);
-		}
+            return new ExModifiers(modifiers, false);
+        }
 
-		internal ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
-		{
-			var attr = GetModifiersAttribute(fi);
-			if (attr != null)
-				return new ExModifiers(attr.Modifiers, attr.IsInternal);
+        internal ExModifiers GetModifiers(FieldInfo fi, bool assemblyIsPrivate)
+        {
+            var attr = GetModifiersAttribute(fi);
+            if (attr != null)
+                return new ExModifiers(attr.Modifiers, attr.IsInternal);
 
-			Modifiers modifiers = 0;
-			if (fi.IsPublic)
-			{
-				modifiers |= Modifiers.Public;
-			}
-			else if (fi.IsPrivate)
-			{
-				modifiers |= Modifiers.Private;
-			}
-			else if (fi.IsFamily || fi.IsFamilyOrAssembly)
-			{
-				modifiers |= Modifiers.Protected;
-			}
-			else if (assemblyIsPrivate)
-			{
-				modifiers |= Modifiers.Private;
-			}
+            Modifiers modifiers = 0;
+            if (fi.IsPublic)
+            {
+                modifiers |= Modifiers.Public;
+            }
+            else if (fi.IsPrivate)
+            {
+                modifiers |= Modifiers.Private;
+            }
+            else if (fi.IsFamily || fi.IsFamilyOrAssembly)
+            {
+                modifiers |= Modifiers.Protected;
+            }
+            else if (assemblyIsPrivate)
+            {
+                modifiers |= Modifiers.Private;
+            }
 
-			if (fi.IsInitOnly || fi.IsLiteral)
-			{
-				modifiers |= Modifiers.Final;
-			}
+            if (fi.IsInitOnly || fi.IsLiteral)
+            {
+                modifiers |= Modifiers.Final;
+            }
 
-			if (fi.IsNotSerialized)
-			{
-				modifiers |= Modifiers.Transient;
-			}
+            if (fi.IsNotSerialized)
+            {
+                modifiers |= Modifiers.Transient;
+            }
 
-			if (fi.IsStatic)
-			{
-				modifiers |= Modifiers.Static;
-			}
+            if (fi.IsStatic)
+            {
+                modifiers |= Modifiers.Static;
+            }
 
-			if (Array.IndexOf(fi.GetRequiredCustomModifiers(), context.Types.IsVolatile) != -1)
-			{
-				modifiers |= Modifiers.Volatile;
-			}
+            if (Array.IndexOf(fi.GetRequiredCustomModifiers(), context.Types.IsVolatile) != -1)
+            {
+                modifiers |= Modifiers.Volatile;
+            }
 
-			return new ExModifiers(modifiers, false);
-		}
+            return new ExModifiers(modifiers, false);
+        }
 
-		internal void SetDebuggingModes(AssemblyBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
-		{
-			debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
-			assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttribute, new object[] { modes }));
-		}
+        internal void SetDebuggingModes(AssemblyBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
+        {
+            debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor(new[] { TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes)) });
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(debuggableAttribute, new object[] { modes }));
+        }
 
 #if IMPORTER
 
@@ -931,8 +931,8 @@ namespace IKVM.Runtime
 
 #endif  // IMPORTER
 
-		internal NameSigAttribute GetNameSig(MemberInfo member)
-		{
+        internal NameSigAttribute GetNameSig(MemberInfo member)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = member.GetCustomAttributes(typeof(NameSigAttribute), false);
             return attr.Length == 1 ? (NameSigAttribute)attr[0] : null;
@@ -945,20 +945,20 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
-		{
-			var elems = (IList<CustomAttributeTypedArgument>)arg.Value;
-			var arr = new T[elems.Count];
-			for (int i = 0; i < arr.Length; i++)
-				arr[i] = (T)elems[i].Value;
+        internal T[] DecodeArray<T>(CustomAttributeTypedArgument arg)
+        {
+            var elems = (IList<CustomAttributeTypedArgument>)arg.Value;
+            var arr = new T[elems.Count];
+            for (int i = 0; i < arr.Length; i++)
+                arr[i] = (T)elems[i].Value;
 
-			return arr;
-		}
+            return arr;
+        }
 
-		internal ImplementsAttribute GetImplements(Type type)
-		{
+        internal ImplementsAttribute GetImplements(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = type.GetCustomAttributes(typeof(ImplementsAttribute), false);
             return attribs.Length == 1 ? (ImplementsAttribute)attribs[0] : null;
@@ -971,10 +971,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal ThrowsAttribute GetThrows(MethodBase mb)
-		{
+        internal ThrowsAttribute GetThrows(MethodBase mb)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = mb.GetCustomAttributes(typeof(ThrowsAttribute), false);
             return attribs.Length == 1 ? (ThrowsAttribute)attribs[0] : null;
@@ -998,10 +998,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal string[] GetNonNestedInnerClasses(Type t)
-		{
+        internal string[] GetNonNestedInnerClasses(Type t)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = t.GetCustomAttributes(typeof(NonNestedInnerClassAttribute), false);
             var classes = new string[attribs.Length];
@@ -1019,10 +1019,10 @@ namespace IKVM.Runtime
 
 			return list.ToArray();
 #endif
-		}
+        }
 
-		internal string GetNonNestedOuterClasses(Type t)
-		{
+        internal string GetNonNestedOuterClasses(Type t)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = t.GetCustomAttributes(typeof(NonNestedOuterClassAttribute), false);
             return attribs.Length == 1 ? ((NonNestedOuterClassAttribute)attribs[0]).OuterClassName : null;
@@ -1034,10 +1034,10 @@ namespace IKVM.Runtime
 			}
 			return null;
 #endif
-		}
+        }
 
-		internal IKVM.Attributes.SignatureAttribute GetSignature(MemberInfo member)
-		{
+        internal IKVM.Attributes.SignatureAttribute GetSignature(MemberInfo member)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = member.GetCustomAttributes(typeof(IKVM.Attributes.SignatureAttribute), false);
             return attribs.Length == 1 ? (IKVM.Attributes.SignatureAttribute)attribs[0] : null;
@@ -1050,10 +1050,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal IKVM.Attributes.MethodParametersAttribute GetMethodParameters(MethodBase method)
-		{
+        internal IKVM.Attributes.MethodParametersAttribute GetMethodParameters(MethodBase method)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = method.GetCustomAttributes(typeof(IKVM.Attributes.MethodParametersAttribute), false);
             return attribs.Length == 1 ? (IKVM.Attributes.MethodParametersAttribute)attribs[0] : null;
@@ -1065,10 +1065,10 @@ namespace IKVM.Runtime
 			}
 			return null;
 #endif
-		}
+        }
 
-		internal object[] GetConstantPool(Type type)
-		{
+        internal object[] GetConstantPool(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = type.GetCustomAttributes(typeof(ConstantPoolAttribute), false);
             return attribs.Length == 1 ? ((ConstantPoolAttribute)attribs[0]).constantPool : null;
@@ -1078,10 +1078,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal byte[] GetRuntimeVisibleTypeAnnotations(MemberInfo member)
-		{
+        internal byte[] GetRuntimeVisibleTypeAnnotations(MemberInfo member)
+        {
 #if !IMPORTER && !EXPORTER
             object[] attribs = member.GetCustomAttributes(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute), false);
             return attribs.Length == 1 ? ((IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute)attribs[0]).data : null;
@@ -1093,10 +1093,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal InnerClassAttribute GetInnerClass(Type type)
-		{
+        internal InnerClassAttribute GetInnerClass(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             object[] attribs = type.GetCustomAttributes(typeof(InnerClassAttribute), false);
             return attribs.Length == 1 ? (InnerClassAttribute)attribs[0] : null;
@@ -1108,10 +1108,10 @@ namespace IKVM.Runtime
 			}
 			return null;
 #endif
-		}
+        }
 
-		internal RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
-		{
+        internal RemappedInterfaceMethodAttribute[] GetRemappedInterfaceMethods(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = type.GetCustomAttributes(typeof(RemappedInterfaceMethodAttribute), false);
             var attr1 = new RemappedInterfaceMethodAttribute[attr.Length];
@@ -1127,10 +1127,10 @@ namespace IKVM.Runtime
 
 			return attrs.ToArray();
 #endif
-		}
+        }
 
-		internal RemappedTypeAttribute GetRemappedType(Type type)
-		{
+        internal RemappedTypeAttribute GetRemappedType(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attribs = type.GetCustomAttributes(typeof(RemappedTypeAttribute), false);
             return attribs.Length == 1 ? (RemappedTypeAttribute)attribs[0] : null;
@@ -1143,10 +1143,10 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal RemappedClassAttribute[] GetRemappedClasses(Assembly coreAssembly)
-		{
+        internal RemappedClassAttribute[] GetRemappedClasses(Assembly coreAssembly)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = coreAssembly.GetCustomAttributes(typeof(RemappedClassAttribute), false);
             var attr1 = new RemappedClassAttribute[attr.Length];
@@ -1162,10 +1162,10 @@ namespace IKVM.Runtime
 
 			return attrs.ToArray();
 #endif
-		}
+        }
 
-		internal string GetAnnotationAttributeType(Type type)
-		{
+        internal string GetAnnotationAttributeType(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = type.GetCustomAttributes(typeof(AnnotationAttributeAttribute), false);
             if (attr.Length == 1)
@@ -1178,36 +1178,36 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
-		internal AssemblyName[] GetInternalsVisibleToAttributes(Assembly assembly)
-		{
-			var list = new List<AssemblyName>();
-			foreach (var cad in CustomAttributeData.GetCustomAttributes(assembly))
-			{
-				if (cad.Constructor.DeclaringType == context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName).AsReflection())
-				{
-					try
-					{
-						list.Add(new AssemblyName((string)cad.ConstructorArguments[0].Value));
-					}
-					catch
-					{
-						// HACK since there is no list of exception that the AssemblyName constructor can throw, we simply catch all
-					}
-				}
-			}
+        internal AssemblyName[] GetInternalsVisibleToAttributes(Assembly assembly)
+        {
+            var list = new List<AssemblyName>();
+            foreach (var cad in CustomAttributeData.GetCustomAttributes(assembly))
+            {
+                if (cad.Constructor.DeclaringType == context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName).AsReflection())
+                {
+                    try
+                    {
+                        list.Add(new AssemblyName((string)cad.ConstructorArguments[0].Value));
+                    }
+                    catch
+                    {
+                        // HACK since there is no list of exception that the AssemblyName constructor can throw, we simply catch all
+                    }
+                }
+            }
 
-			return list.ToArray();
-		}
+            return list.ToArray();
+        }
 
-		internal bool IsJavaModule(Module mod)
-		{
-			return mod.IsDefined(TypeOfJavaModuleAttribute, false);
-		}
+        internal bool IsJavaModule(Module mod)
+        {
+            return mod.IsDefined(TypeOfJavaModuleAttribute, false);
+        }
 
-		internal object[] GetJavaModuleAttributes(Module mod)
-		{
+        internal object[] GetJavaModuleAttributes(Module mod)
+        {
 #if !IMPORTER && !EXPORTER
             return mod.GetCustomAttributes(TypeOfJavaModuleAttribute, false);
 #else
@@ -1226,20 +1226,20 @@ namespace IKVM.Runtime
 			}
 			return attrs.ToArray();
 #endif
-		}
+        }
 
-		internal bool IsNoPackagePrefix(Type type)
-		{
-			return type.IsDefined(TypeOfNoPackagePrefixAttribute, false) || type.Assembly.IsDefined(TypeOfNoPackagePrefixAttribute, false);
-		}
+        internal bool IsNoPackagePrefix(Type type)
+        {
+            return type.IsDefined(TypeOfNoPackagePrefixAttribute, false) || type.Assembly.IsDefined(TypeOfNoPackagePrefixAttribute, false);
+        }
 
-		internal bool HasEnclosingMethodAttribute(Type type)
-		{
-			return type.IsDefined(TypeOfEnclosingMethodAttribute, false);
-		}
+        internal bool HasEnclosingMethodAttribute(Type type)
+        {
+            return type.IsDefined(TypeOfEnclosingMethodAttribute, false);
+        }
 
-		internal IKVM.Attributes.EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
-		{
+        internal IKVM.Attributes.EnclosingMethodAttribute GetEnclosingMethodAttribute(Type type)
+        {
 #if !IMPORTER && !EXPORTER
             var attr = type.GetCustomAttributes(typeof(IKVM.Attributes.EnclosingMethodAttribute), false);
             if (attr.Length == 1)
@@ -1252,7 +1252,7 @@ namespace IKVM.Runtime
 
 			return null;
 #endif
-		}
+        }
 
 #if IMPORTER
 
@@ -1282,19 +1282,19 @@ namespace IKVM.Runtime
 
 #endif
 
-		internal void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
-		{
-			var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName).AsReflection();
-			assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>(), new PropertyInfo[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true }, Array.Empty<FieldInfo>(), Array.Empty<object>()));
-		}
+        internal void SetRuntimeCompatibilityAttribute(AssemblyBuilder assemblyBuilder)
+        {
+            var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName).AsReflection();
+            assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(runtimeCompatibilityAttribute.GetConstructor(Type.EmptyTypes), Array.Empty<object>(), new PropertyInfo[] { runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows") }, new object[] { true }, Array.Empty<FieldInfo>(), Array.Empty<object>()));
+        }
 
-		internal void SetInternalsVisibleToAttribute(AssemblyBuilder assemblyBuilder, string assemblyName)
-		{
-			var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName).AsReflection();
-			var cab = new CustomAttributeBuilder(internalsVisibleToAttribute.GetConstructor(new Type[] { context.Types.String }), new object[] { assemblyName });
-			assemblyBuilder.SetCustomAttribute(cab);
-		}
+        internal void SetInternalsVisibleToAttribute(AssemblyBuilder assemblyBuilder, string assemblyName)
+        {
+            var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName).AsReflection();
+            var cab = new CustomAttributeBuilder(internalsVisibleToAttribute.GetConstructor(new Type[] { context.Types.String }), new object[] { assemblyName });
+            assemblyBuilder.SetCustomAttribute(cab);
+        }
 
-	}
+    }
 
 }

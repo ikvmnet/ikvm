@@ -4,45 +4,45 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-	interface IAssemblySymbol : ISymbol, ICustomAttributeSymbolProvider
-	{
+    interface IAssemblySymbol : ISymbol, ICustomAttributeSymbolProvider
+    {
 
-		IEnumerable<ITypeSymbol> DefinedTypes { get; }
+        IEnumerable<ITypeSymbol> DefinedTypes { get; }
 
-		IMethodSymbol? EntryPoint { get; }
+        IMethodSymbol? EntryPoint { get; }
 
-		IEnumerable<ITypeSymbol> ExportedTypes { get; }
+        IEnumerable<ITypeSymbol> ExportedTypes { get; }
 
-		string? FullName { get; }
+        string? FullName { get; }
 
-		string ImageRuntimeVersion { get; }
+        string ImageRuntimeVersion { get; }
 
-		IModuleSymbol ManifestModule { get; }
+        IModuleSymbol ManifestModule { get; }
 
-		IEnumerable<IModuleSymbol> Modules { get; }
+        IEnumerable<IModuleSymbol> Modules { get; }
 
-		ITypeSymbol[] GetExportedTypes();
+        ITypeSymbol[] GetExportedTypes();
 
-		IModuleSymbol? GetModule(string name);
+        IModuleSymbol? GetModule(string name);
 
-		IModuleSymbol[] GetModules();
+        IModuleSymbol[] GetModules();
 
-		IModuleSymbol[] GetModules(bool getResourceModules);
+        IModuleSymbol[] GetModules(bool getResourceModules);
 
-		AssemblyName GetName();
+        AssemblyName GetName();
 
-		AssemblyName GetName(bool copiedName);
+        AssemblyName GetName(bool copiedName);
 
-		AssemblyName[] GetReferencedAssemblies();
+        AssemblyName[] GetReferencedAssemblies();
 
-		ITypeSymbol? GetType(string name, bool throwOnError);
+        ITypeSymbol? GetType(string name, bool throwOnError);
 
-		ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
+        ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
 
-		ITypeSymbol? GetType(string name);
+        ITypeSymbol? GetType(string name);
 
-		ITypeSymbol[] GetTypes();
+        ITypeSymbol[] GetTypes();
 
-	}
+    }
 
 }

@@ -1169,7 +1169,7 @@ namespace IKVM.Runtime.StubGen
 #if EXPORTER
             return mb.__GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false).Count;
 #else
-			return mb.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length;
+            return mb.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length;
 #endif
         }
 
@@ -1179,7 +1179,7 @@ namespace IKVM.Runtime.StubGen
             var attr = CustomAttributeData.__GetCustomAttributes(mb, context.Resolver.ResolveRuntimeType(typeof(Attributes.AnnotationDefaultAttribute).FullName).AsReflection(), false);
             return attr.Count == 1 ? attr[0] : null;
 #else
-			foreach (var cad in CustomAttributeData.GetCustomAttributes(mb))
+            foreach (var cad in CustomAttributeData.GetCustomAttributes(mb))
                 if (cad.Constructor.DeclaringType == typeof(Attributes.AnnotationDefaultAttribute))
                     return cad;
 

@@ -35,10 +35,10 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-	/// <summary>
-	/// Provides a view of the types available to the reflection infrastructure.
-	/// </summary>
-	public sealed class Universe : IDisposable
+    /// <summary>
+    /// Provides a view of the types available to the reflection infrastructure.
+    /// </summary>
+    public sealed class Universe : IDisposable
     {
 
         public static readonly string NetCoreLibName = "System.Runtime";

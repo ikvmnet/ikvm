@@ -1649,7 +1649,7 @@ namespace IKVM.Runtime
             }
 #endif
 
-			class JniBuilder
+            class JniBuilder
             {
 
                 readonly RuntimeContext context;

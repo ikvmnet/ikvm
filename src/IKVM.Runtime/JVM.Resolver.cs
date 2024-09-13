@@ -14,82 +14,82 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-	static partial class JVM
-	{
+    static partial class JVM
+    {
 
-		/// <summary>
-		/// Provides support for resolving managed types from the current JVM environment.
-		/// </summary>
-		internal class Resolver : ISymbolResolver
-		{
+        /// <summary>
+        /// Provides support for resolving managed types from the current JVM environment.
+        /// </summary>
+        internal class Resolver : ISymbolResolver
+        {
 
-			/// <summary>
-			/// Gets the set of assemblies from which to load core types.
-			/// </summary>
-			/// <returns></returns>
-			static IEnumerable<Assembly> GetCoreAssemblies()
-			{
-				yield return typeof(object).Assembly;
-				yield return typeof(RuntimeCompatibilityAttribute).Assembly;
-				yield return typeof(Console).Assembly;
-				yield return typeof(System.Threading.Interlocked).Assembly;
-				yield return typeof(EditorBrowsableAttribute).Assembly;
-				yield return typeof(System.Collections.IEnumerable).Assembly;
-				yield return typeof(IEnumerable<>).Assembly;
-				yield return typeof(Environment).Assembly;
-			}
+            /// <summary>
+            /// Gets the set of assemblies from which to load core types.
+            /// </summary>
+            /// <returns></returns>
+            static IEnumerable<Assembly> GetCoreAssemblies()
+            {
+                yield return typeof(object).Assembly;
+                yield return typeof(RuntimeCompatibilityAttribute).Assembly;
+                yield return typeof(Console).Assembly;
+                yield return typeof(System.Threading.Interlocked).Assembly;
+                yield return typeof(EditorBrowsableAttribute).Assembly;
+                yield return typeof(System.Collections.IEnumerable).Assembly;
+                yield return typeof(IEnumerable<>).Assembly;
+                yield return typeof(Environment).Assembly;
+            }
 
-			readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
+            readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
 
-			readonly ReflectionSymbolContext _context = new();
-			readonly IAssemblySymbol[] _coreAssemblies;
-			readonly ConcurrentDictionary<string, ITypeSymbol> _typeCache = new();
+            readonly ReflectionSymbolContext _context = new();
+            readonly IAssemblySymbol[] _coreAssemblies;
+            readonly ConcurrentDictionary<string, ITypeSymbol> _typeCache = new();
 
-			/// <summary>
-			/// Initializes a new instance.
-			/// </summary>
-			public Resolver()
-			{
-				_coreAssemblies = coreAssemblies.Select(_context.GetOrCreateAssemblySymbol).ToArray();
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            public Resolver()
+            {
+                _coreAssemblies = coreAssemblies.Select(_context.GetOrCreateAssemblySymbol).ToArray();
+            }
 
-			/// <inheritdoc />
-			public IAssemblySymbol ResolveAssembly(string assemblyName)
-			{
-				return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
-			}
+            /// <inheritdoc />
+            public IAssemblySymbol ResolveAssembly(string assemblyName)
+            {
+                return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
+            }
 
-			/// <inheritdoc />
-			public IAssemblySymbol ResolveBaseAssembly()
-			{
-				return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
-			}
+            /// <inheritdoc />
+            public IAssemblySymbol ResolveBaseAssembly()
+            {
+                return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
+            }
 
-			/// <inheritdoc />
-			public ITypeSymbol ResolveCoreType(string typeName)
-			{
-				return _typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
-			}
+            /// <inheritdoc />
+            public ITypeSymbol ResolveCoreType(string typeName)
+            {
+                return _typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
+            }
 
-			ITypeSymbol ResolveCoreTypeImpl(string typeName)
-			{
-				// loop over core assemblies searching for type
-				foreach (var assembly in _coreAssemblies)
-					if (assembly.GetType(typeName) is ITypeSymbol t)
-						return t;
+            ITypeSymbol ResolveCoreTypeImpl(string typeName)
+            {
+                // loop over core assemblies searching for type
+                foreach (var assembly in _coreAssemblies)
+                    if (assembly.GetType(typeName) is ITypeSymbol t)
+                        return t;
 
-				return null;
-			}
+                return null;
+            }
 
-			/// <inheritdoc />
-			public ITypeSymbol ResolveRuntimeType(string typeName)
-			{
-				return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
-			}
+            /// <inheritdoc />
+            public ITypeSymbol ResolveRuntimeType(string typeName)
+            {
+                return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
+            }
 
-		}
+        }
 
-	}
+    }
 
 #endif
 
