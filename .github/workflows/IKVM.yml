@@ -388,7 +388,7 @@ jobs:
           $tfm += @( "net6.0" )
         }
 
-        $run = 
+        $run = (
           "IKVM.Reflection.Tests",
           "IKVM.CoreLib.Tests",
           "IKVM.Tests",
