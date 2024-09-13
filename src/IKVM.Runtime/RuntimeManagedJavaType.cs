@@ -26,8 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

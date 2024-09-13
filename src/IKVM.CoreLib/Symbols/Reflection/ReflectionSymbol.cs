@@ -351,6 +351,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Transforms a custom set of custom attribute data records to a symbol record.
+        /// </summary>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        {
+            var a = new List<CustomAttributeSymbol>();
+            foreach (var i in attributes)
+                a.Add(ResolveCustomAttribute(i));
+
+            return a.ToArray();
+        }
+
+        /// <summary>
         /// Transforms a custom attribute data record to a symbol record.
         /// </summary>
         /// <param name="customAttributeData"></param>

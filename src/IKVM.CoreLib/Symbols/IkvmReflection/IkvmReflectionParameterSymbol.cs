@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 using ParameterInfo = IKVM.Reflection.ParameterInfo;
 
@@ -52,21 +54,29 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public int Position => _parameter.Position;
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        /// <inheritdoc />
+        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
+            return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, inherit));
         }
 
-        public bool IsDefined(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _parameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }
 
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return _parameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
+        }
     }
 
 }

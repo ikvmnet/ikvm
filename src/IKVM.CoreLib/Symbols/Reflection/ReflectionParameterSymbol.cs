@@ -11,6 +11,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly ParameterInfo _parameter;
         readonly ReflectionMethodBaseSymbol _method;
 
+        CustomAttributeSymbol[]? _customAttributes;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -52,19 +54,28 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         public int Position => _parameter.Position;
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        /// <inheritdoc />
+        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
+            return _customAttributes ??= ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
         }
 
-        public bool IsDefined(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
         }
 
     }

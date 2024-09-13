@@ -194,6 +194,14 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             m.IsPrivate.Should().BeFalse();
         }
 
+        [TestMethod]
+        public void CanReadCustomAttributes()
+        {
+            var c = new IkvmReflectionSymbolContext();
+            var s = c.GetOrCreateTypeSymbol(coreAssembly!.GetType("System.AttributeUsageAttribute"));
+            var a = s.GetCustomAttribute(s);
+        }
+
     }
 
 }

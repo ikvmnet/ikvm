@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Reflection
@@ -84,10 +85,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 Interlocked.CompareExchange(ref _types, new ReflectionTypeSymbol?[_typesSource.Length], null);
 
             // index of current record is specified row - base
-            var idx = row - _typesBaseRow;
-            if (idx < 0)
-                throw new Exception();
-
+            var idx = row - _typesBaseRow - 1;
             Debug.Assert(idx >= 0);
             Debug.Assert(idx < _typesSource.Length);
 
@@ -330,21 +328,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_module.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_module.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return ResolveCustomAttributes(_module.GetCustomAttributesData().Where(i => i.AttributeType == ((ReflectionTypeSymbol)attributeType).ReflectionObject));
         }
 
         /// <inheritdoc />
-        public bool IsDefined(ITypeSymbol attributeType)
+        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, false);
         }
 
     }

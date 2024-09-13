@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -11,22 +12,53 @@ namespace IKVM.CoreLib.Symbols.Reflection
     abstract class ReflectionMemberSymbol : ReflectionSymbol, IMemberSymbol
     {
 
-        readonly ReflectionModuleSymbol _module;
-        readonly ReflectionTypeSymbol? _type;
+        /// <summary>
+        /// Concatinates the list of arrays.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        static T[] Concat<T>(List<T[]>? list)
+        {
+            if (list == null)
+                return [];
+
+            var c = 0;
+            foreach (var i in list)
+                c += i.Length;
+
+            if (c == 0)
+                return [];
+
+            var t = 0;
+            var a = new T[c];
+            foreach (var i in list)
+            {
+                Array.Copy(i, 0, a, t, i.Length);
+                t += i.Length;
+            }
+
+            return a;
+        }
+
+        readonly ReflectionModuleSymbol _containingModule;
+        readonly ReflectionTypeSymbol? _containingType;
         readonly MemberInfo _member;
+
+        CustomAttributeSymbol[]? _customAttributes;
+        CustomAttributeSymbol[]? _inheritedCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="type"></param>
+        /// <param name="containingModule"></param>
+        /// <param name="containingType"></param>
         /// <param name="member"></param>
-        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MemberInfo member) :
+        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, ReflectionTypeSymbol? containingType, MemberInfo member) :
             base(context)
         {
-            _module = module ?? throw new ArgumentNullException(nameof(module));
-            _type = type;
+            _containingModule = containingModule ?? throw new ArgumentNullException(nameof(containingModule));
+            _containingType = containingType;
             _member = member ?? throw new ArgumentNullException(nameof(member));
         }
 
@@ -37,10 +69,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionTypeSymbol ResolveTypeSymbol(Type type)
         {
-            if (_type != null && type == _type.ReflectionObject)
-                return _type;
+            if (_containingType != null && type == _containingType.ReflectionObject)
+                return _containingType;
             else if (type.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(type);
+                return _containingModule.GetOrCreateTypeSymbol(type);
             else
                 return base.ResolveTypeSymbol(type);
         }
@@ -52,10 +84,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
         {
-            if (_type != null && ctor.DeclaringType == _type.ReflectionObject)
-                return _type.GetOrCreateConstructorSymbol(ctor);
+            if (_containingType != null && ctor.DeclaringType == _containingType.ReflectionObject)
+                return _containingType.GetOrCreateConstructorSymbol(ctor);
             else if (ctor.DeclaringType != null && ctor.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
+                return _containingModule.GetOrCreateTypeSymbol(ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
             else
                 return base.ResolveConstructorSymbol(ctor);
         }
@@ -67,10 +99,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
         {
-            if (_type != null && method.DeclaringType == _type.ReflectionObject)
-                return _type.GetOrCreateMethodSymbol(method);
+            if (_containingType != null && method.DeclaringType == _containingType.ReflectionObject)
+                return _containingType.GetOrCreateMethodSymbol(method);
             else if (method.DeclaringType != null && method.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(method.DeclaringType).GetOrCreateMethodSymbol(method);
+                return _containingModule.GetOrCreateTypeSymbol(method.DeclaringType).GetOrCreateMethodSymbol(method);
             else
                 return base.ResolveMethodSymbol(method);
         }
@@ -82,10 +114,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
         {
-            if (_type != null && field.DeclaringType == _type.ReflectionObject)
-                return _type.GetOrCreateFieldSymbol(field);
+            if (_containingType != null && field.DeclaringType == _containingType.ReflectionObject)
+                return _containingType.GetOrCreateFieldSymbol(field);
             else if (field.DeclaringType != null && field.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(field.DeclaringType).GetOrCreateFieldSymbol(field);
+                return _containingModule.GetOrCreateTypeSymbol(field.DeclaringType).GetOrCreateFieldSymbol(field);
             else
                 return base.ResolveFieldSymbol(field);
         }
@@ -99,10 +131,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         protected internal override ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
         {
 
-            if (_type != null && property.DeclaringType == _type.ReflectionObject)
-                return _type.GetOrCreatePropertySymbol(property);
+            if (_containingType != null && property.DeclaringType == _containingType.ReflectionObject)
+                return _containingType.GetOrCreatePropertySymbol(property);
             else if (property.DeclaringType != null && property.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(property.DeclaringType).GetOrCreatePropertySymbol(property);
+                return _containingModule.GetOrCreateTypeSymbol(property.DeclaringType).GetOrCreatePropertySymbol(property);
             else
                 return base.ResolvePropertySymbol(property);
         }
@@ -114,10 +146,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
         {
-            if (_type != null && @event.DeclaringType == _type.ReflectionObject)
-                return _type.GetOrCreateEventSymbol(@event);
+            if (_containingType != null && @event.DeclaringType == _containingType.ReflectionObject)
+                return _containingType.GetOrCreateEventSymbol(@event);
             else if (@event.DeclaringType != null && @event.Module == _member.Module)
-                return _module.GetOrCreateTypeSymbol(@event.DeclaringType).GetOrCreateEventSymbol(@event);
+                return _containingModule.GetOrCreateTypeSymbol(@event.DeclaringType).GetOrCreateEventSymbol(@event);
             else
                 return base.ResolveEventSymbol(@event);
         }
@@ -130,12 +162,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the <see cref="ReflectionModuleSymbol" /> which contains the metadata of this member.
         /// </summary>
-        internal ReflectionModuleSymbol ContainingModule => _module;
+        internal ReflectionModuleSymbol ContainingModule => _containingModule;
 
         /// <summary>
         /// Gets the <see cref="ReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
         /// </summary>
-        internal ReflectionTypeSymbol? ContainingType => _type;
+        internal ReflectionTypeSymbol? ContainingType => _containingType;
 
         /// <inheritdoc />
         public virtual IModuleSymbol Module => Context.GetOrCreateModuleSymbol(_member.Module);
@@ -153,21 +185,72 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual string Name => _member.Name;
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes()
+        public virtual CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_member.GetCustomAttributesData());
+            if (inherit)
+            {
+                // check that we've already processed this
+                if (_inheritedCustomAttributes != null)
+                    return _inheritedCustomAttributes;
+
+                var self = _member;
+                var list = default(List<CustomAttributeSymbol[]>?);
+                for (; ; )
+                {
+                    // get attribute for current member and append to list
+                    var attr = ResolveMemberSymbol(self).GetCustomAttributes(false);
+                    if (attr.Length > 0)
+                    {
+                        list ??= [];
+                        list.Add(attr);
+                    }
+
+                    var type = self as Type;
+                    if (type != null)
+                    {
+                        type = type.BaseType;
+                        if (type == null)
+                            return _inheritedCustomAttributes ??= Concat(list);
+
+                        self = type;
+                        continue;
+                    }
+
+                    var method = self as MethodInfo;
+                    if (method != null)
+                    {
+                        var prev = self;
+                        method = method.GetBaseDefinition();
+                        if (method == null || method == prev)
+                            return _inheritedCustomAttributes ??= Concat(list);
+
+                        self = method;
+                        continue;
+                    }
+
+                    return _inheritedCustomAttributes ??= Concat(list);
+                }
+            }
+
+            return _customAttributes ??= ResolveCustomAttributes(_member.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
         }
 
         /// <inheritdoc />
-        public virtual bool IsDefined(ITypeSymbol attributeType)
+        public virtual CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
         }
 
     }

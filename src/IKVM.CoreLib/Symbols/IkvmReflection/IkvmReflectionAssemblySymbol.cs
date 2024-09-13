@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 using Assembly = IKVM.Reflection.Assembly;
@@ -135,17 +136,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveTypeSymbols(_assembly.GetTypes());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        /// <inheritdoc />
+        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }
 
-        public bool IsDefined(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _assembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
         }

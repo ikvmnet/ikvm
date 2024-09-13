@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using IKVM.Reflection;
@@ -83,10 +84,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             _types ??= new IkvmReflectionTypeSymbol?[_typesSource.Length];
 
             // index of current record is specified row - base
-            var idx = row - _typesBaseRow;
-            if (idx < 0)
-                throw new Exception();
-
+            var idx = row - _typesBaseRow - 1;
             Debug.Assert(idx >= 0);
             Debug.Assert(idx < _typesSource.Length);
 
@@ -335,19 +333,25 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_module.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }
 
         /// <inheritdoc />
-        public bool IsDefined(ITypeSymbol attributeType)
+        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _module.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
         }
