@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 using MethodBase = IKVM.Reflection.MethodBase;
@@ -15,6 +16,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		ParameterInfo[]? _parametersSource;
 		IkvmReflectionParameterSymbol?[]? _parameters;
+		IkvmReflectionParameterSymbol? _returnParameter;
 
 		/// <summary>
 		/// Initializes a new instance.
@@ -41,21 +43,24 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 			Debug.Assert(parameter.Member == _method);
 
-			// initialize source and cache table
-			_parametersSource ??= _method.GetParameters();
-			_parameters ??= new IkvmReflectionParameterSymbol?[_parametersSource.Length];
+			if (_parametersSource == null)
+				Interlocked.CompareExchange(ref _parametersSource, _method.GetParameters().OrderBy(i => i.Position).ToArray(), null);
+			if (_parameters == null)
+				Interlocked.CompareExchange(ref _parameters, new IkvmReflectionParameterSymbol?[_parametersSource.Length], null);
 
 			// index of current record
 			var idx = parameter.Position;
-			Debug.Assert(idx >= 0);
+			Debug.Assert(idx >= -1);
 			Debug.Assert(idx < _parametersSource.Length);
 
 			// check that our list is long enough to contain the entire table
-			if (_parameters.Length < idx)
+			if (idx >= 0 && _parameters.Length < idx)
 				throw new IndexOutOfRangeException();
 
 			// if not yet created, create, allow multiple instances, but only one is eventually inserted
-			ref var rec = ref _parameters[idx];
+			ref var rec = ref _returnParameter;
+			if (idx >= 0)
+				rec = ref _parameters[idx];
 			if (rec == null)
 				Interlocked.CompareExchange(ref rec, new IkvmReflectionParameterSymbol(Context, this, parameter), null);
 

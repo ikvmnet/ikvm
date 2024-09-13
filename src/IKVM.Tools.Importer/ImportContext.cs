@@ -31,6 +31,7 @@ using System.Threading;
 
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -184,14 +185,14 @@ namespace IKVM.Tools.Importer
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
             services.AddSingleton(p => GetDiagnostics(p, rootTarget, options.Log));
-            services.AddSingleton<IManagedTypeResolver, ManagedResolver>();
+            services.AddSingleton<ISymbolResolver, ManagedResolver>();
             services.AddSingleton<StaticCompiler>();
             using var provider = services.BuildServiceProvider();
 
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<ImportState>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IManagedTypeResolver>(), options.Bootstrap, compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<ISymbolResolver>(), options.Bootstrap, compiler);
 
             compiler.rootTarget = rootTarget;
             var importer = new ImportContext();

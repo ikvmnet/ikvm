@@ -19,6 +19,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		}
 
+		internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
+
 	}
 
 }

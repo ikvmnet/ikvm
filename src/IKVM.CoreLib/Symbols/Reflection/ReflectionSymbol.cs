@@ -122,7 +122,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		{
 			var a = new MemberInfo[members.Length];
 			for (int i = 0; i < members.Length; i++)
-				a[i] = ((ReflectionMemberSymbol)members[i]).ReflectionMember;
+				a[i] = ((ReflectionMemberSymbol)members[i]).ReflectionObject;
 
 			return a;
 		}
@@ -171,7 +171,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		{
 			var a = new Type[types.Length];
 			for (int i = 0; i < types.Length; i++)
-				a[i] = ((ReflectionTypeSymbol)types[i]).ReflectionType;
+				a[i] = ((ReflectionTypeSymbol)types[i]).ReflectionObject;
 
 			return a;
 		}

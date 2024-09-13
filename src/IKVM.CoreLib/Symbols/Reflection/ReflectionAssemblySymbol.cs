@@ -25,6 +25,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			_assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
 		}
 
+		internal Assembly ReflectionObject => _assembly;
+
 		/// <summary>
 		/// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
 		/// </summary>
@@ -118,7 +120,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _assembly.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionType);
+			return _assembly.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
 		}
 
 	}

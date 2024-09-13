@@ -42,6 +42,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 			return _modules.GetValue(module, _ => new IkvmReflectionModuleSymbol(Context, _));
 		}
 
+		internal Assembly ReflectionObject => _assembly;
+
 		public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
 
 		public IMethodSymbol? EntryPoint => _assembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
@@ -140,12 +142,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
-			return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false));
+			return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
 		}
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _assembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false);
+			return _assembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
 		}
 
 	}

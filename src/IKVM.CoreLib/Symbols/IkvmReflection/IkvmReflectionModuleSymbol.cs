@@ -312,12 +312,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
-			return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false));
+			return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
 		}
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _module.IsDefined(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false);
+			return _module.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
 		}
 
 	}

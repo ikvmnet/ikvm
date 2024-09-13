@@ -64,7 +64,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionType);
+			return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
 		}
 
 	}

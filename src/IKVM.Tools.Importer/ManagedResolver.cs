@@ -23,51 +23,53 @@
 */
 using System;
 
-using IKVM.Reflection;
-using IKVM.Runtime;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 
 using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
-    class ManagedResolver : IManagedTypeResolver
-    {
 
-        readonly StaticCompiler compiler;
+	class ManagedResolver : ISymbolResolver
+	{
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="compiler"></param>
-        public ManagedResolver(StaticCompiler compiler)
-        {
-            this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-        }
+		readonly StaticCompiler compiler;
+		readonly IkvmReflectionSymbolContext context = new();
 
-        public Assembly ResolveBaseAssembly()
-        {
-            return compiler.baseAssembly;
-        }
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="compiler"></param>
+		public ManagedResolver(StaticCompiler compiler)
+		{
+			this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+		}
 
-        public Assembly ResolveAssembly(string assemblyName)
-        {
-            return compiler.Universe.Load(assemblyName);
-        }
+		public IAssemblySymbol ResolveBaseAssembly()
+		{
+			return compiler.baseAssembly != null ? context.GetOrCreateAssemblySymbol(compiler.baseAssembly) : null;
+		}
 
-        public Type ResolveCoreType(string typeName)
-        {
-            foreach (var assembly in compiler.Universe.GetAssemblies())
-                if (assembly.GetType(typeName) is Type t)
-                    return t;
+		public IAssemblySymbol ResolveAssembly(string assemblyName)
+		{
+			return compiler.Universe.Load(assemblyName) is { } a ? context.GetOrCreateAssemblySymbol(a) : null;
+		}
 
-            return null;
-        }
+		public ITypeSymbol ResolveCoreType(string typeName)
+		{
+			foreach (var assembly in compiler.Universe.GetAssemblies())
+				if (assembly.GetType(typeName) is Type t)
+					return context.GetOrCreateTypeSymbol(t);
 
-        public Type ResolveRuntimeType(string typeName)
-        {
-            return compiler.GetRuntimeType(typeName);
-        }
+			return null;
+		}
 
-    }
+		public ITypeSymbol ResolveRuntimeType(string typeName)
+		{
+			return compiler.GetRuntimeType(typeName) is { } t ? context.GetOrCreateTypeSymbol(t) : null;
+		}
+
+	}
 
 }

@@ -127,6 +127,21 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 			f.FieldType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(int)));
 		}
 
+		[TestMethod]
+		public void CanGetMethod()
+		{
+			var c = new ReflectionSymbolContext();
+			var s = c.GetOrCreateTypeSymbol(typeof(object));
+			var m = s.GetMethod("ToString");
+			m.Name.Should().Be("ToString");
+			m.ReturnType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(string)));
+			m.ReturnParameter.ParameterType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(string)));
+			m.IsGenericMethod.Should().BeFalse();
+			m.IsGenericMethodDefinition.Should().BeFalse();
+			m.IsPublic.Should().BeTrue();
+			m.IsPrivate.Should().BeFalse();
+		}
+
 	}
 
 }

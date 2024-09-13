@@ -17,7 +17,11 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
 
 		class Foo<T>
 		{
+
 			T? field;
+
+			bool Method(int p1) => true;
+
 		}
 
 		Universe? universe;
@@ -171,7 +175,23 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
 			f.Name.Should().Be("field");
 			f.FieldType.IsGenericType.Should().BeFalse();
 			f.FieldType.IsGenericParameter.Should().BeFalse();
-			f.FieldType.Should().BeSameAs(c.GetOrCreateTypeSymbol(universe.GetBuiltInType("System", "Int32")));
+			f.FieldType.Should().BeSameAs(c.GetOrCreateTypeSymbol(universe!.GetBuiltInType("System", "Int32")));
+		}
+
+		[TestMethod]
+		public void CanGetMethod()
+		{
+			var t = universe!.GetBuiltInType("System", "Object");
+			var c = new IkvmReflectionSymbolContext();
+			var s = c.GetOrCreateTypeSymbol(t);
+			var m = s.GetMethod("ToString");
+			m.Name.Should().Be("ToString");
+			m.ReturnType.Should().BeSameAs(c.GetOrCreateTypeSymbol(universe!.GetBuiltInType("System", "String")));
+			m.ReturnParameter.ParameterType.Should().BeSameAs(c.GetOrCreateTypeSymbol(universe!.GetBuiltInType("System", "String")));
+			m.IsGenericMethod.Should().BeFalse();
+			m.IsGenericMethodDefinition.Should().BeFalse();
+			m.IsPublic.Should().BeTrue();
+			m.IsPrivate.Should().BeFalse();
 		}
 
 	}

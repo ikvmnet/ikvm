@@ -239,7 +239,7 @@ namespace IKVM.Runtime
                         {
                             if (tw is EnumEnumJavaType)
                             {
-                                if (!isArray && type.IsDefined(context.Resolver.ResolveCoreType(typeof(FlagsAttribute).FullName), false))
+                                if (!isArray && type.IsDefined(context.Resolver.ResolveCoreType(typeof(FlagsAttribute).FullName).AsReflection(), false))
                                 {
                                     return tw.MakeArrayType(1);
                                 }
@@ -413,9 +413,9 @@ namespace IKVM.Runtime
                 bool inherited = true;
                 foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(attributeType))
                 {
-                    if (cad.Constructor.DeclaringType == Context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName))
+                    if (cad.Constructor.DeclaringType == Context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).AsReflection())
                     {
-                        if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == Context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName))
+                        if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == Context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName).AsReflection())
                         {
                             validOn = (AttributeTargets)cad.ConstructorArguments[0].Value;
                         }
@@ -540,7 +540,7 @@ namespace IKVM.Runtime
 
                 internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
                 {
-                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.BaseType != loader.Context.Types.Object)
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName).AsReflection() && tb.BaseType != loader.Context.Types.Object)
                     {
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
@@ -569,7 +569,7 @@ namespace IKVM.Runtime
                 {
                     // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
                     // but if we make it possible, we should also implement it here
-                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute).FullName))
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute).FullName).AsReflection())
                         throw new NotImplementedException();
                     else
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
@@ -578,11 +578,11 @@ namespace IKVM.Runtime
                 internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
                 {
 #if IMPORTER
-                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName))
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName).AsReflection())
                     {
                         ab.__AddTypeForwarder((Type)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
                     }
-                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyVersionAttribute).FullName))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyVersionAttribute).FullName).AsReflection())
                     {
                         string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         Version version;
@@ -595,7 +595,7 @@ namespace IKVM.Runtime
                             loader.Diagnostics.InvalidCustomAttribute(type.FullName, "The version '" + str + "' is invalid.");
                         }
                     }
-                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyCultureAttribute).FullName))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyCultureAttribute).FullName).AsReflection())
                     {
                         string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         if (str != "")
@@ -603,18 +603,18 @@ namespace IKVM.Runtime
                             ab.__SetAssemblyCulture(str);
                         }
                     }
-                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyDelaySignAttribute).FullName)
-                        || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyFileAttribute).FullName)
-                        || type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyNameAttribute).FullName))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyDelaySignAttribute).FullName).AsReflection()
+						|| type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyFileAttribute).FullName).AsReflection()
+						|| type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyKeyNameAttribute).FullName).AsReflection())
                     {
                         loader.Diagnostics.IgnoredCustomAttribute(type.FullName, "Please use the corresponding compiler switch.");
                     }
-                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyAlgorithmIdAttribute).FullName))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyAlgorithmIdAttribute).FullName).AsReflection())
                     {
                         // this attribute is currently not exposed as an annotation and isn't very interesting
                         throw new NotImplementedException();
                     }
-                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFlagsAttribute).FullName))
+                    else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFlagsAttribute).FullName).AsReflection())
                     {
                         // this attribute is currently not exposed as an annotation and isn't very interesting
                         throw new NotImplementedException();
@@ -624,7 +624,7 @@ namespace IKVM.Runtime
                         ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                     }
 #else
-                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 #endif
                 }
 

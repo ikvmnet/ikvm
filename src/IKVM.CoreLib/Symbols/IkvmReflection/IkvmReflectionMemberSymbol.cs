@@ -41,7 +41,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		/// <returns></returns>
 		protected internal override IkvmReflectionTypeSymbol ResolveTypeSymbol(Type type)
 		{
-			if (_type != null && type == _type.IkvmReflectionType)
+			if (_type != null && type == _type.ReflectionObject)
 				return _type;
 			else if (type.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(type);
@@ -56,9 +56,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		/// <returns></returns>
 		protected internal override IkvmReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
 		{
-			if (_type != null && ctor.DeclaringType == _type.IkvmReflectionType)
+			if (_type != null && ctor.DeclaringType == _type.ReflectionObject)
 				return _type.GetOrCreateConstructorSymbol(ctor);
-			else if (ctor.DeclaringType != null && ctor.DeclaringType.Module == _member.Module)
+			else if (ctor.DeclaringType != null && ctor.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
 			else
 				return base.ResolveConstructorSymbol(ctor);
@@ -71,9 +71,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		/// <returns></returns>
 		protected internal override IkvmReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
 		{
-			if (_type != null && method.DeclaringType == _type.IkvmReflectionType)
+			if (_type != null && method.DeclaringType == _type.ReflectionObject)
 				return _type.GetOrCreateMethodSymbol(method);
-			else if (method.DeclaringType != null && method.DeclaringType.Module == _member.Module)
+			else if (method.DeclaringType != null && method.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(method.DeclaringType).GetOrCreateMethodSymbol(method);
 			else
 				return base.ResolveMethodSymbol(method);
@@ -86,9 +86,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		/// <returns></returns>
 		protected internal override IkvmReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
 		{
-			if (_type != null && field.DeclaringType == _type.IkvmReflectionType)
+			if (_type != null && field.DeclaringType == _type.ReflectionObject)
 				return _type.GetOrCreateFieldSymbol(field);
-			else if (field.DeclaringType != null && field.DeclaringType.Module == _member.Module)
+			else if (field.DeclaringType != null && field.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(field.DeclaringType).GetOrCreateFieldSymbol(field);
 			else
 				return base.ResolveFieldSymbol(field);
@@ -103,9 +103,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		protected internal override IkvmReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
 		{
 
-			if (_type != null && property.DeclaringType == _type.IkvmReflectionType)
+			if (_type != null && property.DeclaringType == _type.ReflectionObject)
 				return _type.GetOrCreatePropertySymbol(property);
-			else if (property.DeclaringType != null && property.DeclaringType.Module == _member.Module)
+			else if (property.DeclaringType != null && property.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(property.DeclaringType).GetOrCreatePropertySymbol(property);
 			else
 				return base.ResolvePropertySymbol(property);
@@ -118,15 +118,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 		/// <returns></returns>
 		protected internal override IkvmReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
 		{
-			if (_type != null && @event.DeclaringType == _type.IkvmReflectionType)
+			if (_type != null && @event.DeclaringType == _type.ReflectionObject)
 				return _type.GetOrCreateEventSymbol(@event);
-			else if (@event.DeclaringType != null && @event.DeclaringType.Module == _member.Module)
+			else if (@event.DeclaringType != null && @event.Module == _member.Module)
 				return _module.GetOrCreateTypeSymbol(@event.DeclaringType).GetOrCreateEventSymbol(@event);
 			else
 				return base.ResolveEventSymbol(@event);
 		}
 
-		internal MemberInfo ReflectionMember => _member;
+		internal MemberInfo ReflectionObject => _member;
 
 		internal IkvmReflectionModuleSymbol ContainingModule => _module;
 
@@ -156,7 +156,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		public virtual bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _member.IsDefined(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false);
+			return _member.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
 		}
 
 	}

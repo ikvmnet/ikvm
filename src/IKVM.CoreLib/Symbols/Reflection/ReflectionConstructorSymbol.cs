@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -18,6 +19,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		{
 
 		}
+
+		internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
 
 	}
 

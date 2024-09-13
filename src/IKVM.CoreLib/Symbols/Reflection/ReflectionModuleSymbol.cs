@@ -75,12 +75,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// initialize source table
 			if (_typesSource == null)
 			{
-				_typesSource = _module.GetTypes().OrderBy(i => i.MetadataToken).ToArray();
+				Interlocked.CompareExchange(ref _typesSource, _module.GetTypes().OrderBy(i => i.MetadataToken).ToArray(), null);
 				_typesBaseRow = _typesSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_typesSource[0].MetadataToken)) : 0;
 			}
 
 			// initialize cache table
-			_types ??= new ReflectionTypeSymbol?[_typesSource.Length];
+			if (_types == null)
+				Interlocked.CompareExchange(ref _types, new ReflectionTypeSymbol?[_typesSource.Length], null);
 
 			// index of current record is specified row - base
 			var idx = row - _typesBaseRow;
@@ -310,7 +311,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionType);
+			return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
 		}
 
 	}

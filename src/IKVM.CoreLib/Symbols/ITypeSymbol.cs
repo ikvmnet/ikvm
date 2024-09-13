@@ -143,18 +143,17 @@ namespace IKVM.CoreLib.Symbols
 		IMemberSymbol[] GetMembers(BindingFlags bindingAttr);
 
 		IMemberSymbol[] GetMembers();
-
-		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr);
+		IMethodSymbol? GetMethod(string name);
 
 		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
 
-		IMethodSymbol? GetMethod(string name);
+		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr);
 
-		IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, ParameterModifier[]? modifiers);
-
-		IMethodSymbol[] GetMethods(BindingFlags bindingAttr);
+		IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types);
 
 		IMethodSymbol[] GetMethods();
+
+		IMethodSymbol[] GetMethods(BindingFlags bindingAttr);
 
 		ITypeSymbol? GetNestedType(string name);
 
@@ -167,8 +166,6 @@ namespace IKVM.CoreLib.Symbols
 		IPropertySymbol[] GetProperties();
 
 		IPropertySymbol[] GetProperties(BindingFlags bindingAttr);
-
-		IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, ParameterModifier[]? modifiers);
 
 		IPropertySymbol? GetProperty(string name, ITypeSymbol[] types);
 

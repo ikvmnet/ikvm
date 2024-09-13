@@ -103,6 +103,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 			}
 		}
 
+		internal new MethodInfo ReflectionObject => (MethodInfo)base.ReflectionObject;
+
 		public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
 
 		public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);

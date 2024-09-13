@@ -39,14 +39,14 @@ namespace IKVM.Tools.Exporter
             base(context, CodeGenOptions.None, null)
         {
             var javaLangObject = new RuntimeStubJavaType(context, Modifiers.Public, "java.lang.Object", null, true);
-            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(object).FullName), javaLangObject);
-            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(string).FullName), new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
-            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(Exception).FullName), new RuntimeStubJavaType(context, Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
-            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IComparable).FullName), new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
+            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(object).FullName).AsReflection(), javaLangObject);
+            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(string).FullName).AsReflection(), new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
+            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(Exception).FullName).AsReflection(), new RuntimeStubJavaType(context, Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
+            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IComparable).FullName).AsReflection(), new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
             
             var autoCloseable = new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
-            autoCloseable.SetMethods(new [] { new RuntimeSimpleCallJavaMethod(autoCloseable, "close", "()V", Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).GetMethod("Dispose"), context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
-            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName), autoCloseable);
+            autoCloseable.SetMethods(new [] { new RuntimeSimpleCallJavaMethod(autoCloseable, "close", "()V", Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).GetMethod("Dispose").AsReflection(), context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
+            SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).AsReflection(), autoCloseable);
 
             RegisterInitiatingLoader(new RuntimeStubJavaType(context, Modifiers.Public, "java.lang.Enum", javaLangObject, false));
             RegisterInitiatingLoader(new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.annotation.Annotation", null, false));

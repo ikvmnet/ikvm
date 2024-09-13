@@ -57,12 +57,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
 		public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
 		{
-			return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false));
+			return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
 		}
 
 		public bool IsDefined(ITypeSymbol attributeType)
 		{
-			return _parameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).IkvmReflectionType, false);
+			return _parameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
 		}
 
 	}

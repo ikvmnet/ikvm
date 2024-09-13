@@ -8,17 +8,39 @@ namespace IKVM.CoreLib.Symbols
 
 		PropertyAttributes Attributes { get; }
 
+		ITypeSymbol PropertyType { get; }
+
 		bool CanRead { get; }
 
 		bool CanWrite { get; }
 
-		IMethodSymbol? GetMethod { get; }
-
 		bool IsSpecialName { get; }
 
-		ITypeSymbol PropertyType { get; }
+		IMethodSymbol? GetMethod { get; }
 
 		IMethodSymbol? SetMethod { get; }
+
+		IMethodSymbol[] GetAccessors();
+
+		object? GetConstantValue();
+
+		object? GetRawConstantValue();
+
+		ITypeSymbol[] GetOptionalCustomModifiers();
+
+		ITypeSymbol[] GetRequiredCustomModifiers();
+
+		ITypeSymbol GetModifiedPropertyType();
+
+		IParameterSymbol[] GetIndexParameters();
+
+		IMethodSymbol? GetGetMethod();
+
+		IMethodSymbol? GetGetMethod(bool nonPublic);
+
+		IMethodSymbol? GetSetMethod();
+
+		IMethodSymbol? GetSetMethod(bool nonPublic);
 
 	}
 

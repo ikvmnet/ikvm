@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
+using IKVM.CoreLib.Symbols.IkvmReflection;
+
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
@@ -40,6 +42,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		Type[]? _genericParametersSource;
 		ReflectionTypeSymbol?[]? _genericParameters;
 		List<(Type[] Arguments, ReflectionTypeSymbol Symbol)>? _genericTypes;
+		ReaderWriterLockSlim? _genericTypesLock;
 
 		/// <summary>
 		/// Initializes a new instance.
@@ -92,12 +95,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// initialize source table
 			if (_methodsSource == null)
 			{
-				_methodsSource = _type.GetConstructors(DefaultBindingFlags).Cast<MethodBase>().Concat(_type.GetMethods(DefaultBindingFlags)).OrderBy(i => i.MetadataToken).ToArray();
+				Interlocked.CompareExchange(ref _methodsSource, _type.GetConstructors(DefaultBindingFlags).Cast<MethodBase>().Concat(_type.GetMethods(DefaultBindingFlags)).OrderBy(i => i.MetadataToken).ToArray(), null);
 				_methodsBaseRow = _methodsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_methodsSource[0].MetadataToken)) : 0;
 			}
 
 			// initialize cache table
-			_methods ??= new ReflectionMethodSymbol?[_methodsSource.Length];
+			if (_methods == null)
+				Interlocked.CompareExchange(ref _methods, new ReflectionMethodBaseSymbol?[_methodsSource.Length], null);
 
 			// index of current record is specified row - base
 			var idx = row - _methodsBaseRow;
@@ -149,12 +153,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// initialize source table
 			if (_fieldsSource == null)
 			{
-				_fieldsSource = _type.GetFields(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray();
+				Interlocked.CompareExchange(ref _fieldsSource, _type.GetFields(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
 				_fieldsBaseRow = _fieldsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_fieldsSource[0].MetadataToken)) : 0;
 			}
 
 			// initialize cache table
-			_fields ??= new ReflectionFieldSymbol?[_fieldsSource.Length];
+			if (_fields == null)
+				Interlocked.CompareExchange(ref _fields, new ReflectionFieldSymbol?[_fieldsSource.Length], null);
 
 			// index of current field is specified row - base
 			var idx = row - _fieldsBaseRow;
@@ -196,12 +201,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			// initialize source table
 			if (_propertiesSource == null)
 			{
-				_propertiesSource = _type.GetProperties(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray();
+				Interlocked.CompareExchange(ref _propertiesSource, _type.GetProperties(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
 				_propertiesBaseRow = _propertiesSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_propertiesSource[0].MetadataToken)) : 0;
 			}
 
 			// initialize cache table
-			_properties ??= new ReflectionPropertySymbol?[_propertiesSource.Length];
+			if (_properties == null)
+				Interlocked.CompareExchange(ref _properties, new ReflectionPropertySymbol?[_propertiesSource.Length], null);
 
 			// index of current property is specified row - base
 			var idx = row - _propertiesBaseRow;
@@ -240,15 +246,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			var hnd = MetadataTokens.PropertyDefinitionHandle(@event.MetadataToken);
 			var row = MetadataTokens.GetRowNumber(hnd);
 
-			// initialize source table
+			// initialize source events
 			if (_eventsSource == null)
 			{
-				_eventsSource = _type.GetEvents(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray();
+				Interlocked.CompareExchange(ref _eventsSource, _type.GetEvents(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
 				_eventsBaseRow = _eventsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.EventDefinitionHandle(_eventsSource[0].MetadataToken)) : 0;
 			}
 
 			// initialize cache table
-			_events ??= new ReflectionEventSymbol?[_eventsSource.Length];
+			if (_events == null)
+				Interlocked.CompareExchange(ref _events, new ReflectionEventSymbol?[_eventsSource.Length], null);
 
 			// index of current event is specified row - base
 			var idx = row - _eventsBaseRow;
@@ -285,8 +292,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			Debug.Assert(genericTypeParameterType.DeclaringType == _type);
 
 			// initialize tables
-			_genericParametersSource ??= _type.GetGenericArguments();
-			_genericParameters ??= new ReflectionTypeSymbol?[_genericParametersSource.Length];
+			if (_genericParametersSource == null)
+				Interlocked.CompareExchange(ref _genericParametersSource, _type.GetGenericArguments(), null);
+			if (_genericParameters == null)
+				Interlocked.CompareExchange(ref _genericParameters, new ReflectionTypeSymbol?[_genericParametersSource.Length], null);
 
 			// position of the parameter in the list
 			var idx = genericTypeParameterType.GenericParameterPosition;
@@ -322,23 +331,43 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				throw new InvalidOperationException();
 
 			// initialize the available parameters
-			_genericParametersSource ??= _type.GetGenericArguments();
+			if (_genericParametersSource == null)
+				Interlocked.CompareExchange(ref _genericParametersSource, _type.GetGenericArguments(), null);
 			if (_genericParametersSource.Length != genericTypeArguments.Length)
 				throw new InvalidOperationException();
 
 			// initialize generic type map, and lock on it since we're potentially adding items
-			_genericTypes ??= [];
-			lock (_genericTypes)
+			if (_genericTypes == null)
+				Interlocked.CompareExchange(ref _genericTypes, [], null);
+			if (_genericTypesLock == null)
+				Interlocked.CompareExchange(ref _genericTypesLock, new(), null);
+
+			try
 			{
+				_genericTypesLock.EnterUpgradeableReadLock();
+
 				// find existing entry
 				foreach (var i in _genericTypes)
 					if (i.Arguments.SequenceEqual(genericTypeArguments))
 						return i.Symbol;
 
-				// generate new symbol
-				var sym = new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
-				_genericTypes.Add((genericTypeArguments, sym));
-				return sym;
+				try
+				{
+					_genericTypesLock.EnterWriteLock();
+
+					// generate new symbol
+					var sym = new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
+					_genericTypes.Add((genericTypeArguments, sym));
+					return sym;
+				}
+				finally
+				{
+					_genericTypesLock.ExitWriteLock();
+				}
+			}
+			finally
+			{
+				_genericTypesLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -423,7 +452,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 		/// <summary>
 		/// Gets the wrapped <see cref="Type"/>.
 		/// </summary>
-		internal Type ReflectionType => _type;
+		internal new Type ReflectionObject => _type;
 
 		public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_type.Assembly);
 
@@ -667,14 +696,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return _type.GetMethod(name, UnpackTypeSymbols(types)) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
+		public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types)
+		{
+			return _type.GetMethod(name, bindingAttr, null, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
+		}
+
 		public IMethodSymbol? GetMethod(string name)
 		{
 			return _type.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
-		}
-
-		public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, ParameterModifier[]? modifiers)
-		{
-			return _type.GetMethod(name, UnpackTypeSymbols(types), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
 		}
 
 		public IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
@@ -717,12 +746,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			return ResolvePropertySymbols(_type.GetProperties(bindingAttr));
 		}
 
-		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, ParameterModifier[]? modifiers)
-		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
-			return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types), modifiers) is { } p ? ResolvePropertySymbol(p) : null;
-		}
-
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol[] types)
 		{
 			return _type.GetProperty(name, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
@@ -730,7 +753,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types)
 		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
+			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionObject : null;
 			return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
@@ -746,14 +769,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType)
 		{
-			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionType : null;
+			var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionObject : null;
 
 			return _type.GetProperty(name, _returnType) is { } p ? ResolvePropertySymbol(p) : null;
 		}
 
 		public bool IsAssignableFrom(ITypeSymbol? c)
 		{
-			return _type.IsAssignableFrom(c != null ? ((ReflectionTypeSymbol)c).ReflectionType : null);
+			return _type.IsAssignableFrom(c != null ? ((ReflectionTypeSymbol)c).ReflectionObject : null);
 		}
 
 		public bool IsEnumDefined(object value)
@@ -763,7 +786,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public bool IsSubclassOf(ITypeSymbol c)
 		{
-			return _type.IsSubclassOf(((ReflectionTypeSymbol)c).ReflectionType);
+			return _type.IsSubclassOf(((ReflectionTypeSymbol)c).ReflectionObject);
 		}
 
 		public ITypeSymbol MakeArrayType()

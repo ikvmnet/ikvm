@@ -134,7 +134,7 @@ namespace IKVM.Runtime
                 if (IsFinal)
                 {
                     il.Emit(OpCodes.Ldsflda, fi);
-                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
+                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).AsReflection().GetMethod(nameof(UnsafeGetImplByRefNoInline), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
                 }
                 else
                 {

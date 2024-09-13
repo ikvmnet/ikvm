@@ -21,6 +21,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 			_field = field ?? throw new ArgumentNullException(nameof(field));
 		}
 
+		internal new FieldInfo ReflectionObject => (FieldInfo)base.ReflectionObject;
+
 		public FieldAttributes Attributes => _field.Attributes;
 
 		public ITypeSymbol FieldType => ResolveTypeSymbol(_field.FieldType);

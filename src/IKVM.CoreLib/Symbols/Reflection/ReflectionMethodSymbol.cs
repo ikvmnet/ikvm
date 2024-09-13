@@ -81,12 +81,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				throw new InvalidOperationException();
 
 			// initialize the available parameters
-			_genericParametersSource ??= _method.GetGenericArguments();
+			if (_genericParametersSource == null)
+				Interlocked.CompareExchange(ref _genericParametersSource, _method.GetGenericArguments(), null);
 			if (_genericParametersSource.Length != genericMethodArguments.Length)
 				throw new InvalidOperationException();
 
 			// initialize generic type map, and lock on it since we're potentially adding items
-			_genericTypes ??= [];
+			if (_genericTypes == null)
+				Interlocked.CompareExchange(ref _genericTypes, [], null);
+
 			lock (_genericTypes)
 			{
 				// find existing entry
@@ -100,6 +103,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 				return sym;
 			}
 		}
+
+		internal new MethodInfo ReflectionObject => (MethodInfo)base.ReflectionObject;
 
 		public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
 
@@ -119,7 +124,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
 		public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
 		{
-			throw new NotImplementedException();
+			return ResolveMethodSymbol(_method.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
 		}
 
 	}

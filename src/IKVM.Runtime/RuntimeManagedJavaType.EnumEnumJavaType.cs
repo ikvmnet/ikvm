@@ -120,7 +120,7 @@ namespace IKVM.Runtime
 #if EMITTERS
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
-                    var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
+                    var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").AsReflection();
                     ilgen.Emit(OpCodes.Ldstr, Name);
                     ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(DeclaringType.TypeAsBaseType));
                 }
