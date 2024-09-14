@@ -60,15 +60,15 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public MethodInfo ObjectToStringMethod => objectToString ??= context.Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+        public MethodInfo ObjectToStringMethod => objectToString ??= context.Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, [], null);
 
         public MethodInfo VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
 
-        public MethodInfo MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { context.Types.Object }, null);
+        public MethodInfo MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).AsReflection().GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, [context.Types.Object], null);
 
-        public MethodInfo MonitorExitMethod => monitorExit ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { context.Types.Object }, null);
+        public MethodInfo MonitorExitMethod => monitorExit ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).AsReflection().GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, [context.Types.Object], null);
 
-        public MethodInfo MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", Type.EmptyTypes);
+        public MethodInfo MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []).AsReflection();
 
         public bool ExperimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 

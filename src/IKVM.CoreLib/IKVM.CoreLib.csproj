@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.CoreLib.Tests" />
         <InternalsVisibleTo Include="IKVM.Runtime" />
         <InternalsVisibleTo Include="IKVM.Tools.Core" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
@@ -18,13 +19,22 @@
         <InternalsVisibleTo Include="IKVM.MSBuild.Tasks" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+    </ItemGroup>
+
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+        <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" />
         <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
     </ItemGroup>
 
     <ItemGroup>

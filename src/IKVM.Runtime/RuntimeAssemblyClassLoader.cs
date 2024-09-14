@@ -574,7 +574,7 @@ namespace IKVM.Runtime
 
             try
             {
-                return Context.Resolver.ResolveAssembly(name);
+                return Context.Resolver.ResolveAssembly(name).AsReflection();
             }
             catch
             {

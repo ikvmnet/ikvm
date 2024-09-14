@@ -85,7 +85,7 @@ namespace IKVM.Tools.Importer.MapXml
             // HACK if the class name contains a comma, we assume it is a .NET type
             if (Type != null)
             {
-                var type = loader.Context.Resolver.ResolveCoreType(Type);
+                var type = loader.Context.Resolver.ResolveCoreType(Type).AsReflection();
                 var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
                 {

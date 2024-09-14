@@ -6,6 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Reflection;
+
 namespace IKVM.Runtime
 {
 
@@ -17,7 +20,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Provides support for resolving managed types from the current JVM environment.
         /// </summary>
-        internal class Resolver : IManagedTypeResolver
+        internal class Resolver : ISymbolResolver
         {
 
             /// <summary>
@@ -36,42 +39,52 @@ namespace IKVM.Runtime
                 yield return typeof(Environment).Assembly;
             }
 
-            readonly Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
-            readonly ConcurrentDictionary<string, Type> typeCache = new();
+            readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
 
+            readonly ReflectionSymbolContext _context = new();
+            readonly IAssemblySymbol[] _coreAssemblies;
+            readonly ConcurrentDictionary<string, ITypeSymbol> _typeCache = new();
 
-            /// <inheritdoc />
-            public Assembly ResolveAssembly(string assemblyName)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            public Resolver()
             {
-                return Assembly.Load(assemblyName);
+                _coreAssemblies = coreAssemblies.Select(_context.GetOrCreateAssemblySymbol).ToArray();
             }
 
             /// <inheritdoc />
-            public Assembly ResolveBaseAssembly()
+            public IAssemblySymbol ResolveAssembly(string assemblyName)
             {
-                return typeof(java.lang.Object).Assembly;
+                return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
             }
 
             /// <inheritdoc />
-            public Type ResolveCoreType(string typeName)
+            public IAssemblySymbol ResolveBaseAssembly()
             {
-                return typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
+                return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
             }
 
-            Type ResolveCoreTypeImpl(string typeName)
+            /// <inheritdoc />
+            public ITypeSymbol ResolveCoreType(string typeName)
+            {
+                return _typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
+            }
+
+            ITypeSymbol ResolveCoreTypeImpl(string typeName)
             {
                 // loop over core assemblies searching for type
-                foreach (var assembly in coreAssemblies)
-                    if (assembly.GetType(typeName) is Type t)
+                foreach (var assembly in _coreAssemblies)
+                    if (assembly.GetType(typeName) is ITypeSymbol t)
                         return t;
 
                 return null;
             }
 
             /// <inheritdoc />
-            public Type ResolveRuntimeType(string typeName)
+            public ITypeSymbol ResolveRuntimeType(string typeName)
             {
-                return typeof(Resolver).Assembly.GetType(typeName);
+                return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
             }
 
         }

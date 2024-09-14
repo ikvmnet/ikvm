@@ -120,11 +120,11 @@ namespace IKVM.Runtime
 
         public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
 
-        public MethodInfo GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.RuntimeTypeHandle }, null);
+        public MethodInfo GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, [context.Types.RuntimeTypeHandle], null);
 
         public MethodInfo GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 
-        public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, new Type[] { context.Types.Object }, null);
+        public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).AsReflection().GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, [context.Types.Object], null);
 
         public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 
@@ -1745,7 +1745,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedByteCode.__multianewarray:
                         {
-                            var localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveCoreType(typeof(int).FullName).MakeArrayType());
+                            var localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveCoreType(typeof(int).FullName).MakeArrayType().AsReflection());
                             var localInt = ilGenerator.UnsafeAllocTempLocal(finish.Context.Types.Int32);
                             ilGenerator.EmitLdc_I4(instr.Arg2);
                             ilGenerator.Emit(OpCodes.Newarr, finish.Context.Types.Int32);
@@ -2725,7 +2725,7 @@ namespace IKVM.Runtime
 
             internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
             {
-                var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1");
+                var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1").AsReflection();
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
 
@@ -3461,7 +3461,7 @@ namespace IKVM.Runtime
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
                 FromBasic(retType, ilgen);
 #else
-                throw new InvalidOperationException();
+				throw new InvalidOperationException();
 #endif
             }
 
@@ -3533,7 +3533,7 @@ namespace IKVM.Runtime
                 Type delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
                 MethodInfo mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
 
-                var typeofInvokeCache = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.InvokeCache`1");
+                var typeofInvokeCache = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.InvokeCache`1").AsReflection();
                 FieldBuilder fb = compiler.finish.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
                 ilgen.Emit(OpCodes.Ldloc, temps[0]);
                 if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))

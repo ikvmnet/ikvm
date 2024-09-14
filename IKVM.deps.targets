@@ -2,7 +2,9 @@
 
     <ItemGroup>
         <PackageReference Include="IKVM.ByteCode" Version="9.1.3" />
-        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" GeneratePathProperty="true" />
+        <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" GeneratePathProperty="true" />
+        <PackageReference Include="System.Text.Json" Version="8.0.4" GeneratePathProperty="true" />
     </ItemGroup>
 
     <Choose>

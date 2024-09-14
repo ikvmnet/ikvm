@@ -99,7 +99,7 @@ namespace IKVM.Runtime
         internal void LoadRemappedTypes()
         {
             // if we're compiling the base assembly, we won't be able to resolve one
-            var baseAssembly = context.Resolver.ResolveBaseAssembly();
+            var baseAssembly = context.Resolver.ResolveBaseAssembly().AsReflection();
             if (baseAssembly != null && remappedTypes.Count == 0)
             {
                 var remapped = context.AttributeHelper.GetRemappedClasses(baseAssembly);

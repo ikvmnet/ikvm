@@ -946,7 +946,7 @@ namespace IKVM.Runtime
             RuntimeJavaType tw = null;
             foreach (var type in modopt)
             {
-                if (type == context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName))
+                if (type == context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName).AsReflection())
                 {
                     // ignore
                 }
@@ -1191,7 +1191,7 @@ namespace IKVM.Runtime
             internal CompiledAnnotation(RuntimeContext context, Type type)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
-                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
+                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType().AsReflection() });
             }
 
             private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)

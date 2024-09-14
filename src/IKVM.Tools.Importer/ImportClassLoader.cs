@@ -547,13 +547,13 @@ namespace IKVM.Tools.Importer
             // sixth argument, property set to initialize JVM
             if (properties.Count > 0)
             {
-                var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName);
-                var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Context.Types.String });
-                var dictionaryType = Context.Resolver.ResolveCoreType(typeof(Dictionary<,>).FullName).MakeGenericType(Context.Types.String, Context.Types.String);
-                var dictionaryAddMethod = dictionaryType.GetMethod("Add", new[] { Context.Types.String, Context.Types.String });
+                var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName).AsReflection();
+                var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), [Context.Types.String]);
+                var dictionaryType = Context.Resolver.ResolveCoreType(typeof(Dictionary<,>).FullName).AsReflection().MakeGenericType(Context.Types.String, Context.Types.String);
+                var dictionaryAddMethod = dictionaryType.GetMethod("Add", [Context.Types.String, Context.Types.String]);
 
                 ilgen.EmitLdc_I4(properties.Count);
-                ilgen.Emit(OpCodes.Newobj, dictionaryType.GetConstructor(new[] { Context.Types.Int32 }));
+                ilgen.Emit(OpCodes.Newobj, dictionaryType.GetConstructor([Context.Types.Int32]));
 
                 foreach (var kvp in properties)
                 {
@@ -575,7 +575,7 @@ namespace IKVM.Tools.Importer
             }
 
             // invoke the launcher main method
-            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run));
+            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run)).AsReflection();
             ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
 
@@ -615,7 +615,7 @@ namespace IKVM.Tools.Importer
             // add a package list and export map
             if (state.sharedclassloader == null || state.sharedclassloader[0] == this)
             {
-                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).GetConstructor(new Type[] { Context.Types.String, Context.Types.String.MakeArrayType() });
+                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).AsReflection().GetConstructor([Context.Types.String, Context.Types.String.MakeArrayType()]);
                 foreach (object[] args in packages.ToArray())
                 {
                     args[1] = UnicodeUtil.EscapeInvalidSurrogates((string[])args[1]);
@@ -668,7 +668,7 @@ namespace IKVM.Tools.Importer
 
         void AddJavaModuleAttribute(ModuleBuilder mb)
         {
-            var typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName);
+            var typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).AsReflection();
             var propInfos = new[] { typeofJavaModuleAttribute.GetProperty("Jars") };
             var propValues = new object[] { jarList.ToArray() };
 
@@ -683,12 +683,12 @@ namespace IKVM.Tools.Importer
                 }
 
                 list = UnicodeUtil.EscapeInvalidSurrogates(list);
-                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(new Type[] { Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType() }), new object[] { list }, propInfos, propValues);
+                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor([Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType().AsReflection()]), [list], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
             else
             {
-                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor(Type.EmptyTypes), new object[0], propInfos, propValues);
+                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor([]), [], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
         }
@@ -1495,7 +1495,7 @@ namespace IKVM.Tools.Importer
                             DeclaringType.Context.AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
                             DeclaringType.Context.AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
                             AddDeclaredExceptions(DeclaringType.Context, mbHelper, m.Throws);
-                            mbHelper.SetCustomAttribute(new CustomAttributeBuilder(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor(new Type[] { DeclaringType.Context.Types.String }), new object[] { "This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead." }));
+                            mbHelper.SetCustomAttribute(new CustomAttributeBuilder(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection().GetConstructor([DeclaringType.Context.Types.String]), ["This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead."]));
                         }
                         return mbCore;
                     }
@@ -2087,7 +2087,7 @@ namespace IKVM.Tools.Importer
                 if (hasfail)
                 {
                     ilgen.MarkLabel(fail);
-                    ilgen.ThrowException(Context.Resolver.ResolveCoreType(typeof(InvalidCastException).FullName));
+                    ilgen.ThrowException(Context.Resolver.ResolveCoreType(typeof(InvalidCastException).FullName).AsReflection());
                 }
 
                 ilgen.DoEmit();
@@ -2277,7 +2277,7 @@ namespace IKVM.Tools.Importer
                 for (int i = 0; i < map.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source));
+                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source).AsReflection());
                     ilgen.Emit(OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
                     ilgen.Emit(OpCodes.Ceq);
                     var label = ilgen.DefineLabel();
@@ -2858,8 +2858,8 @@ namespace IKVM.Tools.Importer
 
             if (options.bootstrap == false)
             {
-                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly());
-                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly()));
+                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly().AsReflection());
+                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly().AsReflection()));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -2875,7 +2875,7 @@ namespace IKVM.Tools.Importer
             if (options.bootstrap == false)
             {
                 loader.fakeTypes = context.FakeTypes;
-                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly());
+                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly().AsReflection());
             }
 
             return 0;
@@ -2883,7 +2883,7 @@ namespace IKVM.Tools.Importer
 
         static bool IsBaseAssembly(RuntimeContext context, Assembly asm)
         {
-            return asm.IsDefined(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RemappedClassAttribute).FullName), false);
+            return asm.IsDefined(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RemappedClassAttribute).FullName).AsReflection(), false);
         }
 
         private static Assembly LoadReferencedAssembly(StaticCompiler compiler, string r)
@@ -3014,7 +3014,7 @@ namespace IKVM.Tools.Importer
                     _ => throw new NotImplementedException(),
                 };
 
-                SetMain(wrapper, state.target, state.props, state.noglobbing, apartmentAttributeType);
+                SetMain(wrapper, state.target, state.props, state.noglobbing, apartmentAttributeType.AsReflection());
             }
 
             // complete map
@@ -3045,7 +3045,7 @@ namespace IKVM.Tools.Importer
             // configure Win32 file version
             if (state.fileversion != null)
             {
-                var filever = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor(new Type[] { Context.Types.String }), new object[] { state.fileversion });
+                var filever = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).AsReflection().GetConstructor([Context.Types.String]), [state.fileversion]);
                 assemblyBuilder.SetCustomAttribute(filever);
             }
 
@@ -3090,7 +3090,7 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderConstructorMissing());
 
                 // apply custom attribute specifying custom class loader
-                var ci = Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { Context.Types.Type }, null);
+                var ci = Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName).AsReflection().GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { Context.Types.Type }, null);
                 assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
 
                 // the class loader type defines a module initialize method, ensure we call it upon module load
@@ -3100,9 +3100,9 @@ namespace IKVM.Tools.Importer
                     moduleInitBuilders.Add((mb, il) =>
                     {
                         il.Emit(OpCodes.Ldtoken, mb);
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
-                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod());
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }).AsReflection());
+                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod().AsReflection());
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule").AsReflection());
                     });
                 }
             }

@@ -253,35 +253,35 @@ namespace IKVM.Runtime
 			static void InitSystemProperties(Dictionary<string, string> p)
 			{
 #if FIRST_PASS || IMPORTER || EXPORTER
-                throw new NotImplementedException();
+        throw new NotImplementedException();
 #else
-				p["openjdk.version"] = Constants.openjdk_version;
-				p["java.vm.name"] = Constants.java_vm_name;
-				p["java.vm.version"] = Constants.java_vm_version;
-				p["java.vm.vendor"] = Constants.java_vm_vendor;
-				p["java.vm.specification.name"] = "Java Virtual Machine Specification";
-				p["java.vm.specification.version"] = Constants.java_vm_specification_version;
-				p["java.vm.specification.vendor"] = Constants.java_vm_specification_vendor;
-				p["java.vm.info"] = "compiled mode";
-				p["java.runtime.name"] = Constants.java_runtime_name;
-				p["java.runtime.version"] = Constants.java_runtime_version;
+        p["openjdk.version"] = Constants.openjdk_version;
+        p["java.vm.name"] = Constants.java_vm_name;
+        p["java.vm.version"] = Constants.java_vm_version;
+        p["java.vm.vendor"] = Constants.java_vm_vendor;
+        p["java.vm.specification.name"] = "Java Virtual Machine Specification";
+        p["java.vm.specification.version"] = Constants.java_vm_specification_version;
+        p["java.vm.specification.vendor"] = Constants.java_vm_specification_vendor;
+        p["java.vm.info"] = "compiled mode";
+        p["java.runtime.name"] = Constants.java_runtime_name;
+        p["java.runtime.version"] = Constants.java_runtime_version;
 
-				// various directory paths
-				p["ikvm.home"] = HomePath;
-				p["java.home"] = HomePath;
-				p["java.library.path"] = GetLibraryPath();
-				p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
-				p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
-				p["sun.boot.library.path"] = GetBootLibraryPath();
-				p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.ResolveBaseAssembly(), HomePath);
-				p["sun.cds.enableSharedLookupCache"] = "false";
+        // various directory paths
+        p["ikvm.home"] = HomePath;
+        p["java.home"] = HomePath;
+        p["java.library.path"] = GetLibraryPath();
+        p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
+        p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
+        p["sun.boot.library.path"] = GetBootLibraryPath();
+        p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.ResolveBaseAssembly().AsReflection(), HomePath);
+        p["sun.cds.enableSharedLookupCache"] = "false";
 
-				// unlimited direct memory
-				p["sun.nio.MaxDirectMemorySize"] = "-1";
+        // unlimited direct memory
+        p["sun.nio.MaxDirectMemorySize"] = "-1";
 
-				// default to FORK on OSX, instead of posix_spawn with jspawnhelper
-				if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-					p["jdk.lang.Process.launchMechanism"] = "FORK";
+        // default to FORK on OSX, instead of posix_spawn with jspawnhelper
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            p["jdk.lang.Process.launchMechanism"] = "FORK";
 
 #if NETFRAMEWORK
                 // read properties from app.config
