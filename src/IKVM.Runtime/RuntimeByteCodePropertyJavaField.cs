@@ -110,7 +110,7 @@ namespace IKVM.Runtime
             {
                 setter.Link();
             }
-            pb = tb.DefineProperty(this.Name, PropertyAttributes.None, this.FieldTypeWrapper.TypeAsSignatureType, Type.EmptyTypes);
+            pb = tb.DefineProperty(this.Name, PropertyAttributes.None, this.FieldTypeWrapper.TypeAsSignatureType, []);
             if (getter != null)
             {
                 pb.SetGetMethod((MethodBuilder)getter.GetMethod());
@@ -212,7 +212,7 @@ namespace IKVM.Runtime
             {
                 throw new java.lang.NoSuchMethodError();
             }
-            return getter.Invoke(obj, new object[0]);
+            return getter.Invoke(obj, []);
         }
 
         internal override void SetValue(object obj, object value)

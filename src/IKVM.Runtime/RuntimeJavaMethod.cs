@@ -27,7 +27,9 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Linq;
-using IKVM.CoreLib.Diagnostics;
+
+using IKVM.CoreLib.Symbols;
+
 
 
 #if IMPORTER || EXPORTER
@@ -46,7 +48,7 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaMethod : RuntimeJavaMember
     {
 
-        MethodBase method;
+        IMethodBaseSymbol method;
         string[] declaredExceptions;
         RuntimeJavaType returnTypeWrapper;
         RuntimeJavaType[] parameterTypeWrappers;
@@ -97,7 +99,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             Profiler.Count("MethodWrapper");
@@ -142,7 +144,7 @@ namespace IKVM.Runtime
         {
             declaredExceptions = exceptions != null && exceptions.Length > 0 ? (string[])exceptions.Clone() : Array.Empty<string>();
         }
-        
+
         /// <summary>
         /// Gest the declared exceptions for the method.
         /// </summary>
@@ -225,18 +227,20 @@ namespace IKVM.Runtime
         }
 
 #if !FIRST_PASS
-        private java.lang.Class[] GetExceptions()
+
+        java.lang.Class[] GetExceptions()
         {
-            string[] classes = declaredExceptions;
-            Type[] types = Type.EmptyTypes;
+            Type[] types = [];
+
+            var classes = declaredExceptions;
             if (classes == null)
             {
                 // NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
                 // the method had any declared exceptions, the declaredExceptions field would have
                 // been set)
-                if (method != null && method is not MethodBuilder)
+                if (method != null && method.AsReflection() is not MethodBuilder)
                 {
-                    ThrowsAttribute attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
+                    var attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
                     if (attr != null)
                     {
                         classes = attr.classes;
@@ -244,25 +248,25 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             if (classes != null)
             {
-                java.lang.Class[] array = new java.lang.Class[classes.Length];
+                var array = new java.lang.Class[classes.Length];
                 for (int i = 0; i < classes.Length; i++)
-                {
                     array[i] = this.DeclaringType.ClassLoader.LoadClassByName(classes[i]).ClassObject;
-                }
+
                 return array;
             }
             else
             {
-                java.lang.Class[] array = new java.lang.Class[types.Length];
+                var array = new java.lang.Class[types.Length];
                 for (int i = 0; i < types.Length; i++)
-                {
                     array[i] = types[i];
-                }
+
                 return array;
             }
         }
+
 #endif // !FIRST_PASS
 
         internal static RuntimeJavaMethod FromExecutable(java.lang.reflect.Executable executable)
@@ -381,7 +385,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal Type ReturnTypeForDefineMethod
+        internal ITypeSymbol ReturnTypeForDefineMethod
         {
             get
             {
@@ -389,23 +393,20 @@ namespace IKVM.Runtime
             }
         }
 
-        internal Type[] GetParametersForDefineMethod()
+        internal ITypeSymbol[] GetParametersForDefineMethod()
         {
-            RuntimeJavaType[] wrappers = GetParameters();
-            int len = wrappers.Length;
+            var wrappers = GetParameters();
+            var len = wrappers.Length;
             if (HasCallerID)
-            {
                 len++;
-            }
-            Type[] temp = new Type[len];
+
+            var temp = new ITypeSymbol[len];
             for (int i = 0; i < wrappers.Length; i++)
-            {
                 temp[i] = wrappers[i].TypeAsSignatureType;
-            }
+
             if (HasCallerID)
-            {
                 temp[len - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-            }
+
             return temp;
         }
 
@@ -413,7 +414,7 @@ namespace IKVM.Runtime
         // for Java types, this is the method that contains the compiled Java bytecode
         // for remapped types, this is the mbCore method (not the helper)
         // Note that for some artificial methods (notably wrap() in enums), method is null
-        internal MethodBase GetMethod()
+        internal IMethodBaseSymbol GetMethod()
         {
             AssertLinked();
             return method;
@@ -451,7 +452,7 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER
 
-        internal Type GetDelegateType()
+        internal ITypeSymbol GetDelegateType()
         {
             var paramTypes = GetParameters();
             if (paramTypes.Length > MethodHandleUtil.MaxArity)
@@ -460,7 +461,7 @@ namespace IKVM.Runtime
                 if (type == null)
                     type = DeclaringType.ClassLoader.GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
 
-                var types = new Type[paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1)];
+                var types = new ITypeSymbol[paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1)];
                 for (int i = 0; i < paramTypes.Length; i++)
                     types[i] = paramTypes[i].TypeAsSignatureType;
 
@@ -482,7 +483,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             // if we've still got the builder object, we need to replace it with the real thing before we can call it
-            var mb = method as MethodBuilder;
+            var mb = method.AsReflection() as MethodBuilder;
             if (mb != null)
             {
 #if NETFRAMEWORK
@@ -537,14 +538,14 @@ namespace IKVM.Runtime
         /// <param name="args"></param>
         /// <returns></returns>
         [HideFromJava]
-        protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
+        protected static object InvokeAndUnwrapException(IMethodBaseSymbol mb, object obj, object[] args)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                return mb.Invoke(obj, args);
+                return mb.AsReflection().Invoke(obj, args);
             }
             catch (TargetInvocationException e)
             {

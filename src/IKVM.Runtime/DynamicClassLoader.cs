@@ -529,7 +529,7 @@ namespace IKVM.Runtime
 
 #if NETFRAMEWORK
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
-                attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
+                attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor([]), []));
 #endif
 
             var assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
@@ -548,7 +548,7 @@ namespace IKVM.Runtime
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
 
-            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
+            moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor([]), []));
             return moduleBuilder;
         }
 

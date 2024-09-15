@@ -16,7 +16,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="type"></param>
         /// <param name="event"></param>
         public ReflectionEventSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, EventInfo @event) :
-            base(context, type.ContainingModule, type, @event)
+            base(context, type, @event)
         {
             _event = @event ?? throw new ArgumentNullException(nameof(@event));
         }

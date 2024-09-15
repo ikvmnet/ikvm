@@ -25,9 +25,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Diagnostics;
 
-#if NETCOREAPP
+#if NET
 using System.Runtime.Loader;
 #endif
 
@@ -54,8 +55,8 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
         readonly object wrapperLock = new object();
-        internal readonly Dictionary<Type, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<Type, RuntimeJavaType>();
-        internal readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
+        internal readonly Dictionary<ITypeSymbol, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<ITypeSymbol, RuntimeJavaType>();
+        internal readonly Dictionary<ITypeSymbol, string> remappedTypes = new Dictionary<ITypeSymbol, string>();
         readonly List<RuntimeGenericClassLoader> genericClassLoaders = new List<RuntimeGenericClassLoader>();
 
 #if IMPORTER || EXPORTER
@@ -99,14 +100,14 @@ namespace IKVM.Runtime
         internal void LoadRemappedTypes()
         {
             // if we're compiling the base assembly, we won't be able to resolve one
-            var baseAssembly = context.Resolver.ResolveBaseAssembly().AsReflection();
+            var baseAssembly = context.Resolver.ResolveBaseAssembly();
             if (baseAssembly != null && remappedTypes.Count == 0)
             {
                 var remapped = context.AttributeHelper.GetRemappedClasses(baseAssembly);
                 if (remapped.Length > 0)
                 {
                     foreach (var r in remapped)
-                        remappedTypes.Add(r.RemappedType, r.Name);
+                        remappedTypes.Add(context.Resolver.ResolveType(r.RemappedType), r.Name);
                 }
                 else
                 {
@@ -119,7 +120,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal bool IsRemappedType(Type type)
+        internal bool IsRemappedType(ITypeSymbol type)
         {
             return remappedTypes.ContainsKey(type);
         }
@@ -171,15 +172,13 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal RuntimeJavaType GetJavaTypeFromType(Type type)
+        internal RuntimeJavaType GetJavaTypeFromType(ITypeSymbol type)
         {
 #if IMPORTER
-            if (type.__ContainsMissingType)
-            {
+            if (type.ContainsMissing)
                 return new RuntimeUnloadableJavaType(context, type);
-            }
 #endif
-            //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
+
 #if !IMPORTER
             RuntimeJavaType.AssertFinished(type);
 #endif
@@ -194,7 +193,7 @@ namespace IKVM.Runtime
                 return wrapper;
 
 #if EXPORTER
-            if (type.__IsMissing || type.__ContainsMissingType)
+            if (type.IsMissing || type.ContainsMissing)
             {
                 wrapper = new RuntimeUnloadableJavaType(context, type);
                 globalTypeToTypeWrapper.Add(type, wrapper);
@@ -206,12 +205,12 @@ namespace IKVM.Runtime
             {
                 wrapper = LoadClassCritical(remapped);
             }
-            else if (ReflectUtil.IsVector(type))
+            else if (type.IsSZArray)
             {
                 // it might be an array of a dynamically compiled Java type
                 int rank = 1;
-                Type elem = type.GetElementType();
-                while (ReflectUtil.IsVector(elem))
+                var elem = type.GetElementType();
+                while (elem.IsSZArray)
                 {
                     rank++;
                     elem = elem.GetElementType();

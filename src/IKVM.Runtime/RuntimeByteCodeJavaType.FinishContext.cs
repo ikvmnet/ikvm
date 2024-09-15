@@ -133,7 +133,7 @@ namespace IKVM.Runtime
                 if (!dynamicClassLiteral.TryGetValue(cacheKey, out var method))
                 {
                     var fb = typeBuilder.DefineField("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, FieldAttributes.PrivateScope | FieldAttributes.Static);
-                    var mb = DefineHelperMethod("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, Type.EmptyTypes);
+                    var mb = DefineHelperMethod("__<>class", context.JavaBase.TypeOfJavaLangClass.TypeAsSignatureType, []);
                     var ilgen2 = context.CodeEmitterFactory.Create(mb);
                     ilgen2.Emit(OpCodes.Ldsfld, fb);
                     var label = ilgen2.DefineLabel();
@@ -185,7 +185,7 @@ namespace IKVM.Runtime
             {
                 RuntimeJavaType tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 FieldBuilder callerIDField = typeBuilder.DefineField("__<callerID>", tw.TypeAsSignatureType, FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.SpecialName);
-                MethodBuilder mb = DefineHelperMethod("__<GetCallerID>", tw.TypeAsSignatureType, Type.EmptyTypes);
+                MethodBuilder mb = DefineHelperMethod("__<GetCallerID>", tw.TypeAsSignatureType, []);
                 callerIDMethod = mb;
                 CodeEmitter ilgen = context.CodeEmitterFactory.Create(mb);
                 ilgen.Emit(OpCodes.Ldsfld, callerIDField);
@@ -604,7 +604,7 @@ namespace IKVM.Runtime
                     // - we don't want the synthesized constructor to show up in Java
                     if (!hasConstructor)
                     {
-                        var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(typeBuilder, MethodAttributes.PrivateScope, Type.EmptyTypes));
+                        var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(typeBuilder, MethodAttributes.PrivateScope, []));
                         ilgen.Emit(OpCodes.Ldnull);
                         ilgen.Emit(OpCodes.Throw);
                         ilgen.DoEmit();
@@ -1295,7 +1295,7 @@ namespace IKVM.Runtime
                 {
                     var propType = fw.FieldTypeWrapper.TypeAsPublicSignatureType;
                     var modopt = wrapper.GetModOpt(fw.FieldTypeWrapper, true);
-                    var pb = typeBuilder.DefineProperty(fw.Name, PropertyAttributes.None, propType, null, modopt, Type.EmptyTypes, null, null);
+                    var pb = typeBuilder.DefineProperty(fw.Name, PropertyAttributes.None, propType, null, modopt, [], null, null);
                     if (type1)
                         context.AttributeHelper.HideFromReflection(pb);
                     else
@@ -1308,7 +1308,7 @@ namespace IKVM.Runtime
                     // we append the IKVM.Attributes.AccessStub type to the modopt array for use in the property accessor method signature
                     // to make sure they never conflict with any user defined methhods
                     var modopt2 = ArrayUtil.Concat(modopt, context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName).AsReflection());
-                    var getter = typeBuilder.DefineMethod("get_" + fw.Name, attribs, CallingConventions.Standard, propType, null, modopt2, Type.EmptyTypes, null, null);
+                    var getter = typeBuilder.DefineMethod("get_" + fw.Name, attribs, CallingConventions.Standard, propType, null, modopt2, [], null, null);
                     context.AttributeHelper.HideFromJava(getter);
                     pb.SetGetMethod(getter);
                     var ilgen = context.CodeEmitterFactory.Create(getter);
@@ -1607,7 +1607,7 @@ namespace IKVM.Runtime
                 static JniProxyBuilder()
                 {
                     mod = DynamicClassLoader.CreateJniProxyModuleBuilder();
-                    var cab = new CustomAttributeBuilder(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+                    var cab = new CustomAttributeBuilder(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]).AsReflection(), []);
                     mod.SetCustomAttribute(cab);
                 }
 
@@ -1950,7 +1950,7 @@ namespace IKVM.Runtime
                                     {
                                         typeBuilder.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).AsReflection());
                                         // FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
-                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerator).FullName).AsReflection(), Type.EmptyTypes);
+                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerator).FullName).AsReflection(), []);
                                         context.AttributeHelper.HideFromJava(mb);
                                         typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator").AsReflection());
                                         var ilgen = context.CodeEmitterFactory.Create(mb);
@@ -2196,9 +2196,9 @@ namespace IKVM.Runtime
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
                 var tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
                 var fb = tb.DefineField("field", context.Types.Object, FieldAttributes.Private | FieldAttributes.Static);
-                fb.SetCustomAttribute(new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]));
+                fb.SetCustomAttribute(new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]).AsReflection(), []));
 
-                var mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, context.Types.Object, Type.EmptyTypes);
+                var mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, context.Types.Object, []);
                 var ilgen = mbGet.GetILGenerator();
                 ilgen.Emit(OpCodes.Ldsfld, fb);
                 ilgen.Emit(OpCodes.Ret);
@@ -2209,7 +2209,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Stsfld, fb);
                 ilgen.Emit(OpCodes.Ret);
 
-                var cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
+                var cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, []);
                 var ctorilgen = context.CodeEmitterFactory.Create(cb);
                 ctorilgen.Emit(OpCodes.Ldarg_0);
                 var basector = threadLocal.GetMethodWrapper("<init>", "()V", false);
@@ -2231,7 +2231,7 @@ namespace IKVM.Runtime
                     RuntimeJavaType arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
                     TypeBuilder tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(context, tb, field.GetField());
-                    cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
+                    cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, []);
                     arfuMap.Add(field, cb);
                     CodeEmitter ctorilgen = context.CodeEmitterFactory.Create(cb);
                     ctorilgen.Emit(OpCodes.Ldarg_0);

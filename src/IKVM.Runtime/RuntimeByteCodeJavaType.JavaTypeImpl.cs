@@ -64,11 +64,11 @@ namespace IKVM.Runtime
             MethodBuilder finalizeMethod;
             int recursionCount;
 #if IMPORTER
-			RuntimeByteCodeJavaType enclosingClassWrapper;
-			AnnotationBuilder annotationBuilder;
-			TypeBuilder enumBuilder;
-			TypeBuilder privateInterfaceMethods;
-			ConcurrentDictionary<string, RuntimeJavaType> nestedTypeNames;  // only keys are used, values are always null
+            RuntimeByteCodeJavaType enclosingClassWrapper;
+            AnnotationBuilder annotationBuilder;
+            TypeBuilder enumBuilder;
+            TypeBuilder privateInterfaceMethods;
+            ConcurrentDictionary<string, RuntimeJavaType> nestedTypeNames;  // only keys are used, values are always null
 #endif
 
             internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
@@ -92,15 +92,15 @@ namespace IKVM.Runtime
                     if (m.IsClassInitializer)
                     {
 #if IMPORTER
-						if (IsSideEffectFreeStaticInitializerOrNoop(m, out var noop))
-						{
-							if (noop)
-								flags |= MemberFlags.NoOp;
-						}
-						else
-						{
-							hasclinit = true;
-						}
+                        if (IsSideEffectFreeStaticInitializerOrNoop(m, out var noop))
+                        {
+                            if (noop)
+                                flags |= MemberFlags.NoOp;
+                        }
+                        else
+                        {
+                            hasclinit = true;
+                        }
 #else
                         hasclinit = true;
 #endif
@@ -110,12 +110,12 @@ namespace IKVM.Runtime
                         flags |= MemberFlags.InternalAccess;
 
 #if IMPORTER
-					if (m.IsCallerSensitive && SupportsCallerID(m))
-						flags |= MemberFlags.CallerID;
+                    if (m.IsCallerSensitive && SupportsCallerID(m))
+                        flags |= MemberFlags.CallerID;
 
-					// set as module initializer
-					if (m.IsModuleInitializer)
-						flags |= MemberFlags.ModuleInitializer;
+                    // set as module initializer
+                    if (m.IsModuleInitializer)
+                        flags |= MemberFlags.ModuleInitializer;
 #endif
 
                     if (wrapper.IsGhost && m.IsVirtual)
@@ -190,78 +190,78 @@ namespace IKVM.Runtime
                     }
                 }
 #if IMPORTER
-				wrapper.AddMapXmlFields(ref fields);
+                wrapper.AddMapXmlFields(ref fields);
 #endif
                 wrapper.SetFields(fields);
             }
 
 #if IMPORTER
 
-			bool SupportsCallerID(ClassFile.Method method)
-			{
-				if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass") || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
-				{
-					// ignore CallerSensitive on methods that don't need CallerID parameter
-					return false;
-				}
-				else if (method.IsStatic)
-				{
-					return true;
-				}
-				else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass") && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
-				{
-					// We only support CallerID instance methods on final or effectively final types,
-					// because we don't support interface stubs with CallerID.
-					// We also don't support a CallerID method overriding a method or implementing an interface.
-					return true;
-				}
-				else if (RequiresDynamicReflectionCallerClass(classFile.Name, method.Name, method.Signature))
-				{
-					// We don't support CallerID for virtual methods that can be overridden or implement an interface,
-					// so these methods will do a dynamic stack walk if when Reflection.getCallerClass() is used.
-					return false;
-				}
-				else
-				{
-					// If we end up here, we either have to add support or add them to the white-list in the above clause
-					// to allow them to fall back to dynamic stack walking.
-					wrapper.ClassLoader.Diagnostics.CallerSensitiveOnUnsupportedMethod(classFile.Name, method.Name, method.Signature);
-					return false;
-				}
-			}
+            bool SupportsCallerID(ClassFile.Method method)
+            {
+                if ((classFile.Name == "sun.reflect.Reflection" && method.Name == "getCallerClass") || (classFile.Name == "java.lang.SecurityManager" && method.Name == "checkMemberAccess"))
+                {
+                    // ignore CallerSensitive on methods that don't need CallerID parameter
+                    return false;
+                }
+                else if (method.IsStatic)
+                {
+                    return true;
+                }
+                else if ((classFile.IsFinal || classFile.Name == "java.lang.Runtime" || classFile.Name == "java.io.ObjectStreamClass") && wrapper.BaseTypeWrapper.GetMethodWrapper(method.Name, method.Signature, true) == null && !HasInterfaceMethod(wrapper, method.Name, method.Signature))
+                {
+                    // We only support CallerID instance methods on final or effectively final types,
+                    // because we don't support interface stubs with CallerID.
+                    // We also don't support a CallerID method overriding a method or implementing an interface.
+                    return true;
+                }
+                else if (RequiresDynamicReflectionCallerClass(classFile.Name, method.Name, method.Signature))
+                {
+                    // We don't support CallerID for virtual methods that can be overridden or implement an interface,
+                    // so these methods will do a dynamic stack walk if when Reflection.getCallerClass() is used.
+                    return false;
+                }
+                else
+                {
+                    // If we end up here, we either have to add support or add them to the white-list in the above clause
+                    // to allow them to fall back to dynamic stack walking.
+                    wrapper.ClassLoader.Diagnostics.CallerSensitiveOnUnsupportedMethod(classFile.Name, method.Name, method.Signature);
+                    return false;
+                }
+            }
 
-			static bool HasInterfaceMethod(RuntimeJavaType tw, string name, string signature)
-			{
-				for (; tw != null; tw = tw.BaseTypeWrapper)
-				{
-					foreach (var iface in tw.Interfaces)
-					{
-						if (iface.GetMethodWrapper(name, signature, false) != null)
-						{
-							return true;
-						}
-						if (HasInterfaceMethod(iface, name, signature))
-						{
-							return true;
-						}
-					}
-				}
+            static bool HasInterfaceMethod(RuntimeJavaType tw, string name, string signature)
+            {
+                for (; tw != null; tw = tw.BaseTypeWrapper)
+                {
+                    foreach (var iface in tw.Interfaces)
+                    {
+                        if (iface.GetMethodWrapper(name, signature, false) != null)
+                        {
+                            return true;
+                        }
+                        if (HasInterfaceMethod(iface, name, signature))
+                        {
+                            return true;
+                        }
+                    }
+                }
 
-				return false;
-			}
+                return false;
+            }
 #endif
 
             internal void CreateStep2()
             {
 #if IMPORTER
-				if (typeBuilder != null)
-				{
-					// in the static compiler we need to create the TypeBuilder from outer to inner
-					// and to avoid having to sort the classes this way, we instead call CreateStep2
-					// on demand for outer wrappers and this necessitates us to keep track of
-					// whether we've already been called
-					return;
-				}
+                if (typeBuilder != null)
+                {
+                    // in the static compiler we need to create the TypeBuilder from outer to inner
+                    // and to avoid having to sort the classes this way, we instead call CreateStep2
+                    // on demand for outer wrappers and this necessitates us to keep track of
+                    // whether we've already been called
+                    return;
+                }
 #endif
 
                 // this method is not allowed to throw exceptions (if it does, the runtime will abort)
@@ -280,121 +280,121 @@ namespace IKVM.Runtime
                         typeAttribs |= TypeAttributes.BeforeFieldInit;
 #if IMPORTER
 
-					bool cantNest = false;
-					bool setModifiers = false;
-					TypeBuilder enclosing = null;
-					string enclosingClassName = null;
-					// we only compile inner classes as nested types in the static compiler, because it has a higher cost
-					// and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
-					// the TypeResolve event very hard)
-					var outerClass = getOuterClass();
-					if (outerClass.outerClass.IsNotNil)
-					{
-						enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
-					}
-					else if (f.EnclosingMethod != null)
-					{
-						enclosingClassName = f.EnclosingMethod[0];
-					}
+                    bool cantNest = false;
+                    bool setModifiers = false;
+                    TypeBuilder enclosing = null;
+                    string enclosingClassName = null;
+                    // we only compile inner classes as nested types in the static compiler, because it has a higher cost
+                    // and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
+                    // the TypeResolve event very hard)
+                    var outerClass = getOuterClass();
+                    if (outerClass.outerClass.IsNotNil)
+                    {
+                        enclosingClassName = classFile.GetConstantPoolClass(outerClass.outerClass);
+                    }
+                    else if (f.EnclosingMethod != null)
+                    {
+                        enclosingClassName = f.EnclosingMethod[0];
+                    }
 
-					if (enclosingClassName != null)
-					{
-						if (!CheckInnerOuterNames(f.Name, enclosingClassName))
-						{
-							wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Incorrect {(outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod")} attribute on {f.Name}");
-						}
-						else
-						{
-							try
-							{
-								enclosingClassWrapper = wrapper.classLoader.TryLoadClassByName(enclosingClassName) as RuntimeByteCodeJavaType;
-							}
-							catch (RetargetableJavaException x)
-							{
-								wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})");
-							}
+                    if (enclosingClassName != null)
+                    {
+                        if (!CheckInnerOuterNames(f.Name, enclosingClassName))
+                        {
+                            wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Incorrect {(outerClass.outerClass.IsNotNil ? "InnerClasses" : "EnclosingMethod")} attribute on {f.Name}");
+                        }
+                        else
+                        {
+                            try
+                            {
+                                enclosingClassWrapper = wrapper.classLoader.TryLoadClassByName(enclosingClassName) as RuntimeByteCodeJavaType;
+                            }
+                            catch (RetargetableJavaException x)
+                            {
+                                wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Unable to load outer class {enclosingClassName} for inner class {f.Name} ({x.GetType().Name}: {x.Message})");
+                            }
 
-							if (enclosingClassWrapper != null)
-							{
-								// make sure the relationship is reciprocal (otherwise we run the risk of
-								// baking the outer type before the inner type) and that the inner and outer
-								// class live in the same class loader (when doing a multi target compilation,
-								// it is possible to split the two classes across assemblies)
-								var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
-								if (oimpl != null && enclosingClassWrapper.ClassLoader == wrapper.ClassLoader)
-								{
-									var outerClassFile = oimpl.classFile;
-									var outerInnerClasses = outerClassFile.InnerClasses;
-									if (outerInnerClasses == null)
-									{
-										enclosingClassWrapper = null;
-									}
-									else
-									{
-										var ok = false;
-										for (int i = 0; i < outerInnerClasses.Length; i++)
-										{
-											if (((outerInnerClasses[i].outerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name) || (outerInnerClasses[i].outerClass.IsNil && outerClass.outerClass.IsNil)) && outerInnerClasses[i].innerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
-											{
-												ok = true;
-												break;
-											}
-										}
+                            if (enclosingClassWrapper != null)
+                            {
+                                // make sure the relationship is reciprocal (otherwise we run the risk of
+                                // baking the outer type before the inner type) and that the inner and outer
+                                // class live in the same class loader (when doing a multi target compilation,
+                                // it is possible to split the two classes across assemblies)
+                                var oimpl = enclosingClassWrapper.impl as JavaTypeImpl;
+                                if (oimpl != null && enclosingClassWrapper.ClassLoader == wrapper.ClassLoader)
+                                {
+                                    var outerClassFile = oimpl.classFile;
+                                    var outerInnerClasses = outerClassFile.InnerClasses;
+                                    if (outerInnerClasses == null)
+                                    {
+                                        enclosingClassWrapper = null;
+                                    }
+                                    else
+                                    {
+                                        var ok = false;
+                                        for (int i = 0; i < outerInnerClasses.Length; i++)
+                                        {
+                                            if (((outerInnerClasses[i].outerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].outerClass) == outerClassFile.Name) || (outerInnerClasses[i].outerClass.IsNil && outerClass.outerClass.IsNil)) && outerInnerClasses[i].innerClass.IsNotNil && outerClassFile.GetConstantPoolClass(outerInnerClasses[i].innerClass) == f.Name)
+                                            {
+                                                ok = true;
+                                                break;
+                                            }
+                                        }
 
-										if (!ok)
-										{
-											enclosingClassWrapper = null;
-										}
-									}
-								}
-								else
-								{
-									enclosingClassWrapper = null;
-								}
+                                        if (!ok)
+                                        {
+                                            enclosingClassWrapper = null;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    enclosingClassWrapper = null;
+                                }
 
-								if (enclosingClassWrapper != null)
-								{
-									enclosingClassWrapper.CreateStep2();
-									enclosing = oimpl.typeBuilder;
-									if (outerClass.outerClass.IsNil)
-									{
-										// we need to record that we're not an inner classes, but an enclosed class
-										typeAttribs |= TypeAttributes.SpecialName;
-									}
-								}
-								else
-								{
-									wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Non-reciprocal inner class {f.Name}");
-								}
-							}
-						}
-					}
+                                if (enclosingClassWrapper != null)
+                                {
+                                    enclosingClassWrapper.CreateStep2();
+                                    enclosing = oimpl.typeBuilder;
+                                    if (outerClass.outerClass.IsNil)
+                                    {
+                                        // we need to record that we're not an inner classes, but an enclosed class
+                                        typeAttribs |= TypeAttributes.SpecialName;
+                                    }
+                                }
+                                else
+                                {
+                                    wrapper.ClassLoader.Diagnostics.GenericCompilerWarning($"Non-reciprocal inner class {f.Name}");
+                                }
+                            }
+                        }
+                    }
 
-					if (f.IsPublic)
-					{
-						if (enclosing != null)
-						{
-							if (enclosingClassWrapper.IsPublic)
-							{
-								typeAttribs |= TypeAttributes.NestedPublic;
-							}
-							else
-							{
-								// We're a public type nested inside a non-public type, this means that we can't compile this type as a nested type,
-								// because that would mean it wouldn't be visible outside the assembly.
-								cantNest = true;
-								typeAttribs |= TypeAttributes.Public;
-							}
-						}
-						else
-						{
-							typeAttribs |= TypeAttributes.Public;
-						}
-					}
-					else if (enclosing != null)
-					{
-						typeAttribs |= TypeAttributes.NestedAssembly;
-					}
+                    if (f.IsPublic)
+                    {
+                        if (enclosing != null)
+                        {
+                            if (enclosingClassWrapper.IsPublic)
+                            {
+                                typeAttribs |= TypeAttributes.NestedPublic;
+                            }
+                            else
+                            {
+                                // We're a public type nested inside a non-public type, this means that we can't compile this type as a nested type,
+                                // because that would mean it wouldn't be visible outside the assembly.
+                                cantNest = true;
+                                typeAttribs |= TypeAttributes.Public;
+                            }
+                        }
+                        else
+                        {
+                            typeAttribs |= TypeAttributes.Public;
+                        }
+                    }
+                    else if (enclosing != null)
+                    {
+                        typeAttribs |= TypeAttributes.NestedAssembly;
+                    }
 #else // IMPORTER
                     if (f.IsPublic)
                     {
@@ -405,34 +405,34 @@ namespace IKVM.Runtime
                     {
                         typeAttribs |= TypeAttributes.Interface | TypeAttributes.Abstract;
 #if IMPORTER
-						// if any "meaningless" bits are set, preserve them
-						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
-						// by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
-						setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
-						if (enclosing != null && !cantNest)
-						{
-							if (wrapper.IsGhost)
-							{
-								// TODO this is low priority, since the current Java class library doesn't define any ghost interfaces
-								// as inner classes
-								throw new NotImplementedException();
-							}
+                        // if any "meaningless" bits are set, preserve them
+                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+                        // by default we assume interfaces are abstract, so in the exceptional case we need a ModifiersAttribute
+                        setModifiers |= (f.Modifiers & Modifiers.Abstract) == 0;
+                        if (enclosing != null && !cantNest)
+                        {
+                            if (wrapper.IsGhost)
+                            {
+                                // TODO this is low priority, since the current Java class library doesn't define any ghost interfaces
+                                // as inner classes
+                                throw new NotImplementedException();
+                            }
 
-							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
-							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
-						}
-						else
-						{
-							if (wrapper.IsGhost)
-							{
-								typeBuilder = wrapper.DefineGhostType(mangledTypeName, typeAttribs);
-							}
-							else
-							{
-								typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
-							}
-						}
+                            // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
+                            // (and broken by J# as well), so we'll just ignore it too.
+                            typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
+                        }
+                        else
+                        {
+                            if (wrapper.IsGhost)
+                            {
+                                typeBuilder = wrapper.DefineGhostType(mangledTypeName, typeAttribs);
+                            }
+                            else
+                            {
+                                typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
+                            }
+                        }
 #else // IMPORTER
                         typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
 #endif // IMPORTER
@@ -441,17 +441,17 @@ namespace IKVM.Runtime
                     {
                         typeAttribs |= TypeAttributes.Class;
 #if IMPORTER
-						// if any "meaningless" bits are set, preserve them
-						setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
-						// by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
-						setModifiers |= !f.IsSuper;
-						if (enclosing != null && !cantNest)
-						{
-							// LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
-							// (and broken by J# as well), so we'll just ignore it too.
-							typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
-						}
-						else
+                        // if any "meaningless" bits are set, preserve them
+                        setModifiers |= (f.Modifiers & (Modifiers)0x99CE) != 0;
+                        // by default we assume ACC_SUPER for classes, so in the exceptional case we need a ModifiersAttribute
+                        setModifiers |= !f.IsSuper;
+                        if (enclosing != null && !cantNest)
+                        {
+                            // LAMESPEC the CLI spec says interfaces cannot contain nested types (Part.II, 9.6), but that rule isn't enforced
+                            // (and broken by J# as well), so we'll just ignore it too.
+                            typeBuilder = enclosing.DefineNestedType(AllocNestedTypeName(enclosingClassWrapper.Name, f.Name), typeAttribs);
+                        }
+                        else
 #endif // IMPORTER
                         {
                             typeBuilder = wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs);
@@ -459,113 +459,113 @@ namespace IKVM.Runtime
                     }
 
 #if IMPORTER
-					// When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
-					// types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
-					wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
+                    // When we're statically compiling, we associate the typeBuilder with the wrapper. This enables types in referenced assemblies to refer back to
+                    // types that we're currently compiling (i.e. a cyclic dependency between the currently assembly we're compiling and a referenced assembly).
+                    wrapper.Context.ClassLoaderFactory.SetWrapperForType(typeBuilder, wrapper);
 
-					if (outerClass.outerClass.IsNotNil)
-					{
-						if (enclosing != null && cantNest)
-						{
-							wrapper.Context.AttributeHelper.SetNonNestedInnerClass(enclosing, f.Name);
-						}
-						if (enclosing == null || cantNest)
-						{
-							wrapper.Context.AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
-						}
-					}
+                    if (outerClass.outerClass.IsNotNil)
+                    {
+                        if (enclosing != null && cantNest)
+                        {
+                            wrapper.Context.AttributeHelper.SetNonNestedInnerClass(enclosing, f.Name);
+                        }
+                        if (enclosing == null || cantNest)
+                        {
+                            wrapper.Context.AttributeHelper.SetNonNestedOuterClass(typeBuilder, enclosingClassName);
+                        }
+                    }
 
-					if (classFile.InnerClasses != null)
-					{
-						foreach (var inner in classFile.InnerClasses)
-						{
-							var name = classFile.GetConstantPoolClass(inner.innerClass);
-							var exists = false;
+                    if (classFile.InnerClasses != null)
+                    {
+                        foreach (var inner in classFile.InnerClasses)
+                        {
+                            var name = classFile.GetConstantPoolClass(inner.innerClass);
+                            var exists = false;
 
-							try
-							{
-								exists = wrapper.ClassLoader.TryLoadClassByName(name) != null;
-							}
-							catch (RetargetableJavaException)
-							{
+                            try
+                            {
+                                exists = wrapper.ClassLoader.TryLoadClassByName(name) != null;
+                            }
+                            catch (RetargetableJavaException)
+                            {
 
-							}
+                            }
 
-							if (!exists)
-							{
-								wrapper.Context.AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
-							}
-						}
-					}
+                            if (!exists)
+                            {
+                                wrapper.Context.AttributeHelper.SetNonNestedInnerClass(typeBuilder, name);
+                            }
+                        }
+                    }
 
-					if (typeBuilder.FullName != wrapper.Name && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
-					{
-						wrapper.classLoader.AddNameMapping(wrapper.Name, typeBuilder.FullName);
-					}
+                    if (typeBuilder.FullName != wrapper.Name && wrapper.Name.Replace('$', '+') != typeBuilder.FullName)
+                    {
+                        wrapper.classLoader.AddNameMapping(wrapper.Name, typeBuilder.FullName);
+                    }
 
-					if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
-					{
-						annotationBuilder = new AnnotationBuilder(wrapper.Context, this, enclosing);
-						wrapper.SetAnnotation(annotationBuilder);
-					}
+                    if (f.IsAnnotation && Annotation.HasRetentionPolicyRuntime(f.Annotations))
+                    {
+                        annotationBuilder = new AnnotationBuilder(wrapper.Context, this, enclosing);
+                        wrapper.SetAnnotation(annotationBuilder);
+                    }
 
-					// For Java 5 Enum types, we generate a nested .NET enum.
-					// This is primarily to support annotations that take enum parameters.
-					if (f.IsEnum && f.IsPublic)
-					{
-						AddCliEnum();
-					}
+                    // For Java 5 Enum types, we generate a nested .NET enum.
+                    // This is primarily to support annotations that take enum parameters.
+                    if (f.IsEnum && f.IsPublic)
+                    {
+                        AddCliEnum();
+                    }
 
-					AddInnerClassAttribute(enclosing != null, outerClass.innerClass.IsNotNil, mangledTypeName, outerClass.accessFlags);
-					if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
-					{
-						wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
-					}
+                    AddInnerClassAttribute(enclosing != null, outerClass.innerClass.IsNotNil, mangledTypeName, outerClass.accessFlags);
+                    if (classFile.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(classFile.Annotations))
+                    {
+                        wrapper.Context.AttributeHelper.SetDeprecatedAttribute(typeBuilder);
+                    }
 
-					if (classFile.GenericSignature != null)
-					{
-						wrapper.Context.AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
-					}
-					if (classFile.EnclosingMethod != null)
-					{
-						if (outerClass.outerClass.IsNil && enclosing != null && !cantNest)
-						{
-							// we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
-							wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
-						}
-						else
-						{
-							wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
-						}
-					}
+                    if (classFile.GenericSignature != null)
+                    {
+                        wrapper.Context.AttributeHelper.SetSignatureAttribute(typeBuilder, classFile.GenericSignature);
+                    }
+                    if (classFile.EnclosingMethod != null)
+                    {
+                        if (outerClass.outerClass.IsNil && enclosing != null && !cantNest)
+                        {
+                            // we don't need to record the enclosing type, if we're compiling the current type as a nested type because of the EnclosingMethod attribute
+                            wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, null, classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+                        }
+                        else
+                        {
+                            wrapper.Context.AttributeHelper.SetEnclosingMethodAttribute(typeBuilder, classFile.EnclosingMethod[0], classFile.EnclosingMethod[1], classFile.EnclosingMethod[2]);
+                        }
+                    }
 
-					if (classFile.RuntimeVisibleTypeAnnotations.Count > 0)
-						wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, in classFile.RuntimeVisibleTypeAnnotations);
+                    if (classFile.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(typeBuilder, in classFile.RuntimeVisibleTypeAnnotations);
 
-					if (wrapper.classLoader.EmitStackTraceInfo)
-					{
-						if (f.SourceFileAttribute != null)
-						{
-							if ((enclosingClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
-								|| (enclosingClassWrapper != null && f.SourceFileAttribute == enclosingClassWrapper.sourceFileName))
-							{
-								// we don't need to record the name because it matches our heuristic
-							}
-							else
-							{
-								wrapper.Context.AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
-							}
-						}
-						else
-						{
-							wrapper.Context.AttributeHelper.SetSourceFile(typeBuilder, null);
-						}
-					}
-					// NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
-					if (setModifiers || classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
-					{
-						wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
-					}
+                    if (wrapper.classLoader.EmitStackTraceInfo)
+                    {
+                        if (f.SourceFileAttribute != null)
+                        {
+                            if ((enclosingClassWrapper == null && f.SourceFileAttribute == typeBuilder.Name + ".java")
+                                || (enclosingClassWrapper != null && f.SourceFileAttribute == enclosingClassWrapper.sourceFileName))
+                            {
+                                // we don't need to record the name because it matches our heuristic
+                            }
+                            else
+                            {
+                                wrapper.Context.AttributeHelper.SetSourceFile(typeBuilder, f.SourceFileAttribute);
+                            }
+                        }
+                        else
+                        {
+                            wrapper.Context.AttributeHelper.SetSourceFile(typeBuilder, null);
+                        }
+                    }
+                    // NOTE in Whidbey we can (and should) use CompilerGeneratedAttribute to mark Synthetic types
+                    if (setModifiers || classFile.IsInternal || (classFile.Modifiers & (Modifiers.Synthetic | Modifiers.Annotation | Modifiers.Enum)) != 0)
+                    {
+                        wrapper.Context.AttributeHelper.SetModifiers(typeBuilder, classFile.Modifiers, classFile.IsInternal);
+                    }
 #endif // IMPORTER
                     if (hasclinit)
                     {
@@ -582,7 +582,7 @@ namespace IKVM.Runtime
                     }
                 }
 #if IMPORTER
-				finally { }
+                finally { }
 #else
                 catch (Exception x)
                 {
@@ -593,50 +593,49 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-			private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
-			{
-				string name = classFile.Name;
+            private void AddInnerClassAttribute(bool isNestedType, bool isInnerClass, string mangledTypeName, Modifiers innerClassFlags)
+            {
+                string name = classFile.Name;
 
-				if (isNestedType)
-				{
-					if (name == enclosingClassWrapper.Name + "$" + typeBuilder.Name)
-					{
-						name = null;
-					}
-				}
-				else if (name == mangledTypeName)
-				{
-					name = null;
-				}
+                if (isNestedType)
+                {
+                    if (name == enclosingClassWrapper.Name + "$" + typeBuilder.Name)
+                    {
+                        name = null;
+                    }
+                }
+                else if (name == mangledTypeName)
+                {
+                    name = null;
+                }
 
-				if ((isInnerClass && RuntimeManagedByteCodeJavaType.PredictReflectiveModifiers(wrapper) != innerClassFlags) || name != null)
-				{
-					// HACK we abuse the InnerClassAttribute to record to real name for non-inner classes as well
-					wrapper.Context.AttributeHelper.SetInnerClass(typeBuilder, name, isInnerClass ? innerClassFlags : wrapper.Modifiers);
-				}
-			}
+                if ((isInnerClass && RuntimeManagedByteCodeJavaType.PredictReflectiveModifiers(wrapper) != innerClassFlags) || name != null)
+                {
+                    // HACK we abuse the InnerClassAttribute to record to real name for non-inner classes as well
+                    wrapper.Context.AttributeHelper.SetInnerClass(typeBuilder, name, isInnerClass ? innerClassFlags : wrapper.Modifiers);
+                }
+            }
 
-			private void AddCliEnum()
-			{
-				ImportClassLoader ccl = wrapper.classLoader;
-				string name = "__Enum";
-				while (!ccl.ReserveName(classFile.Name + "$" + name))
-				{
-					name += "_";
-				}
-				enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, wrapper.Context.Types.Enum);
-				wrapper.Context.AttributeHelper.HideFromJava(enumBuilder);
-				enumBuilder.DefineField("value__", wrapper.Context.Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-				for (int i = 0; i < classFile.Fields.Length; i++)
-				{
-					if (classFile.Fields[i].IsEnum)
-					{
-						FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
-						fieldBuilder.SetConstant(i);
-					}
-				}
-				wrapper.SetEnumType(enumBuilder);
-			}
+            void AddCliEnum()
+            {
+                var ccl = wrapper.classLoader;
+                string name = "__Enum";
+                while (!ccl.ReserveName(classFile.Name + "$" + name))
+                    name += "_";
+
+                enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, wrapper.Context.Types.Enum.AsReflection());
+                wrapper.Context.AttributeHelper.HideFromJava(enumBuilder);
+                enumBuilder.DefineField("value__", wrapper.Context.Types.Int32.AsReflection(), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+                for (int i = 0; i < classFile.Fields.Length; i++)
+                {
+                    if (classFile.Fields[i].IsEnum)
+                    {
+                        FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+                        fieldBuilder.SetConstant(i);
+                    }
+                }
+                wrapper.SetEnumType(enumBuilder);
+            }
 #endif
 
             void AddClinitTrigger()
@@ -686,110 +685,110 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-			private ClassFile.InnerClass getOuterClass()
-			{
-				ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
-				if (innerClasses != null)
-				{
-					for (int j = 0; j < innerClasses.Length; j++)
-					{
-						if (innerClasses[j].innerClass.IsNotNil && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
-						{
-							return innerClasses[j];
-						}
-					}
-				}
-				return new ClassFile.InnerClass();
-			}
+            private ClassFile.InnerClass getOuterClass()
+            {
+                ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
+                if (innerClasses != null)
+                {
+                    for (int j = 0; j < innerClasses.Length; j++)
+                    {
+                        if (innerClasses[j].innerClass.IsNotNil && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
+                        {
+                            return innerClasses[j];
+                        }
+                    }
+                }
+                return new ClassFile.InnerClass();
+            }
 
-			private bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
-			{
-				if (m.ExceptionTable.Length != 0)
-				{
-					noop = false;
-					return false;
-				}
-				noop = true;
-				for (int i = 0; i < m.Instructions.Length; i++)
-				{
-					NormalizedByteCode bc;
-					while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedByteCode.__goto)
-					{
-						int target = m.Instructions[i].TargetIndex;
-						if (target <= i)
-						{
-							// backward branch means we can't do anything
-							noop = false;
-							return false;
-						}
-						// we must skip the unused instructions because the "remove assertions" optimization
-						// uses a goto to remove the (now unused) code
-						i = target;
-					}
-					if (bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
-					{
-						ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
-						if (fld == null || fld.Class != classFile.Name)
-						{
-							noop = false;
-							return false;
-						}
-						// don't allow getstatic to load non-primitive fields, because that would
-						// cause the verifier to try to load the type
-						if (bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
-						{
-							noop = false;
-							return false;
-						}
-						ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
-						if (field == null)
-						{
-							noop = false;
-							return false;
-						}
-						if (bc == NormalizedByteCode.__putstatic)
-						{
-							if (field.IsProperty && field.PropertySetter != null)
-							{
-								noop = false;
-								return false;
-							}
-						}
-						else if (field.IsProperty && field.PropertyGetter != null)
-						{
-							noop = false;
-							return false;
-						}
-					}
-					else if (ByteCodeMetaData.CanThrowException(bc))
-					{
-						noop = false;
-						return false;
-					}
-					else if (bc == NormalizedByteCode.__aconst_null
-						|| (bc == NormalizedByteCode.__iconst && m.Instructions[i].Arg1 == 0)
-						|| bc == NormalizedByteCode.__return
-						|| bc == NormalizedByteCode.__nop)
-					{
-						// valid instructions in a potential noop <clinit>
-					}
-					else
-					{
-						noop = false;
-					}
-				}
-				// the method needs to be verifiable to be side effect free, since we already analysed it,
-				// we know that the verifier won't try to load any types (which isn't allowed at this time)
-				try
-				{
-					wrapper.Context.MethodAnalyzerFactory.Create(null, wrapper, null, classFile, m, wrapper.classLoader);
-					return true;
-				}
-				catch (VerifyError)
-				{
-					return false;
-				}
-			}
+            private bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
+            {
+                if (m.ExceptionTable.Length != 0)
+                {
+                    noop = false;
+                    return false;
+                }
+                noop = true;
+                for (int i = 0; i < m.Instructions.Length; i++)
+                {
+                    NormalizedByteCode bc;
+                    while ((bc = m.Instructions[i].NormalizedOpCode) == NormalizedByteCode.__goto)
+                    {
+                        int target = m.Instructions[i].TargetIndex;
+                        if (target <= i)
+                        {
+                            // backward branch means we can't do anything
+                            noop = false;
+                            return false;
+                        }
+                        // we must skip the unused instructions because the "remove assertions" optimization
+                        // uses a goto to remove the (now unused) code
+                        i = target;
+                    }
+                    if (bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
+                    {
+                        ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
+                        if (fld == null || fld.Class != classFile.Name)
+                        {
+                            noop = false;
+                            return false;
+                        }
+                        // don't allow getstatic to load non-primitive fields, because that would
+                        // cause the verifier to try to load the type
+                        if (bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
+                        {
+                            noop = false;
+                            return false;
+                        }
+                        ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
+                        if (field == null)
+                        {
+                            noop = false;
+                            return false;
+                        }
+                        if (bc == NormalizedByteCode.__putstatic)
+                        {
+                            if (field.IsProperty && field.PropertySetter != null)
+                            {
+                                noop = false;
+                                return false;
+                            }
+                        }
+                        else if (field.IsProperty && field.PropertyGetter != null)
+                        {
+                            noop = false;
+                            return false;
+                        }
+                    }
+                    else if (ByteCodeMetaData.CanThrowException(bc))
+                    {
+                        noop = false;
+                        return false;
+                    }
+                    else if (bc == NormalizedByteCode.__aconst_null
+                        || (bc == NormalizedByteCode.__iconst && m.Instructions[i].Arg1 == 0)
+                        || bc == NormalizedByteCode.__return
+                        || bc == NormalizedByteCode.__nop)
+                    {
+                        // valid instructions in a potential noop <clinit>
+                    }
+                    else
+                    {
+                        noop = false;
+                    }
+                }
+                // the method needs to be verifiable to be side effect free, since we already analysed it,
+                // we know that the verifier won't try to load any types (which isn't allowed at this time)
+                try
+                {
+                    wrapper.Context.MethodAnalyzerFactory.Create(null, wrapper, null, classFile, m, wrapper.classLoader);
+                    return true;
+                }
+                catch (VerifyError)
+                {
+                    return false;
+                }
+            }
 #endif // IMPORTER
 
             private RuntimeJavaMethod GetMethodWrapperDuringCtor(RuntimeJavaType lookup, IList<RuntimeJavaMethod> methods, string name, string sig)
@@ -862,35 +861,34 @@ namespace IKVM.Runtime
 
             private void AddDelegateInvokeStubs(RuntimeJavaType tw, ref RuntimeJavaMethod[] methods)
             {
-                foreach (RuntimeJavaType iface in tw.Interfaces)
+                foreach (var iface in tw.Interfaces)
                 {
-                    if (iface.IsFakeNestedType
-                        && iface.GetMethods().Length == 1
-                        && iface.GetMethods()[0].IsDelegateInvokeWithByRefParameter)
+                    if (iface.IsFakeNestedType &&
+                        iface.GetMethods().Length == 1 &&
+                        iface.GetMethods()[0].IsDelegateInvokeWithByRefParameter)
                     {
-                        RuntimeJavaMethod mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
+                        var mw = new DelegateInvokeStubMethodWrapper(wrapper, iface.DeclaringTypeWrapper.TypeAsBaseType, iface.GetMethods()[0].Signature);
                         if (GetMethodWrapperDuringCtor(wrapper, methods, mw.Name, mw.Signature) == null)
-                        {
                             methods = ArrayUtil.Concat(methods, mw);
-                        }
                     }
+
                     AddDelegateInvokeStubs(iface, ref methods);
                 }
             }
 
 #if IMPORTER
-			private static bool CheckInnerOuterNames(string inner, string outer)
-			{
-				// do some sanity checks on the inner/outer class names
-				return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer, StringComparison.Ordinal);
-			}
+            private static bool CheckInnerOuterNames(string inner, string outer)
+            {
+                // do some sanity checks on the inner/outer class names
+                return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer, StringComparison.Ordinal);
+            }
 
-			private string AllocNestedTypeName(string outer, string inner)
-			{
-				Debug.Assert(CheckInnerOuterNames(inner, outer));
-				nestedTypeNames ??= new ConcurrentDictionary<string, RuntimeJavaType>();
-				return DynamicClassLoaderFactory.TypeNameMangleImpl(nestedTypeNames, inner.Substring(outer.Length + 1), null);
-			}
+            private string AllocNestedTypeName(string outer, string inner)
+            {
+                Debug.Assert(CheckInnerOuterNames(inner, outer));
+                nestedTypeNames ??= new ConcurrentDictionary<string, RuntimeJavaType>();
+                return DynamicClassLoaderFactory.TypeNameMangleImpl(nestedTypeNames, inner.Substring(outer.Length + 1), null);
+            }
 
 #endif
 
@@ -922,7 +920,7 @@ namespace IKVM.Runtime
                     else
                     {
 #if IMPORTER
-						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+                        StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
                         throw new LinkageError("Loader constraints violated");
 #endif
@@ -945,7 +943,7 @@ namespace IKVM.Runtime
                         else
                         {
 #if IMPORTER
-							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
+                            StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
                             throw new LinkageError("Loader constraints violated");
 #endif
@@ -975,63 +973,63 @@ namespace IKVM.Runtime
                 }
                 int fieldIndex = GetFieldIndex(fw);
 #if IMPORTER
-				if (wrapper.ClassLoader.RemoveUnusedFields
-					&& fw.IsPrivate
-					&& fw.IsStatic
-					&& fw.IsFinal
-					&& !fw.IsSerialVersionUID
-					&& classFile.Fields[fieldIndex].Annotations == null
-					&& !classFile.IsReferenced(classFile.Fields[fieldIndex]))
-				{
-					// unused, so we skip it
-					wrapper.ClassLoader.Diagnostics.GenericCompilerInfo($"Unused field {wrapper.Name}::{fw.Name}");
-					return null;
-				}
+                if (wrapper.ClassLoader.RemoveUnusedFields
+                    && fw.IsPrivate
+                    && fw.IsStatic
+                    && fw.IsFinal
+                    && !fw.IsSerialVersionUID
+                    && classFile.Fields[fieldIndex].Annotations == null
+                    && !classFile.IsReferenced(classFile.Fields[fieldIndex]))
+                {
+                    // unused, so we skip it
+                    wrapper.ClassLoader.Diagnostics.GenericCompilerInfo($"Unused field {wrapper.Name}::{fw.Name}");
+                    return null;
+                }
 
-				// for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
-				// order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
-				// using .NET reflection, we sort on metadata token.)
-				if (fieldIndex > 0)
-				{
-					if (!fields[fieldIndex - 1].IsLinked)
-					{
-						for (int i = 0; i < fieldIndex; i++)
-						{
-							fields[i].Link();
-						}
-					}
-				}
+                // for compatibility with broken Java code that assumes that reflection returns the fields in class declaration
+                // order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
+                // using .NET reflection, we sort on metadata token.)
+                if (fieldIndex > 0)
+                {
+                    if (!fields[fieldIndex - 1].IsLinked)
+                    {
+                        for (int i = 0; i < fieldIndex; i++)
+                        {
+                            fields[i].Link();
+                        }
+                    }
+                }
 
-				if (fieldIndex >= classFile.Fields.Length)
-				{
-					// this must be a field defined in map.xml
-					FieldAttributes fieldAttribs = 0;
-					if (fw.IsPublic)
-					{
-						fieldAttribs |= FieldAttributes.Public;
-					}
-					else if (fw.IsProtected)
-					{
-						fieldAttribs |= FieldAttributes.FamORAssem;
-					}
-					else if (fw.IsPrivate)
-					{
-						fieldAttribs |= FieldAttributes.Private;
-					}
-					else
-					{
-						fieldAttribs |= FieldAttributes.Assembly;
-					}
-					if (fw.IsStatic)
-					{
-						fieldAttribs |= FieldAttributes.Static;
-					}
-					if (fw.IsFinal)
-					{
-						fieldAttribs |= FieldAttributes.InitOnly;
-					}
-					return DefineField(fw.Name, fw.FieldTypeWrapper, fieldAttribs, fw.IsVolatile);
-				}
+                if (fieldIndex >= classFile.Fields.Length)
+                {
+                    // this must be a field defined in map.xml
+                    FieldAttributes fieldAttribs = 0;
+                    if (fw.IsPublic)
+                    {
+                        fieldAttribs |= FieldAttributes.Public;
+                    }
+                    else if (fw.IsProtected)
+                    {
+                        fieldAttribs |= FieldAttributes.FamORAssem;
+                    }
+                    else if (fw.IsPrivate)
+                    {
+                        fieldAttribs |= FieldAttributes.Private;
+                    }
+                    else
+                    {
+                        fieldAttribs |= FieldAttributes.Assembly;
+                    }
+                    if (fw.IsStatic)
+                    {
+                        fieldAttribs |= FieldAttributes.Static;
+                    }
+                    if (fw.IsFinal)
+                    {
+                        fieldAttribs |= FieldAttributes.InitOnly;
+                    }
+                    return DefineField(fw.Name, fw.FieldTypeWrapper, fieldAttribs, fw.IsVolatile);
+                }
 #endif // IMPORTER
                 FieldBuilder field;
                 ClassFile.Field fld = classFile.Fields[fieldIndex];
@@ -1043,7 +1041,7 @@ namespace IKVM.Runtime
                 }
                 MethodAttributes methodAttribs = MethodAttributes.HideBySig;
 #if IMPORTER
-				bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
+                bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
                 if (fld.IsPrivate)
                 {
@@ -1083,28 +1081,28 @@ namespace IKVM.Runtime
                 else
                 {
 #if IMPORTER
-					if (wrapper.IsPublic && wrapper.NeedsType2AccessStub(fw))
-					{
-						// this field is going to get a type 2 access stub, so we hide the actual field
-						attribs &= ~FieldAttributes.FieldAccessMask;
-						attribs |= FieldAttributes.Assembly;
-						// instead of adding HideFromJava we rename the field to avoid confusing broken compilers
-						// see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
-						// additional note: now that we maintain the ordering of the fields, we need to recognize
-						// these fields so that we know where to insert the corresponding accessor property FieldWrapper.
-						realFieldName = NamePrefix.Type2AccessStubBackingField + realFieldName;
-					}
-					else if (fld.IsFinal)
-					{
-						if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
-						{
-							attribs |= FieldAttributes.InitOnly;
-						}
-						else
-						{
-							setModifiers = true;
-						}
-					}
+                    if (wrapper.IsPublic && wrapper.NeedsType2AccessStub(fw))
+                    {
+                        // this field is going to get a type 2 access stub, so we hide the actual field
+                        attribs &= ~FieldAttributes.FieldAccessMask;
+                        attribs |= FieldAttributes.Assembly;
+                        // instead of adding HideFromJava we rename the field to avoid confusing broken compilers
+                        // see https://sourceforge.net/tracker/?func=detail&atid=525264&aid=3056721&group_id=69637
+                        // additional note: now that we maintain the ordering of the fields, we need to recognize
+                        // these fields so that we know where to insert the corresponding accessor property FieldWrapper.
+                        realFieldName = NamePrefix.Type2AccessStubBackingField + realFieldName;
+                    }
+                    else if (fld.IsFinal)
+                    {
+                        if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
+                        {
+                            attribs |= FieldAttributes.InitOnly;
+                        }
+                        else
+                        {
+                            setModifiers = true;
+                        }
+                    }
 #else
                     if (fld.IsFinal && wrapper.IsInterface)
                     {
@@ -1120,21 +1118,21 @@ namespace IKVM.Runtime
                     field.SetCustomAttribute(transientAttrib);
                 }
 #if IMPORTER
-				{
-					// if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
-					// the Java modifiers
-					if (setModifiers)
-						wrapper.Context.AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
+                {
+                    // if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
+                    // the Java modifiers
+                    if (setModifiers)
+                        wrapper.Context.AttributeHelper.SetModifiers(field, fld.Modifiers, fld.IsInternal);
 
-					if (fld.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(fld.Annotations))
-						wrapper.Context.AttributeHelper.SetDeprecatedAttribute(field);
+                    if (fld.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(fld.Annotations))
+                        wrapper.Context.AttributeHelper.SetDeprecatedAttribute(field);
 
-					if (fld.GenericSignature != null)
-						wrapper.Context.AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
+                    if (fld.GenericSignature != null)
+                        wrapper.Context.AttributeHelper.SetSignatureAttribute(field, fld.GenericSignature);
 
-					if (fld.RuntimeVisibleTypeAnnotations.Count > 0)
-						wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(field, in fld.RuntimeVisibleTypeAnnotations);
-				}
+                    if (fld.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(field, in fld.RuntimeVisibleTypeAnnotations);
+                }
 #endif
 
                 return field;
@@ -1142,7 +1140,7 @@ namespace IKVM.Runtime
 
             FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
             {
-                var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : Type.EmptyTypes;
+                var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : [];
                 return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
             }
 
@@ -1258,53 +1256,53 @@ namespace IKVM.Runtime
                         }
                         innerClassesTypeWrappers = wrappers.ToArray();
 #if IMPORTER
-						// before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
-						foreach (var tw in innerClassesTypeWrappers)
-						{
-							var dtw = tw as RuntimeByteCodeJavaType;
-							if (dtw != null)
-							{
-								var impl = dtw.impl as JavaTypeImpl;
-								if (impl != null)
-									if (impl.annotationBuilder != null)
-										impl.annotationBuilder.Link();
-							}
-						}
+                        // before we bake our type, we need to link any inner annotations to allow them to create their attribute type (as a nested type)
+                        foreach (var tw in innerClassesTypeWrappers)
+                        {
+                            var dtw = tw as RuntimeByteCodeJavaType;
+                            if (dtw != null)
+                            {
+                                var impl = dtw.impl as JavaTypeImpl;
+                                if (impl != null)
+                                    if (impl.annotationBuilder != null)
+                                        impl.annotationBuilder.Link();
+                            }
+                        }
 #endif
                     }
 #if IMPORTER
 
-					if (annotationBuilder != null)
-					{
-						var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).AsReflection().GetConstructor(new Type[] { wrapper.Context.Types.String }), new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
-						typeBuilder.SetCustomAttribute(cab);
-					}
+                    if (annotationBuilder != null)
+                    {
+                        var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).AsReflection().GetConstructor(new Type[] { wrapper.Context.Types.String }), new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
+                        typeBuilder.SetCustomAttribute(cab);
+                    }
 
-					if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
-					{
-						// mark all exceptions that are unsafe for mapping with a custom attribute,
-						// so that at runtime we can quickly assertain if an exception type can be
-						// caught without filtering
-						wrapper.Context.AttributeHelper.SetExceptionIsUnsafeForMapping(typeBuilder);
-					}
+                    if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
+                    {
+                        // mark all exceptions that are unsafe for mapping with a custom attribute,
+                        // so that at runtime we can quickly assertain if an exception type can be
+                        // caught without filtering
+                        wrapper.Context.AttributeHelper.SetExceptionIsUnsafeForMapping(typeBuilder);
+                    }
 #endif
 
                     var context = new FinishContext(wrapper.Context, host, classFile, wrapper, typeBuilder);
                     var type = context.FinishImpl();
 
 #if IMPORTER
-					if (annotationBuilder != null)
-					{
-						annotationBuilder.Finish(this);
-					}
-					if (enumBuilder != null)
-					{
-						enumBuilder.CreateType();
-					}
-					if (privateInterfaceMethods != null)
-					{
-						privateInterfaceMethods.CreateType();
-					}
+                    if (annotationBuilder != null)
+                    {
+                        annotationBuilder.Finish(this);
+                    }
+                    if (enumBuilder != null)
+                    {
+                        enumBuilder.CreateType();
+                    }
+                    if (privateInterfaceMethods != null)
+                    {
+                        privateInterfaceMethods.CreateType();
+                    }
 #endif
                     var finishedClinitMethod = (MethodInfo)clinitMethod;
 #if !IMPORTER
@@ -1333,565 +1331,568 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-			private bool IsValidAnnotationElementType(string type)
-			{
-				if (type[0] == '[')
-					type = type.Substring(1);
+            private bool IsValidAnnotationElementType(string type)
+            {
+                if (type[0] == '[')
+                    type = type.Substring(1);
 
-				switch (type)
-				{
-					case "Z":
-					case "B":
-					case "S":
-					case "C":
-					case "I":
-					case "J":
-					case "F":
-					case "D":
-					case "Ljava.lang.String;":
-					case "Ljava.lang.Class;":
-						return true;
-				}
+                switch (type)
+                {
+                    case "Z":
+                    case "B":
+                    case "S":
+                    case "C":
+                    case "I":
+                    case "J":
+                    case "F":
+                    case "D":
+                    case "Ljava.lang.String;":
+                    case "Ljava.lang.Class;":
+                        return true;
+                }
 
-				if (type.StartsWith("L") && type.EndsWith(";"))
-				{
-					try
-					{
-						var tw = wrapper.ClassLoader.TryLoadClassByName(type.Substring(1, type.Length - 2));
-						if (tw != null)
-						{
-							if ((tw.Modifiers & Modifiers.Annotation) != 0)
-								return true;
+                if (type.StartsWith("L") && type.EndsWith(";"))
+                {
+                    try
+                    {
+                        var tw = wrapper.ClassLoader.TryLoadClassByName(type.Substring(1, type.Length - 2));
+                        if (tw != null)
+                        {
+                            if ((tw.Modifiers & Modifiers.Annotation) != 0)
+                                return true;
 
-							if ((tw.Modifiers & Modifiers.Enum) != 0)
-							{
-								var enumType = wrapper.Context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("java.lang.Enum");
-								if (enumType != null && tw.IsSubTypeOf(enumType))
-									return true;
-							}
-						}
-					}
-					catch
-					{
+                            if ((tw.Modifiers & Modifiers.Enum) != 0)
+                            {
+                                var enumType = wrapper.Context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("java.lang.Enum");
+                                if (enumType != null && tw.IsSubTypeOf(enumType))
+                                    return true;
+                            }
+                        }
+                    }
+                    catch
+                    {
 
-					}
-				}
+                    }
+                }
 
-				return false;
-			}
+                return false;
+            }
 
-			sealed class AnnotationBuilder : Annotation
-			{
+            sealed class AnnotationBuilder : Annotation
+            {
 
-				readonly RuntimeContext context;
+                readonly RuntimeContext context;
 
-				JavaTypeImpl impl;
-				TypeBuilder outer;
-				TypeBuilder annotationTypeBuilder;
-				TypeBuilder attributeTypeBuilder;
-				MethodBuilder defineConstructor;
+                JavaTypeImpl impl;
+                TypeBuilder outer;
+                TypeBuilder annotationTypeBuilder;
+                TypeBuilder attributeTypeBuilder;
+                MethodBuilder defineConstructor;
 
-				/// <summary>
-				/// Initializes a new instance.
-				/// </summary>
-				/// <param name="context"></param>
-				/// <param name="o"></param>
-				/// <param name="outer"></param>
-				internal AnnotationBuilder(RuntimeContext context, JavaTypeImpl o, TypeBuilder outer)
-				{
-					this.context = context;
-					this.impl = o;
-					this.outer = outer;
-				}
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="context"></param>
+                /// <param name="o"></param>
+                /// <param name="outer"></param>
+                internal AnnotationBuilder(RuntimeContext context, JavaTypeImpl o, TypeBuilder outer)
+                {
+                    this.context = context;
+                    this.impl = o;
+                    this.outer = outer;
+                }
 
-				internal void Link()
-				{
-					if (impl == null)
-					{
-						return;
-					}
-					JavaTypeImpl o = impl;
-					impl = null;
+                internal void Link()
+                {
+                    if (impl == null)
+                    {
+                        return;
+                    }
+                    JavaTypeImpl o = impl;
+                    impl = null;
 
-					// Make sure the annotation type only has valid methods
-					for (int i = 0; i < o.methods.Length; i++)
-					{
-						if (!o.methods[i].IsStatic)
-						{
-							if (!o.methods[i].Signature.StartsWith("()"))
-							{
-								return;
-							}
-							if (!o.IsValidAnnotationElementType(o.methods[i].Signature.Substring(2)))
-							{
-								return;
-							}
-						}
-					}
+                    // Make sure the annotation type only has valid methods
+                    for (int i = 0; i < o.methods.Length; i++)
+                    {
+                        if (!o.methods[i].IsStatic)
+                        {
+                            if (!o.methods[i].Signature.StartsWith("()"))
+                            {
+                                return;
+                            }
+                            if (!o.IsValidAnnotationElementType(o.methods[i].Signature.Substring(2)))
+                            {
+                                return;
+                            }
+                        }
+                    }
 
-					// we only set annotationTypeBuilder if we're valid
-					annotationTypeBuilder = o.typeBuilder;
+                    // we only set annotationTypeBuilder if we're valid
+                    annotationTypeBuilder = o.typeBuilder;
 
-					var annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    var annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
 
-					// make sure we don't clash with another class name
-					var ccl = o.wrapper.classLoader;
-					string name = UnicodeUtil.EscapeInvalidSurrogates(o.classFile.Name);
-					while (!ccl.ReserveName(name + "Attribute"))
-					{
-						name += "_";
-					}
+                    // make sure we don't clash with another class name
+                    var ccl = o.wrapper.classLoader;
+                    string name = UnicodeUtil.EscapeInvalidSurrogates(o.classFile.Name);
+                    while (!ccl.ReserveName(name + "Attribute"))
+                    {
+                        name += "_";
+                    }
 
-					var typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
-					if (o.enclosingClassWrapper != null)
-					{
-						if (o.wrapper.IsPublic)
-						{
-							typeAttributes |= TypeAttributes.NestedPublic;
-						}
-						else
-						{
-							typeAttributes |= TypeAttributes.NestedAssembly;
-						}
-						attributeTypeBuilder = outer.DefineNestedType(o.AllocNestedTypeName(o.enclosingClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
-					}
-					else
-					{
-						if (o.wrapper.IsPublic)
-						{
-							typeAttributes |= TypeAttributes.Public;
-						}
-						else
-						{
-							typeAttributes |= TypeAttributes.NotPublic;
-						}
-						attributeTypeBuilder = o.wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
-					}
-					if (o.wrapper.IsPublic)
-					{
-						// In the Java world, the class appears as a non-public proxy class
-						context.AttributeHelper.SetModifiers(attributeTypeBuilder, Modifiers.Final, false);
-					}
+                    var typeAttributes = TypeAttributes.Class | TypeAttributes.Sealed;
+                    if (o.enclosingClassWrapper != null)
+                    {
+                        if (o.wrapper.IsPublic)
+                        {
+                            typeAttributes |= TypeAttributes.NestedPublic;
+                        }
+                        else
+                        {
+                            typeAttributes |= TypeAttributes.NestedAssembly;
+                        }
+                        attributeTypeBuilder = outer.DefineNestedType(o.AllocNestedTypeName(o.enclosingClassWrapper.Name, name + "Attribute"), typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+                    }
+                    else
+                    {
+                        if (o.wrapper.IsPublic)
+                        {
+                            typeAttributes |= TypeAttributes.Public;
+                        }
+                        else
+                        {
+                            typeAttributes |= TypeAttributes.NotPublic;
+                        }
+                        attributeTypeBuilder = o.wrapper.classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name + "Attribute", typeAttributes, annotationAttributeBaseType.TypeAsBaseType);
+                    }
+                    if (o.wrapper.IsPublic)
+                    {
+                        // In the Java world, the class appears as a non-public proxy class
+                        context.AttributeHelper.SetModifiers(attributeTypeBuilder, Modifiers.Final, false);
+                    }
 
-					// NOTE we "abuse" the InnerClassAttribute to add a custom attribute to name the class "$Proxy[Annotation]" in the Java world
-					int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
-					context.AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
-					attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
-					context.AttributeHelper.SetImplementsAttribute(attributeTypeBuilder, new RuntimeJavaType[] { o.wrapper });
+                    // NOTE we "abuse" the InnerClassAttribute to add a custom attribute to name the class "$Proxy[Annotation]" in the Java world
+                    int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
+                    context.AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
+                    attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
+                    context.AttributeHelper.SetImplementsAttribute(attributeTypeBuilder, new RuntimeJavaType[] { o.wrapper });
 
-					if (o.classFile.Annotations != null)
-					{
-						CustomAttributeBuilder attributeUsageAttribute = null;
-						bool hasAttributeUsageAttribute = false;
-						foreach (object[] def in o.classFile.Annotations)
-						{
-							if (def[1].Equals("Ljava/lang/annotation/Target;") && !hasAttributeUsageAttribute)
-							{
-								for (int i = 2; i < def.Length; i += 2)
-								{
-									if (def[i].Equals("value"))
-									{
-										object[] val = def[i + 1] as object[];
-										if (val != null
-											&& val.Length > 0
-											&& val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
-										{
-											AttributeTargets targets = 0;
-											for (int j = 1; j < val.Length; j++)
-											{
-												object[] eval = val[j] as object[];
-												if (eval != null
-													&& eval.Length == 3
-													&& eval[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
-													&& eval[1].Equals("Ljava/lang/annotation/ElementType;"))
-												{
-													switch ((string)eval[2])
-													{
-														case "ANNOTATION_TYPE":
-															targets |= AttributeTargets.Interface;
-															break;
-														case "CONSTRUCTOR":
-															targets |= AttributeTargets.Constructor;
-															break;
-														case "FIELD":
-															targets |= AttributeTargets.Field;
-															break;
-														case "LOCAL_VARIABLE":
-															break;
-														case "METHOD":
-															targets |= AttributeTargets.Method;
-															break;
-														case "PACKAGE":
-															targets |= AttributeTargets.Interface;
-															break;
-														case "PARAMETER":
-															targets |= AttributeTargets.Parameter;
-															break;
-														case "TYPE":
-															targets |= AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Delegate | AttributeTargets.Enum;
-															break;
-													}
-												}
-											}
+                    if (o.classFile.Annotations != null)
+                    {
+                        CustomAttributeBuilder attributeUsageAttribute = null;
+                        bool hasAttributeUsageAttribute = false;
+                        foreach (object[] def in o.classFile.Annotations)
+                        {
+                            if (def[1].Equals("Ljava/lang/annotation/Target;") && !hasAttributeUsageAttribute)
+                            {
+                                for (int i = 2; i < def.Length; i += 2)
+                                {
+                                    if (def[i].Equals("value"))
+                                    {
+                                        object[] val = def[i + 1] as object[];
+                                        if (val != null
+                                            && val.Length > 0
+                                            && val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
+                                        {
+                                            AttributeTargets targets = 0;
+                                            for (int j = 1; j < val.Length; j++)
+                                            {
+                                                object[] eval = val[j] as object[];
+                                                if (eval != null
+                                                    && eval.Length == 3
+                                                    && eval[0].Equals(AnnotationDefaultAttribute.TAG_ENUM)
+                                                    && eval[1].Equals("Ljava/lang/annotation/ElementType;"))
+                                                {
+                                                    switch ((string)eval[2])
+                                                    {
+                                                        case "ANNOTATION_TYPE":
+                                                            targets |= AttributeTargets.Interface;
+                                                            break;
+                                                        case "CONSTRUCTOR":
+                                                            targets |= AttributeTargets.Constructor;
+                                                            break;
+                                                        case "FIELD":
+                                                            targets |= AttributeTargets.Field;
+                                                            break;
+                                                        case "LOCAL_VARIABLE":
+                                                            break;
+                                                        case "METHOD":
+                                                            targets |= AttributeTargets.Method;
+                                                            break;
+                                                        case "PACKAGE":
+                                                            targets |= AttributeTargets.Interface;
+                                                            break;
+                                                        case "PARAMETER":
+                                                            targets |= AttributeTargets.Parameter;
+                                                            break;
+                                                        case "TYPE":
+                                                            targets |= AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Delegate | AttributeTargets.Enum;
+                                                            break;
+                                                    }
+                                                }
+                                            }
 
-											attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]).AsReflection(), [targets]);
-										}
-									}
-								}
-							}
-							else
-							{
-								// apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
-								// (for example, to allow AttributeUsageAttribute to be overridden)
-								Annotation annotation = Annotation.Load(o.wrapper, def);
-								if (annotation != null && annotation.IsCustomAttribute)
-								{
-									annotation.Apply(o.wrapper.ClassLoader, attributeTypeBuilder, def);
-								}
-								if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
-								{
-									hasAttributeUsageAttribute = true;
-								}
-							}
-						}
-						if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
-						{
-							attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
-						}
-					}
+                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]).AsReflection(), [targets]);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
+                                // (for example, to allow AttributeUsageAttribute to be overridden)
+                                Annotation annotation = Annotation.Load(o.wrapper, def);
+                                if (annotation != null && annotation.IsCustomAttribute)
+                                {
+                                    annotation.Apply(o.wrapper.ClassLoader, attributeTypeBuilder, def);
+                                }
+                                if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
+                                {
+                                    hasAttributeUsageAttribute = true;
+                                }
+                            }
+                        }
+                        if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
+                        {
+                            attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
+                        }
+                    }
 
-					defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType().AsReflection() });
-					context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
-				}
+                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType().AsReflection() });
+                    context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
+                }
 
-				private static Type TypeWrapperToAnnotationParameterType(RuntimeJavaType tw)
-				{
-					bool isArray = false;
-					if (tw.IsArray)
-					{
-						isArray = true;
-						tw = tw.ElementTypeWrapper;
-					}
-					if (tw.Annotation != null)
-					{
-						// we don't support Annotation args
-						return null;
-					}
-					else
-					{
-						Type argType;
-						if (tw == tw.Context.JavaBase.TypeOfJavaLangClass)
-						{
-							argType = tw.Context.Types.Type;
-						}
-						else if (tw.EnumType != null)   // is it a Java enum?
-						{
-							argType = tw.EnumType;
-						}
-						else if (IsDotNetEnum(tw))
-						{
-							argType = tw.DeclaringTypeWrapper.TypeAsSignatureType;
-						}
-						else
-						{
-							argType = tw.TypeAsSignatureType;
-						}
-						if (isArray)
-						{
-							argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
-						}
-						return argType;
-					}
-				}
+                private static Type TypeWrapperToAnnotationParameterType(RuntimeJavaType tw)
+                {
+                    bool isArray = false;
+                    if (tw.IsArray)
+                    {
+                        isArray = true;
+                        tw = tw.ElementTypeWrapper;
+                    }
+                    if (tw.Annotation != null)
+                    {
+                        // we don't support Annotation args
+                        return null;
+                    }
+                    else
+                    {
+                        Type argType;
+                        if (tw == tw.Context.JavaBase.TypeOfJavaLangClass)
+                        {
+                            argType = tw.Context.Types.Type;
+                        }
+                        else if (tw.EnumType != null)   // is it a Java enum?
+                        {
+                            argType = tw.EnumType;
+                        }
+                        else if (IsDotNetEnum(tw))
+                        {
+                            argType = tw.DeclaringTypeWrapper.TypeAsSignatureType;
+                        }
+                        else
+                        {
+                            argType = tw.TypeAsSignatureType;
+                        }
+                        if (isArray)
+                        {
+                            argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
+                        }
+                        return argType;
+                    }
+                }
 
-				private static bool IsDotNetEnum(RuntimeJavaType tw)
-				{
-					return tw.IsFakeNestedType && (tw.Modifiers & Modifiers.Enum) != 0;
-				}
+                private static bool IsDotNetEnum(RuntimeJavaType tw)
+                {
+                    return tw.IsFakeNestedType && (tw.Modifiers & Modifiers.Enum) != 0;
+                }
 
-				internal string AttributeTypeName
-				{
-					get
-					{
-						Link();
-						if (attributeTypeBuilder != null)
-						{
-							return attributeTypeBuilder.FullName;
-						}
-						return null;
-					}
-				}
+                internal string AttributeTypeName
+                {
+                    get
+                    {
+                        Link();
+                        if (attributeTypeBuilder != null)
+                        {
+                            return attributeTypeBuilder.FullName;
+                        }
+                        return null;
+                    }
+                }
 
-				private static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
-				{
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Ldstr, name);
-					ilgen.EmitLdarg(argIndex);
-					if (tw.TypeAsSignatureType.IsValueType)
-					{
-						ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
-					}
-					else if (tw.EnumType != null)   // is it a Java enum?
-					{
-						ilgen.Emit(OpCodes.Box, tw.EnumType);
-					}
-					else if (IsDotNetEnum(tw))
-					{
-						ilgen.Emit(OpCodes.Box, tw.DeclaringTypeWrapper.TypeAsSignatureType);
-					}
-					var setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
-					setValueMethod.Link();
-					setValueMethod.EmitCall(ilgen);
-				}
+                private static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
+                {
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    ilgen.Emit(OpCodes.Ldstr, name);
+                    ilgen.EmitLdarg(argIndex);
+                    if (tw.TypeAsSignatureType.IsValueType)
+                    {
+                        ilgen.Emit(OpCodes.Box, tw.TypeAsSignatureType);
+                    }
+                    else if (tw.EnumType != null)   // is it a Java enum?
+                    {
+                        ilgen.Emit(OpCodes.Box, tw.EnumType);
+                    }
+                    else if (IsDotNetEnum(tw))
+                    {
+                        ilgen.Emit(OpCodes.Box, tw.DeclaringTypeWrapper.TypeAsSignatureType);
+                    }
+                    var setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
+                    setValueMethod.Link();
+                    setValueMethod.EmitCall(ilgen);
+                }
 
-				internal void Finish(JavaTypeImpl o)
-				{
-					Link();
-					if (annotationTypeBuilder == null)
-					{
-						// not a valid annotation type
-						return;
-					}
-					RuntimeJavaType annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
-					annotationAttributeBaseType.Finish();
+                internal void Finish(JavaTypeImpl o)
+                {
+                    Link();
 
-					int requiredArgCount = 0;
-					int valueArg = -1;
-					bool unsupported = false;
-					for (int i = 0; i < o.methods.Length; i++)
-					{
-						if (!o.methods[i].IsStatic)
-						{
-							if (valueArg == -1 && o.methods[i].Name == "value")
-							{
-								valueArg = i;
-							}
-							if (o.classFile.Methods[i].AnnotationDefault == null)
-							{
-								if (TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType) == null)
-								{
-									unsupported = true;
-									break;
-								}
-								requiredArgCount++;
-							}
-						}
-					}
+                    // not a valid annotation type
+                    if (annotationTypeBuilder == null)
+                        return;
 
-					MethodBuilder defaultConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, unsupported || requiredArgCount > 0 ? MethodAttributes.Private : MethodAttributes.Public, Type.EmptyTypes);
-					CodeEmitter ilgen;
+                    var annotationAttributeBaseType = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.AnnotationAttributeBase");
+                    annotationAttributeBaseType.Finish();
 
-					if (!unsupported)
-					{
-						if (requiredArgCount > 0)
-						{
-							Type[] args = new Type[requiredArgCount];
-							for (int i = 0, j = 0; i < o.methods.Length; i++)
-							{
-								if (!o.methods[i].IsStatic)
-								{
-									if (o.classFile.Methods[i].AnnotationDefault == null)
-									{
-										args[j++] = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
-									}
-								}
-							}
-							MethodBuilder reqArgConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, args);
-							context.AttributeHelper.HideFromJava(reqArgConstructor);
-							ilgen = context.CodeEmitterFactory.Create(reqArgConstructor);
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Call, defaultConstructor);
-							for (int i = 0, j = 0; i < o.methods.Length; i++)
-							{
-								if (!o.methods[i].IsStatic)
-								{
-									if (o.classFile.Methods[i].AnnotationDefault == null)
-									{
-										reqArgConstructor.DefineParameter(++j, ParameterAttributes.None, o.methods[i].Name);
-										EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, j);
-									}
-								}
-							}
-							ilgen.Emit(OpCodes.Ret);
-							ilgen.DoEmit();
-						}
-						else if (valueArg != -1)
-						{
-							// We don't have any required parameters, but we do have an optional "value" parameter,
-							// so we create an additional constructor (the default constructor will be public in this case)
-							// that accepts the value parameter.
-							Type argType = TypeWrapperToAnnotationParameterType(o.methods[valueArg].ReturnType);
-							if (argType != null)
-							{
-								MethodBuilder cb = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { argType });
-								context.AttributeHelper.HideFromJava(cb);
-								cb.DefineParameter(1, ParameterAttributes.None, "value");
-								ilgen = context.CodeEmitterFactory.Create(cb);
-								ilgen.Emit(OpCodes.Ldarg_0);
-								ilgen.Emit(OpCodes.Call, defaultConstructor);
-								EmitSetValueCall(annotationAttributeBaseType, ilgen, "value", o.methods[valueArg].ReturnType, 1);
-								ilgen.Emit(OpCodes.Ret);
-								ilgen.DoEmit();
-							}
-						}
-					}
+                    var requiredArgCount = 0;
+                    var valueArg = -1;
+                    var unsupported = false;
+                    for (int i = 0; i < o.methods.Length; i++)
+                    {
+                        if (!o.methods[i].IsStatic)
+                        {
+                            if (valueArg == -1 && o.methods[i].Name == "value")
+                                valueArg = i;
 
-					ilgen = context.CodeEmitterFactory.Create(defaultConstructor);
-					ilgen.Emit(OpCodes.Ldarg_0);
-					o.wrapper.EmitClassLiteral(ilgen);
-					annotationAttributeBaseType.GetMethodWrapper("<init>", "(Ljava.lang.Class;)V", false).EmitCall(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-					ilgen.DoEmit();
+                            if (o.classFile.Methods[i].AnnotationDefault == null)
+                            {
+                                if (TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType) == null)
+                                {
+                                    unsupported = true;
+                                    break;
+                                }
 
-					ilgen = context.CodeEmitterFactory.Create(defineConstructor);
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Call, defaultConstructor);
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Ldarg_1);
-					annotationAttributeBaseType.GetMethodWrapper("setDefinition", "([Ljava.lang.Object;)V", false).EmitCall(ilgen);
-					ilgen.Emit(OpCodes.Ret);
-					ilgen.DoEmit();
+                                requiredArgCount++;
+                            }
+                        }
+                    }
 
-					var getValueMethod = annotationAttributeBaseType.GetMethodWrapper("getValue", "(Ljava.lang.String;)Ljava.lang.Object;", false);
-					var getByteValueMethod = annotationAttributeBaseType.GetMethodWrapper("getByteValue", "(Ljava.lang.String;)B", false);
-					var getBooleanValueMethod = annotationAttributeBaseType.GetMethodWrapper("getBooleanValue", "(Ljava.lang.String;)Z", false);
-					var getCharValueMethod = annotationAttributeBaseType.GetMethodWrapper("getCharValue", "(Ljava.lang.String;)C", false);
-					var getShortValueMethod = annotationAttributeBaseType.GetMethodWrapper("getShortValue", "(Ljava.lang.String;)S", false);
-					var getIntValueMethod = annotationAttributeBaseType.GetMethodWrapper("getIntValue", "(Ljava.lang.String;)I", false);
-					var getFloatValueMethod = annotationAttributeBaseType.GetMethodWrapper("getFloatValue", "(Ljava.lang.String;)F", false);
-					var getLongValueMethod = annotationAttributeBaseType.GetMethodWrapper("getLongValue", "(Ljava.lang.String;)J", false);
-					var getDoubleValueMethod = annotationAttributeBaseType.GetMethodWrapper("getDoubleValue", "(Ljava.lang.String;)D", false);
-					for (int i = 0; i < o.methods.Length; i++)
-					{
-						// skip <clinit> and non-virtual interface methods introduced in Java 8
-						if (o.methods[i].IsVirtual)
-						{
-							MethodBuilder mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper, attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
-							attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
-							ilgen = context.CodeEmitterFactory.Create(mb);
-							ilgen.Emit(OpCodes.Ldarg_0);
-							ilgen.Emit(OpCodes.Ldstr, o.methods[i].Name);
-							if (o.methods[i].ReturnType.IsPrimitive)
-							{
-								if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.BYTE)
-								{
-									getByteValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.BOOLEAN)
-								{
-									getBooleanValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.CHAR)
-								{
-									getCharValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.SHORT)
-								{
-									getShortValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.INT)
-								{
-									getIntValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.FLOAT)
-								{
-									getFloatValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.LONG)
-								{
-									getLongValueMethod.EmitCall(ilgen);
-								}
-								else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.DOUBLE)
-								{
-									getDoubleValueMethod.EmitCall(ilgen);
-								}
-								else
-								{
-									throw new InvalidOperationException();
-								}
-							}
-							else
-							{
-								getValueMethod.EmitCall(ilgen);
-								o.methods[i].ReturnType.EmitCheckcast(ilgen);
-							}
-							ilgen.Emit(OpCodes.Ret);
-							ilgen.DoEmit();
+                    var defaultConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, unsupported || requiredArgCount > 0 ? MethodAttributes.Private : MethodAttributes.Public, []);
+                    CodeEmitter ilgen;
 
-							if (o.classFile.Methods[i].AnnotationDefault != null
-								&& !(o.methods[i].Name == "value" && requiredArgCount == 0))
-							{
-								// now add a .NET property for this annotation optional parameter
-								Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
-								if (argType != null)
-								{
-									PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, Type.EmptyTypes);
-									context.AttributeHelper.HideFromJava(pb);
-									MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, context.Types.Void, new Type[] { argType });
-									context.AttributeHelper.HideFromJava(setter);
-									pb.SetSetMethod(setter);
-									ilgen = context.CodeEmitterFactory.Create(setter);
-									EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
-									ilgen.Emit(OpCodes.Ret);
-									ilgen.DoEmit();
-									MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, Type.EmptyTypes);
-									context.AttributeHelper.HideFromJava(getter);
-									pb.SetGetMethod(getter);
-									// TODO implement the getter method
-									ilgen = context.CodeEmitterFactory.Create(getter);
-									ilgen.ThrowException(context.Resolver.ResolveCoreType(typeof(NotImplementedException).FullName).AsReflection());
-									ilgen.DoEmit();
-								}
-							}
-						}
-					}
-					attributeTypeBuilder.CreateType();
-				}
+                    if (!unsupported)
+                    {
+                        if (requiredArgCount > 0)
+                        {
+                            var args = new Type[requiredArgCount];
+                            for (int i = 0, j = 0; i < o.methods.Length; i++)
+                            {
+                                if (!o.methods[i].IsStatic)
+                                {
+                                    if (o.classFile.Methods[i].AnnotationDefault == null)
+                                    {
+                                        args[j++] = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
+                                    }
+                                }
+                            }
 
-				private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
-				{
-					Link();
-					ConstructorInfo ctor = defineConstructor != null
-						? defineConstructor.__AsConstructorInfo()
-						: context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection().GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
-					return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
-				}
+                            var reqArgConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, args);
+                            context.AttributeHelper.HideFromJava(reqArgConstructor);
+                            ilgen = context.CodeEmitterFactory.Create(reqArgConstructor);
+                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(OpCodes.Call, defaultConstructor);
 
-				internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
-				{
-					tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                            for (int i = 0, j = 0; i < o.methods.Length; i++)
+                            {
+                                if (!o.methods[i].IsStatic)
+                                {
+                                    if (o.classFile.Methods[i].AnnotationDefault == null)
+                                    {
+                                        reqArgConstructor.DefineParameter(++j, ParameterAttributes.None, o.methods[i].Name);
+                                        EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, j);
+                                    }
+                                }
+                            }
 
-				internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
-				{
-					mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.DoEmit();
+                        }
+                        else if (valueArg != -1)
+                        {
+                            // We don't have any required parameters, but we do have an optional "value" parameter,
+                            // so we create an additional constructor (the default constructor will be public in this case)
+                            // that accepts the value parameter.
+                            Type argType = TypeWrapperToAnnotationParameterType(o.methods[valueArg].ReturnType);
+                            if (argType != null)
+                            {
+                                MethodBuilder cb = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { argType });
+                                context.AttributeHelper.HideFromJava(cb);
+                                cb.DefineParameter(1, ParameterAttributes.None, "value");
+                                ilgen = context.CodeEmitterFactory.Create(cb);
+                                ilgen.Emit(OpCodes.Ldarg_0);
+                                ilgen.Emit(OpCodes.Call, defaultConstructor);
+                                EmitSetValueCall(annotationAttributeBaseType, ilgen, "value", o.methods[valueArg].ReturnType, 1);
+                                ilgen.Emit(OpCodes.Ret);
+                                ilgen.DoEmit();
+                            }
+                        }
+                    }
 
-				internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
-				{
-					fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                    ilgen = context.CodeEmitterFactory.Create(defaultConstructor);
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    o.wrapper.EmitClassLiteral(ilgen);
+                    annotationAttributeBaseType.GetMethodWrapper("<init>", "(Ljava.lang.Class;)V", false).EmitCall(ilgen);
+                    ilgen.Emit(OpCodes.Ret);
+                    ilgen.DoEmit();
 
-				internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
-				{
-					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                    ilgen = context.CodeEmitterFactory.Create(defineConstructor);
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    ilgen.Emit(OpCodes.Call, defaultConstructor);
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    ilgen.Emit(OpCodes.Ldarg_1);
+                    annotationAttributeBaseType.GetMethodWrapper("setDefinition", "([Ljava.lang.Object;)V", false).EmitCall(ilgen);
+                    ilgen.Emit(OpCodes.Ret);
+                    ilgen.DoEmit();
 
-				internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
-				{
-					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                    var getValueMethod = annotationAttributeBaseType.GetMethodWrapper("getValue", "(Ljava.lang.String;)Ljava.lang.Object;", false);
+                    var getByteValueMethod = annotationAttributeBaseType.GetMethodWrapper("getByteValue", "(Ljava.lang.String;)B", false);
+                    var getBooleanValueMethod = annotationAttributeBaseType.GetMethodWrapper("getBooleanValue", "(Ljava.lang.String;)Z", false);
+                    var getCharValueMethod = annotationAttributeBaseType.GetMethodWrapper("getCharValue", "(Ljava.lang.String;)C", false);
+                    var getShortValueMethod = annotationAttributeBaseType.GetMethodWrapper("getShortValue", "(Ljava.lang.String;)S", false);
+                    var getIntValueMethod = annotationAttributeBaseType.GetMethodWrapper("getIntValue", "(Ljava.lang.String;)I", false);
+                    var getFloatValueMethod = annotationAttributeBaseType.GetMethodWrapper("getFloatValue", "(Ljava.lang.String;)F", false);
+                    var getLongValueMethod = annotationAttributeBaseType.GetMethodWrapper("getLongValue", "(Ljava.lang.String;)J", false);
+                    var getDoubleValueMethod = annotationAttributeBaseType.GetMethodWrapper("getDoubleValue", "(Ljava.lang.String;)D", false);
+                    for (int i = 0; i < o.methods.Length; i++)
+                    {
+                        // skip <clinit> and non-virtual interface methods introduced in Java 8
+                        if (o.methods[i].IsVirtual)
+                        {
+                            MethodBuilder mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper, attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
+                            attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
+                            ilgen = context.CodeEmitterFactory.Create(mb);
+                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(OpCodes.Ldstr, o.methods[i].Name);
+                            if (o.methods[i].ReturnType.IsPrimitive)
+                            {
+                                if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.BYTE)
+                                {
+                                    getByteValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.BOOLEAN)
+                                {
+                                    getBooleanValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.CHAR)
+                                {
+                                    getCharValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.SHORT)
+                                {
+                                    getShortValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.INT)
+                                {
+                                    getIntValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.FLOAT)
+                                {
+                                    getFloatValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.LONG)
+                                {
+                                    getLongValueMethod.EmitCall(ilgen);
+                                }
+                                else if (o.methods[i].ReturnType == context.PrimitiveJavaTypeFactory.DOUBLE)
+                                {
+                                    getDoubleValueMethod.EmitCall(ilgen);
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException();
+                                }
+                            }
+                            else
+                            {
+                                getValueMethod.EmitCall(ilgen);
+                                o.methods[i].ReturnType.EmitCheckcast(ilgen);
+                            }
+                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.DoEmit();
 
-				internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
-				{
-					pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-				}
+                            if (o.classFile.Methods[i].AnnotationDefault != null
+                                && !(o.methods[i].Name == "value" && requiredArgCount == 0))
+                            {
+                                // now add a .NET property for this annotation optional parameter
+                                Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
+                                if (argType != null)
+                                {
+                                    PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, []);
+                                    context.AttributeHelper.HideFromJava(pb);
+                                    MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, context.Types.Void, new Type[] { argType });
+                                    context.AttributeHelper.HideFromJava(setter);
+                                    pb.SetSetMethod(setter);
+                                    ilgen = context.CodeEmitterFactory.Create(setter);
+                                    EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
+                                    ilgen.Emit(OpCodes.Ret);
+                                    ilgen.DoEmit();
+                                    MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, []);
+                                    context.AttributeHelper.HideFromJava(getter);
+                                    pb.SetGetMethod(getter);
+                                    // TODO implement the getter method
+                                    ilgen = context.CodeEmitterFactory.Create(getter);
+                                    ilgen.ThrowException(context.Resolver.ResolveCoreType(typeof(NotImplementedException).FullName).AsReflection());
+                                    ilgen.DoEmit();
+                                }
+                            }
+                        }
+                    }
+                    attributeTypeBuilder.CreateType();
+                }
 
-				internal override bool IsCustomAttribute
-				{
-					get { return false; }
-				}
-			}
+                private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+                {
+                    Link();
+                    ConstructorInfo ctor = defineConstructor != null
+                        ? defineConstructor.__AsConstructorInfo()
+                        : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection().GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
+                    return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
+                {
+                    tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
+                {
+                    mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
+                {
+                    fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
+                {
+                    pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
+                {
+                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
+                {
+                    pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                }
+
+                internal override bool IsCustomAttribute
+                {
+                    get { return false; }
+                }
+            }
 #endif // IMPORTER
 
             internal override RuntimeJavaType[] InnerClasses
@@ -2291,7 +2292,7 @@ namespace IKVM.Runtime
                 }
 
                 var type = wrapper.TypeAsBaseType;
-                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, [], null);
                 if (baseFinalize != null)
                     return baseFinalize;
 
@@ -2455,11 +2456,11 @@ namespace IKVM.Runtime
                                 wrapper.EmitLevel4Warning(mmw.IsConflictError ? HardError.IncompatibleClassChangeError : HardError.AbstractMethodError, message);
                             }
 #if IMPORTER
-							if (wrapper.IsInterface && !mmw.IsAbstract)
-							{
-								// even though we're not visible to reflection we need to record the fact that we have a default implementation
-								wrapper.Context.AttributeHelper.SetModifiers(mb, mmw.Modifiers, false);
-							}
+                            if (wrapper.IsInterface && !mmw.IsAbstract)
+                            {
+                                // even though we're not visible to reflection we need to record the fact that we have a default implementation
+                                wrapper.Context.AttributeHelper.SetModifiers(mb, mmw.Modifiers, false);
+                            }
 #endif
                             return mb;
                         }
@@ -2502,50 +2503,50 @@ namespace IKVM.Runtime
                     methods[index].SetDeclaredExceptions(exceptions);
 
 #if IMPORTER
-					wrapper.Context.AttributeHelper.SetThrowsAttribute(method, exceptions);
+                    wrapper.Context.AttributeHelper.SetThrowsAttribute(method, exceptions);
 
-					if (setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
-						wrapper.Context.AttributeHelper.SetModifiers(method, m.Modifiers, m.IsInternal);
+                    if (setModifiers || m.IsInternal || (m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0)
+                        wrapper.Context.AttributeHelper.SetModifiers(method, m.Modifiers, m.IsInternal);
 
-					// synthetic and bridge methods should not be visible to the user and set as compiler generated
-					if ((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic && !IsAccessBridge(classFile, m))
-					{
-						wrapper.Context.AttributeHelper.SetCompilerGenerated(method);
-						wrapper.Context.AttributeHelper.SetEditorBrowsableNever(method);
-					}
+                    // synthetic and bridge methods should not be visible to the user and set as compiler generated
+                    if ((m.Modifiers & (Modifiers.Synthetic | Modifiers.Bridge)) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic && !IsAccessBridge(classFile, m))
+                    {
+                        wrapper.Context.AttributeHelper.SetCompilerGenerated(method);
+                        wrapper.Context.AttributeHelper.SetEditorBrowsableNever(method);
+                    }
 
-					// ensure deprecated attribute appears on method if obsolete not specified
-					if (m.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(m.Annotations))
-					{
-						wrapper.Context.AttributeHelper.SetDeprecatedAttribute(method);
-					}
+                    // ensure deprecated attribute appears on method if obsolete not specified
+                    if (m.DeprecatedAttribute && !Annotation.HasObsoleteAttribute(m.Annotations))
+                    {
+                        wrapper.Context.AttributeHelper.SetDeprecatedAttribute(method);
+                    }
 
-					// apply .NET attribute to record Java generic signature
-					if (m.GenericSignature != null)
-					{
-						wrapper.Context.AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
-					}
+                    // apply .NET attribute to record Java generic signature
+                    if (m.GenericSignature != null)
+                    {
+                        wrapper.Context.AttributeHelper.SetSignatureAttribute(method, m.GenericSignature);
+                    }
 
-					if (wrapper.ClassLoader.NoParameterReflection)
-					{
-						// ignore MethodParameters (except to extract parameter names)
-					}
-					else if (m.MalformedMethodParameters)
-					{
-						wrapper.Context.AttributeHelper.SetMethodParametersAttribute(method, null);
-					}
-					else if (m.MethodParameters != null)
-					{
-						var modifiers = new Modifiers[m.MethodParameters.Length];
-						for (int i = 0; i < modifiers.Length; i++)
-							modifiers[i] = (Modifiers)m.MethodParameters[i].accessFlags;
+                    if (wrapper.ClassLoader.NoParameterReflection)
+                    {
+                        // ignore MethodParameters (except to extract parameter names)
+                    }
+                    else if (m.MalformedMethodParameters)
+                    {
+                        wrapper.Context.AttributeHelper.SetMethodParametersAttribute(method, null);
+                    }
+                    else if (m.MethodParameters != null)
+                    {
+                        var modifiers = new Modifiers[m.MethodParameters.Length];
+                        for (int i = 0; i < modifiers.Length; i++)
+                            modifiers[i] = (Modifiers)m.MethodParameters[i].accessFlags;
 
-						wrapper.Context.AttributeHelper.SetMethodParametersAttribute(method, modifiers);
-					}
+                        wrapper.Context.AttributeHelper.SetMethodParametersAttribute(method, modifiers);
+                    }
 
-					// copy runtime visible annotations as attributes
-					if (m.RuntimeVisibleTypeAnnotations.Count > 0)
-						wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, in m.RuntimeVisibleTypeAnnotations);
+                    // copy runtime visible annotations as attributes
+                    if (m.RuntimeVisibleTypeAnnotations.Count > 0)
+                        wrapper.Context.AttributeHelper.SetRuntimeVisibleTypeAnnotationsAttribute(method, in m.RuntimeVisibleTypeAnnotations);
 
 #else // IMPORTER
 
@@ -2663,20 +2664,20 @@ namespace IKVM.Runtime
                     attribs |= MethodAttributes.SpecialName;
                 }
 #if IMPORTER
-				if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
-				{
-					string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
-					foreach (var mw in methods)
-					{
-						if (mw.Name == m.Name && mw.Signature.StartsWith(sigbase) && mw.Signature != m.Signature)
-						{
-							// To prevent bridge methods with covariant return types from confusing
-							// other .NET compilers (like C#), we rename the bridge method.
-							name = NamePrefix.Bridge + name;
-							break;
-						}
-					}
-				}
+                if ((m.Modifiers & Modifiers.Bridge) != 0 && (m.IsPublic || m.IsProtected) && wrapper.IsPublic)
+                {
+                    string sigbase = m.Signature.Substring(0, m.Signature.LastIndexOf(')') + 1);
+                    foreach (var mw in methods)
+                    {
+                        if (mw.Name == m.Name && mw.Signature.StartsWith(sigbase) && mw.Signature != m.Signature)
+                        {
+                            // To prevent bridge methods with covariant return types from confusing
+                            // other .NET compilers (like C#), we rename the bridge method.
+                            name = NamePrefix.Bridge + name;
+                            break;
+                        }
+                    }
+                }
 #endif
                 if ((attribs & MethodAttributes.Virtual) != 0 && !classFile.IsInterface)
                 {
@@ -2709,7 +2710,7 @@ namespace IKVM.Runtime
                 }
                 MethodBuilder mb = null;
 #if IMPORTER
-				mb = wrapper.DefineGhostMethod(typeBuilder, name, attribs, methods[index]);
+                mb = wrapper.DefineGhostMethod(typeBuilder, name, attribs, methods[index]);
 #endif
                 if (mb == null)
                 {
@@ -2784,7 +2785,7 @@ namespace IKVM.Runtime
                                 tb, NamePrefix.PrivateInterfaceInstanceMethod + name, attribs | MethodAttributes.Static | MethodAttributes.SpecialName,
                                 typeBuilder, false);
 #if IMPORTER
-							wrapper.Context.AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
+                            wrapper.Context.AttributeHelper.SetNameSig(mb, m.Name, m.Signature);
 #endif
                         }
                         setModifiers = true;
@@ -2825,7 +2826,7 @@ namespace IKVM.Runtime
                         if (m.IsFinal)
                             attr |= MethodAttributes.Final;
 
-                        finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, wrapper.Context.Types.Void, Type.EmptyTypes);
+                        finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, wrapper.Context.Types.Void, []);
                         if (finalizeName != baseFinalize.Name)
                             typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
 
@@ -2858,11 +2859,11 @@ namespace IKVM.Runtime
                         ilgen.DoEmit();
                     }
 #if IMPORTER
-					if (classFile.Methods[index].AnnotationDefault != null)
-					{
-						var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").AsReflection().GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]);
-						mb.SetCustomAttribute(cab);
-					}
+                    if (classFile.Methods[index].AnnotationDefault != null)
+                    {
+                        var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]);
+                        mb.SetCustomAttribute(cab);
+                    }
 #endif
                 }
 
@@ -2920,28 +2921,28 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-			// The classic example of an access bridge is StringBuilder.length(), the JDK 6 compiler
-			// generates this to work around a reflection problem (which otherwise wouldn't surface the
-			// length() method, because it is defined in the non-public base class AbstractStringBuilder.)
-			private static bool IsAccessBridge(ClassFile classFile, ClassFile.Method m)
-			{
-				// HACK this is a pretty gross hack
-				// We look at the method body to figure out if the bridge method calls another method with the exact
-				// same name/signature and if that is the case, we assume that it is an access bridge.
-				// This code is based on the javac algorithm in addBridgeIfNeeded(...) in com/sun/tools/javac/comp/TransTypes.java.
-				if ((m.Modifiers & (Modifiers.Abstract | Modifiers.Native | Modifiers.Public | Modifiers.Bridge)) == (Modifiers.Public | Modifiers.Bridge))
-				{
-					foreach (ClassFile.Method.Instruction instr in m.Instructions)
-					{
-						if (instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
-						{
-							ClassFile.ConstantPoolItemMI cpi = classFile.SafeGetMethodref(instr.Arg1);
-							return cpi != null && cpi.Name == m.Name && cpi.Signature == m.Signature;
-						}
-					}
-				}
-				return false;
-			}
+            // The classic example of an access bridge is StringBuilder.length(), the JDK 6 compiler
+            // generates this to work around a reflection problem (which otherwise wouldn't surface the
+            // length() method, because it is defined in the non-public base class AbstractStringBuilder.)
+            private static bool IsAccessBridge(ClassFile classFile, ClassFile.Method m)
+            {
+                // HACK this is a pretty gross hack
+                // We look at the method body to figure out if the bridge method calls another method with the exact
+                // same name/signature and if that is the case, we assume that it is an access bridge.
+                // This code is based on the javac algorithm in addBridgeIfNeeded(...) in com/sun/tools/javac/comp/TransTypes.java.
+                if ((m.Modifiers & (Modifiers.Abstract | Modifiers.Native | Modifiers.Public | Modifiers.Bridge)) == (Modifiers.Public | Modifiers.Bridge))
+                {
+                    foreach (ClassFile.Method.Instruction instr in m.Instructions)
+                    {
+                        if (instr.NormalizedOpCode == NormalizedByteCode.__invokespecial)
+                        {
+                            ClassFile.ConstantPoolItemMI cpi = classFile.SafeGetMethodref(instr.Arg1);
+                            return cpi != null && cpi.Name == m.Name && cpi.Signature == m.Signature;
+                        }
+                    }
+                }
+                return false;
+            }
 #endif // IMPORTER
 
             internal override Type Type

@@ -13,10 +13,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
+        /// <param name="containingType"></param>
         /// <param name="field"></param>
-        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, FieldInfo field) :
-            base(context, type.ContainingModule, type, field)
+        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, FieldInfo field) :
+            base(context, containingModule, field)
+        {
+            _field = field ?? throw new ArgumentNullException(nameof(field));
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="containingType"></param>
+        /// <param name="field"></param>
+        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol containingType, FieldInfo field) :
+            base(context, containingType, field)
         {
             _field = field ?? throw new ArgumentNullException(nameof(field));
         }

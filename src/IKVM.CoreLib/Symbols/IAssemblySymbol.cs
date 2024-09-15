@@ -4,7 +4,7 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-    interface IAssemblySymbol : ISymbol, ICustomAttributeSymbolProvider
+    interface IAssemblySymbol : ISymbol, ICustomAttributeProvider
     {
 
         IEnumerable<ITypeSymbol> DefinedTypes { get; }

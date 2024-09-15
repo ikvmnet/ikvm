@@ -118,11 +118,11 @@ namespace IKVM.Runtime
 
         public MethodInfo FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { context.Types.Exception });
 
-        public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
+        public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", []);
 
         public MethodInfo GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, [context.Types.RuntimeTypeHandle], null);
 
-        public MethodInfo GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+        public MethodInfo GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, null, [], null);
 
         public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).AsReflection().GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, [context.Types.Object], null);
 
@@ -2761,7 +2761,7 @@ namespace IKVM.Runtime
             static MethodBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType, TypeBuilder tb, FieldBuilder fb, MethodInfo methodGetTarget)
             {
                 var typeofCallSite = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
-                var args = Type.EmptyTypes;
+                var args = [];
 
                 if (delegateType.IsGenericType)
                 {

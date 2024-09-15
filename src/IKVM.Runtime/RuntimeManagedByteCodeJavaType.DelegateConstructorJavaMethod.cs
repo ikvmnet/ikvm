@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -41,8 +42,8 @@ namespace IKVM.Runtime
         sealed class DelegateConstructorJavaMethod : RuntimeJavaMethod
         {
 
-            readonly ConstructorInfo constructor;
-            MethodInfo invoke;
+            readonly IConstructorSymbol constructor;
+            IMethodSymbol invoke;
 
             /// <summary>
             /// Initializes a new instance.
@@ -51,7 +52,7 @@ namespace IKVM.Runtime
             /// <param name="iface"></param>
             /// <param name="mods"></param>
             DelegateConstructorJavaMethod(RuntimeJavaType tw, RuntimeJavaType iface, ExModifiers mods) :
-               base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, tw.Context.PrimitiveJavaTypeFactory.VOID, new RuntimeJavaType[] { iface }, mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
+               base(tw, StringConstants.INIT, "(" + iface.SigName + ")V", null, tw.Context.PrimitiveJavaTypeFactory.VOID, [iface], mods.Modifiers, mods.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None)
             {
 
             }
@@ -61,17 +62,17 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="tw"></param>
             /// <param name="method"></param>
-            internal DelegateConstructorJavaMethod(RuntimeJavaType tw, MethodBase method) :
+            internal DelegateConstructorJavaMethod(RuntimeJavaType tw, IMethodBaseSymbol method) :
                 this(tw, tw.ClassLoader.LoadClassByName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), tw.Context.AttributeHelper.GetModifiers(method, false))
             {
-                constructor = (ConstructorInfo)method;
+                constructor = (IConstructorSymbol)method;
             }
 
             protected override void DoLinkMethod()
             {
                 var mw = GetParameters()[0].GetMethods()[0];
                 mw.Link();
-                invoke = (MethodInfo)mw.GetMethod();
+                invoke = (IMethodSymbol)mw.GetMethod();
             }
 
 #if EMITTERS

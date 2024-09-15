@@ -48,8 +48,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         readonly IkvmReflectionTypeSymbol? _type;
         readonly MemberInfo _member;
 
-        CustomAttributeSymbol[]? _customAttributes;
-        CustomAttributeSymbol[]? _inheritedCustomAttributes;
+        CustomAttribute[]? _customAttributes;
+        CustomAttribute[]? _inheritedCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -158,7 +158,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 return base.ResolveEventSymbol(@event);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the wrapped <see cref="MemberInfo"/>.
+        /// </summary>
         internal MemberInfo ReflectionObject => _member;
 
         /// <inheritdoc />
@@ -186,7 +188,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public override bool IsMissing => _member.__IsMissing;
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             if (inherit)
             {
@@ -195,7 +197,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                     return _inheritedCustomAttributes;
 
                 var self = _member;
-                var list = default(List<CustomAttributeSymbol[]>?);
+                var list = default(List<CustomAttribute[]>?);
                 for (; ; )
                 {
                     // get attribute for current member and append to list
@@ -237,13 +239,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_member.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, inherit));
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }

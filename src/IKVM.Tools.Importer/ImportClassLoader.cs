@@ -134,9 +134,18 @@ namespace IKVM.Tools.Importer
             peerReferences.Add(ccl);
         }
 
-        internal AssemblyName GetAssemblyName()
+        internal System.Reflection.AssemblyName GetAssemblyName()
         {
-            return assemblyBuilder.GetName();
+            var src = assemblyBuilder.GetName();
+            return new System.Reflection.AssemblyName
+            {
+                Name = src.Name,
+                Version = src.Version,
+                CultureName = src.CultureName,
+                HashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
+                Flags = (System.Reflection.AssemblyNameFlags)src.Flags,
+                ContentType = (System.Reflection.AssemblyContentType)src.ContentType,
+            };
         }
 
         private static PermissionSet Combine(PermissionSet p1, PermissionSet p2)

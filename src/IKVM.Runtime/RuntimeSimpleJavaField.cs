@@ -23,6 +23,8 @@
 */
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using IKVM.CoreLib.Symbols;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -55,7 +57,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             Debug.Assert(!(fieldType == declaringType.Context.PrimitiveJavaTypeFactory.DOUBLE || fieldType == declaringType.Context.PrimitiveJavaTypeFactory.LONG) || !IsVolatile);
@@ -65,12 +67,12 @@ namespace IKVM.Runtime
 
         internal override object GetValue(object obj)
         {
-            return GetField().GetValue(obj);
+            return GetField().AsReflection().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
-            GetField().SetValue(obj, value);
+            GetField().AsReflection().SetValue(obj, value);
         }
 
 #endif
@@ -134,7 +136,7 @@ namespace IKVM.Runtime
                 if (IsFinal)
                 {
                     il.Emit(OpCodes.Ldsflda, fi);
-                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).AsReflection().GetMethod(nameof(UnsafeGetImplByRefNoInline), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
+                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
                 }
                 else
                 {

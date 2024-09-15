@@ -978,7 +978,7 @@ namespace IKVM.Reflection.Emit
         {
             if (typeTokens.TryGetValue(type, out var token) == false)
             {
-                if (type.HasElementType || type.IsConstructedGenericType || type.__IsFunctionPointer)
+                if (type.HasElementType || type.IsConstructedGenericType || type.IsFunctionPointer)
                 {
                     var spec = new ByteBuffer(5);
                     Signature.WriteTypeSpec(this, spec, type);

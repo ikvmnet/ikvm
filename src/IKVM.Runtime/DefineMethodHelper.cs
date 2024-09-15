@@ -74,7 +74,7 @@ namespace IKVM.Runtime
             if (firstParameter != null)
             {
                 parameterTypes[0] = firstParameter;
-                modopt[0] = Type.EmptyTypes;
+                modopt[0] = [];
             }
             for (int i = 0; i < parameters.Length; i++)
             {

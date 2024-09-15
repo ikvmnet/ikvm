@@ -24,11 +24,10 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 #endif
@@ -51,7 +50,7 @@ namespace IKVM.Runtime
         /// Maps existing <see cref="RuntimeAssemblyClassLoader"/> instances to <see cref="Assembly"/> instances. Allows
         /// assemblies to be unloaded.
         /// </summary>
-        readonly ConditionalWeakTable<Assembly, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
+        readonly ConditionalWeakTable<IAssemblySymbol, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
         internal Dictionary<string, string> customClassLoaderRedirects;
@@ -73,7 +72,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public RuntimeAssemblyClassLoader FromAssembly(Assembly assembly)
+        public RuntimeAssemblyClassLoader FromAssembly(IAssemblySymbol assembly)
         {
             if (assemblyClassLoaders.TryGetValue(assembly, out RuntimeAssemblyClassLoader loader))
                 return loader;
@@ -96,7 +95,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        RuntimeAssemblyClassLoader Create(Assembly assembly)
+        RuntimeAssemblyClassLoader Create(IAssemblySymbol assembly)
         {
             // If the assembly is a part of a multi-assembly shared class loader,
             // it will export the __<MainAssembly> type from the main assembly in the group.
@@ -108,9 +107,9 @@ namespace IKVM.Runtime
                     return FromAssembly(mainAssembly);
             }
 
-            var baseAssembly = context.Resolver.ResolveBaseAssembly().AsReflection();
+            var baseAssembly = context.Resolver.ResolveBaseAssembly();
 #if IMPORTER
-            if (baseAssembly != null && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute").AsReflection(), false))
+            if (baseAssembly != null && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
                 context.ClassLoaderFactory.LoadRemappedTypes();
 #endif
 

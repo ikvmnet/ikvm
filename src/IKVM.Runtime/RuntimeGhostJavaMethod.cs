@@ -24,6 +24,7 @@
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -39,8 +40,8 @@ namespace IKVM.Runtime
     sealed class RuntimeGhostJavaMethod : RuntimeSmartJavaMethod
     {
 
-        MethodInfo ghostMethod;
-        MethodInfo defaultImpl;
+        IMethodSymbol ghostMethod;
+        IMethodSymbol defaultImpl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -54,7 +55,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, IMethodSymbol ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             // make sure we weren't handed the ghostMethod in the wrapper value type
@@ -81,17 +82,17 @@ namespace IKVM.Runtime
         [HideFromJava]
         internal override object Invoke(object obj, object[] args)
         {
-            return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
+            return InvokeAndUnwrapException(ghostMethod.AsReflection(), DeclaringType.GhostWrap(obj), args);
         }
 
 #endif
 
-        internal void SetDefaultImpl(MethodInfo impl)
+        internal void SetDefaultImpl(IMethodSymbol impl)
         {
             this.defaultImpl = impl;
         }
 
-        internal MethodInfo GetDefaultImpl()
+        internal IMethodSymbol GetDefaultImpl()
         {
             return defaultImpl;
         }
@@ -105,7 +106,7 @@ namespace IKVM.Runtime
 
         internal MethodBuilder GetGhostMethod()
         {
-            return (MethodBuilder)ghostMethod;
+            return (MethodBuilder)ghostMethod.AsReflection();
         }
 
 #endif

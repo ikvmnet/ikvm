@@ -2,7 +2,7 @@
 {
 
     /// <summary>
-    /// Provides an interface to resolve a maaged type symbols.
+    /// Provides an interface to resolve a managed type symbols.
     /// </summary>
     interface ISymbolResolver
     {

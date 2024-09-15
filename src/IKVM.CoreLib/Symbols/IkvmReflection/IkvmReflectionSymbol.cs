@@ -40,6 +40,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public virtual bool IsMissing => false;
 
+        /// <inheritdoc />
+        public virtual bool ContainsMissing => false;
+
         /// <summary>
         /// Resolves the symbol for the specified type.
         /// </summary>
@@ -350,9 +353,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
+        protected internal CustomAttribute[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
         {
-            var a = new CustomAttributeSymbol[attributes.Count];
+            var a = new CustomAttribute[attributes.Count];
             for (int i = 0; i < attributes.Count; i++)
                 a[i] = ResolveCustomAttribute(attributes[i]);
 
@@ -365,9 +368,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="customAttributeData"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        protected internal CustomAttributeSymbol ResolveCustomAttribute(CustomAttributeData customAttributeData)
+        protected internal CustomAttribute ResolveCustomAttribute(CustomAttributeData customAttributeData)
         {
-            return new CustomAttributeSymbol(
+            return new CustomAttribute(
                 ResolveTypeSymbol(customAttributeData.AttributeType),
                 ResolveConstructorSymbol(customAttributeData.Constructor),
                 ResolveCustomAttributeTypedArguments(customAttributeData.ConstructorArguments),
@@ -375,13 +378,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Transforms a list of <see cref="CustomAttributeTypedArgument"/> values into symbols.
+        /// Transforms a list of <see cref="IKVM.Reflection.CustomAttributeTypedArgument"/> values into symbols.
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeSymbolTypedArgument> ResolveCustomAttributeTypedArguments(IList<CustomAttributeTypedArgument> args)
+        ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<IKVM.Reflection.CustomAttributeTypedArgument> args)
         {
-            var a = new CustomAttributeSymbolTypedArgument[args.Count];
+            var a = new CustomAttributeTypedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeTypedArgument(args[i]);
 
@@ -389,23 +392,36 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Transforms a <see cref="CustomAttributeTypedArgument"/> values into a symbol.
+        /// Transforms a <see cref="IKVM.Reflection.CustomAttributeTypedArgument"/> values into a symbol.
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeSymbolTypedArgument ResolveCustomAttributeTypedArgument(CustomAttributeTypedArgument arg)
+        CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(IKVM.Reflection.CustomAttributeTypedArgument arg)
         {
-            return new CustomAttributeSymbolTypedArgument(ResolveTypeSymbol(arg.ArgumentType), arg.Value);
+            return new CustomAttributeTypedArgument(ResolveTypeSymbol(arg.ArgumentType), ResolveCustomAttributeTypedValue(arg.Value));
         }
 
         /// <summary>
-        /// Transforms a list of <see cref="CustomAttributeNamedArgument"/> values into symbols.
+        /// Transforms the type as appropriate.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        object? ResolveCustomAttributeTypedValue(object? value)
+        {
+            if (value is IKVM.Reflection.Type v)
+                return ResolveTypeSymbol(v);
+
+            return value;
+        }
+
+        /// <summary>
+        /// Transforms a list of <see cref="IKVM.Reflection.CustomAttributeNamedArgument"/> values into symbols.
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeSymbolNamedArgument> ResolveCustomAttributeNamedArguments(IList<CustomAttributeNamedArgument> args)
+        ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<IKVM.Reflection.CustomAttributeNamedArgument> args)
         {
-            var a = new CustomAttributeSymbolNamedArgument[args.Count];
+            var a = new CustomAttributeNamedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeNamedArgument(args[i]);
 
@@ -413,13 +429,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Transforms a <see cref="CustomAttributeNamedArgument"/> values into a symbol.
+        /// Transforms a <see cref="IKVM.Reflection.CustomAttributeNamedArgument"/> values into a symbol.
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeSymbolNamedArgument ResolveCustomAttributeNamedArgument(CustomAttributeNamedArgument arg)
+        CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(IKVM.Reflection.CustomAttributeNamedArgument arg)
         {
-            return new CustomAttributeSymbolNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
+            return new CustomAttributeNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
         }
 
     }

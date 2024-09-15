@@ -44,22 +44,32 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly ReflectionTypeSymbol? _containingType;
         readonly MemberInfo _member;
 
-        CustomAttributeSymbol[]? _customAttributes;
-        CustomAttributeSymbol[]? _inheritedCustomAttributes;
+        CustomAttribute[]? _customAttributes;
+        CustomAttribute[]? _inheritedCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="containingModule"></param>
-        /// <param name="containingType"></param>
         /// <param name="member"></param>
-        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, ReflectionTypeSymbol? containingType, MemberInfo member) :
+        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, MemberInfo member) :
             base(context)
         {
             _containingModule = containingModule ?? throw new ArgumentNullException(nameof(containingModule));
-            _containingType = containingType;
             _member = member ?? throw new ArgumentNullException(nameof(member));
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="containingType"></param>
+        /// <param name="member"></param>
+        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol containingType, MemberInfo member) :
+            this(context, containingType.ContainingModule, member)
+        {
+            _containingType = containingType ?? throw new ArgumentNullException(nameof(containingType));
         }
 
         /// <summary>
@@ -84,10 +94,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
         {
-            if (_containingType != null && ctor.DeclaringType == _containingType.ReflectionObject)
-                return _containingType.GetOrCreateConstructorSymbol(ctor);
-            else if (ctor.DeclaringType != null && ctor.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
+            if (ctor.Module == _member.Module)
+                return _containingModule.GetOrCreateConstructorSymbol(ctor);
             else
                 return base.ResolveConstructorSymbol(ctor);
         }
@@ -99,10 +107,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
         {
-            if (_containingType != null && method.DeclaringType == _containingType.ReflectionObject)
-                return _containingType.GetOrCreateMethodSymbol(method);
-            else if (method.DeclaringType != null && method.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(method.DeclaringType).GetOrCreateMethodSymbol(method);
+            if (method.Module == _member.Module)
+                return _containingModule.GetOrCreateMethodSymbol(method);
             else
                 return base.ResolveMethodSymbol(method);
         }
@@ -114,10 +120,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
         {
-            if (_containingType != null && field.DeclaringType == _containingType.ReflectionObject)
-                return _containingType.GetOrCreateFieldSymbol(field);
-            else if (field.DeclaringType != null && field.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(field.DeclaringType).GetOrCreateFieldSymbol(field);
+            if (field.Module == _member.Module)
+                return _containingModule.GetOrCreateFieldSymbol(field);
             else
                 return base.ResolveFieldSymbol(field);
         }
@@ -130,11 +134,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
         {
-
-            if (_containingType != null && property.DeclaringType == _containingType.ReflectionObject)
-                return _containingType.GetOrCreatePropertySymbol(property);
-            else if (property.DeclaringType != null && property.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(property.DeclaringType).GetOrCreatePropertySymbol(property);
+            if (property.Module == _member.Module)
+                return _containingModule.GetOrCreatePropertySymbol(property);
             else
                 return base.ResolvePropertySymbol(property);
         }
@@ -146,10 +147,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
         {
-            if (_containingType != null && @event.DeclaringType == _containingType.ReflectionObject)
-                return _containingType.GetOrCreateEventSymbol(@event);
-            else if (@event.DeclaringType != null && @event.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(@event.DeclaringType).GetOrCreateEventSymbol(@event);
+            if (@event.Module == _member.Module)
+                return _containingModule.GetOrCreateEventSymbol(@event);
             else
                 return base.ResolveEventSymbol(@event);
         }
@@ -185,7 +184,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual string Name => _member.Name;
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             if (inherit)
             {
@@ -194,7 +193,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                     return _inheritedCustomAttributes;
 
                 var self = _member;
-                var list = default(List<CustomAttributeSymbol[]>?);
+                var list = default(List<CustomAttribute[]>?);
                 for (; ; )
                 {
                     // get attribute for current member and append to list
@@ -236,13 +235,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }

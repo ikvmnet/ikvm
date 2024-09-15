@@ -12,6 +12,11 @@
         /// </summary>
         bool IsMissing { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if the symbol contains a missing symbol.
+        /// </summary>
+        bool ContainsMissing { get; }
+
     }
 
 }

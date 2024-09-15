@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -41,7 +42,7 @@ namespace IKVM.Runtime
     sealed class RuntimeManagedByteCodePropertyJavaField : RuntimeJavaField
     {
 
-        readonly PropertyInfo property;
+        readonly IPropertySymbol property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -49,13 +50,13 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
+        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, IPropertySymbol property, ExModifiers modifiers) :
             base(declaringType, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType), property.Name, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;
         }
 
-        internal PropertyInfo GetProperty()
+        internal IPropertySymbol GetProperty()
         {
             return property;
         }
@@ -111,7 +112,7 @@ namespace IKVM.Runtime
             if (getter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            return getter.Invoke(obj, new object[0]);
+            return getter.AsReflection().Invoke(obj, []);
         }
 
         internal override void SetValue(object obj, object value)
@@ -120,7 +121,7 @@ namespace IKVM.Runtime
             if (setter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            setter.Invoke(obj, new object[] { value });
+            setter.AsReflection().Invoke(obj, new object[] { value });
         }
 
 #endif

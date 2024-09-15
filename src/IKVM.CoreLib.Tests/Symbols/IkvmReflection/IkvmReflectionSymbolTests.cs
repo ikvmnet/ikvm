@@ -194,12 +194,35 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             m.IsPrivate.Should().BeFalse();
         }
 
+        [System.AttributeUsage(System.AttributeTargets.Class)]
+        class AttributeWithType : System.Attribute
+        {
+
+            public AttributeWithType(System.Type type)
+            {
+                Type = type;
+            }
+
+            public System.Type Type { get; }
+
+        }
+
+        [AttributeWithType(typeof(object))]
+        class ClassWithAttributeWithType
+        {
+
+
+
+        }
+
         [TestMethod]
         public void CanReadCustomAttributes()
         {
             var c = new IkvmReflectionSymbolContext();
-            var s = c.GetOrCreateTypeSymbol(coreAssembly!.GetType("System.AttributeUsageAttribute"));
-            var a = s.GetCustomAttribute(s);
+            var s = c.GetOrCreateTypeSymbol(thisAssembly!.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+ClassWithAttributeWithType"));
+            var a = s.GetCustomAttribute(c.GetOrCreateTypeSymbol(thisAssembly!.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+AttributeWithType")));
+            var v = a.Value.ConstructorArguments[0].Value;
+            v.Should().BeOfType<IkvmReflectionTypeSymbol>();
         }
 
     }

@@ -24,11 +24,7 @@
 using System;
 using System.Diagnostics;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -36,24 +32,13 @@ namespace IKVM.Runtime
     static class EnumHelper
     {
 
-        internal static Type GetUnderlyingType(Type enumType)
-        {
-
-#if IMPORTER || EXPORTER
-            return enumType.GetEnumUnderlyingType();
-#else
-            return Enum.GetUnderlyingType(enumType);
-#endif
-        }
-
-#if IMPORTER
-
-        internal static object Parse(RuntimeContext context, Type type, string value)
+        internal static object Parse(RuntimeContext context, ITypeSymbol type, string value)
         {
             object retval = null;
+
             foreach (string str in value.Split(','))
             {
-                FieldInfo field = type.GetField(str.Trim(), BindingFlags.Public | BindingFlags.Static);
+                var field = type.GetField(str.Trim(), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 if (field == null)
                 {
                     throw new InvalidOperationException("Enum value '" + str + "' not found in " + type.FullName);
@@ -70,7 +55,6 @@ namespace IKVM.Runtime
 
             return retval;
         }
-#endif
 
         // note that we only support the integer types that C# supports
         // (the CLI also supports bool, char, IntPtr & UIntPtr)
@@ -86,7 +70,7 @@ namespace IKVM.Runtime
             else
             {
                 long v = ((IConvertible)v1).ToInt64(null) | ((IConvertible)v2).ToInt64(null);
-                switch (Type.GetTypeCode(context.Resolver.ResolveCoreType(v1.GetType().FullName).AsReflection()))
+                switch (context.Resolver.ResolveCoreType(v1.GetType().FullName).TypeCode)
                 {
                     case TypeCode.SByte:
                         return (sbyte)v;
@@ -109,7 +93,7 @@ namespace IKVM.Runtime
         }
 
         // this method can be used to convert an enum value or its underlying value to a Java primitive
-        internal static object GetPrimitiveValue(RuntimeContext context, Type underlyingType, object obj)
+        internal static object GetPrimitiveValue(RuntimeContext context, ITypeSymbol underlyingType, object obj)
         {
             // Note that this method doesn't trust that obj is of the correct type,
             // because it turns out there exist assemblies (e.g. gtk-sharp.dll) that

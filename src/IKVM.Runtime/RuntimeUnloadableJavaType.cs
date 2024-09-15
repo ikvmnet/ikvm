@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -43,8 +45,8 @@ namespace IKVM.Runtime
 
         internal const string ContainerTypeName = "__<Unloadable>";
 
-        readonly Type missingType;
-        Type customModifier;
+        readonly ITypeSymbol missingType;
+        ITypeSymbol customModifier;
 
         /// <summary>
         /// Initializes a new instance.
@@ -62,7 +64,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="context"></param>
         /// <param name="missingType"></param>
-        internal RuntimeUnloadableJavaType(RuntimeContext context, Type missingType) :
+        internal RuntimeUnloadableJavaType(RuntimeContext context, ITypeSymbol missingType) :
             this(context, missingType.FullName) // TODO demangle and re-mangle appropriately
         {
             this.missingType = missingType;
@@ -74,7 +76,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="name"></param>
         /// <param name="customModifier"></param>
-        internal RuntimeUnloadableJavaType(RuntimeContext context, string name, Type customModifier) :
+        internal RuntimeUnloadableJavaType(RuntimeContext context, string name, ITypeSymbol customModifier) :
             this(context, name)
         {
             this.customModifier = customModifier;
@@ -86,9 +88,9 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType EnsureLoadable(RuntimeClassLoader loader)
         {
-            var tw = loader.TryLoadClassByName(this.Name);
+            var tw = loader.TryLoadClassByName(Name);
             if (tw == null)
-                throw new NoClassDefFoundError(this.Name);
+                throw new NoClassDefFoundError(Name);
 
             return tw;
         }
@@ -110,7 +112,7 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("LazyPublishMembers called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal override Type TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
+        internal override ITypeSymbol TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
 
         internal override RuntimeJavaType[] Interfaces
         {
@@ -137,9 +139,9 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal Type MissingType => missingType;
+        internal ITypeSymbol MissingType => missingType;
 
-        internal Type CustomModifier => customModifier;
+        internal ITypeSymbol CustomModifier => customModifier;
 
         internal void SetCustomModifier(Type type)
         {

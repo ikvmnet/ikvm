@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Symbols.Reflection.Emit;
+
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
@@ -35,8 +37,24 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <exception cref="IndexOutOfRangeException"></exception>
         internal ReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
+            if (module is null)
+                throw new ArgumentNullException(nameof(module));
+
             Debug.Assert(module.Assembly == _assembly);
             return _modules.GetValue(module, _ => new ReflectionModuleSymbol(Context, _));
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        internal ReflectionModuleSymbol GetOrCreateModuleSymbol(ReflectionModuleSymbolBuilder module)
+        {
+            if (module is null)
+                throw new ArgumentNullException(nameof(module));
+
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -127,19 +145,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.GetCustomAttributesData().Where(i => i.AttributeType == ((ReflectionTypeSymbol)attributeType).ReflectionObject));
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }

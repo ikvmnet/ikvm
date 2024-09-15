@@ -30,6 +30,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
 using IKVM.Reflection;
 using IKVM.Reflection.Diagnostics;
 using IKVM.Runtime;
@@ -204,15 +205,14 @@ namespace IKVM.Tools.Importer
 
         internal static void LinkageError(string msg, RuntimeJavaType actualType, RuntimeJavaType expectedType, params object[] values)
         {
-            object[] args = new object[values.Length + 2];
+            var args = new object[values.Length + 2];
             values.CopyTo(args, 2);
             args[0] = AssemblyQualifiedName(actualType);
             args[1] = AssemblyQualifiedName(expectedType);
-            string str = string.Format(msg, args);
+
+            var str = string.Format(msg, args);
             if (actualType is RuntimeUnloadableJavaType && (expectedType is RuntimeManagedByteCodeJavaType || expectedType is RuntimeManagedJavaType))
-            {
-                str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
-            }
+                str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.AsReflection().Location);
 
             throw new FatalCompilerErrorException(DiagnosticEvent.LinkageError(str));
         }
@@ -231,10 +231,10 @@ namespace IKVM.Tools.Importer
             return javaType.Name + " (unknown assembly)";
         }
 
-        internal void IssueMissingTypeMessage(Type type)
+        internal void IssueMissingTypeMessage(ITypeSymbol type)
         {
             type = ReflectUtil.GetMissingType(type);
-            if (type.Assembly.__IsMissing)
+            if (type.Assembly.IsMissing)
                 diagnostics.MissingReference(type.FullName, type.Assembly.FullName);
             else
                 diagnostics.MissingType(type.FullName, type.Assembly.FullName);

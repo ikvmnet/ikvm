@@ -109,7 +109,7 @@ namespace IKVM.Runtime.Vfs
             }
             catch
             {
-                return Type.EmptyTypes;
+                return [];
             }
         }
 

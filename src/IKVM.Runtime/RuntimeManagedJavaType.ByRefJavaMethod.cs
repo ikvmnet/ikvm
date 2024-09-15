@@ -21,9 +21,8 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -31,7 +30,6 @@ using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
-using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
@@ -47,7 +45,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
             readonly bool[] byrefs;
 #endif
-            readonly Type[] args;
+            readonly ITypeSymbol[] args;
 
             /// <summary>
             /// Initializes a new instance.
@@ -62,7 +60,7 @@ namespace IKVM.Runtime
             /// <param name="parameterTypes"></param>
             /// <param name="modifiers"></param>
             /// <param name="hideFromReflection"></param>
-            internal ByRefJavaMethod(Type[] args, bool[] byrefs, RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, bool hideFromReflection) :
+            internal ByRefJavaMethod(ITypeSymbol[] args, bool[] byrefs, RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, bool hideFromReflection) :
                 base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
             {
                 this.args = args;
@@ -72,6 +70,7 @@ namespace IKVM.Runtime
             }
 
 #if EMITTERS
+
             protected override void CallImpl(CodeEmitter ilgen)
             {
                 ConvertByRefArgs(ilgen);

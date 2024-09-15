@@ -744,7 +744,7 @@ namespace IKVM.Runtime
         internal Type[] ArgTypeListFromSig(string signature)
         {
             if (signature[1] == ')')
-                return Type.EmptyTypes;
+                return [];
 
             var javaTypes = ArgJavaTypeListFromSig(signature, LoadMode.LoadOrThrow);
             var types = new Type[javaTypes.Length];

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -52,23 +55,36 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Gets or creates a <see cref="ReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public ReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method is ConstructorInfo ctor)
+                return GetOrCreateConstructorSymbol(ctor);
+            else
+                return GetOrCreateMethodSymbol((MethodInfo)method);
+        }
+
+        /// <summary>
         /// Gets or creates a <see cref="ReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
         /// </summary>
         /// <param name="ctor"></param>
         /// <returns></returns>
         public ReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
         {
-            return GetOrCreateAssemblySymbol(ctor.Module.Assembly).GetOrCreateModuleSymbol(ctor.Module).GetOrCreateTypeSymbol(ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+            return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// Gets or creates a <see cref="ReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
         public ReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
-            return GetOrCreateAssemblySymbol(method.Module.Assembly).GetOrCreateModuleSymbol(method.Module).GetOrCreateTypeSymbol(method.DeclaringType!).GetOrCreateMethodSymbol(method);
+            return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
         }
 
         /// <summary>
@@ -78,7 +94,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
-            return GetOrCreateAssemblySymbol(parameter.Member.Module.Assembly).GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateTypeSymbol(parameter.Member.DeclaringType!).GetOrCreateMethodBaseSymbol((MethodBase)parameter.Member).GetOrCreateParameterSymbol(parameter);
+            return GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateParameterSymbol(parameter);
         }
 
         /// <summary>
@@ -88,7 +104,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public ReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            return GetOrCreateAssemblySymbol(field.Module.Assembly).GetOrCreateModuleSymbol(field.Module).GetOrCreateTypeSymbol(field.DeclaringType!).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -98,7 +114,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public ReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
-            return GetOrCreateAssemblySymbol(property.Module.Assembly).GetOrCreateModuleSymbol(property.Module).GetOrCreateTypeSymbol(property.DeclaringType!).GetOrCreatePropertySymbol(property);
+            return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
         }
 
         /// <summary>
@@ -108,7 +124,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public ReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
-            return GetOrCreateAssemblySymbol(@event.Module.Assembly).GetOrCreateModuleSymbol(@event.Module).GetOrCreateTypeSymbol(@event.DeclaringType!).GetOrCreateEventSymbol(@event);
+            return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="ReflectionEventSymbol"/> for the specified <see cref="EventBuilder"/>.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        public ReflectionEventSymbol GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return GetOrCreateEventSymbol(new ReflectionEventBuilderInfo(@event));
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="ReflectionEventSymbol"/> for the specified <see cref="EventBuilder"/>.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        public ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return GetOrCreateParameterSymbol(new ReflectionParameterBuilderInfo(parameter));
         }
 
     }

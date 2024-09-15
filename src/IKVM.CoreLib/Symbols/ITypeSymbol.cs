@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -40,6 +41,11 @@ namespace IKVM.CoreLib.Symbols
         string? Namespace { get; }
 
         /// <summary>
+        /// Gets the underlying type code of the specified Type.
+        /// </summary>
+        TypeCode TypeCode { get; }
+
+        /// <summary>
         /// Gets the type from which the current <see cref="ITypeSymbol"/> directly inherits.
         /// </summary>
         ITypeSymbol? BaseType { get; }
@@ -70,14 +76,19 @@ namespace IKVM.CoreLib.Symbols
         bool IsConstructedGenericType { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the current <see cref="ITypeSymbol"/> represents a type parameter in the definition of a generic type or method.
-        /// </summary>
-        bool IsGenericParameter { get; }
-
-        /// <summary>
         /// Gets a value indicating whether the current type is a generic type.
         /// </summary>
         bool IsGenericType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the current Type represents a generic type definition, from which other generic types can be constructed.
+        /// </summary>
+        bool IsGenericTypeDefinition { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the current <see cref="ITypeSymbol"/> represents a type parameter in the definition of a generic type or method.
+        /// </summary>
+        bool IsGenericParameter { get; }
 
         /// <summary>
         /// Gets a value indicating whether the fields of the current type are laid out automatically by the common language runtime.
@@ -120,6 +131,11 @@ namespace IKVM.CoreLib.Symbols
         bool IsPrimitive { get; }
 
         /// <summary>
+        /// Gets a value that indicates whether the type is an array type that can represent only a single-dimensional array with a zero lower bound.
+        /// </summary>
+        bool IsSZArray { get; }
+
+        /// <summary>
         /// Gets a value that indicates whether the type is an array.
         /// </summary>
         bool IsArray { get; }
@@ -133,6 +149,16 @@ namespace IKVM.CoreLib.Symbols
         /// Gets a value indicating whether the <see cref="ITypeSymbol"/> is a pointer.
         /// </summary>
         bool IsPointer { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="ITypeSymbol"/> is an unmanaged function pointer.
+        /// </summary>
+        bool IsFunctionPointer { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="ITypeSymbol"/> is an unmanaged function pointer.
+        /// </summary>
+        bool IsUnmanagedFunctionPointer { get; }
 
         /// <summary>
         /// Gets a value indicating whether the <see cref="ITypeSymbol"/> is passed by reference.
@@ -203,6 +229,16 @@ namespace IKVM.CoreLib.Symbols
         /// Gets a value indicating whether the <see cref="ITypeSymbol"/> is binary serializable.
         /// </summary>
         bool IsSerializable { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the type is a signature type.
+        /// </summary>
+        bool IsSignatureType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the type has a name that requires special handling.
+        /// </summary>
+        bool IsSpecialName { get; }
 
         /// <summary>
         /// Gets the initializer for the type.
@@ -280,10 +316,10 @@ namespace IKVM.CoreLib.Symbols
         ITypeSymbol? GetInterface(string name, bool ignoreCase);
 
         /// <summary>
-        /// When overridden in a derived class, gets all the interfaces implemented or inherited by the current <see cref="ITypeSymbol"/>.
+        /// When overridden in a derived class, gets all the interfaces implemented or if specified,inherited by the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetInterfaces();
+        ITypeSymbol[] GetInterfaces(bool inherit = true);
 
         /// <summary>
         /// Returns an interface mapping for the specified interface type.

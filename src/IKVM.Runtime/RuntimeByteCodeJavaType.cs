@@ -960,7 +960,7 @@ namespace IKVM.Runtime
 
         internal static Type[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
         {
-            Type[] modopt = Type.EmptyTypes;
+            Type[] modopt = [];
             if (tw.IsUnloadable)
             {
                 if (((RuntimeUnloadableJavaType)tw).MissingType == null)

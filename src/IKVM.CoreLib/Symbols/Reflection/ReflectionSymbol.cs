@@ -29,7 +29,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         protected ReflectionSymbolContext Context => _context;
 
         /// <inheritdoc />
-        public virtual bool IsMissing => false;
+        public bool IsMissing => false;
+
+        /// <inheritdoc />
+        public bool ContainsMissing => false;
 
         /// <summary>
         /// Resolves the symbol for the specified type.
@@ -64,20 +67,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             foreach (var module in modules)
                 yield return ResolveModuleSymbol(module);
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="modules"></param>
-        /// <returns></returns>
-        protected internal Module[] UnpackModuleSymbols(IModuleSymbol[] modules)
-        {
-            var a = new Module[modules.Length];
-            for (int i = 0; i < modules.Length; i++)
-                a[i] = ((ReflectionModuleSymbol)modules[i]).ReflectionModule;
-
-            return a;
         }
 
         /// <summary>
@@ -117,20 +106,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="members"></param>
-        /// <returns></returns>
-        protected internal MemberInfo[] UnpackMemberSymbols(IMemberSymbol[] members)
-        {
-            var a = new MemberInfo[members.Length];
-            for (int i = 0; i < members.Length; i++)
-                a[i] = ((ReflectionMemberSymbol)members[i]).ReflectionObject;
-
-            return a;
-        }
-
-        /// <summary>
         /// Resolves the symbol for the specified type.
         /// </summary>
         /// <param name="type"></param>
@@ -163,20 +138,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             foreach (var type in types)
                 yield return ResolveTypeSymbol(type);
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        protected internal Type[] UnpackTypeSymbols(ITypeSymbol[] types)
-        {
-            var a = new Type[types.Length];
-            for (int i = 0; i < types.Length; i++)
-                a[i] = ((ReflectionTypeSymbol)types[i]).ReflectionObject;
-
-            return a;
         }
 
         /// <summary>
@@ -236,30 +197,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             var a = new ReflectionMethodSymbol[methods.Length];
             for (int i = 0; i < methods.Length; i++)
                 a[i] = ResolveMethodSymbol(methods[i]);
-
-            return a;
-        }
-
-        /// <summary>
-        /// Resolves the symbol for the specified parameter.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionParameterSymbol ResolveParameterSymbol(ParameterInfo parameter)
-        {
-            return _context.GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <summary>
-        /// Resolves the symbols for the specified parameters.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        protected internal ReflectionParameterSymbol[] ResolveParameterSymbols(ParameterInfo[] parameters)
-        {
-            var a = new ReflectionParameterSymbol[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-                a[i] = ResolveParameterSymbol(parameters[i]);
 
             return a;
         }
@@ -337,13 +274,37 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Resolves the symbol for the specified parameter.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        protected virtual internal ReflectionParameterSymbol ResolveParameterSymbol(ParameterInfo parameter)
+        {
+            return _context.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <summary>
+        /// Resolves the symbols for the specified parameters.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        protected internal ReflectionParameterSymbol[] ResolveParameterSymbols(ParameterInfo[] parameters)
+        {
+            var a = new ReflectionParameterSymbol[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+                a[i] = ResolveParameterSymbol(parameters[i]);
+
+            return a;
+        }
+
+        /// <summary>
         /// Transforms a custom set of custom attribute data records to a symbol record.
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
+        protected internal CustomAttribute[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
         {
-            var a = new CustomAttributeSymbol[attributes.Count];
+            var a = new CustomAttribute[attributes.Count];
             for (int i = 0; i < attributes.Count; i++)
                 a[i] = ResolveCustomAttribute(attributes[i]);
 
@@ -355,9 +316,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        protected internal CustomAttribute[] ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
         {
-            var a = new List<CustomAttributeSymbol>();
+            var a = new List<CustomAttribute>();
             foreach (var i in attributes)
                 a.Add(ResolveCustomAttribute(i));
 
@@ -370,9 +331,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="customAttributeData"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        protected internal CustomAttributeSymbol ResolveCustomAttribute(CustomAttributeData customAttributeData)
+        protected internal CustomAttribute ResolveCustomAttribute(CustomAttributeData customAttributeData)
         {
-            return new CustomAttributeSymbol(
+            return new CustomAttribute(
                 ResolveTypeSymbol(customAttributeData.AttributeType),
                 ResolveConstructorSymbol(customAttributeData.Constructor),
                 ResolveCustomAttributeTypedArguments(customAttributeData.ConstructorArguments),
@@ -380,13 +341,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Transforms a list of <see cref="CustomAttributeTypedArgument"/> values into symbols.
+        /// Transforms a list of <see cref="System.Reflection.CustomAttributeTypedArgument"/> values into symbols.
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeSymbolTypedArgument> ResolveCustomAttributeTypedArguments(IList<CustomAttributeTypedArgument> args)
+        ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<System.Reflection.CustomAttributeTypedArgument> args)
         {
-            var a = new CustomAttributeSymbolTypedArgument[args.Count];
+            var a = new CustomAttributeTypedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeTypedArgument(args[i]);
 
@@ -394,23 +355,36 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Transforms a <see cref="CustomAttributeTypedArgument"/> values into a symbol.
+        /// Transforms a <see cref="System.Reflection.CustomAttributeTypedArgument"/> values into a symbol.
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeSymbolTypedArgument ResolveCustomAttributeTypedArgument(CustomAttributeTypedArgument arg)
+        CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(System.Reflection.CustomAttributeTypedArgument arg)
         {
-            return new CustomAttributeSymbolTypedArgument(ResolveTypeSymbol(arg.ArgumentType), arg.Value);
+            return new CustomAttributeTypedArgument(ResolveTypeSymbol(arg.ArgumentType), ResolveCustomAttributeTypedValue(arg.Value));
         }
 
         /// <summary>
-        /// Transforms a list of <see cref="CustomAttributeNamedArgument"/> values into symbols.
+        /// Transforms the type as appropriate.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        object? ResolveCustomAttributeTypedValue(object? value)
+        {
+            if (value is System.Type v)
+                return ResolveTypeSymbol(v);
+
+            return value;
+        }
+
+        /// <summary>
+        /// Transforms a list of <see cref="System.Reflection.CustomAttributeNamedArgument"/> values into symbols.
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeSymbolNamedArgument> ResolveCustomAttributeNamedArguments(IList<CustomAttributeNamedArgument> args)
+        ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<System.Reflection.CustomAttributeNamedArgument> args)
         {
-            var a = new CustomAttributeSymbolNamedArgument[args.Count];
+            var a = new CustomAttributeNamedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeNamedArgument(args[i]);
 
@@ -418,13 +392,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Transforms a <see cref="CustomAttributeNamedArgument"/> values into a symbol.
+        /// Transforms a <see cref="System.Reflection.CustomAttributeNamedArgument"/> values into a symbol.
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeSymbolNamedArgument ResolveCustomAttributeNamedArgument(CustomAttributeNamedArgument arg)
+        CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(System.Reflection.CustomAttributeNamedArgument arg)
         {
-            return new CustomAttributeSymbolNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
+            return new CustomAttributeNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
         }
 
     }

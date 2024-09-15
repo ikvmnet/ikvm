@@ -1,10 +1,10 @@
 ﻿namespace IKVM.CoreLib.Symbols
 {
 
-    readonly record struct CustomAttributeSymbolNamedArgument(
+    readonly record struct CustomAttributeNamedArgument(
         bool IsField,
         IMemberSymbol MemberInfo,
         string MemberName,
-        CustomAttributeSymbolTypedArgument TypedValue);
+        CustomAttributeTypedArgument TypedValue);
 
 }

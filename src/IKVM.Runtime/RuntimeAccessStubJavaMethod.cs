@@ -22,14 +22,11 @@
   
 */
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
-using IKVM.Reflection;
 using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
 #else
-using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
@@ -39,8 +36,8 @@ namespace IKVM.Runtime
     sealed class RuntimeAccessStubJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly MethodInfo stubVirtual;
-        readonly MethodInfo stubNonVirtual;
+        readonly IMethodSymbol stubVirtual;
+        readonly IMethodSymbol stubNonVirtual;
 
         /// <summary>
         /// Initializes a new instance.
@@ -55,7 +52,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeAccessStubJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo core, MethodInfo stubVirtual, MethodInfo stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeAccessStubJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodSymbol core, IMethodSymbol stubVirtual, IMethodSymbol stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, core, returnType, parameterTypes, modifiers, flags)
         {
             this.stubVirtual = stubVirtual;

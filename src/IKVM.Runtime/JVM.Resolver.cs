@@ -9,6 +9,10 @@ using System.Runtime.CompilerServices;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Reflection;
 
+#if IMPORTER || EXPORTER
+using Type = IKVM.Reflection.Type;
+#endif
+
 namespace IKVM.Runtime
 {
 
@@ -20,7 +24,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Provides support for resolving managed types from the current JVM environment.
         /// </summary>
-        internal class Resolver : ISymbolResolver
+        internal class Resolver : IRuntimeSymbolResolver
         {
 
             /// <summary>
@@ -85,6 +89,12 @@ namespace IKVM.Runtime
             public ITypeSymbol ResolveRuntimeType(string typeName)
             {
                 return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
+            }
+
+            /// <inheritdoc />
+            public ITypeSymbol ResolveType(Type type)
+            {
+                return type is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
             }
 
         }

@@ -43,39 +43,57 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _modules.GetValue(module, _ => new IkvmReflectionModuleSymbol(Context, _));
         }
 
+        /// <summary>
+        /// Gets the wrapped <see cref="Assembly"/>.
+        /// </summary>
         internal Assembly ReflectionObject => _assembly;
 
+        /// <inheritdoc />
         public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
 
+        /// <inheritdoc />
         public IMethodSymbol? EntryPoint => _assembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
 
+        /// <inheritdoc />
         public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_assembly.ExportedTypes);
 
+        /// <inheritdoc />
         public string? FullName => _assembly.FullName;
 
+        /// <inheritdoc />
         public string ImageRuntimeVersion => _assembly.ImageRuntimeVersion;
 
+        /// <inheritdoc />
         public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
 
+        /// <inheritdoc />
         public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_assembly.Modules);
 
+        /// <inheritdoc />
         public override bool IsMissing => _assembly.__IsMissing;
 
+        /// <inheritdoc />
+        public override bool ContainsMissing => GetModules().Any(i => i.IsMissing || i.ContainsMissing);
+
+        /// <inheritdoc />
         public ITypeSymbol[] GetExportedTypes()
         {
             return ResolveTypeSymbols(_assembly.GetExportedTypes());
         }
 
+        /// <inheritdoc />
         public IModuleSymbol? GetModule(string name)
         {
             return _assembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
         }
 
+        /// <inheritdoc />
         public IModuleSymbol[] GetModules()
         {
             return ResolveModuleSymbols(_assembly.GetModules());
         }
 
+        /// <inheritdoc />
         public IModuleSymbol[] GetModules(bool getResourceModules)
         {
             return ResolveModuleSymbols(_assembly.GetModules(getResourceModules));
@@ -96,16 +114,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 #pragma warning restore SYSLIB0037 // Type or member is obsolete
         }
 
+        /// <inheritdoc />
         public System.Reflection.AssemblyName GetName()
         {
             return _assemblyName ??= ToName(_assembly.GetName());
         }
 
+        /// <inheritdoc />
         public System.Reflection.AssemblyName GetName(bool copiedName)
         {
             return ToName(_assembly.GetName());
         }
 
+        /// <inheritdoc />
         public System.Reflection.AssemblyName[] GetReferencedAssemblies()
         {
             var l = _assembly.GetReferencedAssemblies();
@@ -116,40 +137,44 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return a;
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError)
         {
             return _assembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
         {
             return _assembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetType(string name)
         {
             return _assembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
+        /// <inheritdoc />
         public ITypeSymbol[] GetTypes()
         {
             return ResolveTypeSymbols(_assembly.GetTypes());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }

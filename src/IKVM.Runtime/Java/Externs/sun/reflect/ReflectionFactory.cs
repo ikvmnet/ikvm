@@ -310,14 +310,14 @@ namespace IKVM.Java.Externs.sun.reflect
             static readonly MethodInfo valueOfFloat = typeof(global::java.lang.Float).GetMethod("valueOf", new Type[] { typeof(float) });
             static readonly MethodInfo valueOfLong = typeof(global::java.lang.Long).GetMethod("valueOf", new Type[] { typeof(long) });
             static readonly MethodInfo valueOfDouble = typeof(global::java.lang.Double).GetMethod("valueOf", new Type[] { typeof(double) });
-            static readonly MethodInfo byteValue = typeof(global::java.lang.Byte).GetMethod("byteValue", Type.EmptyTypes);
-            static readonly MethodInfo booleanValue = typeof(global::java.lang.Boolean).GetMethod("booleanValue", Type.EmptyTypes);
-            static readonly MethodInfo charValue = typeof(global::java.lang.Character).GetMethod("charValue", Type.EmptyTypes);
-            static readonly MethodInfo shortValue = typeof(global::java.lang.Short).GetMethod("shortValue", Type.EmptyTypes);
-            static readonly MethodInfo intValue = typeof(global::java.lang.Integer).GetMethod("intValue", Type.EmptyTypes);
-            static readonly MethodInfo floatValue = typeof(global::java.lang.Float).GetMethod("floatValue", Type.EmptyTypes);
-            static readonly MethodInfo longValue = typeof(global::java.lang.Long).GetMethod("longValue", Type.EmptyTypes);
-            static readonly MethodInfo doubleValue = typeof(global::java.lang.Double).GetMethod("doubleValue", Type.EmptyTypes);
+            static readonly MethodInfo byteValue = typeof(global::java.lang.Byte).GetMethod("byteValue", []);
+            static readonly MethodInfo booleanValue = typeof(global::java.lang.Boolean).GetMethod("booleanValue", []);
+            static readonly MethodInfo charValue = typeof(global::java.lang.Character).GetMethod("charValue", []);
+            static readonly MethodInfo shortValue = typeof(global::java.lang.Short).GetMethod("shortValue", []);
+            static readonly MethodInfo intValue = typeof(global::java.lang.Integer).GetMethod("intValue", []);
+            static readonly MethodInfo floatValue = typeof(global::java.lang.Float).GetMethod("floatValue", []);
+            static readonly MethodInfo longValue = typeof(global::java.lang.Long).GetMethod("longValue", []);
+            static readonly MethodInfo doubleValue = typeof(global::java.lang.Double).GetMethod("doubleValue", []);
 
             internal static void EmitUnboxArg(CodeEmitter ilgen, RuntimeJavaType type)
             {
@@ -522,9 +522,9 @@ namespace IKVM.Java.Externs.sun.reflect
             /// </summary>
             static FastMethodAccessorImpl()
             {
-                nullPointerExceptionCtor = typeof(global::java.lang.NullPointerException).GetConstructor(Type.EmptyTypes);
+                nullPointerExceptionCtor = typeof(global::java.lang.NullPointerException).GetConstructor([]);
                 nullPointerExceptionWithMessageCtor = typeof(global::java.lang.NullPointerException).GetConstructor(new[] { typeof(string) });
-                illegalArgumentExceptionCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
+                illegalArgumentExceptionCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor([]);
                 illegalArgumentExceptionWithMessageCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string) });
                 illegalArgumentExceptionWithMessageAndCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string), typeof(Exception) });
                 illegalArgumentExceptionWithCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(Exception) });

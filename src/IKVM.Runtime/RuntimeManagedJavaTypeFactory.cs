@@ -24,6 +24,8 @@
 using System;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Symbols;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -42,7 +44,7 @@ namespace IKVM.Runtime
     {
 
         readonly RuntimeContext context;
-        readonly ConditionalWeakTable<Type, RuntimeJavaType> cache = new ConditionalWeakTable<Type, RuntimeJavaType>();
+        readonly ConditionalWeakTable<ITypeSymbol, RuntimeJavaType> cache = new ConditionalWeakTable<ITypeSymbol, RuntimeJavaType>();
 
         /// <summary>
         /// Initializes a new instance.
@@ -59,9 +61,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public RuntimeJavaType GetJavaTypeFromManagedType(Type type)
+        public RuntimeJavaType GetJavaTypeFromManagedType(ITypeSymbol type)
         {
-            return cache.GetValue(type, _ => context.AssemblyClassLoaderFactory.FromAssembly(_.Assembly).GetJavaTypeFromAssemblyType(_));
+            return cache.GetValue(type, _ => context.AssemblyClassLoaderFactory.FromAssembly(_.Assembly.AsReflection()).GetJavaTypeFromAssemblyType(_.AsReflection()));
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public RuntimeJavaType GetBaseJavaType(Type type)
+        public RuntimeJavaType GetBaseJavaType(ITypeSymbol type)
         {
             // interfaces have no base type
             if (type.IsInterface)

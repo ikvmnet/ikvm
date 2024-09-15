@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
@@ -48,9 +49,9 @@ namespace IKVM.Runtime
         sealed class OpenGenericJavaType : RuntimeJavaType
         {
 
-            readonly Type type;
+            readonly ITypeSymbol type;
 
-            static Modifiers GetModifiers(Type type)
+            static Modifiers GetModifiers(ITypeSymbol type)
             {
                 var modifiers = Modifiers.Abstract | Modifiers.Final;
                 if (type.IsInterface)
@@ -65,7 +66,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="type"></param>
             /// <param name="name"></param>
-            internal OpenGenericJavaType(RuntimeContext context, Type type, string name) :
+            internal OpenGenericJavaType(RuntimeContext context, ITypeSymbol type, string name) :
                 base(context, TypeFlags.None, GetModifiers(type), name)
             {
                 this.type = type;
@@ -73,7 +74,7 @@ namespace IKVM.Runtime
 
             internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : Context.JavaBase.TypeOfJavaLangObject;
 
-            internal override Type TypeAsTBD => type;
+            internal override ITypeSymbol TypeAsTBD => type;
 
             internal override RuntimeClassLoader ClassLoader => Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 

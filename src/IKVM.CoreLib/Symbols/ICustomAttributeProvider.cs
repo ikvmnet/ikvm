@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides custom attributes for reflection objects that support them.
     /// </summary>
-    interface ICustomAttributeSymbolProvider
+    interface ICustomAttributeProvider
     {
 
         /// <summary>
@@ -12,7 +12,7 @@
         /// </summary>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false);
+        CustomAttribute[] GetCustomAttributes(bool inherit = false);
 
         /// <summary>
         /// Returns an array of custom attributes defined on this member, identified by type, or an empty array if there are no custom attributes of that type.
@@ -20,7 +20,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false);
+        CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false);
 
         /// <summary>
         /// Retrieves a custom attribute of a specified type that is applied to a specified member.
@@ -28,7 +28,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false);
+        CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false);
 
         /// <summary>
         /// Indicates whether one or more instance of <paramref name="attributeType" /> is defined on this member.

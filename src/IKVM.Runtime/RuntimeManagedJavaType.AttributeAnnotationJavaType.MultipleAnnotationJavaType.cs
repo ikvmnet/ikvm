@@ -104,7 +104,7 @@ namespace IKVM.Runtime
                             }
                         }
 
-                        return new object[0];
+                        return [];
                     }
 
                     internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)

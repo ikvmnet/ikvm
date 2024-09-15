@@ -25,6 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -64,7 +66,7 @@ namespace IKVM.Runtime
         /// <param name="constant"></param>
         /// <param name="flags"></param>
         /// <exception cref="InternalException"></exception>
-        internal RuntimeConstantJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
+        internal RuntimeConstantJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, IFieldSymbol field, object constant, MemberFlags flags) :
             base(declaringType, fieldType, name, sig, modifiers, field, flags)
         {
             if (IsStatic == false)

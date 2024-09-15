@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -49,41 +50,47 @@ namespace IKVM.Runtime
             private sealed class DelegateInvokeStubMethodWrapper : RuntimeJavaMethod
             {
 
-                readonly Type delegateType;
+                readonly ITypeSymbol delegateType;
 
-                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, Type delegateType, string sig)
-                    : base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="declaringType"></param>
+                /// <param name="delegateType"></param>
+                /// <param name="sig"></param>
+                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, ITypeSymbol delegateType, string sig) :
+                    base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
                 {
                     this.delegateType = delegateType;
                 }
 
                 internal MethodInfo DoLink(TypeBuilder tb)
                 {
-                    RuntimeJavaMethod mw = this.DeclaringType.GetMethodWrapper("Invoke", this.Signature, true);
+                    var mw = DeclaringType.GetMethodWrapper("Invoke", Signature, true);
 
-                    MethodInfo invoke = delegateType.GetMethod("Invoke");
-                    ParameterInfo[] parameters = invoke.GetParameters();
-                    Type[] parameterTypes = new Type[parameters.Length];
+                    var invoke = delegateType.GetMethod("Invoke");
+                    var parameters = invoke.GetParameters();
+                    var parameterTypes = new ITypeSymbol[parameters.Length];
                     for (int i = 0; i < parameterTypes.Length; i++)
-                    {
                         parameterTypes[i] = parameters[i].ParameterType;
-                    }
-                    MethodBuilder mb = tb.DefineMethod(this.Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
+
+                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType.AsReflection(), parameterTypes.AsReflection());
                     DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
-                    CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
+                    var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)
                     {
                         ilgen.EmitThrow(mw == null || mw.IsStatic ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", DeclaringType.Name + ".Invoke" + Signature);
                         ilgen.DoEmit();
                         return mb;
                     }
-                    CodeEmitterLocal[] byrefs = new CodeEmitterLocal[parameters.Length];
+
+                    var byrefs = new CodeEmitterLocal[parameters.Length];
                     for (int i = 0; i < parameters.Length; i++)
                     {
                         if (parameters[i].ParameterType.IsByRef)
                         {
-                            Type elemType = parameters[i].ParameterType.GetElementType();
-                            CodeEmitterLocal local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
+                            var elemType = parameters[i].ParameterType.GetElementType();
+                            var local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
                             byrefs[i] = local;
                             ilgen.Emit(OpCodes.Ldc_I4_1);
                             ilgen.Emit(OpCodes.Newarr, elemType);
@@ -101,30 +108,29 @@ namespace IKVM.Runtime
                     for (int i = 0; i < parameters.Length; i++)
                     {
                         if (byrefs[i] != null)
-                        {
                             ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
-                        }
                         else
-                        {
                             ilgen.EmitLdarg(i + 1);
-                        }
                     }
+
                     mw.Link();
                     mw.EmitCallvirt(ilgen);
+
                     CodeEmitterLocal returnValue = null;
                     if (mw.ReturnType != DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
                     {
                         returnValue = ilgen.DeclareLocal(mw.ReturnType.TypeAsSignatureType);
                         ilgen.Emit(OpCodes.Stloc, returnValue);
                     }
-                    CodeEmitterLabel exit = ilgen.DefineLabel();
+
+                    var exit = ilgen.DefineLabel();
                     ilgen.EmitLeave(exit);
                     ilgen.BeginFinallyBlock();
                     for (int i = 0; i < parameters.Length; i++)
                     {
                         if (byrefs[i] != null)
                         {
-                            Type elemType = byrefs[i].LocalType.GetElementType();
+                            var elemType = byrefs[i].LocalType.GetElementType();
                             ilgen.EmitLdarg(i + 1);
                             ilgen.Emit(OpCodes.Ldloc, byrefs[i]);
                             ilgen.Emit(OpCodes.Ldc_I4_0);
@@ -132,13 +138,13 @@ namespace IKVM.Runtime
                             ilgen.Emit(OpCodes.Stobj, elemType);
                         }
                     }
+
                     ilgen.Emit(OpCodes.Endfinally);
                     ilgen.EndExceptionBlock();
                     ilgen.MarkLabel(exit);
                     if (returnValue != null)
-                    {
                         ilgen.Emit(OpCodes.Ldloc, returnValue);
-                    }
+
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
                     return mb;

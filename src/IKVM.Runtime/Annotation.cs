@@ -25,25 +25,13 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-
-
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
-using IKVM.Reflection;
 using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-
-using System.Collections;
-using System.Collections.Generic;
-
 #else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Runtime
@@ -119,49 +107,47 @@ namespace IKVM.Runtime
 
 #endif
 
-        private static object LookupEnumValue(RuntimeContext context, Type enumType, string value)
+        static object LookupEnumValue(RuntimeContext context, ITypeSymbol enumType, string value)
         {
-            FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            var field = enumType.GetField(value, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
             if (field != null)
-            {
                 return field.GetRawConstantValue();
-            }
+
             // both __unspecified and missing values end up here
-            return EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(enumType), 0);
+            return EnumHelper.GetPrimitiveValue(context, enumType.GetEnumUnderlyingType(), 0);
         }
 
-        protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
+        protected static object ConvertValue(RuntimeClassLoader loader, ITypeSymbol targetType, object obj)
         {
             if (targetType.IsEnum)
             {
                 // TODO check the obj descriptor matches the type we expect
                 if (((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
                 {
-                    object[] arr = (object[])obj;
+                    var arr = (object[])obj;
+
                     object value = null;
                     for (int i = 1; i < arr.Length; i++)
                     {
                         // TODO check the obj descriptor matches the type we expect
-                        string s = ((object[])arr[i])[2].ToString();
-                        object newval = LookupEnumValue(loader.Context, targetType, s);
+                        var s = ((object[])arr[i])[2].ToString();
+                        var newval = LookupEnumValue(loader.Context, targetType, s);
                         if (value == null)
-                        {
                             value = newval;
-                        }
                         else
-                        {
                             value = EnumHelper.OrBoxedIntegrals(loader.Context, value, newval);
-                        }
                     }
+
                     return value;
                 }
                 else
                 {
-                    string s = ((object[])obj)[2].ToString();
+                    var s = ((object[])obj)[2].ToString();
                     if (s == "__unspecified")
                     {
                         // TODO we should probably return null and handle that
                     }
+
                     return LookupEnumValue(loader.Context, targetType, s);
                 }
             }
@@ -173,13 +159,12 @@ namespace IKVM.Runtime
             else if (targetType.IsArray)
             {
                 // TODO check the obj descriptor matches the type we expect
-                object[] arr = (object[])obj;
-                Type elementType = targetType.GetElementType();
-                object[] targetArray = new object[arr.Length - 1];
+                var arr = (object[])obj;
+                var elementType = targetType.GetElementType();
+                var targetArray = new object[arr.Length - 1];
                 for (int i = 1; i < arr.Length; i++)
-                {
                     targetArray[i - 1] = ConvertValue(loader, elementType, arr[i]);
-                }
+
                 return targetArray;
             }
             else

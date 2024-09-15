@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -49,7 +51,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeVolatileLongDoubleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeVolatileLongDoubleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             if (sig != "J" && sig != "D")

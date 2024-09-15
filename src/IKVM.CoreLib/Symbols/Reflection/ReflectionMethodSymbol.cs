@@ -24,10 +24,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="module"></param>
         /// <param name="type"></param>
         /// <param name="method"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodInfo method) :
-            base(context, module, type, method)
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, MethodInfo method) :
+            base(context, module, method)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="type"></param>
+        /// <param name="method"></param>
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, MethodInfo method) :
+            this(context, type.ContainingModule, method)
+        {
+
         }
 
         /// <summary>
@@ -98,7 +110,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
                         return i.Symbol;
 
                 // generate new symbol
-                var sym = new ReflectionMethodSymbol(Context, ContainingModule, ContainingType, _method.MakeGenericMethod(genericMethodArguments));
+                ReflectionMethodSymbol sym;
+                if (ContainingType != null)
+                    sym = new ReflectionMethodSymbol(Context, ContainingType, _method.MakeGenericMethod(genericMethodArguments));
+                else
+                    sym = new ReflectionMethodSymbol(Context, ContainingModule, _method.MakeGenericMethod(genericMethodArguments));
+
                 _genericTypes.Add((genericMethodArguments, sym));
                 return sym;
             }
@@ -116,7 +133,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
 
         /// <inheritdoc />
-        public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
 
         /// <inheritdoc />
         public IMethodSymbol GetBaseDefinition()
@@ -133,7 +150,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
         {
-            return ResolveMethodSymbol(_method.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
+            return ResolveMethodSymbol(_method.MakeGenericMethod(typeArguments.Unpack()));
         }
 
     }

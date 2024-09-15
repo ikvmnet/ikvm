@@ -419,7 +419,7 @@ namespace IKVM.Runtime
             MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, capturedTypes);
             CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(ctor);
             ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Call, context.Context.Types.Object.GetConstructor(Type.EmptyTypes));
+            ilgen.Emit(OpCodes.Call, context.Context.Types.Object.GetConstructor([]));
             for (int i = 0; i < capturedTypes.Length; i++)
             {
                 ilgen.EmitLdarg(0);
@@ -471,7 +471,7 @@ namespace IKVM.Runtime
             // writeReplace method
             if (serializable)
             {
-                MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, context.Context.Types.Object, Type.EmptyTypes);
+                MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, context.Context.Types.Object, []);
                 ilgen = context.Context.CodeEmitterFactory.Create(writeReplace);
                 context.TypeWrapper.EmitClassLiteral(ilgen);
                 ilgen.Emit(OpCodes.Ldstr, cpi.GetRetType().Name.Replace('.', '/'));

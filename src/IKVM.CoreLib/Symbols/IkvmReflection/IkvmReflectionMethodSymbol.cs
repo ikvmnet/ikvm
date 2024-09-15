@@ -109,7 +109,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
 
-        public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
 
         public IMethodSymbol GetBaseDefinition()
         {

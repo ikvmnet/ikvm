@@ -353,7 +353,7 @@ namespace IKVM.Runtime.JNI
                     {
                         wrapper.Finish();
                         var cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-                        JVM.SetPendingException((Exception)cons.newInstance(msg == null ? new object[0] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID));
+                        JVM.SetPendingException((Exception)cons.newInstance(msg == null ? [] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID));
                         return JNI_OK;
                     }
                     catch (RetargetableJavaException x)

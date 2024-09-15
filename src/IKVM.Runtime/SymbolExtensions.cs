@@ -30,6 +30,18 @@ namespace IKVM.Runtime
 #endif
         }
 
+        public static Module AsReflection(this IModuleSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+			return ((IkvmReflectionModuleSymbol)symbol).ReflectionObject;
+#else
+            return ((ReflectionModuleSymbol)symbol).ReflectionObject;
+#endif
+        }
+
         public static Type AsReflection(this ITypeSymbol symbol)
         {
             if (symbol == null)
@@ -39,6 +51,30 @@ namespace IKVM.Runtime
 			return ((IkvmReflectionTypeSymbol)symbol).ReflectionObject;
 #else
             return ((ReflectionTypeSymbol)symbol).ReflectionObject;
+#endif
+        }
+
+        public static Type[] AsReflection(this ITypeSymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new Type[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = AsReflection(symbols[i]);
+
+            return a;
+        }
+
+        public static MethodBase AsReflection(this IMethodBaseSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+			return ((IkvmReflectionMethodBaseSymbol)symbol).ReflectionObject;
+#else
+            return ((ReflectionMethodBaseSymbol)symbol).ReflectionObject;
 #endif
         }
 
@@ -78,6 +114,18 @@ namespace IKVM.Runtime
 #endif
         }
 
+        public static FieldInfo[] AsReflection(this IFieldSymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new FieldInfo[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = AsReflection(symbols[i]);
+
+            return a;
+        }
+
         public static PropertyInfo AsReflection(this IPropertySymbol symbol)
         {
             if (symbol == null)
@@ -88,6 +136,18 @@ namespace IKVM.Runtime
 #else
             return ((ReflectionPropertySymbol)symbol).ReflectionObject;
 #endif
+        }
+
+        public static PropertyInfo[] AsReflection(this IPropertySymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new PropertyInfo[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = AsReflection(symbols[i]);
+
+            return a;
         }
 
     }

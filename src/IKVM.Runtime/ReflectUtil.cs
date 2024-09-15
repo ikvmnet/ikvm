@@ -23,6 +23,9 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
+
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -39,78 +42,66 @@ namespace IKVM.Runtime
     static class ReflectUtil
     {
 
-        internal static bool IsSameAssembly(Type type1, Type type2)
+        internal static bool IsSameAssembly(ITypeSymbol type1, ITypeSymbol type2)
         {
             return type1.Assembly.Equals(type2.Assembly);
         }
 
-        internal static bool IsFromAssembly(Type type, Assembly assembly)
+        internal static bool IsFromAssembly(ITypeSymbol type, IAssemblySymbol assembly)
         {
             return type.Assembly.Equals(assembly);
         }
 
-        internal static Assembly GetAssembly(Type type)
+        internal static IAssemblySymbol GetAssembly(ITypeSymbol type)
         {
             return type.Assembly;
         }
 
-        internal static bool IsDynamicAssembly(Assembly asm)
+        internal static bool IsDynamicAssembly(IAssemblySymbol asm)
         {
 #if IMPORTER || EXPORTER
             return false;
 #else
-            return asm.IsDynamic;
+            return asm.AsReflection().IsDynamic;
 #endif
         }
 
-        internal static bool IsReflectionOnly(Type type)
+        internal static bool IsReflectionOnly(ITypeSymbol type)
         {
             while (type.HasElementType)
                 type = type.GetElementType();
 
             var asm = type.Assembly;
-            if (asm != null && asm.ReflectionOnly)
+            if (asm != null && asm.AsReflection().ReflectionOnly)
                 return true;
 
             if (!type.IsGenericType || type.IsGenericTypeDefinition)
                 return false;
 
             // we have a generic type instantiation, it might have ReflectionOnly type arguments
-            foreach (Type arg in type.GetGenericArguments())
+            foreach (var arg in type.GetGenericArguments())
                 if (IsReflectionOnly(arg))
                     return true;
 
             return false;
         }
 
-        internal static bool ContainsTypeBuilder(Type type)
+        internal static bool ContainsTypeBuilder(ITypeSymbol type)
         {
             while (type.HasElementType)
                 type = type.GetElementType();
 
             if (!type.IsGenericType || type.IsGenericTypeDefinition)
-                return type is TypeBuilder;
+                return type.AsReflection() is TypeBuilder;
 
-            foreach (Type arg in type.GetGenericArguments())
+            foreach (var arg in type.GetGenericArguments())
                 if (ContainsTypeBuilder(arg))
                     return true;
 
-            return type.GetGenericTypeDefinition() is TypeBuilder;
+            return type.GetGenericTypeDefinition().AsReflection() is TypeBuilder;
         }
 
-        internal static bool IsVector(Type type)
-        {
-#if IMPORTER || EXPORTER
-            return type.__IsVector;
-#else
-            // there's no API to distinguish an array of rank 1 from a vector,
-            // so we check if the type name ends in [], which indicates it's a vector
-            // (non-vectors will have [*] or [,]).
-            return type.IsArray && type.Name.EndsWith("[]");
-#endif
-        }
-
-        internal static bool IsDynamicMethod(MethodInfo method)
+        internal static bool IsDynamicMethod(IMethodSymbol method)
         {
             // there's no way to distinguish a baked DynamicMethod from a RuntimeMethodInfo and
             // on top of that Mono behaves completely different from .NET
@@ -128,10 +119,10 @@ namespace IKVM.Runtime
         internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, RuntimeClassLoader loader)
         {
             var attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Private;
-            return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, Type.EmptyTypes);
+            return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, []);
         }
 
-        internal static bool MatchNameAndPublicKeyToken(AssemblyName name1, AssemblyName name2)
+        internal static bool MatchNameAndPublicKeyToken(System.Reflection.AssemblyName name1, System.Reflection.AssemblyName name2)
         {
             return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase) && CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
         }
@@ -150,7 +141,7 @@ namespace IKVM.Runtime
             return true;
         }
 
-        internal static bool IsConstructor(MethodBase method)
+        internal static bool IsConstructor(IMethodBaseSymbol method)
         {
             return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
         }
@@ -165,12 +156,12 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static bool CanOwnDynamicMethod(Type type)
+        internal static bool CanOwnDynamicMethod(ITypeSymbol type)
         {
             return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
 
-        internal static bool MatchParameterInfos(ParameterInfo p1, ParameterInfo p2)
+        internal static bool MatchParameterInfos(IParameterSymbol p1, IParameterSymbol p2)
         {
             if (p1.ParameterType != p2.ParameterType)
             {
@@ -187,41 +178,39 @@ namespace IKVM.Runtime
             return true;
         }
 
-        private static bool MatchTypes(Type[] t1, Type[] t2)
+        private static bool MatchTypes(ITypeSymbol[] t1, ITypeSymbol[] t2)
         {
             if (t1.Length == t2.Length)
             {
                 for (int i = 0; i < t1.Length; i++)
-                {
                     if (t1[i] != t2[i])
-                    {
                         return false;
-                    }
-                }
+
                 return true;
             }
+
             return false;
         }
 
 #if IMPORTER
 
-        internal static Type GetMissingType(Type type)
+        internal static ITypeSymbol GetMissingType(ITypeSymbol type)
         {
             while (type.HasElementType)
                 type = type.GetElementType();
 
-            if (type.__IsMissing)
+            if (type.IsMissing)
             {
                 return type;
             }
-            else if (type.__ContainsMissingType)
+            else if (type.ContainsMissing)
             {
                 if (type.IsGenericType)
                 {
                     foreach (var arg in type.GetGenericArguments())
                     {
                         var t1 = GetMissingType(arg);
-                        if (t1.__IsMissing)
+                        if (t1.IsMissing)
                             return t1;
                     }
                 }

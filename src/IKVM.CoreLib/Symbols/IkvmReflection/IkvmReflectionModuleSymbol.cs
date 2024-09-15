@@ -178,6 +178,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public override bool IsMissing => _module.__IsMissing;
 
         /// <inheritdoc />
+        public override bool ContainsMissing => GetTypes().Any(t => t.IsMissing || t.ContainsMissing);
+
+        /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
         {
             return _module.GetField(name) is { } f ? ResolveFieldSymbol(f) : null;
@@ -333,19 +336,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(_module.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
             return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
         }
