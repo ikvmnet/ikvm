@@ -7,7 +7,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionFieldSymbol : ReflectionMemberSymbol, IFieldSymbol
     {
 
-        readonly FieldInfo _field;
+        FieldInfo _field;
 
         /// <summary>
         /// Initializes a new instance.
@@ -98,6 +98,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public object? GetRawConstantValue()
         {
             return _field.GetRawConstantValue();
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="field"></param>
+        internal void Complete(FieldInfo field)
+        {
+            ResolveFieldSymbol(_field = field);
+            base.Complete(_field);
         }
 
     }

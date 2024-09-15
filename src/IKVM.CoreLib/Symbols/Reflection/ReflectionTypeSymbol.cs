@@ -692,10 +692,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
         /// </summary>
         /// <param name="type"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        internal void FinishType(Type type)
+        internal void Complete(Type type)
         {
-            _type = type;
+            ResolveTypeSymbol(_type = type);
+            base.Complete(_type);
+
+            ContainingModule.Complete(_type.Module);
+
+            foreach (var i in _type.GetConstructors(DefaultBindingFlags))
+                ResolveConstructorSymbol(i).Complete(i);
+
+            foreach (var i in _type.GetMethods(DefaultBindingFlags))
+                ResolveMethodSymbol(i).Complete(i);
+
+            foreach (var i in _type.GetFields(DefaultBindingFlags))
+                ResolveFieldSymbol(i).Complete(i);
+
+            foreach (var i in _type.GetProperties(DefaultBindingFlags))
+                ResolvePropertySymbol(i).Complete(i);
+
+            foreach (var i in _type.GetEvents(DefaultBindingFlags))
+                ResolveEventSymbol(i).Complete(i);
         }
 
     }

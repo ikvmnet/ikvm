@@ -7,7 +7,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IMethodBaseSymbol
     {
 
-        readonly MethodBase _method;
+        MethodBase _method;
 
         /// <summary>
         /// Initializes a new instance.
@@ -112,6 +112,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IParameterSymbol[] GetParameters()
         {
             return ResolveParameterSymbols(_method.GetParameters());
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="method"></param>
+        internal void Complete(MethodBase method)
+        {
+            ResolveMethodBaseSymbol(_method = method);
+            base.Complete(_method);
+
+            foreach (var i in _method.GetParameters())
+                ResolveParameterSymbol(i).Complete(i);
+            
         }
 
     }

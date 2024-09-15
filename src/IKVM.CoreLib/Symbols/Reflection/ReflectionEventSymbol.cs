@@ -7,7 +7,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionEventSymbol : ReflectionMemberSymbol, IEventSymbol
     {
 
-        readonly EventInfo _event;
+        EventInfo _event;
 
         /// <summary>
         /// Initializes a new instance.
@@ -90,6 +90,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IMethodSymbol[] GetOtherMethods(bool nonPublic)
         {
             return ResolveMethodSymbols(_event.GetOtherMethods(nonPublic));
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="event"></param>
+        internal void Complete(EventInfo @event)
+        {
+            ResolveEventSymbol(_event = @event);
+            base.Complete(_event);
         }
 
     }

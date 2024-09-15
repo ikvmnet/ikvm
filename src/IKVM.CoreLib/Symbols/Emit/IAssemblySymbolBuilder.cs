@@ -24,6 +24,11 @@
         /// <param name="binaryAttribute"></param>
         void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
 
+        /// <summary>
+        /// Finishes all modules of the assembly, updating the associated symbols.
+        /// </summary>
+        void Complete();
+
     }
 
 }

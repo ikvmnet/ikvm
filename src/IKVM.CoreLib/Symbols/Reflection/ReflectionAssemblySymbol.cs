@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Threading;
 
-using IKVM.CoreLib.Symbols.Reflection.Emit;
+using IKVM.CoreLib.Collections;
+using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Threading;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -13,8 +15,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionAssemblySymbol : ReflectionSymbol, IAssemblySymbol
     {
 
-        readonly Assembly _assembly;
-        readonly ConditionalWeakTable<Module, ReflectionModuleSymbol> _modules = new();
+        Assembly _assembly;
+
+        IndexRangeDictionary<ReflectionModuleSymbol> _moduleSymbols = new(initialCapacity: 1, maxCapacity: 32);
+        ReaderWriterLockSlim? _moduleLock;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,21 +44,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (module is null)
                 throw new ArgumentNullException(nameof(module));
 
-            Debug.Assert(module.Assembly == _assembly);
-            return _modules.GetValue(module, _ => new ReflectionModuleSymbol(Context, _));
-        }
+            Debug.Assert(AssemblyNameEqualityComparer.Instance.Equals(module.Assembly.GetName(), _assembly.GetName()));
 
-        /// <summary>
-        /// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        internal ReflectionModuleSymbol GetOrCreateModuleSymbol(ReflectionModuleSymbolBuilder module)
-        {
-            if (module is null)
-                throw new ArgumentNullException(nameof(module));
+            // create lock on demand
+            if (_moduleLock == null)
+                lock (this)
+                    _moduleLock ??= new ReaderWriterLockSlim();
 
-            throw new NotImplementedException();
+            using (_moduleLock.CreateUpgradeableReadLock())
+            {
+                var row = module.GetMetadataTokenRowNumberSafe();
+                if (_moduleSymbols[row] == null)
+                    using (_moduleLock.CreateWriteLock())
+                        return _moduleSymbols[row] ??= new ReflectionModuleSymbol(Context, this, module);
+                else
+                    return _moduleSymbols[row] ?? throw new InvalidOperationException();
+            }
         }
 
         /// <inheritdoc />
@@ -166,6 +171,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _assembly.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, false);
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="assembly"></param>
+        internal void Complete(Assembly assembly)
+        {
+            Context.GetOrCreateAssemblySymbol(_assembly = assembly);
         }
 
     }

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
@@ -14,7 +16,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionSymbolContext
     {
 
-        readonly ConditionalWeakTable<Assembly, ReflectionAssemblySymbol> _assemblies = new();
+        readonly ConcurrentDictionary<AssemblyName, WeakReference<ReflectionAssemblySymbol>> _symbolByName = new(AssemblyNameEqualityComparer.Instance);
+        readonly ConditionalWeakTable<Assembly, ReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -25,13 +28,37 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Gets or creates a <see cref="ReflectionAssemblySymbol"/> indexed based on the assembly's name.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        ReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
+        {
+            var r = _symbolByName.GetOrAdd(assembly.GetName(), _ => new WeakReference<ReflectionAssemblySymbol>(new ReflectionAssemblySymbol(this, assembly)));
+
+            // reference has valid symbol
+            if (r.TryGetTarget(out var s))
+                return s;
+
+            // no valid symbol, must have been released, lock to restore
+            lock (r)
+            {
+                // still gone, recreate
+                if (r.TryGetTarget(out s) == false)
+                    r.SetTarget(s = new ReflectionAssemblySymbol(this, assembly));
+
+                return s;
+            }
+        }
+
+        /// <summary>
         /// Gets or creates a <see cref="ReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
         public ReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
         {
-            return _assemblies.GetValue(assembly, _ => new ReflectionAssemblySymbol(this, _));
+            return _symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
         }
 
         /// <summary>

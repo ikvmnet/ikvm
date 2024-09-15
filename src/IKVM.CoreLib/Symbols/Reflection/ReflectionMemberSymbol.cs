@@ -42,7 +42,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         readonly ReflectionModuleSymbol _containingModule;
         readonly ReflectionTypeSymbol? _containingType;
-        readonly MemberInfo _member;
+        MemberInfo _member;
 
         CustomAttribute[]? _customAttributes;
         CustomAttribute[]? _inheritedCustomAttributes;
@@ -250,6 +250,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="member"></param>
+        protected void Complete(MemberInfo member)
+        {
+            ResolveMemberSymbol(_member = member);
+            _customAttributes = null;
+            _inheritedCustomAttributes = null;
         }
 
     }

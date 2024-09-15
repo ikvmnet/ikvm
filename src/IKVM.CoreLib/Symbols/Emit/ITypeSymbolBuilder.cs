@@ -319,7 +319,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <summary>
         /// Finishes the type, updating the associated symbol.
         /// </summary>
-        void Finish();
+        void Complete();
 
     }
 

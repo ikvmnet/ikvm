@@ -11,8 +11,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     {
 
         readonly ReflectionMethodBaseSymbol _containingMethod;
-        ParameterInfo? _parameter;
-        ReflectionParameterSymbolBuilder? _builder;
+        ParameterInfo _parameter;
 
         CustomAttribute[]? _customAttributes;
 
@@ -29,76 +28,51 @@ namespace IKVM.CoreLib.Symbols.Reflection
             _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingMethod"></param>
-        /// <param name="builder"></param>
-        public ReflectionParameterSymbol(ReflectionSymbolContext context, ReflectionMethodBaseSymbol containingMethod, ReflectionParameterSymbolBuilder builder) :
-            base(context)
-        {
-            _containingMethod = containingMethod ?? throw new ArgumentNullException(nameof(containingMethod));
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-        }
-
         internal ReflectionMethodBaseSymbol ContainingMethod => _containingMethod;
 
         /// <inheritdoc />
-        public ParameterAttributes Attributes => _parameter is { } p ? p.Attributes : _builder is { } b ? (ParameterAttributes)b.ReflectionBuilder.Attributes : throw new InvalidOperationException();
+        public ParameterAttributes Attributes => _parameter.Attributes;
 
         /// <inheritdoc />
-        public object? DefaultValue => _parameter is { } p ? p.DefaultValue : _builder is { } b ? b.GetConstant() : throw new InvalidOperationException();
+        public object? DefaultValue => _parameter.DefaultValue;
 
         /// <inheritdoc />
-        public bool HasDefaultValue => (Attributes & ParameterAttributes.HasDefault) != 0;
+        public bool HasDefaultValue => _parameter.HasDefaultValue;
 
         /// <inheritdoc />
-        public bool IsIn => (Attributes & ParameterAttributes.In) != 0;
+        public bool IsIn => _parameter.IsIn;
 
         /// <inheritdoc />
-        public bool IsLcid => (Attributes & ParameterAttributes.Lcid) != 0;
+        public bool IsLcid => _parameter.IsLcid;
 
         /// <inheritdoc />
-        public bool IsOptional => (Attributes & ParameterAttributes.Optional) != 0;
+        public bool IsOptional => _parameter.IsOptional;
 
         /// <inheritdoc />
-        public bool IsOut => (Attributes & ParameterAttributes.Out) != 0;
+        public bool IsOut => _parameter.IsOut;
 
         /// <inheritdoc />
-        public bool IsRetval => (Attributes & ParameterAttributes.Retval) != 0;
+        public bool IsRetval => _parameter.IsRetval;
 
         /// <inheritdoc />
-        public IMemberSymbol Member => _parameter is { } p ? ResolveMemberSymbol(p.Member) : _containingMethod;
-
-#if NETFRAMEWORK
+        public IMemberSymbol Member => ResolveMemberSymbol(_parameter.Member);
 
         /// <inheritdoc />
-        public int MetadataToken => _parameter is { } p ? p.MetadataToken : _builder is { } b ? b.ReflectionBuilder.GetToken().Token : throw new InvalidOperationException();
-
-#else
+        public int MetadataToken => _parameter.MetadataToken;
 
         /// <inheritdoc />
-        public int MetadataToken => _parameter is { } p ? p.MetadataToken : _builder is { } b ? throw new NotSupportedException() : throw new InvalidOperationException();
-
-#endif
+        public string? Name => _parameter.Name;
 
         /// <inheritdoc />
-        public string? Name => _parameter is { } p ? p.Name : _builder is { } b ? b.ReflectionBuilder.Name : throw new InvalidOperationException();
+        public ITypeSymbol ParameterType => ResolveTypeSymbol(_parameter.ParameterType);
 
         /// <inheritdoc />
-        public ITypeSymbol ParameterType => _parameter is { } p ? ResolveTypeSymbol(p.ParameterType) : _builder is { } b ? throw new NotSupportedException() : throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public int Position => _parameter is { } p ? p.Position : _builder is { } b ? b.ReflectionBuilder.Position : throw new InvalidOperationException();
+        public int Position => _parameter.Position;
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            if (_parameter is not null)
-                return _customAttributes ??= ResolveCustomAttributes(_parameter.GetCustomAttributesData());
-
-            throw new NotSupportedException();
+            return _customAttributes ??= ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
@@ -116,39 +90,29 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            if (_parameter is not null)
-                return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
-
-            throw new NotSupportedException();
+            return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            if (_parameter is not null)
-                return ResolveTypeSymbols(_parameter.GetOptionalCustomModifiers());
-
-            throw new NotSupportedException();
+            return ResolveTypeSymbols(_parameter.GetOptionalCustomModifiers());
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            if (_parameter is not null)
-                return ResolveTypeSymbols(_parameter.GetRequiredCustomModifiers());
-
-            throw new NotSupportedException();
+            return ResolveTypeSymbols(_parameter.GetRequiredCustomModifiers());
         }
 
         /// <summary>
-        /// Finishes the symbol by replacing the builder.
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
         /// </summary>
         /// <param name="parameter"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        internal void Finish(ParameterInfo parameter)
+        internal void Complete(ParameterInfo parameter)
         {
-            _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
-            _builder = null;
+            ResolveParameterSymbol(_parameter = parameter);
+            _customAttributes = null;
         }
 
     }

@@ -227,10 +227,20 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void Finish()
+        void Complete(Type type)
         {
-            var sym = ReflectionSymbol;
-            sym.FinishType(_builder.CreateType());
+            ReflectionSymbol.Complete(type);
+        }
+
+        /// <inheritdoc />
+        public void Complete()
+        {
+            if (_builder.IsCreated() == false)
+            {
+                var type = _builder.CreateType();
+                if (type != null)
+                    Complete(type);
+            }
         }
 
     }

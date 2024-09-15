@@ -7,7 +7,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionPropertySymbol : ReflectionMemberSymbol, IPropertySymbol
     {
 
-        readonly PropertyInfo _property;
+        PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -16,7 +16,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="type"></param>
         /// <param name="property"></param>
         public ReflectionPropertySymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, PropertyInfo property) :
-            base(context, type.ContainingModule, type, property)
+            base(context, type, property)
         {
             _property = property ?? throw new ArgumentNullException(nameof(property));
         }
@@ -112,6 +112,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             return ResolveTypeSymbols(_property.GetRequiredCustomModifiers());
         }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="property"></param>
+        internal void Complete(PropertyInfo property)
+        {
+            ResolvePropertySymbol(_property = property);
+            base.Complete(_property);
+        }
+
     }
 
 }

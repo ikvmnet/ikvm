@@ -85,6 +85,11 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="binaryAttribute"></param>
         void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
 
+        /// <summary>
+        /// Finishes all types of the module, updating the associated symbols.
+        /// </summary>
+        void Complete();
+
     }
 
 }

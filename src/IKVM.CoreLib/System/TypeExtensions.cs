@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.Metadata.Ecma335;
 
-using IKVM.CoreLib.Symbols.Reflection.Emit;
-
 namespace System
 {
 
@@ -93,6 +91,30 @@ namespace System
                     typeof(EventAttributes)),
                 _eventBuilderParameter)
             .Compile();
+
+        /// <summary>
+        /// Gets the metadata token for the specified <see cref="Type"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static int GetMetadataTokenSafe(this Module module)
+        {
+            var t = module.MetadataToken;
+            if (t == 0)
+                throw new InvalidOperationException();
+
+            return t;
+        }
+
+        /// <summary>
+        /// Gets the metadata row number for the specified <see cref="Module"/>.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        public static int GetMetadataTokenRowNumberSafe(this Module module)
+        {
+            return MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(module.GetMetadataTokenSafe()));
+        }
 
         /// <summary>
         /// Gets the metadata token for the specified <see cref="Type"/>.
@@ -292,13 +314,6 @@ namespace System
         /// <exception cref="InvalidOperationException"></exception>
         public static int GetMetadataTokenSafe(this EventInfo @event)
         {
-            if (@event is ReflectionEventBuilderInfo b)
-            {
-                var t = b.GetMetadataToken();
-                if (t == 0)
-                    throw new InvalidOperationException();
-            }
-
             return @event.GetMetadataToken();
         }
 

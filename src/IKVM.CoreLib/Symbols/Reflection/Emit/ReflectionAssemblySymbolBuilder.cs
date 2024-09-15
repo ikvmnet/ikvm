@@ -44,6 +44,24 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
         }
 
+        /// <inheritdoc />
+        public void Complete()
+        {
+            foreach (var module in _builder.GetModules())
+            {
+                if (module is ModuleBuilder moduleBuilder)
+                {
+                    moduleBuilder.CreateGlobalFunctions();
+
+                    foreach (var type in moduleBuilder.GetTypes())
+                        if (type is TypeBuilder typeBuilder)
+                            if (typeBuilder.IsCreated() == false)
+                                if (typeBuilder.CreateType() is { } t)
+                                    ReflectionSymbol.ResolveTypeSymbol(t).Complete(t);
+                }
+            }
+        }
+
     }
 
 }

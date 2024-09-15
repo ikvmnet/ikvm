@@ -34,7 +34,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
-        readonly Module _module;
+        readonly ReflectionAssemblySymbol _containingAssembly;
+        Module _module;
 
         IndexRangeDictionary<Type> _typeTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionTypeSymbol> _typeSymbols = new(maxCapacity: MAX_CAPACITY);
@@ -64,13 +65,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="containingAssembly"></param>
         /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionModuleSymbol(ReflectionSymbolContext context, Module module) :
+        public ReflectionModuleSymbol(ReflectionSymbolContext context, ReflectionAssemblySymbol containingAssembly, Module module) :
             base(context)
         {
+            _containingAssembly = containingAssembly ?? throw new ArgumentNullException(nameof(containingAssembly));
             _module = module ?? throw new ArgumentNullException(nameof(module));
         }
+
+        /// <summary>
+        /// Gets the <see cref="ReflectionModuleSymbol" /> which contains the metadata of this member.
+        /// </summary>
+        internal ReflectionAssemblySymbol ContainingAssembly => _containingAssembly;
 
         /// <summary>
         /// Gets the wrapped <see cref="Module"/>.
@@ -178,7 +186,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (method is null)
                 throw new ArgumentNullException(nameof(method));
 
-            Debug.Assert(method.Module == _module);
+            Debug.Assert(method.Module.GetMetadataTokenSafe() == _module.GetMetadataTokenSafe());
 
             // create lock on demand
             if (_methodLock == null)
@@ -546,6 +554,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, false);
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="module"></param>
+        internal void Complete(Module module)
+        {
+            ResolveModuleSymbol(_module = module);
+            ContainingAssembly.Complete(_module.Assembly);
         }
 
     }

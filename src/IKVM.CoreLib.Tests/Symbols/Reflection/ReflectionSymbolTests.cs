@@ -383,6 +383,28 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         }
 
         [TestMethod]
+        public void CanCompleteTypeBuilder()
+        {
+            var c = new ReflectionSymbolContext();
+            var a = new ReflectionAssemblySymbolBuilder(c, AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.RunAndCollect));
+
+            var moduleBuilder = a.DefineModule("DynamicModule");
+            var moduleSymbol = moduleBuilder.Symbol;
+
+            var type1Builder = moduleBuilder.DefineType("DynamicType1");
+            var type1Symbol = type1Builder.Symbol;
+            type1Symbol.Should().BeOfType<ReflectionTypeSymbol>();
+
+            type1Builder.Complete();
+            var type1SymbolAgain = type1Builder.Symbol;
+            type1SymbolAgain.Should().BeSameAs(type1Symbol);
+            type1SymbolAgain.Name.Should().Be("DynamicType1");
+
+            // check that we can relookup type
+            moduleSymbol.GetType("DynamicType1").Should().BeSameAs(type1SymbolAgain);
+        }
+
+        [TestMethod]
         public void CanCreateAndResolveDynamicMethodOnModule()
         {
             var c = new ReflectionSymbolContext();
