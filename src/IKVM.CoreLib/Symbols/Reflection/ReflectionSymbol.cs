@@ -298,6 +298,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Resolves the symbols for the specified parameters.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        protected internal ReflectionParameterSymbol[] ResolveGenericParameterSymbols(ParameterInfo[] parameters)
+        {
+            var a = new ReflectionParameterSymbol[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+                a[i] = ResolveParameterSymbol(parameters[i]);
+
+            return a;
+        }
+
+        /// <summary>
         /// Transforms a custom set of custom attribute data records to a symbol record.
         /// </summary>
         /// <param name="attributes"></param>

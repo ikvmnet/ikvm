@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -21,12 +20,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         ReflectionTypeSymbol? _asSZArray;
         ReflectionTypeSymbol? _asPointer;
         ReflectionTypeSymbol? _asByRef;
-
-        Type[]? _genericParameterList;
-        ReflectionTypeSymbol?[]? _genericParameterSymbols;
-
-        List<(Type[] Arguments, ReflectionTypeSymbol Symbol)>? _genericTypeSymbols;
-        ReaderWriterLockSlim? _genericTypeLock;
+        ConcurrentDictionary<ITypeSymbol[], ReflectionTypeSymbol>? _genericTypeSymbols;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,48 +38,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the generic parameter type.
         /// </summary>
-        /// <param name="genericTypeParameterType"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericTypeParameterType)
-        {
-            if (genericTypeParameterType is null)
-                throw new ArgumentNullException(nameof(genericTypeParameterType));
-
-            Debug.Assert(genericTypeParameterType.DeclaringType == _type);
-
-            // initialize tables
-            if (_genericParameterList == null)
-                Interlocked.CompareExchange(ref _genericParameterList, _type.GetGenericArguments(), null);
-            if (_genericParameterSymbols == null)
-                Interlocked.CompareExchange(ref _genericParameterSymbols, new ReflectionTypeSymbol?[_genericParameterList.Length], null);
-
-            // position of the parameter in the list
-            var idx = genericTypeParameterType.GenericParameterPosition;
-
-            // check that our list is long enough to contain the entire table
-            if (_genericParameterSymbols.Length < idx)
-                throw new IndexOutOfRangeException();
-
-            // if not yet created, create, allow multiple instances, but only one is eventually inserted
-            ref var rec = ref _genericParameterSymbols[idx];
-            if (rec == null)
-                Interlocked.CompareExchange(ref rec, new ReflectionTypeSymbol(Context, ContainingModule, genericTypeParameterType), null);
-
-            // this should never happen
-            if (rec is not ReflectionTypeSymbol sym)
-                throw new InvalidOperationException();
-
-            return sym;
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the generic parameter type.
-        /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeArguments)
+        internal ReflectionTypeSymbol GetOrCreateGenericTypeSymbol(ITypeSymbol[] genericTypeArguments)
         {
             if (genericTypeArguments is null)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
@@ -93,45 +48,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (_type.IsGenericTypeDefinition == false)
                 throw new InvalidOperationException();
 
-            // initialize the available parameters
-            if (_genericParameterList == null)
-                Interlocked.CompareExchange(ref _genericParameterList, _type.GetGenericArguments(), null);
-            if (_genericParameterList.Length != genericTypeArguments.Length)
-                throw new InvalidOperationException();
-
-            // initialize generic type map, and lock on it since we're potentially adding items
             if (_genericTypeSymbols == null)
-                Interlocked.CompareExchange(ref _genericTypeSymbols, [], null);
-            if (_genericTypeLock == null)
-                Interlocked.CompareExchange(ref _genericTypeLock, new(), null);
+                Interlocked.CompareExchange(ref _genericTypeSymbols, new ConcurrentDictionary<ITypeSymbol[], ReflectionTypeSymbol>(TypeSymbolListEqualityComparer.Instance), null);
 
-            try
-            {
-                _genericTypeLock.EnterUpgradeableReadLock();
-
-                // find existing entry
-                foreach (var i in _genericTypeSymbols)
-                    if (i.Arguments.SequenceEqual(genericTypeArguments))
-                        return i.Symbol;
-
-                try
-                {
-                    _genericTypeLock.EnterWriteLock();
-
-                    // generate new symbol
-                    var sym = new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
-                    _genericTypeSymbols.Add((genericTypeArguments, sym));
-                    return sym;
-                }
-                finally
-                {
-                    _genericTypeLock.ExitWriteLock();
-                }
-            }
-            finally
-            {
-                _genericTypeLock.ExitUpgradeableReadLock();
-            }
+            return _genericTypeSymbols.GetOrAdd(
+                genericTypeArguments,
+                _ => new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments.Unpack())));
         }
 
         /// <summary>
@@ -544,6 +466,48 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            return _type.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+#if NETFRAMEWORK
+            throw new NotImplementedException();
+#else
+            return _type.GetMethod(name, genericParameterCount, bindingAttr, null, callConvention, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+#endif
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+#if NETFRAMEWORK
+            throw new NotImplementedException();
+#else
+            return _type.GetMethod(name, genericParameterCount, bindingAttr, null, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+#endif
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            return _type.GetMethod(name, bindingAttr, null, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+#if NETFRAMEWORK
+            throw new NotImplementedException();
+#else
+            return _type.GetMethod(name, genericParameterCount, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+#endif
+        }
+
+        /// <inheritdoc />
         public IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
         {
             return ResolveMethodSymbols(_type.GetMethods(bindingAttr));
@@ -676,7 +640,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments)
         {
-            throw new NotImplementedException();
+            return GetOrCreateGenericTypeSymbol(typeArguments);
         }
 
         /// <inheritdoc />

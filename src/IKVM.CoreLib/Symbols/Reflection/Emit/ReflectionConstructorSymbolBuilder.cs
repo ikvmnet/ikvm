@@ -46,13 +46,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public ILGenerator GetILGenerator()
+        public IILGenerator GetILGenerator()
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public ILGenerator GetILGenerator(int streamSize)
+        public IILGenerator GetILGenerator(int streamSize)
         {
             throw new NotImplementedException();
         }

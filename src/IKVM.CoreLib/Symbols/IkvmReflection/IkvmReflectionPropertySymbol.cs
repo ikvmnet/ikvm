@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionPropertySymbol : IkvmReflectionMemberSymbol, IPropertySymbol
     {
 
-        readonly PropertyInfo _property;
+        PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,18 +19,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="type"></param>
         /// <param name="property"></param>
         public IkvmReflectionPropertySymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol type, PropertyInfo property) :
-            base(context, type.ContainingModule, type, property)
+            base(context, type, property)
         {
             _property = property ?? throw new ArgumentNullException(nameof(property));
         }
 
-        public new PropertyInfo ReflectionObject => (PropertyInfo)base.ReflectionObject;
+        /// <summary>
+        /// Gets the underlying <see cref="PropertyInfo"/> wrapped by this symbol.
+        /// </summary>
+        internal new PropertyInfo ReflectionObject => _property;
 
         /// <inheritdoc />
         public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)_property.Attributes;
-
-        /// <inheritdoc />
-        public ITypeSymbol PropertyType => ResolveTypeSymbol(_property.PropertyType);
 
         /// <inheritdoc />
         public bool CanRead => _property.CanRead;
@@ -40,6 +40,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         public bool IsSpecialName => _property.IsSpecialName;
+
+        /// <inheritdoc />
+        public ITypeSymbol PropertyType => ResolveTypeSymbol(_property.PropertyType);
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod => _property.GetMethod is { } m ? ResolveMethodSymbol(m) : null;
@@ -54,18 +57,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IParameterSymbol[] GetIndexParameters()
-        {
-            return ResolveParameterSymbols(_property.GetIndexParameters());
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol GetModifiedPropertyType()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
         public IMethodSymbol[] GetAccessors()
         {
             return ResolveMethodSymbols(_property.GetAccessors());
@@ -74,7 +65,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public IMethodSymbol[] GetAccessors(bool nonPublic)
         {
-            throw new NotImplementedException();
+            return ResolveMethodSymbols(_property.GetAccessors(nonPublic));
+        }
+
+        /// <inheritdoc />
+        public IParameterSymbol[] GetIndexParameters()
+        {
+            return ResolveParameterSymbols(_property.GetIndexParameters());
         }
 
         /// <inheritdoc />
@@ -102,6 +99,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
+        public ITypeSymbol GetModifiedPropertyType()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
             return ResolveTypeSymbols(_property.GetOptionalCustomModifiers());
@@ -112,6 +115,17 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             return ResolveTypeSymbols(_property.GetRequiredCustomModifiers());
         }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="property"></param>
+        internal void Complete(PropertyInfo property)
+        {
+            ResolvePropertySymbol(_property = property);
+            base.Complete(_property);
+        }
+
     }
 
 }

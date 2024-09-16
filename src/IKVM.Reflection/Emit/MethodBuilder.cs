@@ -510,7 +510,7 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            internal override Module Module
+            public override Module Module
             {
                 get { return method.Module; }
             }

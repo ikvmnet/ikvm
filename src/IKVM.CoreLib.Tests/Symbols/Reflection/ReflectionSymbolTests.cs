@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -141,6 +142,21 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             m.ReturnParameter.ParameterType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(string)));
             m.IsGenericMethod.Should().BeFalse();
             m.IsGenericMethodDefinition.Should().BeFalse();
+            m.IsPublic.Should().BeTrue();
+            m.IsPrivate.Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void CanResolveGenericMethod()
+        {
+            var c = new ReflectionSymbolContext();
+            var s = c.GetOrCreateTypeSymbol(typeof(ValueTuple));
+            var m = s.GetMethods().FirstOrDefault(i => i.Name == "Create" && i.GetGenericArguments().Length == 1);
+            m.Name.Should().Be("Create");
+            m.ReturnType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(ValueTuple<>)).MakeGenericType(m.GetGenericArguments()[0]));
+            m.ReturnParameter.ParameterType.Should().BeSameAs(c.GetOrCreateTypeSymbol(typeof(ValueTuple<>)).MakeGenericType(m.GetGenericArguments()[0]));
+            m.IsGenericMethod.Should().BeTrue();
+            m.IsGenericMethodDefinition.Should().BeTrue();
             m.IsPublic.Should().BeTrue();
             m.IsPrivate.Should().BeFalse();
         }

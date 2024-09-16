@@ -10,7 +10,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         readonly IkvmReflectionMethodBaseSymbol _containingMethod;
-        readonly ParameterInfo _parameter;
+        ParameterInfo _parameter;
+
+        CustomAttribute[]? _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,10 +30,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         internal IkvmReflectionMethodBaseSymbol ContainingMethod => _containingMethod;
 
         /// <inheritdoc />
-        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)_parameter.Attributes;
+        public System.Reflection.ParameterAttributes Attributes =>(System.Reflection.ParameterAttributes)_parameter.Attributes;
 
         /// <inheritdoc />
-        public object DefaultValue => _parameter.RawDefaultValue;
+        public object? DefaultValue => _parameter.RawDefaultValue;
 
         /// <inheritdoc />
         public bool HasDefaultValue => _parameter.HasDefaultValue;
@@ -69,13 +71,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
+            return _customAttributes ??= ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
         public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, inherit));
+            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
         }
 
         /// <inheritdoc />
@@ -100,6 +102,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
             return ResolveTypeSymbols(_parameter.GetRequiredCustomModifiers());
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="parameter"></param>
+        internal void Complete(ParameterInfo parameter)
+        {
+            ResolveParameterSymbol(_parameter = parameter);
+            _customAttributes = null;
         }
 
     }

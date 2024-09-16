@@ -553,6 +553,21 @@ namespace IKVM.Reflection
             return false;
         }
 
+        public Array GetEnumValues()
+        {
+            if (!IsEnum)
+                throw new ArgumentException();
+
+            var l = __GetDeclaredFields();
+            var a = new object[l.Length];
+
+            for (int i = 0; i < l.Length; i++)
+                if (l[i].IsLiteral)
+                    a[i] = l[i];
+
+            return a;
+        }
+
         public override string ToString()
         {
             return FullName;

@@ -1,55 +1,47 @@
 ﻿using System;
-using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
+using IKVM.Reflection.Emit;
 
-namespace IKVM.CoreLib.Symbols.Reflection.Emit
+namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
-    class ReflectionAssemblySymbolBuilder : ReflectionSymbolBuilder<IAssemblySymbol, ReflectionAssemblySymbol>, IAssemblySymbolBuilder
+    class IkvmReflectionAssemblySymbolBuilder : IkvmReflectionSymbolBuilder<IAssemblySymbol, IkvmReflectionAssemblySymbol>, IAssemblySymbolBuilder
     {
 
         readonly AssemblyBuilder _builder;
-        ReflectionAssemblySymbol? _symbol;
+        IkvmReflectionAssemblySymbol? _symbol;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="builder"></param>
-        public ReflectionAssemblySymbolBuilder(ReflectionSymbolContext context, AssemblyBuilder builder) :
+        public IkvmReflectionAssemblySymbolBuilder(IkvmReflectionSymbolContext context, AssemblyBuilder builder) :
             base(context)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
         }
 
         /// <inheritdoc />
-        internal sealed override ReflectionAssemblySymbol ReflectionSymbol => _symbol ??= Context.GetOrCreateAssemblySymbol(_builder);
+        internal sealed override IkvmReflectionAssemblySymbol ReflectionSymbol => _symbol ??= Context.GetOrCreateAssemblySymbol(_builder);
 
         /// <inheritdoc />
         public IModuleSymbolBuilder DefineModule(string name)
         {
-            return new ReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name));
+            return new IkvmReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name, name + ".dll"));
         }
 
         /// <inheritdoc />
         public IModuleSymbolBuilder DefineModule(string name, string fileName)
         {
-#if NETFRAMEWORK
-            return new ReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name, fileName));
-#else
-            return new ReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name));
-#endif
+            return new IkvmReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name, fileName));
         }
 
         /// <inheritdoc />
         public IModuleSymbolBuilder DefineModule(string name, string fileName, bool emitSymbolInfo)
         {
-#if NETFRAMEWORK
-            return new ReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name, fileName, emitSymbolInfo));
-#else
-            return new ReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name));
-#endif
+            return new IkvmReflectionModuleSymbolBuilder(Context, _builder.DefineDynamicModule(name, fileName, emitSymbolInfo));
         }
 
         /// <inheritdoc />
@@ -61,7 +53,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
+            _builder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
         }
 
         /// <inheritdoc />

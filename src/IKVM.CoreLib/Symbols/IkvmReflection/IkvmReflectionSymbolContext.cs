@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+
+using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
+using IKVM.Reflection.Emit;
 
 using Assembly = IKVM.Reflection.Assembly;
 using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
@@ -21,7 +26,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionSymbolContext
     {
 
-        readonly ConditionalWeakTable<Assembly, IkvmReflectionAssemblySymbol> _assemblies = new();
+        readonly ConcurrentDictionary<System.Reflection.AssemblyName, WeakReference<IkvmReflectionAssemblySymbol>> _symbolByName = new(AssemblyNameEqualityComparer.Instance);
+        readonly ConditionalWeakTable<Assembly, IkvmReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,16 +38,37 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
+        /// Gets or creates a <see cref="IkvmReflectionAssemblySymbol"/> indexed based on the assembly's name.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IkvmReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
+        {
+            var r = _symbolByName.GetOrAdd(assembly.GetName().ToAssemblyName(), _ => new WeakReference<IkvmReflectionAssemblySymbol>(new IkvmReflectionAssemblySymbol(this, assembly)));
+
+            // reference has valid symbol
+            if (r.TryGetTarget(out var s))
+                return s;
+
+            // no valid symbol, must have been released, lock to restore
+            lock (r)
+            {
+                // still gone, recreate
+                if (r.TryGetTarget(out s) == false)
+                    r.SetTarget(s = new IkvmReflectionAssemblySymbol(this, assembly));
+
+                return s;
+            }
+        }
+
+        /// <summary>
         /// Gets or creates a <see cref="IkvmReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
         public IkvmReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
         {
-            if (assembly is null)
-                throw new ArgumentNullException(nameof(assembly));
-
-            return _assemblies.GetValue(assembly, _ => new IkvmReflectionAssemblySymbol(this, _));
+            return _symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
         }
 
         /// <summary>
@@ -51,9 +78,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
-            if (module is null)
-                throw new ArgumentNullException(nameof(module));
-
             return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
         }
 
@@ -64,10 +88,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
         {
-            if (type is null)
-                throw new ArgumentNullException(nameof(type));
-
             return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IkvmReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method is ConstructorInfo ctor)
+                return GetOrCreateConstructorSymbol(ctor);
+            else
+                return GetOrCreateMethodSymbol((MethodInfo)method);
         }
 
         /// <summary>
@@ -77,23 +111,17 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
         {
-            if (ctor is null)
-                throw new ArgumentNullException(nameof(ctor));
-
-            return GetOrCreateAssemblySymbol(ctor.Module.Assembly).GetOrCreateModuleSymbol(ctor.Module).GetOrCreateTypeSymbol(ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+            return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// Gets or creates a <see cref="IkvmReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
         public IkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            return GetOrCreateAssemblySymbol(method.Module.Assembly).GetOrCreateModuleSymbol(method.Module).GetOrCreateTypeSymbol(method.DeclaringType!).GetOrCreateMethodSymbol(method);
+            return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
         }
 
         /// <summary>
@@ -103,10 +131,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            return GetOrCreateAssemblySymbol(parameter.Member.Module.Assembly).GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateTypeSymbol(parameter.Member.DeclaringType!).GetOrCreateMethodBaseSymbol((MethodBase)parameter.Member).GetOrCreateParameterSymbol(parameter);
+            return GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateParameterSymbol(parameter);
         }
 
         /// <summary>
@@ -116,10 +141,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            if (field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            return GetOrCreateAssemblySymbol(field.Module.Assembly).GetOrCreateModuleSymbol(field.Module).GetOrCreateTypeSymbol(field.DeclaringType!).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -129,10 +151,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
-            if (property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            return GetOrCreateAssemblySymbol(property.Module.Assembly).GetOrCreateModuleSymbol(property.Module).GetOrCreateTypeSymbol(property.DeclaringType!).GetOrCreatePropertySymbol(property);
+            return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
         }
 
         /// <summary>
@@ -142,10 +161,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
-            if (@event is null)
-                throw new ArgumentNullException(nameof(@event));
+            return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
+        }
 
-            return GetOrCreateAssemblySymbol(@event.Module.Assembly).GetOrCreateModuleSymbol(@event.Module).GetOrCreateTypeSymbol(@event.DeclaringType!).GetOrCreateEventSymbol(@event);
+        /// <summary>
+        /// Gets or creates a <see cref="IkvmReflectionParameterSymbol"/> for the specified <see cref="ParameterBuilder"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public IkvmReflectionParameterSymbol GetOrCreateParameterSymbol(MethodBuilder method, ParameterBuilder parameter)
+        {
+            return GetOrCreateParameterSymbol(new IkvmReflectionParameterBuilderInfo(method, parameter));
         }
 
     }

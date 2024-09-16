@@ -2,9 +2,10 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices;
 using System.Threading;
 
+using IKVM.CoreLib.Collections;
+using IKVM.CoreLib.Threading;
 using IKVM.Reflection;
 
 using Module = IKVM.Reflection.Module;
@@ -29,23 +30,58 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
         }
 
-        readonly Module _module;
+        const int MAX_CAPACITY = 65536 * 2;
 
-        Type[]? _typesSource;
-        int _typesBaseRow;
-        IkvmReflectionTypeSymbol?[]? _types;
+        const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+
+        readonly IkvmReflectionAssemblySymbol _containingAssembly;
+        Module _module;
+
+        IndexRangeDictionary<Type> _typeTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionTypeSymbol> _typeSymbols = new(maxCapacity: MAX_CAPACITY);
+        ReaderWriterLockSlim? _typeLock;
+
+        IndexRangeDictionary<MethodBase> _methodTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionMethodBaseSymbol> _methodSymbols = new(maxCapacity: MAX_CAPACITY);
+        ReaderWriterLockSlim? _methodLock;
+
+        IndexRangeDictionary<FieldInfo> _fieldTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionFieldSymbol> _fieldSymbols = new(maxCapacity: MAX_CAPACITY);
+        ReaderWriterLockSlim? _fieldLock;
+
+        IndexRangeDictionary<PropertyInfo> _propertyTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionPropertySymbol> _propertySymbols = new(maxCapacity: MAX_CAPACITY);
+        ReaderWriterLockSlim? _propertyLock;
+
+        IndexRangeDictionary<EventInfo> _eventTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionEventSymbol> _eventSymbols = new(maxCapacity: MAX_CAPACITY);
+        ReaderWriterLockSlim? _eventLock;
+
+        IndexRangeDictionary<ParameterInfo> _parameterTable = new();
+        IndexRangeDictionary<IkvmReflectionParameterSymbol> _parameterSymbols = new();
+        ReaderWriterLockSlim? _parameterLock;
+
+        IndexRangeDictionary<IkvmReflectionTypeSymbol> _genericParameterSymbols = new();
+        ReaderWriterLockSlim? _genericParameterLock;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="containingAssembly"></param>
         /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionModuleSymbol(IkvmReflectionSymbolContext context, Module module) :
+        public IkvmReflectionModuleSymbol(IkvmReflectionSymbolContext context, IkvmReflectionAssemblySymbol containingAssembly, Module module) :
             base(context)
         {
+            _containingAssembly = containingAssembly ?? throw new ArgumentNullException(nameof(containingAssembly));
             _module = module ?? throw new ArgumentNullException(nameof(module));
         }
+
+        /// <summary>
+        /// Gets the <see cref="IkvmReflectionModuleSymbol" /> which contains the metadata of this member.
+        /// </summary>
+        internal IkvmReflectionAssemblySymbol ContainingAssembly => _containingAssembly;
 
         /// <summary>
         /// Gets the wrapped <see cref="Module"/>.
@@ -53,7 +89,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         internal Module ReflectionObject => _module;
 
         /// <summary>
-        /// Gets or creates the <see cref="IkvmReflectionTypeSymbol"/> cached for the module by type.
+        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the module by type.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -65,49 +101,41 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             Debug.Assert(type.Module == _module);
 
-            // type is not a definition, but is substituted
+            // type is a generic parameter (GenericParam)
+            if (type.IsGenericParameter)
+                return GetOrCreateGenericParameterSymbol(type);
+
+            // type is not a type definition (TypeDef)
             if (IsTypeDefinition(type) == false)
                 return GetOrCreateTypeSymbolForSpecification(type);
 
-            // look up handle and row
-            var hnd = MetadataTokens.TypeDefinitionHandle(type.MetadataToken);
-            var row = MetadataTokens.GetRowNumber(hnd);
+            // create lock on demand
+            if (_typeLock == null)
+                lock (this)
+                    _typeLock ??= new ReaderWriterLockSlim();
 
-            // initialize source table
-            if (_typesSource == null)
+            using (_typeLock.CreateUpgradeableReadLock())
             {
-                _typesSource = _module.GetTypes().OrderBy(i => i.MetadataToken).ToArray();
-                _typesBaseRow = _typesSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_typesSource[0].MetadataToken)) : 0;
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.TypeDefinitionHandle(type.MetadataToken));
+                if (_typeTable[row] != type)
+                    using (_typeLock.CreateWriteLock())
+                        _typeTable[row] = type;
+
+                if (_typeSymbols[row] == null)
+                    using (_typeLock.CreateWriteLock())
+                        return _typeSymbols[row] ??= new IkvmReflectionTypeSymbol(Context, this, type);
+                else
+                    return _typeSymbols[row] ?? throw new InvalidOperationException();
             }
-
-            // initialize cache table
-            _types ??= new IkvmReflectionTypeSymbol?[_typesSource.Length];
-
-            // index of current record is specified row - base
-            var idx = row - _typesBaseRow - 1;
-            Debug.Assert(idx >= 0);
-            Debug.Assert(idx < _typesSource.Length);
-
-            // check that our type list is long enough to contain the entire table
-            if (_types.Length < idx)
-                throw new IndexOutOfRangeException();
-
-            // if not yet created, create, allow multiple instances, but only one is eventually inserted
-            if (_types[idx] == null)
-                Interlocked.CompareExchange(ref _types[idx], new IkvmReflectionTypeSymbol(Context, this, type), null);
-
-            // this should never happen
-            if (_types[idx] is not IkvmReflectionTypeSymbol sym)
-                throw new InvalidOperationException();
-
-            return sym;
         }
 
         /// <summary>
-        /// For a given 
+        /// Gets or creates a <see cref="IkvmReflectionTypeSymbol"/> for the specification type: array, pointer, etc.
         /// </summary>
         /// <param name="type"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         IkvmReflectionTypeSymbol GetOrCreateTypeSymbolForSpecification(Type type)
         {
             if (type is null)
@@ -117,7 +145,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             if (type.GetElementType() is { } elementType)
             {
-                var elementTypeSymbol = GetOrCreateTypeSymbol(elementType);
+                var elementTypeSymbol = ResolveTypeSymbol(elementType);
 
                 // handles both SZ arrays and normal arrays
                 if (type.IsArray)
@@ -134,26 +162,234 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             if (type.IsGenericType)
             {
-                var definitionType = type.GetGenericTypeDefinition();
-                var definitionTypeSymbol = GetOrCreateTypeSymbol(definitionType);
-                return definitionTypeSymbol.GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
-            }
-
-            // generic type parameter
-            if (type.IsGenericParameter && type.DeclaringMethod is null && type.DeclaringType is not null)
-            {
-                var declaringType = GetOrCreateTypeSymbol(type.DeclaringType);
-                return declaringType.GetOrCreateGenericParameterSymbol(type);
-            }
-
-            // generic method parameter
-            if (type.IsGenericParameter && type.DeclaringMethod is not null && type.DeclaringMethod.DeclaringType is not null)
-            {
-                var declaringMethod = GetOrCreateTypeSymbol(type.DeclaringMethod.DeclaringType);
-                return declaringMethod.GetOrCreateGenericParameterSymbol(type);
+                var definitionTypeSymbol = ResolveTypeSymbol(type.GetGenericTypeDefinition());
+                return definitionTypeSymbol.GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
             }
 
             throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionMethodBaseSymbol"/> cached fqor the type by method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        internal IkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            Debug.Assert(method.Module.MetadataToken == _module.MetadataToken);
+
+            // create lock on demand
+            if (_methodLock == null)
+                lock (this)
+                    _methodLock ??= new ReaderWriterLockSlim();
+
+            using (_methodLock.CreateUpgradeableReadLock())
+            {
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(method.MetadataToken));
+                if (_methodTable[row] != method)
+                    using (_methodLock.CreateWriteLock())
+                        _methodTable[row] = method;
+
+                if (_methodSymbols[row] == null)
+                    using (_methodLock.CreateWriteLock())
+                        if (method is ConstructorInfo c)
+                            return _methodSymbols[row] ??= new IkvmReflectionConstructorSymbol(Context, ResolveTypeSymbol(c.DeclaringType ?? throw new InvalidOperationException()), c);
+                        else if (method is MethodInfo m)
+                            if (method.DeclaringType is { } dt)
+                                return _methodSymbols[row] ??= new IkvmReflectionMethodSymbol(Context, ResolveTypeSymbol(dt), m);
+                            else
+                                return _methodSymbols[row] ??= new IkvmReflectionMethodSymbol(Context, this, m);
+                        else
+                            throw new InvalidOperationException();
+                else
+                    return _methodSymbols[row] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionConstructorSymbol"/> cached for the type by ctor.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        internal IkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return (IkvmReflectionConstructorSymbol)GetOrCreateMethodBaseSymbol(ctor);
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionMethodSymbol"/> cached for the type by method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        internal IkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            return (IkvmReflectionMethodSymbol)GetOrCreateMethodBaseSymbol(method);
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionFieldSymbol"/> cached for the type by field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        internal IkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            if (field is null)
+                throw new ArgumentNullException(nameof(field));
+
+            Debug.Assert(field.Module == _module);
+
+            // create lock on demand
+            if (_fieldLock == null)
+                lock (this)
+                    _fieldLock ??= new ReaderWriterLockSlim();
+
+            using (_fieldLock.CreateUpgradeableReadLock())
+            {
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.FieldDefinitionHandle(field.MetadataToken));
+                if (_fieldTable[row] != field)
+                    using (_fieldLock.CreateWriteLock())
+                        _fieldTable[row] = field;
+
+                if (_fieldSymbols[row] == null)
+                    using (_fieldLock.CreateWriteLock())
+                        if (field.DeclaringType is { } dt)
+                            return _fieldSymbols[row] ??= new IkvmReflectionFieldSymbol(Context, ResolveTypeSymbol(dt), field);
+                        else
+                            return _fieldSymbols[row] ??= new IkvmReflectionFieldSymbol(Context, this, field);
+                else
+                    return _fieldSymbols[row] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionPropertySymbol"/> cached for the type by property.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        internal IkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        {
+            if (property is null)
+                throw new ArgumentNullException(nameof(property));
+
+            Debug.Assert(property.Module == _module);
+
+            // create lock on demand
+            if (_propertyLock == null)
+                lock (this)
+                    _propertyLock ??= new ReaderWriterLockSlim();
+
+            using (_propertyLock.CreateUpgradeableReadLock())
+            {
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.PropertyDefinitionHandle(property.MetadataToken));
+                if (_propertyTable[row] != property)
+                    using (_propertyLock.CreateWriteLock())
+                        _propertyTable[row] = property;
+
+                if (_propertySymbols[row] == null)
+                    using (_propertyLock.CreateWriteLock())
+                        return _propertySymbols[row] ??= new IkvmReflectionPropertySymbol(Context, ResolveTypeSymbol(property.DeclaringType!), property);
+                else
+                    return _propertySymbols[row] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="ReflectionEventSymbol"/> cached for the type by event.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        internal IkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        {
+            if (@event is null)
+                throw new ArgumentNullException(nameof(@event));
+
+            Debug.Assert(@event.Module == _module);
+
+            // create lock on demand
+            if (_eventLock == null)
+                lock (this)
+                    _eventLock ??= new ReaderWriterLockSlim();
+
+            using (_eventLock.CreateUpgradeableReadLock())
+            {
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.EventDefinitionHandle(@event.MetadataToken));
+                if (_eventTable[row] is not EventInfo i || i != @event)
+                    using (_eventLock.CreateWriteLock())
+                        _eventTable[row] = @event;
+
+                if (_eventSymbols[row] == null)
+                    using (_eventLock.CreateWriteLock())
+                        return _eventSymbols[row] ??= new IkvmReflectionEventSymbol(Context, ResolveTypeSymbol(@event.DeclaringType!), @event);
+                else
+                    return _eventSymbols[row] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        internal IkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
+
+            Debug.Assert(parameter.Member.Module == _module);
+
+            // create lock on demand
+            if (_parameterLock == null)
+                lock (this)
+                    _parameterLock ??= new ReaderWriterLockSlim();
+
+            using (_parameterLock.CreateUpgradeableReadLock())
+            {
+                var position = parameter.Position;
+                if (_parameterTable[position] != parameter)
+                    using (_parameterLock.CreateWriteLock())
+                        _parameterTable[position] = parameter;
+
+                if (_parameterSymbols[position] == null)
+                    using (_parameterLock.CreateWriteLock())
+                        return _parameterSymbols[position] ??= new IkvmReflectionParameterSymbol(Context, ResolveMethodBaseSymbol((MethodBase)parameter.Member), parameter);
+                else
+                    return _parameterSymbols[position] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IkvmReflectionTypeSymbol"/> cached for the module by type.
+        /// </summary>
+        /// <param name="genericParameterType"></param>
+        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        internal IkvmReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericParameterType)
+        {
+            if (genericParameterType is null)
+                throw new ArgumentNullException(nameof(genericParameterType));
+
+            Debug.Assert(genericParameterType.Module == _module);
+
+            // create lock on demand
+            if (_genericParameterLock == null)
+                Interlocked.CompareExchange(ref _genericParameterLock, new ReaderWriterLockSlim(), null);
+
+            using (_genericParameterLock.CreateUpgradeableReadLock())
+            {
+                var hnd = MetadataTokens.GenericParameterHandle(genericParameterType.MetadataToken);
+                var row = MetadataTokens.GetRowNumber(hnd);
+                if (_genericParameterSymbols[row] == null)
+                    using (_genericParameterLock.CreateWriteLock())
+                        return _genericParameterSymbols[row] ??= new IkvmReflectionTypeSymbol(Context, this, genericParameterType);
+                else
+                    return _genericParameterSymbols[row] ?? throw new InvalidOperationException();
+            }
         }
 
         /// <inheritdoc />
@@ -173,12 +409,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         public string ScopeName => _module.ScopeName;
-
-        /// <inheritdoc />
-        public override bool IsMissing => _module.__IsMissing;
-
-        /// <inheritdoc />
-        public override bool ContainsMissing => GetTypes().Any(t => t.IsMissing || t.ContainsMissing);
 
         /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
@@ -213,16 +443,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
         {
-            return _module.GetMethod(name, UnpackTypeSymbols(types)) is { } m ? ResolveMethodSymbol(m) : null;
+            return _module.GetMethod(name, types.Unpack()) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
-            if (modifiers != null)
-                throw new NotImplementedException();
-
-            return _module.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -236,8 +463,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             return ResolveMethodSymbols(_module.GetMethods((BindingFlags)bindingFlags));
         }
-        /// <inheritdoc />
 
+        /// <inheritdoc />
         public ITypeSymbol? GetType(string className)
         {
             return _module.GetType(className) is { } t ? ResolveTypeSymbol(t) : null;
@@ -276,9 +503,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public IFieldSymbol? ResolveField(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
-            var _genericMethodArguments = genericMethodArguments != null ? UnpackTypeSymbols(genericMethodArguments) : null;
-            return _module.ResolveField(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } f ? ResolveFieldSymbol(f) : null;
+            return _module.ResolveField(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } f ? ResolveFieldSymbol(f) : null;
         }
 
         /// <inheritdoc />
@@ -290,17 +515,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public IMemberSymbol? ResolveMember(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
-            var _genericMethodArguments = genericMethodArguments != null ? UnpackTypeSymbols(genericMethodArguments) : null;
-            return _module.ResolveMember(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } m ? ResolveMemberSymbol(m) : null;
+            return _module.ResolveMember(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } m ? ResolveMemberSymbol(m) : null;
         }
 
         /// <inheritdoc />
         public IMethodBaseSymbol? ResolveMethod(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
-            var _genericMethodArguments = genericMethodArguments != null ? UnpackTypeSymbols(genericMethodArguments) : null;
-            return _module.ResolveMethod(metadataToken, _genericTypeArguments, _genericMethodArguments) is { } m ? ResolveMethodBaseSymbol(m) : null;
+            return _module.ResolveMethod(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } m ? ResolveMethodBaseSymbol(m) : null;
         }
 
         /// <inheritdoc />
@@ -330,9 +551,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public ITypeSymbol ResolveType(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            var _genericTypeArguments = genericTypeArguments != null ? UnpackTypeSymbols(genericTypeArguments) : null;
-            var _genericMethodArguments = genericMethodArguments != null ? UnpackTypeSymbols(genericMethodArguments) : null;
-            return ResolveTypeSymbol(_module.ResolveType(metadataToken, _genericTypeArguments, _genericMethodArguments));
+            return ResolveTypeSymbol(_module.ResolveType(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
         }
 
         /// <inheritdoc />
@@ -344,7 +563,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
+            return ResolveCustomAttributes(_module.GetCustomAttributesData().Where(i => i.AttributeType == ((IkvmReflectionTypeSymbol)attributeType).ReflectionObject));
         }
 
         /// <inheritdoc />
@@ -357,6 +576,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _module.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
+        }
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="module"></param>
+        internal void Complete(Module module)
+        {
+            ResolveModuleSymbol(_module = module);
+            ContainingAssembly.Complete(_module.Assembly);
         }
 
     }

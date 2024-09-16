@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
 using IKVM.CoreLib.Collections;
@@ -61,6 +62,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IndexRangeDictionary<ReflectionParameterSymbol> _parameterSymbols = new();
         ReaderWriterLockSlim? _parameterLock;
 
+        IndexRangeDictionary<ReflectionTypeSymbol> _genericParameterSymbols = new();
+        ReaderWriterLockSlim? _genericParameterLock;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -98,14 +102,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             Debug.Assert(type.Module == _module);
 
-            // type is not a definition, but is substituted
+            // type is a generic parameter (GenericParam)
+            if (type.IsGenericParameter)
+                return GetOrCreateGenericParameterSymbol(type);
+
+            // type is not a type definition (TypeDef)
             if (IsTypeDefinition(type) == false)
                 return GetOrCreateTypeSymbolForSpecification(type);
 
             // create lock on demand
             if (_typeLock == null)
-                lock (this)
-                    _typeLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _typeLock, new ReaderWriterLockSlim(), null);
 
             using (_typeLock.CreateUpgradeableReadLock())
             {
@@ -156,21 +163,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (type.IsGenericType)
             {
                 var definitionTypeSymbol = ResolveTypeSymbol(type.GetGenericTypeDefinition());
-                return definitionTypeSymbol.GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
-            }
-
-            // generic type parameter
-            if (type.IsGenericParameter && type.DeclaringMethod is null && type.DeclaringType is not null)
-            {
-                var declaringType = ResolveTypeSymbol(type.DeclaringType);
-                return declaringType.GetOrCreateGenericParameterSymbol(type);
-            }
-
-            // generic method parameter
-            if (type.IsGenericParameter && type.DeclaringMethod is not null && type.DeclaringMethod.DeclaringType is not null)
-            {
-                var declaringMethod = ResolveTypeSymbol(type.DeclaringMethod.DeclaringType);
-                return declaringMethod.GetOrCreateGenericParameterSymbol(type);
+                return definitionTypeSymbol.GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
             }
 
             throw new InvalidOperationException();
@@ -190,8 +183,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             // create lock on demand
             if (_methodLock == null)
-                lock (this)
-                    _methodLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _methodLock, new ReaderWriterLockSlim(), null);
 
             using (_methodLock.CreateUpgradeableReadLock())
             {
@@ -251,8 +243,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             // create lock on demand
             if (_fieldLock == null)
-                lock (this)
-                    _fieldLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _fieldLock, new ReaderWriterLockSlim(), null);
 
             using (_fieldLock.CreateUpgradeableReadLock())
             {
@@ -287,8 +278,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             // create lock on demand
             if (_propertyLock == null)
-                lock (this)
-                    _propertyLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _propertyLock, new ReaderWriterLockSlim(), null);
 
             using (_propertyLock.CreateUpgradeableReadLock())
             {
@@ -320,8 +310,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             // create lock on demand
             if (_eventLock == null)
-                lock (this)
-                    _eventLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _eventLock, new ReaderWriterLockSlim(), null);
 
             using (_eventLock.CreateUpgradeableReadLock())
             {
@@ -352,8 +341,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             // create lock on demand
             if (_parameterLock == null)
-                lock (this)
-                    _parameterLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _parameterLock, new ReaderWriterLockSlim(), null);
 
             using (_parameterLock.CreateUpgradeableReadLock())
             {
@@ -367,6 +355,35 @@ namespace IKVM.CoreLib.Symbols.Reflection
                         return _parameterSymbols[position] ??= new ReflectionParameterSymbol(Context, ResolveMethodBaseSymbol((MethodBase)parameter.Member), parameter);
                 else
                     return _parameterSymbols[position] ?? throw new InvalidOperationException();
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the module by type.
+        /// </summary>
+        /// <param name="genericParameterType"></param>
+        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        internal ReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericParameterType)
+        {
+            if (genericParameterType is null)
+                throw new ArgumentNullException(nameof(genericParameterType));
+
+            Debug.Assert(genericParameterType.Module == _module);
+
+            // create lock on demand
+            if (_genericParameterLock == null)
+                Interlocked.CompareExchange(ref _genericParameterLock, new ReaderWriterLockSlim(), null);
+
+            using (_genericParameterLock.CreateUpgradeableReadLock())
+            {
+                var hnd = MetadataTokens.GenericParameterHandle(genericParameterType.GetMetadataTokenSafe());
+                var row = MetadataTokens.GetRowNumber(hnd);
+                if (_genericParameterSymbols[row] == null)
+                    using (_genericParameterLock.CreateWriteLock())
+                        return _genericParameterSymbols[row] ??= new ReflectionTypeSymbol(Context, this, genericParameterType);
+                else
+                    return _genericParameterSymbols[row] ?? throw new InvalidOperationException();
             }
         }
 

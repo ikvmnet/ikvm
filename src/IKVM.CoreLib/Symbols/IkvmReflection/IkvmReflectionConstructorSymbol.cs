@@ -10,16 +10,27 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
         /// <param name="type"></param>
         /// <param name="ctor"></param>
-        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol type, ConstructorInfo ctor) :
-            base(context, module, type, ctor)
+        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol type, ConstructorInfo ctor) :
+            base(context, type, ctor)
         {
 
         }
 
+        /// <summary>
+        /// Gets the underlying <see cref="ConstructorInfo"/> wrapped by this symbol.
+        /// </summary>
         internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
+
+        /// <summary>
+        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
+        /// </summary>
+        /// <param name="type"></param>
+        internal void Complete(ConstructorInfo type)
+        {
+            base.Complete(type);
+        }
 
     }
 

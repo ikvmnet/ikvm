@@ -454,6 +454,60 @@ namespace IKVM.CoreLib.Symbols
         IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types);
 
         /// <summary>
+        /// Searches for the specified method whose parameters match the specified argument types and modifiers, using the specified binding constraints and the specified calling convention.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="bindingAttr"></param>
+        /// <param name="callConvention"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints and the specified calling convention.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="bindingAttr"></param>
+        /// <param name="callConvention"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="bindingAttr"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified argument types and modifiers, using the specified binding constraints.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="bindingAttr"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+        /// <summary>
+        /// Searches for the specified public method whose parameters match the specified generic parameter count, argument types and modifiers.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+
+        /// <summary>
         /// Returns all the public methods of the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>

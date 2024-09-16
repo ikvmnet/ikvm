@@ -1,4 +1,6 @@
-﻿namespace IKVM.CoreLib.Symbols.Emit
+﻿using System.Xml.Linq;
+
+namespace IKVM.CoreLib.Symbols.Emit
 {
 
     interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>
@@ -10,6 +12,23 @@
         /// <param name="name"></param>
         /// <returns></returns>
         IModuleSymbolBuilder DefineModule(string name);
+
+        /// <summary>
+        /// Defines a named module in this assembly.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        IModuleSymbolBuilder DefineModule(string name, string fileName);
+
+        /// <summary>
+        /// Defines a named module in this assembly.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        /// <param name="emitSymbolInfo"></param>
+        /// <returns></returns>
+        IModuleSymbolBuilder DefineModule(string name, string fileName, bool emitSymbolInfo);
 
         /// <summary>
         /// Set a custom attribute using a custom attribute builder.
