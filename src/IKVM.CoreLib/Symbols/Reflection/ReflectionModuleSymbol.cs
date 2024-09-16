@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
@@ -38,31 +39,25 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly ReflectionAssemblySymbol _containingAssembly;
         Module _module;
 
-        IndexRangeDictionary<Type> _typeTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionTypeSymbol> _typeSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _typeLock;
 
-        IndexRangeDictionary<MethodBase> _methodTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionMethodBaseSymbol> _methodSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _methodLock;
 
-        IndexRangeDictionary<FieldInfo> _fieldTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionFieldSymbol> _fieldSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _fieldLock;
 
-        IndexRangeDictionary<PropertyInfo> _propertyTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionPropertySymbol> _propertySymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _propertyLock;
 
-        IndexRangeDictionary<EventInfo> _eventTable = new(maxCapacity: MAX_CAPACITY);
         IndexRangeDictionary<ReflectionEventSymbol> _eventSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _eventLock;
 
-        IndexRangeDictionary<ParameterInfo> _parameterTable = new();
-        IndexRangeDictionary<ReflectionParameterSymbol> _parameterSymbols = new();
+        IndexRangeDictionary<ReflectionParameterSymbol> _parameterSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _parameterLock;
 
-        IndexRangeDictionary<ReflectionTypeSymbol> _genericParameterSymbols = new();
+        IndexRangeDictionary<ReflectionTypeSymbol> _genericParameterSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _genericParameterLock;
 
         /// <summary>
@@ -117,10 +112,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_typeLock.CreateUpgradeableReadLock())
             {
                 var row = type.GetMetadataTokenRowNumberSafe();
-                if (_typeTable[row] != type)
-                    using (_typeLock.CreateWriteLock())
-                        _typeTable[row] = type;
-
                 if (_typeSymbols[row] == null)
                     using (_typeLock.CreateWriteLock())
                         return _typeSymbols[row] ??= new ReflectionTypeSymbol(Context, this, type);
@@ -170,7 +161,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached fqor the type by method.
+        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
@@ -181,6 +172,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             Debug.Assert(method.Module.GetMetadataTokenSafe() == _module.GetMetadataTokenSafe());
 
+            // they are methods, but they are associated differently
+            if (method is DynamicMethod)
+                throw new ArgumentException("Dynamic methods cannot be attached to context.");
+
             // create lock on demand
             if (_methodLock == null)
                 Interlocked.CompareExchange(ref _methodLock, new ReaderWriterLockSlim(), null);
@@ -188,10 +183,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_methodLock.CreateUpgradeableReadLock())
             {
                 var row = method.GetMetadataTokenRowNumberSafe();
-                if (_methodTable[row] != method)
-                    using (_methodLock.CreateWriteLock())
-                        _methodTable[row] = method;
-
                 if (_methodSymbols[row] == null)
                     using (_methodLock.CreateWriteLock())
                         if (method is ConstructorInfo c)
@@ -248,10 +239,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_fieldLock.CreateUpgradeableReadLock())
             {
                 var row = field.GetMetadataTokenRowNumberSafe();
-                if (_fieldTable[row] != field)
-                    using (_fieldLock.CreateWriteLock())
-                        _fieldTable[row] = field;
-
                 if (_fieldSymbols[row] == null)
                     using (_fieldLock.CreateWriteLock())
                         if (field.DeclaringType is { } dt)
@@ -283,10 +270,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_propertyLock.CreateUpgradeableReadLock())
             {
                 var row = property.GetMetadataTokenRowNumberSafe();
-                if (_propertyTable[row] != property)
-                    using (_propertyLock.CreateWriteLock())
-                        _propertyTable[row] = property;
-
                 if (_propertySymbols[row] == null)
                     using (_propertyLock.CreateWriteLock())
                         return _propertySymbols[row] ??= new ReflectionPropertySymbol(Context, ResolveTypeSymbol(property.DeclaringType!), property);
@@ -315,10 +298,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_eventLock.CreateUpgradeableReadLock())
             {
                 var row = @event.GetMetadataTokenRowNumberSafe();
-                if (_eventTable[row] is not EventInfo i || i != @event)
-                    using (_eventLock.CreateWriteLock())
-                        _eventTable[row] = @event;
-
                 if (_eventSymbols[row] == null)
                     using (_eventLock.CreateWriteLock())
                         return _eventSymbols[row] ??= new ReflectionEventSymbol(Context, ResolveTypeSymbol(@event.DeclaringType!), @event);
@@ -346,10 +325,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_parameterLock.CreateUpgradeableReadLock())
             {
                 var position = parameter.Position;
-                if (_parameterTable[position] != parameter)
-                    using (_parameterLock.CreateWriteLock())
-                        _parameterTable[position] = parameter;
-
                 if (_parameterSymbols[position] == null)
                     using (_parameterLock.CreateWriteLock())
                         return _parameterSymbols[position] ??= new ReflectionParameterSymbol(Context, ResolveMethodBaseSymbol((MethodBase)parameter.Member), parameter);

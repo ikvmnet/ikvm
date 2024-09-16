@@ -53,8 +53,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_moduleLock == null)
-                lock (this)
-                    _moduleLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _moduleLock, new ReaderWriterLockSlim(), null);
 
             using (_moduleLock.CreateUpgradeableReadLock())
             {

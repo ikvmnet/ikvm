@@ -57,11 +57,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IndexRangeDictionary<IkvmReflectionEventSymbol> _eventSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _eventLock;
 
-        IndexRangeDictionary<ParameterInfo> _parameterTable = new();
-        IndexRangeDictionary<IkvmReflectionParameterSymbol> _parameterSymbols = new();
+        IndexRangeDictionary<ParameterInfo> _parameterTable = new(maxCapacity: MAX_CAPACITY);
+        IndexRangeDictionary<IkvmReflectionParameterSymbol> _parameterSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _parameterLock;
 
-        IndexRangeDictionary<IkvmReflectionTypeSymbol> _genericParameterSymbols = new();
+        IndexRangeDictionary<IkvmReflectionTypeSymbol> _genericParameterSymbols = new(maxCapacity: MAX_CAPACITY);
         ReaderWriterLockSlim? _genericParameterLock;
 
         /// <summary>
@@ -111,8 +111,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_typeLock == null)
-                lock (this)
-                    _typeLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _typeLock, new ReaderWriterLockSlim(), null);
 
             using (_typeLock.CreateUpgradeableReadLock())
             {
@@ -183,8 +182,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_methodLock == null)
-                lock (this)
-                    _methodLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _methodLock, new ReaderWriterLockSlim(), null);
 
             using (_methodLock.CreateUpgradeableReadLock())
             {
@@ -244,8 +242,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_fieldLock == null)
-                lock (this)
-                    _fieldLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _fieldLock, new ReaderWriterLockSlim(), null);
 
             using (_fieldLock.CreateUpgradeableReadLock())
             {
@@ -280,8 +277,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_propertyLock == null)
-                lock (this)
-                    _propertyLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _propertyLock, new ReaderWriterLockSlim(), null);
 
             using (_propertyLock.CreateUpgradeableReadLock())
             {
@@ -313,8 +309,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_eventLock == null)
-                lock (this)
-                    _eventLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _eventLock, new ReaderWriterLockSlim(), null);
 
             using (_eventLock.CreateUpgradeableReadLock())
             {
@@ -345,8 +340,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             // create lock on demand
             if (_parameterLock == null)
-                lock (this)
-                    _parameterLock ??= new ReaderWriterLockSlim();
+                Interlocked.CompareExchange(ref _parameterLock, new ReaderWriterLockSlim(), null);
 
             using (_parameterLock.CreateUpgradeableReadLock())
             {

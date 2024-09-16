@@ -420,60 +420,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             moduleSymbol.GetType("DynamicType1").Should().BeSameAs(type1SymbolAgain);
         }
 
-        [TestMethod]
-        public void CanCreateAndResolveDynamicMethodOnModule()
-        {
-            var c = new ReflectionSymbolContext();
-
-            var method1 = new DynamicMethod("DynamicMethod1", null, null, typeof(ReflectionSymbolTests).Module);
-            var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
-        }
-
-        [TestMethod]
-        public void CanCreateAndResolveMultipleDynamicMethodsOnModule()
-        {
-            var c = new ReflectionSymbolContext();
-
-            var method1 = new DynamicMethod("DynamicMethod1", null, null, typeof(ReflectionSymbolTests).Module);
-            var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
-
-            var method2 = new DynamicMethod("DynamicMethod2", null, null, typeof(ReflectionSymbolTests).Module);
-            var method2Symbol = c.GetOrCreateMethodSymbol(method2);
-            method2Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method2Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method2));
-        }
-
-        [TestMethod]
-        public void CanCreateAndResolveDynamicMethodOnType()
-        {
-            var c = new ReflectionSymbolContext();
-
-            var method1 = new DynamicMethod("DynamicMethod", null, null, typeof(ReflectionSymbolTests));
-            var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
-        }
-
-        [TestMethod]
-        public void CanCreateAndResolveMultipleDynamicMethodsOnType()
-        {
-            var c = new ReflectionSymbolContext();
-
-            var method1 = new DynamicMethod("DynamicMethod1", null, null, typeof(ReflectionSymbolTests));
-            var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
-
-            var method2 = new DynamicMethod("DynamicMethod2", null, null, typeof(ReflectionSymbolTests));
-            var method2Symbol = c.GetOrCreateMethodSymbol(method2);
-            method2Symbol.Should().BeOfType<ReflectionMethodSymbol>();
-            method2Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method2));
-        }
-
     }
 
 }
