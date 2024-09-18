@@ -92,7 +92,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual MemberTypes MemberType => UnderlyingMember.MemberType;
 
         /// <inheritdoc />
-        public virtual int MetadataToken => UnderlyingMember.MetadataToken;
+        public virtual int MetadataToken => UnderlyingMember.GetMetadataTokenSafe();
 
         /// <inheritdoc />
         public virtual string Name => UnderlyingMember.Name;
