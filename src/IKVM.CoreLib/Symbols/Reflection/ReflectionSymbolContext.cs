@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
@@ -13,11 +14,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Holds references to symbols derived from System.Reflection.
     /// </summary>
-    class ReflectionSymbolContext
+    class ReflectionSymbolContext : ISymbolContext
     {
 
-        readonly ConcurrentDictionary<AssemblyName, WeakReference<ReflectionAssemblySymbol>> _symbolByName = new(AssemblyNameEqualityComparer.Instance);
-        readonly ConditionalWeakTable<Assembly, ReflectionAssemblySymbol> _symbolByAssembly = new();
+        readonly ConcurrentDictionary<AssemblyName, WeakReference<IReflectionAssemblySymbol?>> _symbolByName = new(AssemblyNameEqualityComparer.Instance);
+        readonly ConditionalWeakTable<Assembly, IReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,150 +29,267 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionAssemblySymbol"/> indexed based on the assembly's name.
+        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> indexed based on the assembly's name.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        ReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
+        IReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
         {
-            var r = _symbolByName.GetOrAdd(assembly.GetName(), _ => new WeakReference<ReflectionAssemblySymbol>(new ReflectionAssemblySymbol(this, assembly)));
+            var r = _symbolByName.GetOrAdd(assembly.GetName(), _ => new(null));
 
-            // reference has valid symbol
-            if (r.TryGetTarget(out var s))
-                return s;
-
-            // no valid symbol, must have been released, lock to restore
             lock (r)
             {
-                // still gone, recreate
-                if (r.TryGetTarget(out s) == false)
-                    r.SetTarget(s = new ReflectionAssemblySymbol(this, assembly));
+                // reference has no target, reset
+                if (r.TryGetTarget(out var s) == false)
+                {
+                    if (assembly is AssemblyBuilder builder)
+                    {
+                        // we were passed in a builder, so generate a symbol builder and set it as the builder and symbol.
+                        var a = builder.GetRuntimeAssembly();
+                        r.SetTarget(s = new ReflectionAssemblySymbolBuilder(this, builder));
+                    }
+                    else
+                    {
+                        // we were passed a non builder, so generate a symbol and set it to the symbol
+                        // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
+                        r.SetTarget(s = new ReflectionAssemblySymbol(this, assembly));
+                    }
+                }
 
-                return s;
+                return s ?? throw new InvalidOperationException();
             }
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// Gets or creates a <see cref="IReflectionAssemblySymbolBuilder"/> indexed based on the assembly's name.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public ReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
+        IReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbolByName(AssemblyBuilder assembly)
+        {
+            return (IReflectionAssemblySymbolBuilder)GetOrCreateAssemblySymbolByName((Assembly)assembly);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public IReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
         {
             return _symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
+        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public IReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbol(AssemblyBuilder assembly)
+        {
+            return (IReflectionAssemblySymbolBuilder)_symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        public ReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        {
+            if (module is ModuleBuilder builder)
+                return GetOrCreateModuleSymbol(builder);
+            else
+                return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionModuleSymbolBuilder"/> for the specified <see cref="ModuleBuilder"/>.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
         {
             return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionTypeSymbol"/> for the specified <see cref="Type"/>.
+        /// Gets or creates a <see cref="IReflectionTypeSymbol"/> for the specified <see cref="Type"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public ReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        public IReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        {
+            if (type is TypeBuilder builder)
+                return GetOrCreateTypeSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionTypeSymbolBuilder"/> for the specified <see cref="TypeBuilder"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
         {
             return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public ReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
-        {
-            if (method is ConstructorInfo ctor)
-                return GetOrCreateConstructorSymbol(ctor);
-            else
-                return GetOrCreateMethodSymbol((MethodInfo)method);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="ReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
         /// </summary>
         /// <param name="ctor"></param>
         /// <returns></returns>
-        public ReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            if (ctor is ConstructorBuilder builder)
+                return GetOrCreateConstructorSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
         {
             return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// Gets or creates a <see cref="IReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public ReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            if (method is MethodBuilder builder)
+                return GetOrCreateMethodSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionMethodSymbolBuilder"/> for the specified <see cref="MethodBuilder"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
         {
             return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
+        /// Gets or creates a <see cref="IReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
         /// </summary>
         /// <param name="parameter"></param>
         /// <returns></returns>
-        public ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
             return GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateParameterSymbol(parameter);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
+        /// Gets or creates a <see cref="IReflectionParameterSymbolBuilder"/> for the specified <see cref="ParameterBuilder"/>.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return GetOrCreateModuleSymbol(parameter.GetModuleBuilder()).GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        public ReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            if (field is FieldBuilder builder)
+                return GetOrCreateFieldSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
         {
             return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
+        /// Gets or creates a <see cref="IReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
-        public ReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        {
+            if (property is PropertyBuilder builder)
+                return GetOrCreatePropertySymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
         {
             return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
+        /// Gets or creates a <see cref="IReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public ReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
             return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ReflectionEventSymbol"/> for the specified <see cref="EventBuilder"/>.
+        /// Gets or creates a <see cref="IReflectionEventSymbolBuilder"/> for the specified <see cref="EventBuilder"/>.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public ReflectionEventSymbol GetOrCreateEventSymbol(EventBuilder @event)
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
         {
-            return GetOrCreateEventSymbol(new ReflectionEventBuilderInfo(@event));
+            return GetOrCreateModuleSymbol(@event.GetModuleBuilder()).GetOrCreateEventSymbol(@event);
         }
 
-        /// <summary>
-        /// Gets or creates a <see cref="ReflectionEventSymbol"/> for the specified <see cref="EventBuilder"/>.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        public ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        /// <inheritdoc />
+        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs)
         {
-            return GetOrCreateParameterSymbol(new ReflectionParameterBuilderInfo(parameter));
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs));
+        }
+
+        /// <inheritdoc />
+        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IFieldSymbol[] namedFields, object?[] fieldValues)
+        {
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedFields.Unpack(), fieldValues));
+        }
+
+        /// <inheritdoc />
+        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues)
+        {
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues));
+        }
+
+        /// <inheritdoc />
+        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues, IFieldSymbol[] namedFields, object?[] fieldValues)
+        {
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues, namedFields.Unpack(), fieldValues));
         }
 
     }

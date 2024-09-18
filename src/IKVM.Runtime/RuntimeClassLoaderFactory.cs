@@ -263,22 +263,23 @@ namespace IKVM.Runtime
 
         internal RuntimeClassLoader GetGenericClassLoader(RuntimeJavaType wrapper)
         {
-            Type type = wrapper.TypeAsTBD;
+            var type = wrapper.TypeAsTBD;
             Debug.Assert(type.IsGenericType);
             Debug.Assert(!type.ContainsGenericParameters);
 
-            List<RuntimeClassLoader> list = new List<RuntimeClassLoader>();
+            var list = new List<RuntimeClassLoader>();
             list.Add(context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly));
-            foreach (Type arg in type.GetGenericArguments())
+            foreach (var arg in type.GetGenericArguments())
             {
-                RuntimeClassLoader loader = GetJavaTypeFromType(arg).ClassLoader;
+                var loader = GetJavaTypeFromType(arg).ClassLoader;
                 if (!list.Contains(loader) && loader != bootstrapClassLoader)
                 {
                     list.Add(loader);
                 }
             }
-            RuntimeClassLoader[] key = list.ToArray();
-            RuntimeClassLoader matchingLoader = GetGenericClassLoaderByKey(key);
+
+            var key = list.ToArray();
+            var matchingLoader = GetGenericClassLoaderByKey(key);
             matchingLoader.RegisterInitiatingLoader(wrapper);
             return matchingLoader;
         }
@@ -307,7 +308,7 @@ namespace IKVM.Runtime
         {
             lock (wrapperLock)
             {
-                foreach (RuntimeGenericClassLoader loader in genericClassLoaders)
+                foreach (var loader in genericClassLoaders)
                     if (loader.Matches(key))
                         return loader;
 
@@ -389,9 +390,9 @@ namespace IKVM.Runtime
                 return GetGenericClassLoaderByName(name);
 
 #if NETFRAMEWORK
-            return context.AssemblyClassLoaderFactory.FromAssembly(Assembly.Load(name));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveAssembly( Assembly.Load(name)));
 #else
-            return context.AssemblyClassLoaderFactory.FromAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name)));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name))));
 #endif
         }
 
@@ -409,7 +410,7 @@ namespace IKVM.Runtime
                 return genericClassLoaders[id];
         }
 
-        internal void SetWrapperForType(Type type, RuntimeJavaType wrapper)
+        internal void SetWrapperForType(ITypeSymbol type, RuntimeJavaType wrapper)
         {
 #if !IMPORTER
             RuntimeJavaType.AssertFinished(type);

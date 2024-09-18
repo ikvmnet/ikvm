@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -6,81 +7,139 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionFieldSymbolBuilder : ReflectionSymbolBuilder<IFieldSymbol, ReflectionFieldSymbol>, IFieldSymbolBuilder
+    class ReflectionFieldSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionFieldSymbolBuilder
     {
 
-        readonly ReflectionModuleSymbolBuilder _containingModuleBuilder;
-        readonly ReflectionTypeSymbolBuilder? _containingTypeBuilder;
-        readonly FieldBuilder _builder;
-        ReflectionFieldSymbol? _symbol;
+        FieldBuilder? _builder;
+        FieldInfo _field;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingModuleBuilder"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
-        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, ReflectionModuleSymbolBuilder containingModuleBuilder, FieldBuilder builder) :
-            base(context)
+        /// <exception cref="ArgumentNullException"></exception>
+        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, FieldBuilder builder) :
+            base(context, resolvingModule, resolvingType)
         {
-            _containingModuleBuilder = containingModuleBuilder ?? throw new ArgumentNullException(nameof(containingModuleBuilder));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+            _field = _builder;
         }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingTypeBuilder"></param>
-        /// <param name="builder"></param>
-        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, ReflectionTypeSymbolBuilder containingTypeBuilder, FieldBuilder builder) :
-            base(context)
-        {
-            _containingTypeBuilder = containingTypeBuilder ?? throw new ArgumentNullException(nameof(containingTypeBuilder));
-            _containingModuleBuilder = containingTypeBuilder.ContainingModuleBuilder;
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-        }
-
-        /// <summary>
-        /// Gets the containing <see cref="ReflectionModuleSymbolBuilder"/>.
-        /// </summary>
-        internal ReflectionModuleSymbolBuilder ContainingModuleBuilder => _containingModuleBuilder;
-
-        /// <summary>
-        /// Gets the containing <see cref="ReflectionTypeSymbolBuilder"/>.
-        /// </summary>
-        internal ReflectionTypeSymbolBuilder? ContainingTypeBuilder => _containingTypeBuilder;
-
-        /// <summary>
-        /// Gets the underlying <see cref="FieldBuilder"/>
-        /// </summary>
-        internal FieldBuilder ReflectionBuilder => _builder;
 
         /// <inheritdoc />
-        internal override ReflectionFieldSymbol ReflectionSymbol => _symbol ??= Context.GetOrCreateFieldSymbol(_builder);
+        public FieldInfo UnderlyingField => _field;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingMember => UnderlyingField;
+
+        /// <inheritdoc />
+        public FieldBuilder UnderlyingFieldBuilder => _builder ?? throw new InvalidOperationException();
+
+        #region IFieldSymbolBuilder
 
         /// <inheritdoc />
         public void SetConstant(object? defaultValue)
         {
-            _builder.SetConstant(defaultValue);
+            UnderlyingFieldBuilder.SetConstant(defaultValue);
         }
 
         /// <inheritdoc />
         public void SetOffset(int iOffset)
         {
-            _builder.SetOffset(iOffset);
+            UnderlyingFieldBuilder.SetOffset(iOffset);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
-            _builder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingFieldBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
+            UnderlyingFieldBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        #endregion
+
+        #region IFieldSymbol
+
+        /// <inheritdoc/>
+        public FieldAttributes Attributes => UnderlyingField.Attributes;
+
+        /// <inheritdoc/>
+        public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);
+
+        /// <inheritdoc/>
+        public bool IsSpecialName => UnderlyingField.IsSpecialName;
+
+        /// <inheritdoc/>
+        public bool IsAssembly => UnderlyingField.IsAssembly;
+
+        /// <inheritdoc/>
+        public bool IsFamily => UnderlyingField.IsFamily;
+
+        /// <inheritdoc/>
+        public bool IsFamilyAndAssembly => UnderlyingField.IsFamilyAndAssembly;
+
+        /// <inheritdoc/>
+        public bool IsFamilyOrAssembly => UnderlyingField.IsFamilyOrAssembly;
+
+        /// <inheritdoc/>
+        public bool IsInitOnly => UnderlyingField.IsInitOnly;
+
+        /// <inheritdoc/>
+        public bool IsLiteral => UnderlyingField.IsLiteral;
+
+#pragma warning disable SYSLIB0050 // Type or member is obsolete
+        /// <inheritdoc/>
+        public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
+#pragma warning restore SYSLIB0050 // Type or member is obsolete
+
+        /// <inheritdoc/>
+        public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;
+
+        /// <inheritdoc/>
+        public bool IsPrivate => UnderlyingField.IsPrivate;
+
+        /// <inheritdoc/>
+        public bool IsPublic => UnderlyingField.IsPublic;
+
+        /// <inheritdoc/>
+        public bool IsStatic => UnderlyingField.IsStatic;
+
+        /// <inheritdoc/>
+        public override bool IsComplete => _builder == null;
+
+        /// <inheritdoc/>
+        public ITypeSymbol[] GetOptionalCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
+        }
+
+        /// <inheritdoc/>
+        public ITypeSymbol[] GetRequiredCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
+        }
+
+        /// <inheritdoc/>
+        public object? GetRawConstantValue()
+        {
+            return UnderlyingField.GetRawConstantValue();
+        }
+
+        #endregion
+
+        /// <inheritdoc/>
+        public override void OnComplete()
+        {
+            _field = ResolvingModule.UnderlyingModule.ResolveField(MetadataToken) ?? throw new InvalidOperationException();
+            _builder = null;
+            base.OnComplete();
         }
 
     }

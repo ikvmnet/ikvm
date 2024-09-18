@@ -24,8 +24,7 @@
 using System;
 
 using IKVM.Attributes;
-
-using Type = IKVM.Reflection.Type;
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -60,7 +59,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
-        internal override Type TypeAsTBD
+        internal override ITypeSymbol TypeAsTBD
         {
             get { throw new NotSupportedException(); }
         }

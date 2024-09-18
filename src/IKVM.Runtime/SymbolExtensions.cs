@@ -3,13 +3,18 @@
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Reflection;
 using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
+using System.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
@@ -148,6 +153,78 @@ namespace IKVM.Runtime
                 a[i] = AsReflection(symbols[i]);
 
             return a;
+        }
+
+        public static AssemblyBuilder AsReflection(this IAssemblySymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionAssemblySymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionAssemblySymbolBuilder)builder).ReflectionBuilder;
+#endif
+        }
+
+        public static ModuleBuilder AsReflection(this IModuleSymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionModuleSymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionModuleSymbolBuilder)builder).ReflectionBuilder;
+#endif
+        }
+
+        public static TypeBuilder AsReflection(this ITypeSymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionTypeSymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionTypeSymbolBuilder)builder).ReflectionBuilder;
+#endif
+        }
+
+        public static ConstructorBuilder AsReflection(this IConstructorSymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionConstructorSymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionConstructorSymbolBuilder)builder).ReflectionBuilder;
+#endif
+        }
+
+        public static MethodBuilder AsReflection(this IMethodSymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionMethodSymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionMethodSymbolBuilder)builder).ReflectionBuilder;
+#endif
+        }
+
+        public static FieldBuilder AsReflection(this IFieldSymbolBuilder builder)
+        {
+            if (builder == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionFieldSymbolBuilder)builder).ReflectionBuilder;
+#else
+            return ((ReflectionFieldSymbolBuilder)builder).ReflectionBuilder;
+#endif
         }
 
     }

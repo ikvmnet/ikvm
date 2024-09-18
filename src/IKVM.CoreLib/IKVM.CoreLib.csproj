@@ -20,6 +20,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="PolySharp" Version="1.14.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
     </ItemGroup>
 
@@ -101,5 +105,13 @@
             <AutoGen>True</AutoGen>
         </Compile>
     </ItemGroup>
+
+    <Target Name="Foo" BeforeTargets="" DependsOnTargets="">
+        <ItemGroup>
+            <None Include="$(IntermediateOutputPath)gen.txt">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </None>
+        </ItemGroup>
+    </Target>
 
 </Project>

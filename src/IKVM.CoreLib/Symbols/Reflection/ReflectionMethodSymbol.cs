@@ -4,7 +4,7 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionMethodSymbol : ReflectionMethodBaseSymbol, IMethodSymbol
+    class ReflectionMethodSymbol : ReflectionMethodBaseSymbol, IReflectionMethodSymbol
     {
 
         readonly MethodInfo _method;
@@ -16,34 +16,24 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="module"></param>
         /// <param name="type"></param>
         /// <param name="method"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, MethodInfo method) :
-            base(context, module, method)
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionTypeSymbol? type, MethodInfo method) :
+            base(context, module, type, method)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the underlying <see cref="MethodInfo"/> wrapped by this symbol.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="type"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, MethodInfo method) :
-            this(context, type.ContainingModule, method)
-        {
+        public MethodInfo UnderlyingMethod => _method;
 
-        }
-
-        /// <summary>
-        /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
-        /// </summary>
-        internal new MethodInfo ReflectionObject => _method;
+        #region IMethodSymbol
 
         /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
+        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
 
         /// <inheritdoc />
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
+        public ITypeSymbol ReturnType => ResolveTypeSymbol(UnderlyingMethod.ReturnType);
 
         /// <inheritdoc />
         public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
@@ -51,20 +41,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IMethodSymbol GetBaseDefinition()
         {
-            return ResolveMethodSymbol(_method.GetBaseDefinition());
+            return ResolveMethodSymbol(UnderlyingMethod.GetBaseDefinition());
         }
 
         /// <inheritdoc />
         public IMethodSymbol GetGenericMethodDefinition()
         {
-            return ResolveMethodSymbol(_method.GetGenericMethodDefinition());
+            return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
         }
 
         /// <inheritdoc />
         public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
         {
-            return ResolveMethodSymbol(_method.MakeGenericMethod(typeArguments.Unpack()));
+            return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
         }
+
+        #endregion
 
     }
 

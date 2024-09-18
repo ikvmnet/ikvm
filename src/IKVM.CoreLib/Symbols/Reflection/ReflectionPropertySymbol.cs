@@ -4,95 +4,94 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionPropertySymbol : ReflectionMemberSymbol, IPropertySymbol
+    class ReflectionPropertySymbol : ReflectionMemberSymbol, IReflectionPropertySymbol
     {
 
-        PropertyInfo _property;
+        readonly PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="module"></param>
         /// <param name="type"></param>
         /// <param name="property"></param>
-        public ReflectionPropertySymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, PropertyInfo property) :
-            base(context, type, property)
+        public ReflectionPropertySymbol(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionTypeSymbol type, PropertyInfo property) :
+            base(context, module, type, property)
         {
             _property = property ?? throw new ArgumentNullException(nameof(property));
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="PropertyInfo"/> wrapped by this symbol.
-        /// </summary>
-        internal new PropertyInfo ReflectionObject => _property;
+        /// <inheritdoc />
+        public PropertyInfo UnderlyingProperty => _property;
 
         /// <inheritdoc />
-        public PropertyAttributes Attributes => _property.Attributes;
+        public PropertyAttributes Attributes => UnderlyingProperty.Attributes;
 
         /// <inheritdoc />
-        public bool CanRead => _property.CanRead;
+        public bool CanRead => UnderlyingProperty.CanRead;
 
         /// <inheritdoc />
-        public bool CanWrite => _property.CanWrite;
+        public bool CanWrite => UnderlyingProperty.CanWrite;
 
         /// <inheritdoc />
-        public bool IsSpecialName => _property.IsSpecialName;
+        public bool IsSpecialName => UnderlyingProperty.IsSpecialName;
 
         /// <inheritdoc />
-        public ITypeSymbol PropertyType => ResolveTypeSymbol(_property.PropertyType);
+        public ITypeSymbol PropertyType => ResolveTypeSymbol(UnderlyingProperty.PropertyType);
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod => _property.GetMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public IMethodSymbol? GetMethod => ResolveMethodSymbol(UnderlyingProperty.GetMethod);
 
         /// <inheritdoc />
-        public IMethodSymbol? SetMethod => _property.SetMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public IMethodSymbol? SetMethod => ResolveMethodSymbol(UnderlyingProperty.SetMethod);
 
         /// <inheritdoc />
         public object? GetRawConstantValue()
         {
-            return _property.GetRawConstantValue();
+            return UnderlyingProperty.GetRawConstantValue();
         }
 
         /// <inheritdoc />
         public IMethodSymbol[] GetAccessors()
         {
-            return ResolveMethodSymbols(_property.GetAccessors());
+            return ResolveMethodSymbols(UnderlyingProperty.GetAccessors());
         }
 
         /// <inheritdoc />
         public IMethodSymbol[] GetAccessors(bool nonPublic)
         {
-            return ResolveMethodSymbols(_property.GetAccessors(nonPublic));
+            return ResolveMethodSymbols(UnderlyingProperty.GetAccessors(nonPublic));
         }
 
         /// <inheritdoc />
         public IParameterSymbol[] GetIndexParameters()
         {
-            return ResolveParameterSymbols(_property.GetIndexParameters());
+            return ResolveParameterSymbols(UnderlyingProperty.GetIndexParameters());
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetGetMethod()
         {
-            return _property.GetGetMethod() is MethodInfo m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingProperty.GetGetMethod());
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetGetMethod(bool nonPublic)
         {
-            return _property.GetGetMethod(nonPublic) is MethodInfo m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingProperty.GetGetMethod(nonPublic));
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetSetMethod()
         {
-            return _property.GetSetMethod() is MethodInfo m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingProperty.GetSetMethod());
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetSetMethod(bool nonPublic)
         {
-            return _property.GetSetMethod(nonPublic) is MethodInfo m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingProperty.GetSetMethod(nonPublic));
         }
 
         /// <inheritdoc />
@@ -104,23 +103,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(_property.GetOptionalCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingProperty.GetOptionalCustomModifiers());
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(_property.GetRequiredCustomModifiers());
-        }
-
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="property"></param>
-        internal void Complete(PropertyInfo property)
-        {
-            ResolvePropertySymbol(_property = property);
-            base.Complete(_property);
+            return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
         }
 
     }

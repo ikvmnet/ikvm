@@ -7,77 +7,76 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionMethodSymbolBuilder : ReflectionMethodBaseSymbolBuilder<IMethodSymbol, ReflectionMethodSymbol>, IMethodSymbolBuilder
+    class ReflectionMethodSymbolBuilder : ReflectionMethodBaseSymbolBuilder, IReflectionMethodSymbolBuilder
     {
 
-        readonly MethodBuilder _builder;
-        ReflectionMethodSymbol? _symbol;
+        MethodBuilder? _builder;
+        MethodInfo _method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingModuleBuilder"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
-        public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, ReflectionModuleSymbolBuilder containingModuleBuilder, MethodBuilder builder) :
-            base(context, containingModuleBuilder)
+        /// <exception cref="ArgumentNullException"></exception>
+        public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MethodBuilder builder) :
+            base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+            _method = _builder;
         }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingTypeBuilder"></param>
-        /// <param name="builder"></param>
-        public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, ReflectionTypeSymbolBuilder containingTypeBuilder, MethodBuilder builder) :
-            base(context, containingTypeBuilder)
-        {
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-        }
-
-        /// <summary>
-        /// Gets the <see cref="MethodBuilder"/> that underlies this instance.
-        /// </summary>
-        internal MethodBuilder ReflectionBuilder => _builder;
 
         /// <inheritdoc />
-        internal override ReflectionMethodSymbol ReflectionSymbol => _symbol ??= Context.GetOrCreateMethodSymbol(_builder);
+        public MethodInfo UnderlyingMethod => _method;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
+
+        /// <inheritdoc />
+        public MethodBuilder UnderlyingMethodBuilder => _builder ?? throw new InvalidOperationException();
+
+        #region IMethodSymbolBuilder
 
         /// <inheritdoc />
         public void SetImplementationFlags(MethodImplAttributes attributes)
         {
-            _builder.SetImplementationFlags(attributes);
+            UnderlyingMethodBuilder.SetImplementationFlags(attributes);
         }
 
         /// <inheritdoc />
         public void SetParameters(params ITypeSymbol[] parameterTypes)
         {
-            _builder.SetParameters(parameterTypes.Unpack());
+            UnderlyingMethodBuilder.SetParameters(parameterTypes.Unpack());
         }
 
         /// <inheritdoc />
         public void SetReturnType(ITypeSymbol? returnType)
         {
-            _builder.SetReturnType(returnType?.Unpack());
+            UnderlyingMethodBuilder.SetReturnType(returnType?.Unpack());
         }
 
         /// <inheritdoc />
         public void SetSignature(ITypeSymbol? returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers)
         {
-            _builder.SetSignature(returnType?.Unpack(), returnTypeRequiredCustomModifiers?.Unpack(), returnTypeOptionalCustomModifiers?.Unpack(), parameterTypes?.Unpack(), parameterTypeRequiredCustomModifiers?.Unpack(), parameterTypeOptionalCustomModifiers?.Unpack());
+            UnderlyingMethodBuilder.SetSignature(returnType?.Unpack(), returnTypeRequiredCustomModifiers?.Unpack(), returnTypeOptionalCustomModifiers?.Unpack(), parameterTypes?.Unpack(), parameterTypeRequiredCustomModifiers?.Unpack(), parameterTypeOptionalCustomModifiers?.Unpack());
         }
 
         public IGenericTypeParameterSymbolBuilder[] DefineGenericParameters(params string[] names)
         {
-            throw new NotImplementedException();
+            var l = UnderlyingMethodBuilder.DefineGenericParameters(names);
+            var a = new IGenericTypeParameterSymbolBuilder[l.Length];
+            for (int i = 0; i < l.Length; i++)
+                a[i] = new ReflectionGenericTypeParameterSymbolBuilder(Context, ResolvingModule, ResolvingType, this, l[i]);
+
+            return a;
         }
 
         /// <inheritdoc />
         public IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
         {
-            return new ReflectionParameterSymbolBuilder<IMethodSymbol, ReflectionMethodSymbol, ReflectionMethodSymbolBuilder>(Context, this, _builder.DefineParameter(position, attributes, strParamName));
+            return new ReflectionParameterSymbolBuilder(Context, ResolvingModule, this, UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
         }
 
         public IILGenerator GetILGenerator()
@@ -93,13 +92,57 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
-            _builder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
+            UnderlyingMethodBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        #endregion
+
+        #region IMethodSymbol
+
+        /// <inheritdoc />
+        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
+
+        /// <inheritdoc />
+        public ITypeSymbol ReturnType => ResolveTypeSymbol(UnderlyingMethod.ReturnType);
+
+        /// <inheritdoc />
+        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public override bool IsComplete => _builder == null;
+
+        /// <inheritdoc />
+        public IMethodSymbol GetBaseDefinition()
+        {
+            return ResolveMethodSymbol(UnderlyingMethod.GetBaseDefinition());
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol GetGenericMethodDefinition()
+        {
+            return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
+        {
+            return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
+        }
+
+        #endregion
+
+        /// <inheritdoc />
+        public override void OnComplete()
+        {
+            _method = (MethodInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
+            _builder = null;
+            base.OnComplete();
         }
 
     }

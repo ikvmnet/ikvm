@@ -4,111 +4,92 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionFieldSymbol : ReflectionMemberSymbol, IFieldSymbol
+    class ReflectionFieldSymbol : ReflectionMemberSymbol, IReflectionFieldSymbol
     {
 
-        FieldInfo _field;
+        readonly FieldInfo _field;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingType"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="field"></param>
-        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, FieldInfo field) :
-            base(context, containingModule, field)
+        public ReflectionFieldSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, FieldInfo field) :
+            base(context, resolvingModule, resolvingType, field)
         {
             _field = field ?? throw new ArgumentNullException(nameof(field));
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingType"></param>
-        /// <param name="field"></param>
-        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol containingType, FieldInfo field) :
-            base(context, containingType, field)
-        {
-            _field = field ?? throw new ArgumentNullException(nameof(field));
-        }
+        /// <inheritdoc />
+        public FieldInfo UnderlyingField => _field;
 
-        /// <summary>
-        /// Gets the underlying <see cref="FieldInfo"/> wrapped by this symbol.
-        /// </summary>
-        internal new FieldInfo ReflectionObject => (FieldInfo)base.ReflectionObject;
+        #region IFieldSymbol
 
         /// <inheritdoc/>
-        public FieldAttributes Attributes => _field.Attributes;
+        public FieldAttributes Attributes => UnderlyingField.Attributes;
 
         /// <inheritdoc/>
-        public ITypeSymbol FieldType => ResolveTypeSymbol(_field.FieldType);
+        public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);
 
         /// <inheritdoc/>
-        public bool IsSpecialName => _field.IsSpecialName;
+        public bool IsSpecialName => UnderlyingField.IsSpecialName;
 
         /// <inheritdoc/>
-        public bool IsAssembly => _field.IsAssembly;
+        public bool IsAssembly => UnderlyingField.IsAssembly;
 
         /// <inheritdoc/>
-        public bool IsFamily => _field.IsFamily;
+        public bool IsFamily => UnderlyingField.IsFamily;
 
         /// <inheritdoc/>
-        public bool IsFamilyAndAssembly => _field.IsFamilyAndAssembly;
+        public bool IsFamilyAndAssembly => UnderlyingField.IsFamilyAndAssembly;
 
         /// <inheritdoc/>
-        public bool IsFamilyOrAssembly => _field.IsFamilyOrAssembly;
+        public bool IsFamilyOrAssembly => UnderlyingField.IsFamilyOrAssembly;
 
         /// <inheritdoc/>
-        public bool IsInitOnly => _field.IsInitOnly;
+        public bool IsInitOnly => UnderlyingField.IsInitOnly;
 
         /// <inheritdoc/>
-        public bool IsLiteral => _field.IsLiteral;
+        public bool IsLiteral => UnderlyingField.IsLiteral;
 
 #pragma warning disable SYSLIB0050 // Type or member is obsolete
         /// <inheritdoc/>
-        public bool IsNotSerialized => _field.IsNotSerialized;
+        public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
 #pragma warning restore SYSLIB0050 // Type or member is obsolete
 
         /// <inheritdoc/>
-        public bool IsPinvokeImpl => _field.IsPinvokeImpl;
+        public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;
 
         /// <inheritdoc/>
-        public bool IsPrivate => _field.IsPrivate;
+        public bool IsPrivate => UnderlyingField.IsPrivate;
 
         /// <inheritdoc/>
-        public bool IsPublic => _field.IsPublic;
+        public bool IsPublic => UnderlyingField.IsPublic;
 
         /// <inheritdoc/>
-        public bool IsStatic => _field.IsStatic;
+        public bool IsStatic => UnderlyingField.IsStatic;
 
         /// <inheritdoc/>
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(_field.GetOptionalCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
         }
 
         /// <inheritdoc/>
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(_field.GetRequiredCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
         }
 
         /// <inheritdoc/>
         public object? GetRawConstantValue()
         {
-            return _field.GetRawConstantValue();
+            return UnderlyingField.GetRawConstantValue();
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="field"></param>
-        internal void Complete(FieldInfo field)
-        {
-            ResolveFieldSymbol(_field = field);
-            base.Complete(_field);
-        }
+        #endregion
 
     }
 

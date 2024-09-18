@@ -23,6 +23,9 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection.Emit;
 
@@ -43,7 +46,7 @@ namespace IKVM.Runtime
             sealed class MultipleAnnotationJavaType : AttributeAnnotationJavaTypeBase
             {
 
-                readonly Type annotationType;
+                readonly ITypeSymbol annotationType;
                 readonly AttributeAnnotationJavaType declaringType;
 
                 internal MultipleAnnotationJavaType(RuntimeContext context, AttributeAnnotationJavaType declaringType) :
@@ -60,19 +63,21 @@ namespace IKVM.Runtime
                 protected override void LazyPublishMembers()
                 {
                     RuntimeJavaType tw = declaringType.MakeArrayType(1);
-                    SetMethods(new RuntimeJavaMethod[] { new DynamicOnlyJavaMethod(this, "value", "()" + tw.SigName, tw, Array.Empty<RuntimeJavaType>(), MemberFlags.None) });
-                    SetFields(Array.Empty<RuntimeJavaField>());
+                    SetMethods([new DynamicOnlyJavaMethod(this, "value", "()" + tw.SigName, tw, [], MemberFlags.None)]);
+                    SetFields([]);
                 }
 
                 internal override RuntimeJavaType DeclaringTypeWrapper => declaringType;
 
-                internal override Type TypeAsTBD => annotationType;
+                internal override ITypeSymbol TypeAsTBD => annotationType;
 
 #if !IMPORTER && !EXPORTER
+
                 internal override object[] GetDeclaredAnnotations()
                 {
                     return declaringType.GetDeclaredAnnotations();
                 }
+
 #endif
 
                 sealed class MultipleAnnotation : Annotation
@@ -107,7 +112,7 @@ namespace IKVM.Runtime
                         return [];
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))
@@ -116,7 +121,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))
@@ -125,7 +130,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))
@@ -134,7 +139,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))
@@ -143,7 +148,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))
@@ -152,7 +157,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))

@@ -27,7 +27,6 @@ using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
 
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -45,7 +44,7 @@ namespace IKVM.Runtime
 
         volatile RuntimeJavaType[] interfaces;
         readonly RuntimeJavaType ultimateElementTypeWrapper;
-        Type arrayType;
+        ITypeSymbol arrayType;
         bool finished;
 
         /// <summary>
@@ -68,9 +67,9 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => ultimateElementTypeWrapper.ClassLoader;
 
-        internal static MethodInfo GetCloneMethod(RuntimeContext context)
+        internal static IMethodSymbol GetCloneMethod(RuntimeContext context)
         {
-            return context.Types.Array.GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, [], null);
+            return context.Types.Array.GetMethod("Clone", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, []);
         }
 
         protected override void LazyPublishMembers()
@@ -113,14 +112,14 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override Type TypeAsTBD
+        internal override ITypeSymbol TypeAsTBD
         {
             get
             {
                 while (arrayType == null)
                 {
                     bool prevFinished = finished;
-                    Type type = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+                    var type = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
                     if (prevFinished)
                     {
                         // We were already finished prior to the call to MakeArrayType, so we can safely

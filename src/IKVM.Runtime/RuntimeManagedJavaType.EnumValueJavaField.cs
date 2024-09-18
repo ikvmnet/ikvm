@@ -24,6 +24,8 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection.Emit;
@@ -43,7 +45,7 @@ namespace IKVM.Runtime
         internal sealed class EnumValueJavaField : RuntimeJavaField
         {
 
-            readonly Type underlyingType;
+            readonly ITypeSymbol underlyingType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -53,7 +55,7 @@ namespace IKVM.Runtime
             internal EnumValueJavaField(RuntimeManagedJavaType tw, RuntimeJavaType fieldType) :
                 base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
             {
-                underlyingType = EnumHelper.GetUnderlyingType(tw.type);
+                underlyingType = tw.type.GetEnumUnderlyingType();
             }
 
 #if EMITTERS

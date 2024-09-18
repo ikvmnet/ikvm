@@ -27,6 +27,8 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -54,20 +56,20 @@ namespace IKVM.Runtime
             readonly RuntimeJavaType host;
             readonly ClassFile classFile;
             readonly RuntimeDynamicOrImportJavaType wrapper;
-            TypeBuilder typeBuilder;
+            ITypeSymbolBuilder typeBuilder;
             RuntimeJavaMethod[] methods;
             RuntimeJavaMethod[][] baseMethods;
             RuntimeJavaField[] fields;
             FinishedTypeImpl finishedType;
             bool finishInProgress;
-            MethodBuilder clinitMethod;
-            MethodBuilder finalizeMethod;
+            IMethodSymbolBuilder clinitMethod;
+            IMethodSymbolBuilder finalizeMethod;
             int recursionCount;
 #if IMPORTER
             RuntimeByteCodeJavaType enclosingClassWrapper;
             AnnotationBuilder annotationBuilder;
-            TypeBuilder enumBuilder;
-            TypeBuilder privateInterfaceMethods;
+            ITypeSymbolBuilder enumBuilder;
+            ITypeSymbolBuilder privateInterfaceMethods;
             ConcurrentDictionary<string, RuntimeJavaType> nestedTypeNames;  // only keys are used, values are always null
 #endif
 
@@ -952,19 +954,16 @@ namespace IKVM.Runtime
                 }
             }
 
-            private int GetFieldIndex(RuntimeJavaField fw)
+            int GetFieldIndex(RuntimeJavaField fw)
             {
                 for (int i = 0; i < fields.Length; i++)
-                {
                     if (fields[i] == fw)
-                    {
                         return i;
-                    }
-                }
+
                 throw new InvalidOperationException();
             }
 
-            internal override FieldInfo LinkField(RuntimeJavaField fw)
+            internal override IFieldSymbol LinkField(RuntimeJavaField fw)
             {
                 if (fw is RuntimeByteCodePropertyJavaField)
                 {
@@ -990,15 +989,9 @@ namespace IKVM.Runtime
                 // order, we emit the fields in class declaration order in the .NET metadata (and then when we retrieve them
                 // using .NET reflection, we sort on metadata token.)
                 if (fieldIndex > 0)
-                {
                     if (!fields[fieldIndex - 1].IsLinked)
-                    {
                         for (int i = 0; i < fieldIndex; i++)
-                        {
                             fields[i].Link();
-                        }
-                    }
-                }
 
                 if (fieldIndex >= classFile.Fields.Length)
                 {
@@ -1028,21 +1021,24 @@ namespace IKVM.Runtime
                     {
                         fieldAttribs |= FieldAttributes.InitOnly;
                     }
+
                     return DefineField(fw.Name, fw.FieldTypeWrapper, fieldAttribs, fw.IsVolatile);
                 }
 #endif // IMPORTER
-                FieldBuilder field;
-                ClassFile.Field fld = classFile.Fields[fieldIndex];
+                IFieldSymbolBuilder field;
+                var fld = classFile.Fields[fieldIndex];
                 FieldAttributes attribs = 0;
-                string realFieldName = UnicodeUtil.EscapeInvalidSurrogates(fld.Name);
+                var realFieldName = UnicodeUtil.EscapeInvalidSurrogates(fld.Name);
                 if (!ReferenceEquals(realFieldName, fld.Name))
                 {
                     attribs |= FieldAttributes.SpecialName;
                 }
-                MethodAttributes methodAttribs = MethodAttributes.HideBySig;
+
+                var methodAttribs = MethodAttributes.HideBySig;
 #if IMPORTER
                 bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
+
                 if (fld.IsPrivate)
                 {
                     attribs |= FieldAttributes.Private;
@@ -1068,6 +1064,7 @@ namespace IKVM.Runtime
                     attribs |= FieldAttributes.Static;
                     methodAttribs |= MethodAttributes.Static;
                 }
+
                 // NOTE "constant" static finals are converted into literals
                 // TODO it would be possible for Java code to change the value of a non-blank static final, but I don't
                 // know if we want to support this (since the Java JITs don't really support it either)
@@ -1138,7 +1135,7 @@ namespace IKVM.Runtime
                 return field;
             }
 
-            FieldBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
+            IFieldSymbolBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
             {
                 var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : [];
                 return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
@@ -1384,10 +1381,10 @@ namespace IKVM.Runtime
                 readonly RuntimeContext context;
 
                 JavaTypeImpl impl;
-                TypeBuilder outer;
-                TypeBuilder annotationTypeBuilder;
-                TypeBuilder attributeTypeBuilder;
-                MethodBuilder defineConstructor;
+                ITypeSymbolBuilder outer;
+                ITypeSymbolBuilder annotationTypeBuilder;
+                ITypeSymbolBuilder attributeTypeBuilder;
+                IMethodSymbolBuilder defineConstructor;
 
                 /// <summary>
                 /// Initializes a new instance.
@@ -1395,7 +1392,7 @@ namespace IKVM.Runtime
                 /// <param name="context"></param>
                 /// <param name="o"></param>
                 /// <param name="outer"></param>
-                internal AnnotationBuilder(RuntimeContext context, JavaTypeImpl o, TypeBuilder outer)
+                internal AnnotationBuilder(RuntimeContext context, JavaTypeImpl o, ITypeSymbolBuilder outer)
                 {
                     this.context = context;
                     this.impl = o;
@@ -1541,28 +1538,25 @@ namespace IKVM.Runtime
                             {
                                 // apply any .NET custom attributes that are on the annotation to the custom attribute we synthesize
                                 // (for example, to allow AttributeUsageAttribute to be overridden)
-                                Annotation annotation = Annotation.Load(o.wrapper, def);
+                                var annotation = Annotation.Load(o.wrapper, def);
                                 if (annotation != null && annotation.IsCustomAttribute)
-                                {
                                     annotation.Apply(o.wrapper.ClassLoader, attributeTypeBuilder, def);
-                                }
                                 if (def[1].Equals("Lcli/System/AttributeUsageAttribute$Annotation;"))
-                                {
                                     hasAttributeUsageAttribute = true;
-                                }
                             }
                         }
+
                         if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
                         {
                             attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
                         }
                     }
 
-                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType().AsReflection() });
+                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, [context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType()]);
                     context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
                 }
 
-                private static Type TypeWrapperToAnnotationParameterType(RuntimeJavaType tw)
+                static ITypeSymbol TypeWrapperToAnnotationParameterType(RuntimeJavaType tw)
                 {
                     bool isArray = false;
                     if (tw.IsArray)
@@ -1570,6 +1564,7 @@ namespace IKVM.Runtime
                         isArray = true;
                         tw = tw.ElementTypeWrapper;
                     }
+
                     if (tw.Annotation != null)
                     {
                         // we don't support Annotation args
@@ -1577,7 +1572,7 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        Type argType;
+                        ITypeSymbol argType;
                         if (tw == tw.Context.JavaBase.TypeOfJavaLangClass)
                         {
                             argType = tw.Context.Types.Type;
@@ -1594,15 +1589,15 @@ namespace IKVM.Runtime
                         {
                             argType = tw.TypeAsSignatureType;
                         }
+
                         if (isArray)
-                        {
                             argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
-                        }
+
                         return argType;
                     }
                 }
 
-                private static bool IsDotNetEnum(RuntimeJavaType tw)
+                static bool IsDotNetEnum(RuntimeJavaType tw)
                 {
                     return tw.IsFakeNestedType && (tw.Modifiers & Modifiers.Enum) != 0;
                 }
@@ -1612,15 +1607,15 @@ namespace IKVM.Runtime
                     get
                     {
                         Link();
+
                         if (attributeTypeBuilder != null)
-                        {
-                            return attributeTypeBuilder.FullName;
-                        }
+                            return attributeTypeBuilder.Symbol.FullName;
+
                         return null;
                     }
                 }
 
-                private static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
+                static void EmitSetValueCall(RuntimeJavaType annotationAttributeBaseType, CodeEmitter ilgen, string name, RuntimeJavaType tw, int argIndex)
                 {
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.Emit(OpCodes.Ldstr, name);
@@ -1637,6 +1632,7 @@ namespace IKVM.Runtime
                     {
                         ilgen.Emit(OpCodes.Box, tw.DeclaringTypeWrapper.TypeAsSignatureType);
                     }
+
                     var setValueMethod = annotationAttributeBaseType.GetMethodWrapper("setValue", "(Ljava.lang.String;Ljava.lang.Object;)V", false);
                     setValueMethod.Link();
                     setValueMethod.EmitCall(ilgen);
@@ -1683,7 +1679,7 @@ namespace IKVM.Runtime
                     {
                         if (requiredArgCount > 0)
                         {
-                            var args = new Type[requiredArgCount];
+                            var args = new ITypeSymbol[requiredArgCount];
                             for (int i = 0, j = 0; i < o.methods.Length; i++)
                             {
                                 if (!o.methods[i].IsStatic)
@@ -1699,7 +1695,7 @@ namespace IKVM.Runtime
                             context.AttributeHelper.HideFromJava(reqArgConstructor);
                             ilgen = context.CodeEmitterFactory.Create(reqArgConstructor);
                             ilgen.Emit(OpCodes.Ldarg_0);
-                            ilgen.Emit(OpCodes.Call, defaultConstructor);
+                            ilgen.Emit(OpCodes.Call, defaultConstructor.Symbol);
 
                             for (int i = 0, j = 0; i < o.methods.Length; i++)
                             {
@@ -1852,38 +1848,38 @@ namespace IKVM.Runtime
                 private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     Link();
-                    ConstructorInfo ctor = defineConstructor != null
+                    var ctor = defineConstructor != null
                         ? defineConstructor.__AsConstructorInfo()
-                        : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection().GetConstructor(new Type[] { context.Types.Object.MakeArrayType() });
+                        : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").GetConstructor(new [] { context.Types.Object.MakeArrayType() });
                     return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
                 {
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
                 {
                     fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation)
                 {
                     ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
@@ -2365,7 +2361,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
+            internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
             {
                 Debug.Assert(mw != null);
 
@@ -2945,7 +2941,7 @@ namespace IKVM.Runtime
             }
 #endif // IMPORTER
 
-            internal override Type Type
+            internal override ITypeSymbol Type
             {
                 get
                 {
@@ -3013,7 +3009,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            internal override MethodInfo GetFinalizeMethod()
+            internal override IMethodSymbol GetFinalizeMethod()
             {
                 return finalizeMethod;
             }

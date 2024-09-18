@@ -3,7 +3,7 @@
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface ITypeSymbolBuilder : ISymbolBuilder<ITypeSymbol>
+    interface ITypeSymbolBuilder : ISymbolBuilder<ITypeSymbol>, IMemberSymbolBuilder, ITypeSymbol
     {
 
         /// <summary>
@@ -139,6 +139,13 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
         IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+
+        /// <summary>
+        /// Specifies a given method body that implements a given method declaration, potentially with a different name.
+        /// </summary>
+        /// <param name="methodInfoBody"></param>
+        /// <param name="methodInfoDeclaration"></param>
+        void DefineMethodOverride(IMethodSymbolBuilder methodInfoBody, IMethodSymbol methodInfoDeclaration);
 
         /// <summary>
         /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.

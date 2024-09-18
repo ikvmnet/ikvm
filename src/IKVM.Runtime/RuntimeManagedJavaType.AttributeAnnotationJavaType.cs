@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
-
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -491,7 +491,7 @@ namespace IKVM.Runtime
                     this.type = type;
                 }
 
-                CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+                ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     object[] arr = (object[])annotation;
                     object ctorArg = null;
@@ -534,25 +534,25 @@ namespace IKVM.Runtime
                         // TODO required argument is missing
                     }
 
-                    return new CustomAttributeBuilder(
-                        ctorArg == null ? defCtor.AsReflection() : singleOneArgCtor.AsReflection(),
+                    return loader.Context.Resolver.Symbols.CreateCustomAttribute(
+                        ctorArg == null ? defCtor : singleOneArgCtor,
                         ctorArg == null ? [] : new object[] { ctorArg },
-                        properties.ToArray().AsReflection(),
+                        properties.ToArray(),
                         propertyValues.ToArray(),
-                        fields.ToArray().AsReflection(),
+                        fields.ToArray(),
                         fieldValues.ToArray());
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
                 {
-                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && loader.Context.Resolver.ResolveType(tb.BaseType) != loader.Context.Types.Object)
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.Symbol.BaseType != loader.Context.Types.Object)
                     {
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
 #if IMPORTER
-                        loader.Diagnostics.IgnoredCustomAttribute(type.FullName, $"Type '{tb.FullName}' does not extend cli.System.Object");
+                        loader.Diagnostics.IgnoredCustomAttribute(type.FullName, $"Type '{tb.Symbol.FullName}' does not extend cli.System.Object");
 #else
-                        loader.Diagnostics.GenericRuntimeError($"StructLayoutAttribute cannot be applied to {tb.FullName}, because it does not directly extend cli.System.Object");
+                        loader.Diagnostics.GenericRuntimeError($"StructLayoutAttribute cannot be applied to {tb.Symbol.FullName}, because it does not directly extend cli.System.Object");
 #endif
                         return;
                     }
@@ -560,17 +560,17 @@ namespace IKVM.Runtime
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
                 {
                     fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
                 {
                     // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
                     // but if we make it possible, we should also implement it here
@@ -580,9 +580,11 @@ namespace IKVM.Runtime
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder assemblyBuilder, object annotation)
                 {
 #if IMPORTER
+                    var ab = assemblyBuilder.AsReflection();
+
                     if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName))
                     {
                         ab.__AddTypeForwarder((Type)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
@@ -627,14 +629,14 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                        assemblyBuilder.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                     }
 #else
-                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                    assemblyBuilder.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 #endif
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }

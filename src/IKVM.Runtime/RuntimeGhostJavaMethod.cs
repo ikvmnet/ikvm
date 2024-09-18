@@ -25,6 +25,7 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -67,12 +68,12 @@ namespace IKVM.Runtime
 
         protected override void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, defaultImpl);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, defaultImpl);
         }
 
         protected override void CallvirtImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, ghostMethod);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ghostMethod);
         }
 
 #endif
@@ -99,14 +100,14 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal void SetGhostMethod(MethodBuilder mb)
+        internal void SetGhostMethod(IMethodSymbolBuilder mb)
         {
-            this.ghostMethod = mb;
+            this.ghostMethod = mb.Symbol;
         }
 
-        internal MethodBuilder GetGhostMethod()
+        internal IMethodSymbolBuilder GetGhostMethod()
         {
-            return (MethodBuilder)ghostMethod.AsReflection();
+            return ghostMethod.Builder;
         }
 
 #endif

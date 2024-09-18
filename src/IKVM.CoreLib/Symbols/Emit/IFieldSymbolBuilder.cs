@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IFieldSymbolBuilder : ISymbolBuilder<IFieldSymbol>
+    interface IFieldSymbolBuilder : ISymbolBuilder<IFieldSymbol>, IMemberSymbolBuilder, IFieldSymbol
     {
 
         /// <summary>

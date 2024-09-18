@@ -17,6 +17,11 @@
         /// </summary>
         bool ContainsMissing { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
+        /// </summary>
+        bool IsComplete { get; }
+
     }
 
 }

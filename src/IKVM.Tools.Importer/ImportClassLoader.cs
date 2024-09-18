@@ -35,6 +35,8 @@ using System.Xml.Linq;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -2115,7 +2117,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            internal override Type TypeAsTBD
+            internal override ITypeSymbol TypeAsTBD
             {
                 get
                 {
@@ -2123,7 +2125,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            internal override Type TypeAsBaseType
+            internal override ITypeSymbol TypeAsBaseType
             {
                 get
                 {
@@ -2146,7 +2148,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        internal static void AddDeclaredExceptions(RuntimeContext context, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Throws[] throws)
+        internal static void AddDeclaredExceptions(RuntimeContext context, IMethodSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Throws[] throws)
         {
             if (throws != null)
             {

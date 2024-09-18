@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
 
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -149,11 +148,11 @@ namespace IKVM.Runtime
                     for (int i = 0; i < parameters.Length; i++)
                         argTypes[i + 1] = parameters[i].ParameterType;
 
-                    var helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
+                    var helper = type.GetMethod("instancehelper_" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, argTypes);
                     if (helper != null)
                         mbHelper = helper;
 
-                    mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, BindingFlags.NonPublic | BindingFlags.Static, null, argTypes, null);
+                    mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static, argTypes);
                 }
 
                 return new RemappedJavaMethod(this, name, sig, mb, retType, paramTypes, modifiers, hideFromReflection, mbHelper, mbNonvirtualHelper);

@@ -143,7 +143,7 @@ namespace IKVM.Runtime
 
         internal ITypeSymbol CustomModifier => customModifier;
 
-        internal void SetCustomModifier(Type type)
+        internal void SetCustomModifier(ITypeSymbol type)
         {
             this.customModifier = type;
         }

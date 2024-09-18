@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -174,7 +175,7 @@ namespace IKVM.Tools.Exporter
                     context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, baseAssembly), false, compiler);
                 }
 
-                if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
+                if (context.AttributeHelper.IsJavaModule(context.Resolver.ResolveModule(assembly.ManifestModule)))
                 {
                     diagnostics.ExportingImportsNotSupported();
                     return 1;
@@ -344,7 +345,7 @@ namespace IKVM.Tools.Exporter
             javaType.Context.StubGenerator.Write(stream, javaType, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
-        bool ExportNamespace(IList<string> namespaces, Type type)
+        bool ExportNamespace(IList<string> namespaces, ITypeSymbol type)
         {
             if (namespaces.Count == 0)
                 return true;
@@ -360,7 +361,7 @@ namespace IKVM.Tools.Exporter
         int ProcessTypes(RuntimeContext context, Type[] types)
         {
             int rc = 0;
-            foreach (var t in types)
+            foreach (var t in types.Select(context.Resolver.ResolveType))
             {
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !context.AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !context.AttributeHelper.IsJavaModule(t.Module)))
                 {

@@ -26,6 +26,7 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection.Emit;
@@ -308,14 +309,14 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation);
 
-        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, IMethodSymbolBuilder mb, ref IParameterSymbolBuilder pb, object annotation)
         {
 
         }

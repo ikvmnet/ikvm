@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <summary>
         /// Gets the underlying reflection <see cref="CustomAttributeBuilder"/>.
         /// </summary>
-        internal CustomAttributeBuilder ReflectionBuilder => _builder;
+        internal CustomAttributeBuilder UnderlyingBuilder => _builder;
 
     }
 

@@ -1,132 +1,111 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IMethodBaseSymbol
+    abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IReflectionMethodBaseSymbol
     {
 
-        MethodBase _method;
+        readonly MethodBase _method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="method"></param>
-        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, MethodBase method) :
-            base(context, module, method)
+        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MethodBase method) :
+            base(context, resolvingModule, resolvingType, method)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="type"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, MethodBase method) :
-            this(context, type.ContainingModule, method)
-        {
-
-        }
+        #region IMethodBaseSymbol
 
         /// <summary>
         /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
         /// </summary>
-        internal new MethodBase ReflectionObject => _method;
+        public MethodBase UnderlyingMethodBase => _method;
 
         /// <inheritdoc />
-        public MethodAttributes Attributes => _method.Attributes;
+        public MethodAttributes Attributes => UnderlyingMethodBase.Attributes;
 
         /// <inheritdoc />
-        public CallingConventions CallingConvention => _method.CallingConvention;
+        public CallingConventions CallingConvention => UnderlyingMethodBase.CallingConvention;
 
         /// <inheritdoc />
-        public bool ContainsGenericParameters => _method.ContainsGenericParameters;
+        public bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
 
         /// <inheritdoc />
-        public bool IsAbstract => _method.IsAbstract;
+        public bool IsAbstract => UnderlyingMethodBase.IsAbstract;
 
         /// <inheritdoc />
-        public bool IsAssembly => _method.IsAssembly;
+        public bool IsAssembly => UnderlyingMethodBase.IsAssembly;
 
         /// <inheritdoc />
-        public bool IsConstructor => _method.IsConstructor;
+        public bool IsConstructor => UnderlyingMethodBase.IsConstructor;
 
         /// <inheritdoc />
-        public bool IsFamily => _method.IsFamily;
+        public bool IsFamily => UnderlyingMethodBase.IsFamily;
 
         /// <inheritdoc />
-        public bool IsFamilyAndAssembly => _method.IsFamilyAndAssembly;
+        public bool IsFamilyAndAssembly => UnderlyingMethodBase.IsFamilyAndAssembly;
 
         /// <inheritdoc />
-        public bool IsFamilyOrAssembly => _method.IsFamilyOrAssembly;
+        public bool IsFamilyOrAssembly => UnderlyingMethodBase.IsFamilyOrAssembly;
 
         /// <inheritdoc />
-        public bool IsFinal => _method.IsFinal;
+        public bool IsFinal => UnderlyingMethodBase.IsFinal;
 
         /// <inheritdoc />
-        public bool IsGenericMethod => _method.IsGenericMethod;
+        public bool IsGenericMethod => UnderlyingMethodBase.IsGenericMethod;
 
         /// <inheritdoc />
-        public bool IsGenericMethodDefinition => _method.IsGenericMethodDefinition;
+        public bool IsGenericMethodDefinition => UnderlyingMethodBase.IsGenericMethodDefinition;
 
         /// <inheritdoc />
-        public bool IsHideBySig => _method.IsHideBySig;
+        public bool IsHideBySig => UnderlyingMethodBase.IsHideBySig;
 
         /// <inheritdoc />
-        public bool IsPrivate => _method.IsPrivate;
+        public bool IsPrivate => UnderlyingMethodBase.IsPrivate;
 
         /// <inheritdoc />
-        public bool IsPublic => _method.IsPublic;
+        public bool IsPublic => UnderlyingMethodBase.IsPublic;
 
         /// <inheritdoc />
-        public bool IsStatic => _method.IsStatic;
+        public bool IsStatic => UnderlyingMethodBase.IsStatic;
 
         /// <inheritdoc />
-        public bool IsVirtual => _method.IsVirtual;
+        public bool IsVirtual => UnderlyingMethodBase.IsVirtual;
 
         /// <inheritdoc />
-        public bool IsSpecialName => _method.IsSpecialName;
+        public bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
 
         /// <inheritdoc />
-        public MethodImplAttributes MethodImplementationFlags => _method.MethodImplementationFlags;
+        public MethodImplAttributes MethodImplementationFlags => UnderlyingMethodBase.MethodImplementationFlags;
 
         /// <inheritdoc />
         public ITypeSymbol[] GetGenericArguments()
         {
-            return ResolveTypeSymbols(_method.GetGenericArguments());
+            return ResolveTypeSymbols(UnderlyingMethodBase.GetGenericArguments());
         }
 
         /// <inheritdoc />
         public MethodImplAttributes GetMethodImplementationFlags()
         {
-            return _method.GetMethodImplementationFlags();
+            return UnderlyingMethodBase.GetMethodImplementationFlags();
         }
 
         /// <inheritdoc />
         public IParameterSymbol[] GetParameters()
         {
-            return ResolveParameterSymbols(_method.GetParameters());
+            return ResolveParameterSymbols(UnderlyingMethodBase.GetParameters());
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="method"></param>
-        internal void Complete(MethodBase method)
-        {
-            ResolveMethodBaseSymbol(_method = method);
-            base.Complete(_method);
-
-            foreach (var i in _method.GetParameters())
-                ResolveParameterSymbol(i).Complete(i);
-            
-        }
+        #endregion
 
     }
 

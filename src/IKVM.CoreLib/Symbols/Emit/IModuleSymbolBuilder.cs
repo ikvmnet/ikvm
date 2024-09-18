@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IModuleSymbolBuilder : ISymbolBuilder<IModuleSymbol>
+    interface IModuleSymbolBuilder : ISymbolBuilder<IModuleSymbol>, IModuleSymbol
     {
 
         /// <summary>
@@ -84,11 +84,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="con"></param>
         /// <param name="binaryAttribute"></param>
         void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
-
-        /// <summary>
-        /// Finishes all types of the module, updating the associated symbols.
-        /// </summary>
-        void Complete();
 
     }
 

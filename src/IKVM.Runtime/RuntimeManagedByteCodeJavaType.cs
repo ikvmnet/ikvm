@@ -24,25 +24,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
-using IKVM.CoreLib.Symbols;
-using com.sun.org.apache.bcel.@internal.generic;
-using System.Linq;
-
-
-
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-using System.Runtime.Serialization.Formatters;
-
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -1198,40 +1193,40 @@ namespace IKVM.Runtime
             internal CompiledAnnotation(RuntimeContext context, ITypeSymbol type)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
-                constructor = type.GetConstructor(new ITypeSymbol[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
+                constructor = type.GetConstructor([context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType()]);
             }
 
-            private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+            private ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
             {
-                return new CustomAttributeBuilder(constructor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
+                return context.Resolver.Symbols.CreateCustomAttribute(constructor, [AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation))]);
             }
 
-            internal override void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
             {
                 tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
             {
                 mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
             {
                 fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
             {
                 pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation)
             {
                 ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
             {
                 pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }

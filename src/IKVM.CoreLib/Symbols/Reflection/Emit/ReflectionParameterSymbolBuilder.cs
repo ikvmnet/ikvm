@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -6,12 +8,14 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    abstract class ReflectionParameterSymbolBuilder : ReflectionSymbolBuilder<IParameterSymbol, ReflectionParameterSymbol>, IParameterSymbolBuilder
+    class ReflectionParameterSymbolBuilder : ReflectionSymbolBuilder, IReflectionParameterSymbolBuilder
     {
-        
-        readonly ParameterBuilder _builder;
-        readonly ReflectionParameterBuilderInfo _info;
-        ReflectionParameterSymbol? _symbol;
+
+        readonly IReflectionModuleSymbol _resolvingModule;
+        readonly IReflectionMethodBaseSymbol _resolvingMethod;
+
+        ParameterBuilder? _builder;
+        ParameterInfo _parameter;
 
         object? _constant;
 
@@ -19,83 +23,141 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        protected ReflectionParameterSymbolBuilder(ReflectionSymbolContext context, ParameterBuilder builder) :
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingMethod"></param>
+        /// <param name="builder"></param>
+        public ReflectionParameterSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMethodBaseSymbol resolvingMethod, ParameterBuilder builder) :
             base(context)
         {
+            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _resolvingMethod = resolvingMethod ?? throw new ArgumentNullException(nameof(resolvingMethod));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _info = new ReflectionParameterBuilderInfo(_builder);
+            _parameter = new ReflectionParameterBuilderInfo(_builder, () => _constant);
         }
 
-        /// <summary>
-        /// Gets the wrapped <see cref="ParameterBuilder"/>.
-        /// </summary>
-        internal ParameterBuilder ReflectionBuilder => _builder;
+        /// <inheritdoc />
+        public IReflectionModuleSymbol ResolvingModule => _resolvingMethod.ResolvingModule;
 
         /// <inheritdoc />
-        internal override ReflectionParameterSymbol ReflectionSymbol => _symbol ??= GetOrCreateSymbol(_info);
+        public IReflectionMethodBaseSymbol ResolvingMethod => _resolvingMethod;
 
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionParameterSymbol"/>.
-        /// </summary>
-        /// <returns></returns>
-        protected internal abstract ReflectionParameterSymbol GetOrCreateSymbol(ReflectionParameterBuilderInfo info);
+        /// <inheritdoc />
+        public ParameterInfo UnderlyingParameter => _parameter;
+
+        /// <inheritdoc />
+        public ParameterBuilder UnderlyingParameterBuilder => _builder ?? throw new InvalidOperationException();
+
+        #region IParameterSymbolBuilder
 
         /// <inheritdoc />
         public void SetConstant(object? defaultValue)
         {
-            _builder.SetConstant(_constant = defaultValue);
-        }
-
-        /// <summary>
-        /// Saves the constant value so it can be retrieved as a symbol.
-        /// </summary>
-        /// <returns></returns>
-        internal object? GetConstant()
-        {
-            return _constant;
+            UnderlyingParameterBuilder.SetConstant(_constant = defaultValue);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
-            _builder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingParameterBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).ReflectionBuilder);
+            UnderlyingParameterBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
-    }
+        #endregion
 
-    class ReflectionParameterSymbolBuilder<TContainingSymbol, TContainingReflectionSymbol, TContainingBuilder> : ReflectionParameterSymbolBuilder
-        where TContainingSymbol : IMethodBaseSymbol
-        where TContainingReflectionSymbol : ReflectionMethodBaseSymbol, TContainingSymbol
-        where TContainingBuilder : ReflectionMethodBaseSymbolBuilder<TContainingSymbol, TContainingReflectionSymbol>
-    {
-
-        readonly TContainingBuilder _containingMethodBuilder;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingMethodBuilder"></param>
-        /// <param name="builder"></param>
-        public ReflectionParameterSymbolBuilder(ReflectionSymbolContext context, TContainingBuilder containingMethodBuilder, ParameterBuilder builder) :
-            base(context, builder)
-        {
-            _containingMethodBuilder = containingMethodBuilder ?? throw new ArgumentNullException(nameof(containingMethodBuilder));
-        }
-
-        /// <summary>
-        /// Gets the containing <see cref="ReflectionMethodBaseSymbolBuilder{IMethodBaseSymbol, ReflectionMethodBaseSymbol}"/>.
-        /// </summary>
-        internal TContainingBuilder ContainingMethodBuilder => _containingMethodBuilder;
+        #region IParameterSymbol
 
         /// <inheritdoc />
-        protected internal override ReflectionParameterSymbol GetOrCreateSymbol(ReflectionParameterBuilderInfo info) => ContainingMethodBuilder.ReflectionSymbol.ResolveParameterSymbol(info);
+        public ParameterAttributes Attributes => UnderlyingParameter.Attributes;
+
+        /// <inheritdoc />
+        public object? DefaultValue => UnderlyingParameter.DefaultValue;
+
+        /// <inheritdoc />
+        public bool HasDefaultValue => UnderlyingParameter.HasDefaultValue;
+
+        /// <inheritdoc />
+        public bool IsIn => UnderlyingParameter.IsIn;
+
+        /// <inheritdoc />
+        public bool IsLcid => UnderlyingParameter.IsLcid;
+
+        /// <inheritdoc />
+        public bool IsOptional => UnderlyingParameter.IsOptional;
+
+        /// <inheritdoc />
+        public bool IsOut => UnderlyingParameter.IsOut;
+
+        /// <inheritdoc />
+        public bool IsRetval => UnderlyingParameter.IsRetval;
+
+        /// <inheritdoc />
+        public IMemberSymbol Member => ResolveMemberSymbol(UnderlyingParameter.Member);
+
+        /// <inheritdoc />
+        public int MetadataToken => UnderlyingParameter.MetadataToken;
+
+        /// <inheritdoc />
+        public string? Name => UnderlyingParameter.Name;
+
+        /// <inheritdoc />
+        public ITypeSymbol ParameterType => ResolveTypeSymbol(UnderlyingParameter.ParameterType);
+
+        /// <inheritdoc />
+        public int Position => UnderlyingParameter.Position;
+
+        /// <inheritdoc />
+        public override bool IsComplete => _builder == null;
+
+        /// <inheritdoc />
+        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        {
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
+        }
+
+        /// <inheritdoc />
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
+        }
+
+        /// <inheritdoc />
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+        }
+
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return UnderlyingParameter.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbol[] GetOptionalCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingParameter.GetOptionalCustomModifiers());
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbol[] GetRequiredCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingParameter.GetRequiredCustomModifiers());
+        }
+
+        #endregion
+
+        /// <inheritdoc />
+        public void OnComplete()
+        {
+            var p = ResolvingMethod.UnderlyingMethodBase.GetParameters();
+            _parameter = p[Position];
+            _builder = null;
+        }
 
     }
 

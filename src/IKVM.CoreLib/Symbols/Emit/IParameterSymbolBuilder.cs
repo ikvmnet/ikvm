@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IParameterSymbolBuilder : ISymbolBuilder<IParameterSymbol>
+    interface IParameterSymbolBuilder : ISymbolBuilder<IParameterSymbol>, IParameterSymbol
     {
         /// <summary>
         /// Sets the default value of the parameter.

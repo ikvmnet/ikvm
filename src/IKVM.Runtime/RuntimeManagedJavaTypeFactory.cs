@@ -63,7 +63,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public RuntimeJavaType GetJavaTypeFromManagedType(ITypeSymbol type)
         {
-            return cache.GetValue(type, _ => context.AssemblyClassLoaderFactory.FromAssembly(_.Assembly.AsReflection()).GetJavaTypeFromAssemblyType(_.AsReflection()));
+            return cache.GetValue(type, _ => context.AssemblyClassLoaderFactory.FromAssembly(_.Assembly).GetJavaTypeFromAssemblyType(_));
         }
 
         /// <summary>

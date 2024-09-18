@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Reflection;
 
-using IKVM.CoreLib.Symbols.Reflection.Emit;
-
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionParameterSymbol : ReflectionSymbol, IParameterSymbol
+    class ReflectionParameterSymbol : ReflectionSymbol, IReflectionParameterSymbol
     {
 
-        readonly ReflectionMethodBaseSymbol _containingMethod;
-        ParameterInfo _parameter;
+        readonly IReflectionModuleSymbol _resolvingModule;
+        readonly IReflectionMethodBaseSymbol _resolvingMethod;
+        readonly ParameterInfo _parameter;
 
         CustomAttribute[]? _customAttributes;
 
@@ -19,60 +18,71 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingMethod"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingMethod"></param>
         /// <param name="parameter"></param>
-        public ReflectionParameterSymbol(ReflectionSymbolContext context, ReflectionMethodBaseSymbol containingMethod, ParameterInfo parameter) :
+        public ReflectionParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMethodBaseSymbol resolvingMethod, ParameterInfo parameter) :
             base(context)
         {
-            _containingMethod = containingMethod ?? throw new ArgumentNullException(nameof(containingMethod));
+            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _resolvingMethod = resolvingMethod ?? throw new ArgumentNullException(nameof(resolvingMethod));
             _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
         }
 
-        internal ReflectionMethodBaseSymbol ContainingMethod => _containingMethod;
+        /// <inheritdoc />
+        public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
         /// <inheritdoc />
-        public ParameterAttributes Attributes => _parameter.Attributes;
+        public IReflectionMethodBaseSymbol ResolvingMethod => _resolvingMethod;
 
         /// <inheritdoc />
-        public object? DefaultValue => _parameter.DefaultValue;
+        public ParameterInfo UnderlyingParameter => _parameter;
+
+        #region IParameterSymbol
 
         /// <inheritdoc />
-        public bool HasDefaultValue => _parameter.HasDefaultValue;
+        public ParameterAttributes Attributes => UnderlyingParameter.Attributes;
 
         /// <inheritdoc />
-        public bool IsIn => _parameter.IsIn;
+        public object? DefaultValue => UnderlyingParameter.DefaultValue;
 
         /// <inheritdoc />
-        public bool IsLcid => _parameter.IsLcid;
+        public bool HasDefaultValue => UnderlyingParameter.HasDefaultValue;
 
         /// <inheritdoc />
-        public bool IsOptional => _parameter.IsOptional;
+        public bool IsIn => UnderlyingParameter.IsIn;
 
         /// <inheritdoc />
-        public bool IsOut => _parameter.IsOut;
+        public bool IsLcid => UnderlyingParameter.IsLcid;
 
         /// <inheritdoc />
-        public bool IsRetval => _parameter.IsRetval;
+        public bool IsOptional => UnderlyingParameter.IsOptional;
 
         /// <inheritdoc />
-        public IMemberSymbol Member => ResolveMemberSymbol(_parameter.Member);
+        public bool IsOut => UnderlyingParameter.IsOut;
 
         /// <inheritdoc />
-        public int MetadataToken => _parameter.MetadataToken;
+        public bool IsRetval => UnderlyingParameter.IsRetval;
 
         /// <inheritdoc />
-        public string? Name => _parameter.Name;
+        public IMemberSymbol Member => ResolveMemberSymbol(UnderlyingParameter.Member);
 
         /// <inheritdoc />
-        public ITypeSymbol ParameterType => ResolveTypeSymbol(_parameter.ParameterType);
+        public int MetadataToken => UnderlyingParameter.MetadataToken;
 
         /// <inheritdoc />
-        public int Position => _parameter.Position;
+        public string? Name => UnderlyingParameter.Name;
+
+        /// <inheritdoc />
+        public ITypeSymbol ParameterType => ResolveTypeSymbol(UnderlyingParameter.ParameterType);
+
+        /// <inheritdoc />
+        public int Position => UnderlyingParameter.Position;
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return _customAttributes ??= ResolveCustomAttributes(_parameter.GetCustomAttributesData());
+            return _customAttributes ??= ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
@@ -90,30 +100,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
+            return UnderlyingParameter.IsDefined(attributeType.Unpack(), inherit);
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(_parameter.GetOptionalCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingParameter.GetOptionalCustomModifiers());
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(_parameter.GetRequiredCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingParameter.GetRequiredCustomModifiers());
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="parameter"></param>
-        internal void Complete(ParameterInfo parameter)
-        {
-            ResolveParameterSymbol(_parameter = parameter);
-            _customAttributes = null;
-        }
+        #endregion
 
     }
 

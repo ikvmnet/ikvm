@@ -1,4 +1,6 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using IKVM.CoreLib.Symbols.Emit;
+
+namespace IKVM.CoreLib.Symbols
 {
 
     /// <summary>

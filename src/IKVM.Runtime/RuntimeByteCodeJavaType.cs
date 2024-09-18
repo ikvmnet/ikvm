@@ -27,7 +27,8 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
-
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -54,12 +55,6 @@ namespace IKVM.Runtime
 #endif
     {
 
-#if IMPORTER == false && NETCOREAPP
-
-        static readonly PropertyInfo MetadataTokenInternalPropertyInfo = typeof(MethodBuilder).GetProperty("MetadataTokenInternal", BindingFlags.Instance | BindingFlags.NonPublic);
-
-#endif
-
 #if IMPORTER
         protected readonly ImportClassLoader classLoader;
 #else
@@ -72,7 +67,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
         byte[][] lineNumberTables;
 #endif
-        MethodBase automagicSerializationCtor;
+        IMethodBaseSymbol automagicSerializationCtor;
 
         RuntimeJavaType LoadTypeWrapper(RuntimeClassLoader classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
         {
@@ -93,21 +88,19 @@ namespace IKVM.Runtime
 #if IMPORTER
             do
             {
-                RuntimeUnloadableJavaType missing = tw as RuntimeUnloadableJavaType;
+                var missing = tw as RuntimeUnloadableJavaType;
                 if (missing != null)
                 {
-                    Type mt = ReflectUtil.GetMissingType(missing.MissingType);
-                    if (mt.Assembly.__IsMissing)
-                    {
+                    var mt = ReflectUtil.GetMissingType(missing.MissingType);
+                    if (mt.Assembly.IsMissing)
                         throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseTypeReference(mt.FullName, mt.Assembly.FullName));
-                    }
 
                     throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseType(mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name));
                 }
+
                 foreach (RuntimeJavaType iface in tw.Interfaces)
-                {
                     CheckMissing(tw, iface);
-                }
+
                 prev = tw;
                 tw = tw.BaseTypeWrapper;
             }
@@ -351,7 +344,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override Type TypeAsTBD
+        internal override ITypeSymbol TypeAsTBD
         {
             get
             {
@@ -408,7 +401,7 @@ namespace IKVM.Runtime
                 return false;
         }
 
-        void GenerateOverrideStub(TypeBuilder typeBuilder, RuntimeJavaMethod baseMethod, MethodInfo target, RuntimeJavaMethod targetMethod)
+        void GenerateOverrideStub(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod baseMethod, IMethodSymbol target, RuntimeJavaMethod targetMethod)
         {
             Debug.Assert(!baseMethod.HasCallerID);
 
@@ -587,9 +580,9 @@ namespace IKVM.Runtime
                     parameterNames[i] = names[i];
         }
 
-        protected static ParameterBuilder[] GetParameterBuilders(MethodBuilder mb, int parameterCount, string[] parameterNames)
+        protected static IParameterSymbolBuilder[] GetParameterBuilders(IMethodSymbolBuilder mb, int parameterCount, string[] parameterNames)
         {
-            var parameterBuilders = new ParameterBuilder[parameterCount];
+            var parameterBuilders = new IParameterSymbolBuilder[parameterCount];
             Dictionary<string, int> clashes = null;
             for (int i = 0; i < parameterBuilders.Length; i++)
             {
@@ -609,8 +602,10 @@ namespace IKVM.Runtime
                         name += clash;
                     }
                 }
-                parameterBuilders[i] = mb.DefineParameter(i + 1, ParameterAttributes.None, name);
+
+                parameterBuilders[i] = mb.DefineParameter(i + 1, System.Reflection.ParameterAttributes.None, name);
             }
+
             return parameterBuilders;
         }
 
@@ -641,67 +636,57 @@ namespace IKVM.Runtime
 
         protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
 
-        protected abstract void EmitMapXmlMetadata(TypeBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
+        protected abstract void EmitMapXmlMetadata(ITypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
 
-        protected abstract MethodBuilder DefineGhostMethod(TypeBuilder typeBuilder, string name, MethodAttributes attribs, RuntimeJavaMethod mw);
+        protected abstract MethodBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw);
 
-        protected abstract void FinishGhost(TypeBuilder typeBuilder, RuntimeJavaMethod[] methods);
+        protected abstract void FinishGhost(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods);
 
         protected abstract void FinishGhostStep2();
 
-        protected abstract TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs);
+        protected abstract TypeBuilder DefineGhostType(string mangledTypeName, System.Reflection.TypeAttributes typeAttribs);
 
 #endif // IMPORTER
 
         private bool IsPInvokeMethod(ClassFile.Method m)
         {
 #if IMPORTER
-            Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
+            var mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null)
             {
-                IKVM.Tools.Importer.MapXml.Class clazz;
-                if (mapxml.TryGetValue(this.Name, out clazz) && clazz.Methods != null)
+                if (mapxml.TryGetValue(this.Name, out var clazz) && clazz.Methods != null)
                 {
                     foreach (IKVM.Tools.Importer.MapXml.Method method in clazz.Methods)
                     {
                         if (method.Name == m.Name && method.Sig == m.Signature)
                         {
                             if (method.Attributes != null)
-                            {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
-                                {
                                     if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName).AsReflection())
-                                    {
                                         return true;
-                                    }
-                                }
-                            }
+
                             break;
                         }
                     }
                 }
             }
 #endif
+
             if (m.Annotations != null)
-            {
                 foreach (object[] annot in m.Annotations)
-                {
                     if ("Lcli/System/Runtime/InteropServices/DllImportAttribute$Annotation;".Equals(annot[1]))
-                    {
                         return true;
-                    }
-                }
-            }
+
             return false;
         }
 
-        internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
+        internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
         {
             mw.AssertLinked();
             return impl.LinkMethod(mw);
         }
 
-        internal override FieldInfo LinkField(RuntimeJavaField fw)
+        internal override IFieldSymbol LinkField(RuntimeJavaField fw)
         {
             fw.AssertLinked();
             return impl.LinkField(fw);
@@ -719,42 +704,33 @@ namespace IKVM.Runtime
 
         internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
                 if (methods[i] == mw)
-                {
                     return impl.GetGenericMethodSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
         internal override string GetGenericFieldSignature(RuntimeJavaField fw)
         {
-            RuntimeJavaField[] fields = GetFields();
+            var fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
-            {
                 if (fields[i] == fw)
-                {
                     return impl.GetGenericFieldSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
         internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
                 if (methods[i] == mw)
-                {
                     return impl.GetMethodParameters(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
@@ -780,30 +756,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="mb"></param>
         /// <returns></returns>
-        int GetMethodBaseToken(MethodBase mb)
+        int GetMethodBaseToken(IMethodBaseSymbol mb)
         {
-            if (mb is MethodBuilder mbld)
-            {
-#if NETFRAMEWORK
-                return mbld.GetToken().Token;
-#else
-                try
-                {
-                    return mbld.GetMetadataToken();
-                }
-                catch (InvalidOperationException)
-                {
-                    if (MetadataTokenInternalPropertyInfo != null)
-                        return (int)MetadataTokenInternalPropertyInfo.GetValue(mbld);
-                }
-#endif
-            }
-
-#if NETFRAMEWORK
             return mb.MetadataToken;
-#else
-            return mb.GetMetadataToken();
-#endif
         }
 
         /// <summary>
@@ -812,7 +767,7 @@ namespace IKVM.Runtime
         /// <param name="mb"></param>
         /// <param name="ilOffset"></param>
         /// <returns></returns>
-        internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
+        internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
             if (lineNumberTables != null)
             {
@@ -858,76 +813,71 @@ namespace IKVM.Runtime
 
         internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
                 if (methods[i] == mw)
-                {
                     return DecodeAnnotations(impl.GetMethodAnnotations(i));
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
         internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
                 {
-                    object[][] annotations = impl.GetParameterAnnotations(i);
+                    var annotations = impl.GetParameterAnnotations(i);
                     if (annotations != null)
                     {
                         object[][] objs = new object[annotations.Length][];
                         for (int j = 0; j < annotations.Length; j++)
-                        {
                             objs[j] = DecodeAnnotations(annotations[j]);
-                        }
+
                         return objs;
                     }
+
                     return null;
                 }
             }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
         internal override object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
-            RuntimeJavaField[] fields = GetFields();
+            var fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
-            {
                 if (fields[i] == fw)
-                {
                     return DecodeAnnotations(impl.GetFieldAnnotations(i));
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
         internal override object GetAnnotationDefault(RuntimeJavaMethod mw)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i] == mw)
                 {
-                    object defVal = impl.GetMethodDefaultValue(i);
+                    var defVal = impl.GetMethodDefaultValue(i);
                     if (defVal != null)
-                    {
                         return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
-                    }
+
                     return null;
                 }
             }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
-        private Type GetBaseTypeForDefineType()
+        private ITypeSymbol GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
@@ -936,7 +886,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        protected virtual Type GetBaseTypeForDefineType()
+        protected virtual ITypeSymbol GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
@@ -948,33 +898,31 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-        internal override MethodBase GetSerializationConstructor()
+        internal override IMethodBaseSymbol GetSerializationConstructor()
         {
             return automagicSerializationCtor;
         }
 
-        private Type[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
+        private ITypeSymbol[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
         {
             return GetModOpt(ClassLoader.GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
-        internal static Type[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
+        internal static ITypeSymbol[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
         {
-            Type[] modopt = [];
+            ITypeSymbol[] modopt = [];
             if (tw.IsUnloadable)
             {
                 if (((RuntimeUnloadableJavaType)tw).MissingType == null)
-                {
-                    modopt = new Type[] { ((RuntimeUnloadableJavaType)tw).GetCustomModifier(context) };
-                }
+                    modopt = new ITypeSymbol[] { ((RuntimeUnloadableJavaType)tw).GetCustomModifier(context) };
             }
             else
             {
-                RuntimeJavaType tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
+                var tw1 = tw.IsArray ? tw.GetUltimateElementTypeWrapper() : tw;
                 if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || tw.IsGhostArray || (mustBePublic && !tw1.IsPublic))
                 {
                     // FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
-                    modopt = new Type[tw.ArrayRank + 1];
+                    modopt = new ITypeSymbol[tw.ArrayRank + 1];
                     modopt[0] = GetModOptHelper(tw1);
                     for (int i = 1; i < modopt.Length; i++)
                     {
@@ -985,9 +933,10 @@ namespace IKVM.Runtime
             return modopt;
         }
 
-        private static Type GetModOptHelper(RuntimeJavaType tw)
+        static ITypeSymbol GetModOptHelper(RuntimeJavaType tw)
         {
             Debug.Assert(!tw.IsUnloadable);
+
             if (tw.IsArray)
             {
                 return RuntimeArrayJavaType.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
@@ -1003,7 +952,8 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        private bool NeedsType2AccessStub(RuntimeJavaField fw)
+
+        bool NeedsType2AccessStub(RuntimeJavaField fw)
         {
             Debug.Assert(this.IsPublic && fw.DeclaringType == this);
             return fw.IsType2FinalField
@@ -1011,6 +961,7 @@ namespace IKVM.Runtime
                     && (fw.IsPublic || (fw.IsProtected && !this.IsFinal))
                     && (fw.FieldTypeWrapper.IsUnloadable || fw.FieldTypeWrapper.IsAccessibleFrom(this) || fw.FieldTypeWrapper.InternalsVisibleTo(this)));
         }
+
 #endif
 
         internal static bool RequiresDynamicReflectionCallerClass(string classFile, string method, string signature)
@@ -1074,6 +1025,7 @@ namespace IKVM.Runtime
             }
 #endif
         }
+
     }
 
 }

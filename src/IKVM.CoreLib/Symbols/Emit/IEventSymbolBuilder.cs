@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IEventSymbolBuilder : ISymbolBuilder<IEventSymbol>
+    interface IEventSymbolBuilder : ISymbolBuilder<IEventSymbol>, IMemberSymbolBuilder, IEventSymbol
     {
 
         /// <summary>

@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -9,7 +13,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Base class for managed symbols.
     /// </summary>
-    abstract class ReflectionSymbol : ISymbol
+    abstract class ReflectionSymbol : IReflectionSymbol
     {
 
         readonly ReflectionSymbolContext _context;
@@ -26,301 +30,400 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the associated <see cref="ReflectionSymbolContext"/>.
         /// </summary>
-        protected ReflectionSymbolContext Context => _context;
+        public ReflectionSymbolContext Context => _context;
 
         /// <inheritdoc />
-        public bool IsMissing => false;
+        public virtual bool IsMissing => false;
 
         /// <inheritdoc />
-        public bool ContainsMissing => false;
+        public virtual bool ContainsMissing => false;
 
-        /// <summary>
-        /// Resolves the symbol for the specified type.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionModuleSymbol ResolveModuleSymbol(Module module)
+        /// <inheritdoc />
+        public virtual bool IsComplete => true;
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(assembly))]
+        public virtual IReflectionAssemblySymbol? ResolveAssemblySymbol(Assembly? assembly)
         {
-            return _context.GetOrCreateModuleSymbol(module);
+            return assembly == null ? null : _context.GetOrCreateAssemblySymbol(assembly);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified modules.
-        /// </summary>
-        /// <param name="modules"></param>
-        /// <returns></returns>
-        protected internal ReflectionModuleSymbol[] ResolveModuleSymbols(Module[] modules)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(assembly))]
+        public virtual IReflectionAssemblySymbolBuilder ResolveAssemblySymbol(AssemblyBuilder assembly)
         {
-            var a = new ReflectionModuleSymbol[modules.Length];
-            for (int i = 0; i < modules.Length; i++)
-                a[i] = ResolveModuleSymbol(modules[i]);
+            if (assembly is null)
+                throw new ArgumentNullException(nameof(assembly));
+
+            return _context.GetOrCreateAssemblySymbol(assembly);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(assemblies))]
+        public virtual IReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies)
+        {
+            if (assemblies == null)
+                return null;
+            if (assemblies.Length == 0)
+                return [];
+
+            var a = new IReflectionAssemblySymbol[assemblies.Length];
+            for (int i = 0; i < assemblies.Length; i++)
+                if (ResolveAssemblySymbol(assemblies[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified modules.
-        /// </summary>
-        /// <param name="modules"></param>
-        /// <returns></returns>
-        protected internal IEnumerable<ReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(module))]
+        public virtual IReflectionModuleSymbol? ResolveModuleSymbol(Module? module)
         {
-            foreach (var module in modules)
-                yield return ResolveModuleSymbol(module);
+            return module == null ? null : _context.GetOrCreateModuleSymbol(module);
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified type.
-        /// </summary>
-        /// <param name="member"></param>
-        /// <returns></returns>
-        protected virtual ReflectionMemberSymbol ResolveMemberSymbol(MemberInfo member)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(module))]
+        public virtual IReflectionModuleSymbolBuilder ResolveModuleSymbol(ModuleBuilder module)
         {
-            return member.MemberType switch
+            if (module is null)
+                throw new ArgumentNullException(nameof(module));
+
+            return _context.GetOrCreateModuleSymbol(module);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(modules))]
+        public virtual IReflectionModuleSymbol[]? ResolveModuleSymbols(Module[]? modules)
+        {
+            if (modules == null)
+                return null;
+            if (modules.Length == 0)
+                return [];
+
+            var a = new IReflectionModuleSymbol[modules.Length];
+            for (int i = 0; i < modules.Length; i++)
+                if (ResolveModuleSymbol(modules[i]) is { } symbol)
+                    a[i] = symbol;
+
+            return a;
+        }
+
+        /// <inheritdoc />
+        public virtual IEnumerable<IReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
+        {
+            foreach (var module in modules)
+                if (ResolveModuleSymbol(module) is { } symbol)
+                    yield return symbol;
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(member))]
+        public virtual IReflectionMemberSymbol? ResolveMemberSymbol(MemberInfo? member)
+        {
+            if (member == null)
+                return null;
+
+            return member switch
             {
-                MemberTypes.Constructor => ResolveConstructorSymbol((ConstructorInfo)member),
-                MemberTypes.Event => ResolveEventSymbol((EventInfo)member),
-                MemberTypes.Field => ResolveFieldSymbol((FieldInfo)member),
-                MemberTypes.Method => ResolveMethodSymbol((MethodInfo)member),
-                MemberTypes.Property => ResolvePropertySymbol((PropertyInfo)member),
-                MemberTypes.TypeInfo => ResolveTypeSymbol((Type)member),
-                MemberTypes.NestedType => ResolveTypeSymbol((Type)member),
-                MemberTypes.Custom => throw new NotImplementedException(),
-                MemberTypes.All => throw new NotImplementedException(),
+                ConstructorInfo ctor => ResolveConstructorSymbol(ctor),
+                EventInfo @event => ResolveEventSymbol(@event),
+                FieldInfo field => ResolveFieldSymbol(field),
+                MethodInfo method => ResolveMethodSymbol(method),
+                PropertyInfo property => ResolvePropertySymbol(property),
+                Type type => ResolveTypeSymbol(type),
                 _ => throw new InvalidOperationException(),
             };
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified types.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        protected internal ReflectionMemberSymbol[] ResolveMemberSymbols(MemberInfo[] types)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(members))]
+        public virtual IReflectionMemberSymbol[]? ResolveMemberSymbols(MemberInfo[]? members)
         {
-            var a = new ReflectionMemberSymbol[types.Length];
-            for (int i = 0; i < types.Length; i++)
-                a[i] = ResolveMemberSymbol(types[i]);
+            if (members == null)
+                return null;
+            if (members.Length == 0)
+                return [];
+
+            var a = new IReflectionMemberSymbol[members.Length];
+            for (int i = 0; i < members.Length; i++)
+                if (ResolveMemberSymbol(members[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionTypeSymbol ResolveTypeSymbol(Type type)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(type))]
+        public virtual IReflectionTypeSymbol? ResolveTypeSymbol(Type? type)
         {
+            return type == null ? null : _context.GetOrCreateTypeSymbol(type);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(type))]
+        public virtual IReflectionTypeSymbolBuilder ResolveTypeSymbol(TypeBuilder type)
+        {
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
+
             return _context.GetOrCreateTypeSymbol(type);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified types.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        protected internal ReflectionTypeSymbol[] ResolveTypeSymbols(Type[] types)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(types))]
+        public virtual IReflectionTypeSymbol[]? ResolveTypeSymbols(Type[]? types)
         {
-            var a = new ReflectionTypeSymbol[types.Length];
+            if (types == null)
+                return null;
+            if (types.Length == 0)
+                return [];
+
+            var a = new IReflectionTypeSymbol[types.Length];
             for (int i = 0; i < types.Length; i++)
-                a[i] = ResolveTypeSymbol(types[i]);
+                if (ResolveTypeSymbol(types[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified types.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        protected internal IEnumerable<ReflectionTypeSymbol> ResolveTypeSymbols(IEnumerable<Type> types)
+        /// <inheritdoc />
+        public virtual IEnumerable<IReflectionTypeSymbol> ResolveTypeSymbols(IEnumerable<Type> types)
         {
             foreach (var type in types)
-                yield return ResolveTypeSymbol(type);
+                if (ResolveTypeSymbol(type) is { } symbol)
+                    yield return symbol;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionMethodBaseSymbol ResolveMethodBaseSymbol(MethodBase method)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public virtual IReflectionMethodBaseSymbol? ResolveMethodBaseSymbol(MethodBase? method)
         {
-            if (method.IsConstructor)
-                return ResolveConstructorSymbol((ConstructorInfo)method);
-            else
-                return ResolveMethodSymbol((MethodInfo)method);
+            return method switch
+            {
+                ConstructorInfo ctor => ResolveConstructorSymbol(ctor),
+                MethodInfo method_ => ResolveMethodSymbol(method_),
+                _ => null,
+            };
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified constructor.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public virtual IReflectionConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor)
         {
+            return ctor == null ? null : _context.GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public virtual IReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor)
+        {
+            if (ctor is null)
+                throw new ArgumentNullException(nameof(ctor));
+
             return _context.GetOrCreateConstructorSymbol(ctor);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified constructors.
-        /// </summary>
-        /// <param name="ctors"></param>
-        /// <returns></returns>
-        protected internal ReflectionConstructorSymbol[] ResolveConstructorSymbols(ConstructorInfo[] ctors)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctors))]
+        public virtual IReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors)
         {
-            var a = new ReflectionConstructorSymbol[ctors.Length];
+            if (ctors == null)
+                return null;
+            if (ctors.Length == 0)
+                return [];
+
+            var a = new IReflectionConstructorSymbol[ctors.Length];
             for (int i = 0; i < ctors.Length; i++)
-                a[i] = ResolveConstructorSymbol(ctors[i]);
+                if (ResolveConstructorSymbol(ctors[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public virtual IReflectionMethodSymbol? ResolveMethodSymbol(MethodInfo? method)
         {
+            return method == null ? null : _context.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public virtual IReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
             return _context.GetOrCreateMethodSymbol(method);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified methods.
-        /// </summary>
-        /// <param name="methods"></param>
-        /// <returns></returns>
-        protected internal ReflectionMethodSymbol[] ResolveMethodSymbols(MethodInfo[] methods)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(methods))]
+        public virtual IReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods)
         {
-            var a = new ReflectionMethodSymbol[methods.Length];
+            if (methods == null)
+                return null;
+            if (methods.Length == 0)
+                return [];
+
+            var a = new IReflectionMethodSymbol[methods.Length];
             for (int i = 0; i < methods.Length; i++)
-                a[i] = ResolveMethodSymbol(methods[i]);
+                if (ResolveMethodSymbol(methods[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified field.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public virtual IReflectionFieldSymbol? ResolveFieldSymbol(FieldInfo? field)
         {
+            return field == null ? null : _context.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public virtual IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field)
+        {
+            if (field is null)
+                throw new ArgumentNullException(nameof(field));
+
             return _context.GetOrCreateFieldSymbol(field);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified fields.
-        /// </summary>
-        /// <param name="fields"></param>
-        /// <returns></returns>
-        protected internal ReflectionFieldSymbol[] ResolveFieldSymbols(FieldInfo[] fields)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(fields))]
+        public virtual IReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields)
         {
-            var a = new ReflectionFieldSymbol[fields.Length];
+            if (fields == null)
+                return null;
+            if (fields.Length == 0)
+                return [];
+
+            var a = new IReflectionFieldSymbol[fields.Length];
             for (int i = 0; i < fields.Length; i++)
-                a[i] = ResolveFieldSymbol(fields[i]);
+                if (ResolveFieldSymbol(fields[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified field.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(property))]
+        public virtual IReflectionPropertySymbol? ResolvePropertySymbol(PropertyInfo? property)
         {
+            return property == null ? null : _context.GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(property))]
+        public virtual IReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property)
+        {
+            if (property is null)
+                throw new ArgumentNullException(nameof(property));
+
             return _context.GetOrCreatePropertySymbol(property);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified properties.
-        /// </summary>
-        /// <param name="properties"></param>
-        /// <returns></returns>
-        protected internal ReflectionPropertySymbol[] ResolvePropertySymbols(PropertyInfo[] properties)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(properties))]
+        public virtual IReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties)
         {
-            var a = new ReflectionPropertySymbol[properties.Length];
+            if (properties == null)
+                return null;
+            if (properties.Length == 0)
+                return [];
+
+            var a = new IReflectionPropertySymbol[properties.Length];
             for (int i = 0; i < properties.Length; i++)
-                a[i] = ResolvePropertySymbol(properties[i]);
+                if (ResolvePropertySymbol(properties[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(@event))]
+        public virtual IReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
         {
+            return @event == null ? null : _context.GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(@event))]
+        public virtual IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
+        {
+            if (@event is null)
+                throw new ArgumentNullException(nameof(@event));
+
             return _context.GetOrCreateEventSymbol(@event);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified events.
-        /// </summary>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        protected internal ReflectionEventSymbol[] ResolveEventSymbols(EventInfo[] events)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(events))]
+        public virtual IReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events)
         {
-            var a = new ReflectionEventSymbol[events.Length];
+            if (@events == null)
+                return null;
+            if (@events.Length == 0)
+                return [];
+
+            var a = new IReflectionEventSymbol[events.Length];
             for (int i = 0; i < events.Length; i++)
-                a[i] = ResolveEventSymbol(events[i]);
+                if (ResolveEventSymbol(events[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbol for the specified parameter.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        protected virtual internal ReflectionParameterSymbol ResolveParameterSymbol(ParameterInfo parameter)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
         {
+            return parameter == null ? null : _context.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
+        {
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
+
             return _context.GetOrCreateParameterSymbol(parameter);
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified parameters.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        protected internal ReflectionParameterSymbol[] ResolveParameterSymbols(ParameterInfo[] parameters)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameters))]
+        public virtual IReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters)
         {
-            var a = new ReflectionParameterSymbol[parameters.Length];
+            if (parameters == null)
+                return null;
+            if (parameters.Length == 0)
+                return [];
+
+            var a = new IReflectionParameterSymbol[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
-                a[i] = ResolveParameterSymbol(parameters[i]);
+                if (ResolveParameterSymbol(parameters[i]) is { } symbol)
+                    a[i] = symbol;
 
             return a;
         }
 
-        /// <summary>
-        /// Resolves the symbols for the specified parameters.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        protected internal ReflectionParameterSymbol[] ResolveGenericParameterSymbols(ParameterInfo[] parameters)
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(attributes))]
+        public virtual CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
         {
-            var a = new ReflectionParameterSymbol[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-                a[i] = ResolveParameterSymbol(parameters[i]);
+            if (attributes == null)
+                return null;
+            if (attributes.Count == 0)
+                return [];
 
-            return a;
-        }
-
-        /// <summary>
-        /// Transforms a custom set of custom attribute data records to a symbol record.
-        /// </summary>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
-        protected internal CustomAttribute[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
-        {
             var a = new CustomAttribute[attributes.Count];
             for (int i = 0; i < attributes.Count; i++)
-                a[i] = ResolveCustomAttribute(attributes[i]);
+                if (ResolveCustomAttribute(attributes[i]) is { } v)
+                    a[i] = v;
 
             return a;
         }
@@ -330,11 +433,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttribute[] ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        public virtual IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
         {
+            if (attributes is null)
+                throw new ArgumentNullException(nameof(attributes));
+
             var a = new List<CustomAttribute>();
             foreach (var i in attributes)
-                a.Add(ResolveCustomAttribute(i));
+                if (ResolveCustomAttribute(i) is { } v)
+                    a.Add(v);
 
             return a.ToArray();
         }
@@ -344,12 +451,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="customAttributeData"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        protected internal CustomAttribute ResolveCustomAttribute(CustomAttributeData customAttributeData)
+        [return: NotNullIfNotNull(nameof(customAttributeData))]
+        public virtual CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
         {
+            if (customAttributeData == null)
+                return null;
+
             return new CustomAttribute(
-                ResolveTypeSymbol(customAttributeData.AttributeType),
-                ResolveConstructorSymbol(customAttributeData.Constructor),
+                ResolveTypeSymbol(customAttributeData.AttributeType)!,
+                ResolveConstructorSymbol(customAttributeData.Constructor)!,
                 ResolveCustomAttributeTypedArguments(customAttributeData.ConstructorArguments),
                 ResolveCustomAttributeNamedArguments(customAttributeData.NamedArguments));
         }
@@ -359,8 +469,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<System.Reflection.CustomAttributeTypedArgument> args)
+        public ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<System.Reflection.CustomAttributeTypedArgument> args)
         {
+            if (args is null)
+                throw new ArgumentNullException(nameof(args));
+            if (args.Count == 0)
+                return [];
+
             var a = new CustomAttributeTypedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeTypedArgument(args[i]);
@@ -373,9 +488,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(System.Reflection.CustomAttributeTypedArgument arg)
+        public CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(System.Reflection.CustomAttributeTypedArgument arg)
         {
-            return new CustomAttributeTypedArgument(ResolveTypeSymbol(arg.ArgumentType), ResolveCustomAttributeTypedValue(arg.Value));
+            return new CustomAttributeTypedArgument(
+                ResolveTypeSymbol(arg.ArgumentType)!,
+                ResolveCustomAttributeTypedValue(arg.Value));
         }
 
         /// <summary>
@@ -383,12 +500,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        object? ResolveCustomAttributeTypedValue(object? value)
+        public object? ResolveCustomAttributeTypedValue(object? value)
         {
-            if (value is System.Type v)
-                return ResolveTypeSymbol(v);
-
-            return value;
+            return value switch
+            {
+                Type v => ResolveTypeSymbol(v),
+                _ => value
+            };
         }
 
         /// <summary>
@@ -396,8 +514,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<System.Reflection.CustomAttributeNamedArgument> args)
+        public ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<System.Reflection.CustomAttributeNamedArgument> args)
         {
+            if (args is null)
+                throw new ArgumentNullException(nameof(args));
+            if (args.Count == 0)
+                return [];
+
             var a = new CustomAttributeNamedArgument[args.Count];
             for (int i = 0; i < args.Count; i++)
                 a[i] = ResolveCustomAttributeNamedArgument(args[i]);
@@ -410,9 +533,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="arg"></param>
         /// <returns></returns>
-        CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(System.Reflection.CustomAttributeNamedArgument arg)
+        public CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(System.Reflection.CustomAttributeNamedArgument arg)
         {
-            return new CustomAttributeNamedArgument(arg.IsField, ResolveMemberSymbol(arg.MemberInfo), arg.MemberName, ResolveCustomAttributeTypedArgument(arg.TypedValue));
+            return new CustomAttributeNamedArgument(
+                arg.IsField,
+                ResolveMemberSymbol(arg.MemberInfo)!,
+                arg.MemberName,
+                ResolveCustomAttributeTypedArgument(arg.TypedValue));
         }
 
     }

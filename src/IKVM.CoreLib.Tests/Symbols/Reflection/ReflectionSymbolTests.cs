@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 
 using FluentAssertions;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Reflection;
 using IKVM.CoreLib.Symbols.Reflection.Emit;
 
@@ -219,7 +220,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var c = new ReflectionSymbolContext();
             var a = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.RunAndCollect);
             var assemblySymbol = c.GetOrCreateAssemblySymbol(a);
-            assemblySymbol.Should().BeOfType<ReflectionAssemblySymbol>();
+            assemblySymbol.Should().BeOfType<ReflectionAssemblySymbolBuilder>();
             assemblySymbol.Should().BeSameAs(c.GetOrCreateAssemblySymbol(a));
         }
 
@@ -230,7 +231,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var a = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.RunAndCollect);
             var module = a.DefineDynamicModule("Test");
             var moduleSymbol = c.GetOrCreateModuleSymbol(module);
-            moduleSymbol.Should().BeOfType<ReflectionModuleSymbol>();
+            moduleSymbol.Should().BeOfType<ReflectionModuleSymbolBuilder>();
             moduleSymbol.Should().BeSameAs(c.GetOrCreateModuleSymbol(module));
         }
 
@@ -243,7 +244,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var type1 = m.DefineType("DynamicType1");
             var type1Symbol = c.GetOrCreateTypeSymbol(type1);
-            type1Symbol.Should().BeOfType<ReflectionTypeSymbol>();
+            type1Symbol.Should().BeOfType<ReflectionTypeSymbolBuilder>();
             type1Symbol.Should().BeSameAs(c.GetOrCreateTypeSymbol(type1));
         }
 
@@ -256,13 +257,13 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var type1 = m.DefineType("DynamicType1");
             var type1Symbol = c.GetOrCreateTypeSymbol(type1);
-            type1Symbol.Should().BeOfType<ReflectionTypeSymbol>();
+            type1Symbol.Should().BeOfType<ReflectionTypeSymbolBuilder>();
             type1Symbol.Should().BeSameAs(c.GetOrCreateTypeSymbol(type1));
             type1.CreateType();
 
             var type2 = m.DefineType("DynamicType2");
             var type2Symbol = c.GetOrCreateTypeSymbol(type2);
-            type2Symbol.Should().BeOfType<ReflectionTypeSymbol>();
+            type2Symbol.Should().BeOfType<ReflectionTypeSymbolBuilder>();
             type2Symbol.Should().BeSameAs(c.GetOrCreateTypeSymbol(type2));
         }
 
@@ -276,7 +277,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var method1 = t.DefineMethod("DynamicMethod1", MethodAttributes.Public | MethodAttributes.Static);
             var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
+            method1Symbol.Should().BeOfType<ReflectionMethodSymbolBuilder>();
             method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
         }
 
@@ -290,12 +291,12 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var method1 = t.DefineMethod("DynamicMethod1", MethodAttributes.Public | MethodAttributes.Static);
             var method1Symbol = c.GetOrCreateMethodSymbol(method1);
-            method1Symbol.Should().BeOfType<ReflectionMethodSymbol>();
+            method1Symbol.Should().BeOfType<ReflectionMethodSymbolBuilder>();
             method1Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method1));
 
             var method2 = t.DefineMethod("DynamicMethod2", MethodAttributes.Public | MethodAttributes.Static);
             var method2Symbol = c.GetOrCreateMethodSymbol(method2);
-            method2Symbol.Should().BeOfType<ReflectionMethodSymbol>();
+            method2Symbol.Should().BeOfType<ReflectionMethodSymbolBuilder>();
             method2Symbol.Should().BeSameAs(c.GetOrCreateMethodSymbol(method2));
         }
 
@@ -309,7 +310,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var field = t.DefineField("dynamicField", typeof(object), FieldAttributes.Public);
             var fieldSymbol = c.GetOrCreateFieldSymbol(field);
-            fieldSymbol.Should().BeOfType<ReflectionFieldSymbol>();
+            fieldSymbol.Should().BeOfType<ReflectionFieldSymbolBuilder>();
             fieldSymbol.Should().BeSameAs(c.GetOrCreateFieldSymbol(field));
         }
 
@@ -323,12 +324,12 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var field1 = t.DefineField("dynamicField1", typeof(object), FieldAttributes.Public);
             var field1Symbol = c.GetOrCreateFieldSymbol(field1);
-            field1Symbol.Should().BeOfType<ReflectionFieldSymbol>();
+            field1Symbol.Should().BeOfType<ReflectionFieldSymbolBuilder>();
             field1Symbol.Should().BeSameAs(c.GetOrCreateFieldSymbol(field1));
 
             var field2 = t.DefineField("dynamicField2", typeof(object), FieldAttributes.Public);
             var field2Symbol = c.GetOrCreateFieldSymbol(field2);
-            field2Symbol.Should().BeOfType<ReflectionFieldSymbol>();
+            field2Symbol.Should().BeOfType<ReflectionFieldSymbolBuilder>();
             field2Symbol.Should().BeSameAs(c.GetOrCreateFieldSymbol(field2));
         }
 
@@ -342,7 +343,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var property = t.DefineProperty("DynamicProperty", PropertyAttributes.None, typeof(object), []);
             var propertySymbol = c.GetOrCreatePropertySymbol(property);
-            propertySymbol.Should().BeOfType<ReflectionPropertySymbol>();
+            propertySymbol.Should().BeOfType<ReflectionPropertySymbolBuilder>();
             propertySymbol.Should().BeSameAs(c.GetOrCreatePropertySymbol(property));
         }
 
@@ -356,12 +357,12 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var property1 = t.DefineProperty("DynamicProperty1", PropertyAttributes.None, typeof(object), []);
             var property1Symbol = c.GetOrCreatePropertySymbol(property1);
-            property1Symbol.Should().BeOfType<ReflectionPropertySymbol>();
+            property1Symbol.Should().BeOfType<ReflectionPropertySymbolBuilder>();
             property1Symbol.Should().BeSameAs(c.GetOrCreatePropertySymbol(property1));
 
             var property2 = t.DefineProperty("DynamicProperty2", PropertyAttributes.None, typeof(object), []);
             var property2Symbol = c.GetOrCreatePropertySymbol(property2);
-            property2Symbol.Should().BeOfType<ReflectionPropertySymbol>();
+            property2Symbol.Should().BeOfType<ReflectionPropertySymbolBuilder>();
             property2Symbol.Should().BeSameAs(c.GetOrCreatePropertySymbol(property2));
         }
 
@@ -375,7 +376,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, typeof(EventHandler));
             var event1Symbol = c.GetOrCreateEventSymbol(event1);
-            event1Symbol.Should().BeOfType<ReflectionEventSymbol>();
+            event1Symbol.Should().BeOfType<ReflectionEventSymbolBuilder>();
             event1Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event1));
         }
 
@@ -389,12 +390,12 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
 
             var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, typeof(EventHandler));
             var event1Symbol = c.GetOrCreateEventSymbol(event1);
-            event1Symbol.Should().BeOfType<ReflectionEventSymbol>();
+            event1Symbol.Should().BeOfType<ReflectionEventSymbolBuilder>();
             event1Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event1));
 
             var event2 = t.DefineEvent("DynamicEvent", EventAttributes.None, typeof(EventHandler));
             var event2Symbol = c.GetOrCreateEventSymbol(event2);
-            event2Symbol.Should().BeOfType<ReflectionEventSymbol>();
+            event2Symbol.Should().BeOfType<ReflectionEventSymbolBuilder>();
             event2Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event2));
         }
 
@@ -402,22 +403,22 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         public void CanCompleteTypeBuilder()
         {
             var c = new ReflectionSymbolContext();
-            var a = new ReflectionAssemblySymbolBuilder(c, AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.RunAndCollect));
+            var a = c.GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.RunAndCollect));
 
             var moduleBuilder = a.DefineModule("DynamicModule");
-            var moduleSymbol = moduleBuilder.Symbol;
+            var moduleSymbol = (IModuleSymbol)moduleBuilder;
 
             var type1Builder = moduleBuilder.DefineType("DynamicType1");
-            var type1Symbol = type1Builder.Symbol;
-            type1Symbol.Should().BeOfType<ReflectionTypeSymbol>();
+            var type1Symbol = (ITypeSymbol)type1Builder;
+            type1Symbol.Should().BeOfType<ReflectionTypeSymbolBuilder>();
 
             type1Builder.Complete();
-            var type1SymbolAgain = type1Builder.Symbol;
-            type1SymbolAgain.Should().BeSameAs(type1Symbol);
-            type1SymbolAgain.Name.Should().Be("DynamicType1");
+            var type1Again = moduleBuilder.GetType("DynamicType1");
+            type1Again.Should().BeSameAs(type1Symbol);
+            type1Again.Name.Should().Be("DynamicType1");
 
             // check that we can relookup type
-            moduleSymbol.GetType("DynamicType1").Should().BeSameAs(type1SymbolAgain);
+            moduleSymbol.GetType("DynamicType1").Should().BeSameAs(type1Symbol);
         }
 
     }

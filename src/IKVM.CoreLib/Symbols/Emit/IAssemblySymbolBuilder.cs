@@ -1,9 +1,7 @@
-﻿using System.Xml.Linq;
-
-namespace IKVM.CoreLib.Symbols.Emit
+﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>
+    interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>, IAssemblySymbol
     {
 
         /// <summary>
@@ -42,11 +40,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="con"></param>
         /// <param name="binaryAttribute"></param>
         void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
-
-        /// <summary>
-        /// Finishes all modules of the assembly, updating the associated symbols.
-        /// </summary>
-        void Complete();
 
     }
 

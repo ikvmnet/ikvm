@@ -4,35 +4,26 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionConstructorSymbol : ReflectionMethodBaseSymbol, IConstructorSymbol
+    class ReflectionConstructorSymbol : ReflectionMethodBaseSymbol, IReflectionConstructorSymbol
     {
+
+        readonly ConstructorInfo _ctor;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="ctor"></param>
-        public ReflectionConstructorSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, ConstructorInfo ctor) :
-            base(context, type, ctor)
+        public ReflectionConstructorSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, ConstructorInfo ctor) :
+            base(context, resolvingModule, resolvingType, ctor)
         {
-
+            _ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="ConstructorInfo"/> wrapped by this symbol.
-        /// </summary>
-        internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
-
-
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="type"></param>
-        internal void Complete(ConstructorInfo type)
-        {
-            base.Complete(type);
-        }
+        /// <inheritdoc />
+        public ConstructorInfo UnderlyingConstructor => _ctor;
 
     }
 

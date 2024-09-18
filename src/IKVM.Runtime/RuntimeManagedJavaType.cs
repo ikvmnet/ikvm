@@ -804,7 +804,7 @@ namespace IKVM.Runtime
             if (name == "Finalize" && sig == "()V" && !mb.IsStatic && IsRemappedImplDerived(Context, TypeAsBaseType))
             {
                 // TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (IMethodSymbol)mb, Context.PrimitiveJavaTypeFactory.VOID, [], mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
                 mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
                 return mw;
             }

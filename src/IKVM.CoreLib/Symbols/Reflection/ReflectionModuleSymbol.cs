@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.Metadata.Ecma335;
-using System.Threading;
 
-using IKVM.CoreLib.Collections;
-using IKVM.CoreLib.Threading;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -15,525 +11,211 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Implementation of <see cref="IModuleSymbol"/> derived from System.Reflection.
     /// </summary>
-    class ReflectionModuleSymbol : ReflectionSymbol, IModuleSymbol
+    class ReflectionModuleSymbol : ReflectionSymbol, IReflectionModuleSymbol
     {
-
-        /// <summary>
-        /// Returns <c>true</c> if the given <see cref="Type"/> is a TypeDef. That is, not a modified or substituted or generic parameter type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        static bool IsTypeDefinition(Type type)
-        {
-#if NET
-            return type.IsTypeDefinition;
-#else
-            return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
-#endif
-        }
-
-        const int MAX_CAPACITY = 65536 * 2;
 
         const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
-        readonly ReflectionAssemblySymbol _containingAssembly;
-        Module _module;
-
-        IndexRangeDictionary<ReflectionTypeSymbol> _typeSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _typeLock;
-
-        IndexRangeDictionary<ReflectionMethodBaseSymbol> _methodSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _methodLock;
-
-        IndexRangeDictionary<ReflectionFieldSymbol> _fieldSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _fieldLock;
-
-        IndexRangeDictionary<ReflectionPropertySymbol> _propertySymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _propertyLock;
-
-        IndexRangeDictionary<ReflectionEventSymbol> _eventSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _eventLock;
-
-        IndexRangeDictionary<ReflectionParameterSymbol> _parameterSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _parameterLock;
-
-        IndexRangeDictionary<ReflectionTypeSymbol> _genericParameterSymbols = new(maxCapacity: MAX_CAPACITY);
-        ReaderWriterLockSlim? _genericParameterLock;
+        readonly IReflectionAssemblySymbol _resolvingAssembly;
+        readonly Module _module;
+        ReflectionModuleMetadata _impl;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingAssembly"></param>
+        /// <param name="resolvingAssembly"></param>
         /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionModuleSymbol(ReflectionSymbolContext context, ReflectionAssemblySymbol containingAssembly, Module module) :
+        public ReflectionModuleSymbol(ReflectionSymbolContext context, IReflectionAssemblySymbol resolvingAssembly, Module module) :
             base(context)
         {
-            _containingAssembly = containingAssembly ?? throw new ArgumentNullException(nameof(containingAssembly));
+            _resolvingAssembly = resolvingAssembly ?? throw new ArgumentNullException(nameof(resolvingAssembly));
             _module = module ?? throw new ArgumentNullException(nameof(module));
-        }
-
-        /// <summary>
-        /// Gets the <see cref="ReflectionModuleSymbol" /> which contains the metadata of this member.
-        /// </summary>
-        internal ReflectionAssemblySymbol ContainingAssembly => _containingAssembly;
-
-        /// <summary>
-        /// Gets the wrapped <see cref="Module"/>.
-        /// </summary>
-        internal Module ReflectionObject => _module;
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the module by type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
-        {
-            if (type is null)
-                throw new ArgumentNullException(nameof(type));
-
-            Debug.Assert(type.Module == _module);
-
-            // type is a generic parameter (GenericParam)
-            if (type.IsGenericParameter)
-                return GetOrCreateGenericParameterSymbol(type);
-
-            // type is not a type definition (TypeDef)
-            if (IsTypeDefinition(type) == false)
-                return GetOrCreateTypeSymbolForSpecification(type);
-
-            // create lock on demand
-            if (_typeLock == null)
-                Interlocked.CompareExchange(ref _typeLock, new ReaderWriterLockSlim(), null);
-
-            using (_typeLock.CreateUpgradeableReadLock())
-            {
-                var row = type.GetMetadataTokenRowNumberSafe();
-                if (_typeSymbols[row] == null)
-                    using (_typeLock.CreateWriteLock())
-                        return _typeSymbols[row] ??= new ReflectionTypeSymbol(Context, this, type);
-                else
-                    return _typeSymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="ReflectionTypeSymbol"/> for the specification type: array, pointer, etc.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        ReflectionTypeSymbol GetOrCreateTypeSymbolForSpecification(Type type)
-        {
-            if (type is null)
-                throw new ArgumentNullException(nameof(type));
-
-            Debug.Assert(type.Module == _module);
-
-            if (type.GetElementType() is { } elementType)
-            {
-                var elementTypeSymbol = ResolveTypeSymbol(elementType);
-
-                // handles both SZ arrays and normal arrays
-                if (type.IsArray)
-                    return (ReflectionTypeSymbol)elementTypeSymbol.MakeArrayType(type.GetArrayRank());
-
-                if (type.IsPointer)
-                    return (ReflectionTypeSymbol)elementTypeSymbol.MakePointerType();
-
-                if (type.IsByRef)
-                    return (ReflectionTypeSymbol)elementTypeSymbol.MakeByRefType();
-
-                throw new InvalidOperationException();
-            }
-
-            if (type.IsGenericType)
-            {
-                var definitionTypeSymbol = ResolveTypeSymbol(type.GetGenericTypeDefinition());
-                return definitionTypeSymbol.GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
-            }
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        internal ReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
-        {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            Debug.Assert(method.Module.GetMetadataTokenSafe() == _module.GetMetadataTokenSafe());
-
-            // they are methods, but they are associated differently
-            if (method is DynamicMethod)
-                throw new ArgumentException("Dynamic methods cannot be attached to context.");
-
-            // create lock on demand
-            if (_methodLock == null)
-                Interlocked.CompareExchange(ref _methodLock, new ReaderWriterLockSlim(), null);
-
-            using (_methodLock.CreateUpgradeableReadLock())
-            {
-                var row = method.GetMetadataTokenRowNumberSafe();
-                if (_methodSymbols[row] == null)
-                    using (_methodLock.CreateWriteLock())
-                        if (method is ConstructorInfo c)
-                            return _methodSymbols[row] ??= new ReflectionConstructorSymbol(Context, ResolveTypeSymbol(c.DeclaringType ?? throw new InvalidOperationException()), c);
-                        else if (method is MethodInfo m)
-                            if (method.DeclaringType is { } dt)
-                                return _methodSymbols[row] ??= new ReflectionMethodSymbol(Context, ResolveTypeSymbol(dt), m);
-                            else
-                                return _methodSymbols[row] ??= new ReflectionMethodSymbol(Context, this, m);
-                        else
-                            throw new InvalidOperationException();
-                else
-                    return _methodSymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionConstructorSymbol"/> cached for the type by ctor.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        internal ReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
-        {
-            return (ReflectionConstructorSymbol)GetOrCreateMethodBaseSymbol(ctor);
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        internal ReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
-        {
-            return (ReflectionMethodSymbol)GetOrCreateMethodBaseSymbol(method);
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionFieldSymbol"/> cached for the type by field.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
-        {
-            if (field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            Debug.Assert(field.Module == _module);
-
-            // create lock on demand
-            if (_fieldLock == null)
-                Interlocked.CompareExchange(ref _fieldLock, new ReaderWriterLockSlim(), null);
-
-            using (_fieldLock.CreateUpgradeableReadLock())
-            {
-                var row = field.GetMetadataTokenRowNumberSafe();
-                if (_fieldSymbols[row] == null)
-                    using (_fieldLock.CreateWriteLock())
-                        if (field.DeclaringType is { } dt)
-                            return _fieldSymbols[row] ??= new ReflectionFieldSymbol(Context, ResolveTypeSymbol(dt), field);
-                        else
-                            return _fieldSymbols[row] ??= new ReflectionFieldSymbol(Context, this, field);
-                else
-                    return _fieldSymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionPropertySymbol"/> cached for the type by property.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
-        {
-            if (property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            Debug.Assert(property.Module == _module);
-
-            // create lock on demand
-            if (_propertyLock == null)
-                Interlocked.CompareExchange(ref _propertyLock, new ReaderWriterLockSlim(), null);
-
-            using (_propertyLock.CreateUpgradeableReadLock())
-            {
-                var row = property.GetMetadataTokenRowNumberSafe();
-                if (_propertySymbols[row] == null)
-                    using (_propertyLock.CreateWriteLock())
-                        return _propertySymbols[row] ??= new ReflectionPropertySymbol(Context, ResolveTypeSymbol(property.DeclaringType!), property);
-                else
-                    return _propertySymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionEventSymbol"/> cached for the type by event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
-        {
-            if (@event is null)
-                throw new ArgumentNullException(nameof(@event));
-
-            Debug.Assert(@event.Module == _module);
-
-            // create lock on demand
-            if (_eventLock == null)
-                Interlocked.CompareExchange(ref _eventLock, new ReaderWriterLockSlim(), null);
-
-            using (_eventLock.CreateUpgradeableReadLock())
-            {
-                var row = @event.GetMetadataTokenRowNumberSafe();
-                if (_eventSymbols[row] == null)
-                    using (_eventLock.CreateWriteLock())
-                        return _eventSymbols[row] ??= new ReflectionEventSymbol(Context, ResolveTypeSymbol(@event.DeclaringType!), @event);
-                else
-                    return _eventSymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        internal ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
-        {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            Debug.Assert(parameter.Member.Module == _module);
-
-            // create lock on demand
-            if (_parameterLock == null)
-                Interlocked.CompareExchange(ref _parameterLock, new ReaderWriterLockSlim(), null);
-
-            using (_parameterLock.CreateUpgradeableReadLock())
-            {
-                var position = parameter.Position;
-                if (_parameterSymbols[position] == null)
-                    using (_parameterLock.CreateWriteLock())
-                        return _parameterSymbols[position] ??= new ReflectionParameterSymbol(Context, ResolveMethodBaseSymbol((MethodBase)parameter.Member), parameter);
-                else
-                    return _parameterSymbols[position] ?? throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the module by type.
-        /// </summary>
-        /// <param name="genericParameterType"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericParameterType)
-        {
-            if (genericParameterType is null)
-                throw new ArgumentNullException(nameof(genericParameterType));
-
-            Debug.Assert(genericParameterType.Module == _module);
-
-            // create lock on demand
-            if (_genericParameterLock == null)
-                Interlocked.CompareExchange(ref _genericParameterLock, new ReaderWriterLockSlim(), null);
-
-            using (_genericParameterLock.CreateUpgradeableReadLock())
-            {
-                var hnd = MetadataTokens.GenericParameterHandle(genericParameterType.GetMetadataTokenSafe());
-                var row = MetadataTokens.GetRowNumber(hnd);
-                if (_genericParameterSymbols[row] == null)
-                    using (_genericParameterLock.CreateWriteLock())
-                        return _genericParameterSymbols[row] ??= new ReflectionTypeSymbol(Context, this, genericParameterType);
-                else
-                    return _genericParameterSymbols[row] ?? throw new InvalidOperationException();
-            }
+            _impl = new ReflectionModuleMetadata(this);
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_module.Assembly);
+        public Module UnderlyingModule => _module;
 
         /// <inheritdoc />
-        public string FullyQualifiedName => _module.FullyQualifiedName;
+        public IReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
+
+        #region IModuleSymbol
 
         /// <inheritdoc />
-        public int MetadataToken => _module.MetadataToken;
+        public IAssemblySymbol Assembly => ResolveAssemblySymbol(UnderlyingModule.Assembly);
 
         /// <inheritdoc />
-        public Guid ModuleVersionId => _module.ModuleVersionId;
+        public string FullyQualifiedName => UnderlyingModule.FullyQualifiedName;
 
         /// <inheritdoc />
-        public string Name => _module.Name;
+        public int MetadataToken => UnderlyingModule.MetadataToken;
 
         /// <inheritdoc />
-        public string ScopeName => _module.ScopeName;
+        public Guid ModuleVersionId => UnderlyingModule.ModuleVersionId;
+
+        /// <inheritdoc />
+        public string Name => UnderlyingModule.Name;
+
+        /// <inheritdoc />
+        public string ScopeName => UnderlyingModule.ScopeName;
 
         /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
         {
-            return _module.GetField(name) is { } f ? ResolveFieldSymbol(f) : null;
+            return ResolveFieldSymbol(UnderlyingModule.GetField(name));
         }
 
         /// <inheritdoc />
         public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
         {
-            return _module.GetField(name, bindingAttr) is { } f ? ResolveFieldSymbol(f) : null;
+            return ResolveFieldSymbol(UnderlyingModule.GetField(name, bindingAttr));
         }
 
         /// <inheritdoc />
         public IFieldSymbol[] GetFields(BindingFlags bindingFlags)
         {
-            return ResolveFieldSymbols(_module.GetFields(bindingFlags));
+            return ResolveFieldSymbols(UnderlyingModule.GetFields(bindingFlags))!;
         }
 
         /// <inheritdoc />
         public IFieldSymbol[] GetFields()
         {
-            return ResolveFieldSymbols(_module.GetFields());
+            return ResolveFieldSymbols(UnderlyingModule.GetFields())!;
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name)
         {
-            return _module.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingModule.GetMethod(name));
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
         {
-            return _module.GetMethod(name, types.Unpack()) is { } m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingModule.GetMethod(name, types.Unpack()));
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
-            return _module.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers) is { } m ? ResolveMethodSymbol(m) : null;
+            return ResolveMethodSymbol(UnderlyingModule.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers));
         }
 
         /// <inheritdoc />
         public IMethodSymbol[] GetMethods()
         {
-            return ResolveMethodSymbols(_module.GetMethods());
+            return ResolveMethodSymbols(UnderlyingModule.GetMethods())!;
         }
 
         /// <inheritdoc />
         public IMethodSymbol[] GetMethods(BindingFlags bindingFlags)
         {
-            return ResolveMethodSymbols(_module.GetMethods(bindingFlags));
+            return ResolveMethodSymbols(UnderlyingModule.GetMethods(bindingFlags))!;
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string className)
         {
-            return _module.GetType(className) is { } t ? ResolveTypeSymbol(t) : null;
+            return ResolveTypeSymbol(UnderlyingModule.GetType(className));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string className, bool ignoreCase)
         {
-            return _module.GetType(className, ignoreCase) is { } t ? ResolveTypeSymbol(t) : null;
+            return ResolveTypeSymbol(UnderlyingModule.GetType(className, ignoreCase));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string className, bool throwOnError, bool ignoreCase)
         {
-            return _module.GetType(className, throwOnError, ignoreCase) is { } t ? ResolveTypeSymbol(t) : null;
+            return ResolveTypeSymbol(UnderlyingModule.GetType(className, throwOnError, ignoreCase));
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetTypes()
         {
-            return ResolveTypeSymbols(_module.GetTypes());
+            return ResolveTypeSymbols(UnderlyingModule.GetTypes())!;
         }
 
         /// <inheritdoc />
         public bool IsResource()
         {
-            return _module.IsResource();
+            return UnderlyingModule.IsResource();
         }
 
         /// <inheritdoc />
         public IFieldSymbol? ResolveField(int metadataToken)
         {
-            return _module.ResolveField(metadataToken) is { } f ? ResolveFieldSymbol(f) : null;
+            return ResolveFieldSymbol(UnderlyingModule.ResolveField(metadataToken));
         }
 
         /// <inheritdoc />
         public IFieldSymbol? ResolveField(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            return _module.ResolveField(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } f ? ResolveFieldSymbol(f) : null;
+            return ResolveFieldSymbol(UnderlyingModule.ResolveField(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
         }
 
         /// <inheritdoc />
         public IMemberSymbol? ResolveMember(int metadataToken)
         {
-            return _module.ResolveMember(metadataToken) is { } m ? ResolveMemberSymbol(m) : null;
+            return ResolveMemberSymbol(UnderlyingModule.ResolveMember(metadataToken));
         }
 
         /// <inheritdoc />
         public IMemberSymbol? ResolveMember(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            return _module.ResolveMember(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } m ? ResolveMemberSymbol(m) : null;
+            return ResolveMemberSymbol(UnderlyingModule.ResolveMember(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
         }
 
         /// <inheritdoc />
         public IMethodBaseSymbol? ResolveMethod(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            return _module.ResolveMethod(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()) is { } m ? ResolveMethodBaseSymbol(m) : null;
+            return ResolveMethodBaseSymbol(UnderlyingModule.ResolveMethod(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
         }
 
         /// <inheritdoc />
         public IMethodBaseSymbol? ResolveMethod(int metadataToken)
         {
-            return _module.ResolveMethod(metadataToken) is { } m ? ResolveMethodBaseSymbol(m) : null;
+            return ResolveMethodBaseSymbol(UnderlyingModule.ResolveMethod(metadataToken));
         }
 
         /// <inheritdoc />
         public byte[] ResolveSignature(int metadataToken)
         {
-            return _module.ResolveSignature(metadataToken);
+            return UnderlyingModule.ResolveSignature(metadataToken);
         }
 
         /// <inheritdoc />
         public string ResolveString(int metadataToken)
         {
-            return _module.ResolveString(metadataToken);
+            return UnderlyingModule.ResolveString(metadataToken);
         }
 
         /// <inheritdoc />
         public ITypeSymbol ResolveType(int metadataToken)
         {
-            return ResolveTypeSymbol(_module.ResolveType(metadataToken));
+            return ResolveTypeSymbol(UnderlyingModule.ResolveType(metadataToken));
         }
 
         /// <inheritdoc />
         public ITypeSymbol ResolveType(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments)
         {
-            return ResolveTypeSymbol(_module.ResolveType(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
+            return ResolveTypeSymbol(UnderlyingModule.ResolveType(metadataToken, genericTypeArguments?.Unpack(), genericMethodArguments?.Unpack()));
         }
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_module.GetCustomAttributesData());
+            return ResolveCustomAttributes(UnderlyingModule.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_module.GetCustomAttributesData().Where(i => i.AttributeType == ((ReflectionTypeSymbol)attributeType).ReflectionObject));
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttributes(UnderlyingModule.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
         }
 
         /// <inheritdoc />
@@ -545,17 +227,93 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _module.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, false);
+            return UnderlyingModule.IsDefined(attributeType.Unpack(), false);
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="module"></param>
-        internal void Complete(Module module)
+        #endregion
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
         {
-            ResolveModuleSymbol(_module = module);
-            ContainingAssembly.Complete(_module.Assembly);
+            return _impl.GetOrCreateTypeSymbol(type);
+        }
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
+        {
+            return _impl.GetOrCreateTypeSymbol(type);
+        }
+
+        /// <inheritdoc />
+        public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return _impl.GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            return _impl.GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            return _impl.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            return _impl.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            return _impl.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            return _impl.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        {
+            return _impl.GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return _impl.GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        {
+            return _impl.GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return _impl.GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _impl.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _impl.GetOrCreateParameterSymbol(parameter);
         }
 
     }

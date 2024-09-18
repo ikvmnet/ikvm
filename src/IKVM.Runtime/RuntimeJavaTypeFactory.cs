@@ -24,6 +24,7 @@
 using System.Collections.Generic;
 
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection.Emit;
@@ -43,7 +44,7 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaTypeFactory
     {
 
-        internal abstract ModuleBuilder ModuleBuilder { get; }
+        internal abstract IModuleSymbolBuilder ModuleBuilder { get; }
 
         internal abstract RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain);
 

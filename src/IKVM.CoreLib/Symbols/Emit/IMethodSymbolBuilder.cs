@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IMethodSymbolBuilder : ISymbolBuilder<IMethodSymbol>
+    interface IMethodSymbolBuilder : ISymbolBuilder<IMethodSymbol>, IMethodBaseSymbolBuilder, IMethodSymbol
     {
 
         /// <summary>

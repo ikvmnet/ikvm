@@ -21,16 +21,13 @@
   jeroen@frijters.net
   
 */
-using System;
-
-using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
-
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -53,7 +50,7 @@ namespace IKVM.Runtime
 
         readonly RuntimeJavaMethod getter;
         readonly RuntimeJavaMethod setter;
-        PropertyBuilder pb;
+        IPropertySymbolBuilder pb;
 
         RuntimeJavaMethod GetMethod(string name, string sig, bool isstatic)
         {
@@ -94,31 +91,25 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal PropertyBuilder GetPropertyBuilder()
+        internal IPropertySymbolBuilder GetPropertyBuilder()
         {
             AssertLinked();
             return pb;
         }
 
-        internal void DoLink(TypeBuilder tb)
+        internal void DoLink(ITypeSymbolBuilder tb)
         {
             if (getter != null)
-            {
                 getter.Link();
-            }
             if (setter != null)
-            {
                 setter.Link();
-            }
-            pb = tb.DefineProperty(this.Name, PropertyAttributes.None, this.FieldTypeWrapper.TypeAsSignatureType, []);
+
+            pb = tb.DefineProperty(Name, PropertyAttributes.None, FieldTypeWrapper.TypeAsSignatureType, []);
             if (getter != null)
-            {
-                pb.SetGetMethod((MethodBuilder)getter.GetMethod());
-            }
+                pb.SetGetMethod((IMethodSymbolBuilder)getter.GetMethod());
             if (setter != null)
-            {
-                pb.SetSetMethod((MethodBuilder)setter.GetMethod());
-            }
+                pb.SetSetMethod((IMethodSymbolBuilder)setter.GetMethod());
+
 #if IMPORTER
             DeclaringType.Context.AttributeHelper.SetModifiers(pb, this.Modifiers, this.IsInternal);
 #endif
@@ -147,7 +138,7 @@ namespace IKVM.Runtime
             type.ClassLoader.Diagnostics.EmittedNoSuchMethodError("<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
-            CodeEmitterLabel label = ilgen.DefineLabel();
+            var label = ilgen.DefineLabel();
             ilgen.Emit(OpCodes.Ldc_I4_0);
             ilgen.EmitBrtrue(label);
             ilgen.EmitThrow("java.lang.NoSuchMethodError");
@@ -192,7 +183,7 @@ namespace IKVM.Runtime
             member.DeclaringType.ClassLoader.Diagnostics.EmittedNoSuchMethodError("<unknown>", member.DeclaringType.Name + "." + member.Name + member.Signature);
 #endif
             // HACK the branch around the throw is to keep the verifier happy
-            CodeEmitterLabel label = ilgen.DefineLabel();
+            var label = ilgen.DefineLabel();
             ilgen.Emit(OpCodes.Ldc_I4_0);
             ilgen.EmitBrtrue(label);
             ilgen.EmitThrow("java.lang.NoSuchMethodError");
@@ -206,23 +197,23 @@ namespace IKVM.Runtime
 #endif
 
 #if !IMPORTER && !FIRST_PASS
+
         internal override object GetValue(object obj)
         {
             if (getter == null)
-            {
                 throw new java.lang.NoSuchMethodError();
-            }
+
             return getter.Invoke(obj, []);
         }
 
         internal override void SetValue(object obj, object value)
         {
             if (setter == null)
-            {
                 throw new java.lang.NoSuchMethodError();
-            }
+
             setter.Invoke(obj, new object[] { value });
         }
+
 #endif
 
     }

@@ -7,10 +7,7 @@
     interface ISymbolBuilder
     {
 
-        /// <summary>
-        /// Gets the <see cref="ISymbol"/> that is currently being built. Portions of this interface will be non-functional until the build is completed.
-        /// </summary>
-        ISymbol Symbol { get; }
+
 
     }
 
@@ -22,10 +19,7 @@
         where TSymbol : ISymbol
     {
 
-        /// <summary>
-        /// Gets the <see cref="TSymbol"/> that is currently being built. Portions of this interface will be non-functional until the build is completed.
-        /// </summary>
-        new TSymbol Symbol { get; }
+
 
     }
 

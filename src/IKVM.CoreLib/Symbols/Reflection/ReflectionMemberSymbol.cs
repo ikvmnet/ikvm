@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -9,7 +14,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Obtains information about the attributes of a member and provides access to member metadata.
     /// </summary>
-    abstract class ReflectionMemberSymbol : ReflectionSymbol, IMemberSymbol
+    abstract class ReflectionMemberSymbol : ReflectionSymbol, IReflectionMemberSymbol
     {
 
         /// <summary>
@@ -40,9 +45,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return a;
         }
 
-        readonly ReflectionModuleSymbol _containingModule;
-        readonly ReflectionTypeSymbol? _containingType;
-        MemberInfo _member;
+        readonly IReflectionModuleSymbol _resolvingModule;
+        readonly IReflectionTypeSymbol? _resolvingType;
+        readonly MemberInfo _member;
 
         CustomAttribute[]? _customAttributes;
         CustomAttribute[]? _inheritedCustomAttributes;
@@ -51,137 +56,46 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="containingModule"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="member"></param>
-        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol containingModule, MemberInfo member) :
+        public ReflectionMemberSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MemberInfo member) :
             base(context)
         {
-            _containingModule = containingModule ?? throw new ArgumentNullException(nameof(containingModule));
+            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _resolvingType = resolvingType;
             _member = member ?? throw new ArgumentNullException(nameof(member));
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="containingType"></param>
-        /// <param name="member"></param>
-        public ReflectionMemberSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol containingType, MemberInfo member) :
-            this(context, containingType.ContainingModule, member)
-        {
-            _containingType = containingType ?? throw new ArgumentNullException(nameof(containingType));
-        }
+        /// <inheritdoc />
+        public MemberInfo UnderlyingMember => _member;
 
         /// <summary>
-        /// Resolves the symbol for the specified type.
+        /// Gets the <see cref="IReflectionModuleSymbol" /> which contains the metadata of this member.
         /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        protected internal override ReflectionTypeSymbol ResolveTypeSymbol(Type type)
-        {
-            if (_containingType != null && type == _containingType.ReflectionObject)
-                return _containingType;
-            else if (type.Module == _member.Module)
-                return _containingModule.GetOrCreateTypeSymbol(type);
-            else
-                return base.ResolveTypeSymbol(type);
-        }
+        public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
         /// <summary>
-        /// Resolves the symbol for the specified constructor.
+        /// Gets the <see cref="IReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
         /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        protected internal override ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
-        {
-            if (ctor.Module == _member.Module)
-                return _containingModule.GetOrCreateConstructorSymbol(ctor);
-            else
-                return base.ResolveConstructorSymbol(ctor);
-        }
+        public IReflectionTypeSymbol? ResolvingType => _resolvingType;
 
-        /// <summary>
-        /// Resolves the symbol for the specified method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        protected internal override ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
-        {
-            if (method.Module == _member.Module)
-                return _containingModule.GetOrCreateMethodSymbol(method);
-            else
-                return base.ResolveMethodSymbol(method);
-        }
-
-        /// <summary>
-        /// Resolves the symbol for the specified field.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        protected internal override ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
-        {
-            if (field.Module == _member.Module)
-                return _containingModule.GetOrCreateFieldSymbol(field);
-            else
-                return base.ResolveFieldSymbol(field);
-        }
-
-
-        /// <summary>
-        /// Resolves the symbol for the specified field.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        protected internal override ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
-        {
-            if (property.Module == _member.Module)
-                return _containingModule.GetOrCreatePropertySymbol(property);
-            else
-                return base.ResolvePropertySymbol(property);
-        }
-
-        /// <summary>
-        /// Resolves the symbol for the specified event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        protected internal override ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
-        {
-            if (@event.Module == _member.Module)
-                return _containingModule.GetOrCreateEventSymbol(@event);
-            else
-                return base.ResolveEventSymbol(@event);
-        }
-
-        /// <summary>
-        /// Gets the underlying <see cref="MemberInfo"/> wrapped by this symbol.
-        /// </summary>
-        internal MemberInfo ReflectionObject => _member;
-
-        /// <summary>
-        /// Gets the <see cref="ReflectionModuleSymbol" /> which contains the metadata of this member.
-        /// </summary>
-        internal ReflectionModuleSymbol ContainingModule => _containingModule;
-
-        /// <summary>
-        /// Gets the <see cref="ReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
-        /// </summary>
-        internal ReflectionTypeSymbol? ContainingType => _containingType;
+        #region IMemberSymbol
 
         /// <inheritdoc />
-        public virtual IModuleSymbol Module => Context.GetOrCreateModuleSymbol(_member.Module);
+        public virtual IModuleSymbol Module => ResolveModuleSymbol(UnderlyingMember.Module)!;
 
         /// <inheritdoc />
-        public virtual ITypeSymbol? DeclaringType => _member.DeclaringType is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+        public virtual ITypeSymbol? DeclaringType => ResolveTypeSymbol(UnderlyingMember.DeclaringType)!;
 
         /// <inheritdoc />
-        public virtual MemberTypes MemberType => _member.MemberType;
+        public virtual MemberTypes MemberType => UnderlyingMember.MemberType;
 
         /// <inheritdoc />
-        public virtual int MetadataToken => _member.MetadataToken;
+        public virtual int MetadataToken => UnderlyingMember.MetadataToken;
 
         /// <inheritdoc />
-        public virtual string Name => _member.Name;
+        public virtual string Name => UnderlyingMember.Name;
 
         /// <inheritdoc />
         public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
@@ -196,8 +110,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 var list = default(List<CustomAttribute[]>?);
                 for (; ; )
                 {
+                    if (self == null)
+                        throw new InvalidOperationException();
+
                     // get attribute for current member and append to list
-                    var attr = ResolveMemberSymbol(self).GetCustomAttributes(false);
+                    var attr = ResolveMemberSymbol(self)!.GetCustomAttributes(false);
                     if (attr.Length > 0)
                     {
                         list ??= [];
@@ -231,7 +148,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 }
             }
 
-            return _customAttributes ??= ResolveCustomAttributes(_member.GetCustomAttributesData());
+            return _customAttributes ??= ResolveCustomAttributes(UnderlyingMember.GetCustomAttributesData())!;
         }
 
         /// <inheritdoc />
@@ -249,18 +166,199 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _member.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, inherit);
+            return UnderlyingMember.IsDefined(attributeType.Unpack(), inherit);
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="member"></param>
-        protected void Complete(MemberInfo member)
+        #endregion
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(type))]
+        public override IReflectionTypeSymbol? ResolveTypeSymbol(Type? type)
         {
-            ResolveMemberSymbol(_member = member);
-            _customAttributes = null;
-            _inheritedCustomAttributes = null;
+            if (type is null)
+                return null;
+
+            if (_member == type)
+                return (IReflectionTypeSymbol)this;
+
+            if (_resolvingType != null && type == _resolvingType.UnderlyingType)
+                return _resolvingType;
+
+            if (type.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateTypeSymbol(type);
+
+            return base.ResolveTypeSymbol(type);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public override IReflectionConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor)
+        {
+            if (ctor is null)
+                return null;
+
+            if (_member == ctor)
+                return (IReflectionConstructorSymbol)this;
+
+            if (ctor.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
+
+            return base.ResolveConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public override IReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor)
+        {
+            if (ctor is null)
+                throw new ArgumentNullException(nameof(ctor));
+
+            if (ctor.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
+
+            return base.ResolveConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public override IReflectionMethodSymbol? ResolveMethodSymbol(MethodInfo? method)
+        {
+            if (method is null)
+                return null;
+
+            if (_member == method)
+                return (IReflectionMethodSymbol)this;
+
+            if (method.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateMethodSymbol(method);
+
+            return base.ResolveMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public override IReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            if (method.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateMethodSymbol(method);
+
+            return base.ResolveMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public override IReflectionFieldSymbol? ResolveFieldSymbol(FieldInfo? field)
+        {
+            if (field is null)
+                return null;
+
+            if (_member == field)
+                return (IReflectionFieldSymbol)this;
+
+            if (field.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateFieldSymbol(field);
+
+            return base.ResolveFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public override IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field)
+        {
+            if (field is null)
+                throw new ArgumentNullException(nameof(field));
+
+            if (field.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateFieldSymbol(field);
+
+            return base.ResolveFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(property))]
+        public override IReflectionPropertySymbol? ResolvePropertySymbol(PropertyInfo? property)
+        {
+            if (property is null)
+                return null;
+
+            if (_member == property)
+                return (IReflectionPropertySymbol)this;
+
+            if (property.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreatePropertySymbol(property);
+
+            return base.ResolvePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(property))]
+        public override IReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property)
+        {
+            if (property is null)
+                throw new ArgumentNullException(nameof(property));
+
+            if (property.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreatePropertySymbol(property);
+
+            return base.ResolvePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(@event))]
+        public override IReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
+        {
+            if (@event is null)
+                return null;
+
+            if (_member == @event)
+                return (IReflectionEventSymbol)this;
+
+            if (@event.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateEventSymbol(@event);
+
+            return base.ResolveEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(@event))]
+        public override IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
+        {
+            if (@event is null)
+                throw new ArgumentNullException(nameof(@event));
+
+            if (@event.GetModuleBuilder() == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateEventSymbol(@event);
+
+            return base.ResolveEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public override IReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
+        {
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
+
+            if (parameter.Member.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+
+            return base.ResolveParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public override IReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
+        {
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
+
+            if (parameter.GetModuleBuilder() == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+
+            return base.ResolveParameterSymbol(parameter);
         }
 
     }

@@ -29,6 +29,10 @@ using System.Collections.Concurrent;
 
 using static System.Diagnostics.DebuggableAttribute;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols;
+
+
 
 
 #if IMPORTER
@@ -202,17 +206,17 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
         readonly IDiagnosticHandler diagnostics;
-        readonly ModuleBuilder moduleBuilder;
+        readonly IModuleSymbolBuilder moduleBuilder;
         readonly bool hasInternalAccess;
 
 #if IMPORTER
-        TypeBuilder proxiesContainer;
-        List<TypeBuilder> proxies;
+        ITypeSymbolBuilder proxiesContainer;
+        List<ITypeSymbolBuilder> proxies;
 #endif
 
-        Dictionary<string, TypeBuilder> unloadables;
-        TypeBuilder unloadableContainer;
-        Type[] delegates;
+        Dictionary<string, ITypeSymbolBuilder> unloadables;
+        ITypeSymbolBuilder unloadableContainer;
+        ITypeSymbol[] delegates;
 
         /// <summary>
         /// Initializes a new instance.
@@ -221,7 +225,7 @@ namespace IKVM.Runtime
         /// <param name="diagnostics"></param>
         /// <param name="moduleBuilder"></param>
         /// <param name="hasInternalAccess"></param>
-        internal DynamicClassLoader(RuntimeContext context, IDiagnosticHandler diagnostics, ModuleBuilder moduleBuilder, bool hasInternalAccess)
+        internal DynamicClassLoader(RuntimeContext context, IDiagnosticHandler diagnostics, IModuleSymbolBuilder moduleBuilder, bool hasInternalAccess)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
@@ -310,84 +314,82 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
+        internal ITypeSymbolBuilder DefineProxy(string name, System.Reflection.TypeAttributes typeAttributes, ITypeSymbol parent, ITypeSymbol[] interfaces)
         {
             if (proxiesContainer == null)
             {
-                proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
+                proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class | System.Reflection.TypeAttributes.Sealed | System.Reflection.TypeAttributes.Abstract);
                 context.AttributeHelper.HideFromJava(proxiesContainer);
                 context.AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
-                proxies = new List<TypeBuilder>();
+                proxies = new List<ITypeSymbolBuilder>();
             }
-            TypeBuilder tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
+
+            var tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
             proxies.Add(tb);
             return tb;
         }
 
 #endif
 
-        internal override Type DefineUnloadable(string name)
+        internal override ITypeSymbol DefineUnloadable(string name)
         {
             lock (this)
             {
                 if (unloadables == null)
-                {
-                    unloadables = new Dictionary<string, TypeBuilder>();
-                }
-                TypeBuilder type;
-                if (unloadables.TryGetValue(name, out type))
-                {
+                    unloadables = new Dictionary<string, ITypeSymbolBuilder>();
+
+                if (unloadables.TryGetValue(name, out var type))
                     return type;
-                }
+
                 if (unloadableContainer == null)
                 {
-                    unloadableContainer = moduleBuilder.DefineType(RuntimeUnloadableJavaType.ContainerTypeName, TypeAttributes.Interface | TypeAttributes.Abstract);
+                    unloadableContainer = moduleBuilder.DefineType(RuntimeUnloadableJavaType.ContainerTypeName, System.Reflection.TypeAttributes.Interface | System.Reflection.TypeAttributes.Abstract);
                     context.AttributeHelper.HideFromJava(unloadableContainer);
                 }
-                type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), TypeAttributes.NestedPrivate | TypeAttributes.Interface | TypeAttributes.Abstract);
+
+                type = unloadableContainer.DefineNestedType(TypeNameUtil.MangleNestedTypeName(name), System.Reflection.TypeAttributes.NestedPrivate | System.Reflection.TypeAttributes.Interface | System.Reflection.TypeAttributes.Abstract);
                 unloadables.Add(name, type);
-                return type;
+                return type.Symbol;
             }
         }
 
-        internal override Type DefineDelegate(int parameterCount, bool returnVoid)
+        internal override ITypeSymbol DefineDelegate(int parameterCount, bool returnVoid)
         {
             lock (this)
             {
                 if (delegates == null)
-                {
-                    delegates = new Type[512];
-                }
+                    delegates = new ITypeSymbol[512];
+
                 int index = parameterCount + (returnVoid ? 256 : 0);
-                Type type = delegates[index];
+                var type = delegates[index];
                 if (type != null)
-                {
                     return type;
-                }
-                TypeBuilder tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), TypeAttributes.NotPublic | TypeAttributes.Sealed, context.Types.MulticastDelegate);
-                string[] names = new string[parameterCount + (returnVoid ? 0 : 1)];
+
+                var tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Sealed, context.Types.MulticastDelegate);
+                var names = new string[parameterCount + (returnVoid ? 0 : 1)];
                 for (int i = 0; i < names.Length; i++)
-                {
                     names[i] = "P" + i;
-                }
+
                 if (!returnVoid)
-                {
                     names[names.Length - 1] = "R";
-                }
-                Type[] genericParameters = tb.DefineGenericParameters(names);
-                Type[] parameterTypes = genericParameters;
+
+                var genericParameters = tb.DefineGenericParameters(names);
+                var parameterTypes = genericParameters;
                 if (!returnVoid)
                 {
-                    parameterTypes = new Type[genericParameters.Length - 1];
+                    parameterTypes = new ITypeSymbol[genericParameters.Length - 1];
                     Array.Copy(genericParameters, parameterTypes, parameterTypes.Length);
                 }
-                tb.DefineMethod(ConstructorInfo.ConstructorName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, context.Types.Void, new Type[] { context.Types.Object, context.Types.IntPtr })
-                    .SetImplementationFlags(MethodImplAttributes.Runtime);
-                MethodBuilder mb = tb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.NewSlot | MethodAttributes.Virtual, returnVoid ? context.Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
-                mb.SetImplementationFlags(MethodImplAttributes.Runtime);
-                type = tb.CreateType();
-                delegates[index] = type;
-                return type;
+
+                var ctor = tb.DefineMethod(ConstructorInfo.ConstructorName, System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, context.Types.Void, [context.Types.Object, context.Types.IntPtr]);
+                ctor.SetImplementationFlags(System.Reflection.MethodImplAttributes.Runtime);
+
+                var mb = tb.DefineMethod("Invoke", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.Virtual, returnVoid ? context.Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
+                mb.SetImplementationFlags(System.Reflection.MethodImplAttributes.Runtime);
+
+                tb.Complete();
+                delegates[index] = tb.Symbol;
+                return tb.Symbol;
             }
         }
 
@@ -449,7 +451,7 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal sealed override ModuleBuilder ModuleBuilder => moduleBuilder;
+        internal sealed override IModuleSymbolBuilder ModuleBuilder => moduleBuilder;
 
 #if !IMPORTER
 

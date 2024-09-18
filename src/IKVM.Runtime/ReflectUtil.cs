@@ -24,7 +24,7 @@
 using System;
 
 using IKVM.CoreLib.Symbols;
-
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -116,9 +116,9 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static MethodBuilder DefineTypeInitializer(TypeBuilder typeBuilder, RuntimeClassLoader loader)
+        internal static IMethodSymbolBuilder DefineTypeInitializer(ITypeSymbolBuilder typeBuilder, RuntimeClassLoader loader)
         {
-            var attr = MethodAttributes.Static | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Private;
+            var attr = System.Reflection.MethodAttributes.Static | System.Reflection.MethodAttributes.RTSpecialName | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Private;
             return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, []);
         }
 
@@ -146,9 +146,9 @@ namespace IKVM.Runtime
             return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
         }
 
-        internal static MethodBuilder DefineConstructor(TypeBuilder tb, MethodAttributes attribs, Type[] parameterTypes)
+        internal static IMethodSymbolBuilder DefineConstructor(ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ITypeSymbol[] parameterTypes)
         {
-            return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, parameterTypes);
+            return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, null, parameterTypes);
         }
 
         /// <summary>

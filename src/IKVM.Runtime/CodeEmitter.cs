@@ -28,6 +28,7 @@ using System.Diagnostics.SymbolStore;
 using System.Diagnostics;
 
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -77,9 +78,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="mb"></param>
         /// <returns></returns>
-        public CodeEmitter Create(MethodBuilder mb)
+        public CodeEmitter Create(IMethodSymbolBuilder mb)
         {
-            return new CodeEmitter(context, mb.GetILGenerator(), context.Resolver.ResolveType(mb.DeclaringType));
+            return new CodeEmitter(context, mb.GetILGenerator(), context.Resolver.ResolveType(mb.Symbol.DeclaringType));
         }
 
 #if IMPORTER == false
@@ -103,7 +104,7 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        ILGenerator ilgen_real;
+        IILGenerator ilgen_real;
         bool inFinally;
         Stack<bool> exceptionStack = new Stack<bool>();
         IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
@@ -148,7 +149,7 @@ namespace IKVM.Runtime
 
             internal readonly CodeType pseudo;
             readonly CodeTypeFlags flags;
-            internal readonly OpCode opcode;
+            internal readonly System.Reflection.Emit.OpCode opcode;
             readonly object data;
 
             /// <summary>
@@ -160,7 +161,7 @@ namespace IKVM.Runtime
             {
                 this.pseudo = pseudo;
                 this.flags = CodeTypeFlags.None;
-                this.opcode = OpCodes.Nop;
+                this.opcode = System.Reflection.Emit.OpCodes.Nop;
                 this.data = data;
             }
 
@@ -173,7 +174,7 @@ namespace IKVM.Runtime
             {
                 this.pseudo = pseudo;
                 this.flags = flags;
-                this.opcode = OpCodes.Nop;
+                this.opcode = System.Reflection.Emit.OpCodes.Nop;
                 this.data = null;
             }
 
@@ -182,7 +183,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="opcode"></param>
             /// <param name="data"></param>
-            internal OpCodeWrapper(OpCode opcode, object data)
+            internal OpCodeWrapper(System.Reflection.Emit.OpCode opcode, object data)
             {
                 this.pseudo = CodeType.OpCode;
                 this.flags = CodeTypeFlags.None;
@@ -290,7 +291,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="ilgen"></param>
         /// <param name="declaringType"></param>
-        public CodeEmitter(RuntimeContext context, ILGenerator ilgen, ITypeSymbol declaringType)
+        public CodeEmitter(RuntimeContext context, IILGenerator ilgen, ITypeSymbol declaringType)
         {
             this.context = context;
             this.ilgen_real = ilgen;
@@ -307,7 +308,7 @@ namespace IKVM.Runtime
             code.Add(new OpCodeWrapper(type, data));
         }
 
-        private void EmitOpCode(OpCode opcode, object arg)
+        private void EmitOpCode(System.Reflection.Emit.OpCode opcode, object arg)
         {
             code.Add(new OpCodeWrapper(opcode, arg));
         }
@@ -336,7 +337,7 @@ namespace IKVM.Runtime
                         ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
 #endif
                     // we emit a nop to make sure we always have an instruction associated with the sequence point
-                    ilgen_real.Emit(OpCodes.Nop);
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Nop);
                     break;
                 case CodeType.Label:
                     ilgen_real.MarkLabel(((CodeEmitterLabel)data).Label);
@@ -345,7 +346,7 @@ namespace IKVM.Runtime
                     ilgen_real.BeginExceptionBlock();
                     break;
                 case CodeType.BeginCatchBlock:
-                    ilgen_real.BeginCatchBlock(((ITypeSymbol)data).AsReflection());
+                    ilgen_real.BeginCatchBlock(((ITypeSymbol)data));
                     break;
                 case CodeType.BeginFaultBlock:
                     ilgen_real.BeginFaultBlock();
@@ -355,23 +356,23 @@ namespace IKVM.Runtime
                     break;
                 case CodeType.EndExceptionBlock:
                     ilgen_real.EndExceptionBlock();
-                    ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2); // bogus target of implicit leave
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Br_S, (sbyte)-2); // bogus target of implicit leave
                     break;
                 case CodeType.MemoryBarrier:
-                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MemoryBarrierMethod.AsReflection());
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Call, context.CodeEmitterFactory.MemoryBarrierMethod);
                     break;
                 case CodeType.MonitorEnter:
-                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MonitorEnterMethod.AsReflection());
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Call, context.CodeEmitterFactory.MonitorEnterMethod);
                     break;
                 case CodeType.MonitorExit:
-                    ilgen_real.Emit(OpCodes.Call, context.CodeEmitterFactory.MonitorExitMethod.AsReflection());
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Call, context.CodeEmitterFactory.MonitorExitMethod);
                     break;
                 case CodeType.TailCallPrevention:
-                    ilgen_real.Emit(OpCodes.Ldnull);
-                    ilgen_real.Emit(OpCodes.Pop);
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Ldnull);
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Pop);
                     break;
                 case CodeType.ClearStack:
-                    ilgen_real.Emit(OpCodes.Leave_S, (byte)0);
+                    ilgen_real.Emit(System.Reflection.Emit.OpCodes.Leave_S, (byte)0);
                     break;
                 default:
                     throw new InvalidOperationException();
@@ -379,12 +380,12 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Emits the real OpCode into the underlying IL generator.
+        /// Emits the real System.Reflection.Emit.OpCode into the underlying IL generator.
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="arg"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        void RealEmitOpCode(OpCode opcode, object arg)
+        void RealEmitOpCode(System.Reflection.Emit.OpCode opcode, object arg)
         {
             if (arg == null)
             {
@@ -400,15 +401,15 @@ namespace IKVM.Runtime
             }
             else if (arg is IMethodSymbol mi)
             {
-                ilgen_real.Emit(opcode, mi.AsReflection());
+                ilgen_real.Emit(opcode, mi);
             }
             else if (arg is IConstructorSymbol ci)
             {
-                ilgen_real.Emit(opcode, ci.AsReflection());
+                ilgen_real.Emit(opcode, ci);
             }
             else if (arg is IFieldSymbol fi)
             {
-                ilgen_real.Emit(opcode, fi.AsReflection());
+                ilgen_real.Emit(opcode, fi);
             }
             else if (arg is sbyte sby)
             {
@@ -436,7 +437,7 @@ namespace IKVM.Runtime
             }
             else if (arg is ITypeSymbol type)
             {
-                ilgen_real.Emit(opcode, type.AsReflection());
+                ilgen_real.Emit(opcode, type);
             }
             else if (arg is CodeEmitterLocal local)
             {
@@ -448,7 +449,7 @@ namespace IKVM.Runtime
             }
             else if (arg is CodeEmitterLabel[] labels)
             {
-                var real = new Label[labels.Length];
+                var real = new ILabel[labels.Length];
                 for (int i = 0; i < labels.Length; i++)
                     real[i] = labels[i].Label;
 
@@ -456,11 +457,11 @@ namespace IKVM.Runtime
             }
             else if (arg is ManagedCalliWrapper margs)
             {
-                ilgen_real.EmitCalli(opcode, margs.callConv, margs.returnType.AsReflection(), margs.parameterTypes.AsReflection(), margs.optionalParameterTypes.AsReflection());
+                ilgen_real.EmitCalli(opcode, margs.callConv, margs.returnType, margs.parameterTypes, margs.optionalParameterTypes);
             }
             else if (arg is CalliWrapper args)
             {
-                ilgen_real.EmitCalli(opcode, args.unmanagedCallConv, args.returnType.AsReflection(), args.parameterTypes.AsReflection());
+                ilgen_real.EmitCalli(opcode, args.unmanagedCallConv, args.returnType, args.parameterTypes);
             }
             else
             {
@@ -474,7 +475,7 @@ namespace IKVM.Runtime
             {
                 if (code[i].pseudo == CodeType.Label)
                 {
-                    if (code[i - 1].opcode == OpCodes.Br
+                    if (code[i - 1].opcode == System.Reflection.Emit.OpCodes.Br
                         && code[i - 1].MatchLabel(code[i]))
                     {
                         code.RemoveAt(i - 1);
@@ -482,7 +483,7 @@ namespace IKVM.Runtime
                     }
                     else if (i >= 2
                         && code[i - 1].pseudo == CodeType.LineNumber
-                        && code[i - 2].opcode == OpCodes.Br
+                        && code[i - 2].opcode == System.Reflection.Emit.OpCodes.Br
                         && code[i - 2].MatchLabel(code[i]))
                     {
                         code.RemoveAt(i - 2);
@@ -496,13 +497,13 @@ namespace IKVM.Runtime
         {
             for (int i = 1; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Stloc)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Stloc)
                 {
                     if (code[i + 1].pseudo == CodeType.ReleaseTempLocal && code[i].Local == code[i + 1].Local)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Pop, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Pop, null);
                     }
-                    else if (code[i + 1].opcode == OpCodes.Ldloc && code[i + 1].Local == code[i].Local && code[i + 2].pseudo == CodeType.ReleaseTempLocal && code[i + 2].Local == code[i].Local)
+                    else if (code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[i + 1].Local == code[i].Local && code[i + 2].pseudo == CodeType.ReleaseTempLocal && code[i + 2].Local == code[i].Local)
                     {
                         code.RemoveRange(i, 2);
                     }
@@ -514,7 +515,7 @@ namespace IKVM.Runtime
         {
             for (int i = 1; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Pop)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Pop)
                 {
                     // search backwards for a candidate push to annihilate
                     int stack = 0;
@@ -531,20 +532,20 @@ namespace IKVM.Runtime
                             }
                             stack++;
                         }
-                        else if (code[j].opcode == OpCodes.Stloc)
+                        else if (code[j].opcode == System.Reflection.Emit.OpCodes.Stloc)
                         {
                             stack--;
                         }
-                        else if (code[j].opcode == OpCodes.Shl || code[j].opcode == OpCodes.And || code[j].opcode == OpCodes.Add || code[j].opcode == OpCodes.Sub)
+                        else if (code[j].opcode == System.Reflection.Emit.OpCodes.Shl || code[j].opcode == System.Reflection.Emit.OpCodes.And || code[j].opcode == System.Reflection.Emit.OpCodes.Add || code[j].opcode == System.Reflection.Emit.OpCodes.Sub)
                         {
                             if (stack == 0)
                                 break;
 
                             stack--;
                         }
-                        else if (code[j].opcode == OpCodes.Conv_Ovf_I4
-                            || code[j].opcode == OpCodes.Conv_I8
-                            || code[j].opcode == OpCodes.Ldlen)
+                        else if (code[j].opcode == System.Reflection.Emit.OpCodes.Conv_Ovf_I4
+                            || code[j].opcode == System.Reflection.Emit.OpCodes.Conv_I8
+                            || code[j].opcode == System.Reflection.Emit.OpCodes.Ldlen)
                         {
                             if (stack == 0)
                             {
@@ -568,15 +569,15 @@ namespace IKVM.Runtime
         /// <returns></returns>
         bool IsSideEffectFreePush(int index)
         {
-            if (code[index].opcode == OpCodes.Ldstr)
+            if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldstr)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldnull)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldnull)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldsfld)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldsfld)
             {
                 var field = code[index].FieldInfo;
                 if (field != null)
@@ -598,47 +599,47 @@ namespace IKVM.Runtime
                 }
                 return false;
             }
-            else if (code[index].opcode == OpCodes.Ldc_I4)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldc_I4)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldc_I8)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldc_I8)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldc_R4)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldc_R4)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldc_R8)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldc_R8)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldloc)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldloc)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg_S)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg_S)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg_0)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg_0)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg_1)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg_1)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg_2)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg_2)
             {
                 return true;
             }
-            else if (code[index].opcode == OpCodes.Ldarg_3)
+            else if (code[index].opcode == System.Reflection.Emit.OpCodes.Ldarg_3)
             {
                 return true;
             }
@@ -653,59 +654,59 @@ namespace IKVM.Runtime
             SetLabelRefCounts();
             for (int i = 1; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Isinst
-                    && code[i + 1].opcode == OpCodes.Ldnull
-                    && code[i + 2].opcode == OpCodes.Cgt_Un
-                    && (code[i + 3].opcode == OpCodes.Brfalse || code[i + 3].opcode == OpCodes.Brtrue))
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Isinst
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldnull
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Cgt_Un
+                    && (code[i + 3].opcode == System.Reflection.Emit.OpCodes.Brfalse || code[i + 3].opcode == System.Reflection.Emit.OpCodes.Brtrue))
                 {
                     code.RemoveRange(i + 1, 2);
                 }
-                else if (code[i].opcode == OpCodes.Ldelem_I1
-                    && code[i + 1].opcode == OpCodes.Ldc_I4 && code[i + 1].ValueInt32 == 255
-                    && code[i + 2].opcode == OpCodes.And)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldelem_I1
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldc_I4 && code[i + 1].ValueInt32 == 255
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.And)
                 {
-                    code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
+                    code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldelem_U1, null);
                     code.RemoveRange(i + 1, 2);
                 }
-                else if (code[i].opcode == OpCodes.Ldelem_I1
-                    && code[i + 1].opcode == OpCodes.Conv_I8
-                    && code[i + 2].opcode == OpCodes.Ldc_I8 && code[i + 2].ValueInt64 == 255
-                    && code[i + 3].opcode == OpCodes.And)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldelem_I1
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Conv_I8
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Ldc_I8 && code[i + 2].ValueInt64 == 255
+                    && code[i + 3].opcode == System.Reflection.Emit.OpCodes.And)
                 {
-                    code[i] = new OpCodeWrapper(OpCodes.Ldelem_U1, null);
+                    code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldelem_U1, null);
                     code.RemoveRange(i + 2, 2);
                 }
-                else if (code[i].opcode == OpCodes.Ldc_I4
-                    && code[i + 1].opcode == OpCodes.Ldc_I4
-                    && code[i + 2].opcode == OpCodes.And)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I4
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldc_I4
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.And)
                 {
-                    code[i] = new OpCodeWrapper(OpCodes.Ldc_I4, code[i].ValueInt32 & code[i + 1].ValueInt32);
+                    code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, code[i].ValueInt32 & code[i + 1].ValueInt32);
                     code.RemoveRange(i + 1, 2);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, context.Types.Double)     // dcmpl
-                    || MatchCompare(i, OpCodes.Cgt, OpCodes.Clt_Un, context.Types.Single))      // fcmpl
+                else if (MatchCompare(i, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt_Un, context.Types.Double)     // dcmpl
+                    || MatchCompare(i, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt_Un, context.Types.Single))      // fcmpl
                 {
-                    PatchCompare(i, OpCodes.Ble_Un, OpCodes.Blt_Un, OpCodes.Bge, OpCodes.Bgt);
+                    PatchCompare(i, System.Reflection.Emit.OpCodes.Ble_Un, System.Reflection.Emit.OpCodes.Blt_Un, System.Reflection.Emit.OpCodes.Bge, System.Reflection.Emit.OpCodes.Bgt);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, context.Types.Double)     // dcmpg
-                    || MatchCompare(i, OpCodes.Cgt_Un, OpCodes.Clt, context.Types.Single))      // fcmpg
+                else if (MatchCompare(i, System.Reflection.Emit.OpCodes.Cgt_Un, System.Reflection.Emit.OpCodes.Clt, context.Types.Double)     // dcmpg
+                    || MatchCompare(i, System.Reflection.Emit.OpCodes.Cgt_Un, System.Reflection.Emit.OpCodes.Clt, context.Types.Single))      // fcmpg
                 {
-                    PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge_Un, OpCodes.Bgt_Un);
+                    PatchCompare(i, System.Reflection.Emit.OpCodes.Ble, System.Reflection.Emit.OpCodes.Blt, System.Reflection.Emit.OpCodes.Bge_Un, System.Reflection.Emit.OpCodes.Bgt_Un);
                 }
-                else if (MatchCompare(i, OpCodes.Cgt, OpCodes.Clt, context.Types.Int64))        // lcmp
+                else if (MatchCompare(i, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt, context.Types.Int64))        // lcmp
                 {
-                    PatchCompare(i, OpCodes.Ble, OpCodes.Blt, OpCodes.Bge, OpCodes.Bgt);
+                    PatchCompare(i, System.Reflection.Emit.OpCodes.Ble, System.Reflection.Emit.OpCodes.Blt, System.Reflection.Emit.OpCodes.Bge, System.Reflection.Emit.OpCodes.Bgt);
                 }
                 else if (i < code.Count - 10
-                    && code[i].opcode == OpCodes.Ldc_I4
-                    && code[i + 1].opcode == OpCodes.Dup
-                    && code[i + 2].opcode == OpCodes.Ldc_I4_M1
-                    && code[i + 3].opcode == OpCodes.Bne_Un
-                    && code[i + 4].opcode == OpCodes.Pop
-                    && code[i + 5].opcode == OpCodes.Neg
-                    && code[i + 6].opcode == OpCodes.Br
+                    && code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I4
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Dup
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Ldc_I4_M1
+                    && code[i + 3].opcode == System.Reflection.Emit.OpCodes.Bne_Un
+                    && code[i + 4].opcode == System.Reflection.Emit.OpCodes.Pop
+                    && code[i + 5].opcode == System.Reflection.Emit.OpCodes.Neg
+                    && code[i + 6].opcode == System.Reflection.Emit.OpCodes.Br
                     && code[i + 7].pseudo == CodeType.Label && code[i + 7].MatchLabel(code[i + 3]) && code[i + 7].Label.Temp == 1
-                    && code[i + 8].opcode == OpCodes.Div
+                    && code[i + 8].opcode == System.Reflection.Emit.OpCodes.Div
                     && code[i + 9].pseudo == CodeType.Label && code[i + 9].Label == code[i + 6].Label && code[i + 9].Label.Temp == 1)
                 {
                     int divisor = code[i].ValueInt32;
@@ -721,16 +722,16 @@ namespace IKVM.Runtime
                     }
                 }
                 else if (i < code.Count - 11
-                    && code[i].opcode == OpCodes.Ldc_I8
-                    && code[i + 1].opcode == OpCodes.Dup
-                    && code[i + 2].opcode == OpCodes.Ldc_I4_M1
-                    && code[i + 3].opcode == OpCodes.Conv_I8
-                    && code[i + 4].opcode == OpCodes.Bne_Un
-                    && code[i + 5].opcode == OpCodes.Pop
-                    && code[i + 6].opcode == OpCodes.Neg
-                    && code[i + 7].opcode == OpCodes.Br
+                    && code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I8
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Dup
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Ldc_I4_M1
+                    && code[i + 3].opcode == System.Reflection.Emit.OpCodes.Conv_I8
+                    && code[i + 4].opcode == System.Reflection.Emit.OpCodes.Bne_Un
+                    && code[i + 5].opcode == System.Reflection.Emit.OpCodes.Pop
+                    && code[i + 6].opcode == System.Reflection.Emit.OpCodes.Neg
+                    && code[i + 7].opcode == System.Reflection.Emit.OpCodes.Br
                     && code[i + 8].pseudo == CodeType.Label && code[i + 8].MatchLabel(code[i + 4]) && code[i + 8].Label.Temp == 1
-                    && code[i + 9].opcode == OpCodes.Div
+                    && code[i + 9].opcode == System.Reflection.Emit.OpCodes.Div
                     && code[i + 10].pseudo == CodeType.Label && code[i + 10].MatchLabel(code[i + 7]) && code[i + 10].Label.Temp == 1)
                 {
                     long divisor = code[i].ValueInt64;
@@ -745,26 +746,26 @@ namespace IKVM.Runtime
                         code.RemoveRange(i + 2, 9);
                     }
                 }
-                else if (code[i].opcode == OpCodes.Box
-                    && code[i + 1].opcode == OpCodes.Unbox && code[i + 1].Type == code[i].Type)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Box
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Unbox && code[i + 1].Type == code[i].Type)
                 {
                     CodeEmitterLocal local = new CodeEmitterLocal(code[i].Type);
-                    code[i] = new OpCodeWrapper(OpCodes.Stloc, local);
-                    code[i + 1] = new OpCodeWrapper(OpCodes.Ldloca, local);
+                    code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Stloc, local);
+                    code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldloca, local);
                 }
                 else if (i < code.Count - 13
-                    && code[i + 0].opcode == OpCodes.Box
-                    && code[i + 1].opcode == OpCodes.Dup
-                    && code[i + 2].opcode == OpCodes.Brtrue
-                    && code[i + 3].opcode == OpCodes.Pop
-                    && code[i + 4].opcode == OpCodes.Ldloca && code[i + 4].Local.LocalType == code[i + 0].Type
-                    && code[i + 5].opcode == OpCodes.Initobj && code[i + 5].Type == code[i + 0].Type
-                    && code[i + 6].opcode == OpCodes.Ldloc && code[i + 6].Local == code[i + 4].Local
+                    && code[i + 0].opcode == System.Reflection.Emit.OpCodes.Box
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Dup
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Brtrue
+                    && code[i + 3].opcode == System.Reflection.Emit.OpCodes.Pop
+                    && code[i + 4].opcode == System.Reflection.Emit.OpCodes.Ldloca && code[i + 4].Local.LocalType == code[i + 0].Type
+                    && code[i + 5].opcode == System.Reflection.Emit.OpCodes.Initobj && code[i + 5].Type == code[i + 0].Type
+                    && code[i + 6].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[i + 6].Local == code[i + 4].Local
                     && code[i + 7].pseudo == CodeType.ReleaseTempLocal && code[i + 7].Local == code[i + 6].Local
-                    && code[i + 8].opcode == OpCodes.Br
+                    && code[i + 8].opcode == System.Reflection.Emit.OpCodes.Br
                     && code[i + 9].pseudo == CodeType.Label && code[i + 9].MatchLabel(code[i + 2]) && code[i + 9].Label.Temp == 1
-                    && code[i + 10].opcode == OpCodes.Unbox && code[i + 10].Type == code[i + 0].Type
-                    && code[i + 11].opcode == OpCodes.Ldobj && code[i + 11].Type == code[i + 0].Type
+                    && code[i + 10].opcode == System.Reflection.Emit.OpCodes.Unbox && code[i + 10].Type == code[i + 0].Type
+                    && code[i + 11].opcode == System.Reflection.Emit.OpCodes.Ldobj && code[i + 11].Type == code[i + 0].Type
                     && code[i + 12].pseudo == CodeType.Label && code[i + 12].MatchLabel(code[i + 8]) && code[i + 12].Label.Temp == 1)
                 {
                     code.RemoveRange(i, 13);
@@ -773,114 +774,114 @@ namespace IKVM.Runtime
                 // NOTE intentionally not an else, because we want to optimize the code generated by the earlier compare optimization
                 if (i < code.Count - 6
                     && code[i].opcode.FlowControl == FlowControl.Cond_Branch
-                    && code[i + 1].opcode == OpCodes.Ldc_I4 && code[i + 1].ValueInt32 == 1
-                    && code[i + 2].opcode == OpCodes.Br
+                    && code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldc_I4 && code[i + 1].ValueInt32 == 1
+                    && code[i + 2].opcode == System.Reflection.Emit.OpCodes.Br
                     && code[i + 3].pseudo == CodeType.Label && code[i + 3].MatchLabel(code[i]) && code[i + 3].Label.Temp == 1
-                    && code[i + 4].opcode == OpCodes.Ldc_I4 && code[i + 4].ValueInt32 == 0
+                    && code[i + 4].opcode == System.Reflection.Emit.OpCodes.Ldc_I4 && code[i + 4].ValueInt32 == 0
                     && code[i + 5].pseudo == CodeType.Label && code[i + 5].MatchLabel(code[i + 2]) && code[i + 5].Label.Temp == 1)
                 {
-                    if (code[i].opcode == OpCodes.Bne_Un)
+                    if (code[i].opcode == System.Reflection.Emit.OpCodes.Bne_Un)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 1, 5);
                     }
-                    else if (code[i].opcode == OpCodes.Beq)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Beq)
                     {
-                        code[i + 0] = new OpCodeWrapper(OpCodes.Ceq, null);
-                        code[i + 1] = new OpCodeWrapper(OpCodes.Ldc_I4, 0);
-                        code[i + 2] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i + 0] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
+                        code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+                        code[i + 2] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 3, 3);
                     }
-                    else if (code[i].opcode == OpCodes.Ble || code[i].opcode == OpCodes.Ble_Un)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ble || code[i].opcode == System.Reflection.Emit.OpCodes.Ble_Un)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Cgt, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Cgt, null);
                         code.RemoveRange(i + 1, 5);
                     }
-                    else if (code[i].opcode == OpCodes.Blt)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Blt)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Clt, null);
-                        code[i + 1] = new OpCodeWrapper(OpCodes.Ldc_I4, 0);
-                        code[i + 2] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Clt, null);
+                        code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+                        code[i + 2] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 3, 3);
                     }
-                    else if (code[i].opcode == OpCodes.Blt_Un)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Blt_Un)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Clt_Un, null);
-                        code[i + 1] = new OpCodeWrapper(OpCodes.Ldc_I4, 0);
-                        code[i + 2] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Clt_Un, null);
+                        code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+                        code[i + 2] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 3, 3);
                     }
-                    else if (code[i].opcode == OpCodes.Bge || code[i].opcode == OpCodes.Bge_Un)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Bge || code[i].opcode == System.Reflection.Emit.OpCodes.Bge_Un)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Clt, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Clt, null);
                         code.RemoveRange(i + 1, 5);
                     }
-                    else if (code[i].opcode == OpCodes.Bgt)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Bgt)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Cgt, null);
-                        code[i + 1] = new OpCodeWrapper(OpCodes.Ldc_I4, 0);
-                        code[i + 2] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Cgt, null);
+                        code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+                        code[i + 2] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 3, 3);
                     }
-                    else if (code[i].opcode == OpCodes.Bgt_Un)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Bgt_Un)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Cgt_Un, null);
-                        code[i + 1] = new OpCodeWrapper(OpCodes.Ldc_I4, 0);
-                        code[i + 2] = new OpCodeWrapper(OpCodes.Ceq, null);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Cgt_Un, null);
+                        code[i + 1] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+                        code[i + 2] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ceq, null);
                         code.RemoveRange(i + 3, 3);
                     }
                 }
             }
         }
 
-        bool MatchCompare(int index, OpCode cmp1, OpCode cmp2, ITypeSymbol type)
+        bool MatchCompare(int index, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2, ITypeSymbol type)
         {
-            return code[index].opcode == OpCodes.Stloc && code[index].Local.LocalType == type
-                && code[index + 1].opcode == OpCodes.Stloc && code[index + 1].Local.LocalType == type
-                && code[index + 2].opcode == OpCodes.Ldloc && code[index + 2].MatchLocal(code[index + 1])
-                && code[index + 3].opcode == OpCodes.Ldloc && code[index + 3].MatchLocal(code[index])
+            return code[index].opcode == System.Reflection.Emit.OpCodes.Stloc && code[index].Local.LocalType == type
+                && code[index + 1].opcode == System.Reflection.Emit.OpCodes.Stloc && code[index + 1].Local.LocalType == type
+                && code[index + 2].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[index + 2].MatchLocal(code[index + 1])
+                && code[index + 3].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[index + 3].MatchLocal(code[index])
                 && code[index + 4].opcode == cmp1
-                && code[index + 5].opcode == OpCodes.Ldloc && code[index + 5].MatchLocal(code[index + 1])
-                && code[index + 6].opcode == OpCodes.Ldloc && code[index + 6].MatchLocal(code[index])
+                && code[index + 5].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[index + 5].MatchLocal(code[index + 1])
+                && code[index + 6].opcode == System.Reflection.Emit.OpCodes.Ldloc && code[index + 6].MatchLocal(code[index])
                 && code[index + 7].opcode == cmp2
-                && code[index + 8].opcode == OpCodes.Sub
+                && code[index + 8].opcode == System.Reflection.Emit.OpCodes.Sub
                 && code[index + 9].pseudo == CodeType.ReleaseTempLocal && code[index + 9].Local == code[index].Local
                 && code[index + 10].pseudo == CodeType.ReleaseTempLocal && code[index + 10].Local == code[index + 1].Local
                 && ((code[index + 11].opcode.FlowControl == FlowControl.Cond_Branch && code[index + 11].HasLabel) ||
-                    (code[index + 11].opcode == OpCodes.Ldc_I4_0
+                    (code[index + 11].opcode == System.Reflection.Emit.OpCodes.Ldc_I4_0
                     && (code[index + 12].opcode.FlowControl == FlowControl.Cond_Branch && code[index + 12].HasLabel)));
         }
 
-        void PatchCompare(int index, OpCode ble, OpCode blt, OpCode bge, OpCode bgt)
+        void PatchCompare(int index, System.Reflection.Emit.OpCode ble, System.Reflection.Emit.OpCode blt, System.Reflection.Emit.OpCode bge, System.Reflection.Emit.OpCode bgt)
         {
-            if (code[index + 11].opcode == OpCodes.Brtrue)
+            if (code[index + 11].opcode == System.Reflection.Emit.OpCodes.Brtrue)
             {
-                code[index] = new OpCodeWrapper(OpCodes.Bne_Un, code[index + 11].Label);
+                code[index] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Bne_Un, code[index + 11].Label);
                 code.RemoveRange(index + 1, 11);
             }
-            else if (code[index + 11].opcode == OpCodes.Brfalse)
+            else if (code[index + 11].opcode == System.Reflection.Emit.OpCodes.Brfalse)
             {
-                code[index] = new OpCodeWrapper(OpCodes.Beq, code[index + 11].Label);
+                code[index] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Beq, code[index + 11].Label);
                 code.RemoveRange(index + 1, 11);
             }
-            else if (code[index + 11].opcode == OpCodes.Ldc_I4_0)
+            else if (code[index + 11].opcode == System.Reflection.Emit.OpCodes.Ldc_I4_0)
             {
-                if (code[index + 12].opcode == OpCodes.Ble)
+                if (code[index + 12].opcode == System.Reflection.Emit.OpCodes.Ble)
                 {
                     code[index] = new OpCodeWrapper(ble, code[index + 12].Label);
                     code.RemoveRange(index + 1, 12);
                 }
-                else if (code[index + 12].opcode == OpCodes.Blt)
+                else if (code[index + 12].opcode == System.Reflection.Emit.OpCodes.Blt)
                 {
                     code[index] = new OpCodeWrapper(blt, code[index + 12].Label);
                     code.RemoveRange(index + 1, 12);
                 }
-                else if (code[index + 12].opcode == OpCodes.Bge)
+                else if (code[index + 12].opcode == System.Reflection.Emit.OpCodes.Bge)
                 {
                     code[index] = new OpCodeWrapper(bge, code[index + 12].Label);
                     code.RemoveRange(index + 1, 12);
                 }
-                else if (code[index + 12].opcode == OpCodes.Bgt)
+                else if (code[index + 12].opcode == System.Reflection.Emit.OpCodes.Bgt)
                 {
                     code[index] = new OpCodeWrapper(bgt, code[index + 12].Label);
                     code.RemoveRange(index + 1, 12);
@@ -895,9 +896,9 @@ namespace IKVM.Runtime
         {
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Ldc_I4)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I4)
                     code[i] = OptimizeLdcI4(code[i].ValueInt32);
-                else if (code[i].opcode == OpCodes.Ldc_I8)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I8)
                     OptimizeLdcI8(i);
             }
         }
@@ -912,30 +913,30 @@ namespace IKVM.Runtime
             switch (value)
             {
                 case -1:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_M1, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_M1, null);
                 case 0:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_0, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_0, null);
                 case 1:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_1, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_1, null);
                 case 2:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_2, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_2, null);
                 case 3:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_3, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_3, null);
                 case 4:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_4, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_4, null);
                 case 5:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_5, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_5, null);
                 case 6:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_6, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_6, null);
                 case 7:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_7, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_7, null);
                 case 8:
-                    return new OpCodeWrapper(OpCodes.Ldc_I4_8, null);
+                    return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_8, null);
                 default:
                     if (value >= -128 && value <= 127)
-                        return new OpCodeWrapper(OpCodes.Ldc_I4_S, (sbyte)value);
+                        return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4_S, (sbyte)value);
                     else
-                        return new OpCodeWrapper(OpCodes.Ldc_I4, value);
+                        return new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldc_I4, value);
             }
         }
 
@@ -949,7 +950,7 @@ namespace IKVM.Runtime
             if (value >= int.MinValue && value <= uint.MaxValue)
             {
                 code[index] = OptimizeLdcI4((int)value);
-                code.Insert(index + 1, new OpCodeWrapper(value < 0 ? OpCodes.Conv_I8 : OpCodes.Conv_U8, null));
+                code.Insert(index + 1, new OpCodeWrapper(value < 0 ? System.Reflection.Emit.OpCodes.Conv_I8 : System.Reflection.Emit.OpCodes.Conv_U8, null));
             }
         }
 
@@ -965,7 +966,7 @@ namespace IKVM.Runtime
             SetLabelIndexes();
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Br)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Br)
                 {
                     int target = code[i].Label.Temp + 1;
                     if (code[target].pseudo == CodeType.LineNumber)
@@ -973,36 +974,36 @@ namespace IKVM.Runtime
                         // line number info on endfinally or ret is probably useless anyway
                         target++;
                     }
-                    if (code[target].opcode == OpCodes.Endfinally || code[target].opcode == OpCodes.Ret)
+                    if (code[target].opcode == System.Reflection.Emit.OpCodes.Endfinally || code[target].opcode == System.Reflection.Emit.OpCodes.Ret)
                     {
                         code[i] = code[target];
                     }
                     else
                     {
                         CodeEmitterLabel label = null;
-                        while (code[target].opcode == OpCodes.Br && target != i)
+                        while (code[target].opcode == System.Reflection.Emit.OpCodes.Br && target != i)
                         {
                             label = code[target].Label;
                             target = code[target].Label.Temp + 1;
                         }
                         if (label != null)
                         {
-                            code[i] = new OpCodeWrapper(OpCodes.Br, label);
+                            code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Br, label);
                         }
                     }
                 }
-                else if (code[i].opcode == OpCodes.Leave)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Leave)
                 {
                     int target = code[i].Label.Temp + 1;
                     CodeEmitterLabel label = null;
-                    while ((code[target].opcode == OpCodes.Br || code[target].opcode == OpCodes.Leave) && target != i)
+                    while ((code[target].opcode == System.Reflection.Emit.OpCodes.Br || code[target].opcode == System.Reflection.Emit.OpCodes.Leave) && target != i)
                     {
                         label = code[target].Label;
                         target = code[target].Label.Temp + 1;
                     }
                     if (label != null)
                     {
-                        code[i] = new OpCodeWrapper(OpCodes.Leave, label);
+                        code[i] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Leave, label);
                     }
                 }
             }
@@ -1034,9 +1035,9 @@ namespace IKVM.Runtime
                         case CodeType.OpCode:
                             switch (code[i].opcode.FlowControl)
                             {
-                                case FlowControl.Branch:
-                                case FlowControl.Return:
-                                case FlowControl.Throw:
+                                case System.Reflection.Emit.FlowControl.Branch:
+                                case System.Reflection.Emit.FlowControl.Return:
+                                case System.Reflection.Emit.FlowControl.Throw:
                                     reachable = false;
                                     break;
                             }
@@ -1062,7 +1063,7 @@ namespace IKVM.Runtime
             // now remove the unconditional branches to labels with a refcount of one
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Br && code[i].Label.Temp == 1)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Br && code[i].Label.Temp == 1)
                 {
                     int target = FindLabel(code[i].Label) + 1;
                     for (int j = target; j < code.Count; j++)
@@ -1077,9 +1078,9 @@ namespace IKVM.Runtime
                                 }
                                 switch (code[j].opcode.FlowControl)
                                 {
-                                    case FlowControl.Branch:
-                                    case FlowControl.Return:
-                                    case FlowControl.Throw:
+                                    case System.Reflection.Emit.FlowControl.Branch:
+                                    case System.Reflection.Emit.FlowControl.Return:
+                                    case System.Reflection.Emit.FlowControl.Throw:
                                         // we've found a viable sequence of opcode to move to the branch location
                                         List<OpCodeWrapper> range = code.GetRange(target, j - target + 1);
                                         if (target < i)
@@ -1214,7 +1215,7 @@ namespace IKVM.Runtime
                     {
                         code[i].Label.Temp++;
                     }
-                    else if (code[i].opcode == OpCodes.Switch)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Switch)
                     {
                         foreach (CodeEmitterLabel label in code[i].Labels)
                         {
@@ -1269,9 +1270,9 @@ namespace IKVM.Runtime
                                 }
                                 code[i].Label.Temp |= ReachableFlag;
                             }
-                            else if (code[i].opcode == OpCodes.Switch)
+                            else if (code[i].opcode == System.Reflection.Emit.OpCodes.Switch)
                             {
-                                foreach (CodeEmitterLabel label in code[i].Labels)
+                                foreach (var label in code[i].Labels)
                                 {
                                     if (label.Temp == ProcessedFlag)
                                     {
@@ -1282,15 +1283,15 @@ namespace IKVM.Runtime
                             }
                             switch (code[i].opcode.FlowControl)
                             {
-                                case FlowControl.Cond_Branch:
-                                    if (!code[i].HasLabel && code[i].opcode != OpCodes.Switch)
+                                case System.Reflection.Emit.FlowControl.Cond_Branch:
+                                    if (!code[i].HasLabel && code[i].opcode != System.Reflection.Emit.OpCodes.Switch)
                                     {
                                         throw new NotSupportedException();
                                     }
                                     break;
-                                case FlowControl.Branch:
-                                case FlowControl.Return:
-                                case FlowControl.Throw:
+                                case System.Reflection.Emit.FlowControl.Branch:
+                                case System.Reflection.Emit.FlowControl.Return:
+                                case System.Reflection.Emit.FlowControl.Throw:
                                     reachable = false;
                                     break;
                             }
@@ -1328,9 +1329,9 @@ namespace IKVM.Runtime
                     {
                         switch (code[i].opcode.FlowControl)
                         {
-                            case FlowControl.Branch:
-                            case FlowControl.Return:
-                            case FlowControl.Throw:
+                            case System.Reflection.Emit.FlowControl.Branch:
+                            case System.Reflection.Emit.FlowControl.Return:
+                            case System.Reflection.Emit.FlowControl.Throw:
                                 reachable = false;
                                 firstUnreachable = i + 1;
                                 break;
@@ -1417,7 +1418,7 @@ namespace IKVM.Runtime
             SetLabelIndexes();
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Br && code[i].HasLabel)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Br && code[i].HasLabel)
                 {
                     int source = i - 1;
                     int target = code[i].Label.Temp - 1;
@@ -1437,8 +1438,8 @@ namespace IKVM.Runtime
                         }
                         switch (code[source].opcode.FlowControl)
                         {
-                            case FlowControl.Branch:
-                            case FlowControl.Cond_Branch:
+                            case System.Reflection.Emit.FlowControl.Branch:
+                            case System.Reflection.Emit.FlowControl.Cond_Branch:
                                 goto break_while;
                         }
                         source--;
@@ -1452,7 +1453,7 @@ namespace IKVM.Runtime
                         // TODO for now we only do this optimization if there happens to be an appriopriate label
                         if (code[target - 1].pseudo == CodeType.Label)
                         {
-                            code[source] = new OpCodeWrapper(OpCodes.Br, code[target - 1].Label);
+                            code[source] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Br, code[target - 1].Label);
                             for (int j = source + 1; j <= i; j++)
                             {
                                 // We can't depend on DCE for code correctness (we have to maintain all MSIL invariants at all times),
@@ -1469,10 +1470,10 @@ namespace IKVM.Runtime
         {
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Ldloc &&
-                    code[i + 1].opcode == OpCodes.Stloc &&
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldloc &&
+                    code[i + 1].opcode == System.Reflection.Emit.OpCodes.Stloc &&
                     code[i + 2].pseudo == CodeType.BeginExceptionBlock &&
-                    code[i + 3].opcode == OpCodes.Ldloc &&
+                    code[i + 3].opcode == System.Reflection.Emit.OpCodes.Ldloc &&
                     code[i + 3].MatchLocal(code[i + 1]) &&
                     code[i + 4].pseudo == CodeType.ReleaseTempLocal &&
                     code[i + 4].MatchLocal(code[i + 3]))
@@ -1559,7 +1560,7 @@ namespace IKVM.Runtime
                             // the BeginExceptionBlock of the second block.
                             for (int j = beginFault1; j < i + 2; j++)
                             {
-                                code[j] = new OpCodeWrapper(OpCodes.Nop, null);
+                                code[j] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Nop, null);
                             }
                             // Repair the linking structure.
                             extra[extra[i]] = beginFault2;
@@ -1587,7 +1588,7 @@ namespace IKVM.Runtime
                     if (code[i].Label == label)
                         return true;
                 }
-                else if (code[i].opcode == OpCodes.Switch)
+                else if (code[i].opcode == System.Reflection.Emit.OpCodes.Switch)
                 {
                     foreach (CodeEmitterLabel swlbl in code[i].Labels)
                         if (swlbl == label)
@@ -1660,9 +1661,9 @@ namespace IKVM.Runtime
                                 i++;
                             }
                             // check if the fault handler is the synchronized block exit pattern
-                            if (code[i + 1].opcode == OpCodes.Ldloc
+                            if (code[i + 1].opcode == System.Reflection.Emit.OpCodes.Ldloc
                                 && code[i + 2].pseudo == CodeType.MonitorExit
-                                && code[i + 3].opcode == OpCodes.Endfinally)
+                                && code[i + 3].opcode == System.Reflection.Emit.OpCodes.Endfinally)
                             {
                                 if (!labelIndexSet)
                                 {
@@ -1676,13 +1677,13 @@ namespace IKVM.Runtime
                                 {
                                     for (int j = start; j < i; j++)
                                     {
-                                        if (code[j].opcode == OpCodes.Leave)
+                                        if (code[j].opcode == System.Reflection.Emit.OpCodes.Leave)
                                         {
                                             int target = code[j].Label.Temp;
                                             if (target < start || target > i)
                                             {
                                                 // check if the code preceding the leave matches the fault block
-                                                if ((code[j - 1].opcode == OpCodes.Pop || code[j - 1].opcode == OpCodes.Stloc)
+                                                if ((code[j - 1].opcode == System.Reflection.Emit.OpCodes.Pop || code[j - 1].opcode == System.Reflection.Emit.OpCodes.Stloc)
                                                     && code[j - 2].pseudo == CodeType.MonitorExit
                                                     && code[j - 3].Match(code[i + 1]))
                                                 {
@@ -1745,14 +1746,14 @@ namespace IKVM.Runtime
                         lastMemoryBarrier = i;
                         break;
                     case CodeType.OpCode:
-                        if (code[i].opcode == OpCodes.Volatile)
+                        if (code[i].opcode == System.Reflection.Emit.OpCodes.Volatile)
                         {
-                            if (code[i + 1].opcode != OpCodes.Stfld && code[i + 1].opcode != OpCodes.Stsfld)
+                            if (code[i + 1].opcode != System.Reflection.Emit.OpCodes.Stfld && code[i + 1].opcode != System.Reflection.Emit.OpCodes.Stsfld)
                             {
                                 lastMemoryBarrier = -1;
                             }
                         }
-                        else if (code[i].opcode.FlowControl != FlowControl.Next)
+                        else if (code[i].opcode.FlowControl != System.Reflection.Emit.FlowControl.Next)
                         {
                             lastMemoryBarrier = -1;
                         }
@@ -1763,32 +1764,32 @@ namespace IKVM.Runtime
 
         private static bool MatchLdarg(OpCodeWrapper opc, out short arg)
         {
-            if (opc.opcode == OpCodes.Ldarg)
+            if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg)
             {
                 arg = opc.ValueInt16;
                 return true;
             }
-            else if (opc.opcode == OpCodes.Ldarg_S)
+            else if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg_S)
             {
                 arg = opc.ValueByte;
                 return true;
             }
-            else if (opc.opcode == OpCodes.Ldarg_0)
+            else if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg_0)
             {
                 arg = 0;
                 return true;
             }
-            else if (opc.opcode == OpCodes.Ldarg_1)
+            else if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg_1)
             {
                 arg = 1;
                 return true;
             }
-            else if (opc.opcode == OpCodes.Ldarg_2)
+            else if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg_2)
             {
                 arg = 2;
                 return true;
             }
-            else if (opc.opcode == OpCodes.Ldarg_3)
+            else if (opc.opcode == System.Reflection.Emit.OpCodes.Ldarg_3)
             {
                 arg = 3;
                 return true;
@@ -1800,10 +1801,10 @@ namespace IKVM.Runtime
             }
         }
 
-        private bool IsBranchEqNe(OpCode opcode)
+        private bool IsBranchEqNe(System.Reflection.Emit.OpCode opcode)
         {
-            return opcode == OpCodes.Beq
-                || opcode == OpCodes.Bne_Un;
+            return opcode == System.Reflection.Emit.OpCodes.Beq
+                || opcode == System.Reflection.Emit.OpCodes.Bne_Un;
         }
 
         private void CLRv4_x64_JIT_Workaround()
@@ -1824,7 +1825,7 @@ namespace IKVM.Runtime
                 //
                 // The workaround is to replace ldarg with ldarga/ldind.i8. Looking at the generated code by the x86 and x64 JITs
                 // this appears to be as efficient as the ldarg and it avoids the x64 bug.
-                if (code[i].opcode == OpCodes.Ldc_I8 && code[i].ValueInt64 == 0)
+                if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I8 && code[i].ValueInt64 == 0)
                 {
                     short arg;
                     int m;
@@ -1840,8 +1841,8 @@ namespace IKVM.Runtime
                     {
                         continue;
                     }
-                    code[m] = new OpCodeWrapper(OpCodes.Ldarga, arg);
-                    code.Insert(m + 1, new OpCodeWrapper(OpCodes.Ldind_I8, null));
+                    code[m] = new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldarga, arg);
+                    code.Insert(m + 1, new OpCodeWrapper(System.Reflection.Emit.OpCodes.Ldind_I8, null));
                 }
             }
         }
@@ -1913,7 +1914,7 @@ namespace IKVM.Runtime
                 {
                     case CodeType.OpCode:
                         if (code[i].HasLabel
-                            && code[i].opcode != OpCodes.Leave
+                            && code[i].opcode != System.Reflection.Emit.OpCodes.Leave
                             && code[i].Label.Temp != blockId)
                         {
                             DumpMethod();
@@ -1941,9 +1942,9 @@ namespace IKVM.Runtime
             {
                 switch (code[i].opcode.FlowControl)
                 {
-                    case FlowControl.Branch:
-                    case FlowControl.Cond_Branch:
-                        if (!code[i].HasLabel && code[i].opcode != OpCodes.Switch)
+                    case System.Reflection.Emit.FlowControl.Branch:
+                    case System.Reflection.Emit.FlowControl.Cond_Branch:
+                        if (!code[i].HasLabel && code[i].opcode != System.Reflection.Emit.OpCodes.Switch)
                         {
                             throw new InvalidOperationException();
                         }
@@ -2063,31 +2064,31 @@ namespace IKVM.Runtime
                     {
                         Console.Write(" label" + labelIndexes[code[i].Label]);
                     }
-                    else if (code[i].opcode == OpCodes.Ldarg_S || code[i].opcode == OpCodes.Ldarga_S)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldarg_S || code[i].opcode == System.Reflection.Emit.OpCodes.Ldarga_S)
                     {
                         Console.Write(" " + code[i].ValueByte);
                     }
-                    else if (code[i].opcode == OpCodes.Ldarg || code[i].opcode == OpCodes.Ldarga)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldarg || code[i].opcode == System.Reflection.Emit.OpCodes.Ldarga)
                     {
                         Console.Write(" " + code[i].ValueInt16);
                     }
-                    else if (code[i].opcode == OpCodes.Isinst || code[i].opcode == OpCodes.Castclass || code[i].opcode == OpCodes.Box || code[i].opcode == OpCodes.Unbox || code[i].opcode == OpCodes.Ldobj || code[i].opcode == OpCodes.Newarr)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Isinst || code[i].opcode == System.Reflection.Emit.OpCodes.Castclass || code[i].opcode == System.Reflection.Emit.OpCodes.Box || code[i].opcode == System.Reflection.Emit.OpCodes.Unbox || code[i].opcode == System.Reflection.Emit.OpCodes.Ldobj || code[i].opcode == System.Reflection.Emit.OpCodes.Newarr)
                     {
                         Console.Write(" " + code[i].Type);
                     }
-                    else if (code[i].opcode == OpCodes.Call || code[i].opcode == OpCodes.Callvirt)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Call || code[i].opcode == System.Reflection.Emit.OpCodes.Callvirt)
                     {
                         Console.Write(" " + code[i].MethodBase);
                     }
-                    else if (code[i].opcode == OpCodes.Ldfld || code[i].opcode == OpCodes.Ldsfld || code[i].opcode == OpCodes.Stfld || code[i].opcode == OpCodes.Stsfld)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldfld || code[i].opcode == System.Reflection.Emit.OpCodes.Ldsfld || code[i].opcode == System.Reflection.Emit.OpCodes.Stfld || code[i].opcode == System.Reflection.Emit.OpCodes.Stsfld)
                     {
                         Console.Write(" " + code[i].FieldInfo);
                     }
-                    else if (code[i].opcode == OpCodes.Ldc_I4)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldc_I4)
                     {
                         Console.Write(" " + code[i].ValueInt32);
                     }
-                    else if (code[i].opcode == OpCodes.Ldloc || code[i].opcode == OpCodes.Stloc)
+                    else if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldloc || code[i].opcode == System.Reflection.Emit.OpCodes.Stloc)
                     {
                         Console.Write(" " + code[i].Local.__LocalIndex);
                     }
@@ -2209,27 +2210,27 @@ namespace IKVM.Runtime
             return new CodeEmitterLabel(ilgen_real.DefineLabel());
         }
 
-        internal void Emit(OpCode opcode)
+        internal void Emit(System.Reflection.Emit.OpCode opcode)
         {
             EmitOpCode(opcode, null);
         }
 
         internal void EmitUnaligned(byte alignment)
         {
-            EmitOpCode(OpCodes.Unaligned, alignment);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Unaligned, alignment);
         }
 
-        internal void Emit(OpCode opcode, IMethodBaseSymbol mb)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, IMethodBaseSymbol mb)
         {
             EmitOpCode(opcode, mb);
         }
 
         internal void EmitLdc_R8(double arg)
         {
-            EmitOpCode(OpCodes.Ldc_R8, arg);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ldc_R8, arg);
         }
 
-        internal void Emit(OpCode opcode, IFieldSymbol field)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, IFieldSymbol field)
         {
             EmitOpCode(opcode, field);
         }
@@ -2241,22 +2242,22 @@ namespace IKVM.Runtime
             switch (arg)
             {
                 case 0:
-                    EmitOpCode(OpCodes.Ldarg_0, null);
+                    EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg_0, null);
                     break;
                 case 1:
-                    EmitOpCode(OpCodes.Ldarg_1, null);
+                    EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg_1, null);
                     break;
                 case 2:
-                    EmitOpCode(OpCodes.Ldarg_2, null);
+                    EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg_2, null);
                     break;
                 case 3:
-                    EmitOpCode(OpCodes.Ldarg_3, null);
+                    EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg_3, null);
                     break;
                 default:
                     if ((uint)arg <= byte.MaxValue)
-                        EmitOpCode(OpCodes.Ldarg_S, (byte)arg);
+                        EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg_S, (byte)arg);
                     else
-                        EmitOpCode(OpCodes.Ldarg, (short)arg);
+                        EmitOpCode(System.Reflection.Emit.OpCodes.Ldarg, (short)arg);
 
                     break;
             }
@@ -2267,9 +2268,9 @@ namespace IKVM.Runtime
             Debug.Assert(0 <= arg && arg < 65536);
 
             if (arg < 256)
-                EmitOpCode(OpCodes.Ldarga_S, (byte)arg);
+                EmitOpCode(System.Reflection.Emit.OpCodes.Ldarga_S, (byte)arg);
             else
-                EmitOpCode(OpCodes.Ldarga, (short)arg);
+                EmitOpCode(System.Reflection.Emit.OpCodes.Ldarga, (short)arg);
         }
 
         internal void EmitStarg(int arg)
@@ -2277,112 +2278,112 @@ namespace IKVM.Runtime
             Debug.Assert(0 <= arg && arg < 65536);
 
             if (arg < 256)
-                EmitOpCode(OpCodes.Starg_S, (byte)arg);
+                EmitOpCode(System.Reflection.Emit.OpCodes.Starg_S, (byte)arg);
             else
-                EmitOpCode(OpCodes.Starg, (short)arg);
+                EmitOpCode(System.Reflection.Emit.OpCodes.Starg, (short)arg);
         }
 
         internal void EmitLdc_I8(long arg)
         {
-            EmitOpCode(OpCodes.Ldc_I8, arg);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ldc_I8, arg);
         }
 
         internal void EmitBr(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Br, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Br, label);
         }
 
         internal void EmitBeq(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Beq, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Beq, label);
         }
 
         internal void EmitBne_Un(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Bne_Un, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Bne_Un, label);
         }
 
         internal void EmitBle_Un(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Ble_Un, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ble_Un, label);
         }
 
         internal void EmitBlt_Un(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Blt_Un, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Blt_Un, label);
         }
 
         internal void EmitBge_Un(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Bge_Un, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Bge_Un, label);
         }
 
         internal void EmitBle(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Ble, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ble, label);
         }
 
         internal void EmitBlt(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Blt, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Blt, label);
         }
 
         internal void EmitBge(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Bge, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Bge, label);
         }
 
         internal void EmitBgt(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Bgt, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Bgt, label);
         }
 
         internal void EmitBrtrue(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Brtrue, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Brtrue, label);
         }
 
         internal void EmitBrfalse(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Brfalse, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Brfalse, label);
         }
 
         internal void EmitLeave(CodeEmitterLabel label)
         {
-            EmitOpCode(OpCodes.Leave, label);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Leave, label);
         }
 
         internal void EmitSwitch(CodeEmitterLabel[] labels)
         {
-            EmitOpCode(OpCodes.Switch, labels);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Switch, labels);
         }
 
-        internal void Emit(OpCode opcode, CodeEmitterLocal local)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, CodeEmitterLocal local)
         {
             EmitOpCode(opcode, local);
         }
 
         internal void EmitLdc_R4(float arg)
         {
-            EmitOpCode(OpCodes.Ldc_R4, arg);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ldc_R4, arg);
         }
 
-        internal void Emit(OpCode opcode, string arg)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, string arg)
         {
             EmitOpCode(opcode, arg);
         }
 
-        internal void Emit(OpCode opcode, ITypeSymbol cls)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, ITypeSymbol cls)
         {
             EmitOpCode(opcode, cls);
         }
 
-        internal void EmitCalli(OpCode opcode, CallingConvention unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConvention unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
         {
             EmitOpCode(opcode, new CalliWrapper(unmanagedCallConv, returnType, parameterTypes));
         }
 
-        internal void EmitCalli(OpCode opcode, CallingConventions unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes, ITypeSymbol[] optionalParameterTypes)
+        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConventions unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes, ITypeSymbol[] optionalParameterTypes)
         {
             EmitOpCode(opcode, new ManagedCalliWrapper(unmanagedCallConv, returnType, parameterTypes, optionalParameterTypes));
         }
@@ -2405,8 +2406,8 @@ namespace IKVM.Runtime
 
         internal void ThrowException(ITypeSymbol excType)
         {
-            Emit(OpCodes.Newobj, excType.GetConstructor([]));
-            Emit(OpCodes.Throw);
+            Emit(System.Reflection.Emit.OpCodes.Newobj, excType.GetConstructor([]));
+            Emit(System.Reflection.Emit.OpCodes.Throw);
         }
 
         internal void SetLineNumber(ushort line)
@@ -2440,24 +2441,24 @@ namespace IKVM.Runtime
             var mw = exception.GetMethodWrapper("<init>", "()V", false);
             mw.Link();
             mw.EmitNewobj(this);
-            Emit(OpCodes.Throw);
+            Emit(System.Reflection.Emit.OpCodes.Throw);
         }
 
         internal void EmitThrow(string dottedClassName, string message)
         {
             var exception = context.ClassLoaderFactory.GetBootstrapClassLoader().LoadClassByName(dottedClassName);
-            Emit(OpCodes.Ldstr, message);
+            Emit(System.Reflection.Emit.OpCodes.Ldstr, message);
             var mw = exception.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
             mw.Link();
             mw.EmitNewobj(this);
-            Emit(OpCodes.Throw);
+            Emit(System.Reflection.Emit.OpCodes.Throw);
         }
 
         internal void EmitNullCheck()
         {
             // I think this is the most efficient way to generate a NullReferenceException if the reference is null
-            Emit(OpCodes.Ldvirtftn, context.CodeEmitterFactory.ObjectToStringMethod);
-            Emit(OpCodes.Pop);
+            Emit(System.Reflection.Emit.OpCodes.Ldvirtftn, context.CodeEmitterFactory.ObjectToStringMethod);
+            Emit(System.Reflection.Emit.OpCodes.Pop);
         }
 
         internal void EmitCastclass(ITypeSymbol type)
@@ -2465,22 +2466,22 @@ namespace IKVM.Runtime
             if (context.CodeEmitterFactory.VerboseCastFailureMethod != null)
             {
                 var lb = DeclareLocal(context.Types.Object);
-                Emit(OpCodes.Stloc, lb);
-                Emit(OpCodes.Ldloc, lb);
-                Emit(OpCodes.Isinst, type);
-                Emit(OpCodes.Dup);
+                Emit(System.Reflection.Emit.OpCodes.Stloc, lb);
+                Emit(System.Reflection.Emit.OpCodes.Ldloc, lb);
+                Emit(System.Reflection.Emit.OpCodes.Isinst, type);
+                Emit(System.Reflection.Emit.OpCodes.Dup);
                 var ok = DefineLabel();
                 EmitBrtrue(ok);
-                Emit(OpCodes.Ldloc, lb);
+                Emit(System.Reflection.Emit.OpCodes.Ldloc, lb);
                 EmitBrfalse(ok);    // handle null
-                Emit(OpCodes.Ldtoken, type);
-                Emit(OpCodes.Ldloc, lb);
-                Emit(OpCodes.Call, context.CodeEmitterFactory.VerboseCastFailureMethod);
+                Emit(System.Reflection.Emit.OpCodes.Ldtoken, type);
+                Emit(System.Reflection.Emit.OpCodes.Ldloc, lb);
+                Emit(System.Reflection.Emit.OpCodes.Call, context.CodeEmitterFactory.VerboseCastFailureMethod);
                 MarkLabel(ok);
             }
             else
             {
-                Emit(OpCodes.Castclass, type);
+                Emit(System.Reflection.Emit.OpCodes.Castclass, type);
             }
         }
 
@@ -2489,16 +2490,16 @@ namespace IKVM.Runtime
         internal void EmitAssertType(ITypeSymbol type)
         {
             var isnull = DefineLabel();
-            Emit(OpCodes.Dup);
+            Emit(System.Reflection.Emit.OpCodes.Dup);
             EmitBrfalse(isnull);
-            Emit(OpCodes.Isinst, type);
-            Emit(OpCodes.Dup);
+            Emit(System.Reflection.Emit.OpCodes.Isinst, type);
+            Emit(System.Reflection.Emit.OpCodes.Dup);
             var ok = DefineLabel();
             EmitBrtrue(ok);
             EmitThrow("java.lang.IncompatibleClassChangeError");
             MarkLabel(isnull);
-            Emit(OpCodes.Pop);
-            Emit(OpCodes.Ldnull);
+            Emit(System.Reflection.Emit.OpCodes.Pop);
+            Emit(System.Reflection.Emit.OpCodes.Ldnull);
             MarkLabel(ok);
         }
 
@@ -2508,24 +2509,24 @@ namespace IKVM.Runtime
             var label1 = DefineLabel();
             var label2 = DefineLabel();
 
-            Emit(OpCodes.Dup);
+            Emit(System.Reflection.Emit.OpCodes.Dup);
             EmitBrtrue(label1);
-            Emit(OpCodes.Pop);
+            Emit(System.Reflection.Emit.OpCodes.Pop);
             var local = AllocTempLocal(type);
-            Emit(OpCodes.Ldloca, local);
-            Emit(OpCodes.Initobj, type);
-            Emit(OpCodes.Ldloc, local);
+            Emit(System.Reflection.Emit.OpCodes.Ldloca, local);
+            Emit(System.Reflection.Emit.OpCodes.Initobj, type);
+            Emit(System.Reflection.Emit.OpCodes.Ldloc, local);
             ReleaseTempLocal(local);
             EmitBr(label2);
             MarkLabel(label1);
-            Emit(OpCodes.Unbox, type);
-            Emit(OpCodes.Ldobj, type);
+            Emit(System.Reflection.Emit.OpCodes.Unbox, type);
+            Emit(System.Reflection.Emit.OpCodes.Ldobj, type);
             MarkLabel(label2);
         }
 
         internal void EmitLdc_I4(int i)
         {
-            EmitOpCode(OpCodes.Ldc_I4, i);
+            EmitOpCode(System.Reflection.Emit.OpCodes.Ldc_I4, i);
         }
 
         internal void Emit_idiv()
@@ -2536,14 +2537,14 @@ namespace IKVM.Runtime
             var label1 = DefineLabel();
             var label2 = DefineLabel();
 
-            Emit(OpCodes.Dup);
-            Emit(OpCodes.Ldc_I4_M1);
+            Emit(System.Reflection.Emit.OpCodes.Dup);
+            Emit(System.Reflection.Emit.OpCodes.Ldc_I4_M1);
             EmitBne_Un(label1);
-            Emit(OpCodes.Pop);
-            Emit(OpCodes.Neg);
+            Emit(System.Reflection.Emit.OpCodes.Pop);
+            Emit(System.Reflection.Emit.OpCodes.Neg);
             EmitBr(label2);
             MarkLabel(label1);
-            Emit(OpCodes.Div);
+            Emit(System.Reflection.Emit.OpCodes.Div);
             MarkLabel(label2);
         }
 
@@ -2555,23 +2556,23 @@ namespace IKVM.Runtime
             var label1 = DefineLabel();
             var label2 = DefineLabel();
 
-            Emit(OpCodes.Dup);
-            Emit(OpCodes.Ldc_I4_M1);
-            Emit(OpCodes.Conv_I8);
+            Emit(System.Reflection.Emit.OpCodes.Dup);
+            Emit(System.Reflection.Emit.OpCodes.Ldc_I4_M1);
+            Emit(System.Reflection.Emit.OpCodes.Conv_I8);
             EmitBne_Un(label1);
-            Emit(OpCodes.Pop);
-            Emit(OpCodes.Neg);
+            Emit(System.Reflection.Emit.OpCodes.Pop);
+            Emit(System.Reflection.Emit.OpCodes.Neg);
             EmitBr(label2);
             MarkLabel(label1);
-            Emit(OpCodes.Div);
+            Emit(System.Reflection.Emit.OpCodes.Div);
             MarkLabel(label2);
         }
 
         internal void Emit_instanceof(ITypeSymbol type)
         {
-            Emit(OpCodes.Isinst, type);
-            Emit(OpCodes.Ldnull);
-            Emit(OpCodes.Cgt_Un);
+            Emit(System.Reflection.Emit.OpCodes.Isinst, type);
+            Emit(System.Reflection.Emit.OpCodes.Ldnull);
+            Emit(System.Reflection.Emit.OpCodes.Cgt_Un);
         }
 
         internal enum Comparison
@@ -2585,7 +2586,7 @@ namespace IKVM.Runtime
         internal void Emit_if_le_lt_ge_gt(Comparison comp, CodeEmitterLabel label)
         {
             // don't change this Ldc_I4_0 to Ldc_I4(0) because the optimizer recognizes only this specific pattern
-            Emit(OpCodes.Ldc_I4_0);
+            Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);
             switch (comp)
             {
                 case Comparison.LessOrEqual:
@@ -2603,52 +2604,52 @@ namespace IKVM.Runtime
             }
         }
 
-        private void EmitCmp(ITypeSymbol type, OpCode cmp1, OpCode cmp2)
+        private void EmitCmp(ITypeSymbol type, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2)
         {
             var value1 = AllocTempLocal(type);
             var value2 = AllocTempLocal(type);
-            Emit(OpCodes.Stloc, value2);
-            Emit(OpCodes.Stloc, value1);
-            Emit(OpCodes.Ldloc, value1);
-            Emit(OpCodes.Ldloc, value2);
+            Emit(System.Reflection.Emit.OpCodes.Stloc, value2);
+            Emit(System.Reflection.Emit.OpCodes.Stloc, value1);
+            Emit(System.Reflection.Emit.OpCodes.Ldloc, value1);
+            Emit(System.Reflection.Emit.OpCodes.Ldloc, value2);
             Emit(cmp1);
-            Emit(OpCodes.Ldloc, value1);
-            Emit(OpCodes.Ldloc, value2);
+            Emit(System.Reflection.Emit.OpCodes.Ldloc, value1);
+            Emit(System.Reflection.Emit.OpCodes.Ldloc, value2);
             Emit(cmp2);
-            Emit(OpCodes.Sub);
+            Emit(System.Reflection.Emit.OpCodes.Sub);
             ReleaseTempLocal(value2);
             ReleaseTempLocal(value1);
         }
 
         internal void Emit_lcmp()
         {
-            EmitCmp(context.Types.Int64, OpCodes.Cgt, OpCodes.Clt);
+            EmitCmp(context.Types.Int64, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt);
         }
 
         internal void Emit_fcmpl()
         {
-            EmitCmp(context.Types.Single, OpCodes.Cgt, OpCodes.Clt_Un);
+            EmitCmp(context.Types.Single, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt_Un);
         }
 
         internal void Emit_fcmpg()
         {
-            EmitCmp(context.Types.Single, OpCodes.Cgt_Un, OpCodes.Clt);
+            EmitCmp(context.Types.Single, System.Reflection.Emit.OpCodes.Cgt_Un, System.Reflection.Emit.OpCodes.Clt);
         }
 
         internal void Emit_dcmpl()
         {
-            EmitCmp(context.Types.Double, OpCodes.Cgt, OpCodes.Clt_Un);
+            EmitCmp(context.Types.Double, System.Reflection.Emit.OpCodes.Cgt, System.Reflection.Emit.OpCodes.Clt_Un);
         }
 
         internal void Emit_dcmpg()
         {
-            EmitCmp(context.Types.Double, OpCodes.Cgt_Un, OpCodes.Clt);
+            EmitCmp(context.Types.Double, System.Reflection.Emit.OpCodes.Cgt_Un, System.Reflection.Emit.OpCodes.Clt);
         }
 
         internal void Emit_And_I4(int v)
         {
             EmitLdc_I4(v);
-            Emit(OpCodes.And);
+            Emit(System.Reflection.Emit.OpCodes.And);
         }
 
         internal void CheckLabels()

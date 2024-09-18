@@ -23,6 +23,7 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
@@ -47,7 +48,7 @@ namespace IKVM.Attributes
 			this.methodSig = UnicodeUtil.UnescapeInvalidSurrogates(methodSig);
 		}
 
-		internal EnclosingMethodAttribute SetClassName(RuntimeContext context, Type type)
+		internal EnclosingMethodAttribute SetClassName(RuntimeContext context, ITypeSymbol type)
 		{
 			className ??= context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name;
 			return this;

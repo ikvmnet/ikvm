@@ -1,24 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
+using System.Reflection.Emit;
 
-using IKVM.CoreLib.Collections;
-using IKVM.CoreLib.Reflection;
-using IKVM.CoreLib.Threading;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionAssemblySymbol : ReflectionSymbol, IAssemblySymbol
+    class ReflectionAssemblySymbol : ReflectionSymbol, IReflectionAssemblySymbol
     {
 
-        Assembly _assembly;
-
-        IndexRangeDictionary<ReflectionModuleSymbol> _moduleSymbols = new(initialCapacity: 1, maxCapacity: 32);
-        ReaderWriterLockSlim? _moduleLock;
+        readonly Assembly _assembly;
+        ReflectionAssemblyMetadata _impl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -29,44 +24,21 @@ namespace IKVM.CoreLib.Symbols.Reflection
             base(context)
         {
             _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            _impl = new ReflectionAssemblyMetadata(this);
         }
-
-        internal Assembly ReflectionObject => _assembly;
 
         /// <summary>
-        /// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
+        /// Gets the underlying <see cref="Assembly"/> instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
-        {
-            if (module is null)
-                throw new ArgumentNullException(nameof(module));
+        public Assembly UnderlyingAssembly => _assembly;
 
-            Debug.Assert(AssemblyNameEqualityComparer.Instance.Equals(module.Assembly.GetName(), _assembly.GetName()));
-
-            // create lock on demand
-            if (_moduleLock == null)
-                lock (this)
-                    _moduleLock ??= new ReaderWriterLockSlim();
-
-            using (_moduleLock.CreateUpgradeableReadLock())
-            {
-                var row = module.GetMetadataTokenRowNumberSafe();
-                if (_moduleSymbols[row] == null)
-                    using (_moduleLock.CreateWriteLock())
-                        return _moduleSymbols[row] ??= new ReflectionModuleSymbol(Context, this, module);
-                else
-                    return _moduleSymbols[row] ?? throw new InvalidOperationException();
-            }
-        }
+        #region IAssemblySymbol
 
         /// <inheritdoc />
         public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
 
         /// <inheritdoc />
-        public IMethodSymbol? EntryPoint => _assembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
+        public IMethodSymbol? EntryPoint => ResolveMethodSymbol(_assembly.EntryPoint);
 
         /// <inheritdoc />
         public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_assembly.ExportedTypes);
@@ -92,7 +64,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IModuleSymbol? GetModule(string name)
         {
-            return _assembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
+            return ResolveModuleSymbol(_assembly.GetModule(name));
         }
 
         /// <inheritdoc />
@@ -128,19 +100,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError)
         {
-            return _assembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return ResolveTypeSymbol(_assembly.GetType(name, throwOnError));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
         {
-            return _assembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return ResolveTypeSymbol(_assembly.GetType(name, throwOnError, ignoreCase));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name)
         {
-            return _assembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return ResolveTypeSymbol(_assembly.GetType(name));
         }
 
         /// <inheritdoc />
@@ -158,7 +130,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_assembly.GetCustomAttributesData().Where(i => i.AttributeType == ((ReflectionTypeSymbol)attributeType).ReflectionObject));
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttributes(_assembly.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
         }
 
         /// <inheritdoc />
@@ -170,16 +143,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _assembly.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject, false);
+            return _assembly.IsDefined(attributeType.Unpack(), inherit);
         }
 
-        /// <summary>
-        /// Sets the reflection type. Used by the builder infrastructure to complete a symbol.
-        /// </summary>
-        /// <param name="assembly"></param>
-        internal void Complete(Assembly assembly)
+        #endregion
+
+        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
-            Context.GetOrCreateAssemblySymbol(_assembly = assembly);
+            return _impl.GetOrCreateModuleSymbol(module);
+        }
+
+        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
+        {
+            return (IReflectionModuleSymbolBuilder)_impl.GetOrCreateModuleSymbol(module);
         }
 
     }
