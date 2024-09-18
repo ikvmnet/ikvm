@@ -198,27 +198,28 @@ public class ZipFile implements ZipConstants, Closeable
     boolean valid = false;
 
     try 
-      {
+    {
         readEntries();
         ClassStubZipEntry.expandIkvmClasses(this, entries);
         valid = true;
-      }
-    catch (EOFException _)
-      {
+    }
+    catch (EOFException e)
+    {
         throw new ZipException("invalid CEN header (bad header size)");
-      } 
+    } 
     finally
-      {
+    {
         if (!valid)
-          {
+        {
             try
-              {
+            {
                 raf.close();
-              }
-            catch (IOException _)
-              {
-              }
-          }
+            }
+            catch (IOException e)
+            {
+                
+            }
+        }
       }
   }
 
@@ -553,7 +554,7 @@ public class ZipFile implements ZipConstants, Closeable
   {
     checkClosed();
     try
-      {
+    {
         PartialInputStream inp = new PartialInputStream(4096);
         long pos = inp.seekEndOfCentralDirectory();
         inp.skip(16);
@@ -561,11 +562,11 @@ public class ZipFile implements ZipConstants, Closeable
         if (commentLength == 0)
           return null;
         return inp.readString(commentLength, false);
-      }
-    catch (IOException _)
-      {
+    }
+    catch (IOException e)
+    {
         return null;
-      }
+    }
   }
 
   private static class ZipEntryEnumeration implements Enumeration<ZipEntry>

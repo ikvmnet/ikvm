@@ -62,7 +62,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (m.DeclaringType != null && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(m.DeclaringType) is RuntimeJavaType tw and not null)
                 {
                     // check that the assembly isn't java.base or the IKVM runtime
-                    var clw = tw.GetClassLoader();
+                    var clw = tw.ClassLoader;
                     if (clw is RuntimeAssemblyClassLoader acl)
                         if (acl.GetAssembly(tw) == typeof(object).Assembly || acl.GetAssembly(tw) == typeof(VM).Assembly)
                             continue;

@@ -46,7 +46,7 @@ namespace IKVM.Java.Externs.ikvm.@internal
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
+            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).ClassLoader.GetJavaClassLoader();
 #endif
         }
 

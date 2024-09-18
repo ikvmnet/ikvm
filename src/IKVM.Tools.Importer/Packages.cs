@@ -29,8 +29,8 @@ namespace IKVM.Tools.Importer
     sealed class Packages
     {
 
-        private readonly List<string> packages = new List<string>();
-        private readonly Dictionary<string, string> packagesSet = new Dictionary<string, string>();
+        readonly List<string> packages = new List<string>();
+        readonly Dictionary<string, string> packagesSet = new Dictionary<string, string>();
 
         internal void DefinePackage(string packageName, string jar)
         {
@@ -64,10 +64,12 @@ namespace IKVM.Tools.Importer
                 }
                 currentList.Add(package);
             }
+
             if (currentList.Count != 0)
             {
                 list.Add(new object[] { currentJar, currentList.ToArray() });
             }
+
             return list.ToArray();
         }
 

@@ -17,7 +17,7 @@ namespace IKVM.Tools.Runner.Importer
         /// <summary>
         /// Optional path to the response file to generate. If specified, the response file is not cleaned up.
         /// </summary>
-        public string ResponseFile { get; set; }
+        public string? ResponseFile { get; set; }
 
         /// <summary>
         /// Input files to be compiled.
@@ -27,17 +27,17 @@ namespace IKVM.Tools.Runner.Importer
         /// <summary>
         /// Path of the output assembly.
         /// </summary>
-        public string Output { get; set; }
+        public string? Output { get; set; }
 
         /// <summary>
         /// Name of the output assembly.
         /// </summary>
-        public string Assembly { get; set; }
+        public string? Assembly { get; set; }
 
         /// <summary>
         /// Version of the output assembly.
         /// </summary>
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
         /// <summary>
         /// Target to build.
@@ -52,12 +52,12 @@ namespace IKVM.Tools.Runner.Importer
         /// <summary>
         /// Path to the key to use for strong name signing.
         /// </summary>
-        public string KeyFile { get; set; }
+        public string? KeyFile { get; set; }
 
         /// <summary>
         /// Identity of the key to use for signing.
         /// </summary>
-        public string Key { get; set; }
+        public string? Key { get; set; }
 
         /// <summary>
         /// Whether the assembly should be delay signed.
@@ -71,22 +71,22 @@ namespace IKVM.Tools.Runner.Importer
 
         public IList<string> Recurse { get;  } = new List<string>();
 
-        public string Exclude { get; set; }
+        public string? Exclude { get; set; }
 
         /// <summary>
         /// File version to configure on the assembly.
         /// </summary>
-        public string FileVersion { get; set; }
+        public string? FileVersion { get; set; }
 
         /// <summary>
         /// Win32 icon to configure on the assembly.
         /// </summary>
-        public string Win32Icon { get; set; }
+        public string? Win32Icon { get; set; }
 
         /// <summary>
         /// Win32 manifest to embed within the assembly.
         /// </summary>
-        public string Win32Manifest { get; set; }
+        public string? Win32Manifest { get; set; }
 
         /// <summary>
         /// Set of resources to embed within the assembly.
@@ -117,19 +117,15 @@ namespace IKVM.Tools.Runner.Importer
 
         public bool StrictFinalFieldSemantics { get; set; }
 
-        public IList<string> NoWarn { get; } = new List<string>();
+        public IList<string>? NoWarn { get; set; }
 
-        public bool WarnAsError { get; set; }
+        public IList<string>? WarningsAsErrors { get; set; }
 
-        public IList<string> WarnAsErrorWarnings { get; } = new List<string>();
+        public string? Main { get; set; }
 
-        public string WriteSuppressWarningsFile { get; set; }
+        public string? SrcPath { get; set; }
 
-        public string Main { get; set; }
-
-        public string SrcPath { get; set; }
-
-        public string Apartment { get; set; }
+        public string? Apartment { get; set; }
 
         public IDictionary<string, string> SetProperties { get; } = new Dictionary<string, string>();
 
@@ -141,13 +137,13 @@ namespace IKVM.Tools.Runner.Importer
 
         public IList<string> PrivatePackages { get; } = new List<string>();
 
-        public string ClassLoader { get; set; }
+        public string? ClassLoader { get; set; }
 
         public bool SharedClassLoader { get; set; }
 
-        public string BaseAddress { get; set; }
+        public string? BaseAddress { get; set; }
 
-        public string FileAlign { get; set; }
+        public string? FileAlign { get; set; }
 
         public bool NoPeerCrossReference { get; set; }
 
@@ -161,15 +157,13 @@ namespace IKVM.Tools.Runner.Importer
 
         public IList<string> AssemblyAttributes { get; set; } = new List<string>();
 
-        public string Runtime { get; set; }
+        public string? Runtime { get; set; }
 
         public int? WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }
 
-        public string Remap { get; set; }
-
-        public bool NoLogo { get; set; }
+        public string? Remap { get; set; }
 
     }
 

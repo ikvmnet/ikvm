@@ -78,7 +78,7 @@ namespace IKVM.Runtime
                 DeclaringType.IsPublic && 
                 !DeclaringType.IsInterface && 
                 (IsPublic || (IsProtected && !DeclaringType.IsFinal)) &&
-                !DeclaringType.GetClassLoader().StrictFinalFieldSemantics && 
+                !DeclaringType.ClassLoader.StrictFinalFieldSemantics && 
                 DeclaringType.IsDynamic && 
                 this is not RuntimeConstantJavaField && 
                 this is not RuntimeByteCodePropertyJavaField)
@@ -179,7 +179,7 @@ namespace IKVM.Runtime
                 field = new java.lang.reflect.Field(
                     DeclaringType.ClassObject,
                     Name,
-                    FieldTypeWrapper.EnsureLoadable(DeclaringType.GetClassLoader()).ClassObject,
+                    FieldTypeWrapper.EnsureLoadable(DeclaringType.ClassLoader).ClassObject,
                     (int)(Modifiers & ReflectionFieldModifiersMask) | (IsInternal ? 0x40000000 : 0),
                     fieldIndex ?? Array.IndexOf(DeclaringType.GetFields(), this),
                     DeclaringType.GetGenericFieldSignature(this),
@@ -377,7 +377,7 @@ namespace IKVM.Runtime
                 if (fieldType != null)
                     return;
 
-            var fld = DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(Signature, mode);
+            var fld = DeclaringType.ClassLoader.FieldTypeWrapperFromSig(Signature, mode);
 
             lock (this)
             {

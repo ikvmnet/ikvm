@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -88,6 +89,11 @@ namespace IKVM.Runtime
         /// </summary>
         public RuntimeContext Context => context;
 
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> where events related to this type should be sent.
+        /// </summary>
+        public virtual IDiagnosticHandler Diagnostics => Context.Diagnostics;
+
 #if EMITTERS
 
         internal void EmitClassLiteral(CodeEmitter ilgen)
@@ -119,7 +125,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
+                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").AsReflection().MakeGenericType(type);
                 ilgen.Emit(OpCodes.Call, classLiteralType.GetProperty("Value").GetMethod);
             }
         }
@@ -150,11 +156,11 @@ namespace IKVM.Runtime
             // these are the types that may not be used as a type argument when instantiating a generic type
             return type == context.Types.Void
 #if NETFRAMEWORK
-                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName).AsReflection()
 #endif
-                || type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName)
-                || type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName)
-                || type.ContainsGenericParameters
+				|| type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName).AsReflection()
+				|| type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName).AsReflection()
+				|| type.ContainsGenericParameters
                 || type.IsByRef;
         }
 
@@ -685,7 +691,10 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract RuntimeClassLoader GetClassLoader();
+        /// <summary>
+        /// Gets the associated <see cref="RuntimeClassLoader"/>.
+        /// </summary>
+        internal abstract RuntimeClassLoader ClassLoader { get; }
 
         /// <summary>
         /// Searches for the <see cref="RuntimeJavaField"/> with the specified name and signature.
@@ -878,7 +887,7 @@ namespace IKVM.Runtime
 
         internal bool InternalsVisibleTo(RuntimeJavaType wrapper)
         {
-            return GetClassLoader().InternalsVisibleToImpl(this, wrapper);
+            return ClassLoader.InternalsVisibleToImpl(this, wrapper);
         }
 
         internal virtual bool IsPackageAccessibleFrom(RuntimeJavaType wrapper)
@@ -886,15 +895,15 @@ namespace IKVM.Runtime
             if (MatchingPackageNames(name, wrapper.name))
             {
 #if IMPORTER
-                CompilerClassLoader ccl = GetClassLoader() as CompilerClassLoader;
+                ImportClassLoader ccl = ClassLoader as ImportClassLoader;
                 if (ccl != null)
                 {
                     // this is a hack for multi target -sharedclassloader compilation
                     // (during compilation we have multiple CompilerClassLoader instances to represent the single shared runtime class loader)
-                    return ccl.IsEquivalentTo(wrapper.GetClassLoader());
+                    return ccl.IsEquivalentTo(wrapper.ClassLoader);
                 }
 #endif
-                return GetClassLoader() == wrapper.GetClassLoader();
+                return ClassLoader == wrapper.ClassLoader;
             }
             else
             {
@@ -1030,11 +1039,11 @@ namespace IKVM.Runtime
                     case '[':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().TryLoadClassByName(name.Substring(1));
+                        return ClassLoader.TryLoadClassByName(name.Substring(1));
                     case 'L':
                         // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
                         // (because the ultimate element type was already loaded when this type was created)
-                        return GetClassLoader().TryLoadClassByName(name.Substring(2, name.Length - 3));
+                        return ClassLoader.TryLoadClassByName(name.Substring(2, name.Length - 3));
                     case 'Z':
                         return context.PrimitiveJavaTypeFactory.BOOLEAN;
                     case 'B':
@@ -1061,7 +1070,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(rank != 0);
             // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-            return GetClassLoader().TryLoadClassByName(new String('[', rank) + this.SigName);
+            return ClassLoader.TryLoadClassByName(new String('[', rank) + this.SigName);
         }
 
         internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
@@ -1514,7 +1523,7 @@ namespace IKVM.Runtime
                 object[] attr = mb.GetCustomAttributes(typeof(AnnotationDefaultAttribute), false);
                 if (attr.Length == 1)
                 {
-                    return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
+                    return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, ((AnnotationDefaultAttribute)attr[0]).Value);
                 }
             }
             return null;
@@ -1610,7 +1619,7 @@ namespace IKVM.Runtime
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName) }, null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, [context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName).AsReflection(), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName).AsReflection()], null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()

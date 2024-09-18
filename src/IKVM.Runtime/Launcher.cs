@@ -413,22 +413,6 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (arg.StartsWith("-Xtrace:".AsSpan()))
-                    {
-                        if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.SetTraceLevel(arg.Slice(v + 1).ToString());
-
-                        continue;
-                    }
-
-                    if (arg.StartsWith("-Xmethodtrace:".AsSpan()))
-                    {
-                        if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.HandleMethodTrace(arg.Slice(v + 1).ToString());
-
-                        continue;
-                    }
-
                     if (arg.StartsWith("-Xreference:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
@@ -678,10 +662,6 @@ namespace IKVM.Runtime
             Console.Error.WriteLine("    -Xbreak        trigger a user defined breakpoint at startup");
             Console.Error.WriteLine("    -Xnoglobbing   Disable argument globbing");
             Console.Error.WriteLine("    -Xverify       Enable strict class file verification");
-            Console.Error.WriteLine("    -Xtrace:<string>");
-            Console.Error.WriteLine("                   Displays all tracepoints with the given name");
-            Console.Error.WriteLine("    -Xmethodtrace:<string>");
-            Console.Error.WriteLine("                      Builds method trace into the specified output methods");
             Console.Error.WriteLine();
             Console.Error.WriteLine("The -X options are non-standard and subject to change without notice.");
             Console.Error.WriteLine();

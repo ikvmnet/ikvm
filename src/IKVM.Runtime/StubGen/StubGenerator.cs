@@ -222,7 +222,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="type"></param>
         void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type)
         {
-            if (type.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
+            if (type.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false))
                 builder.Attributes.Deprecated();
         }
 
@@ -414,7 +414,7 @@ namespace IKVM.Runtime.StubGen
             // HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
             // but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
             // the Java deprecated methods actually have two Obsolete attributes
-            if (methodBase.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false) && (!methodBase.Name.StartsWith("instancehelper_") || methodBase.DeclaringType.FullName != "java.lang.String" || GetObsoleteCount(methodBase) == 2))
+            if (methodBase.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false) && (!methodBase.Name.StartsWith("instancehelper_") || methodBase.DeclaringType.FullName != "java.lang.String" || GetObsoleteCount(methodBase) == 2))
                 attributes.Deprecated();
         }
 
@@ -541,7 +541,7 @@ namespace IKVM.Runtime.StubGen
         void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
         {
             // .NET ObsoleteAttribute translates to Deprecated attribute
-            if (field.GetField() != null && field.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false))
+            if (field.GetField() != null && field.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false))
                 attributes.Deprecated();
         }
 
@@ -1167,7 +1167,7 @@ namespace IKVM.Runtime.StubGen
         int GetObsoleteCount(MethodBase mb)
         {
 #if EXPORTER
-            return mb.__GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false).Count;
+            return mb.__GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false).Count;
 #else
             return mb.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length;
 #endif
@@ -1176,7 +1176,7 @@ namespace IKVM.Runtime.StubGen
         CustomAttributeData GetAnnotationDefault(MethodBase mb)
         {
 #if EXPORTER
-            var attr = CustomAttributeData.__GetCustomAttributes(mb, context.Resolver.ResolveRuntimeType(typeof(Attributes.AnnotationDefaultAttribute).FullName), false);
+            var attr = CustomAttributeData.__GetCustomAttributes(mb, context.Resolver.ResolveRuntimeType(typeof(Attributes.AnnotationDefaultAttribute).FullName).AsReflection(), false);
             return attr.Count == 1 ? attr[0] : null;
 #else
             foreach (var cad in CustomAttributeData.GetCustomAttributes(mb))
@@ -1189,7 +1189,7 @@ namespace IKVM.Runtime.StubGen
 
         string GetAssemblyName(RuntimeJavaType tw)
         {
-            var loader = tw.GetClassLoader();
+            var loader = tw.ClassLoader;
             var acl = loader as RuntimeAssemblyClassLoader;
             if (acl != null)
                 return acl.GetAssembly(tw).FullName;

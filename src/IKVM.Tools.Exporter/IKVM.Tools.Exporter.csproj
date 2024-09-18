@@ -7,12 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <InternalsVisibleTo Include="IKVM.Tools.Exporter.Tests" />
+        <InternalsVisibleTo Include="ikvmstub" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Core\IKVM.Tools.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,7 +38,6 @@
         <Compile Include="..\IKVM.Runtime\RuntimeJavaMember.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaType.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
@@ -88,7 +93,7 @@
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeContext.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeContextOptions.cs" LinkBase="IKVM.Runtime" />
-        <Compile Include="..\IKVM.Runtime\IManagedTypeResolver.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\SymbolExtensions.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

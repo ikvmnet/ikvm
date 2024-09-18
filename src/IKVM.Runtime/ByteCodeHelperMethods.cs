@@ -23,7 +23,9 @@
 */
 using System;
 
-using IKVM.Runtime;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.CoreLib.Symbols.Reflection;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -108,7 +110,11 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public ByteCodeHelperMethods(RuntimeContext context)
         {
-		    var typeofByteCodeHelper = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
+#if IMPORTER || EXPORTER
+            var typeofByteCodeHelper = ((IkvmReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+#else
+            var typeofByteCodeHelper = ((ReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+#endif
             multianewarray = GetHelper(typeofByteCodeHelper, "multianewarray");
             multianewarray_ghost = GetHelper(typeofByteCodeHelper, "multianewarray_ghost");
             anewarray_ghost = GetHelper(typeofByteCodeHelper, "anewarray_ghost");
@@ -179,7 +185,7 @@ namespace IKVM.Runtime
             var mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
             if (mi == null)
 #if IMPORTER
-			    throw new FatalCompilerErrorException(Message.RuntimeMethodMissing, method);
+			    throw new FatalCompilerErrorException(DiagnosticEvent.RuntimeMethodMissing(method));
 #else
                 throw new InternalException("Missing ByteCodeHelper method in runtime.");
 #endif

@@ -49,9 +49,9 @@ public class Handler extends URLStreamHandler {
             try {
                 Class c = Class.forName(resource.substring(1, resource.length() - 6).replace('/', '.'), false, loader);
                 return new ByteArrayInputStream(GenerateStub(c));
-            } catch (ClassNotFoundException _) {
+            } catch (ClassNotFoundException e) {
                 
-            } catch (LinkageError _) {
+            } catch (LinkageError e) {
                 
             }
         }

@@ -26,6 +26,7 @@ using System;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Runtime
 {
@@ -154,7 +155,7 @@ namespace IKVM.Runtime
             {
                 if (propertyGetterSetter != null)
                 {
-                    Tracer.Error(Tracer.ClassLoading, "Ignoring duplicate ikvm.lang.Property annotation on {0}.{1}", classFile.Name, this.Name);
+                    classFile.diagnostics.GenericClassLoadingError($"Ignoring duplicate ikvm.lang.Property annotation on {classFile.Name}.{this.Name}");
                     return;
                 }
 
@@ -185,7 +186,7 @@ namespace IKVM.Runtime
                 if (propertyGetterSetter == null || propertyGetterSetter[0] == null)
                 {
                     propertyGetterSetter = null;
-                    Tracer.Error(Tracer.ClassLoading, "Ignoring malformed ikvm.lang.Property annotation on {0}.{1}", classFile.Name, this.Name);
+                    classFile.diagnostics.GenericClassLoadingError($"Ignoring malformed ikvm.lang.Property annotation on {classFile.Name}.{Name}");
                     return;
                 }
             }

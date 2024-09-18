@@ -28,6 +28,7 @@ using System.Linq;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Runtime
 {
@@ -45,6 +46,7 @@ namespace IKVM.Runtime
         const ushort FLAG_MODULE_INITIALIZER = 0x8000;
 
         readonly RuntimeContext context;
+        readonly IDiagnosticHandler diagnostics;
         readonly IKVM.ByteCode.Decoding.ClassFile clazz;
 
         readonly ConstantPoolItem[] constantpool;
@@ -126,9 +128,10 @@ namespace IKVM.Runtime
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="UnsupportedClassVersionError"></exception>
         /// <exception cref="ClassFormatError"></exception>
-        internal ClassFile(RuntimeContext context, IKVM.ByteCode.Decoding.ClassFile clazz, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
+        internal ClassFile(RuntimeContext context, IDiagnosticHandler diagnostics, IKVM.ByteCode.Decoding.ClassFile clazz, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.clazz = clazz ?? throw new ArgumentNullException(nameof(clazz));
 
             try

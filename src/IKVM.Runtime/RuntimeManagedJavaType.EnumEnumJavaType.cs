@@ -120,7 +120,7 @@ namespace IKVM.Runtime
 #if EMITTERS
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
-                    var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
+                    var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").AsReflection();
                     ilgen.Emit(OpCodes.Ldstr, Name);
                     ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(DeclaringType.TypeAsBaseType));
                 }
@@ -183,10 +183,7 @@ namespace IKVM.Runtime
 
             internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
 
-            internal override RuntimeClassLoader GetClassLoader()
-            {
-                return DeclaringTypeWrapper.GetClassLoader();
-            }
+            internal override RuntimeClassLoader ClassLoader => DeclaringTypeWrapper.ClassLoader;
 
             internal override Type TypeAsTBD => fakeType;
 

@@ -44,7 +44,7 @@ namespace IKVM.Tools.Exporter
         public FakeTypes(RuntimeContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1");
+            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1").AsReflection();
         }
 
         internal Type GetAttributeType(Type type)

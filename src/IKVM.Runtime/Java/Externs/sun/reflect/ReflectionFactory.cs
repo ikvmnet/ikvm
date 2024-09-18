@@ -177,7 +177,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     try
                     {
-                        args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
+                        args = ConvertArgs(mw.DeclaringType.ClassLoader, mw.GetParameters(), args);
                     }
                     catch (InvalidCastException e)
                     {
@@ -245,7 +245,7 @@ namespace IKVM.Java.Externs.sun.reflect
             [IKVM.Attributes.HideFromJava]
             public object newInstance(object[] args)
             {
-                args = ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args);
+                args = ConvertArgs(mw.DeclaringType.ClassLoader, mw.GetParameters(), args);
                 try
                 {
                     return mw.CreateInstance(args);
@@ -290,7 +290,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 var obj = RuntimeHelpers.GetUninitializedObject(type);
 #endif
                 if (mw != null)
-                    mw.Invoke(obj, ConvertArgs(mw.DeclaringType.GetClassLoader(), mw.GetParameters(), args));
+                    mw.Invoke(obj, ConvertArgs(mw.DeclaringType.ClassLoader, mw.GetParameters(), args));
 
                 return obj;
             }
@@ -577,7 +577,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
+                        parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.ClassLoader);
                         parameters[i].Finish();
                     }
 
@@ -823,7 +823,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.GetClassLoader());
+                        parameters[i] = parameters[i].EnsureLoadable(mw.DeclaringType.ClassLoader);
                         parameters[i].Finish();
                     }
 
@@ -2012,7 +2012,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                 protected sealed override void CheckValue(object value)
                 {
-                    if (value != null && !fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader()).IsInstance(value))
+                    if (value != null && !fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.ClassLoader).IsInstance(value))
                     {
                         throw SetIllegalArgumentException(value);
                     }
@@ -2054,7 +2054,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 RuntimeJavaType fieldTypeWrapper;
                 try
                 {
-                    fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
+                    fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.ClassLoader);
                     fieldTypeWrapper.Finish();
                     fw.DeclaringType.Finish();
                 }
@@ -2100,7 +2100,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 RuntimeJavaType fieldTypeWrapper;
                 try
                 {
-                    fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.GetClassLoader());
+                    fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.ClassLoader);
                     fieldTypeWrapper.Finish();
                     fw.DeclaringType.Finish();
                 }

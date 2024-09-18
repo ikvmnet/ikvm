@@ -1,0 +1,8 @@
+{
+    "profiles": {
+        "ikvmc": {
+            "commandName": "Project",
+            "commandLineArgs": "@D:\\ikvm\\src\\IKVM.Java\\obj\\Debug\\net8.0\\IKVM.Java.ikvmc.rsp"
+        }
+    }
+}

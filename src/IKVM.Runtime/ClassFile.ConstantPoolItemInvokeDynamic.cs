@@ -74,7 +74,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                var classLoader = thisType.GetClassLoader();
+                var classLoader = thisType.ClassLoader;
                 var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
                 var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
 

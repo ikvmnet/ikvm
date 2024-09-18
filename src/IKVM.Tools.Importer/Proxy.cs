@@ -87,7 +87,7 @@ namespace IKVM.Tools.Importer
             toStringMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
         }
 
-        internal void Create(CompilerClassLoader loader, string proxy)
+        internal void Create(ImportClassLoader loader, string proxy)
         {
             var interfaces = proxy.Split(',');
             var wrappers = new RuntimeJavaType[interfaces.Length];
@@ -104,7 +104,7 @@ namespace IKVM.Tools.Importer
 
                 if (wrappers[i] == null)
                 {
-                    loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, "unable to load interface " + interfaces[i]);
+                    loader.Diagnostics.UnableToCreateProxy(proxy, "unable to load interface " + interfaces[i]);
                     return;
                 }
             }
@@ -112,7 +112,7 @@ namespace IKVM.Tools.Importer
             Create(loader, proxy, wrappers);
         }
 
-        private void Create(CompilerClassLoader loader, string proxy, RuntimeJavaType[] interfaces)
+        private void Create(ImportClassLoader loader, string proxy, RuntimeJavaType[] interfaces)
         {
             List<ProxyMethod> methods;
             try
@@ -121,19 +121,19 @@ namespace IKVM.Tools.Importer
             }
             catch (RetargetableJavaException x)
             {
-                loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
             catch (ProxyException x)
             {
-                loader.Context.StaticCompiler.IssueMessage(Message.UnableToCreateProxy, proxy, x.Message);
+                loader.Diagnostics.UnableToCreateProxy(proxy, x.Message);
                 return;
             }
 
             CreateNoFail(loader, interfaces, methods);
         }
 
-        private List<ProxyMethod> CheckAndCollect(CompilerClassLoader loader, RuntimeJavaType[] interfaces)
+        private List<ProxyMethod> CheckAndCollect(ImportClassLoader loader, RuntimeJavaType[] interfaces)
         {
             var methods = new List<RuntimeJavaMethod>();
 
@@ -194,7 +194,7 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        private void Add(CompilerClassLoader loader, Dictionary<string, RuntimeJavaType[]> exceptions, RuntimeJavaMethod mw)
+        private void Add(ImportClassLoader loader, Dictionary<string, RuntimeJavaType[]> exceptions, RuntimeJavaMethod mw)
         {
             string signature = mw.Signature;
             RuntimeJavaType[] newExceptionTypes = LoadTypes(loader, mw.GetDeclaredExceptions());
@@ -227,7 +227,7 @@ namespace IKVM.Tools.Importer
             return list.ToArray();
         }
 
-        void CreateNoFail(CompilerClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
+        void CreateNoFail(ImportClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
         {
             var ispublic = true;
             var interfaceTypes = new Type[interfaces.Length];
@@ -263,7 +263,7 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateMethod(CompilerClassLoader loader, TypeBuilder tb, ProxyMethod pm)
+        void CreateMethod(ImportClassLoader loader, TypeBuilder tb, ProxyMethod pm)
         {
             var mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
             var exceptions = new List<string>();
@@ -358,7 +358,7 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, CompilerClassLoader loader)
+        void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
         {
             var ilgen = loader.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
             var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType);

@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+
+
+
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
@@ -23,7 +28,8 @@ namespace IKVM.Runtime
     {
 
         readonly RuntimeContextOptions options;
-        readonly IManagedTypeResolver resolver;
+        readonly IDiagnosticHandler diagnostics;
+        readonly ISymbolResolver resolver;
         readonly bool bootstrap;
         readonly ConcurrentDictionary<Type, object> singletons = new();
 
@@ -72,11 +78,13 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="resolver"></param>
+        /// <param name="diagnostics"></param>
         /// <param name="bootstrap"></param>
         /// <param name="staticCompiler"></param>
-        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
             this.staticCompiler = staticCompiler;
@@ -84,20 +92,27 @@ namespace IKVM.Runtime
 
 #else
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="resolver"></param>
-        /// <param name="bootstrap"></param>
-        public RuntimeContext(RuntimeContextOptions options, IManagedTypeResolver resolver, bool bootstrap)
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="options"></param>
+		/// <param name="diagnostics"></param>
+		/// <param name="resolver"></param>
+		/// <param name="bootstrap"></param>
+		public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
         }
 
 #endif
+
+        /// <summary>
+        /// Gets the <see cref="IDiagnosticHandler"/> where events should be sent.
+        /// </summary>
+        public IDiagnosticHandler Diagnostics => diagnostics;
 
         /// <summary>
         /// Gets or creates a new instance in a thread safe manner.
@@ -128,10 +143,10 @@ namespace IKVM.Runtime
         /// </summary>
         public RuntimeContextOptions Options => options;
 
-        /// <summary>
-        /// Gets the <see cref="IManagedTypeResolver"/> associated with this instance of the runtime.
-        /// </summary>
-        public IManagedTypeResolver Resolver => resolver;
+		/// <summary>
+		/// Gets the <see cref="ISymbolResolver"/> associated with this instance of the runtime.
+		/// </summary>
+		public ISymbolResolver Resolver => resolver;
 
         /// <summary>
         /// Gets whether or not the runtime is running in bootstrap mode; that is, we are compiling the Java base assembly itself.

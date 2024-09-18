@@ -23,11 +23,12 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Collections.Concurrent;
+
 using static System.Diagnostics.DebuggableAttribute;
+using IKVM.CoreLib.Diagnostics;
 
 
 #if IMPORTER
@@ -124,7 +125,7 @@ namespace IKVM.Runtime
         {
 #if IMPORTER
             // importer uses only one class loader, and we can just return a single dynamic class loader
-            return new DynamicClassLoader(context, ((CompilerClassLoader)loader).CreateModuleBuilder(), false);
+            return new DynamicClassLoader(context, loader.Diagnostics, ((ImportClassLoader)loader).CreateModuleBuilder(), false);
 #else
             // each assembly class loader gets its own dynamic class loader
             if (loader is RuntimeAssemblyClassLoader acl)
@@ -138,12 +139,12 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
                         n.KeyPair = DynamicClassLoader.ForgedKeyPair.Instance;
 #endif
-                        return new DynamicClassLoader(context, DynamicClassLoader.CreateModuleBuilder(context, n), true);
+                        return new DynamicClassLoader(context, loader.Diagnostics, DynamicClassLoader.CreateModuleBuilder(context, n), true);
                     }
                 }
             }
 
-            return instance ??= new DynamicClassLoader(context, DynamicClassLoader.CreateModuleBuilder(context), false);
+            return instance ??= new DynamicClassLoader(context, loader.Diagnostics, DynamicClassLoader.CreateModuleBuilder(context), false);
 #endif
         }
 
@@ -179,9 +180,7 @@ namespace IKVM.Runtime
             // advance through unique type names until we find a free one
             while (dict.TryAdd(mangledTypeName, javaType) == false)
             {
-#if IMPORTER
-                Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
-#endif
+                javaType.ClassLoader.Diagnostics.GenericCompilerWarning($"Class name clash: {mangledTypeName}");
                 mangledTypeName = baseTypeName + "/" + (++instanceId);
             }
 
@@ -202,6 +201,7 @@ namespace IKVM.Runtime
 #endif
 
         readonly RuntimeContext context;
+        readonly IDiagnosticHandler diagnostics;
         readonly ModuleBuilder moduleBuilder;
         readonly bool hasInternalAccess;
 
@@ -218,11 +218,13 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="diagnostics"></param>
         /// <param name="moduleBuilder"></param>
         /// <param name="hasInternalAccess"></param>
-        internal DynamicClassLoader(RuntimeContext context, ModuleBuilder moduleBuilder, bool hasInternalAccess)
+        internal DynamicClassLoader(RuntimeContext context, IDiagnosticHandler diagnostics, ModuleBuilder moduleBuilder, bool hasInternalAccess)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             this.moduleBuilder = moduleBuilder;
             this.hasInternalAccess = hasInternalAccess;
         }
@@ -250,7 +252,7 @@ namespace IKVM.Runtime
         internal sealed override RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain)
         {
 #if IMPORTER
-            var type = new RuntimeImportByteCodeJavaType(f, (CompilerClassLoader)classLoader);
+            var type = new RuntimeImportByteCodeJavaType(f, (ImportClassLoader)classLoader);
             type.CreateStep1();
             types[f.Name] = type;
             return type;
@@ -410,7 +412,7 @@ namespace IKVM.Runtime
                     {
                         more = true;
                         done.Add(tw, tw);
-                        Tracer.Info(Tracer.Runtime, "Finishing {0}", tw.TypeAsTBD.FullName);
+                        diagnostics.GenericRuntimeTrace($"Finishing: {tw.TypeAsTBD.FullName}");
                         tw.Finish();
                     }
                 }

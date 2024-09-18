@@ -79,7 +79,7 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                RuntimeClassLoader classLoader = thisType.GetClassLoader();
+                RuntimeClassLoader classLoader = thisType.ClassLoader;
                 RuntimeJavaType[] args = classLoader.ArgJavaTypeListFromSig(this.Signature, mode);
                 RuntimeJavaType ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
                 lock (this)

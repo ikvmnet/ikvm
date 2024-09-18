@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using CliWrap;
 
-using IKVM.Tools.Runner.Importer;
+using IKVM.Tools.Runner.Diagnostics;
 using IKVM.Tools.Runner.Internal;
 
 namespace IKVM.Tools.Runner.Exporter
@@ -21,6 +21,7 @@ namespace IKVM.Tools.Runner.Exporter
     {
 
         static readonly string TOOLNAME = "ikvmstub";
+        static readonly string TOOLPATH = typeof(IkvmExporterLauncher).Assembly.Location is string s ? Path.GetDirectoryName(s) ?? "" : "";
 
         /// <summary>
         /// Initializes a new instance.
@@ -38,7 +39,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="listener"></param>
         public IkvmExporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
+            this(TOOLPATH, listener)
         {
 
         }
@@ -48,7 +49,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// </summary>
         /// <param name="toolPath"></param>
         public IkvmExporterLauncher(string toolPath) :
-            this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
+            this(toolPath, new IkvmToolNullDiagnosticListener())
         {
 
         }
@@ -68,15 +69,28 @@ namespace IKVM.Tools.Runner.Exporter
             var args = new List<string>();
 
             if (options.Output is not null)
-                args.Add($"--out:{options.Output}");
+            {
+                args.Add("--out");
+                args.Add(options.Output);
+            }
 
             if (options.References is not null)
+            {
                 foreach (var reference in options.References)
-                    args.Add($"--reference:{reference}");
+                {
+                    args.Add("--reference");
+                    args.Add(reference);
+                }
+            }
 
             if (options.Namespaces is not null)
+            {
                 foreach (var ns in options.Namespaces)
-                    args.Add($"--ns:{ns}");
+                {
+                    args.Add("--ns");
+                    args.Add(ns);
+                }
+            }
 
             if (options.Shared)
                 args.Add("--shared");
@@ -103,17 +117,30 @@ namespace IKVM.Tools.Runner.Exporter
                 args.Add("--bootstrap");
 
             if (options.Lib is not null)
+            {
                 foreach (var i in options.Lib)
-                    args.Add($"--lib:{i}");
+                {
+                    args.Add("--lib");
+                    args.Add(i);
+                }
+            }
 
             if (options.ContinueOnError)
                 args.Add("--skiperror");
+
+            args.Add("--log");
+            args.Add("json,file=stderr");
 
             if (options.Input is not null)
                 args.Add(options.Input);
 
             // path to the temporary response file
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
+
+            // combine manual cancellation with timeout
+            var ctk = cts.Token;
+            if (options.Timeout != Timeout.Infinite)
+                ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
 
             try
             {
@@ -142,16 +169,10 @@ namespace IKVM.Tools.Runner.Exporter
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
-                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
+                await LogEventAsync(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", [cli.TargetFilePath, cli.Arguments], ctk);
 
-                // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
-                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Debug, i)));
-
-                // combine manual cancellation with timeout
-                var ctk = cts.Token;
-                if (options.Timeout != Timeout.Infinite)
-                    ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
+                // send output to MSBuild (TODO, replace with binary reading)
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(l => ParseAndLogEventAsync(l, cancellationToken).AsTask()));
 
                 // execute command
                 var pid = cli.ExecuteAsync(ctk);
@@ -165,7 +186,7 @@ namespace IKVM.Tools.Runner.Exporter
                     }
                     catch
                     {
-                        await LogEvent(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.");
+                        await LogEventAsync(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.", [], ctk);
                     }
 
                 // wait for the execution to finish

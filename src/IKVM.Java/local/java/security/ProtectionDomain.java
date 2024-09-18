@@ -163,9 +163,9 @@ public class ProtectionDomain {
             try {
                 if (false) throw new cli.System.NotSupportedException();
                 url = new java.net.URL(assembly.get_EscapedCodeBase());
-            } catch (java.net.MalformedURLException _) {
+            } catch (java.net.MalformedURLException e) {
                 url = null;
-            } catch (cli.System.NotSupportedException _) {
+            } catch (cli.System.NotSupportedException e) {
                 // dynamic assemblies don't have a codebase
                 url = null;
             }

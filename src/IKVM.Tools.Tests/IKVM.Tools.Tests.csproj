@@ -12,7 +12,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Core\IKVM.Tools.Core.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
     </ItemGroup>
 

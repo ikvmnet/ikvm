@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using CliWrap;
 
+using IKVM.Tools.Runner.Diagnostics;
 using IKVM.Tools.Runner.Internal;
 
 namespace IKVM.Tools.Runner.Importer
@@ -19,6 +20,7 @@ namespace IKVM.Tools.Runner.Importer
     {
 
         static readonly string TOOLNAME = "ikvmc";
+        static readonly string TOOLPATH = typeof(IkvmImporterLauncher).Assembly.Location is string s ? Path.GetDirectoryName(s) ?? "" : "";
 
         /// <summary>
         /// Initializes a new instance.
@@ -36,7 +38,7 @@ namespace IKVM.Tools.Runner.Importer
         /// </summary>
         /// <param name="listener"></param>
         public IkvmImporterLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncher).Assembly.Location), TOOLNAME), listener)
+            this(TOOLPATH, listener)
         {
 
         }
@@ -46,7 +48,7 @@ namespace IKVM.Tools.Runner.Importer
         /// </summary>
         /// <param name="toolPath"></param>
         public IkvmImporterLauncher(string toolPath) :
-            this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
+            this(toolPath, new IkvmToolNullDiagnosticListener())
         {
 
         }
@@ -65,82 +67,82 @@ namespace IKVM.Tools.Runner.Importer
             using var w = new StringWriter();
 
             if (options.Output is not null)
-                w.WriteLine($"-out:{options.Output}");
+                w.WriteLine($"-out \"{options.Output}\"");
 
             if (options.Assembly is not null)
-                w.WriteLine($"-assembly:{options.Assembly}");
+                w.WriteLine($"-assembly {options.Assembly}");
 
             if (options.Version is not null)
-                w.WriteLine($"-version:{options.Version}");
+                w.WriteLine($"-version {options.Version}");
 
             if (options.Target is not null)
             {
                 switch (options.Target)
                 {
                     case IkvmImporterTarget.Library:
-                        w.WriteLine($"-target:library");
+                        w.WriteLine($"-target library");
                         break;
                     case IkvmImporterTarget.Exe:
-                        w.WriteLine($"-target:exe");
+                        w.WriteLine($"-target exe");
                         break;
                     case IkvmImporterTarget.WinExe:
-                        w.WriteLine($"-target:winexe");
+                        w.WriteLine($"-target winexe");
                         break;
                     case IkvmImporterTarget.Module:
-                        w.WriteLine($"-target:module");
+                        w.WriteLine($"-target module");
                         break;
                 }
             }
 
             if (options.Platform is not null)
-                w.WriteLine($"-platform:{options.Platform.ToString().ToLowerInvariant()}");
+                w.WriteLine($"-platform {options.Platform.ToString().ToLowerInvariant()}");
 
             if (options.KeyFile is not null)
-                w.WriteLine($"-keyfile:{options.KeyFile}");
+                w.WriteLine($"-keyfile \"{options.KeyFile}\"");
 
             if (options.Key is not null)
-                w.WriteLine($"-key:{options.Key}");
+                w.WriteLine($"-key {options.Key}");
 
             if (options.DelaySign)
                 w.WriteLine("-delay");
 
             if (options.References is not null)
                 foreach (var reference in options.References)
-                    w.WriteLine($"-reference:{reference}");
+                    w.WriteLine($"-reference \"{reference}\"");
 
             if (options.Recurse is not null)
                 foreach (var recurse in options.Recurse)
-                    w.WriteLine($"-recurse:{recurse}");
+                    w.WriteLine($"-recurse \"{recurse}\"");
 
             if (options.Exclude is not null)
-                w.WriteLine($"-exclude:{options.Exclude}");
+                w.WriteLine($"-exclude \"{options.Exclude}\"");
 
             if (options.FileVersion is not null)
-                w.WriteLine($"-fileversion:{options.FileVersion}");
+                w.WriteLine($"-fileversion {options.FileVersion}");
 
             if (options.Win32Icon is not null)
-                w.WriteLine($"-win32icon:{options.Win32Icon}");
+                w.WriteLine($"-win32icon {options.Win32Icon}");
 
             if (options.Win32Manifest is not null)
-                w.WriteLine($"-win32manifest:{options.Win32Manifest}");
+                w.WriteLine($"-win32manifest {options.Win32Manifest}");
 
             if (options.Resources is not null)
                 foreach (var resource in options.Resources)
-                    w.WriteLine($"-resource:{resource.ResourcePath}={resource.FilePath}");
+                    w.WriteLine($"-resource \"{resource.ResourcePath}={resource.FilePath}\"");
 
             if (options.ExternalResources is not null)
                 foreach (var resource in options.ExternalResources)
-                    w.WriteLine($"-externalresource:{resource.ResourcePath}={resource.FilePath}");
+                    w.WriteLine($"-externalresource \"{resource.ResourcePath}={resource.FilePath}\"");
 
             if (options.CompressResources)
                 w.WriteLine("-compressresources");
 
             if (options.Debug == IkvmImporterDebugMode.Full)
-                w.WriteLine("-debug:full");
+                w.WriteLine("-debug full");
             else if (options.Debug == IkvmImporterDebugMode.Portable)
-                w.WriteLine("-debug:portable");
+                w.WriteLine("-debug portable");
             else if (options.Debug == IkvmImporterDebugMode.Embedded)
-                w.WriteLine("-debug:embedded");
+                w.WriteLine("-debug embedded");
 
             if (options.NoAutoSerialization)
                 w.WriteLine("-noautoserialization");
@@ -161,58 +163,52 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine("-strictfinalfieldsemantics");
 
             if (options.NoWarn is not null)
-                foreach (var i in options.NoWarn)
-                    w.WriteLine($"-nowarn:{i}");
+            {
+                if (options.NoWarn.Count == 0)
+                    w.WriteLine("-nowarn");
+                else
+                    w.WriteLine($"-nowarn {string.Join(",", options.NoWarn)}");
+            }
 
-            if (options.WarnAsError)
-                w.WriteLine("-warnaserror");
-
-            if (options.WarnAsErrorWarnings is not null)
-                foreach (var i in options.WarnAsErrorWarnings)
-                    w.WriteLine($"-warnaserror:{i}");
-
-            if (options.WriteSuppressWarningsFile is not null)
-                w.WriteLine($"-writesupresswarningsfile:{options.WriteSuppressWarningsFile}");
+            if (options.WarningsAsErrors is not null)
+            {
+                if (options.WarningsAsErrors.Count == 0)
+                    w.WriteLine("-warnaserror");
+                else
+                    w.WriteLine($"-warnaserror {string.Join(",", options.WarningsAsErrors)}");
+            }
 
             if (options.Main is not null)
-                w.WriteLine($"-main:{options.Main}");
+                w.WriteLine($"-main {options.Main}");
 
             if (options.SrcPath is not null)
-                w.WriteLine($"-srcpath:{options.SrcPath}");
+                w.WriteLine($"-srcpath {options.SrcPath}");
 
             if (options.Apartment is not null)
-                w.WriteLine($"-apartment:{options.Apartment}");
+                w.WriteLine($"-apartment {options.Apartment}");
 
             if (options.SetProperties is not null)
                 foreach (var kvp in options.SetProperties)
-                    w.WriteLine($"-D{kvp.Key}={kvp.Value}");
+                    w.WriteLine($"-D \"{kvp.Key}={kvp.Value}\"");
 
             if (options.NoStackTraceInfo)
                 w.WriteLine("-nostacktraceinfo");
 
-            if (options.XTrace is not null)
-                foreach (var i in options.XTrace)
-                    w.WriteLine($"-Xtrace:{i}");
-
-            if (options.XMethodTrace is not null)
-                foreach (var i in options.XMethodTrace)
-                    w.WriteLine($"-Xmethodtrace:{i}");
-
             if (options.PrivatePackages is not null)
                 foreach (var i in options.PrivatePackages)
-                    w.WriteLine($"-privatepackage:{i}");
+                    w.WriteLine($"-privatepackage {i}");
 
             if (options.ClassLoader is not null)
-                w.WriteLine($"-classloader:{options.ClassLoader}");
+                w.WriteLine($"-classloader {options.ClassLoader}");
 
             if (options.SharedClassLoader)
                 w.WriteLine("-sharedclassloader");
 
             if (options.BaseAddress is not null)
-                w.WriteLine($"-baseaddress:{options.BaseAddress}");
+                w.WriteLine($"-baseaddress {options.BaseAddress}");
 
             if (options.FileAlign is not null)
-                w.WriteLine($"-filealign:{options.FileAlign}");
+                w.WriteLine($"-filealign {options.FileAlign}");
 
             if (options.NoPeerCrossReference)
                 w.WriteLine("-nopeercrossreference");
@@ -222,7 +218,7 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.Lib is not null)
                 foreach (var i in options.Lib)
-                    w.WriteLine($"-lib:{i}");
+                    w.WriteLine($"-lib \"{i}\"");
 
             if (options.HighEntropyVA)
                 w.WriteLine("-highentropyva");
@@ -232,10 +228,10 @@ namespace IKVM.Tools.Runner.Importer
 
             if (options.AssemblyAttributes is not null)
                 foreach (var i in options.AssemblyAttributes)
-                    w.WriteLine($"-assemblyattributes:{i}");
+                    w.WriteLine($"-assemblyattributes \"{i}\"");
 
             if (options.Runtime is not null)
-                w.WriteLine($"-runtime:{options.Runtime}");
+                w.WriteLine($"-runtime \"{options.Runtime}\"");
 
             if (options.WarningLevel is not null)
                 w.WriteLine($"-w{options.WarningLevel}");
@@ -244,14 +240,13 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine($"-noparameterreflection");
 
             if (options.Remap is not null)
-                w.WriteLine($"-remap:{options.Remap}");
+                w.WriteLine($"-remap \"{options.Remap}\"");
 
-            if (options.NoLogo)
-                w.WriteLine($"-nologo");
+            w.WriteLine($"-log json,file=stderr");
 
             if (options.Input != null)
                 foreach (var i in options.Input)
-                    w.WriteLine(i);
+                    w.Write($"\"{i}\"");
 
             // prepare path to response file
             var response = string.IsNullOrWhiteSpace(options.ResponseFile) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();
@@ -259,11 +254,16 @@ namespace IKVM.Tools.Runner.Importer
             // to cancel the executable
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
 
+            // combine manual cancellation with timeout
+            var ctk = cts.Token;
+            if (options.Timeout != Timeout.Infinite)
+                ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
+
             try
             {
                 // create response file
                 Directory.CreateDirectory(Path.GetDirectoryName(response));
-                File.WriteAllText(options.ResponseFile, w.ToString());
+                File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
                 var exe = GetToolExe();
@@ -294,18 +294,12 @@ namespace IKVM.Tools.Runner.Importer
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
 
                 // execute the contents of the response file
-                cli = cli.WithArguments(new[] { $"@{response}" });
+                cli = cli.WithArguments([$"@{response}"]);
                 cli = cli.WithValidation(CommandResultValidation.None);
-                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
+                await LogEventAsync(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", [cli.TargetFilePath, cli.Arguments], ctk);
 
-                // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
-                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Debug, i)));
-
-                // combine manual cancellation with timeout
-                var ctk = cts.Token;
-                if (options.Timeout != Timeout.Infinite)
-                    ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
+                // send output to MSBuild (TODO, replace with binary reading)
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(l => ParseAndLogEventAsync(l, ctk).AsTask()));
 
                 // execute command
                 using var pid = cli.ExecuteAsync(ctk);
@@ -320,7 +314,7 @@ namespace IKVM.Tools.Runner.Importer
                     }
                     catch
                     {
-                        await LogEvent(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.");
+                        await LogEventAsync(IkvmToolDiagnosticEventLevel.Error, "Failed to attach child process.", [], ctk);
                     }
                 }
 

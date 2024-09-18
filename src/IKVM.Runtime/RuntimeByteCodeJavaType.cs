@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -59,7 +61,7 @@ namespace IKVM.Runtime
 #endif
 
 #if IMPORTER
-        protected readonly CompilerClassLoader classLoader;
+        protected readonly ImportClassLoader classLoader;
 #else
         protected readonly RuntimeClassLoader classLoader;
 #endif
@@ -97,10 +99,10 @@ namespace IKVM.Runtime
                     Type mt = ReflectUtil.GetMissingType(missing.MissingType);
                     if (mt.Assembly.__IsMissing)
                     {
-                        throw new FatalCompilerErrorException(Message.MissingBaseTypeReference, mt.FullName, mt.Assembly.FullName);
+                        throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseTypeReference(mt.FullName, mt.Assembly.FullName));
                     }
-                    throw new FatalCompilerErrorException(Message.MissingBaseType, mt.FullName, mt.Assembly.FullName,
-                        prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name);
+
+                    throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseType(mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name));
                 }
                 foreach (RuntimeJavaType iface in tw.Interfaces)
                 {
@@ -114,7 +116,7 @@ namespace IKVM.Runtime
         }
 
 #if IMPORTER
-        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, CompilerClassLoader classLoader, ProtectionDomain pd)
+        internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, ImportClassLoader classLoader, ProtectionDomain pd)
 #else
         internal RuntimeByteCodeJavaType(RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain pd)
 #endif
@@ -268,7 +270,7 @@ namespace IKVM.Runtime
             DelegateInnerClassCheck(iface != null);
             DelegateInnerClassCheck(iface.IsInterface);
             DelegateInnerClassCheck(iface.IsPublic);
-            DelegateInnerClassCheck(iface.GetClassLoader() == classLoader);
+            DelegateInnerClassCheck(iface.ClassLoader == classLoader);
             RuntimeJavaMethod[] methods = iface.GetMethods();
             DelegateInnerClassCheck(methods.Length == 1 && methods[0].Name == "Invoke");
             if (methods[0].Signature != invoke.Signature)
@@ -315,10 +317,7 @@ namespace IKVM.Runtime
             get { return baseTypeWrapper; }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return classLoader;
-        }
+        internal override RuntimeClassLoader ClassLoader => classLoader;
 
         internal override Modifiers ReflectiveModifiers
         {
@@ -671,7 +670,7 @@ namespace IKVM.Runtime
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
                                 {
-                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
+                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName).AsReflection())
                                     {
                                         return true;
                                     }
@@ -839,7 +838,7 @@ namespace IKVM.Runtime
             if (definitions == null)
                 return null;
 
-            var loader = GetClassLoader().GetJavaClassLoader();
+            var loader = ClassLoader.GetJavaClassLoader();
             var annotations = new List<object>();
 
             for (int i = 0; i < definitions.Length; i++)
@@ -919,7 +918,7 @@ namespace IKVM.Runtime
                     object defVal = impl.GetMethodDefaultValue(i);
                     if (defVal != null)
                     {
-                        return JVM.NewAnnotationElementValue(mw.DeclaringType.GetClassLoader().GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
+                        return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, defVal);
                     }
                     return null;
                 }
@@ -956,7 +955,7 @@ namespace IKVM.Runtime
 
         private Type[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
         {
-            return GetModOpt(GetClassLoader().GetTypeWrapperFactory(), tw, mustBePublic);
+            return GetModOpt(ClassLoader.GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
         internal static Type[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
@@ -1059,15 +1058,15 @@ namespace IKVM.Runtime
         internal void EmitLevel4Warning(HardError error, string message)
         {
 #if IMPORTER
-            if (GetClassLoader().WarningLevelHigh)
+            if (ClassLoader.WarningLevelHigh)
             {
                 switch (error)
                 {
                     case HardError.AbstractMethodError:
-                        GetClassLoader().IssueMessage(Message.EmittedAbstractMethodError, this.Name, message);
+                        ClassLoader.Diagnostics.EmittedAbstractMethodError(this.Name, message);
                         break;
                     case HardError.IncompatibleClassChangeError:
-                        GetClassLoader().IssueMessage(Message.EmittedIncompatibleClassChangeError, this.Name, message);
+                        ClassLoader.Diagnostics.EmittedIncompatibleClassChangeError(this.Name, message);
                         break;
                     default:
                         throw new InvalidOperationException();

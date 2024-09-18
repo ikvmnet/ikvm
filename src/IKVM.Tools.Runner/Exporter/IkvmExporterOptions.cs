@@ -17,12 +17,12 @@ namespace IKVM.Tools.Runner.Exporter
         /// <summary>
         /// Files to be imported.
         /// </summary>
-        public string Input { get; set; }
+        public string? Input { get; set; }
 
         /// <summary>
         /// Path of the output JAR.
         /// </summary>
-        public string Output { get; set; }
+        public string? Output { get; set; }
 
         /// <summary>
         /// Set of paths to assemblies to add as references.

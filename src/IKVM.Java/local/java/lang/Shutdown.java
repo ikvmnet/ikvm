@@ -88,7 +88,7 @@ class Shutdown {
                 if (false) throw new cli.System.Security.SecurityException();
             }
         }
-        catch (cli.System.Security.SecurityException _) {
+        catch (cli.System.Security.SecurityException e) {
             
         }
     }

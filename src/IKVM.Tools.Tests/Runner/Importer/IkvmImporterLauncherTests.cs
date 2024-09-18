@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
 using IKVM.Tests.Util;
-using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Diagnostics;
 using IKVM.Tools.Runner.Importer;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -57,7 +58,7 @@ namespace IKVM.Tools.Tests.Runner.Importer
                 rid = "osx-arm64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncherTests).Assembly.Location), "ikvmc", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmImporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterLauncherTests).Assembly.Location), "ikvmc", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.Args); }));
             var o = new IkvmImporterOptions()
             {
                 Runtime = Path.Combine(ikvmLibs, "IKVM.Runtime.dll"),
@@ -76,7 +77,11 @@ namespace IKVM.Tools.Tests.Runner.Importer
                     if (DotNetSdkUtil.IsAssembly(dll))
                         o.References.Add(dll);
 
+            if (File.Exists(p))
+                File.Delete(p);
+
             var exitCode = await l.ExecuteAsync(o);
+            e.Count(i => i.Level >= IkvmToolDiagnosticEventLevel.Error).Should().Be(0);
             File.Exists(p).Should().BeTrue();
             new FileInfo(p).Length.Should().BeGreaterThanOrEqualTo(64);
             exitCode.Should().Be(0);

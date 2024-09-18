@@ -21,6 +21,7 @@
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
         <IkvmExporter
             ToolPath="$(IkvmExporterToolPath)"
+            LogFile="%(ReferenceExport.StagePath).log"
             Input="%(ReferenceExport.Identity)"
             Output="%(ReferenceExport.StagePath)"
             References="@(_ReferenceExportReference)"
@@ -32,11 +33,25 @@
             NoStdLib="%(ReferenceExport.NoStdLib)"
             Condition="!Exists('%(ReferenceExport.CachePath)')" />
 
-        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
+        <!-- Copy the JAR file to its cache path. -->
+        <Copy 
+            SourceFiles="%(ReferenceExport.StagePath)" 
+            DestinationFiles="%(ReferenceExport.CachePath)"
+            OverwriteReadOnlyFiles="true" 
+            Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
+
+        <!-- Copy the log file to the cache path. -->
+        <Copy
+            SourceFiles="%(ReferenceExport.StagePath).log"
+            DestinationFiles="%(ReferenceExport.CachePath).log"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(ReferenceExport.StagePath).log') And !Exists('%(ReferenceExport.CachePath).log')"/>
+
         <Touch Files="%(ReferenceExport.CachePath)" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
+            <FileWrites Include="%(ReferenceExport.StagePath).log" />
         </ItemGroup>
     </Target>
 
@@ -126,6 +141,9 @@
             Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"
             Debug="$(DebugType)"
+            NoWarn="$(NoWarn.Replace(',', ';'))"
+            TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
+            WarningsAsErrors="$(WarningsAsErrors.Replace(',', ';'))"
             KeyFile="$(KeyOriginatorFile)"
             CompressResources="$(CompressResources)"
             ClassLoader="$(ClassLoader)"

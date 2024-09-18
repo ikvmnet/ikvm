@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -115,11 +116,9 @@ namespace IKVM.MSBuild.Tasks
 
         public string NoWarn { get; set; }
 
-        public bool WarnAsError { get; set; }
+        public bool TreatWarningsAsErrors { get; set; }
 
-        public string WarnAsErrorWarnings { get; set; }
-
-        public string WriteSuppressWarningsFile { get; set; }
+        public string WarningsAsErrors { get; set; }
 
         public string Main { get; set; }
 
@@ -130,10 +129,6 @@ namespace IKVM.MSBuild.Tasks
         public string SetProperties { get; set; }
 
         public bool NoStackTraceInfo { get; set; }
-
-        public string XTrace { get; set; }
-
-        public string XMethodTrace { get; set; }
 
         public string PrivatePackages { get; set; }
 
@@ -313,33 +308,35 @@ namespace IKVM.MSBuild.Tasks
             options.StrictFinalFieldSemantics = StrictFinalFieldSemantics;
 
             if (NoWarn != null)
-                foreach (var i in NoWarn.Split(';'))
+            {
+                foreach (var i in NoWarn.Split([';', ',']))
+                {
+                    options.NoWarn ??= [];
                     options.NoWarn.Add(i);
+                }
+            }
 
-            options.WarnAsError = WarnAsError;
+            if (TreatWarningsAsErrors)
+                options.WarningsAsErrors = [];
 
-            if (WarnAsErrorWarnings != null)
-                foreach (var i in WarnAsErrorWarnings.Split(';'))
-                    options.WarnAsErrorWarnings.Add(i);
+            if (WarningsAsErrors != null)
+            {
+                foreach (var i in WarningsAsErrors.Split([';', ',']))
+                {
+                    options.WarningsAsErrors ??= [];
+                    options.WarningsAsErrors.Add(i);
+                }
+            }
 
-            options.WriteSuppressWarningsFile = WriteSuppressWarningsFile;
             options.Main = Main;
             options.SrcPath = SrcPath;
             options.Apartment = Apartment;
 
             if (SetProperties != null)
-                foreach (var p in SetProperties.Split(new[] { ';' }).Select(i => i.Split(new[] { '=' }, 2)))
+                foreach (var p in SetProperties.Split(';').Select(i => i.Split(['='], 2)))
                     options.SetProperties[p[0]] = p.Length == 2 ? p[1] : "";
 
             options.NoStackTraceInfo = NoStackTraceInfo;
-
-            if (XTrace != null)
-                foreach (var i in XTrace.Split(';'))
-                    options.XTrace.Add(i);
-
-            if (XMethodTrace != null)
-                foreach (var i in XMethodTrace.Split(';'))
-                    options.XMethodTrace.Add(i);
 
             if (PrivatePackages != null)
                 foreach (var i in PrivatePackages.Split(';'))
@@ -370,7 +367,6 @@ namespace IKVM.MSBuild.Tasks
 
             options.NoParameterReflection = NoParameterReflection;
             options.Remap = Remap;
-            options.NoLogo = true;
 
             if (Input != null)
                 foreach (var i in Input)

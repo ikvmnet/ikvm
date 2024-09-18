@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
@@ -207,10 +208,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override RuntimeClassLoader GetClassLoader()
-        {
-            return Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
-        }
+        internal override RuntimeClassLoader ClassLoader => Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
         static ExModifiers GetModifiers(RuntimeContext context, Type type)
         {
@@ -317,7 +315,7 @@ namespace IKVM.Runtime
                     if (interfaceWrappers[i] == null)
                     {
 #if IMPORTER
-                        throw new FatalCompilerErrorException(Message.UnableToResolveInterface, interfaceNames[i], this);
+                        throw new FatalCompilerErrorException(DiagnosticEvent.UnableToResolveInterface(interfaceNames[i], ToString()));
 #else
                         throw new InternalException($"Unable to resolve interface {interfaceNames[i]} on type {this}");
 #endif
@@ -372,7 +370,7 @@ namespace IKVM.Runtime
                 }
                 foreach (string s in Context.AttributeHelper.GetNonNestedInnerClasses(type))
                 {
-                    wrappers.Add(GetClassLoader().LoadClassByName(s));
+                    wrappers.Add(ClassLoader.LoadClassByName(s));
                 }
 
                 return wrappers.ToArray();
@@ -395,8 +393,9 @@ namespace IKVM.Runtime
                 string decl = Context.AttributeHelper.GetNonNestedOuterClasses(type);
                 if (decl != null)
                 {
-                    return GetClassLoader().LoadClassByName(decl);
+                    return ClassLoader.LoadClassByName(decl);
                 }
+
                 return null;
             }
         }
@@ -492,7 +491,7 @@ namespace IKVM.Runtime
                 // as object (not as arrays of object)
                 if (type.IsArray)
                 {
-                    type = GetClassLoader().FieldTypeWrapperFromSig(sigtype, LoadMode.LoadOrThrow);
+                    type = ClassLoader.FieldTypeWrapperFromSig(sigtype, LoadMode.LoadOrThrow);
                 }
                 else if (type.IsPrimitive)
                 {
@@ -517,7 +516,7 @@ namespace IKVM.Runtime
                     }
                     try
                     {
-                        RuntimeJavaType tw = GetClassLoader().TryLoadClassByName(sigtype);
+                        RuntimeJavaType tw = ClassLoader.TryLoadClassByName(sigtype);
                         if (tw != null && tw.IsRemapped)
                         {
                             type = tw;
@@ -609,7 +608,7 @@ namespace IKVM.Runtime
             retType = method is ConstructorInfo ? Context.PrimitiveJavaTypeFactory.VOID : GetParameterTypeWrapper(Context, ((MethodInfo)method).ReturnParameter);
             var parameters = method.GetParameters();
             int len = parameters.Length;
-            if (len > 0 && IsCallerID(Context, parameters[len - 1].ParameterType) && GetClassLoader() == Context.ClassLoaderFactory.GetBootstrapClassLoader() && IsCallerSensitive(method))
+            if (len > 0 && IsCallerID(Context, parameters[len - 1].ParameterType) && ClassLoader == Context.ClassLoaderFactory.GetBootstrapClassLoader() && IsCallerSensitive(method))
             {
                 len--;
                 flags |= MemberFlags.CallerID;
@@ -947,7 +946,7 @@ namespace IKVM.Runtime
             RuntimeJavaType tw = null;
             foreach (var type in modopt)
             {
-                if (type == context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName))
+                if (type == context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName).AsReflection())
                 {
                     // ignore
                 }
@@ -1192,7 +1191,7 @@ namespace IKVM.Runtime
             internal CompiledAnnotation(RuntimeContext context, Type type)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
-                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType() });
+                constructor = type.GetConstructor(new Type[] { context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType().AsReflection() });
             }
 
             private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)

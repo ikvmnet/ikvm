@@ -2,11 +2,21 @@
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Tools.Tests" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="CliWrap" Version="3.6.6" />
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
+        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
     </ItemGroup>
 
 </Project>
