@@ -285,7 +285,7 @@ namespace IKVM.Reflection.Emit
             parameters ??= new List<ParameterBuilder>();
 
             ModuleBuilder.ParamTable.AddVirtualRecord();
-            var pb = new ParameterBuilder(ModuleBuilder, position, attributes, strParamName);
+            var pb = new ParameterBuilder(this, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
                 parameters.Add(pb);

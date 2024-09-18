@@ -1,11 +1,10 @@
-﻿using System.Reflection.Emit;
+﻿using IKVM.CoreLib.Symbols.Emit;
+using IKVM.Reflection.Emit;
 
-using IKVM.CoreLib.Symbols.Emit;
-
-namespace IKVM.CoreLib.Symbols.Reflection.Emit
+namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
-    interface IReflectionGenericTypeParameterSymbolBuilder : IReflectionSymbolBuilder<IReflectionTypeSymbol>, IGenericTypeParameterSymbolBuilder, IReflectionTypeSymbol
+    interface IIkvmReflectionGenericTypeParameterSymbolBuilder : IIkvmReflectionSymbolBuilder<IIkvmReflectionTypeSymbol>, IGenericTypeParameterSymbolBuilder, IIkvmReflectionTypeSymbol
     {
 
         /// <summary>

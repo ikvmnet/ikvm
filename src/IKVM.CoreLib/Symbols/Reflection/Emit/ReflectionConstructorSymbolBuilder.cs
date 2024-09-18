@@ -48,7 +48,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
         {
-            return new ReflectionParameterSymbolBuilder(Context, ResolvingModule, this, UnderlyingConstructorBuilder.DefineParameter(iSequence, attributes, strParamName));
+            return ResolveParameterSymbol(UnderlyingConstructorBuilder.DefineParameter(iSequence, attributes, strParamName));
         }
 
         /// <inheritdoc />
