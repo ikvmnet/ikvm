@@ -105,7 +105,7 @@ namespace IKVM.Runtime
                 type = type.GetElementType();
             }
 
-            var obj = multianewarray(RuntimeArrayJavaType.MakeArrayType(typeof(object), rank).TypeHandle, lengths);
+            var obj = multianewarray(typeof(object).MakeArrayType(rank).TypeHandle, lengths);
             GhostTag.SetTag(obj, typeHandle);
             return obj;
         }

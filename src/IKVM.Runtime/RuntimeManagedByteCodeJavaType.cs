@@ -1280,7 +1280,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
+        internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
             var attr = type.GetCustomAttribute(Context.Resolver.ResolveType(typeof(LineNumberTableAttribute)));
             if (attr != null && attr.Value.Constructor != null)

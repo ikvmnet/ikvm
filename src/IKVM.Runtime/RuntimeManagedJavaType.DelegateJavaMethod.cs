@@ -75,25 +75,25 @@ namespace IKVM.Runtime
                 var mw = targetType.GetMethodWrapper(GetDelegateInvokeStubName(DeclaringType.TypeAsTBD), iface.GetMethods()[0].Signature, true);
                 if (mw == null || mw.IsStatic || !mw.IsPublic)
                 {
-                    context.Emitter.Emit(OpCodes.Ldftn, CreateErrorStub(context, targetType, mw == null || mw.IsStatic));
-                    context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
+                    context.Emitter.Emit(System.Reflection.Emit.OpCodes.Ldftn, CreateErrorStub(context, targetType, mw == null || mw.IsStatic));
+                    context.Emitter.Emit(System.Reflection.Emit.OpCodes.Newobj, delegateConstructor);
                     return true;
                 }
 
                 // TODO linking here is not safe
                 mw.Link();
-                context.Emitter.Emit(OpCodes.Dup);
-                context.Emitter.Emit(OpCodes.Ldvirtftn, mw.GetMethod());
-                context.Emitter.Emit(OpCodes.Newobj, delegateConstructor);
+                context.Emitter.Emit(System.Reflection.Emit.OpCodes.Dup);
+                context.Emitter.Emit(System.Reflection.Emit.OpCodes.Ldvirtftn, mw.GetMethod());
+                context.Emitter.Emit(System.Reflection.Emit.OpCodes.Newobj, delegateConstructor);
                 return true;
             }
 
-            MethodInfo CreateErrorStub(EmitIntrinsicContext context, RuntimeJavaType targetType, bool isAbstract)
+            IMethodSymbol CreateErrorStub(EmitIntrinsicContext context, RuntimeJavaType targetType, bool isAbstract)
             {
                 var invoke = delegateConstructor.DeclaringType.GetMethod("Invoke");
 
                 var parameters = invoke.GetParameters();
-                var parameterTypes = new Type[parameters.Length + 1];
+                var parameterTypes = new ITypeSymbol[parameters.Length + 1];
                 parameterTypes[0] = DeclaringType.Context.Types.Object;
                 for (int i = 0; i < parameters.Length; i++)
                     parameterTypes[i + 1] = parameters[i].ParameterType;
@@ -107,12 +107,12 @@ namespace IKVM.Runtime
 
             internal override void EmitNewobj(CodeEmitter ilgen)
             {
-                ilgen.Emit(OpCodes.Ldtoken, delegateConstructor.DeclaringType);
-                ilgen.Emit(OpCodes.Call, DeclaringType.Context.CompilerFactory.GetTypeFromHandleMethod);
-                ilgen.Emit(OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
-                ilgen.Emit(OpCodes.Ldstr, iface.GetMethods()[0].Signature);
-                ilgen.Emit(OpCodes.Call, DeclaringType.Context.ByteCodeHelperMethods.DynamicCreateDelegate);
-                ilgen.Emit(OpCodes.Castclass, delegateConstructor.DeclaringType);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldtoken, delegateConstructor.DeclaringType);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, DeclaringType.Context.CompilerFactory.GetTypeFromHandleMethod);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, GetDelegateInvokeStubName(DeclaringType.TypeAsTBD));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, iface.GetMethods()[0].Signature);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, DeclaringType.Context.ByteCodeHelperMethods.DynamicCreateDelegate);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, delegateConstructor.DeclaringType);
             }
 
             internal override void EmitCall(CodeEmitter ilgen)
@@ -124,9 +124,9 @@ namespace IKVM.Runtime
                 EmitNewobj(ilgen);
 
                 // invoke the constructor, binding the delegate to the target delegate
-                ilgen.Emit(OpCodes.Dup);
-                ilgen.Emit(OpCodes.Ldvirtftn, DeclaringType.Context.MethodHandleUtil.GetDelegateInvokeMethod(delegateConstructor.DeclaringType));
-                ilgen.Emit(OpCodes.Call, delegateConstructor);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldvirtftn, DeclaringType.Context.MethodHandleUtil.GetDelegateInvokeMethod(delegateConstructor.DeclaringType));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, delegateConstructor);
             }
 
 #endif

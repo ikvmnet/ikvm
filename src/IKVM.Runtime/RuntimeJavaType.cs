@@ -1231,7 +1231,7 @@ namespace IKVM.Runtime
         {
             Debug.Assert(this.IsNonPrimitiveValueType);
 
-            ilgen.Emit(OpCodes.Box, this.TypeAsTBD);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Box, this.TypeAsTBD);
         }
 
         internal void EmitConvSignatureTypeToStackType(CodeEmitter ilgen)
@@ -1242,7 +1242,7 @@ namespace IKVM.Runtime
             }
             else if (this == context.PrimitiveJavaTypeFactory.BYTE)
             {
-                ilgen.Emit(OpCodes.Conv_I1);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Conv_I1);
             }
             else if (IsNonPrimitiveValueType)
             {
@@ -1251,9 +1251,9 @@ namespace IKVM.Runtime
             else if (IsGhost)
             {
                 var local = ilgen.DeclareLocal(TypeAsSignatureType);
-                ilgen.Emit(OpCodes.Stloc, local);
-                ilgen.Emit(OpCodes.Ldloca, local);
-                ilgen.Emit(OpCodes.Ldfld, GhostRefField);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, local);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloca, local);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldfld, GhostRefField);
             }
         }
 
@@ -1266,13 +1266,13 @@ namespace IKVM.Runtime
                 if (IsGhost)
                 {
                     CodeEmitterLocal local1 = ilgen.DeclareLocal(TypeAsLocalOrStackType);
-                    ilgen.Emit(OpCodes.Stloc, local1);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, local1);
                     CodeEmitterLocal local2 = ilgen.DeclareLocal(TypeAsSignatureType);
-                    ilgen.Emit(OpCodes.Ldloca, local2);
-                    ilgen.Emit(OpCodes.Ldloc, local1);
-                    ilgen.Emit(OpCodes.Stfld, GhostRefField);
-                    ilgen.Emit(OpCodes.Ldloca, local2);
-                    ilgen.Emit(OpCodes.Ldobj, TypeAsSignatureType);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloca, local2);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, local1);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Stfld, GhostRefField);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloca, local2);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldobj, TypeAsSignatureType);
                 }
                 // because of the way interface merging works, any reference is valid
                 // for any interface reference
@@ -1287,7 +1287,7 @@ namespace IKVM.Runtime
                 }
                 else if (sourceType != null && sourceType.IsUnloadable)
                 {
-                    ilgen.Emit(OpCodes.Castclass, TypeAsSignatureType);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, TypeAsSignatureType);
                 }
             }
         }
@@ -1296,16 +1296,16 @@ namespace IKVM.Runtime
         {
             if (IsGhost)
             {
-                ilgen.Emit(OpCodes.Dup);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
                 // TODO make sure we get the right "Cast" method and cache it
                 // NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
                 // so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
-                ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
-                ilgen.Emit(OpCodes.Pop);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, TypeAsTBD.GetMethod("Cast"));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
             }
             else if (IsGhostArray)
             {
-                ilgen.Emit(OpCodes.Dup);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
                 // TODO make sure we get the right "CastArray" method and cache it
                 // NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
                 // so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
@@ -1317,8 +1317,8 @@ namespace IKVM.Runtime
                     tw = tw.ElementTypeWrapper;
                 }
                 ilgen.EmitLdc_I4(rank);
-                ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
-                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(context.Types.Object, rank));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(context.Types.Object, rank));
             }
             else
             {
@@ -1333,7 +1333,7 @@ namespace IKVM.Runtime
                 // TODO make sure we get the right "IsInstance" method and cache it
                 // NOTE for dynamic ghosts we don't end up here because DynamicTypeWrapper overrides this method,
                 // so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
-                ilgen.Emit(OpCodes.Call, TypeAsTBD.GetMethod("IsInstance"));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, TypeAsTBD.GetMethod("IsInstance"));
             }
             else if (IsGhostArray)
             {
@@ -1348,7 +1348,7 @@ namespace IKVM.Runtime
                     tw = tw.ElementTypeWrapper;
                 }
                 ilgen.EmitLdc_I4(rank);
-                ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, tw.TypeAsTBD.GetMethod("IsInstanceArray"));
             }
             else
             {
@@ -1363,23 +1363,23 @@ namespace IKVM.Runtime
         internal virtual void EmitLdind(CodeEmitter il)
         {
             if (this == context.PrimitiveJavaTypeFactory.BOOLEAN)
-                il.Emit(OpCodes.Ldind_U1);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_U1);
             else if (this == context.PrimitiveJavaTypeFactory.BYTE)
-                il.Emit(OpCodes.Ldind_U1);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_U1);
             else if (this == context.PrimitiveJavaTypeFactory.CHAR)
-                il.Emit(OpCodes.Ldind_U2);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_U2);
             else if (this == context.PrimitiveJavaTypeFactory.SHORT)
-                il.Emit(OpCodes.Ldind_I2);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_I2);
             else if (this == context.PrimitiveJavaTypeFactory.INT)
-                il.Emit(OpCodes.Ldind_I4);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_I4);
             else if (this == context.PrimitiveJavaTypeFactory.LONG)
-                il.Emit(OpCodes.Ldind_I8);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_I8);
             else if (this == context.PrimitiveJavaTypeFactory.FLOAT)
-                il.Emit(OpCodes.Ldind_R4);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_R4);
             else if (this == context.PrimitiveJavaTypeFactory.DOUBLE)
-                il.Emit(OpCodes.Ldind_R8);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_R8);
             else
-                il.Emit(OpCodes.Ldind_Ref);
+                il.Emit(System.Reflection.Emit.OpCodes.Ldind_Ref);
         }
 
         /// <summary>
@@ -1389,23 +1389,23 @@ namespace IKVM.Runtime
         internal virtual void EmitStind(CodeEmitter il)
         {
             if (this == context.PrimitiveJavaTypeFactory.BOOLEAN)
-                il.Emit(OpCodes.Stind_I1);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I1);
             else if (this == context.PrimitiveJavaTypeFactory.BYTE)
-                il.Emit(OpCodes.Stind_I1);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I1);
             else if (this == context.PrimitiveJavaTypeFactory.CHAR)
-                il.Emit(OpCodes.Stind_I2);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I2);
             else if (this == context.PrimitiveJavaTypeFactory.SHORT)
-                il.Emit(OpCodes.Stind_I2);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I2);
             else if (this == context.PrimitiveJavaTypeFactory.INT)
-                il.Emit(OpCodes.Stind_I4);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I4);
             else if (this == context.PrimitiveJavaTypeFactory.LONG)
-                il.Emit(OpCodes.Stind_I8);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_I8);
             else if (this == context.PrimitiveJavaTypeFactory.FLOAT)
-                il.Emit(OpCodes.Stind_R4);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_R4);
             else if (this == context.PrimitiveJavaTypeFactory.DOUBLE)
-                il.Emit(OpCodes.Stind_R8);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_R8);
             else
-                il.Emit(OpCodes.Stind_Ref);
+                il.Emit(System.Reflection.Emit.OpCodes.Stind_Ref);
         }
 
 #endif
@@ -1479,7 +1479,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual int GetSourceLineNumber(MethodBase mb, int ilOffset)
+        internal virtual int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
             return -1;
         }

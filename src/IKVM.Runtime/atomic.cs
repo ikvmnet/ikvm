@@ -22,17 +22,10 @@
   
 */
 
-using System;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
-using System.Reflection.Emit;
-#endif
+
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
@@ -63,10 +56,10 @@ namespace IKVM.Runtime
                     if (field != null && !field.IsStatic && field.IsVolatile && field.DeclaringType == wrapper && field.FieldTypeWrapper == vclass)
                     {
                         // everything matches up, now call the actual emitter
-                        ilgen.Emit(OpCodes.Pop);
-                        ilgen.Emit(OpCodes.Pop);
-                        ilgen.Emit(OpCodes.Pop);
-                        ilgen.Emit(OpCodes.Newobj, context.GetAtomicReferenceFieldUpdater(field));
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Newobj, context.GetAtomicReferenceFieldUpdater(field));
                         return true;
                     }
                 }
@@ -74,58 +67,58 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal static void EmitImpl(RuntimeContext context, TypeBuilder tb, FieldInfo field)
+        internal static void EmitImpl(RuntimeContext context, ITypeSymbolBuilder tb, IFieldSymbol field)
         {
             EmitCompareAndSet(context, "compareAndSet", tb, field);
             EmitGet(context, tb, field);
             EmitSet(context, "set", tb, field);
         }
 
-        private static void EmitCompareAndSet(RuntimeContext context, string name, TypeBuilder tb, FieldInfo field)
+        private static void EmitCompareAndSet(RuntimeContext context, string name, ITypeSymbolBuilder tb, IFieldSymbol field)
         {
-            MethodBuilder compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Boolean, new Type[] { context.Types.Object, context.Types.Object, context.Types.Object });
-            ILGenerator ilgen = compareAndSet.GetILGenerator();
-            ilgen.Emit(OpCodes.Ldarg_1);
-            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-            ilgen.Emit(OpCodes.Ldflda, field);
-            ilgen.Emit(OpCodes.Ldarg_3);
-            ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            ilgen.Emit(OpCodes.Ldarg_2);
-            ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            ilgen.Emit(OpCodes.Call, MakeCompareExchange(context, field.FieldType));
-            ilgen.Emit(OpCodes.Ldarg_2);
-            ilgen.Emit(OpCodes.Ceq);
-            ilgen.Emit(OpCodes.Ret);
+            var compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Boolean, [context.Types.Object, context.Types.Object, context.Types.Object]);
+            var ilgen = compareAndSet.GetILGenerator();
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldflda, field);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_3);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_2);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, MakeCompareExchange(context, field.FieldType));
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_2);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ceq);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
         }
 
-        internal static MethodInfo MakeCompareExchange(RuntimeContext context, Type type)
+        internal static IMethodSymbol MakeCompareExchange(RuntimeContext context, ITypeSymbol type)
         {
             return context.InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(type);
         }
 
-        static void EmitGet(RuntimeContext context, TypeBuilder tb, FieldInfo field)
+        static void EmitGet(RuntimeContext context, ITypeSymbolBuilder tb, IFieldSymbol field)
         {
-            MethodBuilder get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Object, new Type[] { context.Types.Object });
-            ILGenerator ilgen = get.GetILGenerator();
-            ilgen.Emit(OpCodes.Ldarg_1);
-            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-            ilgen.Emit(OpCodes.Volatile);
-            ilgen.Emit(OpCodes.Ldfld, field);
-            ilgen.Emit(OpCodes.Ret);
+            var get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Object, [context.Types.Object]);
+            var ilgen = get.GetILGenerator();
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Volatile);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldfld, field);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
         }
 
-        static void EmitSet(RuntimeContext context, string name, TypeBuilder tb, FieldInfo field)
+        static void EmitSet(RuntimeContext context, string name, ITypeSymbolBuilder tb, IFieldSymbol field)
         {
-            MethodBuilder set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Void, new Type[] { context.Types.Object, context.Types.Object });
-            CodeEmitter ilgen = context.CodeEmitterFactory.Create(set);
-            ilgen.Emit(OpCodes.Ldarg_1);
-            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-            ilgen.Emit(OpCodes.Ldarg_2);
-            ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            ilgen.Emit(OpCodes.Volatile);
-            ilgen.Emit(OpCodes.Stfld, field);
+            var set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Void, [context.Types.Object, context.Types.Object]);
+            var ilgen = context.CodeEmitterFactory.Create(set);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_2);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Volatile);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Stfld, field);
             ilgen.EmitMemoryBarrier();
-            ilgen.Emit(OpCodes.Ret);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
             ilgen.DoEmit();
         }
 
@@ -136,11 +129,11 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        internal readonly MethodInfo AddInt32;
-        internal readonly MethodInfo CompareExchangeInt32;
-        internal readonly MethodInfo CompareExchangeInt64;
-        internal readonly MethodInfo CompareExchangeOfT;
-        internal readonly MethodInfo ExchangeOfT;
+        internal readonly IMethodSymbol AddInt32;
+        internal readonly IMethodSymbol CompareExchangeInt32;
+        internal readonly IMethodSymbol CompareExchangeInt64;
+        internal readonly IMethodSymbol CompareExchangeOfT;
+        internal readonly IMethodSymbol ExchangeOfT;
 
         /// <summary>
         /// Initializes a new instance.
@@ -150,11 +143,11 @@ namespace IKVM.Runtime
         {
             this.context = context;
 
-            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName).AsReflection();
+            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName);
             AddInt32 = type.GetMethod("Add", [context.Types.Int32.MakeByRefType(), context.Types.Int32]);
-            CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
-            CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
-            foreach (MethodInfo m in type.GetMethods())
+            CompareExchangeInt32 = type.GetMethod("CompareExchange", [context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32]);
+            CompareExchangeInt64 = type.GetMethod("CompareExchange", [context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64]);
+            foreach (var m in type.GetMethods())
             {
                 if (m.IsGenericMethodDefinition)
                 {

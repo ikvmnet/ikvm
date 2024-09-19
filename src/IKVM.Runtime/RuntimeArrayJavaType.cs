@@ -180,18 +180,6 @@ namespace IKVM.Runtime
             return ultimateElementTypeWrapper;
         }
 
-        internal static ITypeSymbol MakeArrayType(ITypeSymbol type, int dims)
-        {
-            // NOTE this is not just an optimization, but it is also required to
-            // make sure that ReflectionOnly types stay ReflectionOnly types
-            // (in particular instantiations of generic types from mscorlib that
-            // have ReflectionOnly type parameters).
-            for (int i = 0; i < dims; i++)
-                type = type.MakeArrayType();
-
-            return type;
-        }
-
     }
 
 }

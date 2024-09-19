@@ -545,14 +545,14 @@ namespace IKVM.Runtime
 
                 internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
                 {
-                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.Symbol.BaseType != loader.Context.Types.Object)
+                    if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.BaseType != loader.Context.Types.Object)
                     {
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
 #if IMPORTER
-                        loader.Diagnostics.IgnoredCustomAttribute(type.FullName, $"Type '{tb.Symbol.FullName}' does not extend cli.System.Object");
+                        loader.Diagnostics.IgnoredCustomAttribute(type.FullName, $"Type '{tb.FullName}' does not extend cli.System.Object");
 #else
-                        loader.Diagnostics.GenericRuntimeError($"StructLayoutAttribute cannot be applied to {tb.Symbol.FullName}, because it does not directly extend cli.System.Object");
+                        loader.Diagnostics.GenericRuntimeError($"StructLayoutAttribute cannot be applied to {tb.FullName}, because it does not directly extend cli.System.Object");
 #endif
                         return;
                     }

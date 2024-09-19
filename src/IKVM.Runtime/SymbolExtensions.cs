@@ -29,9 +29,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionAssemblySymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionAssemblySymbol)symbol).UnderlyingAssembly;
 #else
-            return ((ReflectionAssemblySymbol)symbol).ReflectionObject;
+            return ((IReflectionAssemblySymbol)symbol).UnderlyingAssembly;
 #endif
         }
 
@@ -41,9 +41,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionModuleSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionModuleSymbol)symbol).UnderlyingModule;
 #else
-            return ((ReflectionModuleSymbol)symbol).ReflectionObject;
+            return ((IReflectionModuleSymbol)symbol).UnderlyingModule;
 #endif
         }
 
@@ -53,9 +53,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionTypeSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionTypeSymbol)symbol).UnderlyingType;
 #else
-            return ((ReflectionTypeSymbol)symbol).ReflectionObject;
+            return ((IReflectionTypeSymbol)symbol).UnderlyingType;
 #endif
         }
 
@@ -77,9 +77,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionMethodBaseSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionMethodBaseSymbol)symbol).UnderlyingMethodBase;
 #else
-            return ((ReflectionMethodBaseSymbol)symbol).ReflectionObject;
+            return ((IReflectionMethodBaseSymbol)symbol).UnderlyingMethodBase;
 #endif
         }
 
@@ -89,9 +89,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionConstructorSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionConstructorSymbol)symbol).UnderlyingConstructor;
 #else
-            return ((ReflectionConstructorSymbol)symbol).ReflectionObject;
+            return ((IReflectionConstructorSymbol)symbol).UnderlyingConstructor;
 #endif
         }
 
@@ -101,9 +101,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionMethodSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionMethodSymbol)symbol).UnderlyingMethod;
 #else
-            return ((ReflectionMethodSymbol)symbol).ReflectionObject;
+            return ((IReflectionMethodSymbol)symbol).UnderlyingMethod;
 #endif
         }
 
@@ -113,9 +113,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionFieldSymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionFieldSymbol)symbol).UnderlyingField;
 #else
-            return ((ReflectionFieldSymbol)symbol).ReflectionObject;
+            return ((IReflectionFieldSymbol)symbol).UnderlyingField;
 #endif
         }
 
@@ -137,9 +137,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionPropertySymbol)symbol).ReflectionObject;
+			return ((IIkvmReflectionPropertySymbol)symbol).UnderlyingProperty;
 #else
-            return ((ReflectionPropertySymbol)symbol).ReflectionObject;
+            return ((IReflectionPropertySymbol)symbol).UnderlyingProperty;
 #endif
         }
 
@@ -161,9 +161,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionAssemblySymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionAssemblySymbolBuilder)builder).UnderlyingAssemblyBuilder;
 #else
-            return ((ReflectionAssemblySymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionAssemblySymbolBuilder)builder).UnderlyingAssemblyBuilder;
 #endif
         }
 
@@ -173,9 +173,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionModuleSymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionModuleSymbolBuilder)builder).UnderlyingModuleBuilder;
 #else
-            return ((ReflectionModuleSymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionModuleSymbolBuilder)builder).UnderlyingModuleBuilder;
 #endif
         }
 
@@ -185,9 +185,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionTypeSymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionTypeSymbolBuilder)builder).UnderlyingTypeBuilder;
 #else
-            return ((ReflectionTypeSymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionTypeSymbolBuilder)builder).UnderlyingTypeBuilder;
 #endif
         }
 
@@ -197,9 +197,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionConstructorSymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionConstructorSymbolBuilder)builder).UnderlyingConstructorBuilder;
 #else
-            return ((ReflectionConstructorSymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionConstructorSymbolBuilder)builder).UnderlyingConstructorBuilder;
 #endif
         }
 
@@ -209,9 +209,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionMethodSymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionMethodSymbolBuilder)builder).UnderlyingMethodBuilder;
 #else
-            return ((ReflectionMethodSymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionMethodSymbolBuilder)builder).UnderlyingMethodBuilder;
 #endif
         }
 
@@ -221,9 +221,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-            return ((IkvmReflectionFieldSymbolBuilder)builder).ReflectionBuilder;
+            return ((IIkvmReflectionFieldSymbolBuilder)builder).UnderlyingFieldBuilder;
 #else
-            return ((ReflectionFieldSymbolBuilder)builder).ReflectionBuilder;
+            return ((IReflectionFieldSymbolBuilder)builder).UnderlyingFieldBuilder;
 #endif
         }
 

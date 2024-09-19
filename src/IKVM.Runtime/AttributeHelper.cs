@@ -38,7 +38,9 @@ using IKVM.CoreLib.Symbols.IkvmReflection;
 
 
 #if IMPORTER || EXPORTER
+using IKVM.Reflection;
 #else
+using System.Reflection;
 #endif
 
 #if IMPORTER
@@ -902,7 +904,7 @@ namespace IKVM.Runtime
 
         internal T[] DecodeArray<T>(IKVM.CoreLib.Symbols.CustomAttributeTypedArgument arg)
         {
-            var elems = (CustomAttributeTypedArgument[])arg.Value;
+            var elems = (IKVM.CoreLib.Symbols.CustomAttributeTypedArgument[])arg.Value;
             var arr = new T[elems.Length];
             for (int i = 0; i < arr.Length; i++)
                 arr[i] = (T)elems[i].Value;
@@ -932,7 +934,7 @@ namespace IKVM.Runtime
                 }
                 else if (args[0].ArgumentType == context.Types.Type.MakeArrayType())
                 {
-                    return new ThrowsAttribute(DecodeArray<ITypeSymbol>(args[0]).Unpack());
+                    return new ThrowsAttribute(DecodeArray<ITypeSymbol>(args[0]).AsReflection());
                 }
                 else
                 {

@@ -156,7 +156,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static bool CanOwnDynamicMethod(ITypeSymbol type)
+        internal static bool CanOwnDynamicMethod(Type type)
         {
             return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
@@ -190,6 +190,15 @@ namespace IKVM.Runtime
             }
 
             return false;
+        }
+
+        internal static bool IsVector(Type type)
+        {
+#if NET
+            return type.IsSZArray;
+#else
+            return type.IsArray && type.Name.EndsWith("[]");
+#endif
         }
 
 #if IMPORTER

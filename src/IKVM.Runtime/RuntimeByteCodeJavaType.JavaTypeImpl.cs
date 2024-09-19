@@ -1812,7 +1812,7 @@ namespace IKVM.Runtime
                                 getValueMethod.EmitCall(ilgen);
                                 o.methods[i].ReturnType.EmitCheckcast(ilgen);
                             }
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                             ilgen.DoEmit();
 
                             if (o.classFile.Methods[i].AnnotationDefault != null
@@ -1822,16 +1822,16 @@ namespace IKVM.Runtime
                                 Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
                                 if (argType != null)
                                 {
-                                    PropertyBuilder pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, []);
+                                    var pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, []);
                                     context.AttributeHelper.HideFromJava(pb);
-                                    MethodBuilder setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, context.Types.Void, new Type[] { argType });
+                                    var setter = attributeTypeBuilder.DefineMethod("set_" + o.methods[i].Name, MethodAttributes.Public, context.Types.Void, new ITypeSymbol[] { argType });
                                     context.AttributeHelper.HideFromJava(setter);
                                     pb.SetSetMethod(setter);
                                     ilgen = context.CodeEmitterFactory.Create(setter);
                                     EmitSetValueCall(annotationAttributeBaseType, ilgen, o.methods[i].Name, o.methods[i].ReturnType, 1);
-                                    ilgen.Emit(OpCodes.Ret);
+                                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                                     ilgen.DoEmit();
-                                    MethodBuilder getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, []);
+                                    var getter = attributeTypeBuilder.DefineMethod("get_" + o.methods[i].Name, MethodAttributes.Public, argType, []);
                                     context.AttributeHelper.HideFromJava(getter);
                                     pb.SetGetMethod(getter);
                                     // TODO implement the getter method
@@ -2129,7 +2129,7 @@ namespace IKVM.Runtime
                 return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
             }
 
-            static MethodBase LinkAndGetMethod(RuntimeJavaMethod mw)
+            static IMethodSymbol LinkAndGetMethod(RuntimeJavaMethod mw)
             {
                 mw.Link();
                 return mw.GetMethod();
@@ -2260,7 +2260,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            static MethodInfo GetBaseFinalizeMethod(RuntimeJavaType wrapper)
+            static IMethodSymbol GetBaseFinalizeMethod(RuntimeJavaType wrapper)
             {
                 for (; ; )
                 {
@@ -2294,7 +2294,7 @@ namespace IKVM.Runtime
 
                 while (type != null)
                 {
-                    foreach (MethodInfo m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                    foreach (var m in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
                     {
                         if (m.Name == "Finalize"
                             && m.ReturnType == wrapper.Context.Types.Void
@@ -2467,7 +2467,7 @@ namespace IKVM.Runtime
                     }
 
                     var m = classFile.Methods[index];
-                    MethodBuilder method;
+                    IMethodSymbolBuilder method;
                     bool setModifiers = false;
 
                     if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
@@ -2573,12 +2573,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            MethodBuilder GenerateConstructor(RuntimeJavaMethod mw)
+            IMethodSymbolBuilder GenerateConstructor(RuntimeJavaMethod mw)
             {
                 return mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
             }
 
-            MethodBuilder GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
+            IMethodSymbolBuilder GenerateMethod(int index, ClassFile.Method m, ref bool setModifiers)
             {
                 var attribs = MethodAttributes.HideBySig;
                 if (m.IsNative)
@@ -2630,6 +2630,7 @@ namespace IKVM.Runtime
                         setModifiers = true;
                     }
                 }
+
                 if (m.IsFinal)
                 {
                     if (m.IsVirtual)
@@ -2641,6 +2642,7 @@ namespace IKVM.Runtime
                         setModifiers = true;
                     }
                 }
+
                 if (m.IsStatic)
                 {
                     attribs |= MethodAttributes.Static;
@@ -2653,7 +2655,8 @@ namespace IKVM.Runtime
                 {
                     attribs |= MethodAttributes.Virtual | MethodAttributes.CheckAccessOnOverride;
                 }
-                string name = UnicodeUtil.EscapeInvalidSurrogates(m.Name);
+
+                var name = UnicodeUtil.EscapeInvalidSurrogates(m.Name);
                 if (!ReferenceEquals(name, m.Name))
                 {
                     // mark as specialname to remind us to unescape the name
@@ -2689,9 +2692,9 @@ namespace IKVM.Runtime
                         // if we have a method overriding a more accessible method (the JVM allows this), we need to make the
                         // method more accessible, because otherwise the CLR will complain that we're reducing access
                         bool hasPublicBaseMethod = false;
-                        foreach (RuntimeJavaMethod baseMethodWrapper in baseMethods[index])
+                        foreach (var baseMethodWrapper in baseMethods[index])
                         {
-                            MethodBase baseMethod = baseMethodWrapper.GetMethod();
+                            var baseMethod = baseMethodWrapper.GetMethod();
                             if ((baseMethod.IsPublic && !m.IsPublic) ||
                                 ((baseMethod.IsFamily || baseMethod.IsFamilyOrAssembly) && !m.IsPublic && !m.IsProtected) ||
                                 (!m.IsPublic && !m.IsProtected && !baseMethodWrapper.DeclaringType.IsPackageAccessibleFrom(wrapper)))
@@ -2704,7 +2707,8 @@ namespace IKVM.Runtime
                         }
                     }
                 }
-                MethodBuilder mb = null;
+
+                IMethodSymbolBuilder mb = null;
 #if IMPORTER
                 mb = wrapper.DefineGhostMethod(typeBuilder, name, attribs, methods[index]);
 #endif
@@ -2830,15 +2834,15 @@ namespace IKVM.Runtime
 
                         var ilgen = wrapper.Context.CodeEmitterFactory.Create(finalizeMethod);
                         ilgen.EmitLdarg(0);
-                        ilgen.Emit(OpCodes.Call, wrapper.Context.ByteCodeHelperMethods.SkipFinalizerOf);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, wrapper.Context.ByteCodeHelperMethods.SkipFinalizerOf);
                         var skip = ilgen.DefineLabel();
                         ilgen.EmitBrtrue(skip);
 
                         if (needDispatch)
                         {
                             ilgen.BeginExceptionBlock();
-                            ilgen.Emit(OpCodes.Ldarg_0);
-                            ilgen.Emit(OpCodes.Callvirt, mb);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, mb);
                             ilgen.EmitLeave(skip);
                             ilgen.BeginCatchBlock(wrapper.Context.Types.Object);
                             ilgen.EmitLeave(skip);
@@ -2846,12 +2850,12 @@ namespace IKVM.Runtime
                         }
                         else
                         {
-                            ilgen.Emit(OpCodes.Ldarg_0);
-                            ilgen.Emit(OpCodes.Call, baseFinalize);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, baseFinalize);
                         }
 
                         ilgen.MarkLabel(skip);
-                        ilgen.Emit(OpCodes.Ret);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         ilgen.DoEmit();
                     }
 #if IMPORTER

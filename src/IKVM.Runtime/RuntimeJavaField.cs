@@ -27,6 +27,8 @@ using System.Threading;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -438,20 +440,10 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal virtual void ResolveField()
         {
-            var fb = field.AsReflection() as FieldBuilder;
-            if (fb != null)
-            {
-#if NETFRAMEWORK
-                field = fb.DeclaringType.Module.ResolveField(fb.GetToken().Token);
-#else
-                BindingFlags flags = BindingFlags.DeclaredOnly;
-                flags |= fb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= fb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                field = DeclaringType.TypeAsTBD.GetField(fb.Name, flags);
-#endif
-            }
+
         }
 
 #if !FIRST_PASS

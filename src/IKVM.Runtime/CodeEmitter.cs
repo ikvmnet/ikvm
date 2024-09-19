@@ -80,7 +80,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public CodeEmitter Create(IMethodSymbolBuilder mb)
         {
-            return new CodeEmitter(context, mb.GetILGenerator(), context.Resolver.ResolveType(mb.Symbol.DeclaringType));
+            return new CodeEmitter(context, mb.GetILGenerator(), context.Resolver.ResolveType(mb.DeclaringType));
         }
 
 #if IMPORTER == false

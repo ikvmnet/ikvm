@@ -122,13 +122,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData().Where(i => attributeType.IsAssignableFrom(attributeType)).ToArray());
         }
 
         /// <inheritdoc />
         public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+            return ResolveCustomAttribute(UnderlyingParameter.GetCustomAttributesData().Where(i => attributeType.IsAssignableFrom(attributeType)).FirstOrDefault());
         }
 
         /// <inheritdoc />
