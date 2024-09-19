@@ -298,16 +298,16 @@ namespace IKVM.Runtime
 #endif
 
 #if NET
-				if (AppContext.GetData("IKVM.Properties") is { } ikvmPropertiesContext && !string.IsNullOrWhiteSpace(ikvmPropertiesContext))
-				{
-					foreach (var ikvmSystemProperty in ikvmPropertiesContext.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-					{
-						if (AppContext.GetData(ikvmSystemProperty) is { } ikvmPropertyValue)
-						{
-							p[ikvmSystemProperty] = ikvmPropertyValue;
-						}
-					}
-				}
+                if (AppContext.GetData("IKVM.Properties") is string ikvmPropertiesContext && !string.IsNullOrWhiteSpace(ikvmPropertiesContext))
+                {
+                    foreach (var ikvmSystemProperty in ikvmPropertiesContext.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        if (AppContext.GetData(ikvmSystemProperty) is string ikvmPropertyValue)
+                        {
+                            p[ikvmSystemProperty] = ikvmPropertyValue;
+                        }
+                    }
+                }
 #endif
 
 				// set the properties that were specfied
