@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
@@ -31,16 +33,9 @@ using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
-using System.Reflection;
-using System.Reflection.Emit;
-
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 
@@ -406,7 +401,7 @@ namespace IKVM.Runtime
             Debug.Assert(!baseMethod.HasCallerID);
 
             var overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.DeclaringType.Name + "::" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
-            typeBuilder.DefineMethodOverride(overrideStub, (MethodInfo)baseMethod.GetMethod());
+            typeBuilder.DefineMethodOverride(overrideStub, (IMethodSymbol)baseMethod.GetMethod());
 
             var stubargs = baseMethod.GetParameters();
             var targetArgs = targetMethod.GetParameters();
@@ -939,7 +934,7 @@ namespace IKVM.Runtime
 
             if (tw.IsArray)
             {
-                return RuntimeArrayJavaType.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
+                return GetModOptHelper(tw.GetUltimateElementTypeWrapper()).MakeArrayType(tw.ArrayRank);
             }
             else if (tw.IsGhost)
             {

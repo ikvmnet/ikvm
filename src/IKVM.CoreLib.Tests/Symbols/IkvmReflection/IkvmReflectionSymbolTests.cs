@@ -66,7 +66,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void SameTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object"));
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object"));
             s1.Should().BeOfType<IkvmReflectionTypeSymbol>();
@@ -76,7 +76,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void GenericTypeDefinitionShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1"));
             var s2 = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1"));
             s1.Should().BeSameAs(s2);
@@ -85,7 +85,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void GenericTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1").MakeGenericType(coreAssembly.GetType("System.Int32")));
             var s2 = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1").MakeGenericType(coreAssembly.GetType("System.Int32")));
             s1.Should().BeSameAs(s2);
@@ -94,7 +94,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void ArrayTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object").MakeArrayType(2));
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object").MakeArrayType(2));
             s1.Should().BeSameAs(s2);
@@ -103,7 +103,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void SZArrayTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeArrayType());
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeArrayType());
             s1.Should().BeSameAs(s2);
@@ -112,7 +112,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public unsafe void PointerTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakePointerType());
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakePointerType());
             s1.Should().BeSameAs(s2);
@@ -121,7 +121,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public unsafe void ByRefTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeByRefType());
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeByRefType());
             s1.Should().BeSameAs(s2);
@@ -130,7 +130,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void EnumTypeShouldBeSame()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.AttributeTargets"));
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.AttributeTargets"));
             s1.Should().BeSameAs(s2);
@@ -139,7 +139,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveType()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object"));
             s.Name.Should().Be("Object");
             s.FullName.Should().Be("System.Object");
@@ -148,7 +148,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveFieldOfGenericTypeDefinition()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1"));
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeTrue();
@@ -161,7 +161,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveFieldOfGenericType()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+Foo`1").MakeGenericType(coreAssembly.GetType("System.Int32")));
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeFalse();
@@ -175,7 +175,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMethod()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object"));
             var m = s.GetMethod("ToString");
             m.Name.Should().Be("ToString");
@@ -190,7 +190,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveGenericMethod()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.ValueTuple"));
             var m = s.GetMethods().FirstOrDefault(i => i.Name == "Create" && i.GetGenericArguments().Length == 1);
             m.Name.Should().Be("Create");
@@ -205,7 +205,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveParameters()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object"));
             var m = s.GetMethod("ReferenceEquals");
             m.Name.Should().Be("ReferenceEquals");
@@ -247,7 +247,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanReadCustomAttributes()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var s = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+ClassWithAttributeWithType"));
             var a = s.GetCustomAttribute(c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+AttributeWithType")));
             var v = a.Value.ConstructorArguments[0].Value;
@@ -257,7 +257,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveAssemblyBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var assemblySymbol = c.GetOrCreateAssemblySymbol(a);
             assemblySymbol.Should().BeOfType<IkvmReflectionAssemblySymbolBuilder>();
@@ -267,7 +267,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveModuleBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var moduleSymbol = c.GetOrCreateModuleSymbol(m);
@@ -278,7 +278,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveTypeBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
 
@@ -291,7 +291,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleTypeBuilders()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
 
@@ -310,7 +310,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMethodBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -324,7 +324,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleMethodBuilders()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -343,7 +343,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveFieldBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -357,7 +357,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleFieldBuilders()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -376,7 +376,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolvePropertyBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -390,7 +390,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultiplePropertyBuilders()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -409,7 +409,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveEventBuilder()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -423,7 +423,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleEventBuilders()
         {
-            var c = new IkvmReflectionSymbolContext();
+            var c = new IkvmReflectionSymbolContext(universe);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");

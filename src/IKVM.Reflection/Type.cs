@@ -162,7 +162,7 @@ namespace IKVM.Reflection
         {
             return Array.Empty<EventInfo>();
         }
-
+                
         public virtual PropertyInfo[] __GetDeclaredProperties()
         {
             return Array.Empty<PropertyInfo>();

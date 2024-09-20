@@ -130,7 +130,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void DefineMethodOverride(IMethodSymbolBuilder methodInfoBody, IMethodSymbol methodInfoDeclaration)
+        public void DefineMethodOverride(IMethodSymbol methodInfoBody, IMethodSymbol methodInfoDeclaration)
         {
             UnderlyingTypeBuilder.DefineMethodOverride(methodInfoBody.Unpack(), methodInfoDeclaration.Unpack());
         }

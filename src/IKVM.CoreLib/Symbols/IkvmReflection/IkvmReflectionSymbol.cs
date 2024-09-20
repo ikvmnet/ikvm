@@ -430,11 +430,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return a;
         }
 
-        /// <summary>
-        /// Transforms a custom set of custom attribute data records to a symbol record.
-        /// </summary>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public virtual IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
         {
             if (attributes is null)
@@ -448,11 +444,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return a.ToArray();
         }
 
-        /// <summary>
-        /// Transforms a custom attribute data record to a symbol record.
-        /// </summary>
-        /// <param name="customAttributeData"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(customAttributeData))]
         public virtual CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
         {
@@ -466,11 +458,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 ResolveCustomAttributeNamedArguments(customAttributeData.NamedArguments));
         }
 
-        /// <summary>
-        /// Transforms a list of <see cref="IKVM.Reflection.CustomAttributeTypedArgument"/> values into symbols.
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<IKVM.Reflection.CustomAttributeTypedArgument> args)
         {
             if (args is null)
@@ -485,11 +473,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return a.ToImmutableArray();
         }
 
-        /// <summary>
-        /// Transforms a <see cref="IKVM.Reflection.CustomAttributeTypedArgument"/> values into a symbol.
-        /// </summary>
-        /// <param name="arg"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(IKVM.Reflection.CustomAttributeTypedArgument arg)
         {
             return new CustomAttributeTypedArgument(
@@ -497,11 +481,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 ResolveCustomAttributeTypedValue(arg.Value));
         }
 
-        /// <summary>
-        /// Transforms the type as appropriate.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public object? ResolveCustomAttributeTypedValue(object? value)
         {
             return value switch
@@ -511,11 +491,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             };
         }
 
-        /// <summary>
-        /// Transforms a list of <see cref="IKVM.Reflection.CustomAttributeNamedArgument"/> values into symbols.
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<IKVM.Reflection.CustomAttributeNamedArgument> args)
         {
             if (args is null)
@@ -530,11 +506,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ImmutableArray.Create(a);
         }
 
-        /// <summary>
-        /// Transforms a <see cref="IKVM.Reflection.CustomAttributeNamedArgument"/> values into a symbol.
-        /// </summary>
-        /// <param name="arg"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(IKVM.Reflection.CustomAttributeNamedArgument arg)
         {
             return new CustomAttributeNamedArgument(
@@ -544,6 +516,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 ResolveCustomAttributeTypedArgument(arg.TypedValue));
         }
 
+        /// <inheritdoc />
+        public InterfaceMapping ResolveInterfaceMapping(IKVM.Reflection.InterfaceMapping mapping)
+        {
+            return new InterfaceMapping(
+                ResolveMethodSymbols(mapping.InterfaceMethods),
+                ResolveTypeSymbol(mapping.InterfaceType),
+                ResolveMethodSymbols(mapping.TargetMethods),
+                ResolveTypeSymbol(mapping.TargetType));
+        }
     }
 
 }

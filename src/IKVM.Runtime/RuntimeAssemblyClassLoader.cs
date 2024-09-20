@@ -22,29 +22,19 @@
   
 */
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Runtime.Serialization;
-using System.Runtime.CompilerServices;
-
-using IKVM.CoreLib.Diagnostics;
-using IKVM.Attributes;
-using IKVM.Runtime.Syntax;
-using IKVM.CoreLib.Symbols;
-
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#else
-using IKVM.Runtime.Vfs;
-
+using System.IO;
 using System.Reflection;
-#endif
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Threading;
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+using IKVM.Runtime.Syntax;
+using IKVM.Runtime.Vfs;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -1141,7 +1131,7 @@ namespace IKVM.Runtime
             var list = new List<KeyValuePair<string, string[]>>();
             foreach (var m in assemblyLoader.Assembly.GetModules(false))
             {
-                var attr = m.GetCustomAttributes<PackageListAttribute>();
+                var attr = m.AsReflection().GetCustomAttributes<PackageListAttribute>();
                 foreach (var p in attr)
                     list.Add(new KeyValuePair<string, string[]>(p.jar, p.packages));
             }

@@ -54,19 +54,19 @@
         /// Declares a new label.
         /// </summary>
         /// <returns></returns>
-        System.Reflection.Emit.Label DefineLabel();
+        ILabel DefineLabel();
 
         /// <summary>
         /// Begins an exception block for a non-filtered exception.
         /// </summary>
         /// <returns></returns>
-        System.Reflection.Emit.Label BeginExceptionBlock();
+        ILabel BeginExceptionBlock();
 
         /// <summary>
         /// Marks the Microsoft intermediate language (MSIL) stream's current position with the given label.
         /// </summary>
         /// <param name="loc"></param>
-        void MarkLabel(System.Reflection.Emit.Label loc);
+        void MarkLabel(ILabel loc);
 
         /// <summary>
         /// Begins an exception block for a filtered exception.

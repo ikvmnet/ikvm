@@ -17,7 +17,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         readonly IReflectionAssemblySymbol _symbol;
 
-        IndexRangeDictionary<IReflectionModuleSymbol> _moduleSymbols = new(initialCapacity: 1, maxCapacity: 32);
+        IndexRangeDictionary<IReflectionModuleSymbol> _moduleSymbols = new(maxCapacity: 32);
         ReaderWriterLockSlim? _moduleLock;
 
         /// <summary>

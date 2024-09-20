@@ -6,6 +6,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     abstract class IkvmReflectionMethodBaseSymbol : IkvmReflectionMemberSymbol, IIkvmReflectionMethodBaseSymbol
     {
 
+        IkvmReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -15,8 +17,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IkvmReflectionMethodBaseSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol? resolvingType) :
             base(context, resolvingModule, resolvingType)
         {
-
+            _parameterTable = new IkvmReflectionParameterTable(context, resolvingModule, this);
         }
+
+        #region IIkvmReflectionMethodBaseSymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
 
         #region IMethodBaseSymbol
 

@@ -375,7 +375,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public readonly InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType)
         {
-            throw new NotImplementedException();
+            return _symbol.ResolveInterfaceMapping(_symbol.UnderlyingType.GetInterfaceMap(interfaceType.Unpack()));
         }
 
         /// <inheritdoc />

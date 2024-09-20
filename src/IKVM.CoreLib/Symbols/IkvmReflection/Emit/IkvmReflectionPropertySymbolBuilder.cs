@@ -13,6 +13,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         PropertyBuilder? _builder;
         PropertyInfo _property;
 
+        IkvmReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,11 +23,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionPropertySymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol resolvingType, PropertyBuilder builder) :
+        public IkvmReflectionPropertySymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder resolvingType, PropertyBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _property = _builder;
+            _parameterTable = new IkvmReflectionParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
@@ -36,6 +39,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
+
+        #region IIkvmPropertySymbol
+
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
 
         #region IPropertySymbol
 
@@ -169,7 +181,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
         }
 
-#endregion
+        #endregion
 
         /// <inheritdoc />
         public override void OnComplete()

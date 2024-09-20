@@ -11,30 +11,31 @@ using IKVM.Reflection.Emit;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    struct IkvmReflectionAssemblyMetadata
+    struct IkvmReflectionModuleTable
     {
 
-        readonly IIkvmReflectionAssemblySymbol _symbol;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly IIkvmReflectionAssemblySymbol _assembly;
 
-        IndexRangeDictionary<IIkvmReflectionModuleSymbol> _moduleSymbols = new(initialCapacity: 1, maxCapacity: 32);
+        IndexRangeDictionary<IIkvmReflectionModuleSymbol> _moduleSymbols = new();
         ReaderWriterLockSlim? _moduleLock;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="assembly"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionAssemblyMetadata(IIkvmReflectionAssemblySymbol symbol)
+        public IkvmReflectionModuleTable(IkvmReflectionSymbolContext context, IIkvmReflectionAssemblySymbol assembly)
         {
-            _symbol = symbol ?? throw new ArgumentNullException(nameof(symbol));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
         }
 
         /// <summary>
-        /// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
+        /// Gets or creates the <see cref="IIkvmReflectionModuleSymbol"/> cached for the module.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
         public IIkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
             if (module is null)
@@ -50,12 +51,22 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 if (_moduleSymbols[row] == null)
                     using (_moduleLock.CreateWriteLock())
                         if (module is ModuleBuilder builder)
-                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbolBuilder(_symbol.Context, _symbol, builder);
+                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbolBuilder(_context, _assembly, builder);
                         else
-                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbol(_symbol.Context, _symbol, module);
+                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbol(_context, _assembly, module);
                 else
                     return _moduleSymbols[row] ?? throw new InvalidOperationException();
             }
+        }
+
+        /// <summary>
+        /// Gets or creates the <see cref="IIkvmReflectionModuleSymbolBuilder"/> cached for the module.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        public IIkvmReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
+        {
+            return (IIkvmReflectionModuleSymbolBuilder)GetOrCreateModuleSymbol((Module)module);
         }
 
     }

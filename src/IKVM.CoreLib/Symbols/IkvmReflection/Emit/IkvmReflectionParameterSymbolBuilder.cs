@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     {
 
         readonly IIkvmReflectionModuleSymbol _resolvingModule;
-        readonly IIkvmReflectionMethodBaseSymbol _resolvingMethod;
+        readonly IIkvmReflectionMemberSymbol _resolvingMethod;
 
         ParameterBuilder? _builder;
         ParameterInfo _parameter;
@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingMethod"></param>
         /// <param name="builder"></param>
-        public IkvmReflectionParameterSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionMethodBaseSymbol resolvingMethod, ParameterBuilder builder) :
+        public IkvmReflectionParameterSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionMemberSymbol resolvingMethod, ParameterBuilder builder) :
             base(context)
         {
             _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
@@ -39,7 +39,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public IIkvmReflectionModuleSymbol ResolvingModule => _resolvingMethod.ResolvingModule;
 
         /// <inheritdoc />
-        public IIkvmReflectionMethodBaseSymbol ResolvingMethod => _resolvingMethod;
+        public IIkvmReflectionMemberSymbol ResolvingMember => _resolvingMethod;
 
         /// <inheritdoc />
         public ParameterInfo UnderlyingParameter => _parameter;
@@ -154,8 +154,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public void OnComplete()
         {
-            var p = ResolvingMethod.UnderlyingMethodBase.GetParameters();
-            _parameter = p[Position];
+            if (ResolvingMember is IIkvmReflectionMethodBaseSymbolBuilder b)
+                _parameter = b.UnderlyingMethodBase.GetParameters()[Position];
+
+            if (ResolvingMember is IIkvmReflectionPropertySymbolBuilder p)
+                _parameter = p.UnderlyingPropertyBuilder.GetIndexParameters()[Position];
+
             _builder = null;
         }
 

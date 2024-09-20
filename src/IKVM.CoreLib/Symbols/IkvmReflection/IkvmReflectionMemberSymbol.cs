@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -48,6 +47,118 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         public IIkvmReflectionTypeSymbol? ResolvingType => _resolvingType;
 
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(type))]
+        public override IIkvmReflectionTypeSymbol? ResolveTypeSymbol(Type? type)
+        {
+            if (type is null)
+                return null;
+
+            if (type == UnderlyingMember)
+                return (IIkvmReflectionTypeSymbol)this;
+
+            if (_resolvingType != null && type == _resolvingType.UnderlyingType)
+                return _resolvingType;
+
+            if (type.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateTypeSymbol(type);
+
+            return base.ResolveTypeSymbol(type);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public override IIkvmReflectionConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor)
+        {
+            if (ctor is null)
+                return null;
+
+            if (ctor == UnderlyingMember)
+                return (IIkvmReflectionConstructorSymbol)this;
+
+            if (ctor.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
+
+            return base.ResolveConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(method))]
+        public override IIkvmReflectionMethodSymbol? ResolveMethodSymbol(MethodInfo? method)
+        {
+            if (method is null)
+                return null;
+
+            if (method == UnderlyingMember)
+                return (IIkvmReflectionMethodSymbol)this;
+
+            if (method.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateMethodSymbol(method);
+
+            return base.ResolveMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public override IIkvmReflectionFieldSymbol? ResolveFieldSymbol(FieldInfo? field)
+        {
+            if (field is null)
+                return null;
+
+            if (field == UnderlyingMember)
+                return (IIkvmReflectionFieldSymbol)this;
+
+            if (field.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateFieldSymbol(field);
+
+            return base.ResolveFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(property))]
+        public override IIkvmReflectionPropertySymbol? ResolvePropertySymbol(PropertyInfo? property)
+        {
+            if (property is null)
+                return null;
+
+            if (property == UnderlyingMember)
+                return (IIkvmReflectionPropertySymbol)this;
+
+            if (property.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreatePropertySymbol(property);
+
+            return base.ResolvePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(@event))]
+        public override IIkvmReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
+        {
+            if (@event is null)
+                return null;
+
+            if (@event == UnderlyingMember)
+                return (IIkvmReflectionEventSymbol)this;
+
+            if (@event.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateEventSymbol(@event);
+
+            return base.ResolveEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public override IIkvmReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
+        {
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
+
+            if (parameter.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+
+            return base.ResolveParameterSymbol(parameter);
+        }
+
         #region IMemberSymbol
 
         /// <inheritdoc />
@@ -90,196 +201,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         #endregion
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(type))]
-        public override IIkvmReflectionTypeSymbol? ResolveTypeSymbol(Type? type)
-        {
-            if (type is null)
-                return null;
-
-            if (type == UnderlyingMember)
-                return (IIkvmReflectionTypeSymbol)this;
-
-            if (_resolvingType != null && type == _resolvingType.UnderlyingType)
-                return _resolvingType;
-
-            if (type.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateTypeSymbol(type);
-
-            return base.ResolveTypeSymbol(type);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(ctor))]
-        public override IIkvmReflectionConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor)
-        {
-            if (ctor is null)
-                return null;
-
-            if (ctor == UnderlyingMember)
-                return (IIkvmReflectionConstructorSymbol)this;
-
-            if (ctor.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
-
-            return base.ResolveConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(ctor))]
-        public override IIkvmReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor)
-        {
-            if (ctor is null)
-                throw new ArgumentNullException(nameof(ctor));
-
-            if (ctor.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
-
-            return base.ResolveConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(method))]
-        public override IIkvmReflectionMethodSymbol? ResolveMethodSymbol(MethodInfo? method)
-        {
-            if (method is null)
-                return null;
-
-            if (method == UnderlyingMember)
-                return (IIkvmReflectionMethodSymbol)this;
-
-            if (method.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateMethodSymbol(method);
-
-            return base.ResolveMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(method))]
-        public override IIkvmReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method)
-        {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            if (method.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateMethodSymbol(method);
-
-            return base.ResolveMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(field))]
-        public override IIkvmReflectionFieldSymbol? ResolveFieldSymbol(FieldInfo? field)
-        {
-            if (field is null)
-                return null;
-
-            if (field == UnderlyingMember)
-                return (IIkvmReflectionFieldSymbol)this;
-
-            if (field.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateFieldSymbol(field);
-
-            return base.ResolveFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(field))]
-        public override IIkvmReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field)
-        {
-            if (field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            if (field.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateFieldSymbol(field);
-
-            return base.ResolveFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(property))]
-        public override IIkvmReflectionPropertySymbol? ResolvePropertySymbol(PropertyInfo? property)
-        {
-            if (property is null)
-                return null;
-
-            if (property == UnderlyingMember)
-                return (IIkvmReflectionPropertySymbol)this;
-
-            if (property.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreatePropertySymbol(property);
-
-            return base.ResolvePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(property))]
-        public override IIkvmReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property)
-        {
-            if (property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            if (property.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreatePropertySymbol(property);
-
-            return base.ResolvePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(@event))]
-        public override IIkvmReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
-        {
-            if (@event is null)
-                return null;
-
-            if (@event == UnderlyingMember)
-                return (IIkvmReflectionEventSymbol)this;
-
-            if (@event.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateEventSymbol(@event);
-
-            return base.ResolveEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(@event))]
-        public override IIkvmReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
-        {
-            if (@event is null)
-                throw new ArgumentNullException(nameof(@event));
-
-            if (@event.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateEventSymbol(@event);
-
-            return base.ResolveEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(parameter))]
-        public override IIkvmReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
-        {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            if (parameter.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
-
-            return base.ResolveParameterSymbol(parameter);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(parameter))]
-        public override IIkvmReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
-        {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            if (parameter.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
-
-            return base.ResolveParameterSymbol(parameter);
-        }
 
     }
 

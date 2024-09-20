@@ -2475,11 +2475,11 @@ namespace IKVM.Java.Externs.sun.misc
             var e = Expression.Parameter(typeof(object));
             return Expression.Lambda<Func<object[], long, object, object, object>>(
                 Expression.Call(
-                    compareAndSwapArrayMethodInfo.MakeGenericMethod(tw.TypeAsTBD),
-                    Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD),
+                    compareAndSwapArrayMethodInfo.MakeGenericMethod(tw.TypeAsTBD.AsReflection()),
+                    Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD.AsReflection()),
                     i,
-                    Expression.Convert(v, tw.TypeAsTBD),
-                    Expression.Convert(e, tw.TypeAsTBD)),
+                    Expression.Convert(v, tw.TypeAsTBD.AsReflection()),
+                    Expression.Convert(e, tw.TypeAsTBD.AsReflection())),
                 p, i, v, e)
                 .Compile();
         }

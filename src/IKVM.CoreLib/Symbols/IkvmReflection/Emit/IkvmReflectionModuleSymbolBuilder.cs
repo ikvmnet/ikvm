@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -14,35 +15,183 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     {
 
         readonly IIkvmReflectionAssemblySymbol _resolvingAssembly;
+        readonly ModuleBuilder _module;
 
-        readonly ModuleBuilder _builder;
-        IkvmReflectionModuleMetadata _metadata;
+        IkvmReflectionTypeTable _typeTable;
+        IkvmReflectionMethodTable _methodTable;
+        IkvmReflectionFieldTable _fieldTable;
+
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingAssembly"></param>
-        /// <param name="builder"></param>
+        /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionModuleSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionAssemblySymbol resolvingAssembly, ModuleBuilder builder) :
+        public IkvmReflectionModuleSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionAssemblySymbol resolvingAssembly, ModuleBuilder module) :
             base(context)
         {
             _resolvingAssembly = resolvingAssembly ?? throw new ArgumentNullException(nameof(resolvingAssembly));
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _metadata = new IkvmReflectionModuleMetadata(this);
+            _module = module ?? throw new ArgumentNullException(nameof(module));
+
+            _typeTable = new IkvmReflectionTypeTable(context, this, null);
+            _methodTable = new IkvmReflectionMethodTable(context, this, null);
+            _fieldTable = new IkvmReflectionFieldTable(context, this, null);
         }
 
         /// <inheritdoc />
         public Module UnderlyingModule => UnderlyingModuleBuilder;
 
         /// <inheritdoc />
-        public ModuleBuilder UnderlyingModuleBuilder => _builder;
+        public ModuleBuilder UnderlyingModuleBuilder => _module;
 
         /// <inheritdoc />
         public IIkvmReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
 
+        #region IIkvmReflectionModuleSymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        {
+            if (type.IsTypeDefinition())
+                return _typeTable.GetOrCreateTypeSymbol(type);
+            else if (type.IsGenericType)
+                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
+            else if (type.IsSZArray)
+                return ResolveTypeSymbol(type.GetElementType()).GetOrCreateSZArrayTypeSymbol();
+            else if (type.IsArray)
+                return ResolveTypeSymbol(type.GetElementType()).GetOrCreateArrayTypeSymbol(type.GetArrayRank());
+            else if (type.IsPointer)
+                return ResolveTypeSymbol(type.GetElementType()).GetOrCreatePointerTypeSymbol();
+            else if (type.IsByRef)
+                return ResolveTypeSymbol(type.GetElementType()).GetOrCreateByRefTypeSymbol();
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
+        {
+            return (IIkvmReflectionTypeSymbolBuilder)_typeTable.GetOrCreateTypeSymbol((Type)type);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateMethodBaseSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodBaseSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return ResolveTypeSymbol(ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            return ResolveTypeSymbol((TypeBuilder)ctor.DeclaringType).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateMethodSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateMethodSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateFieldSymbol(field);
+            else
+                return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateFieldSymbol(field);
+            else
+                return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        {
+            return ResolveTypeSymbol(property.DeclaringType).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return ResolveTypeSymbol((TypeBuilder)property.DeclaringType).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        {
+            return ResolveTypeSymbol(@event.DeclaringType).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return ResolveTypeSymbol((TypeBuilder)@event.DeclaringType).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return ResolveMemberSymbol(parameter.Member) switch
+            {
+                IIkvmReflectionMethodBaseSymbol method => method.GetOrCreateParameterSymbol(parameter),
+                IIkvmReflectionPropertySymbol property => property.GetOrCreateParameterSymbol(parameter),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return ResolveMethodSymbol((MethodBuilder)parameter.Method).GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericParameterType)
+        {
+            if (genericParameterType.DeclaringMethod is MethodBuilder dm)
+                return ResolveMethodSymbol(dm).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
+            else
+                return ResolveTypeSymbol((TypeBuilder)genericParameterType.DeclaringType).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
+        }
+
+        #endregion
+
         #region IModuleSymbolBuilder
+
+        /// <inheritdoc />
+        public ISymbolDocumentWriter? DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
+        {
+            return UnderlyingModuleBuilder.DefineDocument(url, language, languageVendor, documentType);
+        }
 
         /// <inheritdoc />
         public ITypeSymbolBuilder DefineType(string name)
@@ -121,7 +270,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public string ScopeName => UnderlyingModule.ScopeName;
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _module == null;
 
         /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
@@ -292,90 +441,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         #endregion
-
-        /// <inheritdoc />
-        public IIkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
-        {
-            return _metadata.GetOrCreateTypeSymbol(type);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
-        {
-            return _metadata.GetOrCreateTypeSymbol(type);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
-        {
-            return _metadata.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
-        {
-            return _metadata.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
-        {
-            return _metadata.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
-        {
-            return _metadata.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
-        {
-            return _metadata.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
-        {
-            return _metadata.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
-        {
-            return _metadata.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
-        {
-            return _metadata.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
-        {
-            return _metadata.GetOrCreateEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
-        {
-            return _metadata.GetOrCreateEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
-        {
-            return _metadata.GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
-        {
-            return _metadata.GetOrCreateParameterSymbol(parameter);
-        }
 
     }
 

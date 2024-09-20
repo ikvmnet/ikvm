@@ -4,6 +4,8 @@ using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
+using Type = IKVM.Reflection.Type;
+
 namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
@@ -13,6 +15,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         MethodBuilder? _builder;
         MethodInfo _method;
 
+        IkvmReflectionGenericTypeParameterTable _genericTypeParameterTable;
+
+        IkvmReflectionILGenerator? _il;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,11 +27,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionMethodSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol? resolvingType, MethodBuilder builder) :
+        public IkvmReflectionMethodSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder? resolvingType, MethodBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _method = _builder;
+            _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
@@ -36,6 +43,34 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public MethodBuilder UnderlyingMethodBuilder => _builder ?? throw new InvalidOperationException();
+
+        #region IIkvmReflectionMethodSymbolBuilder
+
+        /// <inheritdoc />
+        public IIkvmReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        #endregion
+
+        #region IIkvmReflectionMethodSymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        #endregion
+
+        #region IIkvmReflectionMethodBaseSymbol
+
+        #endregion
+
+        #region IIkvmReflectionMethodBaseSymbolBuilder
+
+        #endregion
 
         #region IMethodSymbolBuilder
 
@@ -68,7 +103,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             var l = UnderlyingMethodBuilder.DefineGenericParameters(names);
             var a = new IGenericTypeParameterSymbolBuilder[l.Length];
             for (int i = 0; i < l.Length; i++)
-                a[i] = new IkvmReflectionGenericTypeParameterSymbolBuilder(Context, ResolvingModule, ResolvingType, this, l[i]);
+                a[i] = ResolveGenericTypeParameterSymbol(l[i]);
 
             return a;
         }
@@ -79,14 +114,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
         }
 
+        /// <inheritdoc />
         public IILGenerator GetILGenerator()
         {
-            throw new NotImplementedException();
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
         }
 
-        public IILGenerator GetILGenerator(int size)
+        /// <inheritdoc />
+        public IILGenerator GetILGenerator(int streamSize)
         {
-            throw new NotImplementedException();
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
         }
 
         /// <inheritdoc />
@@ -144,7 +181,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             _builder = null;
             base.OnComplete();
         }
-
     }
 
 }

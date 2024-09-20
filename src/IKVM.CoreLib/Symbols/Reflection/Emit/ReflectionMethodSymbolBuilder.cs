@@ -13,6 +13,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         MethodBuilder? _builder;
         MethodInfo _method;
 
+        ReflectionILGenerator? _il;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -68,7 +70,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             var l = UnderlyingMethodBuilder.DefineGenericParameters(names);
             var a = new IGenericTypeParameterSymbolBuilder[l.Length];
             for (int i = 0; i < l.Length; i++)
-                a[i] = new ReflectionGenericTypeParameterSymbolBuilder(Context, ResolvingModule, ResolvingType, this, l[i]);
+                a[i] = (IGenericTypeParameterSymbolBuilder)ResolveTypeSymbol(l[i]);
 
             return a;
         }
@@ -76,17 +78,19 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
         {
-            return new ReflectionParameterSymbolBuilder(Context, ResolvingModule, this, UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
+            return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
         }
 
+        /// <inheritdoc />
         public IILGenerator GetILGenerator()
         {
-            throw new NotImplementedException();
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
         }
 
-        public IILGenerator GetILGenerator(int size)
+        /// <inheritdoc />
+        public IILGenerator GetILGenerator(int streamSize)
         {
-            throw new NotImplementedException();
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
         }
 
         /// <inheritdoc />

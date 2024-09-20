@@ -25,23 +25,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-
-using IKVM.CoreLib.Diagnostics;
-using IKVM.CoreLib.Symbols;
-using IKVM.Attributes;
-using IKVM.Runtime.Syntax;
-using IKVM.ByteCode;
-using IKVM.CoreLib.Symbols.Emit;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.ByteCode;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.Runtime.Syntax;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -1109,7 +1101,7 @@ namespace IKVM.Runtime
         {
             var enc = Context.AttributeHelper.GetEnclosingMethodAttribute(type);
             if (enc != null)
-                return new string[] { enc.ClassName, enc.MethodName, enc.MethodSignature };
+                return [enc.ClassName, enc.MethodName, enc.MethodSignature];
 
             return null;
         }
@@ -1125,7 +1117,7 @@ namespace IKVM.Runtime
 
         internal override object[] GetDeclaredAnnotations()
         {
-            return CastArray(type.GetCustomAttribute(false));
+            return CastArray(type.GetCustomAttributes(false));
         }
 
         internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)

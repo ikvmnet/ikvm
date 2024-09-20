@@ -10,6 +10,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         readonly PropertyInfo _property;
 
+        IkvmReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,6 +23,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             base(context, module, type)
         {
             _property = property ?? throw new ArgumentNullException(nameof(property));
+            _parameterTable = new IkvmReflectionParameterTable(context, module, this);
         }
 
         /// <inheritdoc />
@@ -28,6 +31,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
+
+        #region IIkvmReflectionPropertySymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IPropertySymbol
 
         /// <inheritdoc />
         public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)UnderlyingProperty.Attributes;
@@ -115,6 +130,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
         }
+
+        #endregion
 
     }
 

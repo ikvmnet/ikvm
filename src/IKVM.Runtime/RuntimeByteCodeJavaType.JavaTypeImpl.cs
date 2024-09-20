@@ -26,20 +26,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 
+using System.Reflection;
+using System.Reflection.Emit;
+
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols;
 
 #if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
-using Type = IKVM.Reflection.Type;
 using RuntimeDynamicOrImportJavaType = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
 #else
-using System.Reflection;
-using System.Reflection.Emit;
 
 using RuntimeDynamicOrImportJavaType = IKVM.Runtime.RuntimeByteCodeJavaType;
 #endif
@@ -1109,11 +1107,13 @@ namespace IKVM.Runtime
 
                     field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
                 }
+
                 if (fld.IsTransient)
                 {
-                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
+                    var transientAttrib = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]), []);
                     field.SetCustomAttribute(transientAttrib);
                 }
+
 #if IMPORTER
                 {
                     // if the Java modifiers cannot be expressed in .NET, we emit the Modifiers attribute to store
@@ -1137,8 +1137,7 @@ namespace IKVM.Runtime
 
             IFieldSymbolBuilder DefineField(string name, RuntimeJavaType tw, FieldAttributes attribs, bool isVolatile)
             {
-                var modreq = isVolatile ? [wrapper.Context.Types.IsVolatile] : [];
-                return typeBuilder.DefineField(name, tw.TypeAsSignatureType, modreq, wrapper.GetModOpt(tw, false), attribs);
+                return typeBuilder.DefineField(name, tw.TypeAsSignatureType, isVolatile ? [wrapper.Context.Types.IsVolatile] : [], wrapper.GetModOpt(tw, false), attribs);
             }
 
             internal override void EmitRunClassConstructor(CodeEmitter ilgen)
@@ -1301,7 +1300,7 @@ namespace IKVM.Runtime
                         privateInterfaceMethods.CreateType();
                     }
 #endif
-                    var finishedClinitMethod = (MethodInfo)clinitMethod;
+                    var finishedClinitMethod = (IMethodSymbol)clinitMethod;
 #if !IMPORTER
                     if (finishedClinitMethod != null)
                     {
@@ -2129,7 +2128,7 @@ namespace IKVM.Runtime
                 return mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(wrapper);
             }
 
-            static IMethodSymbol LinkAndGetMethod(RuntimeJavaMethod mw)
+            static IMethodBaseSymbol LinkAndGetMethod(RuntimeJavaMethod mw)
             {
                 mw.Link();
                 return mw.GetMethod();
@@ -2288,7 +2287,7 @@ namespace IKVM.Runtime
                 }
 
                 var type = wrapper.TypeAsBaseType;
-                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, [], null);
+                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,  []);
                 if (baseFinalize != null)
                     return baseFinalize;
 
@@ -2716,7 +2715,7 @@ namespace IKVM.Runtime
                 {
                     bool needFinalize = false;
                     bool needDispatch = false;
-                    MethodInfo baseFinalize = null;
+                    IMethodSymbol baseFinalize = null;
                     if (baseMethods[index] != null && ReferenceEquals(m.Name, StringConstants.FINALIZE) && ReferenceEquals(m.Signature, StringConstants.SIG_VOID))
                     {
                         baseFinalize = GetBaseFinalizeMethod(wrapper.BaseTypeWrapper);
@@ -2805,7 +2804,7 @@ namespace IKVM.Runtime
                             }
                             else if (subsequent || methods[index].IsExplicitOverride || baseMethod.RealName != name)
                             {
-                                typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
+                                typeBuilder.DefineMethodOverride(mb, (IMethodSymbol)baseMethod.GetMethod());
                             }
 
                             // the non-primary base methods always need an explicit method override

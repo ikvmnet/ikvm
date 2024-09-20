@@ -29,6 +29,34 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyName name, AssemblyBuilderAccess access)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name, access));
+        }
+
+        /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyName name, AssemblyBuilderAccess access, ICustomAttributeBuilder[]? assemblyAttributes)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name, access, assemblyAttributes?.Unpack()));
+        }
+
+        /// <summary>
         /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> indexed based on the assembly's name.
         /// </summary>
         /// <param name="assembly"></param>

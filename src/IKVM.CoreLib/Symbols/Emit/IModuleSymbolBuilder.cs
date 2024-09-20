@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Diagnostics.SymbolStore;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Emit
@@ -6,6 +8,16 @@ namespace IKVM.CoreLib.Symbols.Emit
 
     interface IModuleSymbolBuilder : ISymbolBuilder<IModuleSymbol>, IModuleSymbol
     {
+
+        /// <summary>
+        /// Defines a document for source.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="language"></param>
+        /// <param name="languageVendor"></param>
+        /// <param name="documentType"></param>
+        /// <returns></returns>
+        ISymbolDocumentWriter? DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType);
 
         /// <summary>
         /// Constructs a TypeBuilder for a private type with the specified name in this module.

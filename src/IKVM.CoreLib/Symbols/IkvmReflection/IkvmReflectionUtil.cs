@@ -1,6 +1,9 @@
 ﻿using System;
 
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 
@@ -18,7 +21,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static System.Reflection.AssemblyName ToAssemblyName(this AssemblyName n)
+        public static System.Reflection.AssemblyName Pack(this AssemblyName n)
         {
             return new System.Reflection.AssemblyName()
             {
@@ -42,14 +45,58 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static System.Reflection.AssemblyName[] ToAssemblyNames(this AssemblyName[] n)
+        public static System.Reflection.AssemblyName[] Pack(this AssemblyName[] n)
         {
             if (n.Length == 0)
                 return [];
 
             var a = new System.Reflection.AssemblyName[n.Length];
             for (int i = 0; i < n.Length; i++)
-                a[i] = n[i].ToAssemblyName();
+                a[i] = n[i].Pack();
+
+            return a;
+        }
+
+#pragma warning disable SYSLIB0017 // Type or member is obsolete
+#pragma warning disable SYSLIB0037 // Type or member is obsolete
+
+        /// <summary>
+        /// Converts a <see cref="System.Reflection.AssemblyName"/> to a <see cref="AssemblyName"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyName Unpack(this System.Reflection.AssemblyName n)
+        {
+            return new AssemblyName()
+            {
+                Name = n.Name,
+                Version = n.Version,
+                CultureInfo = n.CultureInfo,
+                CultureName = n.CultureName,
+                ProcessorArchitecture = (ProcessorArchitecture)n.ProcessorArchitecture,
+                Flags = (AssemblyNameFlags)n.Flags,
+                HashAlgorithm = (AssemblyHashAlgorithm)n.HashAlgorithm,
+                ContentType = (AssemblyContentType)n.ContentType,
+                VersionCompatibility = (AssemblyVersionCompatibility)n.VersionCompatibility,
+            };
+        }
+
+#pragma warning restore SYSLIB0037 // Type or member is obsolete
+#pragma warning restore SYSLIB0017 // Type or member is obsolete
+
+        /// <summary>
+        /// Converts a set of <see cref="System.Reflection.AssemblyName"/> to a set of <see cref="AssemblyName"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyName[] Unpack(this System.Reflection.AssemblyName[] n)
+        {
+            if (n.Length == 0)
+                return [];
+
+            var a = new AssemblyName[n.Length];
+            for (int i = 0; i < n.Length; i++)
+                a[i] = n[i].Unpack();
 
             return a;
         }
@@ -308,6 +355,93 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 a[i] = modifiers[i].Unpack();
 
             return a;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILocalBuilder"/>.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        public static LocalBuilder Unpack(this ILocalBuilder builder)
+        {
+            return ((IkvmReflectionLocalBuilder)builder).UnderlyingLocalBuilder;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILabel"/>.
+        /// </summary>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        public static Label Unpack(this ILabel label)
+        {
+            return ((IkvmReflectionLabel)label).UnderlyingLabel;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILabel"/>s.
+        /// </summary>
+        /// <param name="labels"></param>
+        /// <returns></returns>
+        public static Label[] Unpack(this ILabel[] labels)
+        {
+            var a = new Label[labels.Length];
+            for (int i = 0; i < labels.Length; i++)
+                a[i] = labels[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ICustomAttributeBuilder"/>.
+        /// </summary>
+        /// <param name="customAttributes"></param>
+        /// <returns></returns>
+        public static CustomAttributeBuilder Unpack(this ICustomAttributeBuilder customAttributes)
+        {
+            return ((IkvmReflectionCustomAttributeBuilder)customAttributes).UnderlyingBuilder;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ICustomAttributeBuilder"/>s.
+        /// </summary>
+        /// <param name="customAttributes"></param>
+        /// <returns></returns>
+        public static CustomAttributeBuilder[] Unpack(this ICustomAttributeBuilder[] customAttributes)
+        {
+            if (customAttributes.Length == 0)
+                return [];
+
+            var a = new CustomAttributeBuilder[customAttributes.Length];
+            for (int i = 0; i < customAttributes.Length; i++)
+                a[i] = customAttributes[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type represents a type definition.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsTypeDefinition(this Type type)
+        {
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
+
+            return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given method represents a method definition.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsMethodDefinition(this MethodBase method)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            return method.IsGenericMethod == false || (method.IsGenericMethod && method.IsGenericMethodDefinition == true);
         }
 
     }

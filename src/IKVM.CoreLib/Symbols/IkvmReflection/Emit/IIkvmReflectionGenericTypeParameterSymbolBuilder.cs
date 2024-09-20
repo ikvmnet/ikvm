@@ -4,7 +4,7 @@ using IKVM.Reflection.Emit;
 namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
-    interface IIkvmReflectionGenericTypeParameterSymbolBuilder : IIkvmReflectionSymbolBuilder<IIkvmReflectionTypeSymbol>, IGenericTypeParameterSymbolBuilder, IIkvmReflectionTypeSymbol
+    interface IIkvmReflectionGenericTypeParameterSymbolBuilder : IIkvmReflectionSymbolBuilder, IGenericTypeParameterSymbolBuilder, IIkvmReflectionTypeSymbol
     {
 
         /// <summary>

@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
@@ -13,7 +11,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         readonly Assembly _assembly;
-        IkvmReflectionAssemblyMetadata _impl;
+
+        IkvmReflectionModuleTable _moduleTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,13 +23,23 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             base(context)
         {
             _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-            _impl = new IkvmReflectionAssemblyMetadata(this);
+            _moduleTable = new IkvmReflectionModuleTable(context, this);
         }
 
         /// <summary>
         /// Gets the underlying <see cref="Assembly"/> instance.
         /// </summary>
         public Assembly UnderlyingAssembly => _assembly;
+
+        #region IIkvmAssemblySymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        {
+            return _moduleTable.GetOrCreateModuleSymbol(module);
+        }
+
+        #endregion
 
         #region IAssemblySymbol
 
@@ -82,19 +91,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public System.Reflection.AssemblyName GetName()
         {
-            return _assembly.GetName().ToAssemblyName();
+            return _assembly.GetName().Pack();
         }
 
         /// <inheritdoc />
         public System.Reflection.AssemblyName GetName(bool copiedName)
         {
-            return _assembly.GetName().ToAssemblyName();
+            return _assembly.GetName().Pack();
         }
 
         /// <inheritdoc />
         public System.Reflection.AssemblyName[] GetReferencedAssemblies()
         {
-            return _assembly.GetReferencedAssemblies().ToAssemblyNames();
+            return _assembly.GetReferencedAssemblies().Pack();
         }
 
         /// <inheritdoc />
@@ -146,16 +155,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         #endregion
-
-        public IIkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
-        {
-            return _impl.GetOrCreateModuleSymbol(module);
-        }
-
-        public IIkvmReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
-        {
-            return (IIkvmReflectionModuleSymbolBuilder)_impl.GetOrCreateModuleSymbol(module);
-        }
 
     }
 

@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         readonly IIkvmReflectionModuleSymbol _resolvingModule;
-        readonly IIkvmReflectionMethodBaseSymbol _resolvingMethod;
+        readonly IIkvmReflectionMemberSymbol _resolvingMember;
         readonly ParameterInfo _parameter;
 
         /// <summary>
@@ -18,13 +18,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
-        /// <param name="resolvingMethod"></param>
+        /// <param name="resolvingMember"></param>
         /// <param name="parameter"></param>
-        public IkvmReflectionParameterSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionMethodBaseSymbol resolvingMethod, ParameterInfo parameter) :
+        public IkvmReflectionParameterSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionMemberSymbol? resolvingMember, ParameterInfo parameter) :
             base(context)
         {
             _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingMethod = resolvingMethod ?? throw new ArgumentNullException(nameof(resolvingMethod));
+            _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
             _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
         }
 
@@ -32,7 +32,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IIkvmReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
         /// <inheritdoc />
-        public IIkvmReflectionMethodBaseSymbol ResolvingMethod => _resolvingMethod;
+        public IIkvmReflectionMemberSymbol ResolvingMember => _resolvingMember;
 
         /// <inheritdoc />
         public ParameterInfo UnderlyingParameter => _parameter;

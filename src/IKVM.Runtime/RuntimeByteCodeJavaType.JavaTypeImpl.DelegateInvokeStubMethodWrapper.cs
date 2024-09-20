@@ -21,21 +21,18 @@
   jeroen@frijters.net
   
 */
-using System;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 using RuntimeDynamicOrImportJavaType = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
@@ -64,7 +61,7 @@ namespace IKVM.Runtime
                     this.delegateType = delegateType;
                 }
 
-                internal MethodInfo DoLink(TypeBuilder tb)
+                internal IMethodSymbol DoLink(ITypeSymbolBuilder tb)
                 {
                     var mw = DeclaringType.GetMethodWrapper("Invoke", Signature, true);
 
@@ -74,7 +71,7 @@ namespace IKVM.Runtime
                     for (int i = 0; i < parameterTypes.Length; i++)
                         parameterTypes[i] = parameters[i].ParameterType;
 
-                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType.AsReflection(), parameterTypes.AsReflection());
+                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
                     DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
                     var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)
@@ -90,7 +87,7 @@ namespace IKVM.Runtime
                         if (parameters[i].ParameterType.IsByRef)
                         {
                             var elemType = parameters[i].ParameterType.GetElementType();
-                            var local = ilgen.DeclareLocal(RuntimeArrayJavaType.MakeArrayType(elemType, 1));
+                            var local = ilgen.DeclareLocal(elemType.MakeArrayType(1));
                             byrefs[i] = local;
                             ilgen.Emit(OpCodes.Ldc_I4_1);
                             ilgen.Emit(OpCodes.Newarr, elemType);

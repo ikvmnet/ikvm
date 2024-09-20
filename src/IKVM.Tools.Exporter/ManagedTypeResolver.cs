@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.IkvmReflection;
@@ -11,85 +13,104 @@ namespace IKVM.Tools.Exporter
 {
 
     class ManagedTypeResolver : IRuntimeSymbolResolver
-	{
+    {
 
-		readonly StaticCompiler compiler;
-		readonly Assembly baseAssembly;
-		readonly IkvmReflectionSymbolContext symbols = new();
+        readonly StaticCompiler compiler;
+        readonly Assembly baseAssembly;
+        readonly IkvmReflectionSymbolContext symbols;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="compiler"></param>
         /// <param name="baseAssembly"></param>
-        public ManagedTypeResolver(StaticCompiler compiler, Assembly baseAssembly)
-		{
-			this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-			this.baseAssembly = baseAssembly;
+        public ManagedTypeResolver(IkvmReflectionSymbolContext symbols, StaticCompiler compiler, Assembly baseAssembly)
+        {
+            this.symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
+            this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+            this.baseAssembly = baseAssembly;
         }
 
-		/// <inheritdoc />
+        /// <inheritdoc />
         public ISymbolContext Symbols => symbols;
 
         /// <summary>
         /// Attempts to resolve the base Java assembly.
         /// </summary>
         /// <returns></returns>
-        public IAssemblySymbol ResolveBaseAssembly()
-		{
-			return baseAssembly != null ? symbols.GetOrCreateAssemblySymbol(baseAssembly) : null;
-		}
+        public IAssemblySymbol? ResolveBaseAssembly()
+        {
+            return ResolveAssembly(baseAssembly);
+        }
 
-		/// <summary>
-		/// Attempts to resolve an assembly from one of the assembly sources.
-		/// </summary>
-		/// <param name="assemblyName"></param>
-		/// <returns></returns>
-		public IAssemblySymbol ResolveAssembly(string assemblyName)
-		{
-			return compiler.Load(assemblyName) is { } a ? symbols.GetOrCreateAssemblySymbol(a) : null;
-		}
+        /// <summary>
+        /// Attempts to resolve an assembly from one of the assembly sources.
+        /// </summary>
+        /// <param name="assemblyName"></param>
+        /// <returns></returns>
+        public IAssemblySymbol? ResolveAssembly(string assemblyName)
+        {
+            return ResolveAssembly(compiler.Load(assemblyName));
+        }
 
-		/// <summary>
-		/// Attempts to resolve a type from one of the assembly sources.
-		/// </summary>
-		/// <param name="typeName"></param>
-		/// <returns></returns>
-		public ITypeSymbol ResolveCoreType(string typeName)
-		{
-			foreach (var assembly in compiler.Universe.GetAssemblies())
-				if (assembly.GetType(typeName) is Type t)
-					return ResolveType(t);
+        /// <summary>
+        /// Attempts to resolve a type from one of the assembly sources.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        public ITypeSymbol? ResolveCoreType(string typeName)
+        {
+            foreach (var assembly in compiler.Universe.GetAssemblies())
+                if (assembly.GetType(typeName) is Type t)
+                    return ResolveType(t);
 
-			return null;
-		}
+            return null;
+        }
 
-		/// <summary>
-		/// Attempts to resolve a type from the IKVM runtime assembly.
-		/// </summary>
-		/// <param name="typeName"></param>
-		/// <returns></returns>
-		public ITypeSymbol ResolveRuntimeType(string typeName)
-		{
-			return compiler.GetRuntimeType(typeName) is { } t ? symbols.GetOrCreateTypeSymbol(t) : null;
+        /// <summary>
+        /// Attempts to resolve a type from the IKVM runtime assembly.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        public ITypeSymbol? ResolveRuntimeType(string typeName)
+        {
+            return ResolveType(compiler.GetRuntimeType(typeName));
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol ResolveAssembly(Assembly assembly)
+        public IAssemblySymbol? ResolveAssembly(Assembly? assembly)
         {
-            return symbols.GetOrCreateAssemblySymbol(assembly);
+            return assembly != null ? symbols.GetOrCreateAssemblySymbol(assembly) : null;
         }
 
         /// <inheritdoc />
-        public IModuleSymbol ResolveModule(Module module)
+        public IModuleSymbol? ResolveModule(Module? module)
         {
-            return symbols.GetOrCreateModuleSymbol(module);
+            return module != null ? symbols.GetOrCreateModuleSymbol(module) : null;
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveType(Type type)
+        public ITypeSymbol? ResolveType(Type? type)
         {
-			return symbols.GetOrCreateTypeSymbol(type);
+            return type != null ? symbols.GetOrCreateTypeSymbol(type) : null;
+        }
+
+        /// <inheritdoc />
+        public IMethodBaseSymbol? ResolveMethodBase(MethodBase? method)
+        {
+            return method != null ? symbols.GetOrCreateMethodBaseSymbol(method) : null;
+        }
+
+        /// <inheritdoc />
+        public IConstructorSymbol? ResolveConstructor(ConstructorInfo? ctor)
+        {
+            return ctor != null ? symbols.GetOrCreateConstructorSymbol(ctor) : null;
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol? ResolveMethod(MethodInfo? method)
+        {
+            return method != null ? symbols.GetOrCreateMethodSymbol(method) : null;
         }
 
     }

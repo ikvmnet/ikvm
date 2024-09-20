@@ -13,6 +13,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         ConstructorBuilder? _builder;
         ConstructorInfo _ctor;
 
+        IkvmReflectionILGenerator? _il;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionConstructorSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol resolvingType, ConstructorBuilder builder) :
+        public IkvmReflectionConstructorSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder resolvingType, ConstructorBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
@@ -54,13 +56,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IILGenerator GetILGenerator()
         {
-            throw new NotImplementedException();
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator());
         }
 
         /// <inheritdoc />
         public IILGenerator GetILGenerator(int streamSize)
         {
-            throw new NotImplementedException();
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator(streamSize));
         }
 
         /// <inheritdoc />

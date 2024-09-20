@@ -28,11 +28,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IIkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type);
 
         /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionTypeSymbolBuilder"/> for the specified <see cref="TypeBuilder"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionMethodBaseSymbol"/> for the specified <see cref="MethodBase"/>.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="method"></param>
         /// <returns></returns>
-        IIkvmReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type);
+        IIkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method);
 
         /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
@@ -42,25 +42,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IIkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor);
 
         /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbolBuilder"/> for the specified <see cref="ConstructorBuilder"/>.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        IIkvmReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor);
-
-        /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
         IIkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method);
-
-        /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionMethodSymbolBuilder"/> for the specified <see cref="MethodBuilder"/>.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        IIkvmReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method);
 
         /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
@@ -70,25 +56,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IIkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field);
 
         /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionFieldSymbolBuilder"/> for the specified <see cref="FieldBuilder"/>.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        IIkvmReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field);
-
-        /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
         IIkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property);
-
-        /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        IIkvmReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property);
 
         /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
@@ -98,25 +70,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IIkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event);
 
         /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionEventSymbolBuilder"/> for the specified <see cref="EventBuilder"/>.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event);
-
-        /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
         /// </summary>
         /// <param name="parameter"></param>
         /// <returns></returns>
         IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter);
-
-        /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionParameterSymbolBuilder"/> for the specified <see cref="ParameterBuilder"/>.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter);
 
     }
 

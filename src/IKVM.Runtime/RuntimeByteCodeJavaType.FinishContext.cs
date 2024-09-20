@@ -24,6 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
@@ -36,8 +38,6 @@ using IKVM.Tools.Importer;
 
 using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
 #else
-using System.Reflection;
-using System.Reflection.Emit;
 
 using DynamicOrAotTypeWrapper = IKVM.Runtime.RuntimeByteCodeJavaType;
 #endif
@@ -195,13 +195,13 @@ namespace IKVM.Runtime
                 ilgen.DoEmit();
             }
 
-            private void RegisterNestedTypeBuilder(TypeBuilder tb)
+            private void RegisterNestedTypeBuilder(ITypeSymbolBuilder tb)
             {
-                nestedTypeBuilders ??= new List<TypeBuilder>();
+                nestedTypeBuilders ??= new List<ITypeSymbolBuilder>();
                 nestedTypeBuilders.Add(tb);
             }
 
-            internal Type FinishImpl()
+            internal ITypeSymbol FinishImpl()
             {
                 var methods = wrapper.GetMethods();
                 var fields = wrapper.GetFields();
@@ -665,7 +665,7 @@ namespace IKVM.Runtime
 
                     if (m.Annotations != null)
                     {
-                        ParameterBuilder returnParameter = null;
+                        IParameterSymbolBuilder returnParameter = null;
                         foreach (object[] def in m.Annotations)
                         {
                             var annotation = Annotation.Load(wrapper, def);
@@ -741,7 +741,7 @@ namespace IKVM.Runtime
                     }
 #if !IMPORTER
                     if (liveObjects != null)
-                        context.Resolver.ResolveRuntimeType("IKVM.Runtime.LiveObjectHolder`1").GetField("values", BindingFlags.Static | BindingFlags.Public).AsReflection().SetValue(liveObjects.ToArray());
+                        context.Resolver.ResolveRuntimeType("IKVM.Runtime.LiveObjectHolder`1").GetField("values", BindingFlags.Static | BindingFlags.Public).AsReflection().SetValue(null, liveObjects.ToArray());
 #endif
                 }
                 finally
@@ -1005,7 +1005,7 @@ namespace IKVM.Runtime
             private void AddMethodParameterInfo(ClassFile.Method m, RuntimeJavaMethod mw, IMethodSymbolBuilder mb, out string[] parameterNames)
             {
                 parameterNames = null;
-                ParameterBuilder[] parameterBuilders = null;
+                IParameterSymbolBuilder[] parameterBuilders = null;
 
                 if (wrapper.ClassLoader.EmitSymbols
 #if IMPORTER
@@ -1660,7 +1660,7 @@ namespace IKVM.Runtime
                     this.context = context ?? throw new ArgumentNullException(nameof(context));
                 }
 
-                Type LocalRefStructType => context.Resolver.ResolveRuntimeType("IKVM.Runtime.JNI.JNIFrame").AsReflection();
+                ITypeSymbol LocalRefStructType => context.Resolver.ResolveRuntimeType("IKVM.Runtime.JNI.JNIFrame");
 
                 IMethodSymbol JniFuncPtrMethod => LocalRefStructType.GetMethod("GetFuncPtr");
 
@@ -1781,7 +1781,7 @@ namespace IKVM.Runtime
 
                     ilGenerator.Emit(OpCodes.Ldsfld, methodPtr);
 
-                    Type realRetType;
+                    ITypeSymbol realRetType;
                     if (retTypeWrapper == context.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                         realRetType = context.Context.Types.Byte;
                     else if (retTypeWrapper.IsPrimitive)
@@ -1940,16 +1940,16 @@ namespace IKVM.Runtime
                             // look for "magic" interfaces that imply a .NET interface
                             if (iface.ClassLoader == context.JavaBase.TypeOfJavaLangObject.ClassLoader)
                             {
-                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).AsReflection())))
+                                if (iface.Name == "java.lang.Iterable" && !wrapper.ImplementsInterface(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName))))
                                 {
                                     var enumeratorType = context.ClassLoaderFactory.GetBootstrapClassLoader().TryLoadClassByName("ikvm.lang.IterableEnumerator");
                                     if (enumeratorType != null)
                                     {
-                                        typeBuilder.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).AsReflection());
+                                        typeBuilder.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName));
                                         // FXBUG we're using the same method name as the C# compiler here because both the .NET and Mono implementations of Xml serialization depend on this method name
-                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerator).FullName).AsReflection(), []);
+                                        var mb = typeBuilder.DefineMethod("System.Collections.IEnumerable.GetEnumerator", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerator).FullName), []);
                                         context.AttributeHelper.HideFromJava(mb);
-                                        typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator").AsReflection());
+                                        typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator"));
                                         var ilgen = context.CodeEmitterFactory.Create(mb);
                                         ilgen.Emit(OpCodes.Ldarg_0);
                                         var mw = enumeratorType.GetMethodWrapper("<init>", "(Ljava.lang.Iterable;)V", false);
@@ -1990,7 +1990,7 @@ namespace IKVM.Runtime
                     if (RuntimeManagedJavaType.IsUnsupportedAbstractMethod(mb))
                         GenerateUnsupportedAbstractMethodStub(mb);
 
-                var h = new Dictionary<MethodBase, MethodBase>();
+                var h = new Dictionary<IMethodSymbol, IMethodSymbol>();
                 var tw = (RuntimeJavaType)wrapper;
                 while (tw != null)
                 {
@@ -2096,7 +2096,7 @@ namespace IKVM.Runtime
                 return false;
             }
 
-            void EmitCallerIDInitialization(CodeEmitter ilGenerator, FieldInfo callerIDField)
+            void EmitCallerIDInitialization(CodeEmitter ilGenerator, IFieldSymbol callerIDField)
             {
                 var tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 if (tw.InternalsVisibleTo(wrapper))
@@ -2193,7 +2193,7 @@ namespace IKVM.Runtime
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
                 var tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
                 var fb = tb.DefineField("field", context.Types.Object, FieldAttributes.Private | FieldAttributes.Static);
-                fb.SetCustomAttribute(new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]).AsReflection(), []));
+                fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]), []));
 
                 var mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, context.Types.Object, []);
                 var ilgen = mbGet.GetILGenerator();

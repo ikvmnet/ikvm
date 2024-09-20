@@ -145,7 +145,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="methodInfoBody"></param>
         /// <param name="methodInfoDeclaration"></param>
-        void DefineMethodOverride(IMethodSymbolBuilder methodInfoBody, IMethodSymbol methodInfoDeclaration);
+        void DefineMethodOverride(IMethodSymbol methodInfoBody, IMethodSymbol methodInfoDeclaration);
 
         /// <summary>
         /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.

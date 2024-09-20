@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -27,6 +31,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static Module[] Unpack(this IModuleSymbol[] modules)
         {
+            if (modules.Length == 0)
+                return [];
+
             var a = new Module[modules.Length];
             for (int i = 0; i < modules.Length; i++)
                 a[i] = modules[i].Unpack();
@@ -54,6 +61,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static Type[] Unpack(this ITypeSymbol[] types)
         {
+            if (types.Length == 0)
+                return [];
+
             var a = new Type[types.Length];
             for (int i = 0; i < types.Length; i++)
                 a[i] = types[i].Unpack();
@@ -68,6 +78,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static Type[][] Unpack(this ITypeSymbol[][] types)
         {
+            if (types.Length == 0)
+                return [];
+
             var a = new Type[types.Length][];
             for (int i = 0; i < types.Length; i++)
                 a[i] = types[i].Unpack();
@@ -95,6 +108,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static MemberInfo[] Unpack(this IMemberSymbol[] members)
         {
+            if (members.Length == 0)
+                return [];
+
             var a = new MemberInfo[members.Length];
             for (int i = 0; i < members.Length; i++)
                 a[i] = members[i].Unpack();
@@ -122,6 +138,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static ConstructorInfo[] Unpack(this IConstructorSymbol[] ctor)
         {
+            if (ctor.Length == 0)
+                return [];
+
             var a = new ConstructorInfo[ctor.Length];
             for (int i = 0; i < ctor.Length; i++)
                 a[i] = ctor[i].Unpack();
@@ -149,6 +168,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static MethodInfo[] Unpack(this IMethodSymbol[] ctor)
         {
+            if (ctor.Length == 0)
+                return [];
+
             var a = new MethodInfo[ctor.Length];
             for (int i = 0; i < ctor.Length; i++)
                 a[i] = ctor[i].Unpack();
@@ -176,6 +198,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static FieldInfo[] Unpack(this IFieldSymbol[] fields)
         {
+            if (fields.Length == 0)
+                return [];
+
             var a = new FieldInfo[fields.Length];
             for (int i = 0; i < fields.Length; i++)
                 a[i] = fields[i].Unpack();
@@ -203,9 +228,73 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public static PropertyInfo[] Unpack(this IPropertySymbol[] properties)
         {
+            if (properties.Length == 0)
+                return [];
+
             var a = new PropertyInfo[properties.Length];
             for (int i = 0; i < properties.Length; i++)
                 a[i] = properties[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILocalBuilder"/>.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        public static LocalBuilder Unpack(this ILocalBuilder builder)
+        {
+            return ((ReflectionLocalBuilder)builder).UnderlyingLocalBuilder;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILabel"/>.
+        /// </summary>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        public static Label Unpack(this ILabel label)
+        {
+            return ((ReflectionLabel)label).UnderlyingLabel;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ILabel"/>s.
+        /// </summary>
+        /// <param name="labels"></param>
+        /// <returns></returns>
+        public static Label[] Unpack(this ILabel[] labels)
+        {
+            var a = new Label[labels.Length];
+            for (int i = 0; i < labels.Length; i++)
+                a[i] = labels[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ICustomAttributeBuilder"/>.
+        /// </summary>
+        /// <param name="customAttributes"></param>
+        /// <returns></returns>
+        public static CustomAttributeBuilder Unpack(this ICustomAttributeBuilder customAttributes)
+        {
+            return ((ReflectionCustomAttributeBuilder)customAttributes).UnderlyingBuilder;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="ICustomAttributeBuilder"/>s.
+        /// </summary>
+        /// <param name="customAttributes"></param>
+        /// <returns></returns>
+        public static CustomAttributeBuilder[] Unpack(this ICustomAttributeBuilder[] customAttributes)
+        {
+            if (customAttributes.Length == 0)
+                return [];
+
+            var a = new CustomAttributeBuilder[customAttributes.Length];
+            for (int i = 0; i < customAttributes.Length; i++)
+                a[i] = customAttributes[i].Unpack();
 
             return a;
         }

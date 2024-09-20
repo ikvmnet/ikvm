@@ -1020,7 +1020,7 @@ namespace IKVM.Runtime
         internal RemappedTypeAttribute GetRemappedType(ITypeSymbol type)
         {
             foreach (var cad in type.GetCustomAttributes(TypeOfRemappedTypeAttribute))
-                return new RemappedTypeAttribute((Type)cad.ConstructorArguments[0].Value);
+                return new RemappedTypeAttribute(((ITypeSymbol)cad.ConstructorArguments[0].Value).AsReflection());
 
             return null;
         }
@@ -1032,7 +1032,7 @@ namespace IKVM.Runtime
             foreach (var cad in coreAssembly.GetCustomAttributes(TypeOfRemappedClassAttribute))
             {
                 var args = cad.ConstructorArguments;
-                attrs.Add(new RemappedClassAttribute((string)args[0].Value, (Type)args[1].Value));
+                attrs.Add(new RemappedClassAttribute((string)args[0].Value, ((ITypeSymbol)args[1].Value).AsReflection()));
             }
 
             return attrs.ToArray();

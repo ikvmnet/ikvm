@@ -1,10 +1,29 @@
-﻿using IKVM.CoreLib.Symbols.Emit;
+﻿using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols
 {
 
     interface ISymbolContext
     {
+
+        /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        IAssemblySymbolBuilder DefineAssembly(AssemblyName name, AssemblyBuilderAccess access);
+
+        /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        IAssemblySymbolBuilder DefineAssembly(AssemblyName name, AssemblyBuilderAccess access, ICustomAttributeBuilder[]? assemblyAttributes);
 
         /// <summary>
         /// Initializes an instance of the <see cref="ICustomAttributeBuilder"/> interface given the constructor for the custom attribute and the arguments to the constructor.

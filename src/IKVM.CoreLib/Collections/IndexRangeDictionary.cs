@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.CoreLib.Collections
 {
@@ -11,15 +12,35 @@ namespace IKVM.CoreLib.Collections
     struct IndexRangeDictionary<T>
     {
 
-        int _initialCapacity;
+        const int ALIGNMENT = 8;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int AlignTowardsInfinity(int i)
+        {
+            if (i >= 0)
+                return (i + (ALIGNMENT - 1)) & -ALIGNMENT;
+            else
+                return -((-i + (ALIGNMENT - 1)) & -ALIGNMENT);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int AlignTowardsZero(int i)
+        {
+            if (i >= 0)
+                return i - (i % ALIGNMENT);
+            else
+                return -(-i - (-i % ALIGNMENT));
+        }
+
         int _maxCapacity;
-        int _minKey;
-        T?[]? _items;
+        internal int _minKey = 0;
+        internal int _maxKey = 0;
+        internal T?[] _items = [];
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public IndexRangeDictionary() : this(initialCapacity: 4, maxCapacity: int.MaxValue)
+        public IndexRangeDictionary() : this(maxCapacity: int.MaxValue)
         {
 
         }
@@ -27,21 +48,18 @@ namespace IKVM.CoreLib.Collections
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public IndexRangeDictionary(int initialCapacity = 4, int maxCapacity = int.MaxValue)
+        public IndexRangeDictionary(int maxCapacity = int.MaxValue)
         {
-            if (initialCapacity < 0)
-                throw new ArgumentOutOfRangeException(nameof(initialCapacity));
             if (maxCapacity < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxCapacity));
 
-            _initialCapacity = initialCapacity;
             _maxCapacity = maxCapacity;
         }
 
         /// <summary>
         /// Gets the capacity of the dictionary.
         /// </summary>
-        public readonly int Capacity => _items?.Length ?? 0;
+        public readonly int Capacity => _items.Length;
 
         /// <summary>
         /// Gets or sets the item with the specified key, optionally growing the list to accomidate.
@@ -61,46 +79,47 @@ namespace IKVM.CoreLib.Collections
         /// <exception cref="InvalidOperationException"></exception>
         public void EnsureCapacity(int key)
         {
-            // initial state, first item, hold only that
-            if (_items == null)
+            // on first hit, set keys to this key (not 0)
+            if (_items.Length == 0)
             {
                 _minKey = key;
-                _items = new T[_initialCapacity];
+                _maxKey = key;
             }
 
-            // key is less than minKey, grow and shift by difference
-            if (key < _minKey)
+            // calculate new min and max aligned
+            var newMin = Math.Min(_minKey, Math.Min(AlignTowardsZero(key), AlignTowardsInfinity(key)));
+            var newMax = Math.Max(_maxKey, Math.Max(AlignTowardsZero(key), AlignTowardsInfinity(key)));
+
+            // calculate desired length
+            var len = Math.Max(_items.Length, 8);
+            while (len < newMax - newMin + 1)
+                len *= 2;
+
+            // calculate amount to shift
+            int sft = 0;
+            if (newMin < _minKey)
+                sft = _minKey - newMin;
+
+            // if we calculated any resize or shift operation, apply
+            if (_items.Length != len || sft > 0)
             {
-                // increase length until we encompass key
-                var len = _items.Length;
-                while (key - _minKey +  len - _items.Length < 0)
-                    len *= 2;
+                // we will be copying data either to either existing array or new array
+                var src = _items;
+                if (_items.Length != len)
+                    _items = new T[len];
 
-                if (len > _maxCapacity || len < 0)
-                    throw new InvalidOperationException();
-
-                var end = _items.Length - 1;
-                Array.Resize(ref _items, len);
-                for (int i = end; i >= 0; i--)
-                    _items[i + _minKey - key] = _items[i];
-                Array.Clear(_items, 0, end);
-
-                _minKey = key;
+                // copy source data to destination at shift
+                // clear newly exposed positions
+                if (src.Length > 0)
+                {
+                    Array.Copy(src, 0, _items, sft, _maxKey - _minKey + 1);
+                    Array.Clear(_items, 0, sft);
+                }
             }
 
-            // desired position if after the end of the array, we need to grow, but no copies needed
-            if (key - _minKey >= _items.Length)
-            {
-                // increase length until we encompass key
-                var len = _items.Length;
-                while (key - _minKey >= len)
-                    len *= 2;
-
-                if (len > _maxCapacity || len < 0)
-                    throw new InvalidOperationException();
-
-                Array.Resize(ref _items, len);
-            }
+            // reset our min and max range
+            _minKey = newMin;
+            _maxKey = newMax;
 
             Debug.Assert(key - _minKey >= 0);
             Debug.Assert(key - _minKey < _items.Length);
@@ -113,7 +132,7 @@ namespace IKVM.CoreLib.Collections
         readonly T? Get(int key)
         {
             var pos = key - _minKey;
-            if (_items == null || pos < 0 || pos >= _items.Length)
+            if (pos < 0 || pos >= _items.Length)
                 return default;
             else
                 return _items[pos];
@@ -121,7 +140,7 @@ namespace IKVM.CoreLib.Collections
 
         /// <summary>
         /// Adds a new item to the list.
-        /// </summary>
+        /// </summary> 
         /// <param name="key"></param>
         /// <param name="value"></param>
         void Set(int key, T? value)

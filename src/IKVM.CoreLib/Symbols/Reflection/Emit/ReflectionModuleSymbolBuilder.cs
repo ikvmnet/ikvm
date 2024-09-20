@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -41,6 +42,16 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
 
         #region IModuleSymbolBuilder
+
+        /// <inheritdoc />
+        public ISymbolDocumentWriter? DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
+        {
+#if NETFRAMEWORK
+            return UnderlyingModuleBuilder.DefineDocument(url, language, languageVendor, documentType);
+#else
+            return null;
+#endif
+        }
 
         /// <inheritdoc />
         public ITypeSymbolBuilder DefineType(string name)
@@ -96,7 +107,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingModuleBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
-        #endregion
+#endregion
 
         #region IModuleSymbol
 

@@ -1,4 +1,5 @@
 ﻿using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
@@ -6,16 +7,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     abstract class IkvmReflectionMethodBaseSymbolBuilder : IkvmReflectionMemberSymbolBuilder, IIkvmReflectionMethodBaseSymbolBuilder
     {
 
+        IkvmReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingType"></param>
-        public IkvmReflectionMethodBaseSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol? resolvingType) :
+        public IkvmReflectionMethodBaseSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder? resolvingType) :
             base(context, resolvingModule, resolvingType)
         {
-
+            _parameterTable = new IkvmReflectionParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
@@ -23,6 +26,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
+
+        #region IIkvmReflectionMethodBaseSymbolBuilder
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IIkvmReflectionMethodBaseSymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
 
         #region IMethodBaseSymbol
 

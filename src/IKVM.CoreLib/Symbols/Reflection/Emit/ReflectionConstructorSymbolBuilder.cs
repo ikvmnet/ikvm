@@ -13,6 +13,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         ConstructorBuilder? _builder;
         ConstructorInfo _ctor;
 
+        ReflectionILGenerator? _il;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -54,13 +56,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public IILGenerator GetILGenerator()
         {
-            throw new NotImplementedException();
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator());
         }
 
         /// <inheritdoc />
         public IILGenerator GetILGenerator(int streamSize)
         {
-            throw new NotImplementedException();
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator(streamSize));
         }
 
         /// <inheritdoc />

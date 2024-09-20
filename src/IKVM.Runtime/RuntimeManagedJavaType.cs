@@ -24,19 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -308,7 +301,7 @@ namespace IKVM.Runtime
             Debug.Assert(!type.IsByRef, type.FullName);
             Debug.Assert(!type.IsPointer, type.FullName);
             Debug.Assert(!type.Name.EndsWith("[]"), type.FullName);
-            Debug.Assert(type.AsReflection() is not TypeBuilder, type.FullName);
+            Debug.Assert(type is not ITypeSymbolBuilder, type.FullName);
             Debug.Assert(!Context.AttributeHelper.IsJavaModule(type.Module));
 
             this.type = type;
@@ -605,7 +598,11 @@ namespace IKVM.Runtime
                 type = type.GetElementType();
             }
 
-            return type.IsUnmanagedFunctionPointer;
+#if IMPORTER || EXPORTER
+            return type.IsFunctionPointer;
+#else
+            return false;
+#endif
         }
 
         bool MakeMethodDescriptor(IMethodBaseSymbol mb, out string name, out string sig, out RuntimeJavaType[] args, out RuntimeJavaType ret)
@@ -637,7 +634,7 @@ namespace IKVM.Runtime
 
                 if (type.IsByRef)
                 {
-                    type = RuntimeArrayJavaType.MakeArrayType(type.GetElementType(), 1);
+                    type = type.GetElementType().MakeArrayType(1);
                     if (mb.IsAbstract)
                     {
                         // Since we cannot override methods with byref arguments, we don't report abstract
@@ -655,7 +652,7 @@ namespace IKVM.Runtime
                 sb.Append(tw.SigName);
             }
             sb.Append(')');
-            if (mb is ConstructorInfo)
+            if (mb is IConstructorSymbol)
             {
                 ret = Context.PrimitiveJavaTypeFactory.VOID;
                 name = mb.IsStatic ? "<clinit>" : "<init>";

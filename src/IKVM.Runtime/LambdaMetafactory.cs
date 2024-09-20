@@ -24,19 +24,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.ByteCode;
-using IKVM.CoreLib.Diagnostics;
-using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
@@ -529,7 +525,7 @@ namespace IKVM.Runtime
             var mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
             if (interfaceMethod.Name != interfaceMethod.RealName)
             {
-                tb.DefineMethodOverride(mb, (MethodInfo)interfaceMethod.GetMethod());
+                tb.DefineMethodOverride(mb, (IMethodSymbol)interfaceMethod.GetMethod());
             }
 
             context.Context.AttributeHelper.HideFromJava(mb);

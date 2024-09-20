@@ -106,12 +106,4 @@
         </Compile>
     </ItemGroup>
 
-    <Target Name="Foo" BeforeTargets="" DependsOnTargets="">
-        <ItemGroup>
-            <None Include="$(IntermediateOutputPath)gen.txt">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            </None>
-        </ItemGroup>
-    </Target>
-
 </Project>

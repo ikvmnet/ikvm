@@ -330,6 +330,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(System.Reflection.CustomAttributeNamedArgument arg);
 
+        /// <summary>
+        /// Transforms a <see cref="System.Reflection.InterfaceMapping"/> into a symbol type.
+        /// </summary>
+        /// <param name="arg"></param>
+        /// <returns></returns>
+        InterfaceMapping ResolveInterfaceMapping(System.Reflection.InterfaceMapping arg);
+
     }
 
 }

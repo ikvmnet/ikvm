@@ -32,7 +32,7 @@ using IKVM.Runtime.Vfs;
 namespace IKVM.Java.Externs.java.lang
 {
 
-	static class Package
+    static class Package
     {
 
         static Dictionary<string, string> systemPackages;

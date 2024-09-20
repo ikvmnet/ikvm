@@ -14,8 +14,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionModuleSymbol : ReflectionSymbol, IReflectionModuleSymbol
     {
 
-        const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-
         readonly IReflectionAssemblySymbol _resolvingAssembly;
         readonly Module _module;
         ReflectionModuleMetadata _impl;

@@ -18,15 +18,45 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionSymbolContext : ISymbolContext
     {
 
+        readonly Universe _universe;
         readonly ConcurrentDictionary<string, WeakReference<IIkvmReflectionAssemblySymbol?>> _symbolByName = new();
         readonly ConditionalWeakTable<Assembly, IIkvmReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public IkvmReflectionSymbolContext()
+        /// <param name="universe"></param>
+        public IkvmReflectionSymbolContext(Universe universe)
         {
+            _universe = universe ?? throw new ArgumentNullException(nameof(universe));
+        }
 
+        /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        public IAssemblySymbolBuilder DefineAssembly(System.Reflection.AssemblyName name, System.Reflection.Emit.AssemblyBuilderAccess access)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), (AssemblyBuilderAccess)access));
+        }
+
+        /// <summary>
+        /// Defines a dynamic assembly that has the specified name and access rights.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="access"></param>
+        /// <returns></returns>
+        public IAssemblySymbolBuilder DefineAssembly(System.Reflection.AssemblyName name, System.Reflection.Emit.AssemblyBuilderAccess access, ICustomAttributeBuilder[]? assemblyAttributes)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), (AssemblyBuilderAccess)access, assemblyAttributes?.Unpack()));
         }
 
         /// <summary>
@@ -110,7 +140,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
         {
-            return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
+            return GetOrCreateAssemblySymbol((AssemblyBuilder)module.Assembly).GetOrCreateModuleSymbol(module);
         }
 
         /// <summary>
@@ -133,7 +163,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
         {
-            return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+            return GetOrCreateModuleSymbol((ModuleBuilder)type.Module).GetOrCreateTypeSymbol(type);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IIkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method is ConstructorInfo ctor)
+                return GetOrCreateConstructorSymbol(ctor);
+            else
+                return GetOrCreateMethodSymbol((MethodInfo)method);
         }
 
         /// <summary>
@@ -156,7 +199,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
         {
-            return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
+            return GetOrCreateModuleSymbol((ModuleBuilder)ctor.Module).GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <summary>
@@ -179,7 +222,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
         {
-            return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
+            return GetOrCreateModuleSymbol((ModuleBuilder)method.Module).GetOrCreateMethodSymbol(method);
         }
 
         /// <summary>
@@ -199,7 +242,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
         {
-            return GetOrCreateModuleSymbol(parameter.Module).GetOrCreateParameterSymbol(parameter);
+            return GetOrCreateModuleSymbol((ModuleBuilder)parameter.Module).GetOrCreateParameterSymbol(parameter);
         }
 
         /// <summary>
@@ -222,7 +265,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
         {
-            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -245,7 +288,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
         {
-            return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
+            return GetOrCreateModuleSymbol((ModuleBuilder)property.Module).GetOrCreatePropertySymbol(property);
         }
 
         /// <summary>
@@ -255,7 +298,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
-            return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
+            if (@event is EventBuilder builder)
+                return GetOrCreateEventSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
         }
 
         /// <summary>
@@ -265,7 +311,17 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         public IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
         {
-            return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
+            return GetOrCreateModuleSymbol((ModuleBuilder)@event.Module).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionGenericTypeParameterSymbolBuilder"/> for the specified <see cref="GenericTypeParameterBuilder"/>.
+        /// </summary>
+        /// <param name="genericTypeParameter"></param>
+        /// <returns></returns>
+        public IIkvmReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
         /// <inheritdoc />

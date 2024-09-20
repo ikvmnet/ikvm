@@ -21,17 +21,10 @@
   jeroen@frijters.net
   
 */
+using System.Reflection.Emit;
+
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -96,7 +89,7 @@ namespace IKVM.Runtime
                 {
                     var type = args[i];
                     if (type.IsByRef)
-                        type = RuntimeArrayJavaType.MakeArrayType(type.GetElementType(), 1);
+                        type = type.GetElementType().MakeArrayType(1);
 
                     locals[i] = ilgen.DeclareLocal(type);
                     ilgen.Emit(OpCodes.Stloc, locals[i]);

@@ -23,20 +23,16 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Diagnostics.SymbolStore;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.Runtime
 {
@@ -80,7 +76,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public CodeEmitter Create(IMethodSymbolBuilder mb)
         {
-            return new CodeEmitter(context, mb.GetILGenerator(), context.Resolver.ResolveType(mb.DeclaringType));
+            return new CodeEmitter(context, mb.GetILGenerator(), mb.DeclaringType);
         }
 
 #if IMPORTER == false
@@ -92,7 +88,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public CodeEmitter Create(DynamicMethod dm)
         {
-            return new CodeEmitter(context, dm.GetILGenerator(), null);
+            return new CodeEmitter(context, new ReflectionILGenerator((ReflectionSymbolContext)context.Resolver.Symbols, dm.GetILGenerator()), null);
         }
 
 #endif
@@ -2109,11 +2105,9 @@ namespace IKVM.Runtime
             }
         }
 
-        internal void DefineSymbolDocument(ModuleBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
+        internal void DefineSymbolDocument(IModuleSymbolBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
         {
-#if NETFRAMEWORK || IMPORTER
             symbols = module.DefineDocument(url, language, languageVendor, documentType);
-#endif
         }
 
         internal CodeEmitterLocal UnsafeAllocTempLocal(ITypeSymbol type)
@@ -2427,7 +2421,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal void EmitLineNumberTable(MethodBuilder mb)
+        internal void EmitLineNumberTable(IMethodSymbolBuilder mb)
         {
             if (linenums != null)
                 context.AttributeHelper.SetLineNumberTable(mb, linenums);

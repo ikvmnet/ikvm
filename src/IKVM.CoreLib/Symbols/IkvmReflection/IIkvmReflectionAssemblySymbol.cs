@@ -20,13 +20,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         IIkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module);
 
-        /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionModuleSymbolBuilder"/> for the specified <see cref="ModuleBuilder"/>.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        IIkvmReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module);
-
     }
 
 }

@@ -2,5 +2,9 @@
 {
     public interface ILabel
     {
+
+
+
     }
+
 }

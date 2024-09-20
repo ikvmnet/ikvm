@@ -25,14 +25,6 @@ using System;
 
 using IKVM.CoreLib.Symbols;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
@@ -150,10 +142,10 @@ namespace IKVM.Runtime
 
 #if EMITTERS
 
-        internal Type GetCustomModifier(RuntimeJavaTypeFactory context)
+        internal ITypeSymbol GetCustomModifier(RuntimeJavaTypeFactory context)
         {
             // we don't need to lock, because we're only supposed to be called while holding the finish lock
-            return customModifier ?? (customModifier = context.DefineUnloadable(this.Name));
+            return customModifier ??= context.DefineUnloadable(Name);
         }
 
         internal override void EmitCheckcast(CodeEmitter ilgen)
