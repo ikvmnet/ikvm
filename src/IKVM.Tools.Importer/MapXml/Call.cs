@@ -100,8 +100,9 @@ namespace IKVM.Tools.Importer.MapXml
             if (Name == ".ctor")
             {
                 Debug.Assert(Class == null && Type != null);
-                Type[] argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                ConstructorInfo ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+
+                var argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
+                var ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection().GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
                 if (ci == null)
                 {
                     throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
@@ -195,17 +196,17 @@ namespace IKVM.Tools.Importer.MapXml
                         argTypes = new Type[types.Length];
                         for (int i = 0; i < types.Length; i++)
                         {
-                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]);
+                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]).AsReflection();
                         }
                     }
 
-                    Type ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type);
+                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection();
                     if (ti == null)
                     {
                         throw new InvalidOperationException("Missing type: " + Type);
                     }
 
-                    MethodInfo mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+                    var mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
                     if (mi == null)
                     {
                         var ta = argTypes.Select(i => i.AssemblyQualifiedName).ToArray();

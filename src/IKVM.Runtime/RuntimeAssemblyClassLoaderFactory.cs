@@ -108,9 +108,9 @@ namespace IKVM.Runtime
                     return FromAssembly(mainAssembly);
             }
 
-            var baseAssembly = context.Resolver.ResolveBaseAssembly();
+            var baseAssembly = context.Resolver.ResolveBaseAssembly().AsReflection();
 #if IMPORTER
-            if (baseAssembly != null && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
+            if (baseAssembly != null && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute").AsReflection(), false))
                 context.ClassLoaderFactory.LoadRemappedTypes();
 #endif
 

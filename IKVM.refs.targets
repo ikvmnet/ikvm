@@ -5,6 +5,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Reflection\IKVM.Reflection.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+            <OutputItemType>IkvmLibsItem</OutputItemType>
+        </ProjectReference>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.CoreLib\IKVM.CoreLib.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>

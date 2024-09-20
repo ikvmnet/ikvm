@@ -125,7 +125,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
+                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").AsReflection().MakeGenericType(type);
                 ilgen.Emit(OpCodes.Call, classLiteralType.GetProperty("Value").GetMethod);
             }
         }
@@ -156,11 +156,11 @@ namespace IKVM.Runtime
             // these are the types that may not be used as a type argument when instantiating a generic type
             return type == context.Types.Void
 #if NETFRAMEWORK
-                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName)
+                || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName).AsReflection()
 #endif
-                || type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName)
-                || type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName)
-                || type.ContainsGenericParameters
+				|| type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName).AsReflection()
+				|| type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName).AsReflection()
+				|| type.ContainsGenericParameters
                 || type.IsByRef;
         }
 
@@ -1619,7 +1619,7 @@ namespace IKVM.Runtime
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName) }, null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, [context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName).AsReflection(), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName).AsReflection()], null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()

@@ -228,25 +228,25 @@ namespace IKVM.Runtime
 
         private static bool Float_floatToRawIntBits(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter"), "ToInt");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter").AsReflection(), "ToInt");
             return true;
         }
 
         private static bool Float_intBitsToFloat(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter"), "ToFloat");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter").AsReflection(), "ToFloat");
             return true;
         }
 
         private static bool Double_doubleToRawLongBits(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter"), "ToLong");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter").AsReflection(), "ToLong");
             return true;
         }
 
         static bool Double_longBitsToDouble(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter"), "ToDouble");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter").AsReflection(), "ToDouble");
             return true;
         }
 

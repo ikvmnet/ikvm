@@ -111,7 +111,7 @@ namespace IKVM.Runtime
 
             owner.Diagnostics.GenericCompilerWarning($"Unable to load annotation class {annotationClass}");
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection());
 #else
             return null;
 #endif

@@ -150,8 +150,8 @@ namespace IKVM.Runtime
         {
             this.context = context;
 
-            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName);
-            AddInt32 = type.GetMethod("Add", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32 });
+            var type = context.Resolver.ResolveCoreType(typeof(System.Threading.Interlocked).FullName).AsReflection();
+            AddInt32 = type.GetMethod("Add", [context.Types.Int32.MakeByRefType(), context.Types.Int32]);
             CompareExchangeInt32 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int32.MakeByRefType(), context.Types.Int32, context.Types.Int32 });
             CompareExchangeInt64 = type.GetMethod("CompareExchange", new Type[] { context.Types.Int64.MakeByRefType(), context.Types.Int64, context.Types.Int64 });
             foreach (MethodInfo m in type.GetMethods())

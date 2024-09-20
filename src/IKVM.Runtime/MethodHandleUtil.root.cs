@@ -53,29 +53,29 @@ namespace IKVM.Runtime
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
 
-            typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8");
+            typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8").AsReflection();
             typeofMHV = new Type[] {
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`1"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`2"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`3"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`4"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`5"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`6"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`7"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`8"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`1").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`2").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`3").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`4").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`5").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`6").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`7").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`8").AsReflection(),
             };
             typeofMH = new Type[] {
                 null,
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`1"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`2"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`3"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`4"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`5"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`6"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`7"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`8"),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`9"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`1").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`2").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`3").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`4").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`5").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`6").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`7").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`8").AsReflection(),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`9").AsReflection(),
             };
         }
 

@@ -24,6 +24,8 @@
 using System;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.CoreLib.Symbols.Reflection;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -108,7 +110,11 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         public ByteCodeHelperMethods(RuntimeContext context)
         {
-		    var typeofByteCodeHelper = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
+#if IMPORTER || EXPORTER
+            var typeofByteCodeHelper = ((IkvmReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+#else
+            var typeofByteCodeHelper = ((ReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+#endif
             multianewarray = GetHelper(typeofByteCodeHelper, "multianewarray");
             multianewarray_ghost = GetHelper(typeofByteCodeHelper, "multianewarray_ghost");
             anewarray_ghost = GetHelper(typeofByteCodeHelper, "anewarray_ghost");

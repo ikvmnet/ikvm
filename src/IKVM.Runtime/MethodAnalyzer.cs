@@ -2486,7 +2486,6 @@ namespace IKVM.Runtime
         {
             string text = string.Format(message, args);
 #if IMPORTER
-            Diagnostic msg;
             switch (hardError)
             {
                 case HardError.NoClassDefFoundError:
