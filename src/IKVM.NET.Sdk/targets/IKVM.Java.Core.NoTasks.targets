@@ -137,6 +137,7 @@ Value = b.ToString();
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
             <_IkvmExporterArgs Include="--bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
             <_IkvmExporterArgs Include="--nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
+            <_IkvmExporterArgs Include="--skiperror" />
             <_IkvmExporterArgs Include="--non-public-types" Condition=" '%(ReferenceExport.IncludeNonPublicTypes)' == 'true' " />
             <_IkvmExporterArgs Include="--non-public-interfaces" Condition=" '%(ReferenceExport.IncludeNonPublicInterfaces)' == 'true' " />
             <_IkvmExporterArgs Include="--non-public-members" Condition=" '%(ReferenceExport.IncludeNonPublicMembers)' == 'true' " />

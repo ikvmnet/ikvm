@@ -246,6 +246,12 @@ namespace IKVM.Tools.Exporter
                 if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
                     return coreLibName;
 
+            foreach (var libpath in libpaths)
+                if (Directory.Exists(libpath))
+                    foreach (var reference in Directory.EnumerateFiles(libpath, "*.dll"))
+                        if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                            return coreLibName;
+
             return null;
         }
 

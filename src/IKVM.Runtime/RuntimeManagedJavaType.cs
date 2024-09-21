@@ -634,7 +634,7 @@ namespace IKVM.Runtime
 
                 if (type.IsByRef)
                 {
-                    type = type.GetElementType().MakeArrayType(1);
+                    type = type.GetElementType().MakeArrayType();
                     if (mb.IsAbstract)
                     {
                         // Since we cannot override methods with byref arguments, we don't report abstract

@@ -1,8 +1,8 @@
 {
   "profiles": {
     "ikvmstub": {
-      "commandName": "Project",
-      "commandLineArgs": "--bootstrap --nostdlib --parameters --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\Microsoft.VisualBasic.Core.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.IO.FileSystem.DriveInfo.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Runtime.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Java-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Java.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Runtime-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Runtime.dll\" --out:\"C:\\Users\\jhaltom\\Microsoft.VisualBasic.Core.jar\" \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\Microsoft.VisualBasic.Core.dll\""
+        "commandName": "Project",
+        "commandLineArgs": "--bootstrap --skiperror --nostdlib --parameters --lib:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\" --reference:\"D:\\ikvm\\src\\IKVM.Java-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Java.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Runtime-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Runtime.dll\" --out:\"C:\\Users\\jhaltom\\System.Threading.jar\" \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Threading.dll\""
     }
   }
 }

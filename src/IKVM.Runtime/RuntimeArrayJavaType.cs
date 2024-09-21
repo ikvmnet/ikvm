@@ -119,7 +119,7 @@ namespace IKVM.Runtime
                 while (arrayType == null)
                 {
                     bool prevFinished = finished;
-                    var type = ultimateElementTypeWrapper.TypeAsArrayType.MakeArrayType(ArrayRank);
+                    var type = ArrayRank == 1 ? ultimateElementTypeWrapper.TypeAsArrayType.MakeArrayType() : ultimateElementTypeWrapper.TypeAsArrayType.MakeArrayType(ArrayRank);
                     if (prevFinished)
                     {
                         // We were already finished prior to the call to MakeArrayType, so we can safely

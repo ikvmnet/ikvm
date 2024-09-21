@@ -1770,7 +1770,7 @@ namespace IKVM.Runtime
                                 while (tw.IsArray)
                                     tw = tw.ElementTypeWrapper;
 
-                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldtoken, tw.TypeAsTBD.MakeArrayType(wrapper.ArrayRank));
+                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldtoken, wrapper.ArrayRank == 1 ? tw.TypeAsTBD.MakeArrayType() : tw.TypeAsTBD.MakeArrayType(wrapper.ArrayRank));
                                 ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldloc, localArray);
                                 ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.multianewarray_ghost);
                                 ilGenerator.Emit(System.Reflection.Emit.OpCodes.Castclass, wrapper.TypeAsArrayType);
@@ -1810,7 +1810,8 @@ namespace IKVM.Runtime
                                 while (tw.IsArray)
                                     tw = tw.ElementTypeWrapper;
 
-                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldtoken, tw.TypeAsTBD.MakeArrayType(wrapper.ArrayRank + 1));
+                                var rank = wrapper.ArrayRank + 1;
+                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldtoken, rank == 1 ? tw.TypeAsTBD.MakeArrayType() : tw.TypeAsTBD.MakeArrayType(rank));
                                 ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.anewarray_ghost.MakeGenericMethod(wrapper.TypeAsArrayType));
                             }
                             else

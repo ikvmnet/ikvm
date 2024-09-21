@@ -929,7 +929,7 @@ namespace IKVM.Runtime
                     return ((RuntimeUnloadableJavaType)this).MissingType ?? context.Types.Object;
 
                 if (IsGhostArray)
-                    return context.Types.Object.MakeArrayType(ArrayRank);
+                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -953,7 +953,7 @@ namespace IKVM.Runtime
                 }
 
                 if (IsGhostArray)
-                    return context.Types.Object.MakeArrayType(ArrayRank);
+                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -968,7 +968,7 @@ namespace IKVM.Runtime
                     return context.Types.Object;
 
                 if (IsGhostArray)
-                    return context.Types.Object.MakeArrayType(ArrayRank);
+                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -1306,19 +1306,21 @@ namespace IKVM.Runtime
             else if (IsGhostArray)
             {
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
+
                 // TODO make sure we get the right "CastArray" method and cache it
                 // NOTE for dynamic ghosts we don't end up here because AotTypeWrapper overrides this method,
                 // so we're safe to call GetMethod on TypeAsTBD (because it has to be a compiled type, if we're here)
-                RuntimeJavaType tw = this;
+                var tw = this;
                 int rank = 0;
                 while (tw.IsArray)
                 {
                     rank++;
                     tw = tw.ElementTypeWrapper;
                 }
+
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, context.Types.Object.MakeArrayType(rank));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, rank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(rank));
             }
             else
             {

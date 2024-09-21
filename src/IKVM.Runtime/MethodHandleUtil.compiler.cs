@@ -84,7 +84,10 @@ namespace IKVM.Runtime
                 while (tw.IsArray)
                     tw = tw.ElementTypeWrapper;
 
-                return tw.TypeAsSignatureType.MakeArrayType(dims);
+                if (dims == 1)
+                    return tw.TypeAsSignatureType.MakeArrayType();
+                else
+                    return tw.TypeAsSignatureType.MakeArrayType(dims);
             }
             else
             {

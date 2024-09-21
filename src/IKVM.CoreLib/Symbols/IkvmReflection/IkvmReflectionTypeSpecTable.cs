@@ -91,7 +91,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IIkvmReflectionTypeSymbol GetOrCreateByRefTypeSymbol()
         {
             if (_asByRef == null)
-                Interlocked.CompareExchange(ref _asByRef, new IkvmReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakePointerType()), null);
+                Interlocked.CompareExchange(ref _asByRef, new IkvmReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakeByRefType()), null);
 
             return _asByRef;
         }

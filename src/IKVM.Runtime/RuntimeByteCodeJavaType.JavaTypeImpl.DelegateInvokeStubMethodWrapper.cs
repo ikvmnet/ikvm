@@ -87,7 +87,7 @@ namespace IKVM.Runtime
                         if (parameters[i].ParameterType.IsByRef)
                         {
                             var elemType = parameters[i].ParameterType.GetElementType();
-                            var local = ilgen.DeclareLocal(elemType.MakeArrayType(1));
+                            var local = ilgen.DeclareLocal(elemType.MakeArrayType());
                             byrefs[i] = local;
                             ilgen.Emit(OpCodes.Ldc_I4_1);
                             ilgen.Emit(OpCodes.Newarr, elemType);

@@ -89,7 +89,7 @@ namespace IKVM.Runtime
                 {
                     var type = args[i];
                     if (type.IsByRef)
-                        type = type.GetElementType().MakeArrayType(1);
+                        type = type.GetElementType().MakeArrayType();
 
                     locals[i] = ilgen.DeclareLocal(type);
                     ilgen.Emit(OpCodes.Stloc, locals[i]);

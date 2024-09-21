@@ -67,7 +67,7 @@ namespace IKVM.Runtime
                     if (parameterType.IsByRef)
                     {
                         flags |= MemberFlags.DelegateInvokeWithByRefParameter;
-                        parameterType = parameterType.GetElementType().MakeArrayType(1);
+                        parameterType = parameterType.GetElementType().MakeArrayType();
                     }
 
                     argTypeWrappers[i] = Context.ClassLoaderFactory.GetJavaTypeFromType(parameterType);
