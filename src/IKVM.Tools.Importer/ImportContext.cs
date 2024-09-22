@@ -26,14 +26,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
-using IKVM.CoreLib.Symbols;
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.Reflection.Diagnostics;
 using IKVM.Runtime;
 using IKVM.Tools.Core.Diagnostics;
 
@@ -100,6 +101,7 @@ namespace IKVM.Tools.Importer
         }
 
         readonly ImportOptions _options;
+        static readonly AssemblyResolver resolver = new AssemblyResolver();
         string manifestMainClass;
         string defaultAssemblyName;
         static bool time;
@@ -108,7 +110,6 @@ namespace IKVM.Tools.Importer
         static bool nonDeterministicOutput;
         static DebugMode debugMode;
         static readonly List<string> libpaths = new List<string>();
-        internal static readonly AssemblyResolver resolver = new AssemblyResolver();
 
         public static int Execute(ImportOptions options)
         {
@@ -179,27 +180,58 @@ namespace IKVM.Tools.Importer
             return ActivatorUtilities.CreateInstance<CompilerOptionsDiagnosticHandler>(services, options, spec);
         }
 
+        /// <summary>
+        /// Initiates a compilation with the given options.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="FatalCompilerErrorException"></exception>
         static int Compile(ImportOptions options)
         {
+            // use a service collection to initialize core services
             var rootTarget = new ImportState();
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
             services.AddSingleton(p => GetDiagnostics(p, rootTarget, options.Log));
-            services.AddSingleton<ISymbolResolver, ManagedResolver>();
+            services.AddSingleton<IRuntimeSymbolResolver, ImportRuntimeSymbolResolver>();
             services.AddSingleton<StaticCompiler>();
             using var provider = services.BuildServiceProvider();
 
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<ImportState>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<ISymbolResolver>(), options.Bootstrap, compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IRuntimeSymbolResolver>(), options.Bootstrap, compiler);
+
+            // discover the core lib from the references
+            var coreLibName = FindCoreLibName(rootTarget.unresolvedReferences, libpaths);
+            if (coreLibName == null)
+            {
+                diagnostics.CoreClassesMissing();
+                throw new Exception();
+            }
+
+            var universeOptions = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
+            if (nonDeterministicOutput == false)
+                universeOptions |= UniverseOptions.DeterministicOutput;
+
+            // configure the universe of types
+            var universe = new Universe(universeOptions, coreLibName);
+            universe.ResolvedMissingMember += (requestingModule, member) =>
+            {
+                if (requestingModule != null && member is IKVM.Reflection.Type type)
+                    diagnostics.UnableToResolveType(requestingModule.Name, type.FullName, member.Module.FullyQualifiedName);
+            };
+
+            // enable embedded symbol writer if debug mode is enabled
+            if (rootTarget.debugMode == DebugMode.Portable)
+                universe.SetSymbolWriterFactory(module => new PortablePdbSymbolWriter(module));
 
             compiler.rootTarget = rootTarget;
             var importer = new ImportContext();
             importer.ParseCommandLine(context, compiler, diagnostics, options, targets, rootTarget);
-            compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
-            resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
+            resolver.Init(universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, diagnostics, targets);
             ResolveStrongNameKeys(targets);
 
@@ -217,6 +249,64 @@ namespace IKVM.Tools.Importer
             {
                 throw new FatalCompilerErrorException(DiagnosticEvent.FileFormatLimitationExceeded(x.Message));
             }
+        }
+
+        /// <summary>
+        /// Finds the first potential core library in the reference set.
+        /// </summary>
+        /// <param name="references"></param>
+        /// <param name="libpaths"></param>
+        /// <returns></returns>
+        static string FindCoreLibName(IList<string> references, IList<string> libpaths)
+        {
+            if (references != null)
+                foreach (var reference in references)
+                    if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                        return coreLibName;
+
+            if (libpaths != null)
+                foreach (var libpath in libpaths)
+                    foreach (var dll in Directory.GetFiles(libpath, "*.dll"))
+                        if (GetAssemblyNameIfCoreLib(dll) is string coreLibName)
+                            return coreLibName;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given assembly is a core library.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string GetAssemblyNameIfCoreLib(string path)
+        {
+            if (File.Exists(path) == false)
+                return null;
+
+            using var st = File.OpenRead(path);
+            using var pe = new PEReader(st);
+            var mr = pe.GetMetadataReader();
+
+            foreach (var handle in mr.TypeDefinitions)
+                if (IsSystemObject(mr, handle))
+                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type definition handle refers to "System.Object".
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="th"></param>
+        /// <returns></returns>
+        static bool IsSystemObject(MetadataReader reader, TypeDefinitionHandle th)
+        {
+            var td = reader.GetTypeDefinition(th);
+            var ns = reader.GetString(td.Namespace);
+            var nm = reader.GetString(td.Name);
+
+            return ns == "System" && nm == "Object";
         }
 
         static void loader_Warning(StaticCompiler compiler, IDiagnosticHandler diagnostics, AssemblyResolver.WarningId warning, string message, string[] parameters)
@@ -302,7 +392,7 @@ namespace IKVM.Tools.Importer
 
         void ParseCommandLine(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportOptions options, List<ImportState> targets, ImportState compilerOptions)
         {
-            compilerOptions.target = PEFileKinds.ConsoleApplication;
+            compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.ConsoleApplication;
             compilerOptions.guessFileKind = true;
             compilerOptions.version = new Version(0, 0, 0, 0);
             compilerOptions.apartment = ApartmentState.STA;
@@ -321,21 +411,21 @@ namespace IKVM.Tools.Importer
             switch (options.Target)
             {
                 case ImportTarget.Exe:
-                    compilerOptions.target = PEFileKinds.ConsoleApplication;
+                    compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.ConsoleApplication;
                     compilerOptions.guessFileKind = false;
                     break;
                 case ImportTarget.WinExe:
-                    compilerOptions.target = PEFileKinds.WindowApplication;
+                    compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.WindowApplication;
                     compilerOptions.guessFileKind = false;
                     break;
                 case ImportTarget.Module:
                     compilerOptions.targetIsModule = true;
-                    compilerOptions.target = PEFileKinds.Dll;
+                    compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll;
                     compilerOptions.guessFileKind = false;
                     nonDeterministicOutput = true;
                     break;
                 case ImportTarget.Library:
-                    compilerOptions.target = PEFileKinds.Dll;
+                    compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll;
                     compilerOptions.guessFileKind = false;
                     break;
                 default:
@@ -345,28 +435,28 @@ namespace IKVM.Tools.Importer
             switch (options.Platform)
             {
                 case ImportPlatform.X86:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Required32Bit;
-                    compilerOptions.imageFileMachine = ImageFileMachine.I386;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly | System.Reflection.PortableExecutableKinds.Required32Bit;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.I386;
                     break;
                 case ImportPlatform.X64:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.PE32Plus;
-                    compilerOptions.imageFileMachine = ImageFileMachine.AMD64;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly | System.Reflection.PortableExecutableKinds.PE32Plus;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.AMD64;
                     break;
                 case ImportPlatform.ARM:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
-                    compilerOptions.imageFileMachine = ImageFileMachine.ARM;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.ARM;
                     break;
                 case ImportPlatform.ARM64:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
-                    compilerOptions.imageFileMachine = ImageFileMachine.ARM64;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.ARM64;
                     break;
                 case ImportPlatform.AnyCpu32BitPreferred:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
-                    compilerOptions.imageFileMachine = ImageFileMachine.UNKNOWN;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly | System.Reflection.PortableExecutableKinds.Preferred32Bit;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.Unknown;
                     break;
                 case ImportPlatform.AnyCpu:
-                    compilerOptions.pekind = PortableExecutableKinds.ILOnly;
-                    compilerOptions.imageFileMachine = ImageFileMachine.UNKNOWN;
+                    compilerOptions.pekind = System.Reflection.PortableExecutableKinds.ILOnly;
+                    compilerOptions.imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.Unknown;
                     break;
                 default:
                     throw new FatalCompilerErrorException(DiagnosticEvent.UnrecognizedPlatform(options.Platform.ToString()));
@@ -698,12 +788,12 @@ namespace IKVM.Tools.Importer
             if (compilerOptions.path != null && compilerOptions.guessFileKind)
             {
                 if (compilerOptions.path.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
-                    compilerOptions.target = PEFileKinds.Dll;
+                    compilerOptions.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll;
 
                 compilerOptions.guessFileKind = false;
             }
 
-            if (compilerOptions.mainClass == null && manifestMainClass != null && (compilerOptions.guessFileKind || compilerOptions.target != PEFileKinds.Dll))
+            if (compilerOptions.mainClass == null && manifestMainClass != null && (compilerOptions.guessFileKind || compilerOptions.target != IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll))
             {
                 diagnostics.MainMethodFromManifest(manifestMainClass);
                 compilerOptions.mainClass = manifestMainClass;
@@ -857,7 +947,7 @@ namespace IKVM.Tools.Importer
 
         static void ResolveReferences(StaticCompiler compiler, IDiagnosticHandler diagnostics, List<ImportState> targets)
         {
-            var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
+            var cache = new Dictionary<string, Assembly>();
 
             foreach (var target in targets)
             {
@@ -873,6 +963,7 @@ namespace IKVM.Tools.Importer
                                 goto next_reference;
                             }
                         }
+
                         if (!resolver.ResolveReference(cache, ref target.references, reference))
                         {
                             throw new FatalCompilerErrorException(DiagnosticEvent.ReferenceNotFound(reference));
@@ -905,10 +996,10 @@ namespace IKVM.Tools.Importer
             foreach (var target in targets)
                 if (target.references != null)
                     foreach (var asm in target.references)
-                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(compiler, asm);
+                        RuntimeAssemblyClassLoader.PreloadExportedAssemblies(compiler, compiler.Symbols.GetOrCreateAssemblySymbol(asm));
         }
 
-        private static void ArrayAppend<T>(ref T[] array, T element)
+        static void ArrayAppend<T>(ref T[] array, T element)
         {
             if (array == null)
                 array = [element];
@@ -916,7 +1007,7 @@ namespace IKVM.Tools.Importer
                 array = ArrayUtil.Concat(array, element);
         }
 
-        private static void ArrayAppend<T>(ref T[] array, T[] append)
+        static void ArrayAppend<T>(ref T[] array, T[] append)
         {
             if (array == null)
             {

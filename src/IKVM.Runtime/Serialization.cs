@@ -89,9 +89,9 @@ namespace IKVM.Runtime
                 return true;
         }
 
-        internal IMethodSymbolBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, ITypeSymbolBuilder typeBuilder)
+        internal IConstructorSymbolBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, ITypeSymbolBuilder typeBuilder)
         {
-            IMethodSymbolBuilder serializationCtor = null;
+            IConstructorSymbolBuilder serializationCtor = null;
             if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
             {
                 MarkSerializable(typeBuilder);
@@ -148,7 +148,7 @@ namespace IKVM.Runtime
             return serializationCtor;
         }
 
-        internal IMethodSymbolBuilder AddAutomagicSerializationToWorkaroundBaseClass(ITypeSymbolBuilder typeBuilderWorkaroundBaseClass, IMethodBaseSymbol baseCtor)
+        internal IConstructorSymbolBuilder AddAutomagicSerializationToWorkaroundBaseClass(ITypeSymbolBuilder typeBuilderWorkaroundBaseClass, IMethodBaseSymbol baseCtor)
         {
             if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
             {
@@ -187,7 +187,7 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
         }
 
-        IMethodSymbolBuilder AddConstructor(ITypeSymbolBuilder tb, RuntimeJavaMethod defaultConstructor, IMethodBaseSymbol serializationConstructor, bool callReadObject)
+        IConstructorSymbolBuilder AddConstructor(ITypeSymbolBuilder tb, RuntimeJavaMethod defaultConstructor, IMethodBaseSymbol serializationConstructor, bool callReadObject)
         {
             var ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, [context.Resolver.ResolveCoreType(typeof(SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName)]);
             context.AttributeHelper.HideFromJava(ctor);

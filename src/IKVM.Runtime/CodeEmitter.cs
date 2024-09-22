@@ -72,11 +72,21 @@ namespace IKVM.Runtime
         /// <summary>
         /// Creates a new instance.
         /// </summary>
-        /// <param name="mb"></param>
+        /// <param name="method"></param>
         /// <returns></returns>
-        public CodeEmitter Create(IMethodSymbolBuilder mb)
+        public CodeEmitter Create(IMethodSymbolBuilder method)
         {
-            return new CodeEmitter(context, mb.GetILGenerator(), mb.DeclaringType);
+            return new CodeEmitter(context, method.GetILGenerator(), method.DeclaringType);
+        }
+
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        public CodeEmitter Create(IConstructorSymbolBuilder ctor)
+        {
+            return new CodeEmitter(context, ctor.GetILGenerator(), ctor.DeclaringType);
         }
 
 #if IMPORTER == false

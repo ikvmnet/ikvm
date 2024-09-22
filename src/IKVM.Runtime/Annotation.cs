@@ -28,13 +28,6 @@ using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
-
 namespace IKVM.Runtime
 {
 
@@ -100,7 +93,7 @@ namespace IKVM.Runtime
 
             owner.Diagnostics.GenericCompilerWarning($"Unable to load annotation class {annotationClass}");
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection());
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif

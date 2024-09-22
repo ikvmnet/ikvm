@@ -1,4 +1,6 @@
-﻿namespace IKVM.CoreLib.Symbols.Emit
+﻿using System.Reflection;
+
+namespace IKVM.CoreLib.Symbols.Emit
 {
 
     interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>, IAssemblySymbol
@@ -40,6 +42,57 @@
         /// <param name="con"></param>
         /// <param name="binaryAttribute"></param>
         void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
+
+        /// <summary>
+        /// Sets a Win32 icon on the generated assembly.
+        /// </summary>
+        /// <param name="bytes"></param>
+        void DefineIconResource(byte[] bytes);
+
+        /// <summary>
+        /// Sets a manifest resource on the generated assembly.
+        /// </summary>
+        /// <param name="bytes"></param>
+        void DefineManifestResource(byte[] bytes);
+
+        /// <summary>
+        /// Sets a Win32 version info resource on the generated assembly.
+        /// </summary>
+        void DefineVersionInfoResource();
+
+        /// <summary>
+        /// Sets the entry point for this assembly, assuming that a console application is being built.
+        /// </summary>
+        /// <param name="mainMethodProxy"></param>
+        void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy);
+
+        /// <summary>
+        /// Sets the entry point for this assembly and defines the type of the portable executable (PE file) being built.
+        /// </summary>
+        /// <param name="mainMethodProxy"></param>
+        /// <param name="target"></param>
+        void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, PEFileKinds target);
+
+        /// <summary>
+        /// Adds a forwarded type to this assembly.
+        /// </summary>
+        /// <param name="type"></param>
+        void AddTypeForwarder(ITypeSymbol type);
+
+        /// <summary>
+        /// Adds an external resource file to the assembly.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        void AddResourceFile(string name, string fileName);
+
+        /// <summary>
+        /// Saves this assembly to disk.
+        /// </summary>
+        /// <param name="assemblyFileName"></param>
+        /// <param name="portableExecutableKind"></param>
+        /// <param name="imageFileMachine"></param>
+        void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine);
 
     }
 

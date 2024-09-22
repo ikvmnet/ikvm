@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics.SymbolStore;
+using System.IO;
 using System.Linq;
+using System.Resources;
 
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
@@ -194,6 +196,42 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
+        public void DefineManifestResource(string name, Stream stream, System.Reflection.ResourceAttributes attribute)
+        {
+            UnderlyingModuleBuilder.DefineManifestResource(name, stream, (ResourceAttributes)attribute);
+        }
+
+        /// <inheritdoc />
+        public IResourceWriter DefineResource(string name, string description)
+        {
+            return UnderlyingModuleBuilder.DefineResource(name, description);
+        }
+
+        /// <inheritdoc />
+        public IResourceWriter DefineResource(string name, string description, System.Reflection.ResourceAttributes attribute)
+        {
+            return UnderlyingModuleBuilder.DefineResource(name, description, (ResourceAttributes)attribute);
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType.Unpack(), parameterTypes.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] requiredReturnTypeCustomModifiers, ITypeSymbol[] optionalReturnTypeCustomModifiers, ITypeSymbol[] parameterTypes, ITypeSymbol[][] requiredParameterTypeCustomModifiers, ITypeSymbol[][] optionalParameterTypeCustomModifiers)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType.Unpack(), requiredReturnTypeCustomModifiers.Unpack(), optionalReturnTypeCustomModifiers.Unpack(), parameterTypes.Unpack(), requiredParameterTypeCustomModifiers.Unpack(), optionalParameterTypeCustomModifiers.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, returnType.Unpack(), parameterTypes.Unpack()));
+        }
+
+        /// <inheritdoc />
         public ITypeSymbolBuilder DefineType(string name)
         {
             return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name));
@@ -247,6 +285,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             UnderlyingModuleBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
+        /// <inheritdoc />
+        public void AddReference(IAssemblySymbol assembly)
+        {
+            var t = ((IIkvmReflectionAssemblySymbol)assembly).GetExportedTypes();
+            if (t.Length > 0)
+                UnderlyingModuleBuilder.GetTypeToken(t[0].Unpack());
+        }
+
+        /// <inheritdoc />
+        public void Complete()
+        {
+            UnderlyingModuleBuilder.CreateGlobalFunctions();
+        }
+
+        /// <inheritdoc />
+        public void Save(System.Reflection.PortableExecutableKinds portableExecutableKind, IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine)
+        {
+            UnderlyingModuleBuilder.__Save((PortableExecutableKinds)portableExecutableKind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
+        }
+
         #endregion
 
         #region IModuleSymbol
@@ -271,6 +329,27 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public override bool IsComplete => _module == null;
+
+        /// <inheritdoc />
+        public ulong ImageBase
+        {
+            get => UnderlyingModule.__ImageBase;
+            set => UnderlyingModuleBuilder.__ImageBase = value;
+        }
+
+        /// <inheritdoc />
+        public uint FileAlignment
+        {
+            get => UnderlyingModule.__FileAlignment;
+            set => UnderlyingModuleBuilder.__FileAlignment = value;
+        }
+
+        /// <inheritdoc />
+        public System.Reflection.PortableExecutable.DllCharacteristics DllCharacteristics
+        {
+            get => (System.Reflection.PortableExecutable.DllCharacteristics)UnderlyingModule.__DllCharacteristics;
+            set => UnderlyingModuleBuilder.__DllCharacteristics = (IKVM.Reflection.DllCharacteristics)value;
+        }
 
         /// <inheritdoc />
         public IFieldSymbol? GetField(string name)

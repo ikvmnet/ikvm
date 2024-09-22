@@ -1,25 +1,25 @@
 ﻿/*
-  Copyright (C) 2002-2014 Jeroen Frijters
+ Copyright (C) 2002-2014 Jeroen Frijters
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+ This software is provided 'as-is', without any express or implied
+ warranty.  In no event will the authors be held liable for any damages
+ arising from the use of this software.
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+ Permission is granted to anyone to use this software for any purpose,
+ including commercial applications, and to alter it and redistribute it
+ freely, subject to the following restrictions:
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
+ 1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+ 2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+ 3. This notice may not be removed or altered from any source distribution.
 
-  Jeroen Frijters
-  jeroen@frijters.net
-  
+ Jeroen Frijters
+ jeroen@frijters.net
+
 */
 using System;
 using System.Collections.Generic;
@@ -59,7 +59,7 @@ namespace IKVM.Tools.Importer
         internal string assembly;
         internal string mainClass;
         internal ApartmentState apartment;
-        internal PEFileKinds target;
+        internal IKVM.CoreLib.Symbols.Emit.PEFileKinds target;
         internal bool guessFileKind;
         internal string[] unresolvedReferences; // only used during command line parsing
         internal Dictionary<string, string> legacyStubReferences = new Dictionary<string, string>();    // only used during command line parsing
@@ -79,8 +79,8 @@ namespace IKVM.Tools.Importer
         internal string sourcepath;
         internal Dictionary<string, string> externalResources;
         internal string classLoader;
-        internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
-        internal ImageFileMachine imageFileMachine = ImageFileMachine.I386;
+        internal System.Reflection.PortableExecutableKinds pekind = System.Reflection.PortableExecutableKinds.ILOnly;
+        internal IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine = IKVM.CoreLib.Symbols.ImageFileMachine.I386;
         internal ulong baseAddress;
         internal uint fileAlignment;
         internal bool highentropyva;

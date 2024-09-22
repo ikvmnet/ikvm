@@ -22,20 +22,10 @@
   
 */
 using System;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {

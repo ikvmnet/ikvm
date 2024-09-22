@@ -24,12 +24,6 @@
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-#else
-using System.Reflection;
-#endif
-
 namespace IKVM.Runtime
 {
 

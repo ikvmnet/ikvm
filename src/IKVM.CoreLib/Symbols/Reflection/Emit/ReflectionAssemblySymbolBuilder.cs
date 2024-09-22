@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -73,6 +74,64 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, Symbols.Emit.PEFileKinds target)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public void DefineIconResource(byte[] bytes)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public void DefineManifestResource(byte[] bytes)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public void DefineVersionInfoResource()
+        {
+#if NETFRAMEWORK
+            UnderlyingAssemblyBuilder.DefineVersionInfoResource();
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public void AddTypeForwarder(ITypeSymbol type)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public void AddResourceFile(string name, string fileName)
+        {
+#if NETFRAMEWORK
+            UnderlyingAssemblyBuilder.AddResourceFile(name, fileName);
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        {
+#if NETFRAMEWORK
+            UnderlyingAssemblyBuilder.Save(assemblyFileName, portableExecutableKind, (System.Reflection.ImageFileMachine)imageFileMachine);
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
         #endregion
 
         #region IAssemblySymbol
@@ -100,6 +159,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         /// <inheritdoc />
         public override bool IsComplete => _builder == null;
+
+        public string Location => throw new NotImplementedException();
 
         /// <inheritdoc />
         public ITypeSymbol[] GetExportedTypes()
@@ -192,6 +253,24 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             return UnderlyingAssembly.IsDefined(attributeType.Unpack(), inherit);
         }
 
+        /// <inheritdoc />
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
+        {
+            return ResolveManifestResourceInfo(UnderlyingAssembly.GetManifestResourceInfo(resourceName));
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(name);
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(ITypeSymbol type, string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(type.Unpack(), name);
+        }
+
         #endregion
 
         /// <inheritdoc />
@@ -205,7 +284,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             return (IReflectionModuleSymbolBuilder)_metadata.GetOrCreateModuleSymbol(module);
         }
-
     }
 
 }

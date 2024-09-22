@@ -3,8 +3,10 @@
 using System;
 
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
@@ -34,30 +36,19 @@ namespace IKVM.Tools.Exporter
         /// <inheritdoc />
         public ISymbolContext Symbols => symbols;
 
-        /// <summary>
-        /// Attempts to resolve the base Java assembly.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IAssemblySymbol? ResolveBaseAssembly()
         {
             return ResolveAssembly(baseAssembly);
         }
 
-        /// <summary>
-        /// Attempts to resolve an assembly from one of the assembly sources.
-        /// </summary>
-        /// <param name="assemblyName"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IAssemblySymbol? ResolveAssembly(string assemblyName)
         {
             return ResolveAssembly(compiler.Load(assemblyName));
         }
 
-        /// <summary>
-        /// Attempts to resolve a type from one of the assembly sources.
-        /// </summary>
-        /// <param name="typeName"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public ITypeSymbol? ResolveCoreType(string typeName)
         {
             foreach (var assembly in compiler.Universe.GetAssemblies())
@@ -67,11 +58,7 @@ namespace IKVM.Tools.Exporter
             return null;
         }
 
-        /// <summary>
-        /// Attempts to resolve a type from the IKVM runtime assembly.
-        /// </summary>
-        /// <param name="typeName"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public ITypeSymbol? ResolveRuntimeType(string typeName)
         {
             return ResolveType(compiler.GetRuntimeType(typeName));
@@ -84,7 +71,19 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
+        public IAssemblySymbolBuilder? ResolveAssembly(AssemblyBuilder? assembly)
+        {
+            return assembly != null ? symbols.GetOrCreateAssemblySymbol(assembly) : null;
+        }
+
+        /// <inheritdoc />
         public IModuleSymbol? ResolveModule(Module? module)
+        {
+            return module != null ? symbols.GetOrCreateModuleSymbol(module) : null;
+        }
+
+        /// <inheritdoc />
+        public IModuleSymbolBuilder? ResolveModule(ModuleBuilder? module)
         {
             return module != null ? symbols.GetOrCreateModuleSymbol(module) : null;
         }
@@ -93,6 +92,18 @@ namespace IKVM.Tools.Exporter
         public ITypeSymbol? ResolveType(Type? type)
         {
             return type != null ? symbols.GetOrCreateTypeSymbol(type) : null;
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbolBuilder? ResolveType(TypeBuilder? type)
+        {
+            return type != null ? symbols.GetOrCreateTypeSymbol(type) : null;
+        }
+
+        /// <inheritdoc />
+        public IMemberSymbol? ResolveMember(MemberInfo? module)
+        {
+            return module != null ? symbols.GetOrCreateMemberSymbol(module) : null;
         }
 
         /// <inheritdoc />
@@ -108,7 +119,19 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
+        public IConstructorSymbolBuilder? ResolveConstructor(ConstructorBuilder? ctor)
+        {
+            return ctor != null ? symbols.GetOrCreateConstructorSymbol(ctor) : null;
+        }
+
+        /// <inheritdoc />
         public IMethodSymbol? ResolveMethod(MethodInfo? method)
+        {
+            return method != null ? symbols.GetOrCreateMethodSymbol(method) : null;
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder? ResolveMethod(MethodBuilder? method)
         {
             return method != null ? symbols.GetOrCreateMethodSymbol(method) : null;
         }

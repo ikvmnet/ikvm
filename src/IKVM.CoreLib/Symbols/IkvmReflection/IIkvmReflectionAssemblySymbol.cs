@@ -1,6 +1,4 @@
-﻿using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+﻿using IKVM.Reflection;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {

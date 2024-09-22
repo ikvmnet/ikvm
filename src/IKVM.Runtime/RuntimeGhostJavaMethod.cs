@@ -27,14 +27,6 @@ using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
-
 namespace IKVM.Runtime
 {
 
@@ -83,7 +75,7 @@ namespace IKVM.Runtime
         [HideFromJava]
         internal override object Invoke(object obj, object[] args)
         {
-            return InvokeAndUnwrapException(ghostMethod.AsReflection(), DeclaringType.GhostWrap(obj), args);
+            return InvokeAndUnwrapException(ghostMethod, DeclaringType.GhostWrap(obj), args);
         }
 
 #endif
@@ -102,12 +94,12 @@ namespace IKVM.Runtime
 
         internal void SetGhostMethod(IMethodSymbolBuilder mb)
         {
-            this.ghostMethod = mb.Symbol;
+            this.ghostMethod = mb;
         }
 
         internal IMethodSymbolBuilder GetGhostMethod()
         {
-            return ghostMethod.Builder;
+            return (IMethodSymbolBuilder)ghostMethod;
         }
 
 #endif

@@ -23,6 +23,8 @@
 */
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace IKVM.Reflection
 {
@@ -82,6 +84,34 @@ namespace IKVM.Reflection
         public abstract string[] GetManifestResourceNames();
         public abstract ManifestResourceInfo GetManifestResourceInfo(string resourceName);
         public abstract System.IO.Stream GetManifestResourceStream(string name);
+
+        public virtual System.IO.Stream GetManifestResourceStream(Type type, string name)
+        {
+            var sb = new StringBuilder();
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+            else
+            {
+                string? nameSpace = type.Namespace;
+                if (nameSpace != null)
+                {
+                    sb.Append(nameSpace);
+                    if (name != null)
+                    {
+                        sb.Append(System.Type.Delimiter);
+                    }
+                }
+            }
+
+            if (name != null)
+            {
+                sb.Append(name);
+            }
+
+            return GetManifestResourceStream(sb.ToString());
+        }
 
         internal abstract Type FindType(TypeName name);
         internal abstract Type FindTypeIgnoreCase(TypeName lowerCaseName);

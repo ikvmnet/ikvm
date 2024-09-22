@@ -23,24 +23,12 @@
 */
 using System;
 using System.Diagnostics;
-
-using IKVM.Attributes;
-
-using System.Linq;
-
-using IKVM.CoreLib.Symbols;
-
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -238,7 +226,7 @@ namespace IKVM.Runtime
                 // NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
                 // the method had any declared exceptions, the declaredExceptions field would have
                 // been set)
-                if (method != null && method.AsReflection() is not MethodBuilder)
+                if (method != null && method is not IMethodSymbolBuilder)
                 {
                     var attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
                     if (attr != null)
@@ -479,49 +467,7 @@ namespace IKVM.Runtime
         /// </summary>
         internal void ResolveMethod()
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            // if we've still got the builder object, we need to replace it with the real thing before we can call it
-            var mb = method.AsReflection() as MethodBuilder;
-            if (mb != null)
-            {
-#if NETFRAMEWORK
-                method = mb.Module.ResolveMethod(mb.GetToken().Token);
-#else
-                // though ResolveMethod exists, Core 3.1 does not provide a stable way to obtain the resulting metadata token
-                // instead we have to scan the methods for the one that matches the signature using the runtime type instances
-                // FIXME .NET 6
-
-                var parameters = GetParameters();
-                var typeLength = parameters.Length;
-                if (HasCallerID)
-                    typeLength++;
-
-                var types = new Type[typeLength];
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    parameters[i].Finish();
-                    types[i] = parameters[i].TypeAsSignatureType;
-                }
-
-                if (HasCallerID)
-                    types[typeLength - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-
-                if (ReturnType != null)
-                    ReturnType.Finish();
-
-                var flags = BindingFlags.DeclaredOnly;
-                flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                method = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
-                if (method == null)
-                    method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
-                if (method == null)
-                    throw new InternalException("Could not resolve method against runtime type.");
-#endif
-            }
-#endif
+            // should not require anything since Symbols should preserve method
         }
 
         [HideFromJava]

@@ -180,7 +180,7 @@ namespace IKVM.Runtime
         public RuntimeManagedByteCodeJavaType(RuntimeContext context, string name, ITypeSymbol type) :
             this(context, GetModifiers(context, type), name)
         {
-            Debug.Assert(!(type.AsReflection() is TypeBuilder));
+            Debug.Assert(!(type is ITypeSymbolBuilder));
             Debug.Assert(!type.Name.EndsWith("[]"));
 
             this.type = type;
@@ -241,7 +241,7 @@ namespace IKVM.Runtime
                 {
                     try
                     {
-                        clinitMethod = type.GetMethod("__<clinit>", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                        clinitMethod = type.GetMethod("__<clinit>", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
                     }
 #if IMPORTER
                     catch (IKVM.Reflection.MissingMemberException)
@@ -325,10 +325,10 @@ namespace IKVM.Runtime
 
         private bool IsNestedTypeAnonymousOrLocalClass(ITypeSymbol type)
         {
-            switch (type.Attributes & (System.Reflection.TypeAttributes.SpecialName | System.Reflection.TypeAttributes.VisibilityMask))
+            switch (type.Attributes & (TypeAttributes.SpecialName | TypeAttributes.VisibilityMask))
             {
-                case System.Reflection.TypeAttributes.SpecialName | System.Reflection.TypeAttributes.NestedPublic:
-                case System.Reflection.TypeAttributes.SpecialName | System.Reflection.TypeAttributes.NestedAssembly:
+                case TypeAttributes.SpecialName | TypeAttributes.NestedPublic:
+                case TypeAttributes.SpecialName | TypeAttributes.NestedAssembly:
                     return Context.AttributeHelper.HasEnclosingMethodAttribute(type);
                 default:
                     return false;
@@ -346,7 +346,7 @@ namespace IKVM.Runtime
             {
                 var wrappers = new List<RuntimeJavaType>();
 
-                foreach (var nested in type.GetNestedTypes(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly))
+                foreach (var nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
                     if (IsAnnotationAttribute(nested))
                     {
@@ -652,7 +652,7 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishMethods()
         {
-            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance;
+            const BindingFlags flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
             var isDelegate = type.BaseType == Context.Types.MulticastDelegate;
             var methods = new List<RuntimeJavaMethod>();
@@ -670,7 +670,7 @@ namespace IKVM.Runtime
 
             if (type.IsInterface && (type.IsPublic || type.IsNestedPublic))
             {
-                var privateInterfaceMethods = type.GetNestedType(NestedTypeName.PrivateInterfaceMethods, System.Reflection.BindingFlags.NonPublic);
+                var privateInterfaceMethods = type.GetNestedType(NestedTypeName.PrivateInterfaceMethods, BindingFlags.NonPublic);
                 if (privateInterfaceMethods != null)
                     AddMethods(privateInterfaceMethods.GetMethods(flags), methods);
             }
@@ -714,7 +714,7 @@ namespace IKVM.Runtime
                         name = name.Substring(name.IndexOf('|', NamePrefix.AccessStub.Length) + 1);
                         flags |= MemberFlags.AccessStub;
 
-                        var nonvirt = type.GetMethod(NamePrefix.NonVirtual + id, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance);
+                        var nonvirt = type.GetMethod(NamePrefix.NonVirtual + id, BindingFlags.NonPublic | BindingFlags.DeclaredOnly | BindingFlags.Instance);
                         methods.Add(new RuntimeAccessStubJavaMethod(this, name, sig, mi, mi, nonvirt ?? mi, retType, paramTypes, mods.Modifiers & ~Modifiers.Final, flags));
                         return;
                     }
@@ -770,7 +770,7 @@ namespace IKVM.Runtime
 
         IMethodSymbol GetDefaultInterfaceMethodImpl(IMethodSymbol method, string expectedSig)
         {
-            foreach (var candidate in method.DeclaringType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly))
+            foreach (var candidate in method.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
                 if (candidate.IsSpecialName &&
                     candidate.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal) &&
@@ -789,12 +789,12 @@ namespace IKVM.Runtime
 
         bool GetType2AccessStubs(string name, string sig, out IMethodSymbol stubVirt, out IMethodSymbol stubNonVirt)
         {
-            const System.Reflection.BindingFlags flags =
-                System.Reflection.BindingFlags.DeclaredOnly |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.Instance;
+            const BindingFlags flags =
+                BindingFlags.DeclaredOnly |
+                BindingFlags.Public |
+                BindingFlags.NonPublic |
+                BindingFlags.Static |
+                BindingFlags.Instance;
 
             stubVirt = null;
             stubNonVirt = null;
@@ -818,11 +818,11 @@ namespace IKVM.Runtime
 
         bool GetType2AccessStub(string sig, out IConstructorSymbol stub)
         {
-            const System.Reflection.BindingFlags flags =
-                System.Reflection.BindingFlags.DeclaredOnly |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance;
+            const BindingFlags flags =
+                BindingFlags.DeclaredOnly |
+                BindingFlags.Public |
+                BindingFlags.NonPublic |
+                BindingFlags.Instance;
 
             stub = null;
             foreach (var ctor in type.GetConstructors(flags))
@@ -845,12 +845,12 @@ namespace IKVM.Runtime
 
         protected override void LazyPublishFields()
         {
-            const System.Reflection.BindingFlags flags =
-                System.Reflection.BindingFlags.DeclaredOnly |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.Instance;
+            const BindingFlags flags =
+                BindingFlags.DeclaredOnly |
+                BindingFlags.Public |
+                BindingFlags.NonPublic |
+                BindingFlags.Static |
+                BindingFlags.Instance;
 
             var fields = new List<RuntimeJavaField>();
             var rawfields = type.GetFields(flags);
@@ -1022,9 +1022,7 @@ namespace IKVM.Runtime
         internal override void EmitRunClassConstructor(CodeEmitter ilgen)
         {
             if (HasStaticInitializer)
-            {
                 ilgen.Emit(OpCodes.Call, clinitMethod);
-            }
         }
 
 #endif // EMITTERS

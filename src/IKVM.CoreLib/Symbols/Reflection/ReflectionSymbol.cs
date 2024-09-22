@@ -524,6 +524,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 ResolveTypeSymbol(mapping.TargetType));
         }
 
+        /// <inheritdoc />
+        public ManifestResourceInfo? ResolveManifestResourceInfo(System.Reflection.ManifestResourceInfo? info)
+        {
+            return info != null ? new ManifestResourceInfo(info.ResourceLocation, info.FileName, ResolveAssemblySymbol(info.ReferencedAssembly)) : null;
+        }
+
     }
 
 }

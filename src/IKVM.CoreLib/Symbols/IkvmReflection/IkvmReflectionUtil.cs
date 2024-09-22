@@ -102,6 +102,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
+        /// Unpacks the symbol into their original assembly.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Assembly Unpack(this IAssemblySymbol type)
+        {
+            if (type is IIkvmReflectionAssemblySymbol symbol)
+                return symbol.UnderlyingAssembly;
+
+            throw new InvalidOperationException();
+        }
+
+        /// <summary>
         /// Unpacks the symbol into their original type.
         /// </summary>
         /// <param name="module"></param>

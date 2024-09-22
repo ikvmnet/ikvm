@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -48,6 +49,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         public string ImageRuntimeVersion => _assembly.ImageRuntimeVersion;
+
+        /// <inheritdoc />
+        public string Location => _assembly.Location;
 
         /// <inheritdoc />
         public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
@@ -144,6 +148,24 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return _assembly.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        /// <inheritdoc />
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
+        {
+            return ResolveManifestResourceInfo(UnderlyingAssembly.GetManifestResourceInfo(resourceName));
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(name);
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(ITypeSymbol type, string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(type.Unpack(), name);
         }
 
         #endregion

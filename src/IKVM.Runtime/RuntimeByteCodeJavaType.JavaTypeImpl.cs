@@ -282,7 +282,7 @@ namespace IKVM.Runtime
 
                     bool cantNest = false;
                     bool setModifiers = false;
-                    TypeBuilder enclosing = null;
+                    ITypeSymbolBuilder enclosing = null;
                     string enclosingClassName = null;
                     // we only compile inner classes as nested types in the static compiler, because it has a higher cost
                     // and doesn't buy us anything in dynamic mode (and if fact, due to an FXBUG it would make handling
@@ -623,17 +623,18 @@ namespace IKVM.Runtime
                 while (!ccl.ReserveName(classFile.Name + "$" + name))
                     name += "_";
 
-                enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, wrapper.Context.Types.Enum.AsReflection());
+                enumBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NestedPublic | TypeAttributes.Serializable, wrapper.Context.Types.Enum);
                 wrapper.Context.AttributeHelper.HideFromJava(enumBuilder);
-                enumBuilder.DefineField("value__", wrapper.Context.Types.Int32.AsReflection(), FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
+                enumBuilder.DefineField("value__", wrapper.Context.Types.Int32, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
                 for (int i = 0; i < classFile.Fields.Length; i++)
                 {
                     if (classFile.Fields[i].IsEnum)
                     {
-                        FieldBuilder fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
+                        var fieldBuilder = enumBuilder.DefineField(classFile.Fields[i].Name, enumBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
                         fieldBuilder.SetConstant(i);
                     }
                 }
+
                 wrapper.SetEnumType(enumBuilder);
             }
 #endif
@@ -648,7 +649,7 @@ namespace IKVM.Runtime
                     var hasfields = false;
 
                     // If we have any public static fields, the cctor trigger must (and may) be public as well
-                    foreach (ClassFile.Field fld in classFile.Fields)
+                    foreach (var fld in classFile.Fields)
                     {
                         if (fld.IsPublic && fld.IsStatic)
                         {
@@ -685,29 +686,25 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-            private ClassFile.InnerClass getOuterClass()
+            ClassFile.InnerClass getOuterClass()
             {
-                ClassFile.InnerClass[] innerClasses = classFile.InnerClasses;
+                var innerClasses = classFile.InnerClasses;
                 if (innerClasses != null)
-                {
                     for (int j = 0; j < innerClasses.Length; j++)
-                    {
                         if (innerClasses[j].innerClass.IsNotNil && classFile.GetConstantPoolClass(innerClasses[j].innerClass) == classFile.Name)
-                        {
                             return innerClasses[j];
-                        }
-                    }
-                }
+
                 return new ClassFile.InnerClass();
             }
 
-            private bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
+            bool IsSideEffectFreeStaticInitializerOrNoop(ClassFile.Method m, out bool noop)
             {
                 if (m.ExceptionTable.Length != 0)
                 {
                     noop = false;
                     return false;
                 }
+
                 noop = true;
                 for (int i = 0; i < m.Instructions.Length; i++)
                 {
@@ -725,14 +722,16 @@ namespace IKVM.Runtime
                         // uses a goto to remove the (now unused) code
                         i = target;
                     }
+
                     if (bc == NormalizedByteCode.__getstatic || bc == NormalizedByteCode.__putstatic)
                     {
-                        ClassFile.ConstantPoolItemFieldref fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
+                        var fld = classFile.SafeGetFieldref(m.Instructions[i].Arg1);
                         if (fld == null || fld.Class != classFile.Name)
                         {
                             noop = false;
                             return false;
                         }
+
                         // don't allow getstatic to load non-primitive fields, because that would
                         // cause the verifier to try to load the type
                         if (bc == NormalizedByteCode.__getstatic && "L[".IndexOf(fld.Signature[0]) != -1)
@@ -740,12 +739,14 @@ namespace IKVM.Runtime
                             noop = false;
                             return false;
                         }
-                        ClassFile.Field field = classFile.GetField(fld.Name, fld.Signature);
+
+                        var field = classFile.GetField(fld.Name, fld.Signature);
                         if (field == null)
                         {
                             noop = false;
                             return false;
                         }
+
                         if (bc == NormalizedByteCode.__putstatic)
                         {
                             if (field.IsProperty && field.PropertySetter != null)
@@ -791,11 +792,11 @@ namespace IKVM.Runtime
             }
 #endif // IMPORTER
 
-            private RuntimeJavaMethod GetMethodWrapperDuringCtor(RuntimeJavaType lookup, IList<RuntimeJavaMethod> methods, string name, string sig)
+            RuntimeJavaMethod GetMethodWrapperDuringCtor(RuntimeJavaType lookup, IList<RuntimeJavaMethod> methods, string name, string sig)
             {
                 if (lookup == wrapper)
                 {
-                    foreach (RuntimeJavaMethod mw in methods)
+                    foreach (var mw in methods)
                     {
                         if (mw.Name == name && mw.Signature == sig)
                         {
@@ -817,17 +818,19 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void AddMirandaMethods(List<RuntimeJavaMethod> methods, List<RuntimeJavaMethod[]> baseMethods, RuntimeJavaType tw)
+            void AddMirandaMethods(List<RuntimeJavaMethod> methods, List<RuntimeJavaMethod[]> baseMethods, RuntimeJavaType tw)
             {
-                foreach (RuntimeJavaType iface in tw.Interfaces)
+                foreach (var iface in tw.Interfaces)
                 {
                     if (iface.IsPublic && this.wrapper.IsInterface)
                     {
                         // for interfaces, we only need miranda methods for non-public interfaces that we extend
                         continue;
                     }
+
                     AddMirandaMethods(methods, baseMethods, iface);
-                    foreach (RuntimeJavaMethod ifmethod in iface.GetMethods())
+
+                    foreach (var ifmethod in iface.GetMethods())
                     {
                         // skip <clinit> and non-virtual interface methods introduced in Java 8
                         if (ifmethod.IsVirtual)
@@ -835,23 +838,26 @@ namespace IKVM.Runtime
                             RuntimeJavaType lookup = wrapper;
                             while (lookup != null)
                             {
-                                RuntimeJavaMethod mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
+                                var mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
                                 if (mw == null || (mw.IsMirandaMethod && mw.DeclaringType != wrapper))
                                 {
                                     mw = RuntimeMirandaJavaMethod.Create(wrapper, ifmethod);
                                     methods.Add(mw);
-                                    baseMethods.Add(new RuntimeJavaMethod[] { ifmethod });
+                                    baseMethods.Add([ifmethod]);
                                     break;
                                 }
+
                                 if (mw.IsMirandaMethod && mw.DeclaringType == wrapper)
                                 {
                                     methods[methods.IndexOf(mw)] = ((RuntimeMirandaJavaMethod)mw).Update(ifmethod);
                                     break;
                                 }
+
                                 if (!mw.IsStatic || mw.DeclaringType == wrapper)
                                 {
                                     break;
                                 }
+
                                 lookup = mw.DeclaringType.BaseTypeWrapper;
                             }
                         }
@@ -859,7 +865,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void AddDelegateInvokeStubs(RuntimeJavaType tw, ref RuntimeJavaMethod[] methods)
+            void AddDelegateInvokeStubs(RuntimeJavaType tw, ref RuntimeJavaMethod[] methods)
             {
                 foreach (var iface in tw.Interfaces)
                 {
@@ -877,13 +883,14 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER
-            private static bool CheckInnerOuterNames(string inner, string outer)
+
+            static bool CheckInnerOuterNames(string inner, string outer)
             {
                 // do some sanity checks on the inner/outer class names
                 return inner.Length > outer.Length + 1 && inner[outer.Length] == '$' && inner.StartsWith(outer, StringComparison.Ordinal);
             }
 
-            private string AllocNestedTypeName(string outer, string inner)
+            string AllocNestedTypeName(string outer, string inner)
             {
                 Debug.Assert(CheckInnerOuterNames(inner, outer));
                 nestedTypeNames ??= new ConcurrentDictionary<string, RuntimeJavaType>();
@@ -892,20 +899,16 @@ namespace IKVM.Runtime
 
 #endif
 
-            private int GetMethodIndex(RuntimeJavaMethod mw)
+            int GetMethodIndex(RuntimeJavaMethod mw)
             {
                 for (int i = 0; i < methods.Length; i++)
-                {
                     if (methods[i] == mw)
-                    {
                         return i;
-                    }
-                }
 
                 throw new InvalidOperationException();
             }
 
-            private static void CheckLoaderConstraints(RuntimeJavaMethod mw, RuntimeJavaMethod baseMethod)
+            static void CheckLoaderConstraints(RuntimeJavaMethod mw, RuntimeJavaMethod baseMethod)
             {
                 if (mw.ReturnType != baseMethod.ReturnType)
                 {
@@ -913,9 +916,7 @@ namespace IKVM.Runtime
                     {
                         // unloadable types can never cause a loader constraint violation
                         if (mw.ReturnType.IsUnloadable && baseMethod.ReturnType.IsUnloadable)
-                        {
                             ((RuntimeUnloadableJavaType)mw.ReturnType).SetCustomModifier(((RuntimeUnloadableJavaType)baseMethod.ReturnType).CustomModifier);
-                        }
                     }
                     else
                     {
@@ -926,8 +927,9 @@ namespace IKVM.Runtime
 #endif
                     }
                 }
-                RuntimeJavaType[] here = mw.GetParameters();
-                RuntimeJavaType[] there = baseMethod.GetParameters();
+
+                var here = mw.GetParameters();
+                var there = baseMethod.GetParameters();
                 for (int i = 0; i < here.Length; i++)
                 {
                     if (here[i] != there[i])
@@ -1034,7 +1036,7 @@ namespace IKVM.Runtime
 
                 var methodAttribs = MethodAttributes.HideBySig;
 #if IMPORTER
-                bool setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
+                var setModifiers = fld.IsInternal || (fld.Modifiers & (Modifiers.Synthetic | Modifiers.Enum)) != 0;
 #endif
 
                 if (fld.IsPrivate)
@@ -1090,19 +1092,13 @@ namespace IKVM.Runtime
                     else if (fld.IsFinal)
                     {
                         if (wrapper.IsInterface || wrapper.classLoader.StrictFinalFieldSemantics)
-                        {
                             attribs |= FieldAttributes.InitOnly;
-                        }
                         else
-                        {
                             setModifiers = true;
-                        }
                     }
 #else
                     if (fld.IsFinal && wrapper.IsInterface)
-                    {
                         attribs |= FieldAttributes.InitOnly;
-                    }
 #endif
 
                     field = DefineField(realFieldName, fw.FieldTypeWrapper, attribs, fld.IsVolatile);
@@ -1270,7 +1266,7 @@ namespace IKVM.Runtime
 
                     if (annotationBuilder != null)
                     {
-                        var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).AsReflection().GetConstructor(new Type[] { wrapper.Context.Types.String }), new object[] { UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName) });
+                        var cab = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).GetConstructor([wrapper.Context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName)]);
                         typeBuilder.SetCustomAttribute(cab);
                     }
 
@@ -1293,11 +1289,11 @@ namespace IKVM.Runtime
                     }
                     if (enumBuilder != null)
                     {
-                        enumBuilder.CreateType();
+                        enumBuilder.Complete();
                     }
                     if (privateInterfaceMethods != null)
                     {
-                        privateInterfaceMethods.CreateType();
+                        privateInterfaceMethods.Complete();
                     }
 #endif
                     var finishedClinitMethod = (IMethodSymbol)clinitMethod;
@@ -1383,7 +1379,7 @@ namespace IKVM.Runtime
                 ITypeSymbolBuilder outer;
                 ITypeSymbolBuilder annotationTypeBuilder;
                 ITypeSymbolBuilder attributeTypeBuilder;
-                IMethodSymbolBuilder defineConstructor;
+                IConstructorSymbolBuilder defineConstructor;
 
                 /// <summary>
                 /// Initializes a new instance.
@@ -1471,11 +1467,11 @@ namespace IKVM.Runtime
                     int dotindex = o.classFile.Name.LastIndexOf('.') + 1;
                     context.AttributeHelper.SetInnerClass(attributeTypeBuilder, o.classFile.Name.Substring(0, dotindex) + "$Proxy" + o.classFile.Name.Substring(dotindex), Modifiers.Final);
                     attributeTypeBuilder.AddInterfaceImplementation(o.typeBuilder);
-                    context.AttributeHelper.SetImplementsAttribute(attributeTypeBuilder, new RuntimeJavaType[] { o.wrapper });
+                    context.AttributeHelper.SetImplementsAttribute(attributeTypeBuilder, [o.wrapper]);
 
                     if (o.classFile.Annotations != null)
                     {
-                        CustomAttributeBuilder attributeUsageAttribute = null;
+                        ICustomAttributeBuilder attributeUsageAttribute = null;
                         bool hasAttributeUsageAttribute = false;
                         foreach (object[] def in o.classFile.Annotations)
                         {
@@ -1528,7 +1524,7 @@ namespace IKVM.Runtime
                                                 }
                                             }
 
-                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]).AsReflection(), [targets]);
+                                            attributeUsageAttribute = context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]), [targets]);
                                         }
                                     }
                                 }
@@ -1551,7 +1547,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, [context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType()]);
+                    defineConstructor = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, [context.Types.Object.MakeArrayType()]);
                     context.AttributeHelper.SetEditorBrowsableNever(defineConstructor);
                 }
 
@@ -1590,7 +1586,7 @@ namespace IKVM.Runtime
                         }
 
                         if (isArray)
-                            argType = RuntimeArrayJavaType.MakeArrayType(argType, 1);
+                            argType = argType.MakeArrayType();
 
                         return argType;
                     }
@@ -1608,7 +1604,7 @@ namespace IKVM.Runtime
                         Link();
 
                         if (attributeTypeBuilder != null)
-                            return attributeTypeBuilder.Symbol.FullName;
+                            return attributeTypeBuilder.FullName;
 
                         return null;
                     }
@@ -1694,7 +1690,7 @@ namespace IKVM.Runtime
                             context.AttributeHelper.HideFromJava(reqArgConstructor);
                             ilgen = context.CodeEmitterFactory.Create(reqArgConstructor);
                             ilgen.Emit(OpCodes.Ldarg_0);
-                            ilgen.Emit(OpCodes.Call, defaultConstructor.Symbol);
+                            ilgen.Emit(OpCodes.Call, defaultConstructor);
 
                             for (int i = 0, j = 0; i < o.methods.Length; i++)
                             {
@@ -1716,10 +1712,10 @@ namespace IKVM.Runtime
                             // We don't have any required parameters, but we do have an optional "value" parameter,
                             // so we create an additional constructor (the default constructor will be public in this case)
                             // that accepts the value parameter.
-                            Type argType = TypeWrapperToAnnotationParameterType(o.methods[valueArg].ReturnType);
+                            var argType = TypeWrapperToAnnotationParameterType(o.methods[valueArg].ReturnType);
                             if (argType != null)
                             {
-                                MethodBuilder cb = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, new Type[] { argType });
+                                var cb = ReflectUtil.DefineConstructor(attributeTypeBuilder, MethodAttributes.Public, [argType]);
                                 context.AttributeHelper.HideFromJava(cb);
                                 cb.DefineParameter(1, ParameterAttributes.None, "value");
                                 ilgen = context.CodeEmitterFactory.Create(cb);
@@ -1762,8 +1758,8 @@ namespace IKVM.Runtime
                         // skip <clinit> and non-virtual interface methods introduced in Java 8
                         if (o.methods[i].IsVirtual)
                         {
-                            MethodBuilder mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper, attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
-                            attributeTypeBuilder.DefineMethodOverride(mb, (MethodInfo)o.methods[i].GetMethod());
+                            var mb = o.methods[i].GetDefineMethodHelper().DefineMethod(o.wrapper, attributeTypeBuilder, o.methods[i].Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot);
+                            attributeTypeBuilder.DefineMethodOverride(mb, (IMethodSymbol)o.methods[i].GetMethod());
                             ilgen = context.CodeEmitterFactory.Create(mb);
                             ilgen.Emit(OpCodes.Ldarg_0);
                             ilgen.Emit(OpCodes.Ldstr, o.methods[i].Name);
@@ -1818,7 +1814,7 @@ namespace IKVM.Runtime
                                 && !(o.methods[i].Name == "value" && requiredArgCount == 0))
                             {
                                 // now add a .NET property for this annotation optional parameter
-                                Type argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
+                                var argType = TypeWrapperToAnnotationParameterType(o.methods[i].ReturnType);
                                 if (argType != null)
                                 {
                                     var pb = attributeTypeBuilder.DefineProperty(o.methods[i].Name, PropertyAttributes.None, argType, []);
@@ -1835,22 +1831,21 @@ namespace IKVM.Runtime
                                     pb.SetGetMethod(getter);
                                     // TODO implement the getter method
                                     ilgen = context.CodeEmitterFactory.Create(getter);
-                                    ilgen.ThrowException(context.Resolver.ResolveCoreType(typeof(NotImplementedException).FullName).AsReflection());
+                                    ilgen.ThrowException(context.Resolver.ResolveCoreType(typeof(NotImplementedException).FullName));
                                     ilgen.DoEmit();
                                 }
                             }
                         }
                     }
-                    attributeTypeBuilder.CreateType();
+                    attributeTypeBuilder.Complete();
                 }
 
-                private CustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+                ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     Link();
-                    var ctor = defineConstructor != null
-                        ? defineConstructor.__AsConstructorInfo()
-                        : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").GetConstructor(new [] { context.Types.Object.MakeArrayType() });
-                    return new CustomAttributeBuilder(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
+
+                    var ctor = defineConstructor != null ? defineConstructor : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").GetConstructor([context.Types.Object.MakeArrayType()]);
+                    return context.Resolver.Symbols.CreateCustomAttribute(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
                 }
 
                 internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
@@ -2287,7 +2282,7 @@ namespace IKVM.Runtime
                 }
 
                 var type = wrapper.TypeAsBaseType;
-                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,  []);
+                var baseFinalize = type.GetMethod("__<Finalize>", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, []);
                 if (baseFinalize != null)
                     return baseFinalize;
 
@@ -2860,7 +2855,7 @@ namespace IKVM.Runtime
 #if IMPORTER
                     if (classFile.Methods[index].AnnotationDefault != null)
                     {
-                        var cab = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]);
+                        var cab = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]);
                         mb.SetCustomAttribute(cab);
                     }
 #endif

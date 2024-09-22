@@ -22,14 +22,9 @@
   
 */
 using System;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
-
-#if IMPORTER
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -70,7 +65,7 @@ namespace IKVM.Runtime
 
             internal override object CreateInstance(object[] args)
             {
-                return Activator.CreateInstance(DeclaringType.TypeAsTBD);
+                return Activator.CreateInstance(DeclaringType.TypeAsTBD.AsReflection());
             }
 
 #endif

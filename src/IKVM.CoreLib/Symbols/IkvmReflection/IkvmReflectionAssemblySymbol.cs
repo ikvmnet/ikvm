@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 using IKVM.Reflection;
@@ -44,114 +45,135 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         #region IAssemblySymbol
 
         /// <inheritdoc />
-        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
+        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(UnderlyingAssembly.DefinedTypes);
 
         /// <inheritdoc />
-        public IMethodSymbol? EntryPoint => ResolveMethodSymbol(_assembly.EntryPoint);
+        public IMethodSymbol? EntryPoint => ResolveMethodSymbol(UnderlyingAssembly.EntryPoint);
 
         /// <inheritdoc />
-        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_assembly.ExportedTypes);
+        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(UnderlyingAssembly.ExportedTypes);
 
         /// <inheritdoc />
-        public string? FullName => _assembly.FullName;
+        public string? FullName => UnderlyingAssembly.FullName;
 
         /// <inheritdoc />
-        public string ImageRuntimeVersion => _assembly.ImageRuntimeVersion;
+        public string ImageRuntimeVersion => UnderlyingAssembly.ImageRuntimeVersion;
 
         /// <inheritdoc />
-        public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
+        public string Location => UnderlyingAssembly.Location;
 
         /// <inheritdoc />
-        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_assembly.Modules);
+        public IModuleSymbol ManifestModule => ResolveModuleSymbol(UnderlyingAssembly.ManifestModule);
+
+        /// <inheritdoc />
+        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(UnderlyingAssembly.Modules);
 
         /// <inheritdoc />
         public ITypeSymbol[] GetExportedTypes()
         {
-            return ResolveTypeSymbols(_assembly.GetExportedTypes());
+            return ResolveTypeSymbols(UnderlyingAssembly.GetExportedTypes());
         }
 
         /// <inheritdoc />
         public IModuleSymbol? GetModule(string name)
         {
-            return ResolveModuleSymbol(_assembly.GetModule(name));
+            return ResolveModuleSymbol(UnderlyingAssembly.GetModule(name));
         }
 
         /// <inheritdoc />
         public IModuleSymbol[] GetModules()
         {
-            return ResolveModuleSymbols(_assembly.GetModules());
+            return ResolveModuleSymbols(UnderlyingAssembly.GetModules());
         }
 
         /// <inheritdoc />
         public IModuleSymbol[] GetModules(bool getResourceModules)
         {
-            return ResolveModuleSymbols(_assembly.GetModules(getResourceModules));
+            return ResolveModuleSymbols(UnderlyingAssembly.GetModules(getResourceModules));
         }
 
         /// <inheritdoc />
         public System.Reflection.AssemblyName GetName()
         {
-            return _assembly.GetName().Pack();
+            return UnderlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
         public System.Reflection.AssemblyName GetName(bool copiedName)
         {
-            return _assembly.GetName().Pack();
+            return UnderlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
         public System.Reflection.AssemblyName[] GetReferencedAssemblies()
         {
-            return _assembly.GetReferencedAssemblies().Pack();
+            return UnderlyingAssembly.GetReferencedAssemblies().Pack();
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError)
         {
-            return ResolveTypeSymbol(_assembly.GetType(name, throwOnError));
+            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name, throwOnError));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
         {
-            return ResolveTypeSymbol(_assembly.GetType(name, throwOnError, ignoreCase));
+            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name, throwOnError, ignoreCase));
         }
 
         /// <inheritdoc />
         public ITypeSymbol? GetType(string name)
         {
-            return ResolveTypeSymbol(_assembly.GetType(name));
+            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name));
         }
 
         /// <inheritdoc />
         public ITypeSymbol[] GetTypes()
         {
-            return ResolveTypeSymbols(_assembly.GetTypes());
+            return ResolveTypeSymbols(UnderlyingAssembly.GetTypes());
         }
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
+            return ResolveCustomAttributes(UnderlyingAssembly.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_assembly.__GetCustomAttributes(attributeType.Unpack(), inherit));
+            return ResolveCustomAttributes(UnderlyingAssembly.__GetCustomAttributes(attributeType.Unpack(), inherit));
         }
 
         /// <inheritdoc />
         public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttribute(_assembly.__GetCustomAttributes(attributeType.Unpack(), inherit).FirstOrDefault());
+            return ResolveCustomAttribute(UnderlyingAssembly.__GetCustomAttributes(attributeType.Unpack(), inherit).FirstOrDefault());
         }
 
         /// <inheritdoc />
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _assembly.IsDefined(attributeType.Unpack(), inherit);
+            return UnderlyingAssembly.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        /// <inheritdoc />
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
+        {
+            return ResolveManifestResourceInfo(UnderlyingAssembly.GetManifestResourceInfo(resourceName));
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(name);
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(ITypeSymbol type, string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(type.Unpack(), name);
         }
 
         #endregion

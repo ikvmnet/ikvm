@@ -633,13 +633,13 @@ namespace IKVM.Runtime
 
         protected abstract void EmitMapXmlMetadata(ITypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
 
-        protected abstract MethodBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw);
+        protected abstract IMethodSymbolBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw);
 
         protected abstract void FinishGhost(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods);
 
         protected abstract void FinishGhostStep2();
 
-        protected abstract TypeBuilder DefineGhostType(string mangledTypeName, System.Reflection.TypeAttributes typeAttribs);
+        protected abstract ITypeSymbolBuilder DefineGhostType(string mangledTypeName, System.Reflection.TypeAttributes typeAttribs);
 
 #endif // IMPORTER
 
@@ -657,7 +657,7 @@ namespace IKVM.Runtime
                         {
                             if (method.Attributes != null)
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
-                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName).AsReflection())
+                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
                                         return true;
 
                             break;

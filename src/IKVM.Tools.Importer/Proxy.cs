@@ -23,13 +23,13 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
@@ -230,7 +230,7 @@ namespace IKVM.Tools.Importer
         void CreateNoFail(ImportClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
         {
             var ispublic = true;
-            var interfaceTypes = new Type[interfaces.Length];
+            var interfaceTypes = new ITypeSymbol[interfaces.Length];
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
                 ispublic &= interfaces[i].IsPublic;
@@ -253,9 +253,9 @@ namespace IKVM.Tools.Importer
             CreateStaticInitializer(tb, methods, loader);
         }
 
-        void CreateConstructor(TypeBuilder tb)
+        void CreateConstructor(ITypeSymbolBuilder tb)
         {
-            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, new Type[] { invocationHandlerClass.TypeAsSignatureType }));
+            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, [invocationHandlerClass.TypeAsSignatureType]));
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             proxyConstructor.EmitCall(ilgen);
@@ -263,7 +263,7 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateMethod(ImportClassLoader loader, TypeBuilder tb, ProxyMethod pm)
+        void CreateMethod(ImportClassLoader loader, ITypeSymbolBuilder tb, ProxyMethod pm)
         {
             var mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
             var exceptions = new List<string>();
@@ -358,14 +358,15 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateStaticInitializer(TypeBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
+        void CreateStaticInitializer(ITypeSymbolBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
         {
             var ilgen = loader.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
             var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType);
             var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(loader.Context, tb, ilgen);
             ilgen.Emit(OpCodes.Stloc, callerID);
             // HACK we shouldn't create the nested type here (the outer type must be created first)
-            tbCallerID.CreateType();
+            tbCallerID.Complete();
+
             ilgen.BeginExceptionBlock();
             foreach (ProxyMethod method in methods)
             {
@@ -405,7 +406,7 @@ namespace IKVM.Tools.Importer
 
             internal readonly RuntimeJavaMethod mw;
             internal readonly RuntimeJavaType[] exceptions;
-            internal FieldBuilder fb;
+            internal IFieldSymbolBuilder fb;
 
             internal ProxyMethod(RuntimeJavaMethod mw, RuntimeJavaType[] exceptions)
             {

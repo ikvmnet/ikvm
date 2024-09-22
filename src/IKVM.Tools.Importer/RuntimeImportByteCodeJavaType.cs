@@ -24,17 +24,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Runtime;
 using IKVM.Tools.Importer.MapXml;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
@@ -131,7 +129,7 @@ namespace IKVM.Tools.Importer
                         parameterNames[i] = parameters[i].Name;
         }
 
-        internal void AddXmlMapParameterAttributes(IMethodSymbolBuilder method, string className, string methodName, string methodSig, ref ParameterBuilder[] parameterBuilders)
+        internal void AddXmlMapParameterAttributes(IMethodSymbolBuilder method, string className, string methodName, string methodSig, ref IParameterSymbolBuilder[] parameterBuilders)
         {
             var parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
             if (parameters != null)
@@ -149,7 +147,7 @@ namespace IKVM.Tools.Importer
 
         private void AddParameterMetadata(IMethodSymbolBuilder method, RuntimeJavaMethod mw)
         {
-            ParameterBuilder[] pbs;
+            IParameterSymbolBuilder[] pbs;
             if ((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitSymbols)
             {
                 string[] parameterNames = new string[mw.GetParameters().Length];
@@ -323,16 +321,14 @@ namespace IKVM.Tools.Importer
                         if (m == null || m.DeclaringType != typeBuilder || (!m.IsFinal && final))
                         {
                             var mb = typeBuilder.DefineMethod("get_" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
-                            m = mb.Symbol;
 
                             Context.AttributeHelper.HideFromJava(mb);
                             var ilgen = Context.CodeEmitterFactory.Create(mb);
                             if (mw.IsStatic)
                             {
                                 for (int i = 0; i < indexer.Length; i++)
-                                {
                                     ilgen.EmitLdarg(i);
-                                }
+
                                 mw.EmitCall(ilgen);
                             }
                             else
@@ -363,7 +359,6 @@ namespace IKVM.Tools.Importer
                         if (m == null || m.DeclaringType != typeBuilder || (!m.IsFinal && final))
                         {
                             var mb = typeBuilder.DefineMethod("set_" + prop.Name, GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
-                            m = mb.Symbol;
 
                             Context.AttributeHelper.HideFromJava(mb);
                             var ilgen = Context.CodeEmitterFactory.Create(mb);
@@ -371,6 +366,7 @@ namespace IKVM.Tools.Importer
                             {
                                 for (int i = 0; i <= indexer.Length; i++)
                                     ilgen.EmitLdarg(i);
+
                                 mw.EmitCall(ilgen);
                             }
                             else
@@ -378,6 +374,7 @@ namespace IKVM.Tools.Importer
                                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                                 for (int i = 0; i <= indexer.Length; i++)
                                     ilgen.EmitLdarg(i + 1);
+
                                 mw.EmitCallvirt(ilgen);
                             }
 
@@ -489,7 +486,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (fw.Name == field.Name && fw.Signature == field.Sig)
                                     {
-                                        var fb = fw.GetField() as FieldBuilder;
+                                        var fb = fw.GetField() as IFieldSymbolBuilder;
                                         if (fb != null)
                                             foreach (var attr in field.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, fb, attr);
@@ -537,7 +534,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (mw.Name == "<init>" && mw.Signature == constructor.Sig)
                                     {
-                                        var mb = mw.GetMethod() as MethodBuilder;
+                                        var mb = mw.GetMethod() as IMethodSymbolBuilder;
                                         if (mb != null)
                                             foreach (var attr in constructor.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
@@ -573,7 +570,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     var mw = ClassLoader.LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
-                                    typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
+                                    typeBuilder.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
                                 }
 
                                 ImportClassLoader.AddDeclaredExceptions(Context, mb, method.Throws);
@@ -598,7 +595,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (mw.Name == method.Name && mw.Signature == method.Sig)
                                     {
-                                        MethodBuilder mb = mw.GetMethod() as MethodBuilder;
+                                        var mb = mw.GetMethod() as IMethodSymbolBuilder;
                                         if (mb != null)
                                         {
                                             foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
@@ -611,6 +608,7 @@ namespace IKVM.Tools.Importer
                             }
                         }
                     }
+
                     if (clazz.Interfaces != null)
                     {
                         foreach (var iface in clazz.Interfaces)
@@ -631,7 +629,7 @@ namespace IKVM.Tools.Importer
                                     var mb = mw.GetDefineMethodHelper().DefineMethod(this, typeBuilder, tw.Name + "/" + m.Name, System.Reflection.MethodAttributes.Private | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.Virtual | System.Reflection.MethodAttributes.Final | System.Reflection.MethodAttributes.CheckAccessOnOverride);
                                     Context.AttributeHelper.HideFromJava(mb);
                                     typeBuilder.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
-                                    CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                                    var ilgen = Context.CodeEmitterFactory.Create(mb);
                                     m.Emit(classLoader, ilgen);
                                     ilgen.DoEmit();
                                 }
@@ -642,7 +640,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override MethodBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw)
+        protected override IMethodSymbolBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw)
         {
             if (typeBuilderGhostInterface != null && mw.IsVirtual)
             {
@@ -733,14 +731,14 @@ namespace IKVM.Tools.Importer
                 // HACK create a scope to enable reuse of "implementers" name
                 if (true)
                 {
-                    MethodBuilder mb;
+                    IMethodSymbolBuilder mb;
                     CodeEmitter ilgen;
                     CodeEmitterLocal local;
                     // add implicit conversions for all the ghost implementers
                     var implementers = classLoader.GetGhostImplementers(this);
                     for (int i = 0; i < implementers.Length; i++)
                     {
-                        mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new Type[] { implementers[i].TypeAsSignatureType });
+                        mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new[] { implementers[i].TypeAsSignatureType });
                         Context.AttributeHelper.HideFromJava(mb);
                         ilgen = Context.CodeEmitterFactory.Create(mb);
                         local = ilgen.DeclareLocal(TypeAsSignatureType);
@@ -752,21 +750,23 @@ namespace IKVM.Tools.Importer
                         ilgen.Emit(OpCodes.Ret);
                         ilgen.DoEmit();
                     }
+
                     // Implement the "IsInstance" method
                     mb = ghostIsInstanceMethod;
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
-                    CodeEmitterLabel end = ilgen.DefineLabel();
+                    var end = ilgen.DefineLabel();
                     for (int i = 0; i < implementers.Length; i++)
                     {
                         ilgen.Emit(OpCodes.Ldarg_0);
                         ilgen.Emit(OpCodes.Isinst, implementers[i].TypeAsTBD);
-                        CodeEmitterLabel label = ilgen.DefineLabel();
+                        var label = ilgen.DefineLabel();
                         ilgen.EmitBrfalse(label);
                         ilgen.Emit(OpCodes.Ldc_I4_1);
                         ilgen.EmitBr(end);
                         ilgen.MarkLabel(label);
                     }
+
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.Emit(OpCodes.Isinst, typeBuilderGhostInterface);
                     ilgen.Emit(OpCodes.Ldnull);
@@ -774,6 +774,7 @@ namespace IKVM.Tools.Importer
                     ilgen.MarkLabel(end);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
+
                     // Implement the "IsInstanceArray" method
                     mb = ghostIsInstanceArrayMethod;
                     Context.AttributeHelper.HideFromJava(mb);
@@ -864,7 +865,7 @@ namespace IKVM.Tools.Importer
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
                     // Add "ToObject" methods
-                    mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.HideBySig | MethodAttributes.Public, Context.Types.Object, Type.EmptyTypes);
+                    mb = typeBuilder.DefineMethod("ToObject", MethodAttributes.HideBySig | MethodAttributes.Public, Context.Types.Object, []);
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
                     ilgen.Emit(OpCodes.Ldarg_0);
@@ -889,13 +890,13 @@ namespace IKVM.Tools.Importer
                     ilgen.Emit(OpCodes.Ldarg_0);
                     ilgen.Emit(OpCodes.Ldtoken, typeBuilder);
                     ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.GhostTag).FullName).AsReflection().GetMethod("ThrowClassCastException", BindingFlags.NonPublic | BindingFlags.Static));
+                    ilgen.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.GhostTag).FullName).GetMethod("ThrowClassCastException", BindingFlags.NonPublic | BindingFlags.Static));
                     ilgen.MarkLabel(end);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
 
                     // Implement the "Equals" method
-                    mb = typeBuilder.DefineMethod("Equals", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, Context.Types.Boolean, new Type[] { Context.Types.Object });
+                    mb = typeBuilder.DefineMethod("Equals", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, Context.Types.Boolean, [Context.Types.Object]);
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
                     ilgen.Emit(OpCodes.Ldarg_0);
@@ -906,7 +907,7 @@ namespace IKVM.Tools.Importer
                     ilgen.DoEmit();
 
                     // Implement the "GetHashCode" method
-                    mb = typeBuilder.DefineMethod("GetHashCode", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, Context.Types.Int32, Type.EmptyTypes);
+                    mb = typeBuilder.DefineMethod("GetHashCode", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Virtual, Context.Types.Int32, []);
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
                     ilgen.Emit(OpCodes.Ldarg_0);
@@ -916,7 +917,7 @@ namespace IKVM.Tools.Importer
                     ilgen.DoEmit();
 
                     // Implement the "op_Equality" method
-                    mb = typeBuilder.DefineMethod("op_Equality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Context.Types.Boolean, new Type[] { typeBuilder, typeBuilder });
+                    mb = typeBuilder.DefineMethod("op_Equality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Context.Types.Boolean, [typeBuilder, typeBuilder]);
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
                     ilgen.EmitLdarga(0);
@@ -928,7 +929,7 @@ namespace IKVM.Tools.Importer
                     ilgen.DoEmit();
 
                     // Implement the "op_Inequality" method
-                    mb = typeBuilder.DefineMethod("op_Inequality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Context.Types.Boolean, new Type[] { typeBuilder, typeBuilder });
+                    mb = typeBuilder.DefineMethod("op_Inequality", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, Context.Types.Boolean, [typeBuilder, typeBuilder]);
                     Context.AttributeHelper.HideFromJava(mb);
                     ilgen = Context.CodeEmitterFactory.Create(mb);
                     ilgen.EmitLdarga(0);
@@ -946,27 +947,27 @@ namespace IKVM.Tools.Importer
 
         protected override void FinishGhostStep2()
         {
-            typeBuilderGhostInterface?.CreateType();
+            typeBuilderGhostInterface?.Complete();
         }
 
-        protected override TypeBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs)
+        protected override ITypeSymbolBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs)
         {
             typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
             typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
-            TypeBuilder typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, Context.Types.ValueType);
+            var typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(mangledTypeName, typeAttribs, Context.Types.ValueType);
             Context.AttributeHelper.SetGhostInterface(typeBuilder);
             Context.AttributeHelper.SetModifiers(typeBuilder, Modifiers, IsInternal);
             ghostRefField = typeBuilder.DefineField("__<ref>", Context.Types.Object, FieldAttributes.Public | FieldAttributes.SpecialName);
             typeBuilderGhostInterface = typeBuilder.DefineNestedType("__Interface", TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.NestedPublic);
             Context.AttributeHelper.HideFromJava(typeBuilderGhostInterface);
-            ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Boolean, new Type[] { Context.Types.Object });
+            ghostIsInstanceMethod = typeBuilder.DefineMethod("IsInstance", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Boolean, [Context.Types.Object]);
             ghostIsInstanceMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-            ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Boolean, new Type[] { Context.Types.Object, Context.Types.Int32 });
+            ghostIsInstanceArrayMethod = typeBuilder.DefineMethod("IsInstanceArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Boolean, [Context.Types.Object, Context.Types.Int32]);
             ghostIsInstanceArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
             ghostIsInstanceArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
-            ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeBuilder, new Type[] { Context.Types.Object });
+            ghostCastMethod = typeBuilder.DefineMethod("Cast", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeBuilder, [Context.Types.Object]);
             ghostCastMethod.DefineParameter(1, ParameterAttributes.None, "obj");
-            ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Void, new Type[] { Context.Types.Object, Context.Types.Int32 });
+            ghostCastArrayMethod = typeBuilder.DefineMethod("CastArray", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, Context.Types.Void, [Context.Types.Object, Context.Types.Int32]);
             ghostCastArrayMethod.DefineParameter(1, ParameterAttributes.None, "obj");
             ghostCastArrayMethod.DefineParameter(2, ParameterAttributes.None, "rank");
             return typeBuilder;
@@ -994,7 +995,7 @@ namespace IKVM.Tools.Importer
                 }
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ghostCastArrayMethod);
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(Context.Types.Object, rank));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, rank == 1 ? Context.Types.Object.MakeArrayType() : Context.Types.Object.MakeArrayType(rank));
             }
             else
             {

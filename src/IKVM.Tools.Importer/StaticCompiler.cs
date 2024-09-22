@@ -1,25 +1,25 @@
 ﻿/*
-  Copyright (C) 2002-2014 Jeroen Frijters
+ Copyright (C) 2002-2014 Jeroen Frijters
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
+ This software is provided 'as-is', without any express or implied
+ warranty.  In no event will the authors be held liable for any damages
+ arising from the use of this software.
 
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
+ Permission is granted to anyone to use this software for any purpose,
+ including commercial applications, and to alter it and redistribute it
+ freely, subject to the following restrictions:
 
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
+ 1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+ 2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+ 3. This notice may not be removed or altered from any source distribution.
 
-  Jeroen Frijters
-  jeroen@frijters.net
-  
+ Jeroen Frijters
+ jeroen@frijters.net
+
 */
 
 using System;
@@ -31,6 +31,7 @@ using System.Reflection.PortableExecutable;
 
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 using IKVM.Reflection.Diagnostics;
 using IKVM.Runtime;
@@ -43,24 +44,29 @@ namespace IKVM.Tools.Importer
     class StaticCompiler
     {
 
-        readonly ConcurrentDictionary<string, Type> runtimeTypeCache = new();
+        readonly ConcurrentDictionary<string, ITypeSymbol> runtimeTypeCache = new();
 
         readonly IDiagnosticHandler diagnostics;
+        readonly IkvmReflectionSymbolContext symbols;
         internal Universe universe;
-        internal Assembly runtimeAssembly;
-        internal Assembly baseAssembly;
+        internal IAssemblySymbol runtimeAssembly;
+        internal IAssemblySymbol baseAssembly;
         internal ImportState rootTarget;
         internal int errorCount;
 
         internal Universe Universe => universe;
 
+        internal IkvmReflectionSymbolContext Symbols => symbols;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="diagnostics"></param>
-        public StaticCompiler(IDiagnosticHandler diagnostics)
+        /// <param name="symbols"></param>
+        public StaticCompiler(IDiagnosticHandler diagnostics, IkvmReflectionSymbolContext symbols)
         {
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            this.symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
         }
 
         /// <summary>
@@ -167,17 +173,17 @@ namespace IKVM.Tools.Importer
             return asm;
         }
 
-        internal Assembly LoadFile(string path)
+        internal IAssemblySymbol LoadFile(string path)
         {
-            return universe.LoadFile(path);
+            return symbols.GetOrCreateAssemblySymbol( universe.LoadFile(path));
         }
 
-        internal Type GetRuntimeType(string name)
+        internal ITypeSymbol GetRuntimeType(string name)
         {
             return runtimeTypeCache.GetOrAdd(name, runtimeAssembly.GetType);
         }
 
-        internal Type GetTypeForMapXml(RuntimeClassLoader loader, string name)
+        internal ITypeSymbol GetTypeForMapXml(RuntimeClassLoader loader, string name)
         {
             return GetType(loader, name) ?? throw new FatalCompilerErrorException(DiagnosticEvent.MapFileTypeNotFound(name));
         }
@@ -197,7 +203,7 @@ namespace IKVM.Tools.Importer
             return fw;
         }
 
-        internal Type GetType(RuntimeClassLoader loader, string name)
+        internal ITypeSymbol GetType(RuntimeClassLoader loader, string name)
         {
             var ccl = (ImportClassLoader)loader;
             return ccl.GetTypeFromReferencedAssembly(name);
@@ -205,14 +211,15 @@ namespace IKVM.Tools.Importer
 
         internal static void LinkageError(string msg, RuntimeJavaType actualType, RuntimeJavaType expectedType, params object[] values)
         {
-            var args = new object[values.Length + 2];
+            object[] args = new object[values.Length + 2];
             values.CopyTo(args, 2);
             args[0] = AssemblyQualifiedName(actualType);
             args[1] = AssemblyQualifiedName(expectedType);
-
-            var str = string.Format(msg, args);
+            string str = string.Format(msg, args);
             if (actualType is RuntimeUnloadableJavaType && (expectedType is RuntimeManagedByteCodeJavaType || expectedType is RuntimeManagedJavaType))
-                str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.AsReflection().Location);
+            {
+                str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
+            }
 
             throw new FatalCompilerErrorException(DiagnosticEvent.LinkageError(str));
         }

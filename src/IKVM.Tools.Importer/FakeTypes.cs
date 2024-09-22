@@ -22,10 +22,10 @@
   
 */
 using System;
+using System.Reflection;
 
 using IKVM.CoreLib.Symbols;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer
@@ -76,12 +76,13 @@ namespace IKVM.Tools.Importer
             return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
         }
 
-        internal void Create(ModuleBuilder modb, RuntimeClassLoader loader)
+        internal void Create(IModuleSymbolBuilder modb, RuntimeClassLoader loader)
         {
-            var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.MulticastDelegate.AsReflection());
-            genericDelegateInterfaceType = context.Resolver.ResolveType(tb.CreateType());
+            var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.Public);
+            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.MulticastDelegate);
+            tb.Complete();
 
+            genericDelegateInterfaceType = tb;
             genericAttributeAnnotationType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
             genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
             genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
@@ -90,33 +91,39 @@ namespace IKVM.Tools.Importer
 
         internal void Finish(RuntimeClassLoader loader)
         {
-            var tb = (TypeBuilder)genericEnumEnumType.AsReflection();
+            var tb = (ITypeSymbolBuilder)genericEnumEnumType;
             var enumTypeWrapper = loader.LoadClassByName("java.lang.Enum");
             enumTypeWrapper.Finish();
-            tb.SetParent(enumTypeWrapper.TypeAsBaseType.AsReflection());
-            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, [context.Types.String.AsReflection(), context.Types.Int32.AsReflection()]));
-            ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Ldarg_1);
-            ilgen.Emit(OpCodes.Ldarg_2);
+            tb.SetParent(enumTypeWrapper.TypeAsBaseType);
+            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, [context.Types.String, context.Types.Int32]));
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_2);
             enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
-            ilgen.Emit(OpCodes.Ret);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
             ilgen.DoEmit();
-            genericEnumEnumType = context.Resolver.ResolveType(tb.CreateType());
+            tb.Complete();
+
+            genericEnumEnumType = tb;
         }
 
-        void CreateEnumEnum(ModuleBuilder modb, RuntimeClassLoader loader)
+        void CreateEnumEnum(IModuleSymbolBuilder modb, RuntimeClassLoader loader)
         {
             var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
             var gtpb = tb.DefineGenericParameters("T")[0];
-            gtpb.SetBaseTypeConstraint(context.Types.Enum.AsReflection());
-            genericEnumEnumType = context.Resolver.ResolveType(tb);
+            gtpb.SetBaseTypeConstraint(context.Types.Enum);
+            tb.Complete();
+
+            genericEnumEnumType = tb;
         }
 
-        ITypeSymbol CreateAnnotationType(ModuleBuilder modb, string name)
+        ITypeSymbol CreateAnnotationType(IModuleSymbolBuilder modb, string name)
         {
             var tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
-            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.Attribute.AsReflection());
-            return context.Resolver.ResolveType(tb.CreateType());
+            tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.Attribute);
+            tb.Complete();
+
+            return tb;
         }
 
         internal void Load(IAssemblySymbol assembly)

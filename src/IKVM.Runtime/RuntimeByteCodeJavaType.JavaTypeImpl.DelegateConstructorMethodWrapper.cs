@@ -39,7 +39,7 @@ namespace IKVM.Runtime
             sealed class DelegateConstructorMethodWrapper : RuntimeJavaMethod
             {
 
-                IMethodSymbolBuilder constructor;
+                IConstructorSymbolBuilder constructor;
                 IMethodSymbol invoke;
 
                 /// <summary>

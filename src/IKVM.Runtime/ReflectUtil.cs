@@ -146,9 +146,9 @@ namespace IKVM.Runtime
             return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
         }
 
-        internal static IMethodSymbolBuilder DefineConstructor(ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ITypeSymbol[] parameterTypes)
+        internal static IConstructorSymbolBuilder DefineConstructor(ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ITypeSymbol[] parameterTypes)
         {
-            return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, null, parameterTypes);
+            return tb.DefineConstructor(attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, parameterTypes);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static bool CanOwnDynamicMethod(Type type)
+        internal static bool CanOwnDynamicMethod(ITypeSymbol type)
         {
             return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
@@ -192,13 +192,9 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal static bool IsVector(Type type)
+        internal static bool IsVector(ITypeSymbol type)
         {
-#if NET
             return type.IsSZArray;
-#else
-            return type.IsArray && type.Name.EndsWith("[]");
-#endif
         }
 
 #if IMPORTER

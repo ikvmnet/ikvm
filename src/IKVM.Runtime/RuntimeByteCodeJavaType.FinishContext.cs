@@ -59,7 +59,7 @@ namespace IKVM.Runtime
             List<ITypeSymbolBuilder> nestedTypeBuilders;
             IMethodSymbol callerIDMethod;
             List<Item> items;
-            Dictionary<RuntimeJavaField, IMethodSymbolBuilder> arfuMap;
+            Dictionary<RuntimeJavaField, IConstructorSymbolBuilder> arfuMap;
             Dictionary<MethodKey, IMethodSymbol> invokespecialstubcache;
             Dictionary<string, IMethodSymbol> dynamicClassLiteral;
 #if IMPORTER
@@ -289,7 +289,7 @@ namespace IKVM.Runtime
                     }
                 }
 #if IMPORTER
-                TypeBuilder tbDefaultMethods = null;
+                ITypeSymbolBuilder tbDefaultMethods = null;
 #endif
                 bool basehasclinit = wrapper.BaseTypeWrapper != null && wrapper.BaseTypeWrapper.HasStaticInitializer;
                 int clinitIndex = -1;
@@ -389,7 +389,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
                                 // see if there exists a "managed JNI" class for this type
-                                var nativeCodeType = context.Resolver.ResolveRuntimeType("IKVM.Java.Externs." + classFile.Name.Replace("$", "+")).AsReflection();
+                                var nativeCodeType = context.Resolver.ResolveRuntimeType("IKVM.Java.Externs." + classFile.Name.Replace("$", "+"));
                                 if (nativeCodeType != null)
                                 {
                                     if (!m.IsStatic)
@@ -398,7 +398,7 @@ namespace IKVM.Runtime
                                     if (methods[i].HasCallerID)
                                         nargs = ArrayUtil.Concat(nargs, context.JavaBase.TypeOfIkvmInternalCallerID);
 
-                                    foreach (var method in nativeCodeType.GetMethods(BindingFlags.Static | BindingFlags.Public))
+                                    foreach (var method in nativeCodeType.GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
                                     {
                                         var param = method.GetParameters();
                                         int paramLength = param.Length;
@@ -762,7 +762,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-            static void AddConstantPoolAttributeIfNecessary(RuntimeContext context, ClassFile classFile, TypeBuilder typeBuilder)
+            static void AddConstantPoolAttributeIfNecessary(RuntimeContext context, ClassFile classFile, ITypeSymbolBuilder typeBuilder)
             {
                 object[] constantPool = null;
                 bool[] inUse = null;
@@ -974,11 +974,10 @@ namespace IKVM.Runtime
                     return false;
                 }
 
-                FieldInfo fi = casField.GetField();
+                var fi = casField.GetField();
                 if (fi == null)
-                {
                     return false;
-                }
+
                 ilGenerator.EmitLdarg(0);
                 ilGenerator.Emit(OpCodes.Ldflda, fi);
                 ilGenerator.EmitLdarg(2);
@@ -1059,14 +1058,14 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-            private void AddImplementsAttribute()
+            void AddImplementsAttribute()
             {
                 var interfaces = wrapper.Interfaces;
                 if (wrapper.BaseTypeWrapper == context.JavaBase.TypeOfJavaLangObject)
                 {
                     // We special case classes extending java.lang.Object to optimize the metadata encoding
                     // for anonymous classes that implement an interface.
-                    Type[] actualInterfaces = typeBuilder.GetInterfaces();
+                    var actualInterfaces = typeBuilder.GetInterfaces();
                     if (actualInterfaces.Length == 0)
                     {
                         return;
@@ -1089,14 +1088,13 @@ namespace IKVM.Runtime
                 context.AttributeHelper.SetImplementsAttribute(typeBuilder, interfaces);
             }
 
-            private TypeBuilder DefineNestedInteropType(string name)
+            ITypeSymbolBuilder DefineNestedInteropType(string name)
             {
-                ImportClassLoader ccl = wrapper.classLoader;
+                var ccl = wrapper.classLoader;
                 while (!ccl.ReserveName(classFile.Name + "$" + name))
-                {
                     name += "_";
-                }
-                TypeBuilder tb = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
+
+                var tb = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.Abstract);
                 RegisterNestedTypeBuilder(tb);
                 context.AttributeHelper.HideFromJava(tb);
                 return tb;
@@ -1112,17 +1110,13 @@ namespace IKVM.Runtime
 
             }
 
-            private void CreateDefaultMethodInterop(ref TypeBuilder tbDefaultMethods, IMethodSymbolBuilder defaultMethod, RuntimeJavaMethod mw)
+            private void CreateDefaultMethodInterop(ref ITypeSymbolBuilder tbDefaultMethods, IMethodSymbolBuilder defaultMethod, RuntimeJavaMethod mw)
             {
                 if (!ParametersAreAccessible(mw))
-                {
                     return;
-                }
 
                 if (tbDefaultMethods == null)
-                {
                     tbDefaultMethods = DefineNestedInteropType(NestedTypeName.DefaultMethods);
-                }
 
                 var mb = mw.GetDefineMethodHelper().DefineMethod(wrapper.ClassLoader.GetTypeWrapperFactory(), tbDefaultMethods, mw.Name, MethodAttributes.Public | MethodAttributes.Static, wrapper.TypeAsSignatureType, true);
                 var ilgen = context.CodeEmitterFactory.Create(mb);
@@ -1303,7 +1297,7 @@ namespace IKVM.Runtime
 
                     // we append the IKVM.Attributes.AccessStub type to the modopt array for use in the property accessor method signature
                     // to make sure they never conflict with any user defined methhods
-                    var modopt2 = ArrayUtil.Concat(modopt, context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName).AsReflection());
+                    var modopt2 = ArrayUtil.Concat(modopt, context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName));
                     var getter = typeBuilder.DefineMethod("get_" + fw.Name, attribs, CallingConventions.Standard, propType, null, modopt2, [], null, null);
                     context.AttributeHelper.HideFromJava(getter);
                     pb.SetGetMethod(getter);
@@ -1400,7 +1394,7 @@ namespace IKVM.Runtime
                 }
 
                 var returnType = mw.ReturnType.TypeAsPublicSignatureType;
-                var modoptReturnType = ArrayUtil.Concat(wrapper.GetModOpt(mw.ReturnType, true), context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName).AsReflection());
+                var modoptReturnType = ArrayUtil.Concat(wrapper.GetModOpt(mw.ReturnType, true), context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.AccessStub).FullName));
 
                 string name;
                 if (mw.Name == StringConstants.INIT)
@@ -1594,7 +1588,7 @@ namespace IKVM.Runtime
             internal static class JniProxyBuilder
             {
 
-                readonly static ModuleBuilder mod;
+                readonly static IModuleSymbolBuilder mod;
                 static int count;
 
                 /// <summary>
@@ -1602,8 +1596,8 @@ namespace IKVM.Runtime
                 /// </summary>
                 static JniProxyBuilder()
                 {
-                    mod = DynamicClassLoader.CreateJniProxyModuleBuilder();
-                    var cab = new CustomAttributeBuilder(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]).AsReflection(), []);
+                    mod = DynamicClassLoader.CreateJniProxyModuleBuilder(JVM.Context);
+                    var cab = JVM.Context.Resolver.Symbols.CreateCustomAttribute(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]), []);
                     mod.SetCustomAttribute(cab);
                 }
 
@@ -1611,36 +1605,34 @@ namespace IKVM.Runtime
                 {
                     var tb = mod.DefineType("__<jni>" + System.Threading.Interlocked.Increment(ref count), TypeAttributes.Public | TypeAttributes.Class);
                     int instance = m.IsStatic ? 0 : 1;
-                    var argTypes = new ITypeSymbolvvvvvvvvvvvvvvvv[args.Length + instance + 1];
+                    var argTypes = new ITypeSymbol[args.Length + instance + 1];
                     if (instance != 0)
-                    {
-                        argTypes[0] = typeof(object);
-                    }
+                        argTypes[0] = context.Context.Types.Object;
+
                     for (int i = 0; i < args.Length; i++)
                     {
                         // NOTE we take a shortcut here by assuming that all "special" types (i.e. ghost or value types)
                         // are public and so we can get away with replacing all other types with object.
-                        argTypes[i + instance] = !args[i].IsUnloadable && (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : typeof(object);
+                        argTypes[i + instance] = !args[i].IsUnloadable && (args[i].IsPrimitive || args[i].IsGhost || args[i].IsNonPrimitiveValueType) ? args[i].TypeAsSignatureType : context.Context.Types.Object;
                     }
 
                     argTypes[argTypes.Length - 1] = context.context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-                    var retType = !mw.ReturnType.IsUnloadable && (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : typeof(object);
+                    var retType = !mw.ReturnType.IsUnloadable && (mw.ReturnType.IsPrimitive || mw.ReturnType.IsGhost || mw.ReturnType.IsNonPrimitiveValueType) ? mw.ReturnType.TypeAsSignatureType : context.Context.Types.Object;
                     var mb = tb.DefineMethod("method", MethodAttributes.Public | MethodAttributes.Static, retType, argTypes);
                     context.context.AttributeHelper.HideFromJava(mb);
-                    CodeEmitter ilgen = context.context.CodeEmitterFactory.Create(mb);
+                    var ilgen = context.context.CodeEmitterFactory.Create(mb);
                     new JniBuilder(context.context).Generate(context, ilgen, wrapper, mw, tb, classFile, m, args, true);
                     ilgen.DoEmit();
-                    tb.CreateType();
+                    tb.Complete();
+
                     for (int i = 0; i < argTypes.Length - 1; i++)
-                    {
                         ilGenerator.EmitLdarg(i);
-                    }
+
                     context.EmitCallerID(ilGenerator, m.IsLambdaFormCompiled);
                     ilGenerator.Emit(OpCodes.Call, mb);
                     if (!mw.ReturnType.IsUnloadable && !mw.ReturnType.IsPrimitive && !mw.ReturnType.IsGhost && !mw.ReturnType.IsNonPrimitiveValueType)
-                    {
                         ilGenerator.Emit(OpCodes.Castclass, mw.ReturnType.TypeAsSignatureType);
-                    }
+
                     ilGenerator.Emit(OpCodes.Ret);
                 }
             }
@@ -1907,7 +1899,7 @@ namespace IKVM.Runtime
                 }
                 ilgen.Emit(OpCodes.Ldc_I4_1);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveCoreType(typeof(StackFrame).FullName).AsReflection().GetConstructor(new ITypeSymbol[] { context.Types.Int32, context.Types.Boolean }));
+                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveCoreType(typeof(StackFrame).FullName).GetConstructor(new ITypeSymbol[] { context.Types.Int32, context.Types.Boolean }));
                 var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
                 callerID.Link();
                 callerID.EmitCall(ilgen);
@@ -2187,7 +2179,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal IMethodSymbolBuilder DefineThreadLocalType()
+            internal IConstructorSymbolBuilder DefineThreadLocalType()
             {
                 var threadLocal = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicThreadLocal");
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
@@ -2219,26 +2211,28 @@ namespace IKVM.Runtime
                 return cb;
             }
 
-            internal IMethodSymbolBuilder GetAtomicReferenceFieldUpdater(RuntimeJavaField field)
+            internal IConstructorSymbolBuilder GetAtomicReferenceFieldUpdater(RuntimeJavaField field)
             {
-                arfuMap ??= new Dictionary<RuntimeJavaField, IMethodSymbolBuilder>();
+                arfuMap ??= new Dictionary<RuntimeJavaField, IConstructorSymbolBuilder>();
 
                 if (!arfuMap.TryGetValue(field, out var cb))
                 {
                     var arfuTypeWrapper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.IntrinsicAtomicReferenceFieldUpdater");
                     var tb = typeBuilder.DefineNestedType(NestedTypeName.AtomicReferenceFieldUpdater + arfuMap.Count, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, arfuTypeWrapper.TypeAsBaseType);
                     AtomicReferenceFieldUpdaterEmitter.EmitImpl(context, tb, field.GetField());
+
                     cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, []);
                     arfuMap.Add(field, cb);
-                    CodeEmitter ctorilgen = context.CodeEmitterFactory.Create(cb);
+                    var ctorilgen = context.CodeEmitterFactory.Create(cb);
                     ctorilgen.Emit(OpCodes.Ldarg_0);
-                    RuntimeJavaMethod basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    var basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
                     basector.Link();
                     basector.EmitCall(ctorilgen);
                     ctorilgen.Emit(OpCodes.Ret);
                     ctorilgen.DoEmit();
                     RegisterNestedTypeBuilder(tb);
                 }
+
                 return cb;
             }
 

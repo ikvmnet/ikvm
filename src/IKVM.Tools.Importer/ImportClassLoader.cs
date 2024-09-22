@@ -61,7 +61,7 @@ namespace IKVM.Tools.Importer
         string assemblyFile;
         string assemblyDir;
         bool targetIsModule;
-        AssemblyBuilder assemblyBuilder;
+        IAssemblySymbolBuilder assemblyBuilder;
         MapXml.Attribute[] assemblyAttributes;
         ImportState state;
         private readonly StaticCompiler compiler;
@@ -138,16 +138,7 @@ namespace IKVM.Tools.Importer
 
         internal System.Reflection.AssemblyName GetAssemblyName()
         {
-            var src = assemblyBuilder.GetName();
-            return new System.Reflection.AssemblyName
-            {
-                Name = src.Name,
-                Version = src.Version,
-                CultureName = src.CultureName,
-                HashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
-                Flags = (System.Reflection.AssemblyNameFlags)src.Flags,
-                ContentType = (System.Reflection.AssemblyContentType)src.ContentType,
-            };
+            return assemblyBuilder.GetName();
         }
 
         private static PermissionSet Combine(PermissionSet p1, PermissionSet p2)
@@ -163,7 +154,7 @@ namespace IKVM.Tools.Importer
             return p1.Union(p2);
         }
 
-        internal ModuleBuilder CreateModuleBuilder()
+        internal IModuleSymbolBuilder CreateModuleBuilder()
         {
             var name = new AssemblyName();
             name.Name = assemblyName;
@@ -175,8 +166,8 @@ namespace IKVM.Tools.Importer
             name.Version = state.version;
 
             // define a dynamic assembly and module
-            assemblyBuilder = Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, EmitSymbols);
+            assemblyBuilder = Context.Resolver.ResolveAssembly(Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir));
+            var moduleBuilder = assemblyBuilder.DefineModule(assemblyName, assemblyFile, EmitSymbols);
 
             // if configured to emit stack trace info set source file
             if (EmitStackTraceInfo)
@@ -195,11 +186,11 @@ namespace IKVM.Tools.Importer
             Context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 
             if (state.baseAddress != 0)
-                moduleBuilder.__ImageBase = state.baseAddress;
+                moduleBuilder.ImageBase = state.baseAddress;
             if (state.fileAlignment != 0)
-                moduleBuilder.__FileAlignment = state.fileAlignment;
+                moduleBuilder.FileAlignment = state.fileAlignment;
             if (state.highentropyva)
-                moduleBuilder.__DllCharacteristics |= DllCharacteristics.HighEntropyVA;
+                moduleBuilder.DllCharacteristics |= System.Reflection.PortableExecutable.DllCharacteristics.HighEntropyVirtualAddressSpace;
 
             // allow the runtime to "inject" dynamic classes into the assembly
             var mainAssemblyName = state.sharedclassloader != null && state.sharedclassloader[0] != this
@@ -495,17 +486,17 @@ namespace IKVM.Tools.Importer
         private void AddInternalsVisibleToAttribute(ImportClassLoader ccl)
         {
             internalsVisibleTo.Add(ccl);
-            AssemblyBuilder asm = ccl.assemblyBuilder;
-            AssemblyName asmName = asm.GetName();
-            string name = asmName.Name;
-            byte[] pubkey = asmName.GetPublicKey();
+            var asm = ccl.assemblyBuilder;
+            var asmName = asm.GetName();
+            var name = asmName.Name;
+            var pubkey = asmName.GetPublicKey();
+
             if (pubkey == null && asmName.KeyPair != null)
-            {
                 pubkey = asmName.KeyPair.PublicKey;
-            }
+
             if (pubkey != null && pubkey.Length != 0)
             {
-                StringBuilder sb = new StringBuilder(name);
+                var sb = new StringBuilder(name);
                 sb.Append(", PublicKey=");
                 foreach (byte b in pubkey)
                 {
@@ -513,6 +504,7 @@ namespace IKVM.Tools.Importer
                 }
                 name = sb.ToString();
             }
+
             Context.AttributeHelper.SetInternalsVisibleToAttribute(this.assemblyBuilder, name);
         }
 
@@ -524,7 +516,7 @@ namespace IKVM.Tools.Importer
         /// <param name="properties"></param>
         /// <param name="noglobbing"></param>
         /// <param name="apartmentAttributeType"></param>
-        void SetMain(RuntimeJavaType type, PEFileKinds target, IDictionary<string, string> properties, bool noglobbing, Type apartmentAttributeType)
+        void SetMain(RuntimeJavaType type, IKVM.CoreLib.Symbols.Emit.PEFileKinds target, IDictionary<string, string> properties, bool noglobbing, ITypeSymbol apartmentAttributeType)
         {
             if (type is null)
                 throw new ArgumentNullException(nameof(type));
@@ -532,63 +524,63 @@ namespace IKVM.Tools.Importer
                 throw new ArgumentNullException(nameof(properties));
 
             // global main method decorated with appropriate apartment type
-            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", MethodAttributes.Public | MethodAttributes.Static, Context.Types.Int32, new[] { Context.Types.String.MakeArrayType() });
+            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, Context.Types.Int32, new[] { Context.Types.String.MakeArrayType() });
             if (apartmentAttributeType != null)
-                mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
+                mainMethodProxy.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(apartmentAttributeType.GetConstructor([]), []));
 
             var ilgen = Context.CodeEmitterFactory.Create(mainMethodProxy);
 
             // first argument to Launch (assembly)
-            ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
-            ilgen.Emit(OpCodes.Call, Context.CompilerFactory.GetTypeFromHandleMethod);
-            ilgen.Emit(OpCodes.Callvirt, Context.Types.Type.GetProperty(nameof(System.Type.Assembly)).GetGetMethod());
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldtoken, type.TypeAsTBD);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, Context.CompilerFactory.GetTypeFromHandleMethod);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, Context.Types.Type.GetProperty(nameof(System.Type.Assembly)).GetGetMethod());
 
             // second argument to Launch (type name)
-            ilgen.Emit(OpCodes.Ldstr, type.Name);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, type.Name);
 
             // third argument: is this a jar
-            ilgen.Emit(OpCodes.Ldc_I4_0);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);
 
             // fourth argument: args
-            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
 
             // fifth argument, runtime prefix
-            ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
             // sixth argument, property set to initialize JVM
             if (properties.Count > 0)
             {
-                var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName).AsReflection();
+                var environmentType = Context.Resolver.ResolveCoreType(typeof(Environment).FullName);
                 var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), [Context.Types.String]);
-                var dictionaryType = Context.Resolver.ResolveCoreType(typeof(Dictionary<,>).FullName).AsReflection().MakeGenericType(Context.Types.String, Context.Types.String);
+                var dictionaryType = Context.Resolver.ResolveCoreType(typeof(Dictionary<,>).FullName).MakeGenericType(Context.Types.String, Context.Types.String);
                 var dictionaryAddMethod = dictionaryType.GetMethod("Add", [Context.Types.String, Context.Types.String]);
 
                 ilgen.EmitLdc_I4(properties.Count);
-                ilgen.Emit(OpCodes.Newobj, dictionaryType.GetConstructor([Context.Types.Int32]));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Newobj, dictionaryType.GetConstructor([Context.Types.Int32]));
 
                 foreach (var kvp in properties)
                 {
-                    ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldstr, kvp.Key);
-                    ilgen.Emit(OpCodes.Ldstr, kvp.Value);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, kvp.Key);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, kvp.Value);
 
                     // property value can reference an environmental variable (reassess the requirment for this)
                     if (kvp.Value.IndexOf('%') < kvp.Value.LastIndexOf('%'))
-                        ilgen.Emit(OpCodes.Call, environmentExpandMethod);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, environmentExpandMethod);
 
                     // add to properties dictionary
-                    ilgen.Emit(OpCodes.Callvirt, dictionaryAddMethod);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, dictionaryAddMethod);
                 }
             }
             else
             {
-                ilgen.Emit(OpCodes.Ldnull);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldnull);
             }
 
             // invoke the launcher main method
-            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run)).AsReflection();
-            ilgen.Emit(OpCodes.Call, launchMethod);
-            ilgen.Emit(OpCodes.Ret);
+            var launchMethod = Context.Resolver.ResolveRuntimeType(typeof(IKVM.Runtime.Launcher).FullName).GetMethod(nameof(IKVM.Runtime.Launcher.Run));
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, launchMethod);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
 
             // generate entry point
             ilgen.DoEmit();
@@ -602,7 +594,7 @@ namespace IKVM.Tools.Importer
 
         void Save()
         {
-            ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
+            var mb = GetTypeWrapperFactory().ModuleBuilder;
             if (targetIsModule)
             {
                 // HACK force all referenced assemblies to end up as references in the assembly
@@ -611,26 +603,21 @@ namespace IKVM.Tools.Importer
                 // NOTE now we only do this for modules, when we're an assembly we store the exported
                 // assemblies in the ikvm.exports resource.
                 for (int i = 0; i < referencedAssemblies.Length; i++)
-                {
-                    Type[] types = referencedAssemblies[i].MainAssembly.GetExportedTypes();
-                    if (types.Length > 0)
-                    {
-                        mb.GetTypeToken(types[0]);
-                    }
-                }
+                    mb.AddReference(referencedAssemblies[i].MainAssembly);
             }
-            mb.CreateGlobalFunctions();
+
+            mb.Complete();
 
             AddJavaModuleAttribute(mb);
 
             // add a package list and export map
             if (state.sharedclassloader == null || state.sharedclassloader[0] == this)
             {
-                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).AsReflection().GetConstructor([Context.Types.String, Context.Types.String.MakeArrayType()]);
+                var packageListAttributeCtor = Context.Resolver.ResolveRuntimeType(typeof(PackageListAttribute).FullName).GetConstructor([Context.Types.String, Context.Types.String.MakeArrayType()]);
                 foreach (object[] args in packages.ToArray())
                 {
                     args[1] = UnicodeUtil.EscapeInvalidSurrogates((string[])args[1]);
-                    mb.SetCustomAttribute(new CustomAttributeBuilder(packageListAttributeCtor, args));
+                    mb.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(packageListAttributeCtor, args));
                 }
                 // We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
                 // and since you cannot combine -target:module with -sharedclassloader we don't need an export map
@@ -647,7 +634,7 @@ namespace IKVM.Tools.Importer
 
                 try
                 {
-                    GetTypeWrapperFactory().ModuleBuilder.__Save(state.pekind, state.imageFileMachine);
+                    GetTypeWrapperFactory().ModuleBuilder.Save(state.pekind, state.imageFileMachine);
                 }
                 catch (IOException x)
                 {
@@ -677,9 +664,9 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        void AddJavaModuleAttribute(ModuleBuilder mb)
+        void AddJavaModuleAttribute(IModuleSymbolBuilder mb)
         {
-            var typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).AsReflection();
+            var typeofJavaModuleAttribute = Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName);
             var propInfos = new[] { typeofJavaModuleAttribute.GetProperty("Jars") };
             var propValues = new object[] { jarList.ToArray() };
 
@@ -694,12 +681,12 @@ namespace IKVM.Tools.Importer
                 }
 
                 list = UnicodeUtil.EscapeInvalidSurrogates(list);
-                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor([Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType().AsReflection()]), [list], propInfos, propValues);
+                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]), [list], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
             else
             {
-                var cab = new CustomAttributeBuilder(typeofJavaModuleAttribute.GetConstructor([]), [], propInfos, propValues);
+                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([]), [], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
         }
@@ -777,7 +764,7 @@ namespace IKVM.Tools.Importer
                 }
             }
             ms.Position = 0;
-            GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
+            GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, System.Reflection.ResourceAttributes.Public);
         }
 
         void WriteResources()
@@ -839,49 +826,49 @@ namespace IKVM.Tools.Importer
                         name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
 
                     jarList.Add(name);
-                    moduleBuilder.DefineManifestResource(name, mem, ResourceAttributes.Public);
+                    moduleBuilder.DefineManifestResource(name, mem, System.Reflection.ResourceAttributes.Public);
                 }
             }
         }
 
-        private static MethodAttributes MapMethodAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
+        private static System.Reflection.MethodAttributes MapMethodAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
         {
             const IKVM.Tools.Importer.MapXml.MapModifiers access = IKVM.Tools.Importer.MapXml.MapModifiers.Public | IKVM.Tools.Importer.MapXml.MapModifiers.Protected | IKVM.Tools.Importer.MapXml.MapModifiers.Private;
             switch (mod & access)
             {
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Public:
-                    return MethodAttributes.Public;
+                    return System.Reflection.MethodAttributes.Public;
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Protected:
-                    return MethodAttributes.FamORAssem;
+                    return System.Reflection.MethodAttributes.FamORAssem;
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Private:
-                    return MethodAttributes.Private;
+                    return System.Reflection.MethodAttributes.Private;
                 default:
-                    return MethodAttributes.Assembly;
+                    return System.Reflection.MethodAttributes.Assembly;
             }
         }
 
-        private static FieldAttributes MapFieldAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
+        private static System.Reflection.FieldAttributes MapFieldAccessModifiers(IKVM.Tools.Importer.MapXml.MapModifiers mod)
         {
             const IKVM.Tools.Importer.MapXml.MapModifiers access = IKVM.Tools.Importer.MapXml.MapModifiers.Public | IKVM.Tools.Importer.MapXml.MapModifiers.Protected | IKVM.Tools.Importer.MapXml.MapModifiers.Private;
             switch (mod & access)
             {
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Public:
-                    return FieldAttributes.Public;
+                    return System.Reflection.FieldAttributes.Public;
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Protected:
-                    return FieldAttributes.FamORAssem;
+                    return System.Reflection.FieldAttributes.FamORAssem;
                 case IKVM.Tools.Importer.MapXml.MapModifiers.Private:
-                    return FieldAttributes.Private;
+                    return System.Reflection.FieldAttributes.Private;
                 default:
-                    return FieldAttributes.Assembly;
+                    return System.Reflection.FieldAttributes.Assembly;
             }
         }
 
         private sealed class RemapperTypeWrapper : RuntimeJavaType
         {
             private ImportClassLoader classLoader;
-            private TypeBuilder typeBuilder;
-            private TypeBuilder helperTypeBuilder;
-            private Type shadowType;
+            private ITypeSymbolBuilder typeBuilder;
+            private ITypeSymbolBuilder helperTypeBuilder;
+            private ITypeSymbol shadowType;
             private IKVM.Tools.Importer.MapXml.Class classDef;
             private RuntimeJavaType baseTypeWrapper;
             private RuntimeJavaType[] interfaceWrappers;
@@ -917,32 +904,32 @@ namespace IKVM.Tools.Importer
                 this.baseTypeWrapper = GetBaseWrapper(context, c);
                 classDef = c;
                 bool baseIsSealed = false;
-                shadowType = context.StaticCompiler.Universe.GetType(c.Shadows, true);
+                shadowType = context.Resolver.ResolveType(context.StaticCompiler.Universe.GetType(c.Shadows, true));
                 classLoader.SetRemappedType(shadowType, this);
-                Type baseType = shadowType;
-                Type baseInterface = null;
+                var baseType = shadowType;
+                ITypeSymbol baseInterface = null;
                 if (baseType.IsInterface)
                 {
                     baseInterface = baseType;
                 }
-                TypeAttributes attrs = TypeAttributes.Public;
+                var attrs = System.Reflection.TypeAttributes.Public;
                 if ((c.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Interface) == 0)
                 {
-                    attrs |= TypeAttributes.Class;
+                    attrs |= System.Reflection.TypeAttributes.Class;
                     if (baseType.IsSealed)
                     {
                         baseIsSealed = true;
-                        attrs |= TypeAttributes.Abstract | TypeAttributes.Sealed;
+                        attrs |= System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.Sealed;
                     }
                 }
                 else
                 {
-                    attrs |= TypeAttributes.Interface | TypeAttributes.Abstract;
+                    attrs |= System.Reflection.TypeAttributes.Interface | System.Reflection.TypeAttributes.Abstract;
                     baseType = null;
                 }
                 if ((c.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Abstract) != 0)
                 {
-                    attrs |= TypeAttributes.Abstract;
+                    attrs |= System.Reflection.TypeAttributes.Abstract;
                 }
                 string name = c.Name.Replace('/', '.');
                 typeBuilder = classLoader.GetTypeWrapperFactory().ModuleBuilder.DefineType(name, attrs, baseIsSealed ? Context.Types.Object : baseType);
@@ -1068,7 +1055,7 @@ namespace IKVM.Tools.Importer
 
                 }
 
-                internal abstract MethodBase DoLink();
+                internal abstract IMethodBaseSymbol DoLink();
 
                 internal abstract void Finish();
 
@@ -1078,7 +1065,7 @@ namespace IKVM.Tools.Importer
             {
 
                 private IKVM.Tools.Importer.MapXml.Constructor m;
-                private MethodBuilder mbHelper;
+                private IMethodSymbolBuilder mbHelper;
 
                 internal RemappedConstructorWrapper(RemapperTypeWrapper typeWrapper, IKVM.Tools.Importer.MapXml.Constructor m)
                     : base(typeWrapper, "<init>", m.Sig, (Modifiers)m.Modifiers)
@@ -1088,32 +1075,32 @@ namespace IKVM.Tools.Importer
 
                 internal override void EmitCall(CodeEmitter ilgen)
                 {
-                    ilgen.Emit(OpCodes.Call, GetMethod());
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, GetMethod());
                 }
 
                 internal override void EmitNewobj(CodeEmitter ilgen)
                 {
                     if (mbHelper != null)
                     {
-                        ilgen.Emit(OpCodes.Call, mbHelper);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mbHelper);
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Newobj, GetMethod());
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Newobj, GetMethod());
                     }
                 }
 
-                internal override MethodBase DoLink()
+                internal override IMethodBaseSymbol DoLink()
                 {
-                    MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers);
-                    RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
-                    Type[] paramTypes = typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig);
+                    var attr = MapMethodAccessModifiers(m.Modifiers);
+                    var typeWrapper = (RemapperTypeWrapper)DeclaringType;
+                    var paramTypes = typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig);
 
-                    MethodBuilder cbCore = null;
+                    IConstructorSymbolBuilder cbCore = null;
 
                     if (typeWrapper.shadowType.IsSealed)
                     {
-                        mbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | MethodAttributes.Static, CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
+                        mbHelper = typeWrapper.typeBuilder.DefineMethod("newhelper", attr | System.Reflection.MethodAttributes.Static, System.Reflection.CallingConventions.Standard, typeWrapper.shadowType, paramTypes);
                         if (m.Attributes != null)
                         {
                             foreach (IKVM.Tools.Importer.MapXml.Attribute custattr in m.Attributes)
@@ -1121,6 +1108,7 @@ namespace IKVM.Tools.Importer
                                 DeclaringType.Context.AttributeHelper.SetCustomAttribute(DeclaringType.ClassLoader, mbHelper, custattr);
                             }
                         }
+
                         SetParameters(DeclaringType.ClassLoader, mbHelper, m.Parameters);
                         DeclaringType.Context.AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
                         DeclaringType.Context.AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
@@ -1136,9 +1124,11 @@ namespace IKVM.Tools.Importer
                                 DeclaringType.Context.AttributeHelper.SetCustomAttribute(DeclaringType.ClassLoader, cbCore, custattr);
                             }
                         }
+
                         SetParameters(DeclaringType.ClassLoader, cbCore, m.Parameters);
                         AddDeclaredExceptions(DeclaringType.Context, cbCore, m.Throws);
                     }
+
                     return cbCore;
                 }
 
@@ -1146,9 +1136,9 @@ namespace IKVM.Tools.Importer
                 {
                     // TODO we should insert method tracing (if enabled)
 
-                    Type[] paramTypes = this.GetParametersForDefineMethod();
+                    var paramTypes = this.GetParametersForDefineMethod();
 
-                    MethodBuilder cbCore = GetMethod() as MethodBuilder;
+                    var cbCore = GetMethod() as IMethodSymbolBuilder;
 
                     if (cbCore != null)
                     {
@@ -1161,7 +1151,7 @@ namespace IKVM.Tools.Importer
                         }
                         else
                         {
-                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                             for (int i = 0; i < paramTypes.Length; i++)
                             {
                                 ilgen.EmitLdarg(i + 1);
@@ -1172,15 +1162,15 @@ namespace IKVM.Tools.Importer
                             }
                             else
                             {
-                                ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
+                                var baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
                                 if (baseCon == null)
                                 {
                                     // TODO better error handling
                                     throw new InvalidOperationException("base class constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
                                 }
-                                ilgen.Emit(OpCodes.Call, baseCon);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, baseCon);
                             }
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
                         ilgen.DoEmit();
                         if (this.DeclaringType.ClassLoader.EmitStackTraceInfo)
@@ -1191,7 +1181,7 @@ namespace IKVM.Tools.Importer
 
                     if (mbHelper != null)
                     {
-                        CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mbHelper);
+                        var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mbHelper);
                         if (m.Redirect != null)
                         {
                             m.Redirect.Emit(DeclaringType.ClassLoader, ilgen);
@@ -1207,7 +1197,7 @@ namespace IKVM.Tools.Importer
                         }
                         else
                         {
-                            ConstructorInfo baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
+                            var baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
                             if (baseCon == null)
                             {
                                 // TODO better error handling
@@ -1217,8 +1207,8 @@ namespace IKVM.Tools.Importer
                             {
                                 ilgen.EmitLdarg(i);
                             }
-                            ilgen.Emit(OpCodes.Newobj, baseCon);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Newobj, baseCon);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
                         ilgen.DoEmit();
                         if (this.DeclaringType.ClassLoader.EmitStackTraceInfo)
@@ -1234,7 +1224,7 @@ namespace IKVM.Tools.Importer
 
                 private IKVM.Tools.Importer.MapXml.Method m;
                 private IKVM.Tools.Importer.MapXml.Root map;
-                private MethodBuilder mbHelper;
+                private IMethodSymbolBuilder mbHelper;
                 private List<RemapperTypeWrapper> overriders = new List<RemapperTypeWrapper>();
                 private bool inherited;
 
@@ -1265,7 +1255,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Call, (MethodInfo)GetMethod());
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, (IMethodSymbol)GetMethod());
                     }
                 }
 
@@ -1278,17 +1268,17 @@ namespace IKVM.Tools.Importer
                 {
                     if (mbHelper != null && !cloneOrFinalizeHack)
                     {
-                        ilgen.Emit(OpCodes.Call, mbHelper);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mbHelper);
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Callvirt, (MethodInfo)GetMethod());
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, (IMethodSymbol)GetMethod());
                     }
                 }
 
-                internal override MethodBase DoLink()
+                internal override IMethodBaseSymbol DoLink()
                 {
-                    RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
+                    var typeWrapper = (RemapperTypeWrapper)DeclaringType;
 
                     if (typeWrapper.IsInterface)
                     {
@@ -1296,11 +1286,13 @@ namespace IKVM.Tools.Importer
                         {
                             throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
                         }
-                        MethodInfo interfaceMethod = typeWrapper.shadowType.GetMethod(m.Override.Name, typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig));
+
+                        var interfaceMethod = typeWrapper.shadowType.GetMethod(m.Override.Name, typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig));
                         if (interfaceMethod == null)
                         {
                             throw new InvalidOperationException(typeWrapper.Name + "." + m.Name + m.Sig);
                         }
+
                         // if any of the remapped types has a body for this interface method, we need a helper method
                         // to special invocation through this interface for that type
                         List<IKVM.Tools.Importer.MapXml.Class> specialCases = null;
@@ -1336,17 +1328,17 @@ namespace IKVM.Tools.Importer
                             }
                         }
                         DeclaringType.Context.AttributeHelper.SetRemappedInterfaceMethod(typeWrapper.typeBuilder, m.Name, m.Override.Name, throws);
-                        MethodBuilder helper = null;
+                        IMethodSymbolBuilder helper = null;
                         if (specialCases != null)
                         {
                             CodeEmitter ilgen;
-                            Type[] argTypes = ArrayUtil.Concat(typeWrapper.shadowType, typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig));
+                            var argTypes = ArrayUtil.Concat(typeWrapper.shadowType, typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig));
                             if (typeWrapper.helperTypeBuilder == null)
                             {
-                                typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", TypeAttributes.NestedPublic | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
+                                typeWrapper.helperTypeBuilder = typeWrapper.typeBuilder.DefineNestedType("__Helper", System.Reflection.TypeAttributes.NestedPublic | System.Reflection.TypeAttributes.Class | System.Reflection.TypeAttributes.Sealed | System.Reflection.TypeAttributes.Abstract);
                                 DeclaringType.Context.AttributeHelper.HideFromJava(typeWrapper.helperTypeBuilder);
                             }
-                            helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static, typeWrapper.ClassLoader.RetTypeWrapperFromSig(m.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType, argTypes);
+                            helper = typeWrapper.helperTypeBuilder.DefineMethod(m.Name, System.Reflection.MethodAttributes.HideBySig | System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, typeWrapper.ClassLoader.RetTypeWrapperFromSig(m.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType, argTypes);
                             if (m.Attributes != null)
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute custattr in m.Attributes)
@@ -1359,9 +1351,9 @@ namespace IKVM.Tools.Importer
                             foreach (IKVM.Tools.Importer.MapXml.Class c in specialCases)
                             {
                                 var tw = typeWrapper.ClassLoader.LoadClassByName(c.Name);
-                                ilgen.Emit(OpCodes.Ldarg_0);
-                                ilgen.Emit(OpCodes.Isinst, tw.TypeAsTBD);
-                                ilgen.Emit(OpCodes.Dup);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, tw.TypeAsTBD);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
                                 CodeEmitterLabel label = ilgen.DefineLabel();
                                 ilgen.EmitBrfalse(label);
                                 for (int i = 1; i < argTypes.Length; i++)
@@ -1371,16 +1363,16 @@ namespace IKVM.Tools.Importer
                                 var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
                                 mw.Link();
                                 mw.EmitCallvirt(ilgen);
-                                ilgen.Emit(OpCodes.Ret);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                                 ilgen.MarkLabel(label);
-                                ilgen.Emit(OpCodes.Pop);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
                             }
                             for (int i = 0; i < argTypes.Length; i++)
                             {
                                 ilgen.EmitLdarg(i);
                             }
-                            ilgen.Emit(OpCodes.Callvirt, interfaceMethod);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, interfaceMethod);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                             ilgen.DoEmit();
                         }
                         mbHelper = helper;
@@ -1388,9 +1380,9 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        MethodBuilder mbCore = null;
-                        Type[] paramTypes = typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig);
-                        Type retType = typeWrapper.ClassLoader.RetTypeWrapperFromSig(m.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType;
+                        IMethodSymbolBuilder mbCore = null;
+                        var paramTypes = typeWrapper.ClassLoader.ArgTypeListFromSig(m.Sig);
+                        var retType = typeWrapper.ClassLoader.RetTypeWrapperFromSig(m.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType;
 
                         if (typeWrapper.shadowType.IsSealed && (m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Static) == 0)
                         {
@@ -1412,33 +1404,35 @@ namespace IKVM.Tools.Importer
                         }
                         else
                         {
-                            MethodInfo overrideMethod = null;
-                            MethodAttributes attr = m.MethodAttributes | MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig;
+                            IMethodSymbol overrideMethod = null;
+                            var attr = m.MethodAttributes | MapMethodAccessModifiers(m.Modifiers) | System.Reflection.MethodAttributes.HideBySig;
                             if ((m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Static) != 0)
                             {
-                                attr |= MethodAttributes.Static;
+                                attr |= System.Reflection.MethodAttributes.Static;
                             }
                             else if ((m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Private) == 0 && (m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Final) == 0)
                             {
-                                attr |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
+                                attr |= System.Reflection.MethodAttributes.Virtual | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.CheckAccessOnOverride;
+
                                 if (!typeWrapper.shadowType.IsSealed)
                                 {
-                                    MethodInfo autoOverride = typeWrapper.shadowType.GetMethod(m.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+                                    var autoOverride = typeWrapper.shadowType.GetMethod(m.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, paramTypes);
                                     if (autoOverride != null && autoOverride.ReturnType == retType && !autoOverride.IsFinal)
                                     {
                                         // the method we're processing is overriding a method in its shadowType (which is the actual base type)
-                                        attr &= ~MethodAttributes.NewSlot;
+                                        attr &= ~System.Reflection.MethodAttributes.NewSlot;
                                     }
                                 }
+
                                 if (typeWrapper.BaseTypeWrapper != null)
                                 {
-                                    RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
+                                    var baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
                                     if (baseMethod != null)
                                     {
                                         baseMethod.overriders.Add(typeWrapper);
                                         if (baseMethod.m.Override != null)
                                         {
-                                            overrideMethod = typeWrapper.BaseTypeWrapper.TypeAsTBD.GetMethod(baseMethod.m.Override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+                                            overrideMethod = typeWrapper.BaseTypeWrapper.TypeAsTBD.GetMethod(baseMethod.m.Override.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, paramTypes);
                                             if (overrideMethod == null)
                                             {
                                                 throw new InvalidOperationException();
@@ -1470,15 +1464,15 @@ namespace IKVM.Tools.Importer
                         if ((m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Static) == 0 && !IsHideFromJava(m))
                         {
                             // instance methods must have an instancehelper method
-                            MethodAttributes attr = MapMethodAccessModifiers(m.Modifiers) | MethodAttributes.HideBySig | MethodAttributes.Static;
+                            var attr = MapMethodAccessModifiers(m.Modifiers) | System.Reflection.MethodAttributes.HideBySig | System.Reflection.MethodAttributes.Static;
                             // NOTE instancehelpers for protected methods are made internal
                             // and special cased in DotNetTypeWrapper.LazyPublishMembers
                             if ((m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Protected) != 0)
                             {
-                                attr &= ~MethodAttributes.MemberAccessMask;
-                                attr |= MethodAttributes.Assembly;
+                                attr &= ~System.Reflection.MethodAttributes.MemberAccessMask;
+                                attr |= System.Reflection.MethodAttributes.Assembly;
                             }
-                            mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, CallingConventions.Standard, retType, ArrayUtil.Concat(typeWrapper.shadowType, paramTypes));
+                            mbHelper = typeWrapper.typeBuilder.DefineMethod("instancehelper_" + m.Name, attr, System.Reflection.CallingConventions.Standard, retType, ArrayUtil.Concat(typeWrapper.shadowType, paramTypes));
                             if (m.Attributes != null)
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute custattr in m.Attributes)
@@ -1503,10 +1497,11 @@ namespace IKVM.Tools.Importer
                             {
                                 DeclaringType.Context.AttributeHelper.SetEditorBrowsableNever(mbHelper);
                             }
+
                             DeclaringType.Context.AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
                             DeclaringType.Context.AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
                             AddDeclaredExceptions(DeclaringType.Context, mbHelper, m.Throws);
-                            mbHelper.SetCustomAttribute(new CustomAttributeBuilder(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection().GetConstructor([DeclaringType.Context.Types.String]), ["This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead."]));
+                            mbHelper.SetCustomAttribute(DeclaringType.Context.Resolver.Symbols.CreateCustomAttribute(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([DeclaringType.Context.Types.String]), ["This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead."]));
                         }
                         return mbCore;
                     }
@@ -1530,23 +1525,22 @@ namespace IKVM.Tools.Importer
                 internal override void Finish()
                 {
                     // TODO we should insert method tracing (if enabled)
-                    Type[] paramTypes = this.GetParametersForDefineMethod();
+                    var paramTypes = this.GetParametersForDefineMethod();
 
-                    MethodBuilder mbCore = GetMethod() as MethodBuilder;
+                    var mbCore = GetMethod() as IMethodSymbolBuilder;
 
                     // NOTE sealed types don't have instance methods (only instancehelpers)
                     if (mbCore != null)
                     {
-                        CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mbCore);
-                        MethodInfo baseMethod = null;
+                        var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mbCore);
+                        IMethodSymbol baseMethod = null;
                         if (m.Override != null)
                         {
-                            baseMethod = DeclaringType.TypeAsTBD.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, paramTypes, null);
+                            baseMethod = DeclaringType.TypeAsTBD.GetMethod(m.Override.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, paramTypes);
                             if (baseMethod == null)
-                            {
                                 throw new InvalidOperationException();
-                            }
-                            ((TypeBuilder)DeclaringType.TypeAsBaseType).DefineMethodOverride(mbCore, baseMethod);
+
+                            ((ITypeSymbolBuilder)DeclaringType.TypeAsBaseType).DefineMethodOverride(mbCore, baseMethod);
                         }
                         // TODO we need to support ghost (and other funky?) parameter types
                         if (m.Body != null)
@@ -1571,7 +1565,7 @@ namespace IKVM.Tools.Importer
                             if ((m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Static) == 0)
                             {
                                 thisOffset = 1;
-                                ilgen.Emit(OpCodes.Ldarg_0);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                             }
                             for (int i = 0; i < paramTypes.Length; i++)
                             {
@@ -1587,10 +1581,10 @@ namespace IKVM.Tools.Importer
                                 {
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
                                 }
-                                ilgen.Emit(OpCodes.Call, baseMethod);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, baseMethod);
                             }
                             this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
                         ilgen.DoEmit();
                         if (this.DeclaringType.ClassLoader.EmitStackTraceInfo)
@@ -1613,7 +1607,7 @@ namespace IKVM.Tools.Importer
                         }
                         else if (!m.NoNullCheck)
                         {
-                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                             ilgen.EmitNullCheck();
                         }
                         if (mbCore != null &&
@@ -1621,20 +1615,20 @@ namespace IKVM.Tools.Importer
                             (m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Private) == 0 && (m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Final) == 0)
                         {
                             // TODO we should have a way to supress this for overridden methods
-                            ilgen.Emit(OpCodes.Ldarg_0);
-                            ilgen.Emit(OpCodes.Isinst, DeclaringType.TypeAsBaseType);
-                            ilgen.Emit(OpCodes.Dup);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, DeclaringType.TypeAsBaseType);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
                             CodeEmitterLabel skip = ilgen.DefineLabel();
                             ilgen.EmitBrfalse(skip);
                             for (int i = 0; i < paramTypes.Length; i++)
                             {
                                 ilgen.EmitLdarg(i + 1);
                             }
-                            ilgen.Emit(OpCodes.Callvirt, mbCore);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, mbCore);
                             this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                             ilgen.MarkLabel(skip);
-                            ilgen.Emit(OpCodes.Pop);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
                         }
                         foreach (RemapperTypeWrapper overrider in overriders)
                         {
@@ -1646,9 +1640,9 @@ namespace IKVM.Tools.Importer
                             }
                             else
                             {
-                                ilgen.Emit(OpCodes.Ldarg_0);
-                                ilgen.Emit(OpCodes.Isinst, overrider.TypeAsTBD);
-                                ilgen.Emit(OpCodes.Dup);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, overrider.TypeAsTBD);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
                                 CodeEmitterLabel skip = ilgen.DefineLabel();
                                 ilgen.EmitBrfalse(skip);
                                 for (int i = 0; i < paramTypes.Length; i++)
@@ -1658,9 +1652,9 @@ namespace IKVM.Tools.Importer
                                 mw.Link();
                                 mw.EmitCallvirtImpl(ilgen, false);
                                 this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
-                                ilgen.Emit(OpCodes.Ret);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                                 ilgen.MarkLabel(skip);
-                                ilgen.Emit(OpCodes.Pop);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
                             }
                         }
                         if (m.Body != null || m.AlternateBody != null)
@@ -1694,11 +1688,11 @@ namespace IKVM.Tools.Importer
                             }
                             else if (m.Override != null)
                             {
-                                var baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+                                var baseMethod = shadowType.GetMethod(m.Override.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public, paramTypes);
                                 if (baseMethod == null)
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 
-                                ilgen.Emit(OpCodes.Callvirt, baseMethod);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, baseMethod);
                             }
                             else
                             {
@@ -1706,15 +1700,15 @@ namespace IKVM.Tools.Importer
                                 if (baseMethod == null || baseMethod.m.Override == null)
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 
-                                var overrideMethod = shadowType.GetMethod(baseMethod.m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+                                var overrideMethod = shadowType.GetMethod(baseMethod.m.Override.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public, paramTypes);
                                 if (overrideMethod == null)
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 
-                                ilgen.Emit(OpCodes.Callvirt, overrideMethod);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, overrideMethod);
                             }
 
                             ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
 
                         ilgen.DoEmit();
@@ -1727,7 +1721,7 @@ namespace IKVM.Tools.Importer
                     if (m.NonVirtualAlternateBody != null || (m.Override != null && overriders.Count > 0))
                     {
                         var tw = (RemapperTypeWrapper)DeclaringType;
-                        var mb = tw.typeBuilder.DefineMethod("nonvirtualhelper/" + Name, MethodAttributes.Private | MethodAttributes.Static, ReturnTypeForDefineMethod, ArrayUtil.Concat(tw.TypeAsSignatureType, GetParametersForDefineMethod()));
+                        var mb = tw.typeBuilder.DefineMethod("nonvirtualhelper/" + Name, System.Reflection.MethodAttributes.Private | System.Reflection.MethodAttributes.Static, ReturnTypeForDefineMethod, ArrayUtil.Concat(tw.TypeAsSignatureType, GetParametersForDefineMethod()));
 
                         // apply custom attributes from map XML
                         if (m.Attributes != null)
@@ -1745,23 +1739,23 @@ namespace IKVM.Tools.Importer
                         else
                         {
                             var shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
-                            var baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+                            var baseMethod = shadowType.GetMethod(m.Override.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public, paramTypes);
                             if (baseMethod == null)
                                 throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 
-                            ilgen.Emit(OpCodes.Ldarg_0);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                             for (int i = 0; i < paramTypes.Length; i++)
                                 ilgen.EmitLdarg(i + 1);
 
-                            ilgen.Emit(OpCodes.Call, baseMethod);
-                            ilgen.Emit(OpCodes.Ret);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, baseMethod);
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
 
                         ilgen.DoEmit();
                     }
                 }
 
-                private void EmitRedirect(Type baseType, CodeEmitter ilgen)
+                private void EmitRedirect(ITypeSymbol baseType, CodeEmitter ilgen)
                 {
                     var redirName = m.Redirect.Name ?? m.Name;
                     var redirSig = m.Redirect.Sig ?? m.Sig;
@@ -1770,10 +1764,10 @@ namespace IKVM.Tools.Importer
                     // type specified, or class missing, assume loading .NET type
                     if (m.Redirect.Type != null || m.Redirect.Class == null)
                     {
-                        var type = m.Redirect.Type != null ? DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Type, true) : baseType;
+                        var type = m.Redirect.Type != null ? DeclaringType.Context.Resolver.ResolveType(DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Type, true)) : baseType;
                         var redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
                         var mi = type.GetMethod(m.Redirect.Name, redirParamTypes) ?? throw new InvalidOperationException();
-                        ilgen.Emit(OpCodes.Call, mi);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                     }
                     else
                     {
@@ -1785,13 +1779,31 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            private static void SetParameters(RuntimeClassLoader loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
+            static void SetParameters(RuntimeClassLoader loader, IConstructorSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
             {
                 if (parameters != null)
                 {
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        ParameterBuilder pb = mb.DefineParameter(i + 1, ParameterAttributes.None, parameters[i].Name);
+                        var pb = mb.DefineParameter(i + 1, System.Reflection.ParameterAttributes.None, parameters[i].Name);
+                        if (parameters[i].Attributes != null)
+                        {
+                            for (int j = 0; j < parameters[i].Attributes.Length; j++)
+                            {
+                                loader.Context.AttributeHelper.SetCustomAttribute(loader, pb, parameters[i].Attributes[j]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            static void SetParameters(RuntimeClassLoader loader, IMethodSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
+            {
+                if (parameters != null)
+                {
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        var pb = mb.DefineParameter(i + 1, System.Reflection.ParameterAttributes.None, parameters[i].Name);
                         if (parameters[i].Attributes != null)
                         {
                             for (int j = 0; j < parameters[i].Attributes.Length; j++)
@@ -1828,20 +1840,21 @@ namespace IKVM.Tools.Importer
                     foreach (IKVM.Tools.Importer.MapXml.Field f in c.Fields)
                     {
                         {
-                            FieldAttributes attr = MapFieldAccessModifiers(f.Modifiers);
+                            var attr = MapFieldAccessModifiers(f.Modifiers);
                             if (f.Constant != null)
                             {
-                                attr |= FieldAttributes.Literal;
+                                attr |= System.Reflection.FieldAttributes.Literal;
                             }
                             else if ((f.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Final) != 0)
                             {
-                                attr |= FieldAttributes.InitOnly;
+                                attr |= System.Reflection.FieldAttributes.InitOnly;
                             }
                             if ((f.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Static) != 0)
                             {
-                                attr |= FieldAttributes.Static;
+                                attr |= System.Reflection.FieldAttributes.Static;
                             }
-                            FieldBuilder fb = tb.DefineField(f.Name, ClassLoader.FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType, attr);
+
+                            var fb = tb.DefineField(f.Name, ClassLoader.FieldTypeWrapperFromSig(f.Sig, LoadMode.LoadOrThrow).TypeAsSignatureType, attr);
                             if (f.Attributes != null)
                             {
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute custattr in f.Attributes)
@@ -1849,6 +1862,7 @@ namespace IKVM.Tools.Importer
                                     Context.AttributeHelper.SetCustomAttribute(classLoader, fb, custattr);
                                 }
                             }
+
                             object constant;
                             if (f.Constant != null)
                             {
@@ -1891,8 +1905,8 @@ namespace IKVM.Tools.Importer
 
                 if (classDef.Clinit != null)
                 {
-                    MethodBuilder cb = ReflectUtil.DefineTypeInitializer(typeBuilder, classLoader);
-                    CodeEmitter ilgen = Context.CodeEmitterFactory.Create(cb);
+                    var cb = ReflectUtil.DefineTypeInitializer(typeBuilder, classLoader);
+                    var ilgen = Context.CodeEmitterFactory.Create(cb);
                     // TODO emit code to make sure super class is initialized
                     classDef.Clinit.Body.Emit(classLoader, ilgen);
                     ilgen.DoEmit();
@@ -1916,57 +1930,56 @@ namespace IKVM.Tools.Importer
                     // For all inherited methods, we emit a method that hides the inherited method and
                     // annotate it with EditorBrowsableAttribute(EditorBrowsableState.Never) to make
                     // sure the inherited methods don't show up in Intellisense.
-                    var methods = new Dictionary<string, MethodBuilder>();
+                    var methods = new Dictionary<string, IMethodSymbolBuilder>();
                     foreach (var mw in GetMethods())
                     {
-                        var mb = mw.GetMethod() as MethodBuilder;
+                        var mb = mw.GetMethod() as IMethodSymbolBuilder;
                         if (mb != null)
                             methods.Add(MakeMethodKey(mb), mb);
                     }
 
-                    foreach (var mi in typeBuilder.BaseType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy))
+                    foreach (var mi in typeBuilder.BaseType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.FlattenHierarchy))
                     {
-                        string key = MakeMethodKey(mi);
+                        var key = MakeMethodKey(mi);
                         if (!methods.ContainsKey(key))
                         {
-                            ParameterInfo[] paramInfo = mi.GetParameters();
-                            Type[] paramTypes = new Type[paramInfo.Length];
+                            var paramInfo = mi.GetParameters();
+                            var paramTypes = new ITypeSymbol[paramInfo.Length];
                             for (int i = 0; i < paramInfo.Length; i++)
-                            {
                                 paramTypes[i] = paramInfo[i].ParameterType;
-                            }
-                            MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.SpecialName | MethodAttributes.Static), mi.ReturnType, paramTypes);
+
+                            var mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (System.Reflection.MethodAttributes.MemberAccessMask | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Static), mi.ReturnType, paramTypes);
                             Context.AttributeHelper.HideFromJava(mb);
                             Context.AttributeHelper.SetEditorBrowsableNever(mb);
-                            CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+
+                            var ilgen = Context.CodeEmitterFactory.Create(mb);
                             for (int i = 0; i < paramTypes.Length; i++)
-                            {
                                 ilgen.EmitLdarg(i);
-                            }
+
                             if (!mi.IsStatic)
                             {
                                 ilgen.EmitLdarg(paramTypes.Length);
-                                ilgen.Emit(OpCodes.Callvirt, mi);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, mi);
                             }
                             else
                             {
-                                ilgen.Emit(OpCodes.Call, mi);
+                                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                             }
-                            ilgen.Emit(OpCodes.Ret);
+
+                            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                             ilgen.DoEmit();
                             methods[key] = mb;
                         }
                     }
 
-                    foreach (var pi in typeBuilder.BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+                    foreach (var pi in typeBuilder.BaseType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static))
                     {
-                        ParameterInfo[] paramInfo = pi.GetIndexParameters();
-                        Type[] paramTypes = new Type[paramInfo.Length];
+                        var paramInfo = pi.GetIndexParameters();
+                        var paramTypes = new ITypeSymbol[paramInfo.Length];
                         for (int i = 0; i < paramInfo.Length; i++)
-                        {
                             paramTypes[i] = paramInfo[i].ParameterType;
-                        }
-                        PropertyBuilder pb = typeBuilder.DefineProperty(pi.Name, PropertyAttributes.None, pi.PropertyType, paramTypes);
+
+                        var pb = typeBuilder.DefineProperty(pi.Name, System.Reflection.PropertyAttributes.None, pi.PropertyType, paramTypes);
                         if (pi.GetGetMethod() != null)
                         {
                             pb.SetGetMethod(methods[MakeMethodKey(pi.GetGetMethod())]);
@@ -1979,17 +1992,17 @@ namespace IKVM.Tools.Importer
                     }
                 }
 
-                typeBuilder.CreateType();
+                typeBuilder.Complete();
                 if (helperTypeBuilder != null)
-                    helperTypeBuilder.CreateType();
+                    helperTypeBuilder.Complete();
             }
 
-            private static string MakeMethodKey(MethodInfo method)
+            private static string MakeMethodKey(IMethodSymbol method)
             {
                 var sb = new StringBuilder();
                 sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
                 var paramInfo = method.GetParameters();
-                var paramTypes = new Type[paramInfo.Length];
+                var paramTypes = new ITypeSymbol[paramInfo.Length];
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
                     paramTypes[i] = paramInfo[i].ParameterType;
@@ -2005,28 +2018,28 @@ namespace IKVM.Tools.Importer
                 if (typeBuilder.IsInterface)
                     return;
 
-                MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-                MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, new Type[] { Context.Types.Object });
+                var attr = System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static;
+                var mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, new[] { Context.Types.Object });
                 Context.AttributeHelper.HideFromJava(mb);
                 Context.AttributeHelper.SetEditorBrowsableNever(mb);
-                CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                var ilgen = Context.CodeEmitterFactory.Create(mb);
 
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Isinst, shadowType);
-                CodeEmitterLabel retFalse = ilgen.DefineLabel();
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, shadowType);
+                var retFalse = ilgen.DefineLabel();
                 ilgen.EmitBrfalse(retFalse);
 
                 if (!shadowType.IsSealed)
                 {
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Isinst, typeBuilder);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, typeBuilder);
                     ilgen.EmitBrtrue(retFalse);
                 }
 
                 if (shadowType == Context.Types.Object)
                 {
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Isinst, Context.Types.Array);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, Context.Types.Array);
                     ilgen.EmitBrtrue(retFalse);
                 }
 
@@ -2034,17 +2047,17 @@ namespace IKVM.Tools.Importer
                 {
                     if (!r.shadowType.IsInterface && r.shadowType.IsSubclassOf(shadowType))
                     {
-                        ilgen.Emit(OpCodes.Ldarg_0);
-                        ilgen.Emit(OpCodes.Isinst, r.shadowType);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, r.shadowType);
                         ilgen.EmitBrtrue(retFalse);
                     }
                 }
-                ilgen.Emit(OpCodes.Ldc_I4_1);
-                ilgen.Emit(OpCodes.Ret);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
 
                 ilgen.MarkLabel(retFalse);
-                ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Ret);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
 
                 ilgen.DoEmit();
             }
@@ -2056,27 +2069,28 @@ namespace IKVM.Tools.Importer
                 {
                     return;
                 }
-                MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-                MethodBuilder mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, new Type[] { Context.Types.Object });
+
+                var attr = System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static;
+                var mb = typeBuilder.DefineMethod("__<checkcast>", attr, shadowType, [Context.Types.Object]);
                 Context.AttributeHelper.HideFromJava(mb);
                 Context.AttributeHelper.SetEditorBrowsableNever(mb);
-                CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                var ilgen = Context.CodeEmitterFactory.Create(mb);
 
-                CodeEmitterLabel fail = ilgen.DefineLabel();
+                var fail = ilgen.DefineLabel();
                 bool hasfail = false;
 
                 if (!shadowType.IsSealed)
                 {
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Isinst, typeBuilder);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, typeBuilder);
                     ilgen.EmitBrtrue(fail);
                     hasfail = true;
                 }
 
                 if (shadowType == Context.Types.Object)
                 {
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Isinst, Context.Types.Array);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, Context.Types.Array);
                     ilgen.EmitBrtrue(fail);
                     hasfail = true;
                 }
@@ -2085,26 +2099,26 @@ namespace IKVM.Tools.Importer
                 {
                     if (!r.shadowType.IsInterface && r.shadowType.IsSubclassOf(shadowType))
                     {
-                        ilgen.Emit(OpCodes.Ldarg_0);
-                        ilgen.Emit(OpCodes.Isinst, r.shadowType);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Isinst, r.shadowType);
                         ilgen.EmitBrtrue(fail);
                         hasfail = true;
                     }
                 }
-                ilgen.Emit(OpCodes.Ldarg_0);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                 ilgen.EmitCastclass(shadowType);
-                ilgen.Emit(OpCodes.Ret);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
 
                 if (hasfail)
                 {
                     ilgen.MarkLabel(fail);
-                    ilgen.ThrowException(Context.Resolver.ResolveCoreType(typeof(InvalidCastException).FullName).AsReflection());
+                    ilgen.ThrowException(Context.Resolver.ResolveCoreType(typeof(InvalidCastException).FullName));
                 }
 
                 ilgen.DoEmit();
             }
 
-            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
+            internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
             {
                 return ((RemappedMethodBaseWrapper)mw).DoLink();
             }
@@ -2148,15 +2162,26 @@ namespace IKVM.Tools.Importer
             }
         }
 
+        internal static void AddDeclaredExceptions(RuntimeContext context, IConstructorSymbolBuilder cb, IKVM.Tools.Importer.MapXml.Throws[] throws)
+        {
+            if (throws != null)
+            {
+                var exceptions = new string[throws.Length];
+                for (int i = 0; i < exceptions.Length; i++)
+                    exceptions[i] = throws[i].Class;
+
+                context.AttributeHelper.SetThrowsAttribute(cb, exceptions);
+            }
+        }
+
         internal static void AddDeclaredExceptions(RuntimeContext context, IMethodSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Throws[] throws)
         {
             if (throws != null)
             {
-                string[] exceptions = new string[throws.Length];
+                var exceptions = new string[throws.Length];
                 for (int i = 0; i < exceptions.Length; i++)
-                {
                     exceptions[i] = throws[i].Class;
-                }
+
                 context.AttributeHelper.SetThrowsAttribute(mb, exceptions);
             }
         }
@@ -2282,21 +2307,21 @@ namespace IKVM.Tools.Importer
             {
                 var mwSuppressFillInStackTrace = rcontext.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
                 mwSuppressFillInStackTrace.Link();
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Callvirt, rcontext.CompilerFactory.GetTypeMethod);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, rcontext.CompilerFactory.GetTypeMethod);
 
                 for (int i = 0; i < map.Length; i++)
                 {
-                    ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source).AsReflection());
-                    ilgen.Emit(OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
-                    ilgen.Emit(OpCodes.Ceq);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ceq);
                     var label = ilgen.DefineLabel();
                     ilgen.EmitBrfalse(label);
-                    ilgen.Emit(OpCodes.Pop);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
                     if (map[i].Code != null)
                     {
-                        ilgen.Emit(OpCodes.Ldarg_0);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
 
                         if (map[i].Code.Instructions.Length > 0)
                         {
@@ -2310,7 +2335,7 @@ namespace IKVM.Tools.Importer
                             }
                         }
 
-                        ilgen.Emit(OpCodes.Ret);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                     }
                     else
                     {
@@ -2319,15 +2344,15 @@ namespace IKVM.Tools.Importer
                         mw.Link();
                         mwSuppressFillInStackTrace.EmitCall(ilgen);
                         mw.EmitNewobj(ilgen);
-                        ilgen.Emit(OpCodes.Ret);
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                     }
 
                     ilgen.MarkLabel(label);
                 }
 
-                ilgen.Emit(OpCodes.Pop);
-                ilgen.Emit(OpCodes.Ldarg_0);
-                ilgen.Emit(OpCodes.Ret);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Pop);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
             }
         }
 
@@ -2493,7 +2518,7 @@ namespace IKVM.Tools.Importer
                     Context.AttributeHelper.SetCustomAttribute(this, assemblyBuilder, attr);
         }
 
-        private static bool IsSigned(Assembly asm)
+        private static bool IsSigned(IAssemblySymbol asm)
         {
             byte[] key = asm.GetName().GetPublicKey();
             return key != null && key.Length != 0;
@@ -2536,21 +2561,23 @@ namespace IKVM.Tools.Importer
             foreach (var loader in loaders)
                 loader.CompilePass0();
 
-            var mainAssemblyTypes = new Dictionary<ImportClassLoader, Type>();
+            var mainAssemblyTypes = new Dictionary<ImportClassLoader, ITypeSymbol>();
             foreach (var loader in loaders)
             {
                 if (loader.state.sharedclassloader != null)
                 {
                     if (!mainAssemblyTypes.TryGetValue(loader.state.sharedclassloader[0], out var mainAssemblyType))
                     {
-                        var tb = loader.state.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.SpecialName);
+                        var tb = loader.state.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.SpecialName);
                         loader.Context.AttributeHelper.HideFromJava(tb);
-                        mainAssemblyType = tb.CreateType();
+                        tb.Complete();
+
+                        mainAssemblyType = tb;
                         mainAssemblyTypes.Add(loader.state.sharedclassloader[0], mainAssemblyType);
                     }
                     if (loader.state.sharedclassloader[0] != loader)
                     {
-                        ((AssemblyBuilder)loader.GetTypeWrapperFactory().ModuleBuilder.Assembly).__AddTypeForwarder(mainAssemblyType);
+                        ((IAssemblySymbolBuilder)loader.GetTypeWrapperFactory().ModuleBuilder.Assembly).AddTypeForwarder(mainAssemblyType);
                     }
                 }
 
@@ -2591,13 +2618,13 @@ namespace IKVM.Tools.Importer
         {
             diagnostics.GenericCompilerInfo($"JVM.Compile path: {options.path}, assembly: {options.assembly}");
 
-            AssemblyName runtimeAssemblyName = compiler.runtimeAssembly.GetName();
+            var runtimeAssemblyName = compiler.runtimeAssembly.GetName();
             bool allReferencesAreStrongNamed = IsSigned(compiler.runtimeAssembly);
             List<Assembly> references = new List<Assembly>();
-            foreach (Assembly reference in options.references ?? new Assembly[0])
+            foreach (var reference in options.references ?? [])
             {
                 references.Add(reference);
-                allReferencesAreStrongNamed &= IsSigned(reference);
+                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveAssembly(reference));
                 diagnostics.GenericCompilerInfo($"Loaded reference assembly: {reference.FullName}");
 
                 // if it's an IKVM compiled assembly, make sure that it was compiled
@@ -2699,7 +2726,7 @@ namespace IKVM.Tools.Importer
             }
 
             // now look for a main method
-            if (options.mainClass == null && (options.guessFileKind || options.target != PEFileKinds.Dll))
+            if (options.mainClass == null && (options.guessFileKind || options.target != IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll))
             {
                 foreach (string className in classNames)
                 {
@@ -2729,22 +2756,22 @@ namespace IKVM.Tools.Importer
 
             if (options.guessFileKind && options.mainClass == null)
             {
-                options.target = PEFileKinds.Dll;
+                options.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll;
             }
 
-            if (options.target != PEFileKinds.Dll && options.mainClass == null)
+            if (options.target != IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll && options.mainClass == null)
             {
                 throw new FatalCompilerErrorException(DiagnosticEvent.ExeRequiresMainClass());
             }
 
-            if (options.target == PEFileKinds.Dll && options.props.Count != 0)
+            if (options.target == IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll && options.props.Count != 0)
             {
                 throw new FatalCompilerErrorException(DiagnosticEvent.PropertiesRequireExe());
             }
 
             if (options.path == null)
             {
-                if (options.target == PEFileKinds.Dll)
+                if (options.target == IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll)
                 {
                     if (options.targetIsModule)
                     {
@@ -2778,10 +2805,10 @@ namespace IKVM.Tools.Importer
             for (int i = 0; i < references.Count; i++)
             {
                 // if reference is to base assembly, set it explicitly for resolution
-                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, references[i]))
-                    compiler.baseAssembly = references[i];
+                if (compiler.baseAssembly == null && options.bootstrap == false && IsBaseAssembly(context, context.Resolver.ResolveAssembly(references[i])))
+                    compiler.baseAssembly = context.Resolver.ResolveAssembly(references[i]);
 
-                var acl = context.AssemblyClassLoaderFactory.FromAssembly(references[i]);
+                var acl = context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveAssembly(references[i]));
                 if (referencedAssemblies.Contains(acl))
                     diagnostics.DuplicateAssemblyReference(acl.MainAssembly.FullName);
 
@@ -2837,7 +2864,7 @@ namespace IKVM.Tools.Importer
             {
                 foreach (var name in compiler.runtimeAssembly.GetReferencedAssemblies())
                 {
-                    Assembly asm = null;
+                    IAssemblySymbol asm = null;
 
                     try
                     {
@@ -2869,8 +2896,8 @@ namespace IKVM.Tools.Importer
 
             if (options.bootstrap == false)
             {
-                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly().AsReflection());
-                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly().AsReflection()));
+                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly());
+                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly()));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -2886,21 +2913,20 @@ namespace IKVM.Tools.Importer
             if (options.bootstrap == false)
             {
                 loader.fakeTypes = context.FakeTypes;
-                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly().AsReflection());
+                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly());
             }
 
             return 0;
         }
 
-        static bool IsBaseAssembly(RuntimeContext context, Assembly asm)
+        static bool IsBaseAssembly(RuntimeContext context, IAssemblySymbol asm)
         {
-            return asm.IsDefined(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RemappedClassAttribute).FullName).AsReflection(), false);
+            return asm.IsDefined(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RemappedClassAttribute).FullName), false);
         }
 
-        private static Assembly LoadReferencedAssembly(StaticCompiler compiler, string r)
+        private static IAssemblySymbol LoadReferencedAssembly(StaticCompiler compiler, string r)
         {
-            Assembly asm = compiler.LoadFile(r);
-            return asm;
+            return compiler.LoadFile(r);
         }
 
         private void CompilePass0()
@@ -2971,7 +2997,7 @@ namespace IKVM.Tools.Importer
             Diagnostics.GenericCompilerInfo("Compiling class files (3)");
 
             // emits the IL required for module initialization
-            var moduleInitBuilders = new List<Action<MethodBuilder, CodeEmitter>>();
+            var moduleInitBuilders = new List<Action<IMethodSymbolBuilder, CodeEmitter>>();
 
             // bootstrap mode introduces fake types
             if (map != null && state.bootstrap)
@@ -3008,7 +3034,7 @@ namespace IKVM.Tools.Importer
 
                 mw.Link();
 
-                var method = mw.GetMethod() as MethodInfo;
+                var method = mw.GetMethod() as IMethodSymbol;
                 if (method == null)
                     throw new FatalCompilerErrorException(DiagnosticEvent.UnsupportedMainMethod());
 
@@ -3025,7 +3051,7 @@ namespace IKVM.Tools.Importer
                     _ => throw new NotImplementedException(),
                 };
 
-                SetMain(wrapper, state.target, state.props, state.noglobbing, apartmentAttributeType.AsReflection());
+                SetMain(wrapper, state.target, state.props, state.noglobbing, apartmentAttributeType);
             }
 
             // complete map
@@ -3040,7 +3066,7 @@ namespace IKVM.Tools.Importer
                 }
                 catch (IKVM.Reflection.MissingMemberException x)
                 {
-                    Context.StaticCompiler.IssueMissingTypeMessage((Type)x.MemberInfo);
+                    Context.StaticCompiler.IssueMissingTypeMessage((ITypeSymbol)Context.Resolver.ResolveMember(x.MemberInfo));
                     return 1;
                 }
             }
@@ -3056,7 +3082,7 @@ namespace IKVM.Tools.Importer
             // configure Win32 file version
             if (state.fileversion != null)
             {
-                var filever = new CustomAttributeBuilder(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).AsReflection().GetConstructor([Context.Types.String]), [state.fileversion]);
+                var filever = Context.Resolver.Symbols.CreateCustomAttribute(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor([Context.Types.String]), [state.fileversion]);
                 assemblyBuilder.SetCustomAttribute(filever);
             }
 
@@ -3101,8 +3127,8 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderConstructorMissing());
 
                 // apply custom attribute specifying custom class loader
-                var ci = Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName).AsReflection().GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { Context.Types.Type }, null);
-                assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
+                var ci = Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName).GetConstructor(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, new[] { Context.Types.Type });
+                assemblyBuilder.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(ci, new object[] { classLoaderType.TypeAsTBD }));
 
                 // the class loader type defines a module initialize method, ensure we call it upon module load
                 var mwModuleInit = classLoaderType.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
@@ -3110,22 +3136,22 @@ namespace IKVM.Tools.Importer
                 {
                     moduleInitBuilders.Add((mb, il) =>
                     {
-                        il.Emit(OpCodes.Ldtoken, mb);
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }).AsReflection());
-                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod().AsReflection());
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule").AsReflection());
+                        il.Emit(System.Reflection.Emit.OpCodes.Ldtoken, mb);
+                        il.Emit(System.Reflection.Emit.OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }));
+                        il.Emit(System.Reflection.Emit.OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod());
+                        il.Emit(System.Reflection.Emit.OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
                     });
                 }
             }
 
             if (state.iconfile != null)
             {
-                assemblyBuilder.__DefineIconResource(ImportContext.ReadAllBytes(state.iconfile));
+                assemblyBuilder.DefineIconResource(ImportContext.ReadAllBytes(state.iconfile));
             }
 
             if (state.manifestFile != null)
             {
-                assemblyBuilder.__DefineManifestResource(ImportContext.ReadAllBytes(state.manifestFile));
+                assemblyBuilder.DefineManifestResource(ImportContext.ReadAllBytes(state.manifestFile));
             }
 
             assemblyBuilder.DefineVersionInfoResource();
@@ -3141,7 +3167,7 @@ namespace IKVM.Tools.Importer
             if (moduleInitBuilders.Count > 0)
             {
                 // begin a module initializer
-                var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+                var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", System.Reflection.MethodAttributes.Private | System.Reflection.MethodAttributes.Static | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, null, []);
                 var moduleInitIL = Context.CodeEmitterFactory.Create(moduleInit);
 
                 // allow builders to append IL
@@ -3149,7 +3175,7 @@ namespace IKVM.Tools.Importer
                     moduleInitBuilder(moduleInit, moduleInitIL);
 
                 // finish method
-                moduleInitIL.Emit(OpCodes.Ret);
+                moduleInitIL.Emit(System.Reflection.Emit.OpCodes.Ret);
                 moduleInitIL.DoEmit();
             }
 
@@ -3243,16 +3269,17 @@ namespace IKVM.Tools.Importer
             return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldSig(sig) : IKVM.Runtime.ClassFile.IsValidMethodSig(sig));
         }
 
-        internal Type GetTypeFromReferencedAssembly(string name)
+        internal ITypeSymbol GetTypeFromReferencedAssembly(string name)
         {
             foreach (RuntimeAssemblyClassLoader acl in referencedAssemblies)
             {
-                Type type = acl.MainAssembly.GetType(name, false);
+                var type = acl.MainAssembly.GetType(name, false);
                 if (type != null)
                 {
                     return type;
                 }
             }
+
             return null;
         }
 
@@ -3273,6 +3300,7 @@ namespace IKVM.Tools.Importer
                 base.CheckProhibitedPackage(className);
             }
         }
+
     }
 
 }

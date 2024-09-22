@@ -25,13 +25,12 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -102,11 +101,10 @@ namespace IKVM.Tools.Importer.MapXml
                 Debug.Assert(Class == null && Type != null);
 
                 var argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                var ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection().GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+                var ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, argTypes);
                 if (ci == null)
-                {
                     throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
-                }
+
                 ilgen.Emit(opcode, ci);
             }
             else
@@ -176,37 +174,37 @@ namespace IKVM.Tools.Importer.MapXml
                     else
                     {
                         // ldftn or ldvirtftn
-                        ilgen.Emit(opcode, (MethodInfo)method.GetMethod());
+                        ilgen.Emit(opcode, (IMethodSymbol)method.GetMethod());
                     }
                 }
                 else
                 {
-                    Type[] argTypes;
+                    ITypeSymbol[] argTypes;
                     if (Sig.StartsWith("("))
                     {
                         argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
                     }
                     else if (Sig == "")
                     {
-                        argTypes = Reflection.Type.EmptyTypes;
+                        argTypes = [];
                     }
                     else
                     {
-                        string[] types = Sig.Split(';');
-                        argTypes = new Type[types.Length];
+                        var types = Sig.Split(';');
+                        argTypes = new ITypeSymbol[types.Length];
                         for (int i = 0; i < types.Length; i++)
                         {
-                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]).AsReflection();
+                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]);
                         }
                     }
 
-                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection();
+                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type);
                     if (ti == null)
                     {
                         throw new InvalidOperationException("Missing type: " + Type);
                     }
 
-                    var mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+                    var mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, argTypes);
                     if (mi == null)
                     {
                         var ta = argTypes.Select(i => i.AssemblyQualifiedName).ToArray();

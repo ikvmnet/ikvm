@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Diagnostics.SymbolStore;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Reflection.PortableExecutable;
+using System.Resources;
 
 using IKVM.CoreLib.Symbols.Emit;
 
@@ -51,6 +54,54 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 #else
             return null;
 #endif
+        }
+
+        /// <inheritdoc />
+        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
+        {
+#if NETFRAMEWORK
+            UnderlyingModuleBuilder.DefineManifestResource(name, stream, attribute);
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public IResourceWriter DefineResource(string name, string description)
+        {
+#if NETFRAMEWORK
+            return UnderlyingModuleBuilder.DefineResource(name, description);
+#else
+            throw new NotImplementedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
+        {
+#if NETFRAMEWORK
+            return UnderlyingModuleBuilder.DefineResource(name, description, attribute);
+#else
+            throw new NotImplementedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType.Unpack(), parameterTypes.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] requiredReturnTypeCustomModifiers, ITypeSymbol[] optionalReturnTypeCustomModifiers, ITypeSymbol[] parameterTypes, ITypeSymbol[][] requiredParameterTypeCustomModifiers, ITypeSymbol[][] optionalParameterTypeCustomModifiers)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType.Unpack(), requiredReturnTypeCustomModifiers.Unpack(), optionalReturnTypeCustomModifiers.Unpack(), parameterTypes.Unpack(), requiredParameterTypeCustomModifiers.Unpack(), optionalParameterTypeCustomModifiers.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        {
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, returnType.Unpack(), parameterTypes.Unpack()));
         }
 
         /// <inheritdoc />
@@ -107,7 +158,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingModuleBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
-#endregion
+        #endregion
 
         #region IModuleSymbol
 
@@ -128,6 +179,27 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         /// <inheritdoc />
         public string ScopeName => UnderlyingModule.ScopeName;
+
+        /// <inheritdoc />
+        public ulong ImageBase
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public uint FileAlignment
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public DllCharacteristics DllCharacteristics
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
         public override bool IsComplete => _builder == null;
@@ -299,6 +371,36 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return UnderlyingModule.IsDefined(attributeType.Unpack(), false);
+        }
+
+        /// <inheritdoc />
+        public void AddReference(IAssemblySymbol assembly)
+        {
+#if NETFRAMEWORK
+            var t = ((IReflectionAssemblySymbol)assembly).GetExportedTypes();
+            if (t.Length > 0)
+                UnderlyingModuleBuilder.GetTypeToken(t[0].Unpack());
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public void AddTypeForwarder(ITypeSymbol type)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public void Complete()
+        {
+            UnderlyingModuleBuilder.CreateGlobalFunctions();
+        }
+
+        /// <inheritdoc />
+        public void Save(PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
+        {
+            throw new NotSupportedException();
         }
 
         #endregion

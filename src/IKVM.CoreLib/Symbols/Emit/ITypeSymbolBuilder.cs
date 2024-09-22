@@ -32,6 +32,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         void AddInterfaceImplementation(ITypeSymbol interfaceType);
 
         /// <summary>
+        /// Adds a new constructor to the type, with the given attributes and signature and the standard calling convention.
+        /// </summary>
+        /// <param name="attributes"></param>
+        /// <param name="parameterTypes"></param>
+        /// <returns></returns>
+        IConstructorSymbolBuilder DefineConstructor(System.Reflection.MethodAttributes attributes, ITypeSymbol[]? parameterTypes);
+
+        /// <summary>
         /// Adds a new constructor to the type, with the given attributes and signature.
         /// </summary>
         /// <param name="attributes"></param>

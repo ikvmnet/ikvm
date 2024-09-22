@@ -21,17 +21,9 @@
   jeroen@frijters.net
   
 */
-using IKVM.CoreLib.Symbols;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {

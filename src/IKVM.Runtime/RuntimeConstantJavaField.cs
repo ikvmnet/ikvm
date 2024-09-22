@@ -23,20 +23,10 @@
 */
 using System;
 using System.Diagnostics;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -151,7 +141,7 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             var field = GetField();
-            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.GetValue(null);
+            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.AsReflection().GetValue(null);
         }
 
         internal override void SetValue(object obj, object value)

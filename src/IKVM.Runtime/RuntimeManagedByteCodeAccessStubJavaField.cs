@@ -21,19 +21,10 @@
   jeroen@frijters.net
   
 */
+using System.Reflection.Emit;
+
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -117,16 +108,16 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            return GetField().GetValue(obj);
+            return GetField().AsReflection().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            GetField().SetValue(obj, value);
+            GetField().AsReflection().SetValue(obj, value);
         }
 
-#endif 
+#endif
 
     }
 

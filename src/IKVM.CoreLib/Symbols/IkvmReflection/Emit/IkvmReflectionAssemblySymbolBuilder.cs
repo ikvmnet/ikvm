@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -77,13 +78,61 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
-            _builder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingAssemblyBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingAssemblyBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        /// <inheritdoc />
+        public void DefineIconResource(byte[] bytes)
+        {
+            UnderlyingAssemblyBuilder.__DefineIconResource(bytes);
+        }
+
+        /// <inheritdoc />
+        public void DefineManifestResource(byte[] bytes)
+        {
+            UnderlyingAssemblyBuilder.__DefineManifestResource(bytes);
+        }
+
+        /// <inheritdoc />
+        public void DefineVersionInfoResource()
+        {
+            UnderlyingAssemblyBuilder.DefineVersionInfoResource();
+        }
+
+        /// <inheritdoc />
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
+        {
+            UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack());
+        }
+
+        /// <inheritdoc />
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
+        {
+            UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack(), (IKVM.Reflection.Emit.PEFileKinds)target);
+        }
+
+        /// <inheritdoc />
+        public void AddTypeForwarder(ITypeSymbol type)
+        {
+            UnderlyingAssemblyBuilder.__AddTypeForwarder(type.Unpack());
+        }
+
+        /// <inheritdoc />
+        public void AddResourceFile(string name, string value)
+        {
+            UnderlyingAssemblyBuilder.AddResourceFile(name, value);
+        }
+
+        /// <inheritdoc />
+        public void Save(string assemblyFileName, System.Reflection.PortableExecutableKinds portableExecutableKind, IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine)
+        {
+            UnderlyingAssemblyBuilder.Save(assemblyFileName, (PortableExecutableKinds)portableExecutableKind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
         }
 
         #endregion
@@ -113,6 +162,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public override bool IsComplete => _builder == null;
+
+        public string Location => throw new NotImplementedException();
 
         /// <inheritdoc />
         public ITypeSymbol[] GetExportedTypes()
@@ -202,6 +253,24 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
         {
             return UnderlyingAssembly.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        /// <inheritdoc />
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
+        {
+            return ResolveManifestResourceInfo(UnderlyingAssembly.GetManifestResourceInfo(resourceName));
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(name);
+        }
+
+        /// <inheritdoc />
+        public Stream? GetManifestResourceStream(ITypeSymbol type, string name)
+        {
+            return UnderlyingAssembly.GetManifestResourceStream(type.Unpack(), name);
         }
 
         #endregion

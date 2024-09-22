@@ -34,8 +34,6 @@ using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Encoding;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.IkvmReflection;
-
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -267,6 +265,11 @@ namespace IKVM.Runtime
             pb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
+        internal void SetCustomAttribute(RuntimeClassLoader loader, IConstructorSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
+        {
+            mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
+        }
+
         internal void SetCustomAttribute(RuntimeClassLoader loader, IMethodSymbolBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
@@ -298,7 +301,7 @@ namespace IKVM.Runtime
 
                 if (tw.IsArray)
                 {
-                    var arr = Array.CreateInstance(Type.__GetSystemType(tw.ElementTypeWrapper.TypeAsArrayType.TypeCode), attr.Params[i].Elements.Length);
+                    var arr = Array.CreateInstance(tw.ElementTypeWrapper.TypeAsArrayType.GetSystemType(), attr.Params[i].Elements.Length);
                     for (int j = 0; j < arr.Length; j++)
                         arr.SetValue(ParseValue(loader, tw.ElementTypeWrapper, attr.Params[i].Elements[j].Value), j);
 
@@ -416,6 +419,11 @@ namespace IKVM.Runtime
             tb.SetCustomAttribute(GetEditorBrowsableNever());
         }
 
+        internal void SetEditorBrowsableNever(IConstructorSymbolBuilder mb)
+        {
+            mb.SetCustomAttribute(GetEditorBrowsableNever());
+        }
+
         internal void SetEditorBrowsableNever(IMethodSymbolBuilder mb)
         {
             mb.SetCustomAttribute(GetEditorBrowsableNever());
@@ -448,6 +456,16 @@ namespace IKVM.Runtime
         {
             deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             pb.SetCustomAttribute(deprecatedAttribute);
+        }
+
+        internal void SetThrowsAttribute(IConstructorSymbolBuilder mb, string[] exceptions)
+        {
+            if (exceptions != null && exceptions.Length != 0)
+            {
+                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor([context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]);
+                exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
+                mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(throwsAttribute, [exceptions]));
+            }
         }
 
         internal void SetThrowsAttribute(IMethodSymbolBuilder mb, string[] exceptions)
@@ -498,6 +516,11 @@ namespace IKVM.Runtime
         internal void HideFromJava(ITypeSymbolBuilder typeBuilder)
         {
             typeBuilder.SetCustomAttribute(HideFromJavaAttributeBuilder);
+        }
+
+        internal void HideFromJava(IConstructorSymbolBuilder ctor)
+        {
+            ctor.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
 
         internal void HideFromJava(IMethodSymbolBuilder mb)
@@ -726,6 +749,17 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
+        internal void SetModifiers(IConstructorSymbolBuilder cb, Modifiers modifiers, bool isInternal)
+        {
+            ICustomAttributeBuilder customAttributeBuilder;
+            if (isInternal)
+                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
+            else
+                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
+
+            cb.SetCustomAttribute(customAttributeBuilder);
+        }
+
         internal void SetModifiers(IMethodSymbolBuilder mb, Modifiers modifiers, bool isInternal)
         {
             ICustomAttributeBuilder customAttributeBuilder;
@@ -791,7 +825,7 @@ namespace IKVM.Runtime
             typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(sourceFileAttribute, [filename]));
         }
 
-        internal void SetSourceFile(IMethodSymbolBuilder moduleBuilder, string filename)
+        internal void SetSourceFile(IModuleSymbolBuilder moduleBuilder, string filename)
         {
             sourceFileAttribute ??= TypeOfSourceFileAttribute.GetConstructor([context.Types.String]);
             moduleBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(sourceFileAttribute, [filename]));

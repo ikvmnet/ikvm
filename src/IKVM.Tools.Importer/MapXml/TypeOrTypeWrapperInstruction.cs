@@ -25,9 +25,8 @@
 using System.Diagnostics;
 using System.Xml.Linq;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -49,7 +48,7 @@ namespace IKVM.Tools.Importer.MapXml
         }
 
         internal RuntimeJavaType typeWrapper;
-        internal Type typeType;
+        internal ITypeSymbol typeType;
 
         public string Class { get; set; }
 

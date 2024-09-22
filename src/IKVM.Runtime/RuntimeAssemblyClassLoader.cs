@@ -450,11 +450,11 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static void PreloadExportedAssemblies(StaticCompiler compiler, Assembly assembly)
+        internal static void PreloadExportedAssemblies(StaticCompiler compiler, IAssemblySymbol assembly)
         {
             if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
             {
-                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                using (var stream = assembly.GetManifestResourceStream("ikvm.exports"))
                 {
                     var rdr = new BinaryReader(stream);
                     var assemblyCount = rdr.ReadInt32();

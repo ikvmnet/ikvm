@@ -198,6 +198,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
+        public IConstructorSymbolBuilder DefineConstructor(System.Reflection.MethodAttributes attributes, ITypeSymbol[]? parameterTypes)
+        {
+            return ResolveConstructorSymbol(UnderlyingTypeBuilder.DefineConstructor((MethodAttributes)attributes, CallingConventions.Standard, parameterTypes?.Unpack()));
+        }
+
+        /// <inheritdoc />
         public IConstructorSymbolBuilder DefineConstructor(System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol[]? parameterTypes)
         {
             return ResolveConstructorSymbol(UnderlyingTypeBuilder.DefineConstructor((MethodAttributes)attributes, (CallingConventions)callingConvention, parameterTypes?.Unpack()));
