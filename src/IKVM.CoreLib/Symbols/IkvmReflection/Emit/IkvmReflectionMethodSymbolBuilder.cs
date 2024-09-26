@@ -16,6 +16,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         MethodInfo _method;
 
         IkvmReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        IkvmReflectionMethodSpecTable _specTable;
 
         IkvmReflectionILGenerator? _il;
 
@@ -33,6 +34,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _method = _builder;
             _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, resolvingModule, this);
+            _specTable = new IkvmReflectionMethodSpecTable(context, resolvingModule, resolvingType, this);
         }
 
         /// <inheritdoc />
@@ -62,6 +64,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
+        /// <inheritdoc />
+        public IIkvmReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
+        {
+            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
+        }
+
         #endregion
 
         #region IIkvmReflectionMethodBaseSymbol
@@ -72,13 +80,47 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         #endregion
 
-        #region IMethodSymbolBuilder
+        #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
+        public override void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
         {
             UnderlyingMethodBuilder.SetImplementationFlags((MethodImplAttributes)attributes);
         }
+
+        /// <inheritdoc />
+        public override IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
+        {
+            return ResolveParameterSymbol(this, UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
+        }
+
+        /// <inheritdoc />
+        public override IILGenerator GetILGenerator()
+        {
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
+        }
+
+        /// <inheritdoc />
+        public override IILGenerator GetILGenerator(int streamSize)
+        {
+            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
+        }
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        {
+            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+        }
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        {
+            UnderlyingMethodBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        #endregion
+
+        #region IMethodSymbolBuilder
 
         /// <inheritdoc />
         public void SetParameters(params ITypeSymbol[] parameterTypes)
@@ -106,36 +148,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
                 a[i] = ResolveGenericTypeParameterSymbol(l[i]);
 
             return a;
-        }
-
-        /// <inheritdoc />
-        public IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
-        {
-            return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
-        }
-
-        /// <inheritdoc />
-        public IILGenerator GetILGenerator()
-        {
-            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
-        }
-
-        /// <inheritdoc />
-        public IILGenerator GetILGenerator(int streamSize)
-        {
-            return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
         #endregion
@@ -177,7 +189,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public override void OnComplete()
         {
-            _method = (MethodInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
             _builder = null;
             base.OnComplete();
         }

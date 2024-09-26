@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                 this.fakeType = context.FakeTypes.GetAttributeType(attributeType);
 #elif !FIRST_PASS
-                this.fakeType = context.Resolver.ResolveType(typeof(ikvm.@internal.AttributeAnnotation<>)).MakeGenericType(attributeType);
+                this.fakeType = context.Resolver.ImportType(typeof(ikvm.@internal.AttributeAnnotation<>)).MakeGenericType(attributeType);
 #endif
                 this.attributeType = attributeType;
             }
@@ -560,7 +560,7 @@ namespace IKVM.Runtime
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
@@ -593,7 +593,7 @@ namespace IKVM.Runtime
                     {
                         string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         Version version;
-                        if (ImportContext.TryParseVersion(str, out version))
+                        if (ImportContextFactory.TryParseVersion(str, out version))
                         {
                             ab.__SetAssemblyVersion(version);
                         }

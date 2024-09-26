@@ -329,7 +329,7 @@ namespace IKVM.Runtime.StubGen
 
                         if (throws.types != null)
                             foreach (var ex in throws.types)
-                                e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveType(ex)).Name.Replace('.', '/')));
+                                e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ImportType(ex)).Name.Replace('.', '/')));
                     });
                 }
             }

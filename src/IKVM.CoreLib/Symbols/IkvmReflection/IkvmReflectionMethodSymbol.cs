@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 using IKVM.Reflection;
 
@@ -13,6 +14,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         readonly MethodInfo _method;
 
         IkvmReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        IkvmReflectionMethodSpecTable _specTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,6 +28,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
             _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, module, this);
+            _specTable = new IkvmReflectionMethodSpecTable(context, module, type, this);
         }
 
         /// <inheritdoc />
@@ -40,6 +43,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IIkvmReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
         {
             return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        /// <inheritdoc />
+        public IIkvmReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
+        {
+            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
         }
 
         #endregion

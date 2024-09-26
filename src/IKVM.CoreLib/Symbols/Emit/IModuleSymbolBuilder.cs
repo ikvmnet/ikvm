@@ -71,7 +71,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] parameterTypes);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
 
         /// <summary>
         /// Defines a global method with the specified name, attributes, calling convention, return type, custom modifiers for the return type, parameter types, and custom modifiers for the parameter types.
@@ -86,7 +86,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="requiredParameterTypeCustomModifiers"></param>
         /// <param name="optionalParameterTypeCustomModifiers"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] requiredReturnTypeCustomModifiers, ITypeSymbol[] optionalReturnTypeCustomModifiers, ITypeSymbol[] parameterTypes, ITypeSymbol[][] requiredParameterTypeCustomModifiers, ITypeSymbol[][] optionalParameterTypeCustomModifiers);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? requiredReturnTypeCustomModifiers, ITypeSymbol[]? optionalReturnTypeCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredParameterTypeCustomModifiers, ITypeSymbol[][]? optionalParameterTypeCustomModifiers);
 
         /// <summary>
         /// Defines a global method with the specified name, attributes, return type, and parameter types.
@@ -96,7 +96,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol returnType, ITypeSymbol[] parameterTypes);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
 
         /// <summary>
         /// Constructs a TypeBuilder for a private type with the specified name in this module.

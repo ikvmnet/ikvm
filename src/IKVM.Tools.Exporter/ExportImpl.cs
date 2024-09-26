@@ -11,7 +11,6 @@ using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 using IKVM.Runtime;
-using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 
@@ -147,7 +146,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(symbols, compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(true), diagnostics, new ManagedTypeResolver(symbols, universe, runtimeAssembly, null), compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -174,10 +173,10 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(symbols, compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(symbols, universe, runtimeAssembly, baseAssembly), compiler);
                 }
 
-                if (context.AttributeHelper.IsJavaModule(context.Resolver.ResolveModule(assembly.ManifestModule)))
+                if (context.AttributeHelper.IsJavaModule(context.Resolver.ImportModule(assembly.ManifestModule)))
                 {
                     diagnostics.ExportingImportsNotSupported();
                     return 1;
@@ -369,7 +368,7 @@ namespace IKVM.Tools.Exporter
         int ProcessTypes(RuntimeContext context, Type[] types)
         {
             int rc = 0;
-            foreach (var t in types.Select(context.Resolver.ResolveType))
+            foreach (var t in types.Select(context.Resolver.ImportType))
             {
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !context.AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !context.AttributeHelper.IsJavaModule(t.Module)))
                 {

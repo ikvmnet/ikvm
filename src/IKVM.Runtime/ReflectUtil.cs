@@ -26,6 +26,9 @@ using System;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
+using System.Collections.Immutable;
+
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -116,29 +119,19 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static IMethodSymbolBuilder DefineTypeInitializer(ITypeSymbolBuilder typeBuilder, RuntimeClassLoader loader)
+        internal static IConstructorSymbolBuilder DefineTypeInitializer(ITypeSymbolBuilder typeBuilder, RuntimeClassLoader loader)
         {
-            var attr = System.Reflection.MethodAttributes.Static | System.Reflection.MethodAttributes.RTSpecialName | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Private;
-            return typeBuilder.DefineMethod(ConstructorInfo.TypeConstructorName, attr, null, []);
+            return typeBuilder.DefineTypeInitializer();
         }
 
-        internal static bool MatchNameAndPublicKeyToken(System.Reflection.AssemblyName name1, System.Reflection.AssemblyName name2)
+        internal static bool MatchNameAndPublicKeyToken(AssemblyNameInfo name1, AssemblyNameInfo name2)
         {
-            return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase) && CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
+            return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase) && CompareKeys(name1.PublicKeyOrToken, name2.PublicKeyOrToken);
         }
 
-        static bool CompareKeys(byte[] b1, byte[] b2)
+        static bool CompareKeys(ImmutableArray<byte> b1, ImmutableArray<byte> b2)
         {
-            int len1 = b1 == null ? 0 : b1.Length;
-            int len2 = b2 == null ? 0 : b2.Length;
-            if (len1 != len2)
-                return false;
-
-            for (int i = 0; i < len1; i++)
-                if (b1[i] != b2[i])
-                    return false;
-
-            return true;
+            return b1.AsSpan().SequenceEqual(b2.AsSpan());
         }
 
         internal static bool IsConstructor(IMethodBaseSymbol method)
@@ -156,7 +149,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal static bool CanOwnDynamicMethod(ITypeSymbol type)
+        internal static bool CanOwnDynamicMethod(Type type)
         {
             return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }

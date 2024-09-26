@@ -137,7 +137,7 @@ namespace IKVM.Runtime
                 var attr = context.AttributeHelper.GetRemappedType(type);
                 if (attr != null)
                 {
-                    if (context.Resolver.ResolveType(attr.Type) == context.Types.Object)
+                    if (context.Resolver.ImportType(attr.Type) == context.Types.Object)
                         return null;
                     else
                         return context.JavaBase.TypeOfJavaLangObject;
@@ -1196,7 +1196,7 @@ namespace IKVM.Runtime
                 tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
 
-            internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
+            internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
             {
                 mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
             }
@@ -1254,7 +1254,7 @@ namespace IKVM.Runtime
 
         internal override string GetSourceFileName()
         {
-            var attr = type.GetCustomAttribute(Context.Resolver.ResolveType(typeof(SourceFileAttribute)));
+            var attr = type.GetCustomAttribute(Context.Resolver.ImportType(typeof(SourceFileAttribute)));
             if (attr != null && attr.Value.ConstructorArguments.Length > 0)
                 return (string)attr.Value.ConstructorArguments[0].Value;
 
@@ -1264,7 +1264,7 @@ namespace IKVM.Runtime
             if (IsNestedTypeAnonymousOrLocalClass(type))
                 return Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetSourceFileName();
 
-            if (type.Module.IsDefined(Context.Resolver.ResolveType(typeof(SourceFileAttribute)), false))
+            if (type.Module.IsDefined(Context.Resolver.ImportType(typeof(SourceFileAttribute)), false))
                 return type.Name + ".java";
 
             return null;
@@ -1272,7 +1272,7 @@ namespace IKVM.Runtime
 
         internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
-            var attr = type.GetCustomAttribute(Context.Resolver.ResolveType(typeof(LineNumberTableAttribute)));
+            var attr = type.GetCustomAttribute(Context.Resolver.ImportType(typeof(LineNumberTableAttribute)));
             if (attr != null && attr.Value.Constructor != null)
                 return ((LineNumberTableAttribute)attr.Value.Constructor.AsReflection().Invoke(attr.Value.ConstructorArguments.Cast<object>().ToArray())).GetLineNumber(ilOffset);
 

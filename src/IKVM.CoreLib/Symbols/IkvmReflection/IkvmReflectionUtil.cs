@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
@@ -13,83 +14,55 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     static class IkvmReflectionUtil
     {
 
-#pragma warning disable SYSLIB0017 // Type or member is obsolete
-#pragma warning disable SYSLIB0037 // Type or member is obsolete
-
         /// <summary>
         /// Converts a <see cref="AssemblyName"/> to a <see cref="System.Reflection.AssemblyName"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static System.Reflection.AssemblyName Pack(this AssemblyName n)
+        public static AssemblyNameInfo Pack(this AssemblyName n)
         {
-            return new System.Reflection.AssemblyName()
-            {
-                Name = n.Name,
-                Version = n.Version,
-                CultureInfo = n.CultureInfo,
-                CultureName = n.CultureName,
-                ProcessorArchitecture = (System.Reflection.ProcessorArchitecture)n.ProcessorArchitecture,
-                Flags = (System.Reflection.AssemblyNameFlags)n.Flags,
-                HashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)n.HashAlgorithm,
-                ContentType = (System.Reflection.AssemblyContentType)n.ContentType,
-                VersionCompatibility = (System.Configuration.Assemblies.AssemblyVersionCompatibility)n.VersionCompatibility,
-            };
+            return new AssemblyNameInfo(n.Name, n.Version, n.CultureName, (System.Reflection.AssemblyNameFlags)n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty);
         }
-
-#pragma warning restore SYSLIB0037 // Type or member is obsolete
-#pragma warning restore SYSLIB0017 // Type or member is obsolete
 
         /// <summary>
         /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="System.Reflection.AssemblyName"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static System.Reflection.AssemblyName[] Pack(this AssemblyName[] n)
+        public static AssemblyNameInfo[] Pack(this AssemblyName[] n)
         {
             if (n.Length == 0)
                 return [];
 
-            var a = new System.Reflection.AssemblyName[n.Length];
+            var a = new AssemblyNameInfo[n.Length];
             for (int i = 0; i < n.Length; i++)
                 a[i] = n[i].Pack();
 
             return a;
         }
 
-#pragma warning disable SYSLIB0017 // Type or member is obsolete
-#pragma warning disable SYSLIB0037 // Type or member is obsolete
-
         /// <summary>
-        /// Converts a <see cref="System.Reflection.AssemblyName"/> to a <see cref="AssemblyName"/>.
+        /// Converts a <see cref="AssemblyNameInfo"/> to a <see cref="AssemblyName"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static AssemblyName Unpack(this System.Reflection.AssemblyName n)
+        public static AssemblyName Unpack(this AssemblyNameInfo n)
         {
             return new AssemblyName()
             {
                 Name = n.Name,
                 Version = n.Version,
-                CultureInfo = n.CultureInfo,
                 CultureName = n.CultureName,
-                ProcessorArchitecture = (ProcessorArchitecture)n.ProcessorArchitecture,
                 Flags = (AssemblyNameFlags)n.Flags,
-                HashAlgorithm = (AssemblyHashAlgorithm)n.HashAlgorithm,
-                ContentType = (AssemblyContentType)n.ContentType,
-                VersionCompatibility = (AssemblyVersionCompatibility)n.VersionCompatibility,
             };
         }
-
-#pragma warning restore SYSLIB0037 // Type or member is obsolete
-#pragma warning restore SYSLIB0017 // Type or member is obsolete
 
         /// <summary>
         /// Converts a set of <see cref="System.Reflection.AssemblyName"/> to a set of <see cref="AssemblyName"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static AssemblyName[] Unpack(this System.Reflection.AssemblyName[] n)
+        public static AssemblyName[] Unpack(this AssemblyNameInfo[] n)
         {
             if (n.Length == 0)
                 return [];
@@ -454,7 +427,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (method is null)
                 throw new ArgumentNullException(nameof(method));
 
-            return method.IsGenericMethod == false || (method.IsGenericMethod && method.IsGenericMethodDefinition == true);
+            return method.IsGenericMethod == false || method.IsGenericMethodDefinition;
         }
 
     }

@@ -40,8 +40,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
 
-        #region IIkvmPropertySymbol
+        #region IIkvmReflectionPropertySymbolBuilder
 
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IIkvmReflectionPropertySymbol
+
+        /// <inheritdoc />
         public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
             return _parameterTable.GetOrCreateParameterSymbol(parameter);
@@ -49,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         #endregion
 
-        #region IPropertySymbol
+        #region IPropertySymbolBuilder
 
         /// <inheritdoc />
         public void SetConstant(object? defaultValue)
@@ -186,7 +197,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public override void OnComplete()
         {
-            _property = (PropertyInfo?)ResolvingModule.UnderlyingModule.ResolveMember(MetadataToken) ?? throw new InvalidOperationException();
             _builder = null;
             base.OnComplete();
         }

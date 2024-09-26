@@ -26,6 +26,28 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
 
+        #region IMethodBaseSymbolBuilder
+
+        /// <inheritdoc />
+        public abstract void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes);
+
+        /// <inheritdoc />
+        public abstract IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName);
+
+        /// <inheritdoc />
+        public abstract IILGenerator GetILGenerator();
+
+        /// <inheritdoc />
+        public abstract IILGenerator GetILGenerator(int streamSize);
+
+        /// <inheritdoc />
+        public abstract void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
+
+        /// <inheritdoc />
+        public abstract void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
+
+        #endregion
+
         #region IMethodBaseSymbol
 
         /// <inheritdoc />

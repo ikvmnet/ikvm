@@ -101,7 +101,7 @@ namespace IKVM.Tools.Importer.MapXml
                 Debug.Assert(Class == null && Type != null);
 
                 var argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                var ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, argTypes);
+                var ci = context.ClassLoader.Context.Resolver.ResolveType(Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, argTypes);
                 if (ci == null)
                     throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
 
@@ -115,9 +115,8 @@ namespace IKVM.Tools.Importer.MapXml
                     Debug.Assert(Sig != null);
                     var method = context.ClassLoader.LoadClassByName(Class).GetMethodWrapper(Name, Sig, false);
                     if (method == null)
-                    {
                         throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);
-                    }
+
                     method.Link();
                     // TODO this code is part of what Compiler.CastInterfaceArgs (in compiler.cs) does,
                     // it would be nice if we could avoid this duplication...
@@ -126,7 +125,7 @@ namespace IKVM.Tools.Importer.MapXml
                     {
                         if (argTypeWrappers[i].IsGhost)
                         {
-                            CodeEmitterLocal[] temps = new CodeEmitterLocal[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
+                            var temps = new CodeEmitterLocal[argTypeWrappers.Length + (method.IsStatic ? 0 : 1)];
                             for (int j = temps.Length - 1; j >= 0; j--)
                             {
                                 RuntimeJavaType tw;
@@ -194,15 +193,13 @@ namespace IKVM.Tools.Importer.MapXml
                         argTypes = new ITypeSymbol[types.Length];
                         for (int i = 0; i < types.Length; i++)
                         {
-                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]);
+                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]);
                         }
                     }
 
-                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type);
+                    var ti = context.ClassLoader.Context.Resolver.ResolveType(Type);
                     if (ti == null)
-                    {
                         throw new InvalidOperationException("Missing type: " + Type);
-                    }
 
                     var mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, argTypes);
                     if (mi == null)

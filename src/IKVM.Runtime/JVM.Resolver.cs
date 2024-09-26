@@ -92,7 +92,7 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveType(Type type)
+            public ITypeSymbol ImportType(Type type)
             {
                 return type is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
             }

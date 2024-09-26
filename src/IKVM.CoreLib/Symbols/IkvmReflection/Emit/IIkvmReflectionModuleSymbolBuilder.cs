@@ -57,9 +57,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionParameterSymbolBuilder"/> for the specified <see cref="ParameterBuilder"/>.
         /// </summary>
+        /// <param name="member"></param>
         /// <param name="parameter"></param>
         /// <returns></returns>
-        IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter);
+        IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(IIkvmReflectionMemberSymbolBuilder member, ParameterBuilder parameter);
 
         /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionGenericTypeParameterSymbolBuilder"/> for the specified <see cref="GenericTypeParameterBuilder"/>.

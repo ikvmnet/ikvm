@@ -285,6 +285,8 @@ namespace IKVM.CoreLib.Diagnostics
                     return ModuleInitializerMethodRequirements;
                 case 5060:
                     return InvalidZip;
+                case 5061:
+                    return CoreAssemblyVersionMismatch;
                 case 6000:
                     return GenericRuntimeTrace;
                 case 6001:
@@ -1395,6 +1397,15 @@ namespace IKVM.CoreLib.Diagnostics
 /// Invalid zip: {name}.
         /// </remarks>
         public static readonly Diagnostic InvalidZip = new Diagnostic(5060, nameof(InvalidZip), "Invalid zip: {0}.", DiagnosticLevel.Fatal);
+
+        /// <summary>
+        /// The 'CoreAssemblyVersionMismatch' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.
+        /// </remarks>
+        public static readonly Diagnostic CoreAssemblyVersionMismatch = new Diagnostic(5061, nameof(CoreAssemblyVersionMismatch), "Unable to load assembly \'{-1}\' as it depends on a higher version of {-1} than the" +
+    " one currently loaded.", DiagnosticLevel.Fatal);
 
         /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.

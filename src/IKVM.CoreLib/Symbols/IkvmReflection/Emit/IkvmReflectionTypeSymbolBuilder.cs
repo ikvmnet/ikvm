@@ -27,18 +27,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resolvingModule"></param>
+        /// <param name="module"></param>
         /// <param name="builder"></param>
-        public IkvmReflectionTypeSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, TypeBuilder builder) :
-            base(context, resolvingModule, null)
+        public IkvmReflectionTypeSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder module, TypeBuilder builder) :
+            base(context, module, null)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _type = _builder;
-            _methodTable = new IkvmReflectionMethodTable(context, resolvingModule, this);
-            _fieldTable = new IkvmReflectionFieldTable(context, resolvingModule, this);
-            _propertyTable = new IkvmReflectionPropertyTable(context, resolvingModule, this);
-            _eventTable = new IkvmReflectionEventTable(context, resolvingModule, this);
-            _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, resolvingModule, this);
+            _methodTable = new IkvmReflectionMethodTable(context, module, this);
+            _fieldTable = new IkvmReflectionFieldTable(context, module, this);
+            _propertyTable = new IkvmReflectionPropertyTable(context, module, this);
+            _eventTable = new IkvmReflectionEventTable(context, module, this);
+            _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, module, this);
+            _specTable = new IkvmReflectionTypeSpecTable(context, module, this);
         }
 
         /// <inheritdoc />
@@ -162,12 +163,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
         {
             return _eventTable.GetOrCreateEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
-        {
-            return ResolveMethodSymbol((MethodBuilder)parameter.Method).GetOrCreateParameterSymbol(parameter);
         }
 
         #endregion
@@ -899,7 +894,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             {
                 // complete type
                 if (_builder.IsCreated() == false)
-                    _builder.CreateType();
+                {
+                    _type = _builder.CreateType();
+                    _builder = null;
+                }
 
                 // force module to reresolve
                 Context.GetOrCreateModuleSymbol(ResolvingModule.UnderlyingModule);
@@ -911,9 +909,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public override void OnComplete()
         {
             const System.Reflection.BindingFlags DefaultBindingFlags = System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static;
-
-            _type = ResolvingModule.UnderlyingModule.ResolveType(MetadataToken);
-            _builder = null;
 
             foreach (var i in GetGenericArguments())
                 if (i is IIkvmReflectionGenericTypeParameterSymbolBuilder b)

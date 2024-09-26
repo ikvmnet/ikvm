@@ -100,14 +100,14 @@ namespace IKVM.Runtime
         internal void LoadRemappedTypes()
         {
             // if we're compiling the base assembly, we won't be able to resolve one
-            var baseAssembly = context.Resolver.ResolveBaseAssembly();
-            if (baseAssembly != null && remappedTypes.Count == 0)
+            if (context.Options.Bootstrap == false && remappedTypes.Count == 0)
             {
+                var baseAssembly = context.Resolver.ResolveBaseAssembly();
                 var remapped = context.AttributeHelper.GetRemappedClasses(baseAssembly);
                 if (remapped.Length > 0)
                 {
                     foreach (var r in remapped)
-                        remappedTypes.Add(context.Resolver.ResolveType(r.RemappedType), r.Name);
+                        remappedTypes.Add(context.Resolver.ImportType(r.RemappedType), r.Name);
                 }
                 else
                 {
@@ -390,9 +390,9 @@ namespace IKVM.Runtime
                 return GetGenericClassLoaderByName(name);
 
 #if NETFRAMEWORK
-            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveAssembly( Assembly.Load(name)));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ImportAssembly( Assembly.Load(name)));
 #else
-            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name))));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ImportAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name))));
 #endif
         }
 

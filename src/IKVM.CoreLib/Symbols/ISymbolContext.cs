@@ -14,14 +14,14 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        IAssemblySymbolBuilder DefineAssembly(AssemblyName name);
+        IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name);
 
         /// <summary>
         /// Defines a dynamic assembly that has the specified name and access rights.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        IAssemblySymbolBuilder DefineAssembly(AssemblyName name, ICustomAttributeBuilder[]? assemblyAttributes);
+        IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name, ICustomAttributeBuilder[]? assemblyAttributes);
 
         /// <summary>
         /// Initializes an instance of the <see cref="ICustomAttributeBuilder"/> interface given the constructor for the custom attribute and the arguments to the constructor.

@@ -699,7 +699,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public override void OnComplete()
         {
-            throw new NotImplementedException();
+            
         }
 
     }

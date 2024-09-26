@@ -576,6 +576,20 @@ namespace IKVM.CoreLib.Reflection
             return _getParameterMethodBuilderFunc(parameter);
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the <see cref="Type"/> is a SZArray.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsSZArray(this Type type)
+        {
+#if NET
+            return type.IsSZArray;
+#else
+            return type.IsArray && type.Name.EndsWith("[]");
+#endif
+        }
+
     }
 
 }

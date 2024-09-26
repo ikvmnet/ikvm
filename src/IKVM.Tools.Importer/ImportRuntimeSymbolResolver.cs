@@ -22,7 +22,10 @@
 
 */
 using System;
+using System.IO;
+using System.Threading;
 
+using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.IkvmReflection;
@@ -38,104 +41,178 @@ namespace IKVM.Tools.Importer
     class ImportRuntimeSymbolResolver : IRuntimeSymbolResolver
     {
 
-        readonly StaticCompiler compiler;
-        readonly IkvmReflectionSymbolContext context;
-
-        /// <inheritdoc />
-        public ISymbolContext Symbols => context;
+        readonly IDiagnosticHandler diagnostics;
+        readonly Universe universe;
+        readonly IkvmReflectionSymbolContext symbols;
+        readonly ImportOptions options;
+        IAssemblySymbol runtimeAssembly;
+        IAssemblySymbol baseAssembly;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="compiler"></param>
-        public ImportRuntimeSymbolResolver(StaticCompiler compiler)
+        /// <param name="diagnostics"></param>
+        /// <param name="universe"></param>
+        /// <param name="symbols"></param>
+        /// <param name="options"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols, ImportOptions options)
         {
-            this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-            this.context = new IkvmReflectionSymbolContext(compiler.Universe);
+            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            this.universe = universe ?? throw new ArgumentNullException(nameof(universe));
+            this.symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        /// <inheritdoc />
+        public ISymbolContext Symbols => symbols;
+
+        /// <inheritdoc />
+        public IAssemblySymbol ResolveCoreAssembly()
+        {
+            try
+            {
+                if (ImportAssembly(universe.CoreLib) is { } a)
+                    return a;
+            }
+            catch (FileNotFoundException)
+            {
+
+            }
+
+            throw new FatalCompilerErrorException(DiagnosticEvent.CoreClassesMissing());
+        }
+
+        /// <inheritdoc />
+        public IAssemblySymbol ResolveRuntimeAssembly()
+        {
+            if (runtimeAssembly == null)
+                Interlocked.CompareExchange(ref runtimeAssembly, LoadRuntimeAssembly(), null);
+
+            return runtimeAssembly;
+        }
+
+        /// <summary>
+        /// Attempts to load the runtime assembly.
+        /// </summary>
+        /// <exception cref="FatalCompilerErrorException"></exception>
+        IAssemblySymbol LoadRuntimeAssembly()
+        {
+            foreach (var assembly in universe.GetAssemblies())
+                if (assembly.GetType("IKVM.Runtime.JVM") is Type)
+                    return ImportAssembly(assembly);
+
+            throw new FatalCompilerErrorException(DiagnosticEvent.RuntimeNotFound());
         }
 
         /// <inheritdoc />
         public IAssemblySymbol ResolveBaseAssembly()
         {
-            return compiler.baseAssembly;
+            if (baseAssembly == null)
+                Interlocked.CompareExchange(ref baseAssembly, LoadBaseAssembly(), null);
+
+            return baseAssembly;
         }
 
-        /// <inheritdoc />
-        public IAssemblySymbol ResolveAssembly(string assemblyName)
+        /// <summary>
+        /// Attempts to load the base assembly.
+        /// </summary>
+        IAssemblySymbol LoadBaseAssembly()
         {
-            return compiler.Universe.Load(assemblyName) is { } a ? context.GetOrCreateAssemblySymbol(a) : null;
+            foreach (var assembly in universe.GetAssemblies())
+                if (assembly.GetType("java.lang.Object") is Type)
+                    return ImportAssembly(assembly);
+
+            throw new Exception();
         }
 
         /// <inheritdoc />
         public ITypeSymbol ResolveCoreType(string typeName)
         {
-            foreach (var assembly in compiler.Universe.GetAssemblies())
-                if (assembly.GetType(typeName) is Type t)
-                    return context.GetOrCreateTypeSymbol(t);
-
-            return null;
+            return ResolveCoreAssembly().GetType(typeName);
         }
 
         /// <inheritdoc />
         public ITypeSymbol ResolveRuntimeType(string typeName)
         {
-            return compiler.GetRuntimeType(typeName);
+            return ResolveRuntimeAssembly().GetType(typeName);
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol ResolveAssembly(Assembly assembly)
+        public ITypeSymbol ResolveBaseType(string typeName)
         {
-            return context.GetOrCreateAssemblySymbol(assembly);
+            return ResolveBaseAssembly().GetType(typeName);
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder ResolveAssembly(AssemblyBuilder assembly)
+        public IAssemblySymbol ResolveAssembly(string assemblyName)
         {
-            return context.GetOrCreateAssemblySymbol(assembly);
+            return universe.Load(assemblyName) is { } a ? symbols.GetOrCreateAssemblySymbol(a) : null;
         }
 
         /// <inheritdoc />
-        public IModuleSymbol ResolveModule(Module module)
+        public ITypeSymbol ResolveType(string typeName)
         {
-            return context.GetOrCreateModuleSymbol(module);
+            foreach (var assembly in universe.GetAssemblies())
+                if (assembly.GetType(typeName) is Type t)
+                    return ImportType(t);
+
+            return null;
         }
 
         /// <inheritdoc />
-        public IModuleSymbolBuilder ResolveModule(ModuleBuilder module)
+        public IAssemblySymbol ImportAssembly(Assembly assembly)
         {
-            return context.GetOrCreateModuleSymbol(module);
+            return symbols.GetOrCreateAssemblySymbol(assembly);
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveType(Type type)
+        public IAssemblySymbolBuilder ImportAssembly(AssemblyBuilder assembly)
         {
-            return context.GetOrCreateTypeSymbol(type);
+            return symbols.GetOrCreateAssemblySymbol(assembly);
         }
 
         /// <inheritdoc />
-        public IMemberSymbol ResolveMember(MemberInfo memberInfo)
+        public IModuleSymbol ImportModule(Module module)
         {
-            return context.GetOrCreateMemberSymbol(memberInfo);
+            return symbols.GetOrCreateModuleSymbol(module);
         }
 
         /// <inheritdoc />
-        public IMethodBaseSymbol ResolveMethodBase(MethodBase type)
+        public IModuleSymbolBuilder ImportModule(ModuleBuilder module)
         {
-            return context.GetOrCreateMethodBaseSymbol(type);
+            return symbols.GetOrCreateModuleSymbol(module);
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol ResolveConstructor(ConstructorInfo ctor)
+        public ITypeSymbol ImportType(Type type)
         {
-            return context.GetOrCreateConstructorSymbol(ctor);
+            return symbols.GetOrCreateTypeSymbol(type);
         }
 
         /// <inheritdoc />
-        public IMethodSymbol ResolveMethod(MethodInfo method)
+        public IMemberSymbol ImportMember(MemberInfo memberInfo)
         {
-            return context.GetOrCreateMethodSymbol(method);
+            return symbols.GetOrCreateMemberSymbol(memberInfo);
         }
 
+        /// <inheritdoc />
+        public IMethodBaseSymbol ImportMethodBase(MethodBase type)
+        {
+            return symbols.GetOrCreateMethodBaseSymbol(type);
+        }
+
+        /// <inheritdoc />
+        public IConstructorSymbol ImportConstructor(ConstructorInfo ctor)
+        {
+            return symbols.GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IMethodSymbol ImportMethod(MethodInfo method)
+        {
+            return symbols.GetOrCreateMethodSymbol(method);
+        }
     }
 
 }

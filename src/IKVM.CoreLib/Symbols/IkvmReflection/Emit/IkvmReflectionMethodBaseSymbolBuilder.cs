@@ -1,4 +1,5 @@
-﻿using IKVM.Reflection;
+﻿using IKVM.CoreLib.Symbols.Emit;
+using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
@@ -27,20 +28,38 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
 
-        #region IIkvmReflectionMethodBaseSymbolBuilder
+        #region IIkvmReflectionMethodBaseSymbol
 
         /// <inheritdoc />
-        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
             return _parameterTable.GetOrCreateParameterSymbol(parameter);
         }
 
         #endregion
 
-        #region IIkvmReflectionMethodBaseSymbol
+        #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        public abstract void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes);
+
+        /// <inheritdoc />
+        public abstract IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName);
+
+        /// <inheritdoc />
+        public abstract IILGenerator GetILGenerator();
+
+        /// <inheritdoc />
+        public abstract IILGenerator GetILGenerator(int streamSize);
+
+        /// <inheritdoc />
+        public abstract void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
+
+        /// <inheritdoc />
+        public abstract void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
+
+        /// <inheritdoc />
+        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
         {
             return _parameterTable.GetOrCreateParameterSymbol(parameter);
         }

@@ -1631,6 +1631,21 @@
             }
         ]
     },
+    "CoreAssemblyVersionMismatch": {
+        "id": 5061,
+        "level": "Fatal",
+        "message": "Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.",
+        "args": [
+            {
+                "name": "arg0",
+                "type": "string"
+            },
+            {
+                "name": "arg1",
+                "type": "string"
+            }
+        ]
+    },
     "GenericRuntimeTrace": {
         "id": 6000,
         "level": "Trace",

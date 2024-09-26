@@ -75,7 +75,7 @@ namespace IKVM.Tools.Importer
             readonly RuntimeJavaTypeFactory context;
             readonly ITypeSymbolBuilder typeBuilder;
             readonly RuntimeJavaMethod ctor;
-            IMethodSymbolBuilder constructorBuilder;
+            IConstructorSymbolBuilder constructorBuilder;
 
             /// <summary>
             /// Initializes a new instance.
@@ -129,7 +129,7 @@ namespace IKVM.Tools.Importer
                         parameterNames[i] = parameters[i].Name;
         }
 
-        internal void AddXmlMapParameterAttributes(IMethodSymbolBuilder method, string className, string methodName, string methodSig, ref IParameterSymbolBuilder[] parameterBuilders)
+        internal void AddXmlMapParameterAttributes(IMethodBaseSymbolBuilder method, string className, string methodName, string methodSig, ref IParameterSymbolBuilder[] parameterBuilders)
         {
             var parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
             if (parameters != null)

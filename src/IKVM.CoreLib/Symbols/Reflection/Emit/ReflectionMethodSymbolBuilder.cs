@@ -39,13 +39,47 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public MethodBuilder UnderlyingMethodBuilder => _builder ?? throw new InvalidOperationException();
 
-        #region IMethodSymbolBuilder
+        #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public void SetImplementationFlags(MethodImplAttributes attributes)
+        public override void SetImplementationFlags(MethodImplAttributes attributes)
         {
             UnderlyingMethodBuilder.SetImplementationFlags(attributes);
         }
+
+        /// <inheritdoc />
+        public override IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
+        {
+            return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
+        }
+
+        /// <inheritdoc />
+        public override IILGenerator GetILGenerator()
+        {
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
+        }
+
+        /// <inheritdoc />
+        public override IILGenerator GetILGenerator(int streamSize)
+        {
+            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
+        }
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        {
+            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+        }
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        {
+            UnderlyingMethodBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        #endregion
+
+        #region IMethodSymbolBuilder
 
         /// <inheritdoc />
         public void SetParameters(params ITypeSymbol[] parameterTypes)
@@ -73,36 +107,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
                 a[i] = (IGenericTypeParameterSymbolBuilder)ResolveTypeSymbol(l[i]);
 
             return a;
-        }
-
-        /// <inheritdoc />
-        public IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
-        {
-            return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
-        }
-
-        /// <inheritdoc />
-        public IILGenerator GetILGenerator()
-        {
-            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
-        }
-
-        /// <inheritdoc />
-        public IILGenerator GetILGenerator(int streamSize)
-        {
-            return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
         #endregion

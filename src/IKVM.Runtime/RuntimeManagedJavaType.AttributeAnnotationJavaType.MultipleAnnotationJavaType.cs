@@ -112,7 +112,7 @@ namespace IKVM.Runtime
                         return [];
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
                     {
                         Annotation annot = type.Annotation;
                         foreach (object ann in UnwrapArray(annotation))

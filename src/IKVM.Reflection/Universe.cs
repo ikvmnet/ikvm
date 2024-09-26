@@ -204,7 +204,7 @@ namespace IKVM.Reflection
         /// <summary>
         /// Gets the core library.
         /// </summary>
-        internal Assembly CoreLib => Load(coreLibName);
+        public Assembly CoreLib => Load(coreLibName);
 
         /// <summary>
         /// Attempts to import the type from the core library.

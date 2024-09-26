@@ -55,13 +55,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public IIkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
         {
-            return _methodTable.GetOrCreateMethodBaseSymbol(method);
+            if (method is ConstructorInfo ctor)
+                return GetOrCreateConstructorSymbol(ctor);
+            else
+                return GetOrCreateMethodSymbol((MethodInfo)method);
         }
 
         /// <inheritdoc />
         public IIkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
-            return _methodTable.GetOrCreateMethodSymbol(method);
+            if (method.IsMethodDefinition())
+                return _methodTable.GetOrCreateMethodSymbol(method);
+            else
+                return ResolveMethodSymbol(method.GetGenericMethodDefinition()).GetOrCreateGenericMethodSymbol(method);
         }
 
         /// <inheritdoc />
@@ -433,7 +439,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (inherit)
                 return ResolveTypeSymbols(UnderlyingType.GetInterfaces());
             else
-                throw new NotImplementedException();
+                return ResolveTypeSymbols(UnderlyingType.__GetDeclaredInterfaces());
         }
 
         /// <inheritdoc />

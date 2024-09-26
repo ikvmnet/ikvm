@@ -11,8 +11,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     class IkvmReflectionParameterSymbolBuilder : IkvmReflectionSymbolBuilder, IIkvmReflectionParameterSymbolBuilder
     {
 
-        readonly IIkvmReflectionModuleSymbol _resolvingModule;
-        readonly IIkvmReflectionMemberSymbol _resolvingMethod;
+        readonly IIkvmReflectionModuleSymbol _module;
+        readonly IIkvmReflectionMemberSymbol _member;
 
         ParameterBuilder? _builder;
         ParameterInfo _parameter;
@@ -23,23 +23,23 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resolvingModule"></param>
-        /// <param name="resolvingMethod"></param>
+        /// <param name="module"></param>
+        /// <param name="member"></param>
         /// <param name="builder"></param>
-        public IkvmReflectionParameterSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionMemberSymbol resolvingMethod, ParameterBuilder builder) :
+        public IkvmReflectionParameterSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionMemberSymbol member, ParameterBuilder builder) :
             base(context)
         {
-            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingMethod = resolvingMethod ?? throw new ArgumentNullException(nameof(resolvingMethod));
+            _module = module ?? throw new ArgumentNullException(nameof(module));
+            _member = member ?? throw new ArgumentNullException(nameof(member));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _parameter = new IkvmReflectionParameterBuilderInfo(_builder, () => _constant);
+            _parameter = new IkvmReflectionParameterBuilderInfo(member, _builder, () => _constant);
         }
 
         /// <inheritdoc />
-        public IIkvmReflectionModuleSymbol ResolvingModule => _resolvingMethod.ResolvingModule;
+        public IIkvmReflectionModuleSymbol ResolvingModule => _module;
 
         /// <inheritdoc />
-        public IIkvmReflectionMemberSymbol ResolvingMember => _resolvingMethod;
+        public IIkvmReflectionMemberSymbol ResolvingMember => _member;
 
         /// <inheritdoc />
         public ParameterInfo UnderlyingParameter => _parameter;

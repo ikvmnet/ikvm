@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -10,6 +11,49 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
     static class ReflectionUtil
     {
+
+        /// <summary>
+        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyNameInfo Pack(this AssemblyName n)
+        {
+            return new AssemblyNameInfo(n.Name ?? throw new InvalidOperationException(), n.Version, n.CultureName, n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty);
+        }
+
+        /// <summary>
+        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyNameInfo"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyNameInfo[] Pack(this AssemblyName[] n)
+        {
+            if (n.Length == 0)
+                return [];
+
+            var a = new AssemblyNameInfo[n.Length];
+            for (int i = 0; i < n.Length; i++)
+                a[i] = n[i].Pack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Converts a <see cref="AssemblyNameInfo"/> to a <see cref="AssemblyName"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyName Unpack(this AssemblyNameInfo n)
+        {
+            return new AssemblyName()
+            {
+                Name = n.Name,
+                Version = n.Version,
+                CultureName = n.CultureName,
+                Flags = n.Flags,
+            };
+        }
 
         /// <summary>
         /// Unpacks the symbol into their original type.

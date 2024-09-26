@@ -107,13 +107,12 @@ namespace IKVM.Runtime
                     return FromAssembly(mainAssembly);
             }
 
-            var baseAssembly = context.Resolver.ResolveBaseAssembly();
 #if IMPORTER
-            if (baseAssembly != null && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
+            if (context.Options.Bootstrap == false && assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
                 context.ClassLoaderFactory.LoadRemappedTypes();
 #endif
 
-            if (baseAssembly == assembly)
+            if (assembly.IsDefined(context.Resolver.ResolveRuntimeType("IKVM.Attributes.RemappedClassAttribute"), false))
             {
                 // This cast is necessary for ikvmc and a no-op for the runtime.
                 // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader

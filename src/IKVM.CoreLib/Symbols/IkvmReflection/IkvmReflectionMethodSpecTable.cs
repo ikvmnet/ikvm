@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         readonly IkvmReflectionSymbolContext _context;
         readonly IIkvmReflectionModuleSymbol _module;
-        readonly IIkvmReflectionTypeSymbol _type;
+        readonly IIkvmReflectionTypeSymbol? _type;
         readonly IIkvmReflectionMethodSymbol _method;
 
         ConcurrentDictionary<IIkvmReflectionTypeSymbol[], IIkvmReflectionMethodSymbol>? _genericMethodSymbols;
@@ -25,11 +25,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="type"></param>
         /// <param name="method"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionMethodSpecTable(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol type, IIkvmReflectionMethodSymbol method)
+        public IkvmReflectionMethodSpecTable(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol? type, IIkvmReflectionMethodSymbol method)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _module = module ?? throw new ArgumentNullException(nameof(module));
-            _type = type ?? throw new ArgumentNullException(nameof(type));
+            _type = type;
             _method = method ?? throw new ArgumentNullException(nameof(method));
         }
 

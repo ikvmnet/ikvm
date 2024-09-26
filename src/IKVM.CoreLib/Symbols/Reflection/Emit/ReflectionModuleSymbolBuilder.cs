@@ -87,21 +87,21 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType.Unpack(), parameterTypes.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType?.Unpack(), parameterTypes?.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[] requiredReturnTypeCustomModifiers, ITypeSymbol[] optionalReturnTypeCustomModifiers, ITypeSymbol[] parameterTypes, ITypeSymbol[][] requiredParameterTypeCustomModifiers, ITypeSymbol[][] optionalParameterTypeCustomModifiers)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? requiredReturnTypeCustomModifiers, ITypeSymbol[]? optionalReturnTypeCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredParameterTypeCustomModifiers, ITypeSymbol[][]? optionalParameterTypeCustomModifiers)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType.Unpack(), requiredReturnTypeCustomModifiers.Unpack(), optionalReturnTypeCustomModifiers.Unpack(), parameterTypes.Unpack(), requiredParameterTypeCustomModifiers.Unpack(), optionalParameterTypeCustomModifiers.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType?.Unpack(), requiredReturnTypeCustomModifiers?.Unpack(), optionalReturnTypeCustomModifiers?.Unpack(), parameterTypes?.Unpack(), requiredParameterTypeCustomModifiers?.Unpack(), optionalParameterTypeCustomModifiers?.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, returnType.Unpack(), parameterTypes.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, returnType?.Unpack(), parameterTypes?.Unpack()));
         }
 
         /// <inheritdoc />

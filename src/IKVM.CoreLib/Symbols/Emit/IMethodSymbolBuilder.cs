@@ -5,12 +5,6 @@
     {
 
         /// <summary>
-        /// Sets the implementation flags for this method.
-        /// </summary>
-        /// <param name="attributes"></param>
-        void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes);
-
-        /// <summary>
         /// Sets the number and types of parameters for a method.
         /// </summary>
         /// <param name="parameterTypes"></param>
@@ -39,41 +33,6 @@
         /// <param name="names"></param>
         /// <returns></returns>
         IGenericTypeParameterSymbolBuilder[] DefineGenericParameters(params string[] names);
-
-        /// <summary>
-        /// Sets the parameter attributes and the name of a parameter of this method, or of the return value of this method. Returns a ParameterBuilder that can be used to apply custom attributes.
-        /// </summary>
-        /// <param name="position"></param>
-        /// <param name="attributes"></param>
-        /// <param name="strParamName"></param>
-        /// <returns></returns>
-        IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName);
-
-        /// <summary>
-        /// Returns an ILGenerator for this method with a default Microsoft intermediate language (MSIL) stream size of 64 bytes.
-        /// </summary>
-        /// <returns></returns>
-        IILGenerator GetILGenerator();
-
-        /// <summary>
-        /// Returns an ILGenerator for this method with the specified Microsoft intermediate language (MSIL) stream size.
-        /// </summary>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        IILGenerator GetILGenerator(int size);
-
-        /// <summary>
-        /// Set a custom attribute using a custom attribute builder.
-        /// </summary>
-        /// <param name="customBuilder"></param>
-        void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
-
-        /// <summary>
-        /// Sets a custom attribute using a specified custom attribute blob.
-        /// </summary>
-        /// <param name="con"></param>
-        /// <param name="binaryAttribute"></param>
-        void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
 
     }
 

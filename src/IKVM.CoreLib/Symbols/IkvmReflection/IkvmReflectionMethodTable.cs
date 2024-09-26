@@ -53,8 +53,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (method is MethodInfo m_ && m_.IsMethodDefinition() == false)
                 throw new ArgumentException(nameof(method));
 
-            var row = MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(method.MetadataToken));
-            if (row == 0)
+            var token = method.MetadataToken;
+            if (token <= 0)
             {
                 // we fall back to lookup by name if there is no valid metadata token
                 if (_byName == null)
@@ -73,11 +73,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             using (_lock.CreateUpgradeableReadLock())
             {
-                if (_table[row] == null)
+                if (_table[token] == null)
                     using (_lock.CreateWriteLock())
-                        return _table[row] ??= CreateMethodBaseSymbol(_context, _module, _type, method);
+                        return _table[token] ??= CreateMethodBaseSymbol(_context, _module, _type, method);
 
-                return _table[row] ?? throw new InvalidOperationException();
+                return _table[token] ?? throw new InvalidOperationException();
             }
         }
 

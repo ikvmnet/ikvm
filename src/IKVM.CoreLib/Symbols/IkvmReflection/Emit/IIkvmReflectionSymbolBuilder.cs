@@ -74,14 +74,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         IIkvmReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event);
 
         /// <summary>
-        /// Resolves the symbol for the specified parameter.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(parameter))]
-        IIkvmReflectionParameterSymbolBuilder? ResolveParameterSymbol(ParameterBuilder parameter);
-
-        /// <summary>
         /// Resolves the symbol for the specified generic type parameter.
         /// </summary>
         /// <param name="genericTypeParameter"></param>

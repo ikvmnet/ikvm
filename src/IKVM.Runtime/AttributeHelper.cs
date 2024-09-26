@@ -25,21 +25,17 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
-using IKVM.CoreLib.Diagnostics;
 using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Encoding;
+using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-#else
-using System.Reflection;
-#endif
+using IKVM.CoreLib.Symbols.Reflection;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -55,8 +51,6 @@ namespace IKVM.Runtime
     {
 
         readonly RuntimeContext context;
-
-#if IMPORTER
 
         ICustomAttributeBuilder compilerGeneratedAttribute;
         ICustomAttributeBuilder ghostInterfaceAttribute;
@@ -79,8 +73,6 @@ namespace IKVM.Runtime
         ITypeSymbol typeofModifiers;
         ITypeSymbol typeofSourceFileAttribute;
         ITypeSymbol typeofLineNumberTableAttribute;
-
-#endif
 
         ITypeSymbol typeofRemappedClassAttribute;
         ITypeSymbol typeofRemappedTypeAttribute;
@@ -105,79 +97,68 @@ namespace IKVM.Runtime
         ITypeSymbol typeofRuntimeVisibleTypeAnnotationsAttribute;
         ITypeSymbol typeofConstantPoolAttribute;
         ITypeSymbol typeofDebuggableAttribute;
+        ITypeSymbol typeofCustomAssemblyClassLoaderAttribute;
         ICustomAttributeBuilder hideFromJavaAttribute;
         ICustomAttributeBuilder hideFromReflection;
         IConstructorSymbol debuggableAttribute;
 
-#if IMPORTER
+        ITypeSymbol TypeOfModifiers => typeofModifiers ??= context.Resolver.ResolveRuntimeType(typeof(Modifiers).FullName);
 
-        ITypeSymbol TypeOfModifiers => typeofModifiers ??= LoadType(typeof(Modifiers));
+        ITypeSymbol TypeOfSourceFileAttribute => typeofSourceFileAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.SourceFileAttribute).FullName);
 
-        ITypeSymbol TypeOfSourceFileAttribute => typeofSourceFileAttribute ??= LoadType(typeof(IKVM.Attributes.SourceFileAttribute));
+        ITypeSymbol TypeOfLineNumberTableAttribute => typeofLineNumberTableAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.LineNumberTableAttribute).FullName);
 
-        ITypeSymbol TypeOfLineNumberTableAttribute => typeofLineNumberTableAttribute ??= LoadType(typeof(IKVM.Attributes.LineNumberTableAttribute));
+        ITypeSymbol TypeOfRemappedClassAttribute => typeofRemappedClassAttribute ??= context.Resolver.ResolveRuntimeType(typeof(RemappedClassAttribute).FullName);
 
-#endif
+        ITypeSymbol TypeOfRemappedTypeAttribute => typeofRemappedTypeAttribute ??= context.Resolver.ResolveRuntimeType(typeof(RemappedTypeAttribute).FullName);
 
-        ITypeSymbol TypeOfRemappedClassAttribute => typeofRemappedClassAttribute ??= LoadType(typeof(RemappedClassAttribute));
+        ITypeSymbol TypeOfModifiersAttribute => typeofModifiersAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ModifiersAttribute).FullName);
 
-        ITypeSymbol TypeOfRemappedTypeAttribute => typeofRemappedTypeAttribute ??= LoadType(typeof(RemappedTypeAttribute));
+        ITypeSymbol TypeOfRemappedInterfaceMethodAttribute => typeofRemappedInterfaceMethodAttribute ??= context.Resolver.ResolveRuntimeType(typeof(RemappedInterfaceMethodAttribute).FullName);
 
-        ITypeSymbol TypeOfModifiersAttribute => typeofModifiersAttribute ??= LoadType(typeof(ModifiersAttribute));
+        ITypeSymbol TypeOfNameSigAttribute => typeofNameSigAttribute ??= context.Resolver.ResolveRuntimeType(typeof(NameSigAttribute).FullName);
 
-        ITypeSymbol TypeOfRemappedInterfaceMethodAttribute => typeofRemappedInterfaceMethodAttribute ??= LoadType(typeof(RemappedInterfaceMethodAttribute));
+        ITypeSymbol TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName);
 
-        ITypeSymbol TypeOfNameSigAttribute => typeofNameSigAttribute ??= LoadType(typeof(NameSigAttribute));
+        ITypeSymbol TypeOfSignatureAttribute => typeofSignatureAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.SignatureAttribute).FullName);
 
-        ITypeSymbol TypeOfJavaModuleAttribute => typeofJavaModuleAttribute ??= LoadType(typeof(JavaModuleAttribute));
+        ITypeSymbol TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= context.Resolver.ResolveRuntimeType(typeof(InnerClassAttribute).FullName);
 
-        ITypeSymbol TypeOfSignatureAttribute => typeofSignatureAttribute ??= LoadType(typeof(IKVM.Attributes.SignatureAttribute));
+        ITypeSymbol TypeOfImplementsAttribute => typeofImplementsAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ImplementsAttribute).FullName);
 
-        ITypeSymbol TypeOfInnerClassAttribute => typeofInnerClassAttribute ??= LoadType(typeof(InnerClassAttribute));
+        ITypeSymbol TypeOfGhostInterfaceAttribute => typeofGhostInterfaceAttribute ??= context.Resolver.ResolveRuntimeType(typeof(GhostInterfaceAttribute).FullName);
 
-        ITypeSymbol TypeOfImplementsAttribute => typeofImplementsAttribute ??= LoadType(typeof(ImplementsAttribute));
+        ITypeSymbol TypeOfExceptionIsUnsafeForMappingAttribute => typeofExceptionIsUnsafeForMappingAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ExceptionIsUnsafeForMappingAttribute).FullName);
 
-        ITypeSymbol TypeOfGhostInterfaceAttribute => typeofGhostInterfaceAttribute ??= LoadType(typeof(GhostInterfaceAttribute));
+        ITypeSymbol TypeOfThrowsAttribute => typeofThrowsAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ThrowsAttribute).FullName);
 
-        ITypeSymbol TypeOfExceptionIsUnsafeForMappingAttribute => typeofExceptionIsUnsafeForMappingAttribute ??= LoadType(typeof(ExceptionIsUnsafeForMappingAttribute));
+        ITypeSymbol TypeOfHideFromJavaAttribute => typeofHideFromJavaAttribute ??= context.Resolver.ResolveRuntimeType(typeof(HideFromJavaAttribute).FullName);
 
-        ITypeSymbol TypeOfThrowsAttribute => typeofThrowsAttribute ??= LoadType(typeof(ThrowsAttribute));
+        ITypeSymbol TypeOfHideFromJavaFlags => typeofHideFromJavaFlags ??= context.Resolver.ResolveRuntimeType(typeof(HideFromJavaFlags).FullName);
 
-        ITypeSymbol TypeOfHideFromJavaAttribute => typeofHideFromJavaAttribute ??= LoadType(typeof(HideFromJavaAttribute));
+        ITypeSymbol TypeOfNoPackagePrefixAttribute => typeofNoPackagePrefixAttribute ??= context.Resolver.ResolveRuntimeType(typeof(NoPackagePrefixAttribute).FullName);
 
-        ITypeSymbol TypeOfHideFromJavaFlags => typeofHideFromJavaFlags ??= LoadType(typeof(HideFromJavaFlags));
+        ITypeSymbol TypeOfAnnotationAttributeAttribute => typeofAnnotationAttributeAttribute ??= context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName);
 
-        ITypeSymbol TypeOfNoPackagePrefixAttribute => typeofNoPackagePrefixAttribute ??= LoadType(typeof(NoPackagePrefixAttribute));
+        ITypeSymbol TypeOfNonNestedInnerClassAttribute => typeofNonNestedInnerClassAttribute ??= context.Resolver.ResolveRuntimeType(typeof(NonNestedInnerClassAttribute).FullName);
 
-        ITypeSymbol TypeOfAnnotationAttributeAttribute => typeofAnnotationAttributeAttribute ??= LoadType(typeof(AnnotationAttributeAttribute));
+        ITypeSymbol TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= context.Resolver.ResolveRuntimeType(typeof(NonNestedOuterClassAttribute).FullName);
 
-        ITypeSymbol TypeOfNonNestedInnerClassAttribute => typeofNonNestedInnerClassAttribute ??= LoadType(typeof(NonNestedInnerClassAttribute));
+        ITypeSymbol TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.EnclosingMethodAttribute).FullName);
 
-        ITypeSymbol TypeOfNonNestedOuterClassAttribute => typeofNonNestedOuterClassAttribute ??= LoadType(typeof(NonNestedOuterClassAttribute));
+        ITypeSymbol TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.MethodParametersAttribute).FullName);
 
-        ITypeSymbol TypeOfEnclosingMethodAttribute => typeofEnclosingMethodAttribute ??= LoadType(typeof(IKVM.Attributes.EnclosingMethodAttribute));
+        ITypeSymbol TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute).FullName);
 
-        ITypeSymbol TypeOfMethodParametersAttribute => typeofMethodParametersAttribute ??= LoadType(typeof(IKVM.Attributes.MethodParametersAttribute));
-
-        ITypeSymbol TypeOfRuntimeVisibleTypeAnnotationsAttribute => typeofRuntimeVisibleTypeAnnotationsAttribute ??= LoadType(typeof(IKVM.Attributes.RuntimeVisibleTypeAnnotationsAttribute));
-
-        ITypeSymbol TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= LoadType(typeof(ConstantPoolAttribute));
+        ITypeSymbol TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ConstantPoolAttribute).FullName);
 
         ITypeSymbol TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName);
+
+        ITypeSymbol TypeOfCustomAssemblyClassLoaderAttribute => typeofCustomAssemblyClassLoaderAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute).FullName);
 
         ICustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([]), []);
 
         ICustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk]);
-
-        /// <summary>
-        /// Loads the given managed type from the runtime assembly.
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        ITypeSymbol LoadType(System.Type t)
-        {
-            return context.Resolver.ResolveRuntimeType(t.FullName);
-        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -320,7 +301,7 @@ namespace IKVM.Runtime
             GetAttributeArgsAndTypes(loader, attr, out var argTypes, out var args);
             if (attr.Type != null)
             {
-                var t = context.Resolver.ResolveCoreType(attr.Type);
+                var t = context.Resolver.ResolveType(attr.Type);
                 var ci = t.GetConstructor(argTypes);
                 if (ci == null)
                     throw new InvalidOperationException($"Constructor missing: {attr.Type}::<init>{attr.Sig}");
@@ -404,13 +385,13 @@ namespace IKVM.Runtime
 
         internal void SetCompilerGenerated(ITypeSymbolBuilder tb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
+            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
             tb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
-        internal void SetCompilerGenerated(IMethodSymbolBuilder mb)
+        internal void SetCompilerGenerated(IMethodBaseSymbolBuilder mb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
+            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
             mb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
@@ -419,12 +400,7 @@ namespace IKVM.Runtime
             tb.SetCustomAttribute(GetEditorBrowsableNever());
         }
 
-        internal void SetEditorBrowsableNever(IConstructorSymbolBuilder mb)
-        {
-            mb.SetCustomAttribute(GetEditorBrowsableNever());
-        }
-
-        internal void SetEditorBrowsableNever(IMethodSymbolBuilder mb)
+        internal void SetEditorBrowsableNever(IMethodBaseSymbolBuilder mb)
         {
             mb.SetCustomAttribute(GetEditorBrowsableNever());
         }
@@ -434,7 +410,7 @@ namespace IKVM.Runtime
             pb.SetCustomAttribute(GetEditorBrowsableNever());
         }
 
-        internal void SetDeprecatedAttribute(IMethodSymbolBuilder mb)
+        internal void SetDeprecatedAttribute(IMethodBaseSymbolBuilder mb)
         {
             deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             mb.SetCustomAttribute(deprecatedAttribute);
@@ -458,17 +434,7 @@ namespace IKVM.Runtime
             pb.SetCustomAttribute(deprecatedAttribute);
         }
 
-        internal void SetThrowsAttribute(IConstructorSymbolBuilder mb, string[] exceptions)
-        {
-            if (exceptions != null && exceptions.Length != 0)
-            {
-                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor([context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]);
-                exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
-                mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(throwsAttribute, [exceptions]));
-            }
-        }
-
-        internal void SetThrowsAttribute(IMethodSymbolBuilder mb, string[] exceptions)
+        internal void SetThrowsAttribute(IMethodBaseSymbolBuilder mb, string[] exceptions)
         {
             if (exceptions != null && exceptions.Length != 0)
             {
@@ -498,7 +464,7 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-        internal void HideFromReflection(IMethodSymbolBuilder mb)
+        internal void HideFromReflection(IMethodBaseSymbolBuilder mb)
         {
             mb.SetCustomAttribute(HideFromReflectionBuilder);
         }
@@ -518,17 +484,12 @@ namespace IKVM.Runtime
             typeBuilder.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
 
-        internal void HideFromJava(IConstructorSymbolBuilder ctor)
+        internal void HideFromJava(IMethodBaseSymbolBuilder ctor)
         {
             ctor.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
 
-        internal void HideFromJava(IMethodSymbolBuilder mb)
-        {
-            mb.SetCustomAttribute(HideFromJavaAttributeBuilder);
-        }
-
-        internal void HideFromJava(IMethodSymbolBuilder mb, HideFromJavaFlags flags)
+        internal void HideFromJava(IMethodBaseSymbolBuilder mb, HideFromJavaFlags flags)
         {
             mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [flags]));
         }
@@ -538,14 +499,10 @@ namespace IKVM.Runtime
             fb.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
 
-#if IMPORTER
-
         internal void HideFromJava(IPropertySymbolBuilder pb)
         {
             pb.SetCustomAttribute(HideFromJavaAttributeBuilder);
         }
-
-#endif
 
         internal bool IsHideFromJava(ITypeSymbol type)
         {
@@ -584,8 +541,6 @@ namespace IKVM.Runtime
             return HideFromJavaFlags.None;
         }
 
-#if IMPORTER
-
         internal void SetImplementsAttribute(ITypeSymbolBuilder typeBuilder, RuntimeJavaType[] ifaceWrappers)
         {
             var interfaces = new string[ifaceWrappers.Length];
@@ -597,8 +552,6 @@ namespace IKVM.Runtime
 
             typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(implementsAttribute, [interfaces]));
         }
-
-#endif
 
         internal bool IsGhostInterface(ITypeSymbol type)
         {
@@ -749,18 +702,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal void SetModifiers(IConstructorSymbolBuilder cb, Modifiers modifiers, bool isInternal)
-        {
-            ICustomAttributeBuilder customAttributeBuilder;
-            if (isInternal)
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
-            else
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
-
-            cb.SetCustomAttribute(customAttributeBuilder);
-        }
-
-        internal void SetModifiers(IMethodSymbolBuilder mb, Modifiers modifiers, bool isInternal)
+        internal void SetModifiers(IMethodBaseSymbolBuilder mb, Modifiers modifiers, bool isInternal)
         {
             ICustomAttributeBuilder customAttributeBuilder;
             if (isInternal)
@@ -804,7 +746,7 @@ namespace IKVM.Runtime
             tb.SetCustomAttribute(customAttributeBuilder);
         }
 
-        internal void SetNameSig(IMethodSymbolBuilder mb, string name, string sig)
+        internal void SetNameSig(IMethodBaseSymbolBuilder mb, string name, string sig)
         {
             var customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfNameSigAttribute.GetConstructor([context.Types.String, context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(name), UnicodeUtil.EscapeInvalidSurrogates(sig)]);
             mb.SetCustomAttribute(customAttributeBuilder);
@@ -831,7 +773,7 @@ namespace IKVM.Runtime
             moduleBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(sourceFileAttribute, [filename]));
         }
 
-        internal void SetLineNumberTable(IMethodSymbolBuilder mb, IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter writer)
+        internal void SetLineNumberTable(IMethodBaseSymbolBuilder mb, IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter writer)
         {
             object arg;
             IConstructorSymbol con;
@@ -869,13 +811,13 @@ namespace IKVM.Runtime
             fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
         }
 
-        internal void SetSignatureAttribute(IMethodSymbolBuilder mb, string signature)
+        internal void SetSignatureAttribute(IMethodBaseSymbolBuilder mb, string signature)
         {
             signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor([context.Types.String]);
             mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
         }
 
-        internal void SetMethodParametersAttribute(IMethodSymbolBuilder mb, Modifiers[] modifiers)
+        internal void SetMethodParametersAttribute(IMethodBaseSymbolBuilder mb, Modifiers[] modifiers)
         {
             methodParametersAttribute ??= TypeOfMethodParametersAttribute.GetConstructor([TypeOfModifiers.MakeArrayType()]);
             mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(methodParametersAttribute, [modifiers]));
@@ -901,7 +843,7 @@ namespace IKVM.Runtime
             fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
-        internal void SetRuntimeVisibleTypeAnnotationsAttribute(IMethodSymbolBuilder mb, ref readonly TypeAnnotationTable table)
+        internal void SetRuntimeVisibleTypeAnnotationsAttribute(IMethodBaseSymbolBuilder mb, ref readonly TypeAnnotationTable table)
         {
             var builder = new BlobBuilder();
             var encoder = new TypeAnnotationTableEncoder(builder);
@@ -1080,9 +1022,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal System.Reflection.AssemblyName[] GetInternalsVisibleToAttributes(IAssemblySymbol assembly)
+        internal AssemblyNameInfo[] GetInternalsVisibleToAttributes(IAssemblySymbol assembly)
         {
-            var list = new List<System.Reflection.AssemblyName>();
+            var list = new List<AssemblyNameInfo>();
 
             foreach (var cad in assembly.GetCustomAttributes())
             {
@@ -1090,7 +1032,7 @@ namespace IKVM.Runtime
                 {
                     try
                     {
-                        list.Add(new System.Reflection.AssemblyName((string)cad.ConstructorArguments[0].Value));
+                        list.Add(new AssemblyName((string)cad.ConstructorArguments[0].Value).Pack());
                     }
                     catch
                     {
@@ -1141,8 +1083,6 @@ namespace IKVM.Runtime
             return null;
         }
 
-#if IMPORTER
-
         internal void SetRemappedClass(IAssemblySymbolBuilder assemblyBuilder, string name, ITypeSymbol shadowType)
         {
             var remappedClassAttribute = TypeOfRemappedClassAttribute.GetConstructor([context.Types.String, context.Types.Type]);
@@ -1167,8 +1107,6 @@ namespace IKVM.Runtime
             typeBuilder.SetCustomAttribute(cab);
         }
 
-#endif
-
         internal void SetRuntimeCompatibilityAttribute(IAssemblySymbolBuilder assemblyBuilder)
         {
             var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName);
@@ -1179,6 +1117,12 @@ namespace IKVM.Runtime
         {
             var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName);
             var cab = context.Resolver.Symbols.CreateCustomAttribute(internalsVisibleToAttribute.GetConstructor([context.Types.String]), [assemblyName]);
+            assemblyBuilder.SetCustomAttribute(cab);
+        }
+
+        internal void SetCustomAssemblyClassLoaderAttribute(IAssemblySymbolBuilder assemblyBuilder, ITypeSymbol classLoaderType)
+        {
+            var cab = context.Resolver.Symbols.CreateCustomAttribute(TypeOfCustomAssemblyClassLoaderAttribute.GetConstructor([context.Types.Type]), [classLoaderType]);
             assemblyBuilder.SetCustomAttribute(cab);
         }
 

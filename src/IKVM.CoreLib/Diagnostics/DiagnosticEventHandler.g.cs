@@ -1639,6 +1639,18 @@ namespace IKVM.CoreLib.Diagnostics
         }
 
         /// <summary>
+        /// The 'CoreAssemblyVersionMismatch' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.
+        /// </remarks>
+        public void CoreAssemblyVersionMismatch(string arg0, string arg1)
+        {
+            if (IsEnabled(Diagnostic.CoreAssemblyVersionMismatch))
+                Report(Diagnostic.CoreAssemblyVersionMismatch.Event([arg0, arg1]));
+        }
+
+        /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
         /// </summary>
         /// <remarks>

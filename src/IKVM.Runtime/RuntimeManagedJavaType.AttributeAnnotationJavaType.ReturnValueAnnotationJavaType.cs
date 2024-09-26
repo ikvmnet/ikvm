@@ -66,7 +66,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                     this.fakeType = context.FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
 #elif !FIRST_PASS
-                    this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
+                    this.fakeType = context.Resolver.ResolveBaseType(typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).FullName).MakeGenericType(declaringType.attributeType);
 #endif
                     this.declaringType = declaringType;
                 }
@@ -138,7 +138,7 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
                     {
 
                     }

@@ -103,7 +103,6 @@ namespace IKVM.Tools.Importer
             ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
             ilgen.DoEmit();
             tb.Complete();
-
             genericEnumEnumType = tb;
         }
 
@@ -112,8 +111,6 @@ namespace IKVM.Tools.Importer
             var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
             var gtpb = tb.DefineGenericParameters("T")[0];
             gtpb.SetBaseTypeConstraint(context.Types.Enum);
-            tb.Complete();
-
             genericEnumEnumType = tb;
         }
 
@@ -122,7 +119,6 @@ namespace IKVM.Tools.Importer
             var tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
             tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.Attribute);
             tb.Complete();
-
             return tb;
         }
 

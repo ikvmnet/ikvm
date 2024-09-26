@@ -14,18 +14,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     class IkvmReflectionParameterBuilderInfo : ParameterInfo
     {
 
+        readonly IIkvmReflectionMemberSymbol _member;
         readonly ParameterBuilder _builder;
         readonly Func<object?> _getDefaultValue;
 
         /// <summary>
         /// Initialies a new instance.
         /// </summary>
+        /// <param name="member"></param>
         /// <param name="builder"></param>
-        /// <param name="getParameterType"></param>
         /// <param name="getDefaultValue"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionParameterBuilderInfo(ParameterBuilder builder, Func<object?> getDefaultValue)
+        public IkvmReflectionParameterBuilderInfo(IIkvmReflectionMemberSymbol member, ParameterBuilder builder, Func<object?> getDefaultValue)
         {
+            _member = member ?? throw new ArgumentNullException(nameof(member));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _getDefaultValue = getDefaultValue ?? throw new ArgumentNullException(nameof(getDefaultValue));
         }
@@ -34,7 +36,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public override ParameterAttributes Attributes => (ParameterAttributes)_builder.Attributes;
 
         /// <inheritdoc />
-        public override MemberInfo Member => throw new NotImplementedException();
+        public override MemberInfo Member => _member.UnderlyingMember;
 
         /// <inheritdoc />
         public override Type ParameterType => ((MethodBase)Member).GetParameters()[Position].ParameterType;
@@ -46,7 +48,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public override string? Name => _builder.Name;
 
         /// <inheritdoc />
-        public override int Position => _builder.Position;
+        public override int Position => _builder.Position - 1;
 
         /// <inheritdoc />
         public override int MetadataToken => throw new NotImplementedException();

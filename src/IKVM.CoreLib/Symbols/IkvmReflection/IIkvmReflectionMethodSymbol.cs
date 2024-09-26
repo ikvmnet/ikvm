@@ -18,6 +18,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         IIkvmReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter);
 
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionMethodSymbol"/> for the given generic version of this method definition.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        IIkvmReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method);
+
     }
 
 }

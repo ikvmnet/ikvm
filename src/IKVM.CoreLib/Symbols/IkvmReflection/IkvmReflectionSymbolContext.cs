@@ -32,7 +32,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(System.Reflection.AssemblyName name)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
@@ -41,7 +41,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(System.Reflection.AssemblyName name, ICustomAttributeBuilder[]? assemblyAttributes)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name, ICustomAttributeBuilder[]? assemblyAttributes)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
@@ -246,27 +246,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IIkvmReflectionParameterSymbolBuilder"/> for the specified <see cref="ParameterBuilder"/>.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
-        {
-            return GetOrCreateModuleSymbol((ModuleBuilder)parameter.Module).GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <summary>
         /// Gets or creates a <see cref="IIkvmReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
         public IIkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            return field switch
-            {
-                FieldBuilder builder => GetOrCreateFieldSymbol(builder),
-                _ => GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field)
-            };
+            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -340,25 +326,52 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs)
         {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs));
+            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IFieldSymbol[] namedFields, object?[] fieldValues)
         {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedFields.Unpack(), fieldValues));
+            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedFields.Unpack(), UnpackArguments(fieldValues)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues)
         {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues));
+            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues, IFieldSymbol[] namedFields, object?[] fieldValues)
         {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues, namedFields.Unpack(), fieldValues));
+            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues), namedFields.Unpack(), UnpackArguments(fieldValues)));
+        }
+
+        /// <summary>
+        /// Unpacks a single constructor argument.
+        /// </summary>
+        /// <param name="constructorArg"></param>
+        /// <returns></returns>
+        object? UnpackArgument(object? constructorArg)
+        {
+            if (constructorArg is ITypeSymbol type)
+                return type.Unpack();
+
+            return constructorArg;
+        }
+
+        /// <summary>
+        /// Unpacks a set of constructor arguments.
+        /// </summary>
+        /// <param name="constructorArgs"></param>
+        /// <returns></returns>
+        object?[] UnpackArguments(object?[] constructorArgs)
+        {
+            var l = new object?[constructorArgs.Length];
+            for (int i = 0; i < constructorArgs.Length; i++)
+                l[i] = UnpackArgument(constructorArgs[i]);
+
+            return l;
         }
 
     }

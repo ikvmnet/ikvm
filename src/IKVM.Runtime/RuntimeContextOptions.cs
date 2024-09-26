@@ -10,16 +10,24 @@
         internal const string DefaultDynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected";
 #endif
 
+        readonly bool bootstrap;
         readonly string dynamicAssemblySuffixAndPublicKey;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="bootstrap"></param>
         /// <param name="dynamicAssemblySuffixAndPublicKey"></param>
-        public RuntimeContextOptions(string dynamicAssemblySuffixAndPublicKey = null)
+        public RuntimeContextOptions(bool bootstrap = false, string dynamicAssemblySuffixAndPublicKey = null)
         {
+            this.bootstrap = bootstrap;
             this.dynamicAssemblySuffixAndPublicKey = dynamicAssemblySuffixAndPublicKey ?? DefaultDynamicAssemblySuffixAndPublicKey;
         }
+
+        /// <summary>
+        /// Gets whether or not bootstrap mode is enabled.
+        /// </summary>
+        public bool Bootstrap => bootstrap;
 
         /// <summary>
         /// Gets the suffix and public key to add to dynamically generated assemblies.

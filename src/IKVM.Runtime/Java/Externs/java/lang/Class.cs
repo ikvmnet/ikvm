@@ -72,7 +72,7 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.ResolveType(type));
+                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.ImportType(type));
 
                 if (tw == null)
                 {

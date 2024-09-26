@@ -56,7 +56,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                 this.fakeType = context.FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
-                this.fakeType = context.Resolver.ResolveType(typeof(ikvm.@internal.EnumEnum<>)).MakeGenericType(enumType);
+                this.fakeType = context.Resolver.ImportType(typeof(ikvm.@internal.EnumEnum<>)).MakeGenericType(enumType);
 #endif
             }
 

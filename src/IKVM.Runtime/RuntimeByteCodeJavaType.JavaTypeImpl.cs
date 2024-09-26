@@ -1853,7 +1853,7 @@ namespace IKVM.Runtime
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
@@ -2461,7 +2461,7 @@ namespace IKVM.Runtime
                     }
 
                     var m = classFile.Methods[index];
-                    IMethodSymbolBuilder method;
+                    IMethodBaseSymbolBuilder method;
                     bool setModifiers = false;
 
                     if (methods[index].HasCallerID && (m.Modifiers & Modifiers.VarArgs) != 0)
@@ -2567,7 +2567,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            IMethodSymbolBuilder GenerateConstructor(RuntimeJavaMethod mw)
+            IConstructorSymbolBuilder GenerateConstructor(RuntimeJavaMethod mw)
             {
                 return mw.GetDefineMethodHelper().DefineConstructor(wrapper, typeBuilder, GetMethodAccess(mw) | MethodAttributes.HideBySig);
             }

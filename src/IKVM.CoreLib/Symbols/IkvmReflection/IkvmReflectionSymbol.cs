@@ -349,12 +349,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         [return: NotNullIfNotNull(nameof(@event))]
         public virtual IIkvmReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
         {
-            return @event == null ? null : _context.GetOrCreateEventSymbol(@event);
+            if (@event is null)
+                return null;
+
+            return _context.GetOrCreateEventSymbol(@event);
         }
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(@event))]
-        public virtual IIkvmReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
+        public virtual IIkvmReflectionEventSymbolBuilder? ResolveEventSymbol(EventBuilder @event)
         {
             if (@event is null)
                 throw new ArgumentNullException(nameof(@event));
@@ -383,17 +386,36 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         [return: NotNullIfNotNull(nameof(parameter))]
         public virtual IIkvmReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
         {
-            return parameter == null ? null : _context.GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(parameter))]
-        public virtual IIkvmReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
-        {
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
             return _context.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IIkvmReflectionParameterSymbolBuilder? ResolveParameterSymbol(IIkvmReflectionMethodBaseSymbolBuilder method, ParameterBuilder parameter)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            if (parameter is null)
+                return null;
+
+            return method.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IIkvmReflectionParameterSymbolBuilder? ResolveParameterSymbol(IIkvmReflectionPropertySymbolBuilder property, ParameterBuilder parameter)
+        {
+            if (property is null)
+                throw new ArgumentNullException(nameof(property));
+
+            if (parameter is null)
+                return null;
+
+            return property.GetOrCreateParameterSymbol(parameter);
         }
 
         /// <inheritdoc />

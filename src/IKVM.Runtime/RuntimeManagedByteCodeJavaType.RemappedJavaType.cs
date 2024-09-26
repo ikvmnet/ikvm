@@ -58,7 +58,7 @@ namespace IKVM.Runtime
                 base(context, name, type)
             {
                 var attr = Context.AttributeHelper.GetRemappedType(type) ?? throw new InvalidOperationException();
-                remappedType = Context.Resolver.ResolveType(attr.Type);
+                remappedType = Context.Resolver.ImportType(attr.Type);
             }
 
             internal override ITypeSymbol TypeAsTBD => remappedType;

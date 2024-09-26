@@ -2,9 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 
@@ -17,8 +15,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     abstract class IkvmReflectionMemberSymbol : IkvmReflectionSymbol, IIkvmReflectionMemberSymbol
     {
 
-        readonly IIkvmReflectionModuleSymbol _resolvingModule;
-        readonly IIkvmReflectionTypeSymbol? _resolvingType;
+        readonly IIkvmReflectionModuleSymbol _module;
+        readonly IIkvmReflectionTypeSymbol? _type;
 
         /// <summary>
         /// Initializes a new instance.
@@ -30,8 +28,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IkvmReflectionMemberSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol? resolvingType) :
             base(context)
         {
-            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingType = resolvingType;
+            _module = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _type = resolvingType;
         }
 
         /// <inheritdoc />
@@ -40,12 +38,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <summary>
         /// Gets the <see cref="IIkvmReflectionModuleSymbol" /> which contains the metadata of this member.
         /// </summary>
-        public IIkvmReflectionModuleSymbol ResolvingModule => _resolvingModule;
+        public IIkvmReflectionModuleSymbol ResolvingModule => _module;
 
         /// <summary>
         /// Gets the <see cref="IIkvmReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
         /// </summary>
-        public IIkvmReflectionTypeSymbol? ResolvingType => _resolvingType;
+        public IIkvmReflectionTypeSymbol? ResolvingType => _type;
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(type))]
@@ -57,11 +55,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (type == UnderlyingMember)
                 return (IIkvmReflectionTypeSymbol)this;
 
-            if (_resolvingType != null && type == _resolvingType.UnderlyingType)
-                return _resolvingType;
+            if (_type != null && type == _type.UnderlyingType)
+                return _type;
 
-            if (type.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateTypeSymbol(type);
+            if (type.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateTypeSymbol(type);
 
             return base.ResolveTypeSymbol(type);
         }
@@ -76,8 +74,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (ctor == UnderlyingMember)
                 return (IIkvmReflectionConstructorSymbol)this;
 
-            if (ctor.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
+            if (ctor.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateConstructorSymbol(ctor);
 
             return base.ResolveConstructorSymbol(ctor);
         }
@@ -92,8 +90,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (method == UnderlyingMember)
                 return (IIkvmReflectionMethodSymbol)this;
 
-            if (method.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateMethodSymbol(method);
+            if (method.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateMethodSymbol(method);
 
             return base.ResolveMethodSymbol(method);
         }
@@ -108,8 +106,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (field == UnderlyingMember)
                 return (IIkvmReflectionFieldSymbol)this;
 
-            if (field.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateFieldSymbol(field);
+            if (field.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateFieldSymbol(field);
 
             return base.ResolveFieldSymbol(field);
         }
@@ -124,8 +122,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (property == UnderlyingMember)
                 return (IIkvmReflectionPropertySymbol)this;
 
-            if (property.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreatePropertySymbol(property);
+            if (property.Module == _module.UnderlyingModule)
+                return _module.GetOrCreatePropertySymbol(property);
 
             return base.ResolvePropertySymbol(property);
         }
@@ -140,8 +138,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (@event == UnderlyingMember)
                 return (IIkvmReflectionEventSymbol)this;
 
-            if (@event.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateEventSymbol(@event);
+            if (@event.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateEventSymbol(@event);
 
             return base.ResolveEventSymbol(@event);
         }
@@ -153,8 +151,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
-            if (parameter.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+            if (parameter.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateParameterSymbol(parameter);
 
             return base.ResolveParameterSymbol(parameter);
         }

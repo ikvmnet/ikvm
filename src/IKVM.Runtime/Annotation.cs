@@ -34,7 +34,7 @@ namespace IKVM.Runtime
     abstract class Annotation
     {
 
-#if IMPORTER
+#if !EXPORTER
 
         internal static Annotation LoadAssemblyCustomAttribute(RuntimeClassLoader loader, object[] def)
         {
@@ -59,10 +59,6 @@ namespace IKVM.Runtime
 
             return null;
         }
-
-#endif
-
-#if !EXPORTER
 
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
@@ -303,7 +299,7 @@ namespace IKVM.Runtime
         }
 
         internal abstract void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IMethodSymbolBuilder mb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation);
         internal abstract void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation);
         internal abstract void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation);
         internal abstract void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation);

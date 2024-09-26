@@ -145,15 +145,28 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(parameter))]
-        public override IIkvmReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
+        public override IIkvmReflectionParameterSymbolBuilder? ResolveParameterSymbol(IIkvmReflectionMethodBaseSymbolBuilder method, ParameterBuilder parameter)
         {
             if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
+                return null;
 
             if (parameter.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+                return _resolvingModule.GetOrCreateParameterSymbol(method, parameter);
 
-            return base.ResolveParameterSymbol(parameter);
+            return base.ResolveParameterSymbol(method, parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public override IIkvmReflectionParameterSymbolBuilder? ResolveParameterSymbol(IIkvmReflectionPropertySymbolBuilder property, ParameterBuilder parameter)
+        {
+            if (parameter is null)
+                return null;
+
+            if (parameter.Module == _resolvingModule.UnderlyingModule)
+                return _resolvingModule.GetOrCreateParameterSymbol(property, parameter);
+
+            return base.ResolveParameterSymbol(property, parameter);
         }
 
         #endregion

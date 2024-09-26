@@ -72,21 +72,23 @@ namespace IKVM.Runtime
             var parameters = mw.GetParameters();
             var parameterTypes = new ITypeSymbol[parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam];
             var modopt = new ITypeSymbol[parameterTypes.Length][];
+
             if (firstParameter != null)
             {
                 parameterTypes[0] = firstParameter;
                 modopt[0] = [];
             }
+
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameterTypes[i + firstParam] = mustBePublic
-                    ? parameters[i].TypeAsPublicSignatureType
-                    : parameters[i].TypeAsSignatureType;
+                parameterTypes[i + firstParam] = mustBePublic ? parameters[i].TypeAsPublicSignatureType : parameters[i].TypeAsSignatureType;
                 modopt[i + firstParam] = RuntimeByteCodeJavaType.GetModOpt(context, parameters[i], mustBePublic);
             }
+
             if (mw.HasCallerID)
             {
                 parameterTypes[parameterTypes.Length - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
+                modopt[parameterTypes.Length - 1] = [];
             }
 
             var returnType = mustBePublic ? mw.ReturnType.TypeAsPublicSignatureType : mw.ReturnType.TypeAsSignatureType;
@@ -94,14 +96,35 @@ namespace IKVM.Runtime
             return tb.DefineMethod(name, attribs, System.Reflection.CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
         }
 
-        internal IMethodSymbolBuilder DefineConstructor(RuntimeByteCodeJavaType context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
+        internal IConstructorSymbolBuilder DefineConstructor(RuntimeByteCodeJavaType context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
         {
-            return DefineConstructor(context.ClassLoader.GetTypeWrapperFactory(), tb, attribs);
+            return DefineConstructor(context.ClassLoader.GetTypeWrapperFactory(), tb, attribs, false);
         }
 
-        internal IMethodSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
+        internal IConstructorSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
         {
-            return DefineMethod(context, tb, ConstructorInfo.ConstructorName, attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName);
+            return DefineConstructor(context, tb, attribs, false);
+        }
+
+        internal IConstructorSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, bool mustBePublic)
+        {
+            // we add optional modifiers to make the signature unique
+            var parameters = mw.GetParameters();
+            var parameterTypes = new ITypeSymbol[parameters.Length + (mw.HasCallerID ? 1 : 0)];
+            var modopt = new ITypeSymbol[parameterTypes.Length][];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                parameterTypes[i] = mustBePublic ? parameters[i].TypeAsPublicSignatureType : parameters[i].TypeAsSignatureType;
+                modopt[i] = RuntimeByteCodeJavaType.GetModOpt(context, parameters[i], mustBePublic);
+            }
+
+            if (mw.HasCallerID)
+            {
+                parameterTypes[parameterTypes.Length - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
+                modopt[parameterTypes.Length - 1] = [];
+            }
+
+            return tb.DefineConstructor(attribs, System.Reflection.CallingConventions.Standard, parameterTypes, null, modopt);
         }
 
     }

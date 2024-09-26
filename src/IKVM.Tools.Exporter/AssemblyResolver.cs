@@ -28,15 +28,15 @@ using System.IO;
 using IKVM.Reflection;
 using IKVM.Runtime;
 
-namespace IKVM.Tools.Importer
+namespace IKVM.Tools.Exporter
 {
 
     sealed class AssemblyResolver
     {
 
-        readonly List<string> libpath = new List<string>();
-        Universe universe;
-        Version coreLibVersion;
+        private readonly List<string> libpath = new List<string>();
+        private Universe universe;
+        private Version coreLibVersion;
 
         internal enum WarningId
         {

@@ -32,6 +32,8 @@ using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols;
 
 using static System.Diagnostics.DebuggableAttribute;
+using System.Collections.Immutable;
+
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -137,10 +139,12 @@ namespace IKVM.Runtime
                 {
                     if (attr.AssemblyName == name)
                     {
-                        var n = new AssemblyName(name);
+                        byte[] kp = [];
 #if NETFRAMEWORK
-                        n.KeyPair = DynamicClassLoader.ForgedKeyPair.Instance;
+                        kp = DynamicClassLoader.ForgedKeyPair.Instance.PublicKey;
 #endif
+
+                        var n = new AssemblyNameInfo(name, publicKeyOrToken: kp.ToImmutableArray());
                         return new DynamicClassLoader(context, loader.Diagnostics, DynamicClassLoader.CreateModuleBuilder(context, n), true);
                     }
                 }
@@ -442,8 +446,7 @@ namespace IKVM.Runtime
 
         internal static IModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
-            var name = new AssemblyName("jniproxy");
-            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, name, AssemblyBuilderAccess.Run, null);
+            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyNameInfo("jniproxy"), null);
             return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
         }
 
@@ -515,24 +518,21 @@ namespace IKVM.Runtime
 
         public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context)
         {
-            AssemblyName name = new AssemblyName();
-            name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
-            return CreateModuleBuilder(context, name);
+            return CreateModuleBuilder(context, new AssemblyNameInfo("ikvm_dynamic_assembly__" + (uint)Environment.TickCount));
         }
 
-        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyName name)
+        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyNameInfo name)
         {
             var now = DateTime.Now;
-            name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
+            name = new AssemblyNameInfo(name.Name, new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond));
             var attribs = new List<ICustomAttributeBuilder>();
-            var access = AssemblyBuilderAccess.Run;
 
 #if NETFRAMEWORK
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
                 attribs.Add(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(System.Security.SecurityTransparentAttribute).FullName).GetConstructor([]), []));
 #endif
 
-            var assemblyBuilder = DefineDynamicAssembly(context, name, access, attribs.ToArray());
+            var assemblyBuilder = DefineDynamicAssembly(context, name, attribs.ToArray());
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 
             // determine debugging mode
@@ -548,9 +548,9 @@ namespace IKVM.Runtime
             return moduleBuilder;
         }
 
-        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyName name, AssemblyBuilderAccess access, ICustomAttributeBuilder[] assemblyAttributes)
+        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyNameInfo name, ICustomAttributeBuilder[] assemblyAttributes)
         {
-            return context.Resolver.Symbols.DefineAssembly(name, access, assemblyAttributes);
+            return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes);
         }
 
 #endif

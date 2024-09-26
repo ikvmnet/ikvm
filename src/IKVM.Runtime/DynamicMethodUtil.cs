@@ -87,7 +87,7 @@ namespace IKVM.Runtime
     /// <returns></returns>
     static DynamicMethod CreateCore(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
     {
-        if (ReflectUtil.CanOwnDynamicMethod(owner))
+        if (ReflectUtil.CanOwnDynamicMethod(owner)) 
             return new DynamicMethod(name, returnType, paramTypes, owner);
         else
             return new DynamicMethod(name, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, returnType, paramTypes, owner.Module, true);

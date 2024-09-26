@@ -575,7 +575,7 @@ namespace IKVM.Runtime
                     parameterNames[i] = names[i];
         }
 
-        protected static IParameterSymbolBuilder[] GetParameterBuilders(IMethodSymbolBuilder mb, int parameterCount, string[] parameterNames)
+        protected static IParameterSymbolBuilder[] GetParameterBuilders(IMethodBaseSymbolBuilder mb, int parameterCount, string[] parameterNames)
         {
             var parameterBuilders = new IParameterSymbolBuilder[parameterCount];
             Dictionary<string, int> clashes = null;
@@ -909,7 +909,7 @@ namespace IKVM.Runtime
             if (tw.IsUnloadable)
             {
                 if (((RuntimeUnloadableJavaType)tw).MissingType == null)
-                    modopt = new ITypeSymbol[] { ((RuntimeUnloadableJavaType)tw).GetCustomModifier(context) };
+                    modopt = [((RuntimeUnloadableJavaType)tw).GetCustomModifier(context)];
             }
             else
             {
@@ -920,11 +920,10 @@ namespace IKVM.Runtime
                     modopt = new ITypeSymbol[tw.ArrayRank + 1];
                     modopt[0] = GetModOptHelper(tw1);
                     for (int i = 1; i < modopt.Length; i++)
-                    {
                         modopt[i] = tw.Context.Types.Array;
-                    }
                 }
             }
+
             return modopt;
         }
 

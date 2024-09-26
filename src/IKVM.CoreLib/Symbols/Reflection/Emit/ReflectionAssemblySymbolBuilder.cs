@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -187,21 +188,26 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public AssemblyName GetName()
+        public AssemblyNameInfo GetName()
         {
-            return UnderlyingAssembly.GetName();
+            return ToAssemblyName(UnderlyingAssembly.GetName());
         }
 
         /// <inheritdoc />
-        public AssemblyName GetName(bool copiedName)
+        public AssemblyNameInfo[] GetReferencedAssemblies()
         {
-            return UnderlyingAssembly.GetName(copiedName);
+            return UnderlyingAssembly.GetReferencedAssemblies().Select(i => ToAssemblyName(i)).ToArray();
         }
 
-        /// <inheritdoc />
-        public AssemblyName[] GetReferencedAssemblies()
+        /// <summary>
+        /// Transforms the <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        AssemblyNameInfo ToAssemblyName(AssemblyName n)
         {
-            return UnderlyingAssembly.GetReferencedAssemblies();
+            return new AssemblyNameInfo(n.Name ?? throw new InvalidOperationException(), n.Version, n.CultureName, n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? []);
         }
 
         /// <inheritdoc />

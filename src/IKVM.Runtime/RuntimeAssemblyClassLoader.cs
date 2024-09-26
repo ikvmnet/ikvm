@@ -75,7 +75,7 @@ namespace IKVM.Runtime
             IModuleSymbol[] modules;
             Dictionary<string, string> nameMap;
             bool hasDotNetModule;
-            System.Reflection.AssemblyName[] internalsVisibleTo;
+            AssemblyNameInfo[] internalsVisibleTo;
             string[] jarList;
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
             sun.misc.URLClassPath urlClassPath;
@@ -384,7 +384,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal bool InternalsVisibleTo(System.Reflection.AssemblyName otherName)
+            internal bool InternalsVisibleTo(AssemblyNameInfo otherName)
             {
                 if (internalsVisibleTo == null)
                     Interlocked.CompareExchange(ref internalsVisibleTo, loader.Context.AttributeHelper.GetInternalsVisibleToAttributes(assembly), null);
@@ -394,9 +394,7 @@ namespace IKVM.Runtime
                     // we match the simple name and PublicKeyToken (because the AssemblyName constructor used
                     // by GetInternalsVisibleToAttributes() only sets the PublicKeyToken, even if a PublicKey is specified)
                     if (ReflectUtil.MatchNameAndPublicKeyToken(name, otherName))
-                    {
                         return true;
-                    }
                 }
 
                 return false;
@@ -1176,7 +1174,7 @@ namespace IKVM.Runtime
 
             var attribs = assembly.GetCustomAttribute(Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName), false);
             if (attribs is not null)
-                return new CustomAssemblyClassLoaderAttribute((System.Type)attribs.Value.ConstructorArguments[0].Value);
+                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).AsReflection();
 
             return null;
         }
@@ -1286,7 +1284,7 @@ namespace IKVM.Runtime
 
             readonly ConstructorInfo ctor;
             readonly object classLoader;
-            readonly Assembly assembly;
+            readonly IAssemblySymbol assembly;
 
             /// <summary>
             /// Initializes a new instance.
@@ -1294,7 +1292,7 @@ namespace IKVM.Runtime
             /// <param name="ctor"></param>
             /// <param name="classLoader"></param>
             /// <param name="assembly"></param>
-            internal CustomClassLoaderCtorCaller(ConstructorInfo ctor, object classLoader, Assembly assembly)
+            internal CustomClassLoaderCtorCaller(ConstructorInfo ctor, object classLoader, IAssemblySymbol assembly)
             {
                 this.ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
                 this.classLoader = classLoader ?? throw new ArgumentNullException(nameof(classLoader));
@@ -1303,7 +1301,7 @@ namespace IKVM.Runtime
 
             public object run()
             {
-                ctor.Invoke(classLoader, new object[] { assembly });
+                ctor.Invoke(classLoader, [assembly.AsReflection()]);
                 return null;
             }
         }

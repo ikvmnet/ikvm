@@ -1,8 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-
-using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -68,11 +65,17 @@ namespace IKVM.CoreLib.Symbols
 
         IModuleSymbol[] GetModules(bool getResourceModules);
 
-        AssemblyName GetName();
+        /// <summary>
+        /// Gets an <see cref="AssemblyNameInfo"/> for this assembly.
+        /// </summary>
+        /// <returns></returns>
+        AssemblyNameInfo GetName();
 
-        AssemblyName GetName(bool copiedName);
-
-        AssemblyName[] GetReferencedAssemblies();
+        /// <summary>
+        /// Gets the <see cref="AssemblyNameInfo"/> objects for all the assemblies referenced by this assembly.
+        /// </summary>
+        /// <returns></returns>
+        AssemblyNameInfo[] GetReferencedAssemblies();
 
         ITypeSymbol? GetType(string name, bool throwOnError);
 

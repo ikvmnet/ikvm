@@ -1245,6 +1245,16 @@ namespace IKVM.CoreLib.Diagnostics.Tracing
         public void InvalidZip(string name) => WriteEvent(5060, name);
 
         /// <summary>
+        /// The 'CoreAssemblyVersionMismatch' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.
+        /// </remarks>
+        [Event(5061, Message = "Unable to load assembly \'{-1}\' as it depends on a higher version of {-1} than the" +
+    " one currently loaded.", Level = EventLevel.Critical)]
+        public void CoreAssemblyVersionMismatch(string arg0, string arg1) => WriteEvent(5061, arg0, arg1);
+
+        /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
         /// </summary>
         /// <remarks>

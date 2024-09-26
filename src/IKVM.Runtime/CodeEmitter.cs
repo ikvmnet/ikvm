@@ -61,11 +61,11 @@ namespace IKVM.Runtime
 
         public IMethodSymbol VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
 
-        public IMethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public IMethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public IMethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveCoreType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
+        public IMethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
 
         public bool ExperimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 
@@ -74,19 +74,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public CodeEmitter Create(IMethodSymbolBuilder method)
+        public CodeEmitter Create(IMethodBaseSymbolBuilder method)
         {
             return new CodeEmitter(context, method.GetILGenerator(), method.DeclaringType);
-        }
-
-        /// <summary>
-        /// Creates a new instance.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        public CodeEmitter Create(IConstructorSymbolBuilder ctor)
-        {
-            return new CodeEmitter(context, ctor.GetILGenerator(), ctor.DeclaringType);
         }
 
 #if IMPORTER == false
@@ -338,10 +328,9 @@ namespace IKVM.Runtime
                     break;
                 case CodeType.SequencePoint:
                     // MarkSequencePoint does not exist in Core, but does exist in Framework and IKVM.Reflection
-#if NETFRAMEWORK || IMPORTER
                     if (symbols != null)
                         ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
-#endif
+
                     // we emit a nop to make sure we always have an instruction associated with the sequence point
                     ilgen_real.Emit(System.Reflection.Emit.OpCodes.Nop);
                     break;
@@ -2431,7 +2420,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal void EmitLineNumberTable(IMethodSymbolBuilder mb)
+        internal void EmitLineNumberTable(IMethodBaseSymbolBuilder mb)
         {
             if (linenums != null)
                 context.AttributeHelper.SetLineNumberTable(mb, linenums);

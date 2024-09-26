@@ -34,12 +34,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="name"></param>
         /// <param name="access"></param>
         /// <returns></returns>
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyName name)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndCollect));
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
         }
 
         /// <summary>
@@ -48,12 +48,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="name"></param>
         /// <param name="access"></param>
         /// <returns></returns>
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyName name, ICustomAttributeBuilder[]? assemblyAttributes)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name, ICustomAttributeBuilder[]? assemblyAttributes)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
         }
 
         /// <summary>

@@ -490,6 +490,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
                 0xfe1a => OpCodes.Rethrow,
                 0xfe1c => OpCodes.Sizeof,
                 0xfe1d => OpCodes.Refanytype,
+                0xfe13 => OpCodes.Volatile,
                 _ => throw new NotImplementedException(),
             };
         }

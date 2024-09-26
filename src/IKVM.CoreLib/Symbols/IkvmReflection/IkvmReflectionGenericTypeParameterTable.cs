@@ -60,10 +60,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                             return _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbolBuilder(_context, (IIkvmReflectionModuleSymbolBuilder)_module, (IIkvmReflectionMemberSymbolBuilder)_member, builder);
                         else
                             return _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbol(_context, _module, _member, genericTypeParameter);
-                else
-                {
-                    return _table[pos] ?? throw new InvalidOperationException();
-                }
+
+                return _table[pos] ?? throw new InvalidOperationException();
             }
         }
 

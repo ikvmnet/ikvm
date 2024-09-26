@@ -39,43 +39,47 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public ConstructorBuilder UnderlyingConstructorBuilder => _builder ?? throw new InvalidOperationException();
 
-        #region IConstructorSymbolBuilder
+        #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public void SetImplementationFlags(MethodImplAttributes attributes)
+        public override void SetImplementationFlags(MethodImplAttributes attributes)
         {
             UnderlyingConstructorBuilder.SetImplementationFlags(attributes);
         }
 
         /// <inheritdoc />
-        public IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
+        public override IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
         {
             return ResolveParameterSymbol(UnderlyingConstructorBuilder.DefineParameter(iSequence, attributes, strParamName));
         }
 
         /// <inheritdoc />
-        public IILGenerator GetILGenerator()
+        public override IILGenerator GetILGenerator()
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator());
         }
 
         /// <inheritdoc />
-        public IILGenerator GetILGenerator(int streamSize)
+        public override IILGenerator GetILGenerator(int streamSize)
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator(streamSize));
         }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
             UnderlyingConstructorBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
             UnderlyingConstructorBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
+
+        #endregion
+
+        #region IConstructorSymbolBuilder
 
         #endregion
 

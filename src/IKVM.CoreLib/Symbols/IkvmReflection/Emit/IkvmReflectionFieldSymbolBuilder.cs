@@ -135,7 +135,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc/>
         public override void OnComplete()
         {
-            _field = ResolvingModule.UnderlyingModule.ResolveField(MetadataToken) ?? throw new InvalidOperationException();
             _builder = null;
             base.OnComplete();
         }

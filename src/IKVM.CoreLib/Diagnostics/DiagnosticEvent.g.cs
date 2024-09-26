@@ -1097,6 +1097,14 @@ namespace IKVM.CoreLib.Diagnostics
         public static DiagnosticEvent InvalidZip(string name, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.InvalidZip.Event([name], exception, location);
 
         /// <summary>
+        /// The 'CoreAssemblyVersionMismatch' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.
+        /// </remarks>
+        public static DiagnosticEvent CoreAssemblyVersionMismatch(string arg0, string arg1, Exception? exception = null, DiagnosticLocation location = default) => Diagnostic.CoreAssemblyVersionMismatch.Event([arg0, arg1], exception, location);
+
+        /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
         /// </summary>
         /// <remarks>

@@ -381,7 +381,7 @@ namespace IKVM.Runtime
                 var mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
-                    var mbs = context.Resolver.ResolveMethodBase(mb);
+                    var mbs = context.Resolver.ImportMethodBase(mb);
                     if (context.ClassLoaderFactory.IsRemappedType(mbs.DeclaringType))
                         return -1;
 
@@ -399,7 +399,7 @@ namespace IKVM.Runtime
             var mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
-                var mbs = context.Resolver.ResolveMethodBase(mb);
+                var mbs = context.Resolver.ImportMethodBase(mb);
                 if (context.ClassLoaderFactory.IsRemappedType(mbs.DeclaringType))
                     return null;
 

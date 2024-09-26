@@ -38,6 +38,8 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Dia
     var level = kvp.Value.Level;
     if (level == "Fatal")
         level = "Critical";
+    if (level == "Info")
+        level = "Informational";
     if (level == "Trace")
         level = "Verbose";
 

@@ -19,6 +19,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         IndexRangeDictionary<IIkvmReflectionParameterSymbol> _table = new();
         ReaderWriterLockSlim? _lock;
+        IIkvmReflectionParameterSymbol? _returnParameter;
 
         /// <summary>
         /// Initializes a new instance.
@@ -54,6 +55,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             using (_lock.CreateUpgradeableReadLock())
             {
                 var position = parameter.Position;
+                if (position == -1)
+                    return _returnParameter ??= new IkvmReflectionParameterSymbol(_context, _module, _member, parameter);
+
                 if (_table[position] == null)
                     using (_lock.CreateWriteLock())
                         return _table[position] ??= new IkvmReflectionParameterSymbol(_context, _module, _member, parameter);
@@ -80,7 +84,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             using (_lock.CreateUpgradeableReadLock())
             {
-                var position = parameter.Position;
+                var position = parameter.Position - 1;
+                if (position == -1)
+                    return (IIkvmReflectionParameterSymbolBuilder)(_returnParameter ??= new IkvmReflectionParameterSymbolBuilder(_context, _module, (IIkvmReflectionMethodBaseSymbol)_member, parameter));
+
                 if (_table[position] == null)
                     using (_lock.CreateWriteLock())
                         return (IIkvmReflectionParameterSymbolBuilder)(_table[position] ??= new IkvmReflectionParameterSymbolBuilder(_context, _module, (IIkvmReflectionMethodBaseSymbol)_member, parameter));
