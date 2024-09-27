@@ -71,12 +71,13 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            RuntimeJavaType tw1 = GhostTag.GetTag(obj);
+            var tw1 = GhostTag.GetTag(obj);
             if (tw1 != null)
             {
-                RuntimeJavaType tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+                var tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
                 return tw1.IsAssignableTo(tw2);
             }
+
             return false;
 #endif
         }

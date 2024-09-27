@@ -69,6 +69,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(UnderlyingAssembly.Modules);
 
         /// <inheritdoc />
+        public override bool IsMissing => UnderlyingAssembly.__IsMissing;
+
+        /// <inheritdoc />
         public ITypeSymbol[] GetExportedTypes()
         {
             return ResolveTypeSymbols(UnderlyingAssembly.GetExportedTypes());

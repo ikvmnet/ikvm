@@ -66,6 +66,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public string ScopeName => UnderlyingModule.ScopeName;
 
         /// <inheritdoc />
+        public override bool IsMissing => UnderlyingModule.__IsMissing;
+
+        /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
         {
             return ResolveFieldSymbol(UnderlyingModule.GetField(name));

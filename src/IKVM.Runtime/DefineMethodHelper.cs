@@ -21,21 +21,8 @@
   jeroen@frijters.net
   
 */
-using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-using DynamicOrAotTypeWrapper = IKVM.Tools.Importer.RuntimeImportByteCodeJavaType;
-using ProtectionDomain = System.Object;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -43,7 +30,7 @@ namespace IKVM.Runtime
     sealed class DefineMethodHelper
     {
 
-        private readonly RuntimeJavaMethod mw;
+        readonly RuntimeJavaMethod mw;
 
         internal DefineMethodHelper(RuntimeJavaMethod mw)
         {

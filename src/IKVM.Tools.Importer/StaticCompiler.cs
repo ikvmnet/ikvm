@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 
 using IKVM.CoreLib.Diagnostics;
@@ -141,11 +140,6 @@ namespace IKVM.Tools.Importer
                 diagnostics.MissingReference(type.FullName, type.Assembly.FullName);
             else
                 diagnostics.MissingType(type.FullName, type.Assembly.FullName);
-        }
-
-        internal void SuppressWarning(ImportContext options, Diagnostic diagnostic, string name)
-        {
-            options.suppressWarnings.Add($"{diagnostic.Id}:{name}");
         }
 
     }

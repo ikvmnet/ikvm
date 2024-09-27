@@ -284,6 +284,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IConstructorSymbol? TypeInitializer => ResolveConstructorSymbol(UnderlyingType.TypeInitializer);
 
         /// <inheritdoc />
+        public override bool ContainsMissing => UnderlyingType.__ContainsMissingType;
+
+        /// <inheritdoc />
         public int GetArrayRank()
         {
             return UnderlyingType.GetArrayRank();

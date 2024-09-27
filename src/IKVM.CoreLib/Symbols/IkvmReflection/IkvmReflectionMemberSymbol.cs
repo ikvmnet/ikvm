@@ -175,6 +175,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public virtual string Name => UnderlyingMember.Name;
 
         /// <inheritdoc />
+        public override bool IsMissing => UnderlyingMember.__IsMissing;
+
+        /// <inheritdoc />
         public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
             return ResolveCustomAttributes(UnderlyingMember.__GetCustomAttributes(null, inherit))!;

@@ -29,7 +29,6 @@ using System.Threading;
 
 using IKVM.CoreLib.Symbols;
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Runtime;
 
 namespace IKVM.Tools.Importer
@@ -88,31 +87,28 @@ namespace IKVM.Tools.Importer
         internal uint fileAlignment;
         internal bool highentropyva;
         internal List<ImportClassLoader> sharedclassloader; // should *not* be deep copied in Copy(), because we want the list of all compilers that share a class loader
-        internal HashSet<string> suppressWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        internal HashSet<string> errorWarnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        internal bool warnaserror; // treat all warnings as errors
         internal List<string> proxies = new();
         internal List<object> assemblyAttributeAnnotations = new();
         internal bool warningLevelHigh;
         internal bool noParameterReflection;
         internal bool bootstrap;
-        internal string log;
 
+        /// <summary>
+        /// Creates a copy of the current <see cref="ImportContext"/>.
+        /// </summary>
+        /// <returns></returns>
         internal ImportContext Copy()
         {
-            ImportContext copy = (ImportContext)MemberwiseClone();
+            var copy = (ImportContext)MemberwiseClone();
             copy.jars = Copy(jars);
             copy.jarMap = new Dictionary<string, int>(jarMap);
+
             if (props != null)
-            {
                 copy.props = new Dictionary<string, string>(props);
-            }
+
             if (externalResources != null)
-            {
                 copy.externalResources = new Dictionary<string, string>(externalResources);
-            }
-            copy.suppressWarnings = new(suppressWarnings, StringComparer.OrdinalIgnoreCase);
-            copy.errorWarnings = new(errorWarnings, StringComparer.OrdinalIgnoreCase);
+
             return copy;
         }
 

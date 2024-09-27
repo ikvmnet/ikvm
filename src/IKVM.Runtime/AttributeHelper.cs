@@ -374,8 +374,8 @@ namespace IKVM.Runtime
         {
             if (editorBrowsableNever == null)
             {
-                var typeofEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName);
-                var typeofEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName);
+                var typeofEditorBrowsableAttribute = context.Resolver.ResolveType(typeof(EditorBrowsableAttribute).FullName);
+                var typeofEditorBrowsableState = context.Resolver.ResolveType(typeof(EditorBrowsableState).FullName);
                 var ctor = typeofEditorBrowsableAttribute.GetConstructor([typeofEditorBrowsableState]);
                 editorBrowsableNever = context.Resolver.Symbols.CreateCustomAttribute(ctor, [EditorBrowsableState.Never]);
             }
@@ -700,8 +700,6 @@ namespace IKVM.Runtime
             assemblyBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(debuggableAttribute, [modes]));
         }
 
-#if IMPORTER
-
         internal void SetModifiers(IMethodBaseSymbolBuilder mb, Modifiers modifiers, bool isInternal)
         {
             ICustomAttributeBuilder customAttributeBuilder;
@@ -864,8 +862,6 @@ namespace IKVM.Runtime
             paramArrayAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]), []);
             pb.SetCustomAttribute(paramArrayAttribute);
         }
-
-#endif  // IMPORTER
 
         internal NameSigAttribute GetNameSig(IMemberSymbol member)
         {

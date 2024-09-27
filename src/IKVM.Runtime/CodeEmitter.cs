@@ -2405,10 +2405,8 @@ namespace IKVM.Runtime
 
         internal void SetLineNumber(ushort line)
         {
-#if NETFRAMEWORK || IMPORTER
             if (symbols != null)
                 EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
-#endif
 
             EmitPseudoOpCode(CodeType.LineNumber, (int)line);
         }
@@ -2418,15 +2416,11 @@ namespace IKVM.Runtime
             return linenums == null ? null : linenums.ToArray();
         }
 
-#if IMPORTER
-
         internal void EmitLineNumberTable(IMethodBaseSymbolBuilder mb)
         {
             if (linenums != null)
                 context.AttributeHelper.SetLineNumberTable(mb, linenums);
         }
-
-#endif
 
         internal void EmitThrow(string dottedClassName)
         {

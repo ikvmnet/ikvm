@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-using IKVM.CoreLib.Diagnostics;
+﻿using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Tools.Core.Diagnostics
 {

@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System.Reflection;
-
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 

@@ -26,13 +26,6 @@ using System.Collections.Generic;
 
 using IKVM.CoreLib.Symbols;
 
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#endif
-
 namespace IKVM.Runtime
 {
 

@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {

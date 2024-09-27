@@ -21,11 +21,22 @@ namespace IKVM.Tools.Core.Diagnostics
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
+        /// <summary>
+        /// Gets the options.
+        /// </summary>
+        public TOptions Options => _options;
+
         /// <inheritdoc />
         public void Write(in DiagnosticEvent @event)
         {
+            var level = @event.Diagnostic.Level;
+            if (level is DiagnosticLevel.Warning && Options.WarnAsError)
+                level = DiagnosticLevel.Error;
+            if (level is DiagnosticLevel.Warning && Options.WarnAsErrorDiagnostics.Contains(@event.Diagnostic))
+                level = DiagnosticLevel.Error;
+
             // find the writer for the event's level
-            var channel = @event.Diagnostic.Level switch
+            var channel = level switch
             {
                 DiagnosticLevel.Trace => _options.TraceChannel,
                 DiagnosticLevel.Info => _options.InfoChannel,
@@ -39,15 +50,16 @@ namespace IKVM.Tools.Core.Diagnostics
             if (channel == null)
                 return;
 
-            WriteImpl(@event, channel);
+            WriteImpl(@event, level, channel);
         }
 
         /// <summary>
         /// Implement this method to write the diagnostic event to the channel.
         /// </summary>
         /// <param name="event"></param>
+        /// <param name="level"></param>
         /// <param name="channel"></param>
-        protected abstract void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel);
+        protected abstract void WriteImpl(in DiagnosticEvent @event, DiagnosticLevel level, IDiagnosticChannel channel);
 
         /// <summary>
         /// Disposes of the instance.

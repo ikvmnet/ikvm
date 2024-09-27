@@ -120,7 +120,7 @@ namespace IKVM.Java.Externs.java.io
             public static float ReadFloat(byte[] buf, int offset)
             {
 #if FIRST_PASS || IMPORTER
-			return 0;
+			    return 0;
 #else
                 return global::java.lang.Float.intBitsToFloat(ReadInt(buf, offset));
 #endif

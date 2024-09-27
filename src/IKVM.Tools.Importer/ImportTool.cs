@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
@@ -25,7 +26,7 @@ namespace IKVM.Tools.Importer
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
-    public class ImportTool
+    public partial class ImportTool
     {
 
         /// <summary>
@@ -55,7 +56,6 @@ namespace IKVM.Tools.Importer
         /// Executes the importer.
         /// </summary>
         /// <param name="options"></param>
-        /// <param name="diagnostics"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         async Task<int> ExecuteImplAsync(ImportOptions options, CancellationToken cancellationToken)
@@ -63,7 +63,9 @@ namespace IKVM.Tools.Importer
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
             services.AddSingleton(options);
-            services.AddSingleton<IDiagnosticHandler>(p => GetDiagnostics(p, p.GetRequiredService<ImportOptions>().Log));
+            services.AddSingleton<DiagnosticOptions>(p => GetDiagnosticOptions(p, p.GetRequiredService<ImportOptions>()));
+            services.AddSingleton<ImportDiagnosticHandler>(p => GetDiagnostics(p, p.GetRequiredService<ImportOptions>().Log));
+            services.AddSingleton<IDiagnosticHandler>(p => p.GetRequiredService<ImportDiagnosticHandler>());
             services.AddSingleton(p => CreateResolver(p.GetRequiredService<IDiagnosticHandler>(), p.GetRequiredService<ImportOptions>()));
             services.AddSingleton(p => p.GetRequiredService<ImportAssemblyResolver>().Universe);
             services.AddSingleton<IkvmReflectionSymbolContext>();
@@ -74,17 +76,31 @@ namespace IKVM.Tools.Importer
             services.AddSingleton<ImportContextFactory>();
             using var provider = services.BuildServiceProvider();
 
-            // convert options to imports
-            var imports = provider.GetRequiredService<ImportContextFactory>().Create(options);
-            if (imports.Count == 0)
-                throw new FatalCompilerErrorException(DiagnosticEvent.NoTargetsFound());
+            try
+            {
+                // convert options to imports
+                var imports = provider.GetRequiredService<ImportContextFactory>().Create(options);
+                if (imports.Count == 0)
+                    throw new FatalCompilerErrorException(DiagnosticEvent.NoTargetsFound());
 
-            // execute the compiler
-            return await Task.Run(() => Execute(
-                provider.GetRequiredService<RuntimeContext>(),
-                provider.GetRequiredService<StaticCompiler>(),
-                provider.GetRequiredService<IDiagnosticHandler>(),
-                imports));
+                // execute the compiler
+                return await Task.Run(() => Execute(
+                    provider.GetRequiredService<RuntimeContext>(),
+                    provider.GetRequiredService<StaticCompiler>(),
+                    provider.GetRequiredService<IDiagnosticHandler>(),
+                    imports));
+            }
+            catch (FatalCompilerErrorException e)
+            {
+                provider.GetRequiredService<ImportDiagnosticHandler>().Report(e.Event);
+                return e.Event.Diagnostic.Id;
+
+            }
+            catch (Exception e)
+            {
+                provider.GetRequiredService<ImportDiagnosticHandler>().GenericCompilerError(e.Message);
+                return Diagnostic.GenericCompilerError.Id;
+            }
         }
 
         /// <summary>
@@ -222,14 +238,36 @@ namespace IKVM.Tools.Importer
         /// <param name="services"></param>
         /// <param name="spec"></param>
         /// <returns></returns>
-        static FormattedDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
+        static ImportDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
         {
             if (services is null)
                 throw new ArgumentNullException(nameof(services));
             if (string.IsNullOrWhiteSpace(spec))
                 throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
 
-            return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
+            return ActivatorUtilities.CreateInstance<ImportDiagnosticHandler>(services, spec);
+        }
+
+        /// <summary>
+        /// Generates a diagnostic instance from the diagnostics options.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        static DiagnosticOptions GetDiagnosticOptions(IServiceProvider services, ImportOptions options)
+        {
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
+            if (options is null)
+                throw new ArgumentNullException(nameof(options));
+
+            return new DiagnosticOptions()
+            {
+                NoWarn = options.NoWarn != null && options.NoWarn.Length == 0,
+                NoWarnDiagnostics = options.NoWarn?.ToImmutableArray() ?? [],
+                WarnAsError = options.WarnAsError != null && options.WarnAsError.Length == 0,
+                WarnAsErrorDiagnostics = options.WarnAsError?.ToImmutableArray() ?? [],
+            };
         }
 
         /// <summary>

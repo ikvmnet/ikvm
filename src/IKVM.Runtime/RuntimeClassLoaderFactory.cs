@@ -174,14 +174,10 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal RuntimeJavaType GetJavaTypeFromType(ITypeSymbol type)
         {
-#if IMPORTER
-            if (type.ContainsMissing)
-                return new RuntimeUnloadableJavaType(context, type);
-#endif
-
 #if !IMPORTER
             RuntimeJavaType.AssertFinished(type);
 #endif
+
             Debug.Assert(!type.IsPointer);
             Debug.Assert(!type.IsByRef);
 
@@ -192,14 +188,12 @@ namespace IKVM.Runtime
             if (wrapper != null)
                 return wrapper;
 
-#if EXPORTER
             if (type.IsMissing || type.ContainsMissing)
             {
                 wrapper = new RuntimeUnloadableJavaType(context, type);
                 globalTypeToTypeWrapper.Add(type, wrapper);
                 return wrapper;
             }
-#endif
 
             if (remappedTypes.TryGetValue(type, out var remapped))
             {

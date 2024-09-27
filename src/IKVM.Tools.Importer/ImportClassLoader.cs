@@ -306,26 +306,22 @@ namespace IKVM.Tools.Importer
                     }
                     catch (UnsupportedClassVersionException e)
                     {
-                        Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         Diagnostics.ClassFormatError(name, e.Message);
                         return null;
                     }
                     catch (ByteCodeException e)
                     {
-                        Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         Diagnostics.ClassFormatError(name, e.Message);
                         return null;
                     }
                     catch (ClassFormatError e)
                     {
-                        Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         Diagnostics.ClassFormatError(name, e.Message);
                         return null;
                     }
 
                     if (f.Name != name)
                     {
-                        Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                         Diagnostics.WrongClassName(name, f.Name);
                         return null;
                     }
@@ -434,7 +430,6 @@ namespace IKVM.Tools.Importer
                         Diagnostics.GenericUnableToCompileError(name, x.GetType().Name, x.Message);
                     }
 
-                    Context.StaticCompiler.SuppressWarning(state, Diagnostic.ClassNotFound, name);
                     return null;
                 }
                 else
@@ -2526,78 +2521,82 @@ namespace IKVM.Tools.Importer
         /// <returns></returns>
         internal static int Compile(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, List<ImportContext> imports)
         {
-            var loaders = new List<ImportClassLoader>();
-
-            // create class loaders for each import
-            foreach (var import in imports)
+            try
             {
-                int rc = CreateCompiler(context, compiler, diagnostics, import, out var loader);
-                if (rc != 0)
-                    return rc;
+                var loaders = new List<ImportClassLoader>();
 
-                loaders.Add(loader);
-                import.sharedclassloader?.Add(loader);
-            }
-
-            // add a reference between all of the loaders.
-            foreach (var loader1 in loaders)
-                foreach (var loader2 in loaders)
-                    if (loader1 != loader2 && (loader1.state.crossReferenceAllPeers || (loader1.state.peerReferences != null && Array.IndexOf(loader1.state.peerReferences, loader2.state.assembly) != -1)))
-                        loader1.AddReference(loader2);
-
-            // first compilation pass
-            foreach (var loader in loaders)
-                loader.CompilePass0();
-
-            var mainAssemblyTypes = new Dictionary<ImportClassLoader, ITypeSymbol>();
-
-            foreach (var loader in loaders)
-            {
-                if (loader.state.sharedclassloader != null)
+                // create class loaders for each import
+                foreach (var import in imports)
                 {
-                    if (mainAssemblyTypes.TryGetValue(loader.state.sharedclassloader[0], out var mainAssemblyType) == false)
-                    {
-                        var tb = loader.state.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.SpecialName);
-                        loader.Context.AttributeHelper.HideFromJava(tb);
-                        tb.Complete();
+                    int rc = CreateCompiler(context, compiler, diagnostics, import, out var loader);
+                    if (rc != 0)
+                        return rc;
 
-                        mainAssemblyType = tb;
-                        mainAssemblyTypes.Add(loader.state.sharedclassloader[0], mainAssemblyType);
-                    }
-
-                    if (loader.state.sharedclassloader[0] != loader)
-                        ((IAssemblySymbolBuilder)loader.GetTypeWrapperFactory().ModuleBuilder.Assembly).AddTypeForwarder(mainAssemblyType);
+                    loaders.Add(loader);
+                    import.sharedclassloader?.Add(loader);
                 }
 
-                loader.CompilePass1();
-            }
+                // add a reference between all of the loaders.
+                foreach (var loader1 in loaders)
+                    foreach (var loader2 in loaders)
+                        if (loader1 != loader2 && (loader1.state.crossReferenceAllPeers || (loader1.state.peerReferences != null && Array.IndexOf(loader1.state.peerReferences, loader2.state.assembly) != -1)))
+                            loader1.AddReference(loader2);
 
-            foreach (var loader in loaders)
-                loader.CompilePass2();
-
-            if (context.Options.Bootstrap)
+                // first compilation pass
                 foreach (var loader in loaders)
-                    loader.EmitRemappedTypes2ndPass();
+                    loader.CompilePass0();
 
-            foreach (var loader in loaders)
+                var mainAssemblyTypes = new Dictionary<ImportClassLoader, ITypeSymbol>();
+
+                foreach (var loader in loaders)
+                {
+                    if (loader.state.sharedclassloader != null)
+                    {
+                        if (mainAssemblyTypes.TryGetValue(loader.state.sharedclassloader[0], out var mainAssemblyType) == false)
+                        {
+                            var tb = loader.state.sharedclassloader[0].GetTypeWrapperFactory().ModuleBuilder.DefineType("__<MainAssembly>", System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.SpecialName);
+                            loader.Context.AttributeHelper.HideFromJava(tb);
+                            tb.Complete();
+
+                            mainAssemblyType = tb;
+                            mainAssemblyTypes.Add(loader.state.sharedclassloader[0], mainAssemblyType);
+                        }
+
+                        if (loader.state.sharedclassloader[0] != loader)
+                            ((IAssemblySymbolBuilder)loader.GetTypeWrapperFactory().ModuleBuilder.Assembly).AddTypeForwarder(mainAssemblyType);
+                    }
+
+                    loader.CompilePass1();
+                }
+
+                foreach (var loader in loaders)
+                    loader.CompilePass2();
+
+                if (context.Options.Bootstrap)
+                    foreach (var loader in loaders)
+                        loader.EmitRemappedTypes2ndPass();
+
+                foreach (var loader in loaders)
+                {
+                    int rc = loader.CompilePass3();
+                    if (rc != 0)
+                        return rc;
+                }
+
+                diagnostics.GenericCompilerInfo("CompilerClassLoader.Save...");
+
+                foreach (var loader in loaders)
+                    loader.PrepareSave();
+
+                foreach (var loader in loaders)
+                    loader.Save();
+            }
+            catch (FileFormatLimitationExceededException e)
             {
-                int rc = loader.CompilePass3();
-                if (rc != 0)
-                    return rc;
+                throw new FatalCompilerErrorException(DiagnosticEvent.FileFormatLimitationExceeded(e.Message));
             }
 
-            diagnostics.GenericCompilerInfo("CompilerClassLoader.Save...");
-
-            foreach (var loader in loaders)
-                loader.PrepareSave();
-
-            //if (compiler.errorCount > 0)
-            //    return 1;
-
-            foreach (var loader in loaders)
-                loader.Save();
-
-            return 1;
+            return 0;
         }
 
         static int CreateCompiler(RuntimeContext context, StaticCompiler compiler, IDiagnosticHandler diagnostics, ImportContext import, out ImportClassLoader loader)

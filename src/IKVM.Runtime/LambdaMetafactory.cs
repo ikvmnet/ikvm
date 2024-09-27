@@ -41,7 +41,7 @@ namespace IKVM.Runtime
     sealed class LambdaMetafactory
     {
 
-        private IMethodSymbolBuilder getInstance;
+        IMethodSymbolBuilder getInstance;
 
         internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
         {

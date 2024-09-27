@@ -34,12 +34,12 @@ namespace IKVM.Runtime
     sealed class InstructionState
     {
 
-        private struct LocalStoreSites
+        struct LocalStoreSites
         {
 
-            private int[] data;
-            private int count;
-            private bool shared;
+            int[] data;
+            int count;
+            bool shared;
 
             internal LocalStoreSites Copy()
             {
@@ -121,8 +121,19 @@ namespace IKVM.Runtime
             Locals = 2,
             All = Stack | Locals
         }
+
         private ShareFlags flags;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="stack"></param>
+        /// <param name="stackSize"></param>
+        /// <param name="stackEnd"></param>
+        /// <param name="locals"></param>
+        /// <param name="unitializedThis"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         private InstructionState(RuntimeContext context, RuntimeJavaType[] stack, int stackSize, int stackEnd, RuntimeJavaType[] locals, bool unitializedThis)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
@@ -134,6 +145,13 @@ namespace IKVM.Runtime
             this.unitializedThis = unitializedThis;
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="maxLocals"></param>
+        /// <param name="maxStack"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         internal InstructionState(RuntimeContext context, int maxLocals, int maxStack)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));

@@ -26,11 +26,6 @@ namespace IKVM.CoreLib.Diagnostics
         /// </summary>
         public readonly DiagnosticLocation Location = Location;
 
-        internal static DiagnosticEvent RuntimeMismatch(object location, string fullName1, string fullName2)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Formats the diagnostic event message.
         /// </summary>

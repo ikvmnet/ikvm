@@ -21,57 +21,6 @@ namespace IKVM.Tools.Importer
     class ImportContextFactory
     {
 
-        /// <summary>
-        /// <see cref="IDiagnosticHandler"/> for the importer.
-        /// </summary>
-        class CompilerOptionsDiagnosticHandler : FormattedDiagnosticHandler
-        {
-
-            readonly ImportContext _options;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="options"></param>
-            /// <param name="spec"></param>
-            /// <param name="formatters"></param>
-            public CompilerOptionsDiagnosticHandler(ImportContext options, string spec, DiagnosticFormatterProvider formatters) :
-                base(spec, formatters)
-            {
-                _options = options ?? throw new ArgumentNullException(nameof(options));
-            }
-
-            /// <inheritdoc />
-            public override bool IsEnabled(Diagnostic diagnostic)
-            {
-                return diagnostic.Level is not DiagnosticLevel.Trace and not DiagnosticLevel.Info;
-            }
-
-            /// <inheritdoc />
-            public override void Report(in DiagnosticEvent @event)
-            {
-                if (IsEnabled(@event.Diagnostic) == false)
-                    return;
-
-                var key = @event.Diagnostic.Id.ToString();
-                for (int i = 0; ; i++)
-                {
-                    if (_options.suppressWarnings.Contains(key))
-                        return;
-
-                    if (i == @event.Args.Length)
-                        break;
-
-                    key += ":" + @event.Args[i];
-                }
-
-                _options.suppressWarnings.Add(key);
-
-                base.Report(@event);
-            }
-
-        }
-
         readonly RuntimeContext runtime;
         readonly ImportAssemblyResolver resolver;
         readonly StaticCompiler compiler;
@@ -375,20 +324,6 @@ namespace IKVM.Tools.Importer
             if (options.PublicPackages != null)
                 foreach (var prefix in options.PublicPackages)
                     import.publicPackages = [.. import.privatePackages, prefix];
-
-            if (options.NoWarn != null)
-                foreach (var diagnostic in options.NoWarn)
-                    import.suppressWarnings.Add($"IKVM{diagnostic.Id:D4}");
-
-            // TODO handle specific diagnostic IDs
-            if (options.WarnAsError != null)
-            {
-                if (options.WarnAsError.Length == 0)
-                    import.warnaserror = true;
-                else
-                    foreach (var i in options.WarnAsError)
-                        import.errorWarnings.Add($"IKVM{i.Id:D4}");
-            }
 
             if (options.ClassLoader != null)
                 import.classLoader = options.ClassLoader;
