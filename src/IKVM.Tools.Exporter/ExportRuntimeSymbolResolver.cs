@@ -38,10 +38,10 @@ using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 
-namespace IKVM.Tools.Importer
+namespace IKVM.Tools.Exporter
 {
 
-    class ImportRuntimeSymbolResolver : IRuntimeSymbolResolver
+    class ExportRuntimeSymbolResolver : IRuntimeSymbolResolver
     {
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace IKVM.Tools.Importer
         /// <param name="universe"></param>
         /// <param name="symbols"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols)
+        public ExportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols)
         {
             _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _universe = universe ?? throw new ArgumentNullException(nameof(universe));

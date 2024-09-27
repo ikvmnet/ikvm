@@ -39,7 +39,7 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         internal BootstrapClassLoader(RuntimeContext context) :
-            base(context, context.Resolver.ResolveBaseAssembly(), [typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName])
+            base(context, context.Resolver.GetBaseAssembly(), [typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName])
         {
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
             RegisterNativeLibrary(LibJava.Instance.Handle);

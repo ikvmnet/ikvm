@@ -541,7 +541,7 @@ namespace IKVM.Runtime
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
                 // support serializing .NET exceptions (by replacing them with a placeholder exception)
-                if (Context.Types.Exception.IsAssignableFrom(type) && Context.Resolver.ImportType(typeof(java.io.Serializable.__Interface)).IsAssignableFrom(type) == false && methodsList.ContainsKey("writeReplace()Ljava.lang.Object;") == false)
+                if (Context.Types.Exception.IsAssignableFrom(type) && Context.Resolver.GetSymbol(typeof(java.io.Serializable.__Interface)).IsAssignableFrom(type) == false && methodsList.ContainsKey("writeReplace()Ljava.lang.Object;") == false)
                     methodsList.Add("writeReplace()Ljava.lang.Object;", new ExceptionWriteReplaceJavaMethod(this));
 
 #endif

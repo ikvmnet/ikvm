@@ -329,7 +329,7 @@ namespace IKVM.Runtime.StubGen
 
                         if (throws.types != null)
                             foreach (var ex in throws.types)
-                                e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ImportType(ex)).Name.Replace('.', '/')));
+                                e.Class(builder.Constants.GetOrAddClass(context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.GetSymbol(ex)).Name.Replace('.', '/')));
                     });
                 }
             }
@@ -580,7 +580,7 @@ namespace IKVM.Runtime.StubGen
 #if !FIRST_PASS && !EXPORTER
             if (source != null)
             {
-                foreach (var cad in CustomAttributeData.GetCustomAttributes(source))
+                foreach (var cad in source.GetCustomAttributes())
                 {
                     var ann = GetAnnotation(cad);
                     if (ann != null)
@@ -615,7 +615,7 @@ namespace IKVM.Runtime.StubGen
                     {
                         encoder.ParameterAnnotation(e2 =>
                         {
-                            foreach (var cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
+                            foreach (var cad in parameters[i].GetCustomAttributes())
                             {
                                 var ann = GetAnnotation(cad);
                                 if (ann != null)
@@ -913,12 +913,12 @@ namespace IKVM.Runtime.StubGen
         object[] GetAnnotation(CustomAttribute cad)
         {
             // attribute is either a AnnotationAttributeBase or a DynamicAnnotationAttribute with a single object[] in our internal annotation format
-            if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) && (cad.Constructor.DeclaringType.BaseType == typeof(ikvm.@internal.AnnotationAttributeBase) || cad.Constructor.DeclaringType == typeof(DynamicAnnotationAttribute)))
+            if (cad.ConstructorArguments.Length == 1 && cad.ConstructorArguments[0].ArgumentType == context.Types.Object.MakeArrayType() && (cad.Constructor.DeclaringType.BaseType == context.Resolver.ResolveBaseType(typeof(ikvm.@internal.AnnotationAttributeBase).FullName) || cad.Constructor.DeclaringType == context.Resolver.ResolveBaseType(typeof(DynamicAnnotationAttribute).FullName)))
             {
                 return UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value);
             }
 
-            if (cad.Constructor.DeclaringType.BaseType == typeof(ikvm.@internal.AnnotationAttributeBase))
+            if (cad.Constructor.DeclaringType.BaseType == context.Resolver.ResolveBaseType(typeof(ikvm.@internal.AnnotationAttributeBase).FullName))
             {
                 var annotationType = GetAnnotationInterface(cad);
                 if (annotationType != null)
@@ -948,12 +948,12 @@ namespace IKVM.Runtime.StubGen
             return null;
         }
 
-        string GetAnnotationInterface(CustomAttributeData cad)
+        string GetAnnotationInterface(CustomAttribute cad)
         {
-            var attr = cad.Constructor.DeclaringType.GetCustomAttributes(typeof(IKVM.Attributes.ImplementsAttribute), false);
-            if (attr.Length == 1)
+            var attr = cad.Constructor.DeclaringType.GetCustomAttribute(context.Resolver.ResolveRuntimeType(typeof(ImplementsAttribute).FullName), false);
+            if (attr != null)
             {
-                var interfaces = ((IKVM.Attributes.ImplementsAttribute)attr[0]).Interfaces;
+                var interfaces = (string[])attr.Value.ConstructorArguments[0].Value;
                 if (interfaces.Length == 1)
                     return interfaces[0];
             }
@@ -974,11 +974,11 @@ namespace IKVM.Runtime.StubGen
             {
                 // if GetWrapperFromType returns null, we've got an ikvmc synthesized .NET enum nested inside a Java enum
                 var tw = context.ClassLoaderFactory.GetJavaTypeFromType(arg.ArgumentType) ?? context.ClassLoaderFactory.GetJavaTypeFromType(arg.ArgumentType.DeclaringType);
-                return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), Enum.GetName(arg.ArgumentType, arg.Value) };
+                return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_ENUM, EncodeTypeName(tw), arg.ArgumentType.GetEnumName(arg.Value) };
             }
 
             // argument is directly a type, so we encode it as a TAG_CLASS
-            if (arg.Value is Type type)
+            if (arg.Value is ITypeSymbol type)
             {
                 return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(context.ClassLoaderFactory.GetJavaTypeFromType(type)) };
             }

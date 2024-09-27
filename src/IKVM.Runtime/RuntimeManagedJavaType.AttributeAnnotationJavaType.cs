@@ -71,7 +71,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                 this.fakeType = context.FakeTypes.GetAttributeType(attributeType);
 #elif !FIRST_PASS
-                this.fakeType = context.Resolver.ImportType(typeof(ikvm.@internal.AttributeAnnotation<>)).MakeGenericType(attributeType);
+                this.fakeType = context.Resolver.GetSymbol(typeof(ikvm.@internal.AttributeAnnotation<>)).MakeGenericType(attributeType);
 #endif
                 this.attributeType = attributeType;
             }

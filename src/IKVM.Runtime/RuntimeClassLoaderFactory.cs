@@ -102,17 +102,17 @@ namespace IKVM.Runtime
             // if we're compiling the base assembly, we won't be able to resolve one
             if (context.Options.Bootstrap == false && remappedTypes.Count == 0)
             {
-                var baseAssembly = context.Resolver.ResolveBaseAssembly();
+                var baseAssembly = context.Resolver.GetBaseAssembly();
                 var remapped = context.AttributeHelper.GetRemappedClasses(baseAssembly);
                 if (remapped.Length > 0)
                 {
                     foreach (var r in remapped)
-                        remappedTypes.Add(context.Resolver.ImportType(r.RemappedType), r.Name);
+                        remappedTypes.Add(context.Resolver.GetSymbol(r.RemappedType), r.Name);
                 }
                 else
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(DiagnosticEvent.CoreClassesMissing());
+                    throw new DiagnosticEventException(DiagnosticEvent.CoreClassesMissing());
 #else
                     throw new InternalException("Failed to find core classes in core library.");
 #endif
@@ -283,7 +283,7 @@ namespace IKVM.Runtime
 #if IMPORTER
             var wrapper = GetBootstrapClassLoader().TryLoadClassByName(name);
             if (wrapper == null)
-                throw new FatalCompilerErrorException(DiagnosticEvent.CriticalClassNotFound(name));
+                throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(name));
 
             return wrapper;
 #else
@@ -384,9 +384,9 @@ namespace IKVM.Runtime
                 return GetGenericClassLoaderByName(name);
 
 #if NETFRAMEWORK
-            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ImportAssembly( Assembly.Load(name)));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.GetSymbol(Assembly.Load(name)));
 #else
-            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ImportAssembly(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name))));
+            return context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.GetSymbol(AssemblyLoadContext.GetLoadContext(typeof(RuntimeClassLoader).Assembly).LoadFromAssemblyName(new AssemblyName(name))));
 #endif
         }
 

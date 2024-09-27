@@ -53,7 +53,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                 this.fakeType = context.FakeTypes.GetDelegateType(delegateType);
 #elif !FIRST_PASS
-                this.fakeType = context.Resolver.ImportType(typeof(ikvm.@internal.DelegateInterface<>)).MakeGenericType(delegateType);
+                this.fakeType = context.Resolver.GetSymbol(typeof(ikvm.@internal.DelegateInterface<>)).MakeGenericType(delegateType);
 #endif
                 var invoke = delegateType.GetMethod("Invoke");
                 var parameters = invoke.GetParameters();

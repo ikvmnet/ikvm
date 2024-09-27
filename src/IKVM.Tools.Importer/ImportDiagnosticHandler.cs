@@ -30,8 +30,8 @@ namespace IKVM.Tools.Importer
         /// <inheritdoc />
         public override bool IsEnabled(Diagnostic diagnostic)
         {
-            if (diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Info)
-                return false; 
+            //if (diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Info)
+            //    return false;
 
             if (diagnostic.Level == DiagnosticLevel.Warning && _options.NoWarn.Any(i => i.Id == diagnostic.Id))
                 return false;

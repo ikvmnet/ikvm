@@ -7,6 +7,7 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -70,7 +71,7 @@ namespace IKVM.Tools.Importer
             services.AddSingleton(p => p.GetRequiredService<ImportAssemblyResolver>().Universe);
             services.AddSingleton<IkvmReflectionSymbolContext>();
             services.AddSingleton<IRuntimeSymbolResolver, ImportRuntimeSymbolResolver>();
-            services.AddSingleton<RuntimeContextOptions>(p => new RuntimeContextOptions(p.GetRequiredService<ImportOptions>().Bootstrap));
+            services.AddSingleton<RuntimeContextOptions>(p => CreateContextOptions(p));
             services.AddSingleton<RuntimeContext>();
             services.AddSingleton<StaticCompiler>();
             services.AddSingleton<ImportContextFactory>();
@@ -78,28 +79,34 @@ namespace IKVM.Tools.Importer
 
             try
             {
-                // convert options to imports
-                var imports = provider.GetRequiredService<ImportContextFactory>().Create(options);
-                if (imports.Count == 0)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.NoTargetsFound());
+                try
+                {
+                    // convert options to imports
+                    var imports = provider.GetRequiredService<ImportContextFactory>().Create(options);
+                    if (imports.Count == 0)
+                        throw new DiagnosticEventException(DiagnosticEvent.NoTargetsFound());
 
-                // execute the compiler
-                return await Task.Run(() => Execute(
-                    provider.GetRequiredService<RuntimeContext>(),
-                    provider.GetRequiredService<StaticCompiler>(),
-                    provider.GetRequiredService<IDiagnosticHandler>(),
-                    imports));
+                    // execute the compiler
+                    return await Task.Run(() => Execute(
+                        provider.GetRequiredService<RuntimeContext>(),
+                        provider.GetRequiredService<StaticCompiler>(),
+                        provider.GetRequiredService<IDiagnosticHandler>(),
+                        imports));
+                }
+                catch (DiagnosticEventException e)
+                {
+                    ExceptionDispatchInfo.Capture(e).Throw();
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    throw new DiagnosticEventException(DiagnosticEvent.GenericCompilerError(e.Message));
+                }
             }
-            catch (FatalCompilerErrorException e)
+            catch (DiagnosticEventException e)
             {
                 provider.GetRequiredService<ImportDiagnosticHandler>().Report(e.Event);
                 return e.Event.Diagnostic.Id;
-
-            }
-            catch (Exception e)
-            {
-                provider.GetRequiredService<ImportDiagnosticHandler>().GenericCompilerError(e.Message);
-                return Diagnostic.GenericCompilerError.Id;
             }
         }
 
@@ -268,6 +275,19 @@ namespace IKVM.Tools.Importer
                 WarnAsError = options.WarnAsError != null && options.WarnAsError.Length == 0,
                 WarnAsErrorDiagnostics = options.WarnAsError?.ToImmutableArray() ?? [],
             };
+        }
+
+        /// <summary>
+        /// Creates the <see cref="RuntimeContextOptions"/>.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        static RuntimeContextOptions CreateContextOptions(IServiceProvider services)
+        {
+            var u = services.GetRequiredService<Universe>();
+            var isNetFX = u.CoreLibName == "mscorlib";
+            var dynamicSuffix = isNetFX ? RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey : RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey;
+            return new RuntimeContextOptions(services.GetRequiredService<ImportOptions>().Bootstrap, dynamicSuffix);
         }
 
         /// <summary>

@@ -152,7 +152,7 @@ namespace IKVM.Runtime
 
         ITypeSymbol TypeOfConstantPoolAttribute => typeofConstantPoolAttribute ??= context.Resolver.ResolveRuntimeType(typeof(ConstantPoolAttribute).FullName);
 
-        ITypeSymbol TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveCoreType(typeof(DebuggableAttribute).FullName);
+        ITypeSymbol TypeOfDebuggableAttribute => typeofDebuggableAttribute ??= context.Resolver.ResolveSystemType(typeof(DebuggableAttribute).FullName);
 
         ITypeSymbol TypeOfCustomAssemblyClassLoaderAttribute => typeofCustomAssemblyClassLoaderAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute).FullName);
 
@@ -179,7 +179,7 @@ namespace IKVM.Runtime
             }
             else if (tw.IsUnloadable)
             {
-                throw new FatalCompilerErrorException(DiagnosticEvent.MapFileTypeNotFound(tw.Name));
+                throw new DiagnosticEventException(DiagnosticEvent.MapFileTypeNotFound(tw.Name));
             }
             else if (tw.TypeAsTBD.IsEnum)
             {
@@ -374,8 +374,8 @@ namespace IKVM.Runtime
         {
             if (editorBrowsableNever == null)
             {
-                var typeofEditorBrowsableAttribute = context.Resolver.ResolveType(typeof(EditorBrowsableAttribute).FullName);
-                var typeofEditorBrowsableState = context.Resolver.ResolveType(typeof(EditorBrowsableState).FullName);
+                var typeofEditorBrowsableAttribute = context.Resolver.ResolveSystemType(typeof(EditorBrowsableAttribute).FullName);
+                var typeofEditorBrowsableState = context.Resolver.ResolveSystemType(typeof(EditorBrowsableState).FullName);
                 var ctor = typeofEditorBrowsableAttribute.GetConstructor([typeofEditorBrowsableState]);
                 editorBrowsableNever = context.Resolver.Symbols.CreateCustomAttribute(ctor, [EditorBrowsableState.Never]);
             }
@@ -385,13 +385,13 @@ namespace IKVM.Runtime
 
         internal void SetCompilerGenerated(ITypeSymbolBuilder tb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
+            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
             tb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
         internal void SetCompilerGenerated(IMethodBaseSymbolBuilder mb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
+            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
             mb.SetCustomAttribute(compilerGeneratedAttribute);
         }
 
@@ -412,25 +412,25 @@ namespace IKVM.Runtime
 
         internal void SetDeprecatedAttribute(IMethodBaseSymbolBuilder mb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
+            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             mb.SetCustomAttribute(deprecatedAttribute);
         }
 
         internal void SetDeprecatedAttribute(ITypeSymbolBuilder tb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
+            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             tb.SetCustomAttribute(deprecatedAttribute);
         }
 
         internal void SetDeprecatedAttribute(IFieldSymbolBuilder fb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
+            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             fb.SetCustomAttribute(deprecatedAttribute);
         }
 
         internal void SetDeprecatedAttribute(IPropertySymbolBuilder pb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
+            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
             pb.SetCustomAttribute(deprecatedAttribute);
         }
 
@@ -438,7 +438,7 @@ namespace IKVM.Runtime
         {
             if (exceptions != null && exceptions.Length != 0)
             {
-                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor([context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]);
+                throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor([context.Types.String.MakeArrayType()]);
                 exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
                 mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(throwsAttribute, [exceptions]));
             }
@@ -548,7 +548,7 @@ namespace IKVM.Runtime
                 interfaces[i] = UnicodeUtil.EscapeInvalidSurrogates(ifaceWrappers[i].Name);
 
             if (implementsAttribute == null)
-                implementsAttribute = TypeOfImplementsAttribute.GetConstructor([context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]);
+                implementsAttribute = TypeOfImplementsAttribute.GetConstructor([context.Types.String.MakeArrayType()]);
 
             typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(implementsAttribute, [interfaces]));
         }
@@ -1024,7 +1024,7 @@ namespace IKVM.Runtime
 
             foreach (var cad in assembly.GetCustomAttributes())
             {
-                if (cad.Constructor.DeclaringType == context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName))
+                if (cad.Constructor.DeclaringType == context.Resolver.ResolveSystemType(typeof(InternalsVisibleToAttribute).FullName))
                 {
                     try
                     {

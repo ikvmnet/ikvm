@@ -302,7 +302,7 @@ namespace IKVM.Runtime
                     return FromClass(clazz);
                 }
 
-                var symbol = JVM.Context.Resolver.ImportType(type);
+                var symbol = JVM.Context.Resolver.GetSymbol(type);
                 if (type == typeof(void) || type.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(symbol))
                     tw = JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(symbol);
                 else

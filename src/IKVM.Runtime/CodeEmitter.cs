@@ -61,11 +61,11 @@ namespace IKVM.Runtime
 
         public IMethodSymbol VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
 
-        public IMethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public IMethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public IMethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
+        public IMethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
 
         public bool ExperimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 

@@ -137,7 +137,7 @@ namespace IKVM.Runtime
                 var attr = context.AttributeHelper.GetRemappedType(type);
                 if (attr != null)
                 {
-                    if (context.Resolver.ImportType(attr.Type) == context.Types.Object)
+                    if (context.Resolver.GetSymbol(attr.Type) == context.Types.Object)
                         return null;
                     else
                         return context.JavaBase.TypeOfJavaLangObject;
@@ -312,7 +312,7 @@ namespace IKVM.Runtime
                     if (interfaceWrappers[i] == null)
                     {
 #if IMPORTER
-                        throw new FatalCompilerErrorException(DiagnosticEvent.UnableToResolveInterface(interfaceNames[i], ToString()));
+                        throw new DiagnosticEventException(DiagnosticEvent.UnableToResolveInterface(interfaceNames[i], ToString()));
 #else
                         throw new InternalException($"Unable to resolve interface {interfaceNames[i]} on type {this}");
 #endif
@@ -1183,7 +1183,7 @@ namespace IKVM.Runtime
             internal CompiledAnnotation(RuntimeContext context, ITypeSymbol type)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
-                constructor = type.GetConstructor([context.Resolver.ResolveCoreType(typeof(object).FullName).MakeArrayType()]);
+                constructor = type.GetConstructor([context.Types.Object.MakeArrayType()]);
             }
 
             private ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
@@ -1254,7 +1254,7 @@ namespace IKVM.Runtime
 
         internal override string GetSourceFileName()
         {
-            var attr = type.GetCustomAttribute(Context.Resolver.ImportType(typeof(SourceFileAttribute)));
+            var attr = type.GetCustomAttribute(Context.Resolver.GetSymbol(typeof(SourceFileAttribute)));
             if (attr != null && attr.Value.ConstructorArguments.Length > 0)
                 return (string)attr.Value.ConstructorArguments[0].Value;
 
@@ -1264,7 +1264,7 @@ namespace IKVM.Runtime
             if (IsNestedTypeAnonymousOrLocalClass(type))
                 return Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).GetSourceFileName();
 
-            if (type.Module.IsDefined(Context.Resolver.ImportType(typeof(SourceFileAttribute)), false))
+            if (type.Module.IsDefined(Context.Resolver.GetSymbol(typeof(SourceFileAttribute)), false))
                 return type.Name + ".java";
 
             return null;
@@ -1272,7 +1272,7 @@ namespace IKVM.Runtime
 
         internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
-            var attr = type.GetCustomAttribute(Context.Resolver.ImportType(typeof(LineNumberTableAttribute)));
+            var attr = type.GetCustomAttribute(Context.Resolver.GetSymbol(typeof(LineNumberTableAttribute)));
             if (attr != null && attr.Value.Constructor != null)
                 return ((LineNumberTableAttribute)attr.Value.Constructor.AsReflection().Invoke(attr.Value.ConstructorArguments.Cast<object>().ToArray())).GetLineNumber(ilOffset);
 

@@ -242,9 +242,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
         {
-#if NETFRAMEWORK
             _il.MarkSequencePoint(document, startLine, startColumn, endLine, endColumn);
-#endif
         }
 
         /// <inheritdoc />

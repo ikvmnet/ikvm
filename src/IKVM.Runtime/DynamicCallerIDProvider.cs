@@ -36,7 +36,10 @@ namespace IKVM.Runtime
         // method to be public without giving untrusted code the ability to forge a CallerID token
         internal static readonly DynamicCallerIDProvider Instance = new DynamicCallerIDProvider();
 
-        private DynamicCallerIDProvider() { }
+        private DynamicCallerIDProvider()
+        {
+
+        }
 
         internal ikvm.@internal.CallerID GetCallerID()
         {
@@ -56,7 +59,7 @@ namespace IKVM.Runtime
                     continue;
                 }
 
-                var caller = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType);
+                var caller = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(method.DeclaringType));
                 return CreateCallerID(caller.Host ?? caller);
             }
 #endif

@@ -27,13 +27,35 @@ namespace IKVM.Tools.Core.Diagnostics
         public TOptions Options => _options;
 
         /// <inheritdoc />
+        public bool CanWrite(in DiagnosticEvent @event)
+        {
+            // filter out nowarn
+            if (@event.Diagnostic.Level is DiagnosticLevel.Warning)
+            {
+                if (Options.NoWarn)
+                    return false;
+                else if (Options.NoWarnDiagnostics.Contains(@event.Diagnostic))
+                    return false;
+            }
+
+            // any unknown diagnostic can be written
+            return @event.Diagnostic.Level is not DiagnosticLevel.Unknown;
+        }
+
+        /// <inheritdoc />
         public void Write(in DiagnosticEvent @event)
         {
             var level = @event.Diagnostic.Level;
-            if (level is DiagnosticLevel.Warning && Options.WarnAsError)
-                level = DiagnosticLevel.Error;
-            if (level is DiagnosticLevel.Warning && Options.WarnAsErrorDiagnostics.Contains(@event.Diagnostic))
-                level = DiagnosticLevel.Error;
+            if (CanWrite(@event) == false)
+                return;
+
+            if (level is DiagnosticLevel.Warning)
+            {
+                if (Options.WarnAsError)
+                    level = DiagnosticLevel.Error;
+                else if (Options.WarnAsErrorDiagnostics.Contains(@event.Diagnostic))
+                    level = DiagnosticLevel.Error;
+            }
 
             // find the writer for the event's level
             var channel = level switch

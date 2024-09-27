@@ -28,13 +28,15 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Symbols;
+
 namespace IKVM.Runtime
 {
 
     partial class MethodHandleUtil
     {
 
-        internal Type GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
+        internal ITypeSymbol GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
 		    throw new NotImplementedException();
@@ -45,7 +47,7 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false
 
-        Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
+        ITypeSymbol CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
         {
             var args = new RuntimeJavaType[type.parameterCount()];
             for (int i = 0; i < args.Length; i++)
@@ -58,20 +60,20 @@ namespace IKVM.Runtime
             return CreateMethodHandleDelegateType(args, ret);
         }
 
-        static Type[] GetParameterTypes(MethodBase mb)
+        static ITypeSymbol[] GetParameterTypes(IMethodBaseSymbol mb)
         {
             var pi = mb.GetParameters();
-            var args = new Type[pi.Length];
+            var args = new ITypeSymbol[pi.Length];
             for (int i = 0; i < args.Length; i++)
                 args[i] = pi[i].ParameterType;
 
             return args;
         }
 
-        internal static Type[] GetParameterTypes(Type thisType, MethodBase mb)
+        internal static ITypeSymbol[] GetParameterTypes(ITypeSymbol thisType, IMethodBaseSymbol mb)
         {
             var pi = mb.GetParameters();
-            var args = new Type[pi.Length + 1];
+            var args = new ITypeSymbol[pi.Length + 1];
             args[0] = thisType;
             for (int i = 1; i < args.Length; i++)
                 args[i] = pi[i - 1].ParameterType;
@@ -79,7 +81,7 @@ namespace IKVM.Runtime
             return args;
         }
 
-        internal java.lang.invoke.MethodType GetDelegateMethodType(Type type)
+        internal java.lang.invoke.MethodType GetDelegateMethodType(ITypeSymbol type)
         {
             java.lang.Class[] types;
             var mi = GetDelegateInvokeMethod(type);
@@ -124,13 +126,13 @@ namespace IKVM.Runtime
             readonly RuntimeContext context;
             readonly java.lang.invoke.MethodType type;
             readonly int firstArg;
-            readonly Type delegateType;
+            readonly ITypeSymbol delegateType;
             readonly object firstBoundValue;
             readonly object secondBoundValue;
-            readonly Type container;
+            readonly ITypeSymbol container;
             readonly DynamicMethod dm;
             readonly CodeEmitter ilgen;
-            readonly Type packedArgType;
+            readonly ITypeSymbol packedArgType;
             readonly int packedArgPos;
 
             sealed class Container<T1, T2>
@@ -159,7 +161,7 @@ namespace IKVM.Runtime
             /// <param name="owner"></param>
             /// <param name="useBasicTypes"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, Type container, object target, object value, Type owner, bool useBasicTypes)
+            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, ITypeSymbol container, object target, object value, ITypeSymbol owner, bool useBasicTypes)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
                 this.type = type;
@@ -171,7 +173,7 @@ namespace IKVM.Runtime
 
                 var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
 
-                Type[] paramTypes;
+                ITypeSymbol[] paramTypes;
                 if (container != null)
                 {
                     firstArg = 1;
@@ -180,17 +182,17 @@ namespace IKVM.Runtime
                 else if (target != null)
                 {
                     firstArg = 1;
-                    paramTypes = GetParameterTypes(target.GetType(), mi);
+                    paramTypes = GetParameterTypes(context.Resolver.GetSymbol(target.GetType()), mi);
                 }
                 else
                 {
                     paramTypes = GetParameterTypes(mi);
                 }
 
-                if (!ReflectUtil.CanOwnDynamicMethod(owner))
-                    owner = typeof(DynamicMethodBuilder);
+                if (!ReflectUtil.CanOwnDynamicMethod(owner.AsReflection()))
+                    owner = context.Resolver.GetSymbol(typeof(DynamicMethodBuilder));
 
-                dm = new DynamicMethod(name, mi.ReturnType, paramTypes, owner, true);
+                dm = new DynamicMethod(name, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), owner.AsReflection(), true);
                 ilgen = context.CodeEmitterFactory.Create(dm);
 
                 if (type.parameterCount() > MaxArity)
@@ -211,9 +213,9 @@ namespace IKVM.Runtime
                 var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
                 dm.Ldarg(0);
                 dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(global::java.lang.invoke.MethodHandle)).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(global::java.lang.invoke.LambdaForm)).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(global::java.lang.invoke.MemberName)).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Castclass, targetDelegateType);
                 for (int i = 0; i < type.parameterCount(); i++)
                     dm.Ldarg(i);
@@ -229,15 +231,15 @@ namespace IKVM.Runtime
             {
                 FinishTypes(type);
 
-                var dm = new DynamicMethodBuilder(context, "InvokeExact", type, typeof(java.lang.invoke.MethodHandle), null, null, null, false);
+                var dm = new DynamicMethodBuilder(context, "InvokeExact", type, context.Resolver.GetSymbol(typeof(java.lang.invoke.MethodHandle)), null, null, null, false);
                 var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.insertParameterTypes(0, context.JavaBase.TypeOfJavaLangInvokeMethodHandle.ClassObject));
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.MethodHandle).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(global::java.lang.invoke.LambdaForm).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(global::java.lang.invoke.MethodHandle)).GetField(METHOD_HANDLE_FORM_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(global::java.lang.invoke.LambdaForm)).GetField(LAMBDA_FORM_VMENTRY_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 if (type.returnType() == java.lang.Void.TYPE)
-                    dm.ilgen.Emit(OpCodes.Call, typeof(MethodHandleUtil).GetMethod(nameof(GetVoidAdapter), BindingFlags.Static | BindingFlags.NonPublic));
+                    dm.ilgen.Emit(OpCodes.Call, context.Resolver.GetSymbol(typeof(MethodHandleUtil)).GetMethod(nameof(GetVoidAdapter), BindingFlags.Static | BindingFlags.NonPublic));
                 else
-                    dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                    dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(java.lang.invoke.MemberName)).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
 
                 dm.ilgen.Emit(OpCodes.Castclass, targetDelegateType);
                 dm.ilgen.Emit(OpCodes.Ldarg_0);
@@ -273,8 +275,8 @@ namespace IKVM.Runtime
                 var delegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type.dropParameterTypes(type.parameterCount() - 1, type.parameterCount()));
                 var dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type, null, null, null, null, true);
                 dm.Ldarg(type.parameterCount() - 1);
-                dm.ilgen.EmitCastclass(typeof(java.lang.invoke.MemberName));
-                dm.ilgen.Emit(OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.ilgen.EmitCastclass(context.Resolver.GetSymbol(typeof(java.lang.invoke.MemberName)));
+                dm.ilgen.Emit(OpCodes.Ldfld, context.Resolver.GetSymbol(typeof(java.lang.invoke.MemberName)).GetField(MEMBER_NAME_VMTARGET_FIELD, BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.ilgen.Emit(OpCodes.Castclass, delegateType);
                 for (int i = 0, count = type.parameterCount() - 1; i < count; i++)
                     dm.Ldarg(i);
@@ -288,7 +290,7 @@ namespace IKVM.Runtime
             {
                 var type = mn.getMethodType().insertParameterTypes(0, mn.getDeclaringClass());
                 var targetDelegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(type);
-                var dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type, typeof(Container<,>).MakeGenericType(typeof(object), typeof(IKVM.Runtime.InvokeCache<>).MakeGenericType(targetDelegateType)), null, null, null, true);
+                var dm = new DynamicMethodBuilder(context, "DirectMethodHandle." + mn.getName() + type, type, context.Resolver.GetSymbol(typeof(Container<,>)).MakeGenericType(context.Types.Object, context.Resolver.GetSymbol(typeof(IKVM.Runtime.InvokeCache<>)).MakeGenericType(targetDelegateType)), null, null, null, true);
                 dm.Ldarg(0);
                 dm.EmitCheckcast(context.JavaBase.TypeOfJavaLangInvokeMethodHandle);
                 switch (mn.getName())
@@ -332,7 +334,7 @@ namespace IKVM.Runtime
                     dm.Ldarg(0);
                     dm.BoxArgs(1);
                 }
-                dm.Callvirt(typeof(RuntimeJavaMethod).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
+                dm.Callvirt(context.Resolver.GetSymbol(typeof(RuntimeJavaMethod)).GetMethod("Invoke", BindingFlags.Instance | BindingFlags.NonPublic));
                 dm.UnboxReturnValue();
 
                 dm.Ret();
@@ -439,12 +441,12 @@ namespace IKVM.Runtime
                 return dm.CreateDelegate();
             }
 
-            internal void Call(MethodInfo method)
+            internal void Call(IMethodSymbol method)
             {
                 ilgen.Emit(OpCodes.Call, method);
             }
 
-            internal void Callvirt(MethodInfo method)
+            internal void Callvirt(IMethodSymbol method)
             {
                 ilgen.Emit(OpCodes.Callvirt, method);
             }
@@ -459,7 +461,7 @@ namespace IKVM.Runtime
                 mw.EmitCallvirt(ilgen);
             }
 
-            internal void CallDelegate(Type delegateType)
+            internal void CallDelegate(ITypeSymbol delegateType)
             {
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
@@ -512,8 +514,8 @@ namespace IKVM.Runtime
                 //ilgen.DumpMethod();
                 ilgen.DoEmit();
                 return ValidateDelegate(firstArg == 0
-                    ? dm.CreateDelegate(delegateType)
-                    : dm.CreateDelegate(delegateType, container == null ? firstBoundValue : Activator.CreateInstance(container, firstBoundValue, secondBoundValue)));
+                    ? dm.CreateDelegate(delegateType.AsReflection())
+                    : dm.CreateDelegate(delegateType.AsReflection(), container == null ? firstBoundValue : Activator.CreateInstance(container.AsReflection(), firstBoundValue, secondBoundValue)));
             }
 
             internal void BoxArgs(int start)
@@ -578,14 +580,14 @@ namespace IKVM.Runtime
                 tw.EmitCheckcast(ilgen);
             }
 
-            internal void EmitCastclass(Type type)
+            internal void EmitCastclass(ITypeSymbol type)
             {
                 ilgen.EmitCastclass(type);
             }
 
             internal void EmitWriteLine()
             {
-                ilgen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(object) }));
+                ilgen.Emit(OpCodes.Call, context.Resolver.GetSymbol(typeof(Console)).GetMethod("WriteLine", [context.Types.Object]));
             }
 
             internal void CastByte()
@@ -627,10 +629,10 @@ namespace IKVM.Runtime
             return d;
         }
 
-        internal Type GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
+        internal ITypeSymbol GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
         {
-            type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type);
-            return type._invokeExactDelegateType;
+            type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type).AsReflection();
+            return context.Resolver.GetSymbol(type._invokeExactDelegateType);
         }
 
         internal T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle mh)
@@ -640,13 +642,13 @@ namespace IKVM.Runtime
             if (mh._invokeExactDelegate == null)
             {
                 type._invokeExactDynamicMethod ??= DynamicMethodBuilder.CreateInvokeExact(context, type);
-                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type), mh);
+                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type).AsReflection(), mh);
                 var del = mh._invokeExactDelegate as T;
                 if (del != null)
                     return del;
             }
 
-            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(typeof(T)), type);
+            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(context.Resolver.GetSymbol(typeof(T))), type);
         }
 
         /// <summary>
@@ -668,7 +670,7 @@ namespace IKVM.Runtime
             return type.voidAdapter;
         }
 
-        internal void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, Type packedArgType)
+        internal void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, ITypeSymbol packedArgType)
         {
             index += firstArg;
             if (index >= packedArgPos)

@@ -1743,7 +1743,7 @@ namespace IKVM.Runtime
                         }
                     case NormalizedByteCode.__multianewarray:
                         {
-                            var localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Resolver.ResolveCoreType(typeof(int).FullName).MakeArrayType());
+                            var localArray = ilGenerator.UnsafeAllocTempLocal(finish.Context.Types.Int32.MakeArrayType());
                             var localInt = ilGenerator.UnsafeAllocTempLocal(finish.Context.Types.Int32);
                             ilGenerator.EmitLdc_I4(instr.Arg2);
                             ilGenerator.Emit(System.Reflection.Emit.OpCodes.Newarr, finish.Context.Types.Int32);
@@ -3439,24 +3439,25 @@ namespace IKVM.Runtime
             internal static void EmitLinkToCall(RuntimeContext context, CodeEmitter ilgen, RuntimeJavaType[] args, RuntimeJavaType retType)
             {
 #if !FIRST_PASS && !IMPORTER
-                CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
+                var temps = new CodeEmitterLocal[args.Length];
                 for (int i = args.Length - 1; i > 0; i--)
                 {
                     temps[i] = ilgen.DeclareLocal(context.MethodHandleUtil.AsBasicType(args[i]));
                     ToBasic(args[i], ilgen);
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, temps[i]);
                 }
+
                 temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, temps[0]);
                 Array.Resize(ref args, args.Length - 1);
-                Type delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
+
+                var delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[args.Length]);
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldfld, typeof(java.lang.invoke.MemberName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Ldfld, context.Resolver.ResolveBaseType(typeof(java.lang.invoke.MemberName).FullName).GetField("vmtarget", BindingFlags.Instance | BindingFlags.NonPublic));
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, delegateType);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
-                }
+
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
                 FromBasic(retType, ilgen);
 #else
@@ -3464,7 +3465,7 @@ namespace IKVM.Runtime
 #endif
             }
 
-            private void EmitInvokeExact(CodeEmitter ilgen)
+            void EmitInvokeExact(CodeEmitter ilgen)
             {
                 var args = cpi.GetArgTypes();
                 var temps = new CodeEmitterLocal[args.Length];
@@ -3494,7 +3495,7 @@ namespace IKVM.Runtime
                 ilgen.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            private void EmitInvokeMaxArity(CodeEmitter ilgen)
+            void EmitInvokeMaxArity(CodeEmitter ilgen)
             {
                 RuntimeJavaType[] args = cpi.GetArgTypes();
                 CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
@@ -3510,9 +3511,8 @@ namespace IKVM.Runtime
                 var mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
-                }
+
                 compiler.finish.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
@@ -3553,15 +3553,14 @@ namespace IKVM.Runtime
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldsflda, fb);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
-                }
+
                 compiler.finish.Context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
-            private void EmitInvokeBasic(CodeEmitter ilgen)
+            void EmitInvokeBasic(CodeEmitter ilgen)
             {
-                RuntimeJavaType retType = cpi.GetRetType();
+                var retType = cpi.GetRetType();
                 EmitInvokeBasic(wrapper.Context, ilgen, cpi.GetArgTypes(), retType, true);
                 FromBasic(retType, ilgen);
             }
@@ -3574,21 +3573,20 @@ namespace IKVM.Runtime
                 {
                     temps[i] = ilgen.DeclareLocal(context.MethodHandleUtil.AsBasicType(args[i]));
                     if (toBasic)
-                    {
                         ToBasic(args[i], ilgen);
-                    }
+
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, temps[i]);
                 }
                 temps[0] = ilgen.DeclareLocal(args[0].TypeAsSignatureType);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, temps[0]);
+
                 var delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
                 var mi = context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[0]);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
-                {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
-                }
+
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
 
@@ -3614,12 +3612,13 @@ namespace IKVM.Runtime
             {
                 throw new InvalidOperationException();
             }
+
         }
 
-        private sealed class DynamicFieldBinder
+        sealed class DynamicFieldBinder
         {
 
-            private IMethodSymbol method;
+            IMethodSymbol method;
 
             internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
             {
@@ -3659,7 +3658,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private sealed class DynamicBinder
+        sealed class DynamicBinder
         {
 
             RuntimeJavaMethod mw;

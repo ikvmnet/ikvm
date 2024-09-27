@@ -1,11 +1,9 @@
 ﻿using System;
 
-using IKVM.CoreLib.Diagnostics;
-
-namespace IKVM.Tools.Importer
+namespace IKVM.CoreLib.Diagnostics
 {
 
-    sealed class FatalCompilerErrorException : Exception
+    sealed class DiagnosticEventException : Exception
     {
 
         /// <summary>
@@ -33,7 +31,7 @@ namespace IKVM.Tools.Importer
         /// Initializes a new instance.
         /// </summary>
         /// <param name="evt"></param>
-        internal FatalCompilerErrorException(in DiagnosticEvent evt) :
+        internal DiagnosticEventException(in DiagnosticEvent evt) :
 #if NET8_0_OR_GREATER
             base($"{FormatDiagnosticLevel(evt.Diagnostic.Level)} IKVM{evt.Diagnostic.Id:D4}: {string.Format(null, evt.Diagnostic.Message, evt.Args)}")
 #else

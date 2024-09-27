@@ -8,12 +8,6 @@
     {
 
         /// <summary>
-        /// Gets the known core assembly.
-        /// </summary>
-        /// <returns></returns>
-        IAssemblySymbol ResolveCoreAssembly();
-
-        /// <summary>
         /// Resolves the named type from the core assembly.
         /// </summary>
         /// <param name="typeName"></param>

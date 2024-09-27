@@ -61,7 +61,7 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("..", "Dia
         /// <#= desc #>
         /// </summary>
         /// <remarks>
-<#= Util.ToCommentString(kvp.Value.Message) #>
+<#= Util.ToCommentString(kvp.Value) #>
         /// </remarks>
         [Event(<#= kvp.Value.Id #>, Message = <#= Util.ToStringLiteral(string.Join("", message)) #>, Level = EventLevel.<#= level #>)]
         public void <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => WriteEvent(<#= string.Join(", ", argList) #>);

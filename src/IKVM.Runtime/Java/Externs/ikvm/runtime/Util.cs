@@ -50,7 +50,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 return ghostType;
 
             var t = o.GetType();
-            var ts = context.Resolver.ImportType(t);
+            var ts = context.Resolver.GetSymbol(t);
             if (t.IsPrimitive || context.ClassLoaderFactory.IsRemappedType(ts) && !ts.IsSealed)
                 return context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts);
 
@@ -73,7 +73,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             throw new NotImplementedException();
 #else
             var t = Type.GetTypeFromHandle(handle);
-            var ts = JVM.Context.Resolver.ImportType(t);
+            var ts = JVM.Context.Resolver.GetSymbol(t);
             if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || t == typeof(void))
                 return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).ClassObject;
 
@@ -94,7 +94,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             throw new NotImplementedException();
 #else
             var t = Type.GetTypeFromHandle(handle);
-            var ts = JVM.Context.Resolver.ImportType(t);
+            var ts = JVM.Context.Resolver.GetSymbol(t);
             if (ts.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || ts == typeof(void))
                 return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).MakeArrayType(rank).ClassObject;
 
@@ -114,7 +114,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var ts = JVM.Context.Resolver.ImportType(type);
+            var ts = JVM.Context.Resolver.GetSymbol(type);
 
             int rank = 0;
             while (ReflectUtil.IsVector(ts))

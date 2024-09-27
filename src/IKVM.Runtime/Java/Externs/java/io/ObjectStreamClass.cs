@@ -21,9 +21,9 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Reflection;
 using IKVM.Runtime;
+using IKVM.CoreLib.Symbols;
+
 
 #if !NO_REF_EMIT
 using System.Reflection.Emit;
@@ -177,41 +177,46 @@ namespace IKVM.Java.Externs.java.io
 
 #if !FIRST_PASS && !NO_REF_EMIT
 
-        private sealed class FastFieldReflector : global::ikvm.@internal.FieldReflectorBase
+        sealed class FastFieldReflector : global::ikvm.@internal.FieldReflectorBase
         {
 
-            private static readonly MethodInfo ReadByteMethod = typeof(IOHelpers).GetMethod("ReadByte");
-            private static readonly MethodInfo ReadBooleanMethod = typeof(IOHelpers).GetMethod("ReadBoolean");
-            private static readonly MethodInfo ReadCharMethod = typeof(IOHelpers).GetMethod("ReadChar");
-            private static readonly MethodInfo ReadShortMethod = typeof(IOHelpers).GetMethod("ReadShort");
-            private static readonly MethodInfo ReadIntMethod = typeof(IOHelpers).GetMethod("ReadInt");
-            private static readonly MethodInfo ReadFloatMethod = typeof(IOHelpers).GetMethod("ReadFloat");
-            private static readonly MethodInfo ReadLongMethod = typeof(IOHelpers).GetMethod("ReadLong");
-            private static readonly MethodInfo ReadDoubleMethod = typeof(IOHelpers).GetMethod("ReadDouble");
-            private static readonly MethodInfo WriteByteMethod = typeof(IOHelpers).GetMethod("WriteByte");
-            private static readonly MethodInfo WriteBooleanMethod = typeof(IOHelpers).GetMethod("WriteBoolean");
-            private static readonly MethodInfo WriteCharMethod = typeof(IOHelpers).GetMethod("WriteChar");
-            private static readonly MethodInfo WriteShortMethod = typeof(IOHelpers).GetMethod("WriteShort");
-            private static readonly MethodInfo WriteIntMethod = typeof(IOHelpers).GetMethod("WriteInt");
-            private static readonly MethodInfo WriteFloatMethod = typeof(IOHelpers).GetMethod("WriteFloat");
-            private static readonly MethodInfo WriteLongMethod = typeof(IOHelpers).GetMethod("WriteLong");
-            private static readonly MethodInfo WriteDoubleMethod = typeof(IOHelpers).GetMethod("WriteDouble");
-            private delegate void ObjFieldGetterSetter(object obj, object[] objarr);
-            private delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
-            private static readonly ObjFieldGetterSetter objDummy = new ObjFieldGetterSetter(Dummy);
-            private static readonly PrimFieldGetterSetter primDummy = new PrimFieldGetterSetter(Dummy);
-            private global::java.io.ObjectStreamField[] fields;
-            private ObjFieldGetterSetter objFieldGetter;
-            private PrimFieldGetterSetter primFieldGetter;
-            private ObjFieldGetterSetter objFieldSetter;
-            private PrimFieldGetterSetter primFieldSetter;
+            delegate void ObjFieldGetterSetter(object obj, object[] objarr);
+            delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
 
-            private static void Dummy(object obj, object[] objarr)
+            static readonly IMethodSymbol ReadByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadByte"));
+            static readonly IMethodSymbol ReadBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadBoolean"));
+            static readonly IMethodSymbol ReadCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadChar"));
+            static readonly IMethodSymbol ReadShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadShort"));
+            static readonly IMethodSymbol ReadIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadInt"));
+            static readonly IMethodSymbol ReadFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadFloat"));
+            static readonly IMethodSymbol ReadLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadLong"));
+            static readonly IMethodSymbol ReadDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadDouble"));
+            static readonly IMethodSymbol WriteByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteByte"));
+            static readonly IMethodSymbol WriteBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteBoolean"));
+            static readonly IMethodSymbol WriteCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteChar"));
+            static readonly IMethodSymbol WriteShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteShort"));
+            static readonly IMethodSymbol WriteIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteInt"));
+            static readonly IMethodSymbol WriteFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteFloat"));
+            static readonly IMethodSymbol WriteLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteLong"));
+            static readonly IMethodSymbol WriteDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteDouble"));
+
+            static readonly ObjFieldGetterSetter objDummy = new ObjFieldGetterSetter(Dummy);
+            static readonly PrimFieldGetterSetter primDummy = new PrimFieldGetterSetter(Dummy);
+
+            global::java.io.ObjectStreamField[] fields;
+            ObjFieldGetterSetter objFieldGetter;
+            PrimFieldGetterSetter primFieldGetter;
+            ObjFieldGetterSetter objFieldSetter;
+            PrimFieldGetterSetter primFieldSetter;
+
+            static void Dummy(object obj, object[] objarr)
             {
+
             }
 
-            private static void Dummy(object obj, byte[] barr)
+            static void Dummy(object obj, byte[] barr)
             {
+
             }
 
             internal FastFieldReflector(global::java.io.ObjectStreamField[] fields)
@@ -220,7 +225,7 @@ namespace IKVM.Java.Externs.java.io
                 RuntimeJavaType tw = null;
                 foreach (global::java.io.ObjectStreamField field in fields)
                 {
-                    RuntimeJavaField fw = GetFieldWrapper(field);
+                    var fw = GetFieldWrapper(field);
                     if (fw != null)
                     {
                         if (tw == null)
@@ -234,6 +239,7 @@ namespace IKVM.Java.Externs.java.io
                         }
                     }
                 }
+
                 if (tw == null)
                 {
                     objFieldGetter = objFieldSetter = objDummy;
@@ -250,10 +256,10 @@ namespace IKVM.Java.Externs.java.io
                         throw x.ToJava();
                     }
 
-                    var dmObjGetter = DynamicMethodUtil.Create("__<ObjFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
-                    var dmPrimGetter = DynamicMethodUtil.Create("__<PrimFieldGetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
-                    var dmObjSetter = DynamicMethodUtil.Create("__<ObjFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(object[]) });
-                    var dmPrimSetter = DynamicMethodUtil.Create("__<PrimFieldSetter>", tw.TypeAsBaseType, true, null, new Type[] { typeof(object), typeof(byte[]) });
+                    var dmObjGetter = DynamicMethodUtil.Create("__<ObjFieldGetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(object[])]);
+                    var dmPrimGetter = DynamicMethodUtil.Create("__<PrimFieldGetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(byte[])]);
+                    var dmObjSetter = DynamicMethodUtil.Create("__<ObjFieldSetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(object[])]);
+                    var dmPrimSetter = DynamicMethodUtil.Create("__<PrimFieldSetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(byte[])]);
                     var ilgenObjGetter = JVM.Context.CodeEmitterFactory.Create(dmObjGetter);
                     var ilgenPrimGetter = JVM.Context.CodeEmitterFactory.Create(dmPrimGetter);
                     var ilgenObjSetter = JVM.Context.CodeEmitterFactory.Create(dmObjSetter);
@@ -272,13 +278,12 @@ namespace IKVM.Java.Externs.java.io
 
                     foreach (global::java.io.ObjectStreamField field in fields)
                     {
-                        RuntimeJavaField fw = GetFieldWrapper(field);
+                        var fw = GetFieldWrapper(field);
                         if (fw == null)
-                        {
                             continue;
-                        }
+
                         fw.ResolveField();
-                        RuntimeJavaType fieldType = fw.FieldTypeWrapper;
+                        var fieldType = fw.FieldTypeWrapper;
                         try
                         {
                             fieldType = fieldType.EnsureLoadable(tw.ClassLoader);
@@ -288,6 +293,7 @@ namespace IKVM.Java.Externs.java.io
                         {
                             throw x.ToJava();
                         }
+
                         if (fieldType.IsPrimitive)
                         {
                             // Getter

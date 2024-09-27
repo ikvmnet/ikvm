@@ -705,7 +705,7 @@ namespace IKVM.Runtime
                 if (javaType.TypeAsTBD != type && (!javaType.IsRemapped || javaType.TypeAsBaseType != type))
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(DiagnosticEvent.AssemblyContainsDuplicateClassNames(type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName));
+                    throw new DiagnosticEventException(DiagnosticEvent.AssemblyContainsDuplicateClassNames(type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName));
 #else
                     throw new InternalException($"\nType \"{type.FullName}\" and \"{javaType.TypeAsTBD.FullName}\" both map to the same name \"{javaType.Name}\".");
 #endif

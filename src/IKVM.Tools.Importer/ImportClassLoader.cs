@@ -165,7 +165,7 @@ namespace IKVM.Tools.Importer
             name.Version = state.version;
 
             // define a dynamic assembly and module
-            assemblyBuilder = Context.Resolver.ImportAssembly(Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir));
+            assemblyBuilder = Context.Resolver.GetSymbol(Context.StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir));
             var moduleBuilder = assemblyBuilder.DefineModule(assemblyName, assemblyFile, EmitSymbols);
 
             // if configured to emit stack trace info set source file
@@ -631,11 +631,11 @@ namespace IKVM.Tools.Importer
                 }
                 catch (IOException x)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message));
+                    throw new DiagnosticEventException(DiagnosticEvent.ErrorWritingFile(GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message));
                 }
                 catch (UnauthorizedAccessException x)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message));
+                    throw new DiagnosticEventException(DiagnosticEvent.ErrorWritingFile(GetTypeWrapperFactory().ModuleBuilder.FullyQualifiedName, x.Message));
                 }
             }
             else
@@ -648,11 +648,11 @@ namespace IKVM.Tools.Importer
                 }
                 catch (IOException x)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(Path.Combine(assemblyDir, assemblyFile), x.Message));
+                    throw new DiagnosticEventException(DiagnosticEvent.ErrorWritingFile(Path.Combine(assemblyDir, assemblyFile), x.Message));
                 }
                 catch (UnauthorizedAccessException x)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorWritingFile(Path.Combine(assemblyDir, assemblyFile), x.Message));
+                    throw new DiagnosticEventException(DiagnosticEvent.ErrorWritingFile(Path.Combine(assemblyDir, assemblyFile), x.Message));
                 }
             }
         }
@@ -674,7 +674,7 @@ namespace IKVM.Tools.Importer
                 }
 
                 list = UnicodeUtil.EscapeInvalidSurrogates(list);
-                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([Context.Resolver.ResolveCoreType(typeof(string).FullName).MakeArrayType()]), [list], propInfos, propValues);
+                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([Context.Types.String.MakeArrayType()]), [list], propInfos, propValues);
                 mb.SetCustomAttribute(cab);
             }
             else
@@ -897,7 +897,7 @@ namespace IKVM.Tools.Importer
                 this.baseTypeWrapper = GetBaseWrapper(context, c);
                 classDef = c;
                 bool baseIsSealed = false;
-                shadowType = context.Resolver.ImportType(context.StaticCompiler.Universe.GetType(c.Shadows, true));
+                shadowType = context.Resolver.GetSymbol(context.StaticCompiler.Universe.GetType(c.Shadows, true));
                 classLoader.SetRemappedType(shadowType, this);
                 var baseType = shadowType;
                 ITypeSymbol baseInterface = null;
@@ -1757,7 +1757,7 @@ namespace IKVM.Tools.Importer
                     // type specified, or class missing, assume loading .NET type
                     if (m.Redirect.Type != null || m.Redirect.Class == null)
                     {
-                        var type = m.Redirect.Type != null ? DeclaringType.Context.Resolver.ImportType(DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Type, true)) : baseType;
+                        var type = m.Redirect.Type != null ? DeclaringType.Context.Resolver.GetSymbol(DeclaringType.Context.StaticCompiler.Universe.GetType(m.Redirect.Type, true)) : baseType;
                         var redirParamTypes = classLoader.ArgTypeListFromSig(redirSig);
                         var mi = type.GetMethod(m.Redirect.Name, redirParamTypes) ?? throw new InvalidOperationException();
                         ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
@@ -2301,7 +2301,7 @@ namespace IKVM.Tools.Importer
                 for (int i = 0; i < map.Length; i++)
                 {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Dup);
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Ldtoken, rcontext.Resolver.ResolveType(map[i].Source));
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ceq);
                     var label = ilgen.DefineLabel();
@@ -2593,7 +2593,7 @@ namespace IKVM.Tools.Importer
             }
             catch (FileFormatLimitationExceededException e)
             {
-                throw new FatalCompilerErrorException(DiagnosticEvent.FileFormatLimitationExceeded(e.Message));
+                throw new DiagnosticEventException(DiagnosticEvent.FileFormatLimitationExceeded(e.Message));
             }
 
             return 0;
@@ -2604,7 +2604,7 @@ namespace IKVM.Tools.Importer
             diagnostics.GenericCompilerInfo($"JVM.Compile path: {import.path}, assembly: {import.assembly}");
 
             // locate specified runtime assembly
-            var runtimeAssembly = context.Resolver.ResolveRuntimeAssembly();
+            var runtimeAssembly = context.Resolver.GetRuntimeAssembly();
             var allReferencesAreStrongNamed = IsSigned(runtimeAssembly);
 
             var references = new List<IAssemblySymbol>();
@@ -2625,12 +2625,12 @@ namespace IKVM.Tools.Importer
                         {
                             // TODO we really should support binding redirects here to allow different revisions to be mixed
                             if (asmref.FullName != runtimeAssembly.FullName)
-                                throw new FatalCompilerErrorException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
+                                throw new DiagnosticEventException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
                         }
                         else
                         {
                             if (asmref.PublicKeyOrToken.IsEmpty == false)
-                                throw new FatalCompilerErrorException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
+                                throw new DiagnosticEventException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
                         }
                     }
                 }
@@ -2744,10 +2744,10 @@ namespace IKVM.Tools.Importer
                 import.target = IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll;
 
             if (import.target != IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll && import.mainClass == null)
-                throw new FatalCompilerErrorException(DiagnosticEvent.ExeRequiresMainClass());
+                throw new DiagnosticEventException(DiagnosticEvent.ExeRequiresMainClass());
 
             if (import.target == IKVM.CoreLib.Symbols.Emit.PEFileKinds.Dll && import.props.Count != 0)
-                throw new FatalCompilerErrorException(DiagnosticEvent.PropertiesRequireExe());
+                throw new DiagnosticEventException(DiagnosticEvent.PropertiesRequireExe());
 
             if (import.path == null)
             {
@@ -2767,7 +2767,7 @@ namespace IKVM.Tools.Importer
             if (import.targetIsModule)
             {
                 if (import.classLoader != null)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ModuleCannotHaveClassLoader());
+                    throw new DiagnosticEventException(DiagnosticEvent.ModuleCannotHaveClassLoader());
 
                 // TODO if we're overwriting a user specified assembly name, we need to emit a warning
                 import.assembly = import.path.Name;
@@ -2801,7 +2801,7 @@ namespace IKVM.Tools.Importer
                 }
                 catch (Exception e)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ErrorReadingFile(import.remapfile.FullName, e.Message));
+                    throw new DiagnosticEventException(DiagnosticEvent.ErrorReadingFile(import.remapfile.FullName, e.Message));
                 }
 
                 try
@@ -2814,7 +2814,7 @@ namespace IKVM.Tools.Importer
                     }
                     catch (MapXml.MapXmlException x)
                     {
-                        throw new FatalCompilerErrorException(DiagnosticEvent.ErrorParsingMapFile(import.remapfile.FullName, x.Message));
+                        throw new DiagnosticEventException(DiagnosticEvent.ErrorParsingMapFile(import.remapfile.FullName, x.Message));
                     }
 
                     if (loader.ValidateAndSetMap(map) == false)
@@ -2831,13 +2831,13 @@ namespace IKVM.Tools.Importer
 
             if (import.bootstrap == false)
             {
-                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly());
-                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly()));
+                allReferencesAreStrongNamed &= IsSigned(context.Resolver.GetBaseAssembly());
+                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.GetBaseAssembly()));
             }
 
             if ((import.keyPair != null || import.publicKey != null) && !allReferencesAreStrongNamed)
             {
-                throw new FatalCompilerErrorException(DiagnosticEvent.StrongNameRequiresStrongNamedRefs());
+                throw new DiagnosticEventException(DiagnosticEvent.StrongNameRequiresStrongNamedRefs());
             }
 
             if (loader.map != null)
@@ -2848,7 +2848,7 @@ namespace IKVM.Tools.Importer
             if (import.bootstrap == false)
             {
                 loader.fakeTypes = context.FakeTypes;
-                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly());
+                loader.fakeTypes.Load(context.Resolver.GetBaseAssembly());
             }
 
             return 0;
@@ -2960,22 +2960,22 @@ namespace IKVM.Tools.Importer
                 }
                 if (wrapper == null)
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.MainClassNotFound());
+                    throw new DiagnosticEventException(DiagnosticEvent.MainClassNotFound());
                 }
 
                 var mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
                 if (mw == null || !mw.IsStatic)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.MainMethodNotFound());
+                    throw new DiagnosticEventException(DiagnosticEvent.MainMethodNotFound());
 
                 mw.Link();
 
                 var method = mw.GetMethod() as IMethodSymbol;
                 if (method == null)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.UnsupportedMainMethod());
+                    throw new DiagnosticEventException(DiagnosticEvent.UnsupportedMainMethod());
 
                 if (!ReflectUtil.IsFromAssembly(method.DeclaringType, assemblyBuilder) && (!method.IsPublic || !method.DeclaringType.IsPublic))
                 {
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ExternalMainNotAccessible());
+                    throw new DiagnosticEventException(DiagnosticEvent.ExternalMainNotAccessible());
                 }
 
                 var apartmentAttributeType = state.apartment switch
@@ -3001,7 +3001,7 @@ namespace IKVM.Tools.Importer
                 }
                 catch (IKVM.Reflection.MissingMemberException x)
                 {
-                    Context.StaticCompiler.IssueMissingTypeMessage((ITypeSymbol)Context.Resolver.ImportMember(x.MemberInfo));
+                    Context.StaticCompiler.IssueMissingTypeMessage((ITypeSymbol)Context.Resolver.GetSymbol(x.MemberInfo));
                     return 1;
                 }
             }
@@ -3046,20 +3046,20 @@ namespace IKVM.Tools.Importer
                 }
 
                 if (classLoaderType == null)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderNotFound());
+                    throw new DiagnosticEventException(DiagnosticEvent.ClassLoaderNotFound());
 
                 if (classLoaderType.IsPublic == false && ReflectUtil.IsFromAssembly(classLoaderType.TypeAsBaseType, assemblyBuilder) == false)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderNotAccessible());
+                    throw new DiagnosticEventException(DiagnosticEvent.ClassLoaderNotAccessible());
 
                 if (classLoaderType.IsAbstract)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderIsAbstract());
+                    throw new DiagnosticEventException(DiagnosticEvent.ClassLoaderIsAbstract());
 
                 if (classLoaderType.IsAssignableTo(Context.ClassLoaderFactory.LoadClassCritical("java.lang.ClassLoader")) == false)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderNotClassLoader());
+                    throw new DiagnosticEventException(DiagnosticEvent.ClassLoaderNotClassLoader());
 
                 var classLoaderInitMethod = classLoaderType.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
                 if (classLoaderInitMethod == null)
-                    throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderConstructorMissing());
+                    throw new DiagnosticEventException(DiagnosticEvent.ClassLoaderConstructorMissing());
 
                 // apply custom attribute specifying custom class loader
                 Context.AttributeHelper.SetCustomAssemblyClassLoaderAttribute(assemblyBuilder, classLoaderType.TypeAsTBD);

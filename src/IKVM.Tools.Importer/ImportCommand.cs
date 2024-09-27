@@ -295,36 +295,6 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Parse an option set of Diagnostic ID values.
-        /// </summary>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        Diagnostic[]? ParseDiagnosticArray(ArgumentResult result)
-        {
-            List<Diagnostic>? l = null;
-
-            foreach (var i in result.Tokens)
-            {
-                foreach (var j in i.Value.Split(LIST_SEPARATOR, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (int.TryParse(j, out var id) && Diagnostic.GetById(id) is { } diagnostic)
-                    {
-                        l ??= new();
-                        l.Add(diagnostic);
-                    }
-
-                    if (j.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) && int.TryParse(j["IKVM".Length..], out var id2) && Diagnostic.GetById(id2) is { } diagnostic2)
-                    {
-                        l ??= new();
-                        l.Add(diagnostic2);
-                    }
-                }
-            }
-
-            return l?.ToArray();
-        }
-
-        /// <summary>
         /// Parses an optional string option. An optional string argument represents three states: not present (null),
         /// empty (present with no values) or specified (present with values).
         /// </summary>

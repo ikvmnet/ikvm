@@ -630,7 +630,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return type.IsArray && IsPrimitiveArrayType(JVM.Context.Resolver.ImportType(type.GetElementType()));
+            return type.IsArray && IsPrimitiveArrayType(JVM.Context.Resolver.GetSymbol(type.GetElementType()));
 #endif
         }
 
@@ -1049,7 +1049,7 @@ namespace IKVM.Runtime
                 throw new ArgumentOutOfRangeException();
 
             // check for InitializeModule method present on classloader
-            var classLoader = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.ImportAssembly(asm)).GetJavaClassLoader();
+            var classLoader = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).GetJavaClassLoader();
             if (classLoader != null)
             {
                 var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);

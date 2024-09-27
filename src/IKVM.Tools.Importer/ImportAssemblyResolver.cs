@@ -87,7 +87,7 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        /// <exception cref="FatalCompilerErrorException"></exception>
+        /// <exception cref="DiagnosticEventException"></exception>
         internal Assembly LoadFile(string path)
         {
             string ex = null;
@@ -101,7 +101,7 @@ namespace IKVM.Tools.Importer
                         // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of the corelib
                         foreach (var asmref in module.GetReferencedAssemblies())
                             if (asmref.Name == universe.CoreLibName && asmref.Version > coreLibVersion)
-                                throw new FatalCompilerErrorException(DiagnosticEvent.CoreAssemblyVersionMismatch(asmref.Name, universe.CoreLibName));
+                                throw new DiagnosticEventException(DiagnosticEvent.CoreAssemblyVersionMismatch(asmref.Name, universe.CoreLibName));
                     }
 
                     var asm = universe.LoadAssembly(module);

@@ -1661,11 +1661,11 @@ namespace IKVM.Runtime
 
                 IMethodSymbol UnwrapLocalRefMethod => LocalRefStructType.GetMethod("UnwrapLocalRef");
 
-                IMethodSymbol WriteLineMethod => context.Resolver.ResolveType(typeof(Console).FullName).GetMethod("WriteLine", [context.Types.Object]);
+                IMethodSymbol WriteLineMethod => context.Resolver.ResolveSystemType(typeof(Console).FullName).GetMethod("WriteLine", [context.Types.Object]);
 
-                IMethodSymbol MonitorEnterMethod => context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", [context.Types.Object]);
+                IMethodSymbol MonitorEnterMethod => context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", [context.Types.Object]);
 
-                IMethodSymbol MonitorExitMethod => context.Resolver.ResolveType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", [context.Types.Object]);
+                IMethodSymbol MonitorExitMethod => context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", [context.Types.Object]);
 
                 internal void Generate(RuntimeByteCodeJavaType.FinishContext context, CodeEmitter ilGenerator, RuntimeByteCodeJavaType wrapper, RuntimeJavaMethod mw, ITypeSymbolBuilder typeBuilder, ClassFile classFile, ClassFile.Method m, RuntimeJavaType[] args, bool thruProxy)
                 {
@@ -1896,7 +1896,7 @@ namespace IKVM.Runtime
                 }
                 ilgen.Emit(OpCodes.Ldc_I4_1);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
-                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveType(typeof(StackFrame).FullName).GetConstructor([context.Types.Int32, context.Types.Boolean]));
+                ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveSystemType(typeof(StackFrame).FullName).GetConstructor([context.Types.Int32, context.Types.Boolean]));
                 var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
                 callerID.Link();
                 callerID.EmitCall(ilgen);

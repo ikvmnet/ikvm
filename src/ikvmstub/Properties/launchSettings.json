@@ -1,8 +1,8 @@
 {
   "profiles": {
     "ikvmstub": {
-        "commandName": "Project",
-        "commandLineArgs": "--bootstrap --skiperror --nostdlib --parameters --lib:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\" --reference:\"D:\\ikvm\\src\\IKVM.Java-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Java.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Runtime-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Runtime.dll\" --out:\"C:\\Users\\jhaltom\\System.Threading.jar\" \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Threading.dll\""
+      "commandName": "Project",
+      "commandLineArgs": "--bootstrap --nostdlib --skiperror --parameters --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\Microsoft.Win32.Primitives.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Collections.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Net.Primitives.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Runtime.dll\" --reference:\"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Runtime.InteropServices.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Java\\bin\\Debug\\net8.0\\IKVM.Java.dll\" --reference:\"D:\\ikvm\\src\\IKVM.Runtime-ref\\obj\\Debug\\net8.0\\ref\\IKVM.Runtime.dll\" --out:\"C:\\Users\\jhaltom\\System.Net.Primitives.jar\" \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.8\\ref\\net8.0\\System.Net.Primitives.dll\""
     }
   }
 }

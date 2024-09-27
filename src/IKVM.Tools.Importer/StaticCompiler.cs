@@ -80,19 +80,19 @@ namespace IKVM.Tools.Importer
 
         internal ITypeSymbol GetTypeForMapXml(RuntimeClassLoader loader, string name)
         {
-            return GetType(loader, name) ?? throw new FatalCompilerErrorException(DiagnosticEvent.MapFileTypeNotFound(name));
+            return GetType(loader, name) ?? throw new DiagnosticEventException(DiagnosticEvent.MapFileTypeNotFound(name));
         }
 
         internal RuntimeJavaType GetClassForMapXml(RuntimeClassLoader loader, string name)
         {
-            return loader.TryLoadClassByName(name) ?? throw new FatalCompilerErrorException(DiagnosticEvent.MapFileClassNotFound(name));
+            return loader.TryLoadClassByName(name) ?? throw new DiagnosticEventException(DiagnosticEvent.MapFileClassNotFound(name));
         }
 
         internal RuntimeJavaField GetFieldForMapXml(RuntimeClassLoader loader, string clazz, string name, string sig)
         {
             var fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
             if (fw == null)
-                throw new FatalCompilerErrorException(DiagnosticEvent.MapFileFieldNotFound(name, clazz));
+                throw new DiagnosticEventException(DiagnosticEvent.MapFileFieldNotFound(name, clazz));
 
             fw.Link();
             return fw;
@@ -116,7 +116,7 @@ namespace IKVM.Tools.Importer
                 str += string.Format("\n\t(Please add a reference to {0})", expectedType.TypeAsBaseType.Assembly.Location);
             }
 
-            throw new FatalCompilerErrorException(DiagnosticEvent.LinkageError(str));
+            throw new DiagnosticEventException(DiagnosticEvent.LinkageError(str));
         }
 
         static string AssemblyQualifiedName(RuntimeJavaType javaType)

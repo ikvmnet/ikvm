@@ -696,7 +696,7 @@ namespace IKVM.Tools.Importer
                                 if (methods[i].IsAbstract)
                                 {
                                     // This should only happen for remapped types (defined in map.xml), because normally you'd get a miranda method.
-                                    throw new FatalCompilerErrorException(DiagnosticEvent.GhostInterfaceMethodMissing(implementers[j].Name, Name, methods[i].Name, methods[i].Signature));
+                                    throw new DiagnosticEventException(DiagnosticEvent.GhostInterfaceMethodMissing(implementers[j].Name, Name, methods[i].Name, methods[i].Signature));
                                 }
                                 // We're inheriting a default method
                                 ilgen.Emit(OpCodes.Pop);

@@ -40,7 +40,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            SetTag(obj, JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)));
+            SetTag(obj, JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(Type.GetTypeFromHandle(typeHandle))));
 #endif
         }
 
@@ -74,7 +74,7 @@ namespace IKVM.Runtime
             var tw1 = GhostTag.GetTag(obj);
             if (tw1 != null)
             {
-                var tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+                var tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(Type.GetTypeFromHandle(typeHandle))).MakeArrayType(rank);
                 return tw1.IsAssignableTo(tw2);
             }
 

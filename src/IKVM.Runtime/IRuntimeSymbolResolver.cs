@@ -30,93 +30,121 @@ namespace IKVM.Runtime
         ISymbolContext Symbols { get; }
 
         /// <summary>
+        /// Resolves the named type from any of the known System assemblies.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ITypeSymbol? ResolveSystemType(string typeName);
+
+        /// <summary>
         /// Gets the known runtime assembly.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol ResolveRuntimeAssembly();
+        IAssemblySymbol? GetRuntimeAssembly();
 
         /// <summary>
         /// Resolves the named type from the IKVM runtime assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveRuntimeType(string typeName);
+        ITypeSymbol? ResolveRuntimeType(string typeName);
 
         /// <summary>
         /// Resolves the known Java base assembly.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol ResolveBaseAssembly();
+        IAssemblySymbol? GetBaseAssembly();
 
         /// <summary>
         /// Resolves the named type from the IKVM Java assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveBaseType(string typeName);
+        ITypeSymbol? ResolveBaseType(string typeName);
 
         /// <summary>
         /// Gets the <see cref="IAssemblySymbol"/> associated with the specified assembly.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IAssemblySymbol ImportAssembly(Assembly assembly);
+        IAssemblySymbol GetSymbol(Assembly assembly);
 
         /// <summary>
         /// Gets the <see cref="IAssemblySymbolBuilder"/> associated with the specified assembly.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IAssemblySymbolBuilder?ImportAssembly(AssemblyBuilder assembly);
+        IAssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly);
 
         /// <summary>
         /// Gets the <see cref="IModuleSymbol"/> associated with the specified module.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        IModuleSymbol ImportModule(Module module);
+        IModuleSymbol GetSymbol(Module module);
 
         /// <summary>
         /// Gets the <see cref="IModuleSymbolBuilder"/> associated with the specified module.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        IModuleSymbolBuilder ImportModule(ModuleBuilder module);
-
-        /// <summary>
-        /// Gets the <see cref="ITypeSymbol"/> associated with the specified type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        ITypeSymbol ImportType(Type type);
+        IModuleSymbolBuilder GetSymbol(ModuleBuilder module);
 
         /// <summary>
         /// Gets the <see cref="IMemberSymbol"/> associated with the specified member.
         /// </summary>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
-        IMemberSymbol ImportMember(MemberInfo memberInfo);
+        IMemberSymbol GetSymbol(MemberInfo memberInfo);
+
+        /// <summary>
+        /// Gets the <see cref="ITypeSymbol"/> associated with the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        ITypeSymbol GetSymbol(Type type);
 
         /// <summary>
         /// Gets the <see cref="IMethodBaseSymbol"/> associated with the specified method.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        IMethodBaseSymbol ImportMethodBase(MethodBase type);
+        IMethodBaseSymbol GetSymbol(MethodBase type);
 
         /// <summary>
-        /// Gets the <see cref="IConstructorSymbol"/> associated with the specified method.
+        /// Gets the <see cref="IConstructorSymbol"/> associated with the specified constructor.
         /// </summary>
         /// <param name="ctor"></param>
         /// <returns></returns>
-        IConstructorSymbol ImportConstructor(ConstructorInfo ctor);
+        IConstructorSymbol GetSymbol(ConstructorInfo ctor);
 
         /// <summary>
         /// Gets the <see cref="IMethodSymbol"/> associated with the specified method.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        IMethodSymbol ImportMethod(MethodInfo method);
+        IMethodSymbol GetSymbol(MethodInfo method);
+
+        /// <summary>
+        /// Gets the <see cref="IFieldSymbol"/> associated with the specified field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        IFieldSymbol GetSymbol(FieldInfo field);
+
+        /// <summary>
+        /// Gets the <see cref="IPropertySymbol"/> associated with the specified property.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        IPropertySymbol GetSymbol(PropertyInfo property);
+
+        /// <summary>
+        /// Gets the <see cref="IEventSymbol"/> associated with the specified event.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        IEventSymbol GetSymbol(EventInfo @event);
 
     }
 

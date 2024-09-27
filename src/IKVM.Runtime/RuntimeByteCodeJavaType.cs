@@ -88,9 +88,9 @@ namespace IKVM.Runtime
                 {
                     var mt = ReflectUtil.GetMissingType(missing.MissingType);
                     if (mt.Assembly.IsMissing)
-                        throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseTypeReference(mt.FullName, mt.Assembly.FullName));
+                        throw new DiagnosticEventException(DiagnosticEvent.MissingBaseTypeReference(mt.FullName, mt.Assembly.FullName));
 
-                    throw new FatalCompilerErrorException(DiagnosticEvent.MissingBaseType(mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name));
+                    throw new DiagnosticEventException(DiagnosticEvent.MissingBaseType(mt.FullName, mt.Assembly.FullName, prev.TypeAsBaseType.FullName, prev.TypeAsBaseType.Module.Name));
                 }
 
                 foreach (RuntimeJavaType iface in tw.Interfaces)
@@ -657,7 +657,7 @@ namespace IKVM.Runtime
                         {
                             if (method.Attributes != null)
                                 foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
-                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
+                                    if (Context.StaticCompiler.GetType(classLoader, attr.Type) == Context.Resolver.ResolveSystemType(typeof(System.Runtime.InteropServices.DllImportAttribute).FullName))
                                         return true;
 
                             break;
