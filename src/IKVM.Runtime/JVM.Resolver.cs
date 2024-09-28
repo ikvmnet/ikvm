@@ -60,8 +60,10 @@ namespace IKVM.Runtime
             /// </summary>
             public Resolver()
             {
+                _coreAssembly = GetSymbol(typeof(object).Assembly);
                 _systemAssemblies = GetSystemAssemblies().Distinct().ToArray().Select(GetSymbol).ToArray();
                 _runtimeAssembly = GetSymbol(typeof(JVM).Assembly);
+                _baseAssembly = GetSymbol(typeof(java.lang.Object).Assembly);
             }
 
             /// <inheritdoc />
@@ -76,7 +78,7 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public IAssemblySymbol GetCoreAssembly()
             {
-                return _coreAssembly ??= GetSymbol(typeof(object).Assembly);
+                return _coreAssembly;
             }
 
             /// <inheritdoc />

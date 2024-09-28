@@ -95,7 +95,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #else
             var t = Type.GetTypeFromHandle(handle);
             var ts = JVM.Context.Resolver.GetSymbol(t);
-            if (ts.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || ts == typeof(void))
+            if (ts.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || ts == JVM.Context.Types.Void)
                 return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))

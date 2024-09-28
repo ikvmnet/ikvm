@@ -6,7 +6,6 @@ using System.Security;
 using System.Text;
 using System.Threading;
 
-using IKVM.CoreLib.Diagnostics.Tracing;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Runtime

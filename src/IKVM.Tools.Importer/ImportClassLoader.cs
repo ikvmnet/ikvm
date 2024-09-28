@@ -1131,11 +1131,11 @@ namespace IKVM.Tools.Importer
 
                     var paramTypes = this.GetParametersForDefineMethod();
 
-                    var cbCore = GetMethod() as IMethodSymbolBuilder;
-
+                    var cbCore = GetMethod() as IConstructorSymbolBuilder;
                     if (cbCore != null)
                     {
-                        CodeEmitter ilgen = DeclaringType.Context.CodeEmitterFactory.Create(cbCore);
+                        var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(cbCore);
+
                         // TODO we need to support ghost (and other funky?) parameter types
                         if (m.Body != null)
                         {
@@ -1146,9 +1146,8 @@ namespace IKVM.Tools.Importer
                         {
                             ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
                             for (int i = 0; i < paramTypes.Length; i++)
-                            {
                                 ilgen.EmitLdarg(i + 1);
-                            }
+
                             if (m.Redirect != null)
                             {
                                 throw new NotImplementedException();
@@ -1157,19 +1156,18 @@ namespace IKVM.Tools.Importer
                             {
                                 var baseCon = DeclaringType.TypeAsTBD.GetConstructor(paramTypes);
                                 if (baseCon == null)
-                                {
-                                    // TODO better error handling
                                     throw new InvalidOperationException("base class constructor not found: " + DeclaringType.Name + ".<init>" + m.Sig);
-                                }
+
                                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, baseCon);
                             }
+
                             ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         }
+
                         ilgen.DoEmit();
-                        if (this.DeclaringType.ClassLoader.EmitStackTraceInfo)
-                        {
+
+                        if (DeclaringType.ClassLoader.EmitStackTraceInfo)
                             ilgen.EmitLineNumberTable(cbCore);
-                        }
                     }
 
                     if (mbHelper != null)

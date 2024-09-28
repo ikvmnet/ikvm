@@ -16,7 +16,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <summary>
         /// Gets or sets whether the specified diagnostics should be suppressed.
         /// </summary>
-        public ImmutableArray<Diagnostic> NoWarnDiagnostics { get; set; }
+        public ImmutableArray<Diagnostic> NoWarnDiagnostics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets whether all warnings should be promoted to errors.
@@ -26,7 +26,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <summary>
         /// Gets or sets whether the specified diagnostics should be promoted to errors.
         /// </summary>
-        public ImmutableArray<Diagnostic> WarnAsErrorDiagnostics { get; set; }
+        public ImmutableArray<Diagnostic> WarnAsErrorDiagnostics { get; set; } = [];
 
     }
 
