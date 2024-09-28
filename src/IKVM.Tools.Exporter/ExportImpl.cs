@@ -146,7 +146,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(true), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols), compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(true), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, options.Bootstrap), compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -172,7 +172,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols), compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, options.Bootstrap), compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(context.Resolver.GetSymbol(assembly.ManifestModule)))

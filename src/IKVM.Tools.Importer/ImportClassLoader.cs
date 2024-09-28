@@ -517,7 +517,7 @@ namespace IKVM.Tools.Importer
                 throw new ArgumentNullException(nameof(properties));
 
             // global main method decorated with appropriate apartment type
-            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, Context.Types.Int32, new[] { Context.Types.String.MakeArrayType() });
+            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, Context.Types.Int32, [Context.Types.String.MakeArrayType()]);
             if (apartmentAttributeType != null)
                 mainMethodProxy.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(apartmentAttributeType.GetConstructor([]), []));
 

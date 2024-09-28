@@ -1,27 +1,4 @@
-﻿/*
- Copyright (C) 2002-2014 Jeroen Frijters
-
- This software is provided 'as-is', without any express or implied
- warranty.  In no event will the authors be held liable for any damages
- arising from the use of this software.
-
- Permission is granted to anyone to use this software for any purpose,
- including commercial applications, and to alter it and redistribute it
- freely, subject to the following restrictions:
-
- 1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
- 2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
- 3. This notice may not be removed or altered from any source distribution.
-
- Jeroen Frijters
- jeroen@frijters.net
-
-*/
-#nullable enable
+﻿#nullable enable
 
 using System;
 using System.Collections.Concurrent;
@@ -63,6 +40,7 @@ namespace IKVM.Tools.Exporter
         readonly IDiagnosticHandler _diagnostics;
         readonly Universe _universe;
         readonly IkvmReflectionSymbolContext _symbols;
+        readonly bool _bootstrap;
 
         IAssemblySymbol? _coreAssembly;
         readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
@@ -82,12 +60,14 @@ namespace IKVM.Tools.Exporter
         /// <param name="diagnostics"></param>
         /// <param name="universe"></param>
         /// <param name="symbols"></param>
+        /// <param name="bootstrap"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ExportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols)
+        public ExportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols, bool bootstrap)
         {
             _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _universe = universe ?? throw new ArgumentNullException(nameof(universe));
             _symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
+            _bootstrap = bootstrap;
         }
 
         /// <inheritdoc />
@@ -97,6 +77,27 @@ namespace IKVM.Tools.Exporter
         public IAssemblySymbol GetCoreAssembly()
         {
             return (_coreAssembly ??= GetSymbol(_universe.CoreLib)) ?? throw new DiagnosticEventException(DiagnosticEvent.CoreClassesMissing());
+        }
+
+        /// <summary>
+        /// Resolves the set of system assemblies.
+        /// </summary>
+        /// <returns></returns>
+        IAssemblySymbol[] FindSystemAssemblies()
+        {
+            return _systemAssemblies ??= ResolveSystemAssembliesIter().Distinct().ToArray();
+        }
+
+        /// <summary>
+        /// Resolves the set of system assemblies that contain the system types.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IAssemblySymbol> ResolveSystemAssembliesIter()
+        {
+            foreach (var assembly in _universe.GetAssemblies())
+                foreach (var typeName in GetSystemTypeNames())
+                    if (assembly.GetType(typeName) is Type t)
+                        yield return GetSymbol(assembly);
         }
 
         /// <inheritdoc />
@@ -118,8 +119,12 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol GetBaseAssembly()
+        public IAssemblySymbol? GetBaseAssembly()
         {
+            // bootstrap mode is used for builing the main assembly, and thus should not return the existing base assembly
+            if (_bootstrap)
+                return null;
+
             return (_baseAssembly ??= FindBaseAssembly()) ?? throw new DiagnosticEventException(DiagnosticEvent.BootstrapClassesMissing());
         }
 
@@ -138,34 +143,13 @@ namespace IKVM.Tools.Exporter
         /// <inheritdoc />
         public ITypeSymbol ResolveCoreType(string typeName)
         {
-            return _coreTypeCache.GetOrAdd(typeName, _ => GetCoreAssembly().GetType(_)) ?? throw new DiagnosticEventException(DiagnosticEvent.CoreClassesMissing());
-        }
-
-        /// <summary>
-        /// Resolves the set of system assemblies.
-        /// </summary>
-        /// <returns></returns>
-        IAssemblySymbol[] ResolveSystemAssemblies()
-        {
-            return _systemAssemblies ??= ResolveSystemAssembliesIter().Distinct().ToArray();
-        }
-
-        /// <summary>
-        /// Resolves the set of system assemblies that contain the system types.
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<IAssemblySymbol> ResolveSystemAssembliesIter()
-        {
-            foreach (var assembly in _universe.GetAssemblies())
-                foreach (var typeName in GetSystemTypeNames())
-                    if (assembly.GetType(typeName) is Type t)
-                        yield return GetSymbol(assembly);
+            return _coreTypeCache.GetOrAdd(typeName, _ => GetCoreAssembly().GetType(_)) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
 
         /// <inheritdoc />
         public ITypeSymbol ResolveSystemType(string typeName)
         {
-            return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new DiagnosticEventException(DiagnosticEvent.ClassNotFound(typeName));
+            return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
 
         /// <summary>
@@ -175,7 +159,7 @@ namespace IKVM.Tools.Exporter
         /// <returns></returns>
         ITypeSymbol? FindSystemType(string typeName)
         {
-            foreach (var assembly in ResolveSystemAssemblies())
+            foreach (var assembly in FindSystemAssemblies())
                 if (assembly.GetType(typeName) is { } t)
                     return t;
 
@@ -183,15 +167,35 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? ResolveRuntimeType(string typeName)
+        public ITypeSymbol ResolveRuntimeType(string typeName)
         {
-            return GetRuntimeAssembly().GetType(typeName);
+            return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
+        }
+
+        /// <summary>
+        /// Attempts to load the specified runtime type.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ITypeSymbol? FindRuntimeType(string typeName)
+        {
+            return GetRuntimeAssembly()?.GetType(typeName);
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? ResolveBaseType(string typeName)
+        public ITypeSymbol ResolveBaseType(string typeName)
         {
-            return GetBaseAssembly().GetType(typeName);
+            return _baseTypeCache.GetOrAdd(typeName, FindBaseType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
+        }
+
+        /// <summary>
+        /// Attempts to find the base type.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ITypeSymbol? FindBaseType(string typeName)
+        {
+            return GetBaseAssembly()?.GetType(typeName);
         }
 
         /// <inheritdoc />

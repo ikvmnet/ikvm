@@ -953,10 +953,10 @@ namespace IKVM.Runtime
                     tw = context.ClassLoaderFactory.GetJavaTypeFromType(type);
                 }
             }
+
             if (rank != 0)
-            {
                 tw = tw.MakeArrayType(rank);
-            }
+
             return tw;
         }
 

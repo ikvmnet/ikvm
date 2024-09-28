@@ -382,6 +382,7 @@ namespace IKVM.Runtime
                 {
                     baseType = FindCommonBaseTypeHelper(context, elem1, elem2);
                 }
+
                 return baseType.MakeArrayType(rank);
             }
             return FindCommonBaseTypeHelper(context, type1, type2);

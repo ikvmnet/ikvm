@@ -1,27 +1,4 @@
-﻿/*
- Copyright (C) 2002-2014 Jeroen Frijters
-
- This software is provided 'as-is', without any express or implied
- warranty.  In no event will the authors be held liable for any damages
- arising from the use of this software.
-
- Permission is granted to anyone to use this software for any purpose,
- including commercial applications, and to alter it and redistribute it
- freely, subject to the following restrictions:
-
- 1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
- 2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
- 3. This notice may not be removed or altered from any source distribution.
-
- Jeroen Frijters
- jeroen@frijters.net
-
-*/
-#nullable enable
+﻿#nullable enable
 
 using System;
 using System.Collections.Concurrent;
@@ -63,6 +40,7 @@ namespace IKVM.Tools.Importer
         readonly IDiagnosticHandler _diagnostics;
         readonly Universe _universe;
         readonly IkvmReflectionSymbolContext _symbols;
+        readonly bool _bootstrap;
 
         IAssemblySymbol? _coreAssembly;
         readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
@@ -82,12 +60,14 @@ namespace IKVM.Tools.Importer
         /// <param name="diagnostics"></param>
         /// <param name="universe"></param>
         /// <param name="symbols"></param>
+        /// <param name="bootstrap"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols)
+        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols, bool bootstrap)
         {
             _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _universe = universe ?? throw new ArgumentNullException(nameof(universe));
             _symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
+            _bootstrap = bootstrap;
         }
 
         /// <inheritdoc />
@@ -118,8 +98,12 @@ namespace IKVM.Tools.Importer
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol GetBaseAssembly()
+        public IAssemblySymbol? GetBaseAssembly()
         {
+            // bootstrap mode is used for builing the main assembly, and thus should not return the existing base assembly
+            if (_bootstrap)
+                return null;
+
             return (_baseAssembly ??= FindBaseAssembly()) ?? throw new DiagnosticEventException(DiagnosticEvent.BootstrapClassesMissing());
         }
 

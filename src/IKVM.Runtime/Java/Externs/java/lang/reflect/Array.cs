@@ -608,11 +608,11 @@ namespace IKVM.Java.Externs.java.lang.reflect
             {
                 var wrapper = RuntimeJavaType.FromClass(componentType);
                 wrapper.Finish();
-                object obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType.AsReflection(), length);
+
+                var obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType.AsReflection(), length);
                 if (wrapper.IsGhost || wrapper.IsGhostArray)
-                {
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
-                }
+
                 return obj;
             }
             catch (RetargetableJavaException x)

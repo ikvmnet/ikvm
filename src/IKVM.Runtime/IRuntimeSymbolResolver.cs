@@ -34,20 +34,20 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? ResolveSystemType(string typeName);
+        ITypeSymbol ResolveSystemType(string typeName);
 
         /// <summary>
         /// Gets the known runtime assembly.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol? GetRuntimeAssembly();
+        IAssemblySymbol GetRuntimeAssembly();
 
         /// <summary>
         /// Resolves the named type from the IKVM runtime assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? ResolveRuntimeType(string typeName);
+        ITypeSymbol ResolveRuntimeType(string typeName);
 
         /// <summary>
         /// Resolves the known Java base assembly.
@@ -60,7 +60,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? ResolveBaseType(string typeName);
+        ITypeSymbol ResolveBaseType(string typeName);
 
         /// <summary>
         /// Gets the <see cref="IAssemblySymbol"/> associated with the specified assembly.

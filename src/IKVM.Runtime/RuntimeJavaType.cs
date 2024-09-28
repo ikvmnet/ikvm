@@ -137,7 +137,7 @@ namespace IKVM.Runtime
                 while (tw.IsArray)
                     tw = tw.ElementTypeWrapper;
 
-                return tw.TypeAsTBD.MakeArrayType(rank);
+                return rank == 1 ? tw.TypeAsTBD.MakeArrayType() : tw.TypeAsTBD.MakeArrayType(rank);
             }
             else
             {
@@ -1029,16 +1029,17 @@ namespace IKVM.Runtime
         internal RuntimeJavaType MakeArrayType(int rank)
         {
             Debug.Assert(rank != 0);
+
             // NOTE this call to LoadClassByDottedNameFast can never fail and will not trigger a class load
-            return ClassLoader.TryLoadClassByName(new String('[', rank) + this.SigName);
+            return ClassLoader.TryLoadClassByName(new string('[', rank) + SigName);
         }
 
         internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
         {
-            RuntimeJavaType typeWrapper = this;
+            var typeWrapper = this;
             while (typeWrapper != null)
             {
-                RuntimeJavaType[] interfaces = typeWrapper.Interfaces;
+                var interfaces = typeWrapper.Interfaces;
                 for (int i = 0; i < interfaces.Length; i++)
                 {
                     if (interfaces[i] == interfaceWrapper)
