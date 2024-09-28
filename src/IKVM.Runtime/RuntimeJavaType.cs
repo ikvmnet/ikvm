@@ -137,7 +137,7 @@ namespace IKVM.Runtime
                 while (tw.IsArray)
                     tw = tw.ElementTypeWrapper;
 
-                return rank == 1 ? tw.TypeAsTBD.MakeArrayType() : tw.TypeAsTBD.MakeArrayType(rank);
+                return RuntimeArrayJavaType.MakeArrayType(tw.TypeAsTBD, rank);
             }
             else
             {

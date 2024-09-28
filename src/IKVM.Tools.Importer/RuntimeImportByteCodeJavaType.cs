@@ -995,7 +995,7 @@ namespace IKVM.Tools.Importer
                 }
                 ilgen.EmitLdc_I4(rank);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ghostCastArrayMethod);
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, rank == 1 ? Context.Types.Object.MakeArrayType() : Context.Types.Object.MakeArrayType(rank));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(Context.Types.Object, rank));
             }
             else
             {

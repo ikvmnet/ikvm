@@ -60,14 +60,14 @@ namespace IKVM.Tools.Importer
         /// <param name="diagnostics"></param>
         /// <param name="universe"></param>
         /// <param name="symbols"></param>
-        /// <param name="bootstrap"></param>
+        /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols, bool bootstrap)
+        public ImportRuntimeSymbolResolver(IDiagnosticHandler diagnostics, Universe universe, IkvmReflectionSymbolContext symbols, ImportOptions options)
         {
             _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _universe = universe ?? throw new ArgumentNullException(nameof(universe));
             _symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
-            _bootstrap = bootstrap;
+            _bootstrap = options.Bootstrap;
         }
 
         /// <inheritdoc />

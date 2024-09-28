@@ -84,10 +84,7 @@ namespace IKVM.Runtime
                 while (tw.IsArray)
                     tw = tw.ElementTypeWrapper;
 
-                if (dims == 1)
-                    return tw.TypeAsSignatureType.MakeArrayType();
-                else
-                    return tw.TypeAsSignatureType.MakeArrayType(dims);
+                return RuntimeArrayJavaType.MakeArrayType(tw.TypeAsSignatureType, dims);
             }
             else
             {

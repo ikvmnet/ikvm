@@ -933,10 +933,7 @@ namespace IKVM.Runtime
 
             if (tw.IsArray)
             {
-                if (tw.ArrayRank == 1)
-                    return GetModOptHelper(tw.GetUltimateElementTypeWrapper()).MakeArrayType();
-                else
-                    return GetModOptHelper(tw.GetUltimateElementTypeWrapper()).MakeArrayType(tw.ArrayRank);
+                return RuntimeArrayJavaType.MakeArrayType(GetModOptHelper(tw.GetUltimateElementTypeWrapper()), tw.ArrayRank);
             }
             else if (tw.IsGhost)
             {
