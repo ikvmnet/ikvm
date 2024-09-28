@@ -910,7 +910,7 @@ namespace IKVM.Runtime
             if (javaClassLoader == null)
                 return "null";
             else
-                return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+                return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(Context.Resolver.GetSymbol(javaClassLoader.GetType())).Name, javaClassLoader.GetHashCode());
         }
 
 #endif

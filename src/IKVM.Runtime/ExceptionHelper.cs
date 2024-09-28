@@ -256,7 +256,7 @@ namespace IKVM.Runtime
                     }
 
                     fileName ??= exceptionHelper.GetFileName(frame);
-                    stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
+                    stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(JVM.Context.Resolver.GetSymbol(type)), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
                 }
 
                 if (cleanStackTrace && isLast)

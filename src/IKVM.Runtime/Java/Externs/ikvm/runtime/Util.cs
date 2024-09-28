@@ -77,7 +77,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || t == typeof(void))
                 return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).ClassObject;
 
-            if (!IsVisibleAsClass(ts))
+            if (!IsVisibleAsClass(t))
                 return null;
 
             var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
@@ -140,7 +140,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #endif
         }
 
-        private static bool IsVisibleAsClass(ITypeSymbol type)
+        private static bool IsVisibleAsClass(Type type)
         {
             while (type.HasElementType)
             {

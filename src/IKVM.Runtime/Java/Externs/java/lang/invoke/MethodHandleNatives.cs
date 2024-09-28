@@ -366,18 +366,19 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     mw = thisType.Context.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper(mw.Name, mw.Signature, true);
                 }
             }
-            RuntimeJavaType tw = mw.DeclaringType;
+
+            var tw = mw.DeclaringType;
             tw.Finish();
             mw.Link();
             mw.ResolveMethod();
-            MethodInfo mi = mw.GetMethod() as MethodInfo;
+            var mi = mw.GetMethod() as MethodInfo;
             if (mi != null
                 && !mw.HasCallerID
                 && mw.IsStatic
                 && tw.Context.MethodHandleUtil.HasOnlyBasicTypes(mw.GetParameters(), mw.ReturnType)
                 && type.parameterCount() <= MethodHandleUtil.MaxArity)
             {
-                return Delegate.CreateDelegate(tw.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType), mi);
+                return Delegate.CreateDelegate(tw.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType).AsReflection(), mi);
             }
             else
             {
@@ -465,7 +466,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
-            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
+            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()).AsReflection());
             var ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
             Interlocked.CompareExchange(ref site.ics, ics, null);
         }

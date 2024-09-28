@@ -55,7 +55,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
                     this.annotationType = context.FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
 #elif !FIRST_PASS
-                    this.annotationType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
+                    this.annotationType = context.Resolver.GetSymbol(typeof(ikvm.@internal.AttributeAnnotationMultiple<>)).MakeGenericType(declaringType.attributeType);
 #endif
                     this.declaringType = declaringType;
                 }

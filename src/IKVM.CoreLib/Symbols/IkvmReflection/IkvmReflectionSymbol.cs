@@ -508,6 +508,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             return value switch
             {
+                IList<IKVM.Reflection.CustomAttributeTypedArgument> aa => ResolveCustomAttributeTypedArguments(aa),
                 Type v => ResolveTypeSymbol(v),
                 _ => value
             };

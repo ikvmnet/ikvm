@@ -27,6 +27,8 @@ using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
 using System.Collections.Immutable;
+using IKVM.CoreLib.Reflection;
+
 
 
 #if IMPORTER || EXPORTER

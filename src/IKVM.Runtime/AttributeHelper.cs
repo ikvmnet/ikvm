@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
@@ -876,7 +877,7 @@ namespace IKVM.Runtime
 
         internal T[] DecodeArray<T>(IKVM.CoreLib.Symbols.CustomAttributeTypedArgument arg)
         {
-            var elems = (IKVM.CoreLib.Symbols.CustomAttributeTypedArgument[])arg.Value;
+            var elems = (ImmutableArray<IKVM.CoreLib.Symbols.CustomAttributeTypedArgument>)arg.Value;
             var arr = new T[elems.Length];
             for (int i = 0; i < arr.Length; i++)
                 arr[i] = (T)elems[i].Value;

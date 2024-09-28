@@ -44,7 +44,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return assembly.IsDynamic == false ? (JVM.Context.AssemblyClassLoaderFactory.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
+            return assembly.IsDynamic == false ? (JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(assembly)).DoLoad(className)?.ClassObject) : null;
 #endif
         }
 
@@ -84,7 +84,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 if (asm.IsDynamic)
                     continue;
 
-                var acl = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm);
+                var acl = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm));
                 if (done.Add(acl))
                     foreach (var url in acl.FindResources(name))
                         yield return url;

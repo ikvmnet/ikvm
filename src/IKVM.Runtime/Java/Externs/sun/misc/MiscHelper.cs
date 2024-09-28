@@ -39,9 +39,7 @@ namespace IKVM.Java.Externs.sun.misc
             throw new NotImplementedException();
 #else
 			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
-			{
-				return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
-			}
+				return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).GetJavaClassLoader();
 
 			return null;
 #endif

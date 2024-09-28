@@ -47,7 +47,7 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
 
             typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8");
-            typeofMHV = new[] {
+            typeofMHV = [
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`1"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`2"),
@@ -57,8 +57,8 @@ namespace IKVM.Runtime
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`6"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`7"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`8"),
-            };
-            typeofMH = new[] {
+            ];
+            typeofMH = [
                 null,
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`1"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`2"),
@@ -69,7 +69,7 @@ namespace IKVM.Runtime
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`7"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`8"),
                 context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`9"),
-            };
+            ];
         }
 
         internal bool IsPackedArgsContainer(ITypeSymbol type)

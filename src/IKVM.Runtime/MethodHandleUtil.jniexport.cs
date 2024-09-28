@@ -22,6 +22,7 @@
   
 */
 #if IMPORTER == false
+
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -47,7 +48,7 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false
 
-        ITypeSymbol CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
+        Type CreateMethodHandleDelegateType(java.lang.invoke.MethodType type)
         {
             var args = new RuntimeJavaType[type.parameterCount()];
             for (int i = 0; i < args.Length; i++)
@@ -57,7 +58,8 @@ namespace IKVM.Runtime
             }
             var ret = RuntimeJavaType.FromClass(type.returnType());
             ret.Finish();
-            return CreateMethodHandleDelegateType(args, ret);
+
+            return CreateMethodHandleDelegateType(args, ret).AsReflection();
         }
 
         static ITypeSymbol[] GetParameterTypes(IMethodBaseSymbol mb)
@@ -81,10 +83,10 @@ namespace IKVM.Runtime
             return args;
         }
 
-        internal java.lang.invoke.MethodType GetDelegateMethodType(ITypeSymbol type)
+        internal java.lang.invoke.MethodType GetDelegateMethodType(Type type)
         {
             java.lang.Class[] types;
-            var mi = GetDelegateInvokeMethod(type);
+            var mi = GetDelegateInvokeMethod(context.Resolver.GetSymbol(type));
             var pi = mi.GetParameters();
             if (pi.Length > 0 && IsPackedArgsContainer(pi[pi.Length - 1].ParameterType))
             {
@@ -161,7 +163,7 @@ namespace IKVM.Runtime
             /// <param name="owner"></param>
             /// <param name="useBasicTypes"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, ITypeSymbol container, object target, object value, ITypeSymbol owner, bool useBasicTypes)
+            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, ITypeSymbol container, object target, object value, Type owner, bool useBasicTypes)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
                 this.type = type;
@@ -189,10 +191,10 @@ namespace IKVM.Runtime
                     paramTypes = GetParameterTypes(mi);
                 }
 
-                if (!ReflectUtil.CanOwnDynamicMethod(owner.AsReflection()))
-                    owner = context.Resolver.GetSymbol(typeof(DynamicMethodBuilder));
+                if (!ReflectUtil.CanOwnDynamicMethod(owner))
+                    owner = typeof(DynamicMethodBuilder);
 
-                dm = new DynamicMethod(name, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), owner.AsReflection(), true);
+                dm = new DynamicMethod(name, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), owner, true);
                 ilgen = context.CodeEmitterFactory.Create(dm);
 
                 if (type.parameterCount() > MaxArity)
@@ -346,7 +348,7 @@ namespace IKVM.Runtime
                 FinishTypes(type);
 
                 var tw = mw.DeclaringType;
-                var owner = tw.TypeAsBaseType;
+                var owner = tw.TypeAsBaseType.AsReflection();
                 var dm = new DynamicMethodBuilder(context, "MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null, mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
                 for (int i = 0, count = type.parameterCount(); i < count; i++)
                 {
@@ -631,7 +633,7 @@ namespace IKVM.Runtime
 
         internal ITypeSymbol GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
         {
-            type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type).AsReflection();
+            type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type);
             return context.Resolver.GetSymbol(type._invokeExactDelegateType);
         }
 
@@ -648,7 +650,7 @@ namespace IKVM.Runtime
                     return del;
             }
 
-            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(context.Resolver.GetSymbol(typeof(T))), type);
+            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(typeof(T)), type);
         }
 
         /// <summary>
