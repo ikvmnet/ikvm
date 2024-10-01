@@ -15,7 +15,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         /// <summary>
-        /// Converts a <see cref="AssemblyName"/> to a <see cref="System.Reflection.AssemblyName"/>.
+        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
@@ -25,7 +25,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="System.Reflection.AssemblyName"/>.
+        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyNameInfo"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
@@ -58,7 +58,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <summary>
-        /// Converts a set of <see cref="System.Reflection.AssemblyName"/> to a set of <see cref="AssemblyName"/>.
+        /// Converts a set of <see cref="AssemblyNameInfo"/> to a set of <see cref="AssemblyName"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>

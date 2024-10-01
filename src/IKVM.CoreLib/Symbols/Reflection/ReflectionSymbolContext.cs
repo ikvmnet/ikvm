@@ -17,7 +17,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionSymbolContext : ISymbolContext
     {
 
-        readonly ConcurrentDictionary<AssemblyName, WeakReference<IReflectionAssemblySymbol?>> _symbolByName = new(AssemblyNameEqualityComparer.Instance);
+        readonly ConcurrentDictionary<string, WeakReference<IReflectionAssemblySymbol?>> _symbolByName = new();
         readonly ConditionalWeakTable<Assembly, IReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
@@ -28,32 +28,30 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         }
 
-        /// <summary>
-        /// Defines a dynamic assembly that has the specified name and access rights.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="access"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
+#if NET
             return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
+#else
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave));
+#endif
         }
 
-        /// <summary>
-        /// Defines a dynamic assembly that has the specified name and access rights.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="access"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IAssemblySymbolBuilder DefineAssembly(AssemblyNameInfo name, ICustomAttributeBuilder[]? assemblyAttributes)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
+#if NET
             return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+#else
+            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave,assemblyAttributes?.Unpack()));
+#endif
         }
 
         /// <summary>
@@ -63,7 +61,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         IReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
         {
-            var r = _symbolByName.GetOrAdd(assembly.GetName(), _ => new(null));
+            var r = _symbolByName.GetOrAdd(assembly.FullName ?? throw new InvalidOperationException(), _ => new(null));
 
             lock (r)
             {
@@ -73,7 +71,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
                     if (assembly is AssemblyBuilder builder)
                     {
                         // we were passed in a builder, so generate a symbol builder and set it as the builder and symbol.
-                        var a = builder.GetRuntimeAssembly();
                         r.SetTarget(s = new ReflectionAssemblySymbolBuilder(this, builder));
                     }
                     else
@@ -138,7 +135,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
         {
-            return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
+            return GetOrCreateAssemblySymbol((AssemblyBuilder)module.Assembly).GetOrCreateModuleSymbol(module);
         }
 
         /// <summary>
@@ -161,7 +158,38 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
         {
-            return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+            return GetOrCreateModuleSymbol((ModuleBuilder)type.Module).GetOrCreateTypeSymbol(type);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionMemberSymbol"/> for the specified <see cref="MemberInfo"/>.
+        /// </summary>
+        /// <param name="member"></param>
+        /// <returns></returns>
+        public IReflectionMemberSymbol GetOrCreateMemberSymbol(MemberInfo member)
+        {
+            return member switch
+            {
+                MethodBase method => GetOrCreateMethodBaseSymbol(method),
+                FieldInfo field => GetOrCreateFieldSymbol(field),
+                PropertyInfo property => GetOrCreatePropertySymbol(property),
+                EventInfo @event => GetOrCreateEventSymbol(@event),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            return method switch
+            {
+                ConstructorInfo ctor => GetOrCreateConstructorSymbol(ctor),
+                _ => GetOrCreateMethodSymbol((MethodInfo)method)
+            };
         }
 
         /// <summary>
@@ -171,10 +199,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
         {
-            if (ctor is ConstructorBuilder builder)
-                return GetOrCreateConstructorSymbol(builder);
-            else
-                return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
+            return ctor switch
+            {
+                ConstructorBuilder builder => GetOrCreateConstructorSymbol(builder),
+                _ => GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor)
+            };
         }
 
         /// <summary>
@@ -184,7 +213,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
         {
-            return GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor);
+            return GetOrCreateModuleSymbol((ModuleBuilder)ctor.Module).GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <summary>
@@ -194,10 +223,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
-            if (method is MethodBuilder builder)
-                return GetOrCreateMethodSymbol(builder);
-            else
-                return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
+            return method switch
+            {
+                MethodBuilder builder => GetOrCreateMethodSymbol(builder),
+                _ => GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method)
+            };
         }
 
         /// <summary>
@@ -207,7 +237,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
         {
-            return GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method);
+            return GetOrCreateModuleSymbol((ModuleBuilder)method.Module).GetOrCreateMethodSymbol(method);
         }
 
         /// <summary>
@@ -221,26 +251,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionParameterSymbolBuilder"/> for the specified <see cref="ParameterBuilder"/>.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
-        {
-            return GetOrCreateModuleSymbol(parameter.GetModuleBuilder()).GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <summary>
         /// Gets or creates a <see cref="IReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
         public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            if (field is FieldBuilder builder)
-                return GetOrCreateFieldSymbol(builder);
-            else
-                return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -250,7 +267,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
         {
-            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
@@ -260,10 +277,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
-            if (property is PropertyBuilder builder)
-                return GetOrCreatePropertySymbol(builder);
-            else
-                return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
+            return property switch
+            {
+                PropertyBuilder builder => GetOrCreatePropertySymbol(builder),
+                _ => GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property)
+            };
         }
 
         /// <summary>
@@ -273,7 +291,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
         {
-            return GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property);
+            return GetOrCreateModuleSymbol((ModuleBuilder)property.Module).GetOrCreatePropertySymbol(property);
         }
 
         /// <summary>
@@ -296,28 +314,65 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return GetOrCreateModuleSymbol(@event.GetModuleBuilder()).GetOrCreateEventSymbol(@event);
         }
 
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionGenericTypeParameterSymbolBuilder"/> for the specified <see cref="GenericTypeParameterBuilder"/>.
+        /// </summary>
+        /// <param name="genericTypeParameter"></param>
+        /// <returns></returns>
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs)
         {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs));
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IFieldSymbol[] namedFields, object?[] fieldValues)
         {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedFields.Unpack(), fieldValues));
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedFields.Unpack(), UnpackArguments(fieldValues)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues)
         {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues));
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues)));
         }
 
         /// <inheritdoc />
         public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues, IFieldSymbol[] namedFields, object?[] fieldValues)
         {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), constructorArgs, namedProperties.Unpack(), propertyValues, namedFields.Unpack(), fieldValues));
+            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues), namedFields.Unpack(), UnpackArguments(fieldValues)));
+        }
+
+        /// <summary>
+        /// Unpacks a single constructor argument.
+        /// </summary>
+        /// <param name="constructorArg"></param>
+        /// <returns></returns>
+        object? UnpackArgument(object? constructorArg)
+        {
+            if (constructorArg is ITypeSymbol type)
+                return type.Unpack();
+
+            return constructorArg;
+        }
+
+        /// <summary>
+        /// Unpacks a set of constructor arguments.
+        /// </summary>
+        /// <param name="constructorArgs"></param>
+        /// <returns></returns>
+        object?[] UnpackArguments(object?[] constructorArgs)
+        {
+            var l = new object?[constructorArgs.Length];
+            for (int i = 0; i < constructorArgs.Length; i++)
+                l[i] = UnpackArgument(constructorArgs[i]);
+
+            return l;
         }
 
     }

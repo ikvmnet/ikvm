@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -8,7 +6,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IReflectionMethodBaseSymbol
     {
 
-        readonly MethodBase _method;
+        ReflectionParameterTable _parameterTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -16,25 +14,35 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingType"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MethodBase method) :
-            base(context, resolvingModule, resolvingType, method)
+        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType) :
+            base(context, resolvingModule, resolvingType)
         {
-            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
+
+        #region IReflectionMethodBaseSymbol
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
 
         #region IMethodBaseSymbol
 
-        /// <summary>
-        /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
-        /// </summary>
-        public MethodBase UnderlyingMethodBase => _method;
+        /// <inheritdoc />
+        public abstract MethodBase UnderlyingMethodBase { get; }
 
         /// <inheritdoc />
-        public MethodAttributes Attributes => UnderlyingMethodBase.Attributes;
+        public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
 
         /// <inheritdoc />
-        public CallingConventions CallingConvention => UnderlyingMethodBase.CallingConvention;
+        public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;
+
+        /// <inheritdoc />
+        public System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)UnderlyingMethodBase.CallingConvention;
 
         /// <inheritdoc />
         public bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
@@ -85,7 +93,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
 
         /// <inheritdoc />
-        public MethodImplAttributes MethodImplementationFlags => UnderlyingMethodBase.MethodImplementationFlags;
+        public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
 
         /// <inheritdoc />
         public ITypeSymbol[] GetGenericArguments()
@@ -94,9 +102,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public MethodImplAttributes GetMethodImplementationFlags()
+        public System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
-            return UnderlyingMethodBase.GetMethodImplementationFlags();
+            return (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.GetMethodImplementationFlags();
         }
 
         /// <inheritdoc />

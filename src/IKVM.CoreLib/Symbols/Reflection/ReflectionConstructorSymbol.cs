@@ -17,13 +17,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="resolvingType"></param>
         /// <param name="ctor"></param>
         public ReflectionConstructorSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, ConstructorInfo ctor) :
-            base(context, resolvingModule, resolvingType, ctor)
+            base(context, resolvingModule, resolvingType)
         {
             _ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
         }
 
         /// <inheritdoc />
         public ConstructorInfo UnderlyingConstructor => _ctor;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
 
     }
 

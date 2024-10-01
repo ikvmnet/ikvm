@@ -62,7 +62,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(assemblies))]
-        public virtual IIkvmReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies)
+        public IIkvmReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies)
         {
             if (assemblies == null)
                 return null;
@@ -96,7 +96,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(modules))]
-        public virtual IIkvmReflectionModuleSymbol[]? ResolveModuleSymbols(Module[]? modules)
+        public IIkvmReflectionModuleSymbol[]? ResolveModuleSymbols(Module[]? modules)
         {
             if (modules == null)
                 return null;
@@ -112,7 +112,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public virtual IEnumerable<IIkvmReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
+        public IEnumerable<IIkvmReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
         {
             foreach (var module in modules)
                 if (ResolveModuleSymbol(module) is { } symbol)
@@ -140,7 +140,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(members))]
-        public virtual IIkvmReflectionMemberSymbol[]? ResolveMemberSymbols(MemberInfo[]? members)
+        public IIkvmReflectionMemberSymbol[]? ResolveMemberSymbols(MemberInfo[]? members)
         {
             if (members == null)
                 return null;
@@ -174,7 +174,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(types))]
-        public virtual IIkvmReflectionTypeSymbol[]? ResolveTypeSymbols(Type[]? types)
+        public IIkvmReflectionTypeSymbol[]? ResolveTypeSymbols(Type[]? types)
         {
             if (types == null)
                 return null;
@@ -228,7 +228,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(ctors))]
-        public virtual IIkvmReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors)
+        public IIkvmReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors)
         {
             if (ctors == null)
                 return null;
@@ -262,7 +262,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(methods))]
-        public virtual IIkvmReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods)
+        public IIkvmReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods)
         {
             if (methods == null)
                 return null;
@@ -296,7 +296,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(fields))]
-        public virtual IIkvmReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields)
+        public IIkvmReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields)
         {
             if (fields == null)
                 return null;
@@ -330,7 +330,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(properties))]
-        public virtual IIkvmReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties)
+        public IIkvmReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties)
         {
             if (properties == null)
                 return null;
@@ -367,7 +367,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(events))]
-        public virtual IIkvmReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events)
+        public IIkvmReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events)
         {
             if (@events == null)
                 return null;
@@ -420,7 +420,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(parameters))]
-        public virtual IIkvmReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters)
+        public IIkvmReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters)
         {
             if (parameters == null)
                 return null;
@@ -437,7 +437,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(attributes))]
-        public virtual CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
+        public CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
         {
             if (attributes == null)
                 return null;
@@ -453,7 +453,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public virtual IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        public IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
         {
             if (attributes is null)
                 throw new ArgumentNullException(nameof(attributes));
@@ -468,7 +468,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(customAttributeData))]
-        public virtual CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
+        public CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
         {
             if (customAttributeData == null)
                 return null;

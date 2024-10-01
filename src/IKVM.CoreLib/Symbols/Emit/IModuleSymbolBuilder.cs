@@ -183,12 +183,12 @@ namespace IKVM.CoreLib.Symbols.Emit
         void AddReference(IAssemblySymbol assembly);
 
         /// <summary>
-        /// Finishes the module.
+        /// Finishes the module and all types. Required before save.
         /// </summary>
         void Complete();
 
         /// <summary>
-        /// Saves this module assembly to disk.
+        /// Saves this module assembly to disk. Module must first be completed.
         /// </summary>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>

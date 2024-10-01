@@ -951,7 +951,7 @@ namespace IKVM.Runtime.StubGen
         string GetAnnotationInterface(CustomAttribute cad)
         {
             var attr = cad.Constructor.DeclaringType.GetCustomAttribute(context.Resolver.ResolveRuntimeType(typeof(ImplementsAttribute).FullName), false);
-            if (attr != null)
+            if (attr.HasValue)
             {
                 var interfaces = (string[])attr.Value.ConstructorArguments[0].Value;
                 if (interfaces.Length == 1)

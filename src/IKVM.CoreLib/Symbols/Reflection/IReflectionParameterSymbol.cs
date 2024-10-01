@@ -12,9 +12,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionModuleSymbol ResolvingModule { get; }
 
         /// <summary>
-        /// Gets the method that resolved the parameter.
+        /// Gets the member that resolved the parameter.
         /// </summary>
-        IReflectionMethodBaseSymbol ResolvingMethod { get; }
+        IReflectionMemberSymbol ResolvingMember { get; }
 
         /// <summary>
         /// Gets the underlying <see cref="ParameterInfo"/>.

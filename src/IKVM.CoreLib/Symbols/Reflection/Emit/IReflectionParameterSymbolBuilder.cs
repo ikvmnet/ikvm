@@ -5,7 +5,7 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    interface IReflectionParameterSymbolBuilder : IReflectionSymbolBuilder<IReflectionParameterSymbol>, IParameterSymbolBuilder, IReflectionParameterSymbol
+    interface IReflectionParameterSymbolBuilder : IReflectionSymbolBuilder, IParameterSymbolBuilder, IReflectionParameterSymbol
     {
 
         /// <summary>

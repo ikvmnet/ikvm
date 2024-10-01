@@ -23,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IndexRangeDictionary<IIkvmReflectionMethodBaseSymbol> _table = new();
         ReaderWriterLockSlim? _lock;
 
-        ConcurrentDictionary<string, IIkvmReflectionMethodBaseSymbol>? _byName;
+        ConcurrentDictionary<int, IIkvmReflectionMethodBaseSymbol>? _byToken;
 
         /// <summary>
         /// Initializes a new instance.
@@ -54,17 +54,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 throw new ArgumentException(nameof(method));
 
             var token = method.MetadataToken;
-            if (token <= 0)
+            if (token == 0)
+                throw new InvalidOperationException();
+
+            // pseudo tokens: since IKVM.Reflection does not remove pseudo tokens after creation, we can keep using these
+            // but they are non-sequential per-type, so we need to use a real dictionary
+            if (token < 0)
             {
                 // we fall back to lookup by name if there is no valid metadata token
-                if (_byName == null)
-                    Interlocked.CompareExchange(ref _byName, new(), null);
+                if (_byToken == null)
+                    Interlocked.CompareExchange(ref _byToken, new(), null);
 
-                var context_ = _context;
-                var module_ = _module;
-                var type_ = _type;
-                var method_ = method;
-                return _byName.GetOrAdd(method.ToString() ?? throw new InvalidOperationException(), _ => CreateMethodBaseSymbol(context_, module_, type_, method_));
+                var value = (_context, _module, _type, method);
+                return _byToken.GetOrAdd(token, _ => CreateMethodBaseSymbol(value._context, value._module, value._type, value.method));
             }
 
             // create lock on demand

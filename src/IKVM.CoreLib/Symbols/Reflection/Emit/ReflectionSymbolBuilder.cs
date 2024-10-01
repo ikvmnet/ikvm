@@ -1,4 +1,7 @@
-﻿using IKVM.CoreLib.Symbols.Emit;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
@@ -17,6 +20,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context)
         {
 
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull("genericTypeParameter")]
+        public IReflectionGenericTypeParameterSymbolBuilder? ResolveGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return Context.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
     }

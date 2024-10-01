@@ -47,7 +47,7 @@ namespace IKVM.Reflection.Emit
 
         // user configurable values
         Type returnType;
-        Type[] parameterTypes;
+        Type[] parameterTypes = Array.Empty<Type>();
         PackedCustomModifiers customModifiers;
         MethodAttributes attributes;
         MethodImplAttributes implFlags;
@@ -87,6 +87,7 @@ namespace IKVM.Reflection.Emit
             if ((attributes & MethodAttributes.Static) == 0)
                 callingConvention |= CallingConventions.HasThis;
             this.callingConvention = callingConvention;
+            this.returnType = Module.Universe.System_Void;
         }
 
         public ILGenerator GetILGenerator()

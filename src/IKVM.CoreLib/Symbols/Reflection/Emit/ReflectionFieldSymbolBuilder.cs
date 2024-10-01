@@ -21,7 +21,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, FieldBuilder builder) :
+        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
@@ -94,10 +94,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc/>
         public bool IsLiteral => UnderlyingField.IsLiteral;
 
-#pragma warning disable SYSLIB0050 // Type or member is obsolete
         /// <inheritdoc/>
         public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
-#pragma warning restore SYSLIB0050 // Type or member is obsolete
 
         /// <inheritdoc/>
         public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;

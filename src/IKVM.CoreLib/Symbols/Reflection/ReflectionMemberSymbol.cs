@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
-
-using IKVM.CoreLib.Reflection;
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -17,40 +12,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
     abstract class ReflectionMemberSymbol : ReflectionSymbol, IReflectionMemberSymbol
     {
 
-        /// <summary>
-        /// Concatinates the list of arrays.
-        /// </summary>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        static T[] Concat<T>(List<T[]>? list)
-        {
-            if (list == null)
-                return [];
-
-            var c = 0;
-            foreach (var i in list)
-                c += i.Length;
-
-            if (c == 0)
-                return [];
-
-            var t = 0;
-            var a = new T[c];
-            foreach (var i in list)
-            {
-                Array.Copy(i, 0, a, t, i.Length);
-                t += i.Length;
-            }
-
-            return a;
-        }
-
-        readonly IReflectionModuleSymbol _resolvingModule;
-        readonly IReflectionTypeSymbol? _resolvingType;
-        readonly MemberInfo _member;
-
-        CustomAttribute[]? _customAttributes;
-        CustomAttribute[]? _inheritedCustomAttributes;
+        readonly IReflectionModuleSymbol _module;
+        readonly IReflectionTypeSymbol? _type;
 
         /// <summary>
         /// Initializes a new instance.
@@ -59,117 +22,25 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingType"></param>
         /// <param name="member"></param>
-        public ReflectionMemberSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MemberInfo member) :
+        public ReflectionMemberSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType) :
             base(context)
         {
-            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingType = resolvingType;
-            _member = member ?? throw new ArgumentNullException(nameof(member));
+            _module = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _type = resolvingType;
         }
 
         /// <inheritdoc />
-        public MemberInfo UnderlyingMember => _member;
+        public abstract MemberInfo UnderlyingMember { get; }
 
         /// <summary>
         /// Gets the <see cref="IReflectionModuleSymbol" /> which contains the metadata of this member.
         /// </summary>
-        public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
+        public IReflectionModuleSymbol ResolvingModule => _module;
 
         /// <summary>
         /// Gets the <see cref="IReflectionTypeSymbol" /> which contains the metadata of this member, or null if the member is not a member of a type.
         /// </summary>
-        public IReflectionTypeSymbol? ResolvingType => _resolvingType;
-
-        #region IMemberSymbol
-
-        /// <inheritdoc />
-        public virtual IModuleSymbol Module => ResolveModuleSymbol(UnderlyingMember.Module)!;
-
-        /// <inheritdoc />
-        public virtual ITypeSymbol? DeclaringType => ResolveTypeSymbol(UnderlyingMember.DeclaringType)!;
-
-        /// <inheritdoc />
-        public virtual MemberTypes MemberType => UnderlyingMember.MemberType;
-
-        /// <inheritdoc />
-        public virtual int MetadataToken => UnderlyingMember.GetMetadataTokenSafe();
-
-        /// <inheritdoc />
-        public virtual string Name => UnderlyingMember.Name;
-
-        /// <inheritdoc />
-        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            if (inherit)
-            {
-                // check that we've already processed this
-                if (_inheritedCustomAttributes != null)
-                    return _inheritedCustomAttributes;
-
-                var self = _member;
-                var list = default(List<CustomAttribute[]>?);
-                for (; ; )
-                {
-                    if (self == null)
-                        throw new InvalidOperationException();
-
-                    // get attribute for current member and append to list
-                    var attr = ResolveMemberSymbol(self)!.GetCustomAttributes(false);
-                    if (attr.Length > 0)
-                    {
-                        list ??= [];
-                        list.Add(attr);
-                    }
-
-                    var type = self as Type;
-                    if (type != null)
-                    {
-                        type = type.BaseType;
-                        if (type == null)
-                            return _inheritedCustomAttributes ??= Concat(list);
-
-                        self = type;
-                        continue;
-                    }
-
-                    var method = self as MethodInfo;
-                    if (method != null)
-                    {
-                        var prev = self;
-                        method = method.GetBaseDefinition();
-                        if (method == null || method == prev)
-                            return _inheritedCustomAttributes ??= Concat(list);
-
-                        self = method;
-                        continue;
-                    }
-
-                    return _inheritedCustomAttributes ??= Concat(list);
-                }
-            }
-
-            return _customAttributes ??= ResolveCustomAttributes(UnderlyingMember.GetCustomAttributesData())!;
-        }
-
-        /// <inheritdoc />
-        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
-        {
-            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
-        }
-
-        /// <inheritdoc />
-        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
-        {
-            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
-        }
-
-        /// <inheritdoc />
-        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
-        {
-            return UnderlyingMember.IsDefined(attributeType.Unpack(), inherit);
-        }
-
-        #endregion
+        public IReflectionTypeSymbol? ResolvingType => _type;
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(type))]
@@ -178,14 +49,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (type is null)
                 return null;
 
-            if (_member == type)
+            if (type == UnderlyingMember)
                 return (IReflectionTypeSymbol)this;
 
-            if (_resolvingType != null && type == _resolvingType.UnderlyingType)
-                return _resolvingType;
+            if (_type != null && type == _type.UnderlyingType)
+                return _type;
 
-            if (type.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateTypeSymbol(type);
+            if (type.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateTypeSymbol(type);
 
             return base.ResolveTypeSymbol(type);
         }
@@ -197,24 +68,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (ctor is null)
                 return null;
 
-            if (_member == ctor)
+            if (ctor == UnderlyingMember)
                 return (IReflectionConstructorSymbol)this;
 
-            if (ctor.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
-
-            return base.ResolveConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(ctor))]
-        public override IReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor)
-        {
-            if (ctor is null)
-                throw new ArgumentNullException(nameof(ctor));
-
-            if (ctor.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateConstructorSymbol(ctor);
+            if (ctor.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateConstructorSymbol(ctor);
 
             return base.ResolveConstructorSymbol(ctor);
         }
@@ -226,24 +84,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (method is null)
                 return null;
 
-            if (_member == method)
+            if (method == UnderlyingMember)
                 return (IReflectionMethodSymbol)this;
 
-            if (method.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateMethodSymbol(method);
-
-            return base.ResolveMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(method))]
-        public override IReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method)
-        {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            if (method.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateMethodSymbol(method);
+            if (method.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateMethodSymbol(method);
 
             return base.ResolveMethodSymbol(method);
         }
@@ -255,24 +100,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (field is null)
                 return null;
 
-            if (_member == field)
+            if (field == UnderlyingMember)
                 return (IReflectionFieldSymbol)this;
 
-            if (field.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateFieldSymbol(field);
-
-            return base.ResolveFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(field))]
-        public override IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field)
-        {
-            if (field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            if (field.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateFieldSymbol(field);
+            if (field.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateFieldSymbol(field);
 
             return base.ResolveFieldSymbol(field);
         }
@@ -284,24 +116,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (property is null)
                 return null;
 
-            if (_member == property)
+            if (property == UnderlyingMember)
                 return (IReflectionPropertySymbol)this;
 
-            if (property.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreatePropertySymbol(property);
-
-            return base.ResolvePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(property))]
-        public override IReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property)
-        {
-            if (property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            if (property.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreatePropertySymbol(property);
+            if (property.Module == _module.UnderlyingModule)
+                return _module.GetOrCreatePropertySymbol(property);
 
             return base.ResolvePropertySymbol(property);
         }
@@ -313,24 +132,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (@event is null)
                 return null;
 
-            if (_member == @event)
+            if (@event == UnderlyingMember)
                 return (IReflectionEventSymbol)this;
 
-            if (@event.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateEventSymbol(@event);
-
-            return base.ResolveEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(@event))]
-        public override IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
-        {
-            if (@event is null)
-                throw new ArgumentNullException(nameof(@event));
-
-            if (@event.GetModuleBuilder() == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateEventSymbol(@event);
+            if (@event.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateEventSymbol(@event);
 
             return base.ResolveEventSymbol(@event);
         }
@@ -342,24 +148,65 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
-            if (parameter.Member.Module == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
+            if (parameter.Member.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateParameterSymbol(parameter);
 
             return base.ResolveParameterSymbol(parameter);
+        }
+
+        #region IMemberSymbol
+
+        /// <inheritdoc />
+        public virtual IModuleSymbol Module => ResolveModuleSymbol(UnderlyingMember.Module)!;
+
+        /// <inheritdoc />
+        public virtual ITypeSymbol? DeclaringType => ResolveTypeSymbol(UnderlyingMember.DeclaringType)!;
+
+        /// <inheritdoc />
+        public virtual System.Reflection.MemberTypes MemberType => (System.Reflection.MemberTypes)UnderlyingMember.MemberType;
+
+        /// <inheritdoc />
+        public virtual int MetadataToken => UnderlyingMember.MetadataToken;
+
+        /// <inheritdoc />
+        public virtual string Name => UnderlyingMember.Name;
+
+        /// <inheritdoc />
+        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        {
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            return ResolveCustomAttributes(UnderlyingMember.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(parameter))]
-        public override IReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
+            if (inherit == true)
+                throw new NotSupportedException();
 
-            if (parameter.GetModuleBuilder() == _resolvingModule.UnderlyingModule)
-                return _resolvingModule.GetOrCreateParameterSymbol(parameter);
-
-            return base.ResolveParameterSymbol(parameter);
+            var _attribyteType = attributeType.Unpack();
+            return ResolveCustomAttributes(UnderlyingMember.GetCustomAttributesData().Where(i => i.AttributeType == _attribyteType).ToArray());
         }
+
+        /// <inheritdoc />
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttribute(UnderlyingMember.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
+        }
+
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return UnderlyingMember.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        #endregion
 
     }
 

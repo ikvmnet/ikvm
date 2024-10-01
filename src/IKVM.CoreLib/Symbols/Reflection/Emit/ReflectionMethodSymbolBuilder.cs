@@ -13,6 +13,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         MethodBuilder? _builder;
         MethodInfo _method;
 
+        ReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        ReflectionMethodSpecTable _specTable;
+
         ReflectionILGenerator? _il;
 
         /// <summary>
@@ -23,11 +26,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, MethodBuilder builder) :
+        public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, MethodBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _method = _builder;
+            _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, resolvingModule, this);
+            _specTable = new ReflectionMethodSpecTable(context, resolvingModule, resolvingType, this);
         }
 
         /// <inheritdoc />
@@ -39,18 +44,52 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public MethodBuilder UnderlyingMethodBuilder => _builder ?? throw new InvalidOperationException();
 
-        #region IMethodBaseSymbolBuilder
+        #region IReflectionMethodSymbolBuilder
 
         /// <inheritdoc />
-        public override void SetImplementationFlags(MethodImplAttributes attributes)
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
-            UnderlyingMethodBuilder.SetImplementationFlags(attributes);
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        #endregion
+
+        #region IReflectionMethodSymbol
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
         /// <inheritdoc />
-        public override IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
+        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
         {
-            return ResolveParameterSymbol(UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
+            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
+        }
+
+        #endregion
+
+        #region IReflectionMethodBaseSymbol
+
+        #endregion
+
+        #region IReflectionMethodBaseSymbolBuilder
+
+        #endregion
+
+        #region IMethodBaseSymbolBuilder
+
+        /// <inheritdoc />
+        public override void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
+        {
+            UnderlyingMethodBuilder.SetImplementationFlags((MethodImplAttributes)attributes);
+        }
+
+        /// <inheritdoc />
+        public override IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
+        {
+            return ResolveParameterSymbol(this, UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
         }
 
         /// <inheritdoc />
@@ -104,7 +143,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             var l = UnderlyingMethodBuilder.DefineGenericParameters(names);
             var a = new IGenericTypeParameterSymbolBuilder[l.Length];
             for (int i = 0; i < l.Length; i++)
-                a[i] = (IGenericTypeParameterSymbolBuilder)ResolveTypeSymbol(l[i]);
+                a[i] = ResolveGenericTypeParameterSymbol(l[i]);
 
             return a;
         }
@@ -152,7 +191,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             _builder = null;
             base.OnComplete();
         }
-
     }
 
 }

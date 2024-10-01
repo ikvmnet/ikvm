@@ -17,7 +17,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
     {
 
         readonly IIkvmReflectionAssemblySymbol _resolvingAssembly;
-        readonly ModuleBuilder _module;
+        Module _module;
+        ModuleBuilder? _builder;
 
         IkvmReflectionTypeTable _typeTable;
         IkvmReflectionMethodTable _methodTable;
@@ -28,13 +29,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingAssembly"></param>
-        /// <param name="module"></param>
+        /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionModuleSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionAssemblySymbol resolvingAssembly, ModuleBuilder module) :
+        public IkvmReflectionModuleSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionAssemblySymbol resolvingAssembly, ModuleBuilder builder) :
             base(context)
         {
             _resolvingAssembly = resolvingAssembly ?? throw new ArgumentNullException(nameof(resolvingAssembly));
-            _module = module ?? throw new ArgumentNullException(nameof(module));
+            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+            _module = _builder;
 
             _typeTable = new IkvmReflectionTypeTable(context, this, null);
             _methodTable = new IkvmReflectionMethodTable(context, this, null);
@@ -42,10 +44,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public Module UnderlyingModule => UnderlyingModuleBuilder;
+        public Module UnderlyingModule => _module;
 
         /// <inheritdoc />
-        public ModuleBuilder UnderlyingModuleBuilder => _module;
+        public ModuleBuilder UnderlyingModuleBuilder => _builder ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public IIkvmReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
@@ -305,11 +307,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public void Complete()
         {
             UnderlyingModuleBuilder.CreateGlobalFunctions();
+
+            foreach (var type in GetTypes())
+                if (type is IIkvmReflectionTypeSymbolBuilder t)
+                    t.Complete();
+
+            _builder = null;
         }
 
         /// <inheritdoc />
         public void Save(System.Reflection.PortableExecutableKinds portableExecutableKind, IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine)
         {
+            if (IsComplete == false)
+                throw new InvalidOperationException("Module must be completed before Save.");
+
             UnderlyingModuleBuilder.__Save((PortableExecutableKinds)portableExecutableKind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
         }
 
@@ -336,7 +347,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public string ScopeName => UnderlyingModule.ScopeName;
 
         /// <inheritdoc />
-        public override bool IsComplete => _module == null;
+        public override bool IsComplete => _builder == null;
 
         /// <inheritdoc />
         public ulong ImageBase
@@ -518,7 +529,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttribute(UnderlyingModule.__GetCustomAttributes(attributeType.Unpack(), inherit).FirstOrDefault());
+            var _attributeType = attributeType.Unpack();
+            var a = UnderlyingModule.__GetCustomAttributes(_attributeType, inherit);
+            if (a.Count > 0)
+                return ResolveCustomAttribute(a[0]);
+
+            return null;
         }
 
         /// <inheritdoc />
@@ -528,6 +544,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         #endregion
+
+        /// <inheritdoc />
+        public override string ToString() => UnderlyingModule.ToString()!;
 
     }
 

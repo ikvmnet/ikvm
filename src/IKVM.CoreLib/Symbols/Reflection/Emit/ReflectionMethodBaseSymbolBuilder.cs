@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
 
@@ -8,16 +9,18 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     abstract class ReflectionMethodBaseSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionMethodBaseSymbolBuilder
     {
 
+        ReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingType"></param>
-        public ReflectionMethodBaseSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType) :
+        public ReflectionMethodBaseSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType) :
             base(context, resolvingModule, resolvingType)
         {
-
+            _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
@@ -25,6 +28,16 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
+
+        #region IReflectionMethodBaseSymbol
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
 
         #region IMethodBaseSymbolBuilder
 
@@ -46,15 +59,21 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public abstract void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
 
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
         #endregion
 
         #region IMethodBaseSymbol
 
         /// <inheritdoc />
-        public MethodAttributes Attributes => UnderlyingMethodBase.Attributes;
+        public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;
 
         /// <inheritdoc />
-        public CallingConventions CallingConvention => UnderlyingMethodBase.CallingConvention;
+        public System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)UnderlyingMethodBase.CallingConvention;
 
         /// <inheritdoc />
         public bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
@@ -105,7 +124,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
 
         /// <inheritdoc />
-        public MethodImplAttributes MethodImplementationFlags => UnderlyingMethodBase.MethodImplementationFlags;
+        public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
 
         /// <inheritdoc />
         public ITypeSymbol[] GetGenericArguments()
@@ -114,7 +133,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public MethodImplAttributes GetMethodImplementationFlags()
+        public System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
             return UnderlyingMethodBase.GetMethodImplementationFlags();
         }

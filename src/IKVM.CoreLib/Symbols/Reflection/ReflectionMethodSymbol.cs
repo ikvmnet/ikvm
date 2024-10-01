@@ -9,6 +9,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         readonly MethodInfo _method;
 
+        ReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        ReflectionMethodSpecTable _specTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -17,15 +20,34 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="type"></param>
         /// <param name="method"></param>
         public ReflectionMethodSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionTypeSymbol? type, MethodInfo method) :
-            base(context, module, type, method)
+            base(context, module, type)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
+            _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, module, this);
+            _specTable = new ReflectionMethodSpecTable(context, module, type, this);
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="MethodInfo"/> wrapped by this symbol.
-        /// </summary>
+        /// <inheritdoc />
         public MethodInfo UnderlyingMethod => _method;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
+
+        #region IReflectionMethodSymbol
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
+        {
+            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
+        }
+
+        #endregion
 
         #region IMethodSymbol
 

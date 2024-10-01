@@ -17,7 +17,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="resolvingType"></param>
         /// <param name="field"></param>
         public ReflectionFieldSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType, FieldInfo field) :
-            base(context, resolvingModule, resolvingType, field)
+            base(context, resolvingModule, resolvingType)
         {
             _field = field ?? throw new ArgumentNullException(nameof(field));
         }
@@ -25,10 +25,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public FieldInfo UnderlyingField => _field;
 
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingMember => UnderlyingField;
+
         #region IFieldSymbol
 
         /// <inheritdoc/>
-        public FieldAttributes Attributes => UnderlyingField.Attributes;
+        public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)UnderlyingField.Attributes;
 
         /// <inheritdoc/>
         public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);
@@ -54,10 +57,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc/>
         public bool IsLiteral => UnderlyingField.IsLiteral;
 
-#pragma warning disable SYSLIB0050 // Type or member is obsolete
         /// <inheritdoc/>
         public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
-#pragma warning restore SYSLIB0050 // Type or member is obsolete
 
         /// <inheritdoc/>
         public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;

@@ -920,7 +920,7 @@ namespace IKVM.Runtime
                     return ((RuntimeUnloadableJavaType)this).MissingType ?? context.Types.Object;
 
                 if (IsGhostArray)
-                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -944,7 +944,7 @@ namespace IKVM.Runtime
                 }
 
                 if (IsGhostArray)
-                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -959,7 +959,7 @@ namespace IKVM.Runtime
                     return context.Types.Object;
 
                 if (IsGhostArray)
-                    return ArrayRank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(ArrayRank);
+                    return RuntimeArrayJavaType.MakeArrayType(context.Types.Object, ArrayRank);
 
                 return TypeAsTBD;
             }
@@ -1311,8 +1311,8 @@ namespace IKVM.Runtime
                 }
 
                 ilgen.EmitLdc_I4(rank);
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Castclass, rank == 1 ? context.Types.Object.MakeArrayType() : context.Types.Object.MakeArrayType(rank));
+                ilgen.Emit(OpCodes.Call, tw.TypeAsTBD.GetMethod("CastArray"));
+                ilgen.Emit(OpCodes.Castclass, RuntimeArrayJavaType.MakeArrayType(context.Types.Object, rank));
             }
             else
             {

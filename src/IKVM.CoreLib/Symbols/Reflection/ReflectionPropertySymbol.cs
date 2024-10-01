@@ -9,6 +9,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         readonly PropertyInfo _property;
 
+        ReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -17,16 +19,32 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="type"></param>
         /// <param name="property"></param>
         public ReflectionPropertySymbol(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionTypeSymbol type, PropertyInfo property) :
-            base(context, module, type, property)
+            base(context, module, type)
         {
             _property = property ?? throw new ArgumentNullException(nameof(property));
+            _parameterTable = new ReflectionParameterTable(context, module, this);
         }
 
         /// <inheritdoc />
         public PropertyInfo UnderlyingProperty => _property;
 
         /// <inheritdoc />
-        public PropertyAttributes Attributes => UnderlyingProperty.Attributes;
+        public override MemberInfo UnderlyingMember => UnderlyingProperty;
+
+        #region IReflectionPropertySymbol
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IPropertySymbol
+
+        /// <inheritdoc />
+        public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)UnderlyingProperty.Attributes;
 
         /// <inheritdoc />
         public bool CanRead => UnderlyingProperty.CanRead;
@@ -111,6 +129,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
         }
+
+        #endregion
 
     }
 

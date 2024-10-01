@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,7 +14,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     {
 
         readonly AssemblyBuilder _builder;
-        ReflectionAssemblyMetadata _metadata;
+
+        ReflectionModuleTable _moduleTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _metadata = new ReflectionAssemblyMetadata(this);
+            _moduleTable = new ReflectionModuleTable(context, this);
         }
 
         /// <inheritdoc />
@@ -34,6 +34,26 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         /// <inheritdoc />
         public AssemblyBuilder UnderlyingAssemblyBuilder => _builder;
+
+        #region IReflectionAssemblySymbolBuilder
+
+        /// <inheritdoc />
+        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
+        {
+            return _moduleTable.GetOrCreateModuleSymbol(module);
+        }
+
+        #endregion
+
+        #region IReflectionAssemblySymbol
+
+        /// <inheritdoc />
+        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        {
+            return _moduleTable.GetOrCreateModuleSymbol(module);
+        }
+
+        #endregion
 
         #region IAssemblySymbolBuilder
 
@@ -66,23 +86,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
         {
-            _builder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingAssemblyBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
-            _builder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, Symbols.Emit.PEFileKinds target)
-        {
-            throw new NotImplementedException();
+            UnderlyingAssemblyBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
         /// <inheritdoc />
@@ -108,6 +118,18 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
         public void AddTypeForwarder(ITypeSymbol type)
         {
             throw new NotSupportedException();
@@ -124,7 +146,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        public void Save(string assemblyFileName, System.Reflection.PortableExecutableKinds portableExecutableKind, IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine)
         {
 #if NETFRAMEWORK
             UnderlyingAssemblyBuilder.Save(assemblyFileName, portableExecutableKind, (System.Reflection.ImageFileMachine)imageFileMachine);
@@ -190,24 +212,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public AssemblyNameInfo GetName()
         {
-            return ToAssemblyName(UnderlyingAssembly.GetName());
+            return UnderlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
         public AssemblyNameInfo[] GetReferencedAssemblies()
         {
-            return UnderlyingAssembly.GetReferencedAssemblies().Select(i => ToAssemblyName(i)).ToArray();
-        }
-
-        /// <summary>
-        /// Transforms the <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
-        /// </summary>
-        /// <param name="n"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        AssemblyNameInfo ToAssemblyName(AssemblyName n)
-        {
-            return new AssemblyNameInfo(n.Name ?? throw new InvalidOperationException(), n.Version, n.CultureName, n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? []);
+            return UnderlyingAssembly.GetReferencedAssemblies().Pack();
         }
 
         /// <inheritdoc />
@@ -250,7 +261,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttribute(UnderlyingAssembly.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
         }
 
         /// <inheritdoc />
@@ -279,17 +291,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         #endregion
 
-        /// <inheritdoc />
-        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
-        {
-            return _metadata.GetOrCreateModuleSymbol(module);
-        }
-
-        /// <inheritdoc />
-        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
-        {
-            return (IReflectionModuleSymbolBuilder)_metadata.GetOrCreateModuleSymbol(module);
-        }
     }
 
 }

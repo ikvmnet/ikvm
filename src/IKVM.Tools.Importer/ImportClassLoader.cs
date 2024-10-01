@@ -599,8 +599,6 @@ namespace IKVM.Tools.Importer
                     mb.AddReference(referencedAssemblies[i].MainAssembly);
             }
 
-            mb.Complete();
-
             AddJavaModuleAttribute(mb);
 
             // add a package list and export map
@@ -620,6 +618,9 @@ namespace IKVM.Tools.Importer
                     WriteExportMap();
                 }
             }
+
+            // complete the module and all types
+            mb.Complete();
 
             if (targetIsModule)
             {

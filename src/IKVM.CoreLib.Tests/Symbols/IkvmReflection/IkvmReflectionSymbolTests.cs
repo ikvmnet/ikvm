@@ -97,6 +97,8 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object").MakeArrayType(2));
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Object").MakeArrayType(2));
+            s1.IsSZArray.Should().BeFalse();
+            s2.IsSZArray.Should().BeFalse();
             s1.Should().BeSameAs(s2);
         }
 
@@ -106,6 +108,8 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             var c = new IkvmReflectionSymbolContext(universe);
             var s1 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeArrayType());
             var s2 = c.GetOrCreateTypeSymbol(coreAssembly.GetType("System.Int32").MakeArrayType());
+            s1.IsSZArray.Should().BeTrue();
+            s2.IsSZArray.Should().BeTrue();
             s1.Should().BeSameAs(s2);
         }
 

@@ -21,7 +21,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionEventSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, EventBuilder builder) :
+        public ReflectionEventSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, EventBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
@@ -80,7 +80,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IEventSymbol
 
         /// <inheritdoc />
-        public EventAttributes Attributes => UnderlyingEvent.Attributes;
+        public System.Reflection.EventAttributes Attributes => UnderlyingEvent.Attributes;
 
         /// <inheritdoc />
         public ITypeSymbol? EventHandlerType => ResolveTypeSymbol(UnderlyingEvent.EventHandlerType);

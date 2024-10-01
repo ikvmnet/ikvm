@@ -17,20 +17,21 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="resolvingType"></param>
         /// <param name="event"></param>
         public ReflectionEventSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, EventInfo @event) :
-            base(context, resolvingModule, resolvingType, @event)
+            base(context, resolvingModule, resolvingType)
         {
             _event = @event ?? throw new ArgumentNullException(nameof(@event));
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="EventInfo"/> wrapped by this symbol.
-        /// </summary>
+        /// <inheritdoc />
         public EventInfo UnderlyingEvent => _event;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingMember => UnderlyingEvent;
 
         #region IEventSymbol
 
         /// <inheritdoc />
-        public EventAttributes Attributes => UnderlyingEvent.Attributes;
+        public System.Reflection.EventAttributes Attributes => (System.Reflection.EventAttributes)UnderlyingEvent.Attributes;
 
         /// <inheritdoc />
         public ITypeSymbol? EventHandlerType => ResolveTypeSymbol(UnderlyingEvent.EventHandlerType);

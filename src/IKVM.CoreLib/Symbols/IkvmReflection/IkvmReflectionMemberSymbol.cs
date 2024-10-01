@@ -192,7 +192,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttribute(UnderlyingMember.__GetCustomAttributes(attributeType.Unpack(), inherit).FirstOrDefault());
+            var _attributeType = attributeType.Unpack();
+            var a = UnderlyingMember.__GetCustomAttributes(_attributeType, inherit);
+            if (a.Count > 0)
+                return ResolveCustomAttribute(a[0]);
+
+            return null;
         }
 
         /// <inheritdoc />
@@ -202,6 +207,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         #endregion
+
+        /// <inheritdoc />
+        public override string ToString() => UnderlyingMember.ToString()!;
 
     }
 

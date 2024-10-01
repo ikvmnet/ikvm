@@ -13,6 +13,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         PropertyBuilder? _builder;
         PropertyInfo _property;
 
+        ReflectionParameterTable _parameterTable;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,11 +23,12 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionPropertySymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, PropertyBuilder builder) :
+        public ReflectionPropertySymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, PropertyBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _property = _builder;
+            _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
@@ -37,7 +40,27 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
 
-        #region IPropertySymbol
+        #region IReflectionPropertySymbolBuilder
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IReflectionPropertySymbol
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IPropertySymbolBuilder
 
         /// <inheritdoc />
         public void SetConstant(object? defaultValue)
@@ -80,7 +103,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IPropertySymbol
 
         /// <inheritdoc />
-        public PropertyAttributes Attributes => UnderlyingProperty.Attributes;
+        public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)UnderlyingProperty.Attributes;
 
         /// <inheritdoc />
         public bool CanRead => UnderlyingProperty.CanRead;
@@ -169,7 +192,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
         }
 
-#endregion
+        #endregion
 
         /// <inheritdoc />
         public override void OnComplete()

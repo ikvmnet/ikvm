@@ -23,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionConstructorSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, ConstructorBuilder builder) :
+        public ReflectionConstructorSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, ConstructorBuilder builder) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
@@ -39,7 +39,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public ConstructorBuilder UnderlyingConstructorBuilder => _builder ?? throw new InvalidOperationException();
 
-        #region IMethodBaseSymbolBuilder
+        #region IConstructorSymbolBuilder
 
         /// <inheritdoc />
         public override void SetImplementationFlags(MethodImplAttributes attributes)
@@ -50,7 +50,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public override IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
         {
-            return ResolveParameterSymbol(UnderlyingConstructorBuilder.DefineParameter(iSequence, attributes, strParamName));
+            if (iSequence <= 0)
+                throw new ArgumentOutOfRangeException(nameof(iSequence));
+
+            return ResolveParameterSymbol(this, UnderlyingConstructorBuilder.DefineParameter(iSequence, attributes, strParamName));
         }
 
         /// <inheritdoc />
@@ -76,10 +79,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             UnderlyingConstructorBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
-
-        #endregion
-
-        #region IConstructorSymbolBuilder
 
         #endregion
 

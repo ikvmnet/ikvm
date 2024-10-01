@@ -60,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(assemblies))]
-        public virtual IReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies)
+        public IReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies)
         {
             if (assemblies == null)
                 return null;
@@ -94,7 +94,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(modules))]
-        public virtual IReflectionModuleSymbol[]? ResolveModuleSymbols(Module[]? modules)
+        public IReflectionModuleSymbol[]? ResolveModuleSymbols(Module[]? modules)
         {
             if (modules == null)
                 return null;
@@ -110,7 +110,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual IEnumerable<IReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
+        public IEnumerable<IReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
         {
             foreach (var module in modules)
                 if (ResolveModuleSymbol(module) is { } symbol)
@@ -138,7 +138,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(members))]
-        public virtual IReflectionMemberSymbol[]? ResolveMemberSymbols(MemberInfo[]? members)
+        public IReflectionMemberSymbol[]? ResolveMemberSymbols(MemberInfo[]? members)
         {
             if (members == null)
                 return null;
@@ -172,7 +172,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(types))]
-        public virtual IReflectionTypeSymbol[]? ResolveTypeSymbols(Type[]? types)
+        public IReflectionTypeSymbol[]? ResolveTypeSymbols(Type[]? types)
         {
             if (types == null)
                 return null;
@@ -188,7 +188,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual IEnumerable<IReflectionTypeSymbol> ResolveTypeSymbols(IEnumerable<Type> types)
+        public IEnumerable<IReflectionTypeSymbol> ResolveTypeSymbols(IEnumerable<Type> types)
         {
             foreach (var type in types)
                 if (ResolveTypeSymbol(type) is { } symbol)
@@ -226,7 +226,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(ctors))]
-        public virtual IReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors)
+        public IReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors)
         {
             if (ctors == null)
                 return null;
@@ -260,7 +260,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(methods))]
-        public virtual IReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods)
+        public IReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods)
         {
             if (methods == null)
                 return null;
@@ -294,7 +294,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(fields))]
-        public virtual IReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields)
+        public IReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields)
         {
             if (fields == null)
                 return null;
@@ -328,7 +328,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(properties))]
-        public virtual IReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties)
+        public IReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties)
         {
             if (properties == null)
                 return null;
@@ -347,12 +347,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         [return: NotNullIfNotNull(nameof(@event))]
         public virtual IReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event)
         {
-            return @event == null ? null : _context.GetOrCreateEventSymbol(@event);
+            if (@event is null)
+                return null;
+
+            return _context.GetOrCreateEventSymbol(@event);
         }
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(@event))]
-        public virtual IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event)
+        public virtual IReflectionEventSymbolBuilder? ResolveEventSymbol(EventBuilder @event)
         {
             if (@event is null)
                 throw new ArgumentNullException(nameof(@event));
@@ -362,7 +365,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(events))]
-        public virtual IReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events)
+        public IReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events)
         {
             if (@events == null)
                 return null;
@@ -381,13 +384,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         [return: NotNullIfNotNull(nameof(parameter))]
         public virtual IReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter)
         {
-            return parameter == null ? null : _context.GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull(nameof(parameter))]
-        public virtual IReflectionParameterSymbolBuilder ResolveParameterSymbol(ParameterBuilder parameter)
-        {
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
@@ -395,8 +391,34 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IReflectionParameterSymbolBuilder? ResolveParameterSymbol(IReflectionMethodBaseSymbolBuilder method, ParameterBuilder parameter)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            if (parameter is null)
+                return null;
+
+            return method.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(parameter))]
+        public virtual IReflectionParameterSymbolBuilder? ResolveParameterSymbol(IReflectionPropertySymbolBuilder property, ParameterBuilder parameter)
+        {
+            if (property is null)
+                throw new ArgumentNullException(nameof(property));
+
+            if (parameter is null)
+                return null;
+
+            return property.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(parameters))]
-        public virtual IReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters)
+        public IReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters)
         {
             if (parameters == null)
                 return null;
@@ -413,7 +435,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(attributes))]
-        public virtual CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
+        public CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
         {
             if (attributes == null)
                 return null;
@@ -429,7 +451,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        public IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
         {
             if (attributes is null)
                 throw new ArgumentNullException(nameof(attributes));
@@ -444,7 +466,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(customAttributeData))]
-        public virtual CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
+        public CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
         {
             if (customAttributeData == null)
                 return null;
@@ -484,6 +506,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             return value switch
             {
+                IList<System.Reflection.CustomAttributeTypedArgument> aa => ResolveCustomAttributeTypedArguments(aa),
                 Type v => ResolveTypeSymbol(v),
                 _ => value
             };
@@ -527,7 +550,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public ManifestResourceInfo? ResolveManifestResourceInfo(System.Reflection.ManifestResourceInfo? info)
         {
-            return info != null ? new ManifestResourceInfo(info.ResourceLocation, info.FileName, ResolveAssemblySymbol(info.ReferencedAssembly)) : null;
+            return info != null ? new ManifestResourceInfo((System.Reflection.ResourceLocation)info.ResourceLocation, info.FileName, ResolveAssemblySymbol(info.ReferencedAssembly)) : null;
         }
 
     }

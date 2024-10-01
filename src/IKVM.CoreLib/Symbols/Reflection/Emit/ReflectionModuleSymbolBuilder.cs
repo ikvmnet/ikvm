@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.PortableExecutable;
 using System.Resources;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
@@ -16,9 +16,12 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     {
 
         readonly IReflectionAssemblySymbol _resolvingAssembly;
+        Module _module;
+        ModuleBuilder? _builder;
 
-        readonly ModuleBuilder _builder;
-        ReflectionModuleMetadata _metadata;
+        ReflectionTypeTable _typeTable;
+        ReflectionMethodTable _methodTable;
+        ReflectionFieldTable _fieldTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,17 +35,166 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             _resolvingAssembly = resolvingAssembly ?? throw new ArgumentNullException(nameof(resolvingAssembly));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _metadata = new ReflectionModuleMetadata(this);
+            _module = _builder;
+
+            _typeTable = new ReflectionTypeTable(context, this, null);
+            _methodTable = new ReflectionMethodTable(context, this, null);
+            _fieldTable = new ReflectionFieldTable(context, this, null);
         }
 
         /// <inheritdoc />
-        public Module UnderlyingModule => UnderlyingModuleBuilder;
+        public Module UnderlyingModule => _module;
 
         /// <inheritdoc />
-        public ModuleBuilder UnderlyingModuleBuilder => _builder;
+        public ModuleBuilder UnderlyingModuleBuilder => _builder ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public IReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
+
+        #region IReflectionModuleSymbol
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        {
+            if (type.IsTypeDefinition())
+                return _typeTable.GetOrCreateTypeSymbol(type);
+            else if (type.IsGenericType)
+                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
+            else if (type.IsSZArray())
+                return ResolveTypeSymbol(type.GetElementType()!).GetOrCreateSZArrayTypeSymbol();
+            else if (type.IsArray)
+                return ResolveTypeSymbol(type.GetElementType()!).GetOrCreateArrayTypeSymbol(type.GetArrayRank());
+            else if (type.IsPointer)
+                return ResolveTypeSymbol(type.GetElementType()!).GetOrCreatePointerTypeSymbol();
+            else if (type.IsByRef)
+                return ResolveTypeSymbol(type.GetElementType()!).GetOrCreateByRefTypeSymbol();
+            else if (type.IsGenericParameter && type.DeclaringMethod is MethodInfo dm)
+                return ResolveMethodSymbol(dm).GetOrCreateGenericTypeParameterSymbol(type);
+            else if (type.IsGenericParameter)
+                return ResolveTypeSymbol(type.DeclaringType!).GetOrCreateGenericTypeParameterSymbol(type);
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
+        {
+            return (IReflectionTypeSymbolBuilder)_typeTable.GetOrCreateTypeSymbol((Type)type);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateMethodBaseSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodBaseSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return ResolveTypeSymbol(ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            return ResolveTypeSymbol((TypeBuilder)ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateMethodSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateMethodSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol(dt).GetOrCreateFieldSymbol(field);
+            else
+                return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateFieldSymbol(field);
+            else
+                return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        {
+            return ResolveTypeSymbol(property.DeclaringType!).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return ResolveTypeSymbol(property.GetTypeBuilder()).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        {
+            return ResolveTypeSymbol(@event.DeclaringType!).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return ResolveTypeSymbol(@event.GetTypeBuilder()).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return ResolveMemberSymbol(parameter.Member) switch
+            {
+                IReflectionMethodBaseSymbol method => method.GetOrCreateParameterSymbol(parameter),
+                IReflectionPropertySymbol property => property.GetOrCreateParameterSymbol(parameter),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(IReflectionMemberSymbolBuilder member, ParameterBuilder parameter)
+        {
+            return member switch
+            {
+                IReflectionMethodBaseSymbolBuilder method => method.GetOrCreateParameterSymbol(parameter),
+                IReflectionPropertySymbolBuilder property => property.GetOrCreateParameterSymbol(parameter),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <inheritdoc />
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericParameterType)
+        {
+            if (genericParameterType.DeclaringMethod is MethodBuilder dm)
+                return ResolveMethodSymbol(dm).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
+            else
+                return ResolveTypeSymbol((TypeBuilder)genericParameterType.DeclaringType!).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
+        }
+
+        #endregion
 
         #region IModuleSymbolBuilder
 
@@ -57,10 +209,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
+        public void DefineManifestResource(string name, Stream stream, System.Reflection.ResourceAttributes attribute)
         {
 #if NETFRAMEWORK
-            UnderlyingModuleBuilder.DefineManifestResource(name, stream, attribute);
+                UnderlyingModuleBuilder.DefineManifestResource(name, stream, attribute);
 #else
             throw new NotSupportedException();
 #endif
@@ -70,80 +222,80 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IResourceWriter DefineResource(string name, string description)
         {
 #if NETFRAMEWORK
-            return UnderlyingModuleBuilder.DefineResource(name, description);
+                return UnderlyingModuleBuilder.DefineResource(name, description);
 #else
             throw new NotImplementedException();
 #endif
         }
 
         /// <inheritdoc />
-        public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
+        public IResourceWriter DefineResource(string name, string description, System.Reflection.ResourceAttributes attribute)
         {
 #if NETFRAMEWORK
-            return UnderlyingModuleBuilder.DefineResource(name, description, attribute);
+                return UnderlyingModuleBuilder.DefineResource(name, description, attribute);
 #else
             throw new NotImplementedException();
 #endif
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType?.Unpack(), parameterTypes?.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), parameterTypes?.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? requiredReturnTypeCustomModifiers, ITypeSymbol[]? optionalReturnTypeCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredParameterTypeCustomModifiers, ITypeSymbol[][]? optionalParameterTypeCustomModifiers)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? requiredReturnTypeCustomModifiers, ITypeSymbol[]? optionalReturnTypeCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredParameterTypeCustomModifiers, ITypeSymbol[][]? optionalParameterTypeCustomModifiers)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, callingConvention, returnType?.Unpack(), requiredReturnTypeCustomModifiers?.Unpack(), optionalReturnTypeCustomModifiers?.Unpack(), parameterTypes?.Unpack(), requiredParameterTypeCustomModifiers?.Unpack(), optionalParameterTypeCustomModifiers?.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), requiredReturnTypeCustomModifiers?.Unpack(), optionalReturnTypeCustomModifiers?.Unpack(), parameterTypes?.Unpack(), requiredParameterTypeCustomModifiers?.Unpack(), optionalParameterTypeCustomModifiers?.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
+        public IMethodSymbolBuilder DefineGlobalMethod(string name, System.Reflection.MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, attributes, returnType?.Unpack(), parameterTypes?.Unpack()));
+            return ResolveMethodSymbol(UnderlyingModuleBuilder.DefineGlobalMethod(name, (MethodAttributes)attributes, returnType?.Unpack(), parameterTypes?.Unpack()));
         }
 
         /// <inheritdoc />
         public ITypeSymbolBuilder DefineType(string name)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, int typesize)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, int typesize)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr, parent?.Unpack(), typesize));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr, parent?.Unpack(), typesize));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr, parent?.Unpack()));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr, parent?.Unpack()));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packsize)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, System.Reflection.Emit.PackingSize packsize)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr, parent?.Unpack(), packsize));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr, parent?.Unpack(), (PackingSize)packsize));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packingSize, int typesize)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, System.Reflection.Emit.PackingSize packingSize, int typesize)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr, parent?.Unpack(), packingSize, typesize));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr, parent?.Unpack(), (PackingSize)packingSize, typesize));
         }
 
         /// <inheritdoc />
-        public ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, ITypeSymbol[]? interfaces)
+        public ITypeSymbolBuilder DefineType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, ITypeSymbol[]? interfaces)
         {
-            return (ITypeSymbolBuilder)ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, attr, parent?.Unpack(), interfaces?.Unpack()));
+            return ResolveTypeSymbol(UnderlyingModuleBuilder.DefineType(name, (TypeAttributes)attr, parent?.Unpack(), interfaces?.Unpack()));
         }
 
         /// <inheritdoc />
@@ -156,6 +308,36 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
         {
             UnderlyingModuleBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+        }
+
+        /// <inheritdoc />
+        public void AddReference(IAssemblySymbol assembly)
+        {
+#if NETFRAMEWORK
+            var t = ((IReflectionAssemblySymbol)assembly).GetExportedTypes();
+            if (t.Length > 0)
+                UnderlyingModuleBuilder.GetTypeToken(t[0].Unpack());
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        /// <inheritdoc />
+        public void Complete()
+        {
+            UnderlyingModuleBuilder.CreateGlobalFunctions();
+
+            foreach (var type in GetTypes())
+                if (type is IReflectionTypeSymbolBuilder t)
+                    t.Complete();
+
+            _builder = null;
+        }
+
+        /// <inheritdoc />
+        public void Save(System.Reflection.PortableExecutableKinds portableExecutableKind, IKVM.CoreLib.Symbols.ImageFileMachine imageFileMachine)
+        {
+            throw new NotSupportedException();
         }
 
         #endregion
@@ -195,7 +377,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public DllCharacteristics DllCharacteristics
+        public System.Reflection.PortableExecutable.DllCharacteristics DllCharacteristics
         {
             get => throw new NotSupportedException();
             set => throw new NotSupportedException();
@@ -211,15 +393,15 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
+        public IFieldSymbol? GetField(string name, System.Reflection.BindingFlags bindingAttr)
         {
-            return ResolveFieldSymbol(UnderlyingModule.GetField(name, bindingAttr));
+            return ResolveFieldSymbol(UnderlyingModule.GetField(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IFieldSymbol[] GetFields(BindingFlags bindingFlags)
+        public IFieldSymbol[] GetFields(System.Reflection.BindingFlags bindingFlags)
         {
-            return ResolveFieldSymbols(UnderlyingModule.GetFields(bindingFlags))!;
+            return ResolveFieldSymbols(UnderlyingModule.GetFields((BindingFlags)bindingFlags))!;
         }
 
         /// <inheritdoc />
@@ -241,9 +423,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
-            return ResolveMethodSymbol(UnderlyingModule.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers));
+            return ResolveMethodSymbol(UnderlyingModule.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, types.Unpack(), modifiers?.Unpack()));
         }
 
         /// <inheritdoc />
@@ -253,9 +435,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetMethods(BindingFlags bindingFlags)
+        public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingFlags)
         {
-            return ResolveMethodSymbols(UnderlyingModule.GetMethods(bindingFlags))!;
+            return ResolveMethodSymbols(UnderlyingModule.GetMethods((BindingFlags)bindingFlags))!;
         }
 
         /// <inheritdoc />
@@ -355,16 +537,17 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
             var _attributeType = attributeType.Unpack();
             return ResolveCustomAttributes(UnderlyingModule.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
         }
 
         /// <inheritdoc />
-        public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttribute(UnderlyingModule.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
         }
 
         /// <inheritdoc />
@@ -373,121 +556,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             return UnderlyingModule.IsDefined(attributeType.Unpack(), false);
         }
 
-        /// <inheritdoc />
-        public void AddReference(IAssemblySymbol assembly)
-        {
-#if NETFRAMEWORK
-            var t = ((IReflectionAssemblySymbol)assembly).GetExportedTypes();
-            if (t.Length > 0)
-                UnderlyingModuleBuilder.GetTypeToken(t[0].Unpack());
-#else
-            throw new NotSupportedException();
-#endif
-        }
-
-        /// <inheritdoc />
-        public void AddTypeForwarder(ITypeSymbol type)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public void Complete()
-        {
-            UnderlyingModuleBuilder.CreateGlobalFunctions();
-        }
-
-        /// <inheritdoc />
-        public void Save(PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
-        {
-            throw new NotSupportedException();
-        }
-
         #endregion
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
-        {
-            return _metadata.GetOrCreateTypeSymbol(type);
-        }
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
-        {
-            return _metadata.GetOrCreateTypeSymbol(type);
-        }
-
-        /// <inheritdoc />
-        public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
-        {
-            return _metadata.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
-        {
-            return _metadata.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
-        {
-            return _metadata.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
-        {
-            return _metadata.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
-        {
-            return _metadata.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
-        {
-            return _metadata.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
-        {
-            return _metadata.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
-        {
-            return _metadata.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
-        {
-            return _metadata.GetOrCreateEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
-        {
-            return _metadata.GetOrCreateEventSymbol(@event);
-        }
-
-        /// <inheritdoc />
-        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
-        {
-            return _metadata.GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <inheritdoc />
-        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
-        {
-            return _metadata.GetOrCreateParameterSymbol(parameter);
-        }
 
     }
 

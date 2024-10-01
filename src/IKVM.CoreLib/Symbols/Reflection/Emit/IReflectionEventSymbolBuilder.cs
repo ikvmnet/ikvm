@@ -5,9 +5,12 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    interface IReflectionEventSymbolBuilder : IReflectionSymbolBuilder<IReflectionEventSymbol>, IReflectionMemberSymbolBuilder, IEventSymbolBuilder, IReflectionEventSymbol
+    interface IReflectionEventSymbolBuilder : IReflectionSymbolBuilder, IReflectionMemberSymbolBuilder, IEventSymbolBuilder, IReflectionEventSymbol
     {
 
+        /// <summary>
+        /// Gets the underlying <see cref="EventBuilder"/>.
+        /// </summary>
         EventBuilder UnderlyingEventBuilder { get; }
 
     }

@@ -51,8 +51,38 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 Name = n.Name,
                 Version = n.Version,
                 CultureName = n.CultureName,
-                Flags = n.Flags,
+                Flags = (AssemblyNameFlags)n.Flags,
             };
+        }
+
+        /// <summary>
+        /// Converts a set of <see cref="AssemblyNameInfo"/> to a set of <see cref="AssemblyName"/>.
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static AssemblyName[] Unpack(this AssemblyNameInfo[] n)
+        {
+            if (n.Length == 0)
+                return [];
+
+            var a = new AssemblyName[n.Length];
+            for (int i = 0; i < n.Length; i++)
+                a[i] = n[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the symbol into their original assembly.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Assembly Unpack(this IAssemblySymbol type)
+        {
+            if (type is IReflectionAssemblySymbol symbol)
+                return symbol.UnderlyingAssembly;
+
+            throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -283,6 +313,35 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Unpacks the parameter modifier.
+        /// </summary>
+        /// <param name="modifier"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static ParameterModifier Unpack(this System.Reflection.ParameterModifier modifier)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Unpacks the parameter modifier.
+        /// </summary>
+        /// <param name="modifier"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static ParameterModifier[] Unpack(this System.Reflection.ParameterModifier[] modifiers)
+        {
+            if (modifiers.Length == 0)
+                return [];
+
+            var a = new ParameterModifier[modifiers.Length];
+            for (int i = 0; i < modifiers.Length; i++)
+                a[i] = modifiers[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
         /// Unpacks the <see cref="ILocalBuilder"/>.
         /// </summary>
         /// <param name="builder"></param>
@@ -341,6 +400,36 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 a[i] = customAttributes[i].Unpack();
 
             return a;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type represents a type definition.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsTypeDefinition(this Type type)
+        {
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
+
+#if NET
+            return type.IsTypeDefinition;
+#else
+            return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
+#endif
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given method represents a method definition.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsMethodDefinition(this MethodBase method)
+        {
+            if (method is null)
+                throw new ArgumentNullException(nameof(method));
+
+            return method.IsGenericMethod == false || method.IsGenericMethodDefinition;
         }
 
     }

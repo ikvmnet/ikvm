@@ -2,9 +2,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
-using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 

@@ -1,7 +1,4 @@
 ﻿using System.Reflection;
-using System.Reflection.Emit;
-
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -20,13 +17,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="module"></param>
         /// <returns></returns>
         IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module);
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionModuleSymbolBuilder"/> for the specified <see cref="ModuleBuilder"/>.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module);
 
     }
 

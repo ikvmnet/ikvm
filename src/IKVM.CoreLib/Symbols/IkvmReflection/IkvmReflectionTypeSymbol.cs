@@ -42,7 +42,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public Type UnderlyingType => _type;
 
         /// <inheritdoc />
-        public override IKVM.Reflection.MemberInfo UnderlyingMember => UnderlyingType;
+        public override MemberInfo UnderlyingMember => UnderlyingType;
 
         #region IIkvmReflectionTypeSymbol
 

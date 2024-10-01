@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
+
 using IKVM.CoreLib.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
@@ -37,7 +38,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override string? Name => _builder.Name;
 
         /// <inheritdoc />
-        public override int Position => _builder.Position;
+        public override int Position => _builder.Position - 1;
 
         /// <inheritdoc />
         public override int MetadataToken => _builder.GetMetadataToken();

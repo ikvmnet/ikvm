@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Reflection.Emit;
-
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -27,14 +24,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionAssemblySymbol? ResolveAssemblySymbol(Assembly? assembly);
 
         /// <summary>
-        /// Resolves the symbol for the specified assembly builder.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(assembly))]
-        IReflectionAssemblySymbolBuilder ResolveAssemblySymbol(AssemblyBuilder assembly);
-
-        /// <summary>
         /// Resolves the symbols for the specified assemblies.
         /// </summary>
         /// <param name="assemblies"></param>
@@ -49,14 +38,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(module))]
         IReflectionModuleSymbol? ResolveModuleSymbol(Module? module);
-
-        /// <summary>
-        /// Resolves the symbol for the specified module.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(module))]
-        IReflectionModuleSymbolBuilder ResolveModuleSymbol(ModuleBuilder module);
 
         /// <summary>
         /// Resolves the symbols for the specified modules.
@@ -98,14 +79,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionTypeSymbol? ResolveTypeSymbol(Type? type);
 
         /// <summary>
-        /// Resolves the symbol for the specified type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(type))]
-        IReflectionTypeSymbolBuilder ResolveTypeSymbol(TypeBuilder type);
-
-        /// <summary>
         /// Resolves the symbols for the specified types.
         /// </summary>
         /// <param name="types"></param>
@@ -137,14 +110,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor);
 
         /// <summary>
-        /// Resolves the symbol for the specified constructor.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(ctor))]
-        IReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor);
-
-        /// <summary>
         /// Resolves the symbols for the specified constructors.
         /// </summary>
         /// <param name="ctors"></param>
@@ -159,14 +124,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(method))]
         IReflectionMethodSymbol? ResolveMethodSymbol(MethodInfo? method);
-
-        /// <summary>
-        /// Resolves the symbol for the specified method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(method))]
-        IReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method);
 
         /// <summary>
         /// Resolves the symbols for the specified methods.
@@ -185,14 +142,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionFieldSymbol? ResolveFieldSymbol(FieldInfo? field);
 
         /// <summary>
-        /// Resolves the symbol for the specified field.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(field))]
-        IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field);
-
-        /// <summary>
         /// Resolves the symbols for the specified fields.
         /// </summary>
         /// <param name="fields"></param>
@@ -207,14 +156,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(property))]
         IReflectionPropertySymbol? ResolvePropertySymbol(PropertyInfo? property);
-
-        /// <summary>
-        /// Resolves the symbol for the specified property.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(property))]
-        IReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property);
 
         /// <summary>
         /// Resolves the symbols for the specified properties.
@@ -233,14 +174,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionEventSymbol? ResolveEventSymbol(EventInfo? @event);
 
         /// <summary>
-        /// Resolves the symbol for the specified event.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(@event))]
-        IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event);
-
-        /// <summary>
         /// Resolves the symbols for the specified events.
         /// </summary>
         /// <param name="events"></param>
@@ -255,14 +188,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(parameter))]
         IReflectionParameterSymbol? ResolveParameterSymbol(ParameterInfo? parameter);
-
-        /// <summary>
-        /// Resolves the symbol for the specified parameter.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        [return: NotNullIfNotNull(nameof(parameter))]
-        IReflectionParameterSymbolBuilder? ResolveParameterSymbol(ParameterBuilder parameter);
 
         /// <summary>
         /// Resolves the symbols for the specified parameters.

@@ -9,23 +9,21 @@ namespace IKVM.CoreLib.Symbols.Reflection
     {
 
         readonly IReflectionModuleSymbol _resolvingModule;
-        readonly IReflectionMethodBaseSymbol _resolvingMethod;
+        readonly IReflectionMemberSymbol _resolvingMember;
         readonly ParameterInfo _parameter;
-
-        CustomAttribute[]? _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
-        /// <param name="resolvingMethod"></param>
+        /// <param name="resolvingMember"></param>
         /// <param name="parameter"></param>
-        public ReflectionParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMethodBaseSymbol resolvingMethod, ParameterInfo parameter) :
+        public ReflectionParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMemberSymbol? resolvingMember, ParameterInfo parameter) :
             base(context)
         {
             _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingMethod = resolvingMethod ?? throw new ArgumentNullException(nameof(resolvingMethod));
+            _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
             _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
         }
 
@@ -33,7 +31,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
         /// <inheritdoc />
-        public IReflectionMethodBaseSymbol ResolvingMethod => _resolvingMethod;
+        public IReflectionMemberSymbol ResolvingMember => _resolvingMember;
 
         /// <inheritdoc />
         public ParameterInfo UnderlyingParameter => _parameter;
@@ -41,10 +39,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         #region IParameterSymbol
 
         /// <inheritdoc />
-        public ParameterAttributes Attributes => UnderlyingParameter.Attributes;
+        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)UnderlyingParameter.Attributes;
 
         /// <inheritdoc />
-        public object? DefaultValue => UnderlyingParameter.DefaultValue;
+        public object? DefaultValue => UnderlyingParameter.RawDefaultValue;
 
         /// <inheritdoc />
         public bool HasDefaultValue => UnderlyingParameter.HasDefaultValue;
@@ -80,21 +78,32 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public int Position => UnderlyingParameter.Position;
 
         /// <inheritdoc />
-        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return _customAttributes ??= ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
         public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            var _attribyteType = attributeType.Unpack();
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attribyteType).ToArray());
         }
 
         /// <inheritdoc />
         public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return GetCustomAttributes(attributeType, inherit).FirstOrDefault();
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttribute(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
         }
 
         /// <inheritdoc />

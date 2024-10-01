@@ -1255,7 +1255,7 @@ namespace IKVM.Runtime
         internal override string GetSourceFileName()
         {
             var attr = type.GetCustomAttribute(Context.Resolver.GetSymbol(typeof(SourceFileAttribute)));
-            if (attr != null && attr.Value.ConstructorArguments.Length > 0)
+            if (attr.HasValue && attr.Value.ConstructorArguments.Length > 0)
                 return (string)attr.Value.ConstructorArguments[0].Value;
 
             if (DeclaringTypeWrapper != null)
@@ -1273,11 +1273,12 @@ namespace IKVM.Runtime
         internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
         {
             var attr = type.GetCustomAttribute(Context.Resolver.GetSymbol(typeof(LineNumberTableAttribute)));
-            if (attr != null && attr.Value.Constructor != null)
+            if (attr.HasValue && attr.Value.Constructor != null)
                 return ((LineNumberTableAttribute)attr.Value.Constructor.AsReflection().Invoke(attr.Value.ConstructorArguments.Cast<object>().ToArray())).GetLineNumber(ilOffset);
 
             return -1;
         }
+
 #endif
 
         internal override bool IsFastClassLiteralSafe
