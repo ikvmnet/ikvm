@@ -60,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
                 if (_table[position] == null)
                     using (_lock.CreateWriteLock())
-                        return _table[position] ??= new IkvmReflectionParameterSymbol(_context, _module, _member, parameter);
+                        _table[position] ??= new IkvmReflectionParameterSymbol(_context, _module, _member, parameter);
 
                 return _table[position] ?? throw new InvalidOperationException();
             }

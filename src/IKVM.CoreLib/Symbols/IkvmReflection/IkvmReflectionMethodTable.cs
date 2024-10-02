@@ -75,11 +75,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             using (_lock.CreateUpgradeableReadLock())
             {
-                if (_table[token] == null)
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(token));
+                if (_table[row] == null)
                     using (_lock.CreateWriteLock())
-                        return _table[token] ??= CreateMethodBaseSymbol(_context, _module, _type, method);
+                        _table[row] ??= CreateMethodBaseSymbol(_context, _module, _type, method);
 
-                return _table[token] ?? throw new InvalidOperationException();
+                return _table[row] ?? throw new InvalidOperationException();
             }
         }
 

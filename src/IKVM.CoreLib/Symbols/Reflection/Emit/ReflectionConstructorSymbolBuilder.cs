@@ -89,6 +89,17 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         #endregion
 
+        #region IMethodBaseSymbol
+
+        /// <inheritdoc />
+        public override ITypeSymbol[] GetGenericArguments()
+        {
+            // constructor never has generic arguments
+            return [];
+        }
+
+        #endregion
+
         /// <inheritdoc />
         public override void OnComplete()
         {

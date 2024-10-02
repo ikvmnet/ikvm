@@ -152,8 +152,8 @@ namespace IKVM.Tools.Importer
             // warn when unable to resolve a member
             universe.ResolvedMissingMember += (Module requestingModule, MemberInfo member) =>
             {
-                if (requestingModule != null && member is IKVM.Reflection.Type)
-                    diagnostics.UnableToResolveType(requestingModule.Name, ((IKVM.Reflection.Type)member).FullName, member.Module.FullyQualifiedName);
+                if (requestingModule != null && member is IKVM.Reflection.Type type)
+                    diagnostics.UnableToResolveType(requestingModule.Name, type.FullName, member.Module.FullyQualifiedName);
             };
 
             // enable embedded symbol writer

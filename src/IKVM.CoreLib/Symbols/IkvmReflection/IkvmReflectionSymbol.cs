@@ -446,8 +446,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
             var a = new CustomAttribute[attributes.Count];
             for (int i = 0; i < attributes.Count; i++)
-                if (ResolveCustomAttribute(attributes[i]) is { } v)
-                    a[i] = v;
+                a[i] = ResolveCustomAttribute(attributes[i]) ?? throw new InvalidOperationException();
 
             return a;
         }

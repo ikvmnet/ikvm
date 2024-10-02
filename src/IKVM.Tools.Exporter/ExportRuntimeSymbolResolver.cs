@@ -172,6 +172,20 @@ namespace IKVM.Tools.Exporter
             return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
 
+        /// <inheritdoc />
+        public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
+        {
+            var t = _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType);
+            if (t != null)
+            {
+                type = t;
+                return true;
+            }
+
+            type = null;
+            return false;
+        }
+
         /// <summary>
         /// Attempts to load the specified runtime type.
         /// </summary>

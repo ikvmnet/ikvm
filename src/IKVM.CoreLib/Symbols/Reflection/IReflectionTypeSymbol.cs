@@ -91,7 +91,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeDefinition"></param>
         /// <returns></returns>
-        IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeDefinition);
+        IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition);
 
     }
 

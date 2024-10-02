@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -44,16 +46,16 @@ namespace IKVM.Runtime
             readonly ReflectionSymbolContext _symbols = new();
 
             IAssemblySymbol _coreAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _coreTypeCache = new();
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
 
             IAssemblySymbol[] _systemAssemblies;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _systemTypeCache = new();
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _systemTypeCache = new();
 
             IAssemblySymbol _runtimeAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _runtimeTypeCache = new();
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _runtimeTypeCache = new();
 
             IAssemblySymbol _baseAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _baseTypeCache = new();
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _baseTypeCache = new();
 
             /// <summary>
             /// Initializes a new instance.
@@ -84,7 +86,7 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public ITypeSymbol ResolveCoreType(string typeName)
             {
-                return _coreTypeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
+                return _coreTypeCache.GetOrAdd(typeName, ResolveCoreTypeImpl) ?? throw new InvalidOperationException();
             }
 
             /// <summary>
@@ -92,7 +94,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol ResolveCoreTypeImpl(string typeName)
+            ITypeSymbol? ResolveCoreTypeImpl(string typeName)
             {
                 return _coreAssembly.GetType(typeName);
             }
@@ -100,7 +102,7 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public ITypeSymbol ResolveSystemType(string typeName)
             {
-                return _systemTypeCache.GetOrAdd(typeName, ResolveSystemTypeImpl);
+                return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new InvalidOperationException();
             }
 
             /// <summary>
@@ -108,7 +110,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol ResolveSystemTypeImpl(string typeName)
+            ITypeSymbol? FindSystemType(string typeName)
             {
                 foreach (var assembly in _systemAssemblies)
                     if (assembly.GetType(typeName) is ITypeSymbol t)
@@ -126,7 +128,21 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public ITypeSymbol ResolveRuntimeType(string typeName)
             {
-                return _runtimeTypeCache.GetOrAdd(typeName, ResolveRuntimeTypeImpl);
+                return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new InvalidOperationException();
+            }
+
+            /// <inheritdoc />
+            public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
+            {
+                var t = _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType);
+                if (t != null)
+                {
+                    type = t;
+                    return true;
+                }
+
+                type = null;
+                return false;
             }
 
             /// <summary>
@@ -134,7 +150,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol ResolveRuntimeTypeImpl(string typeName)
+            ITypeSymbol? FindRuntimeType(string typeName)
             {
                 return _runtimeAssembly.GetType(typeName);
             }
@@ -148,11 +164,11 @@ namespace IKVM.Runtime
             /// <inheritdoc />
             public ITypeSymbol ResolveBaseType(string typeName)
             {
-                return _baseAssembly.GetType(typeName);
+                return _baseAssembly.GetType(typeName) ?? throw new InvalidOperationException();
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveType(string typeName)
+            public ITypeSymbol? ResolveType(string typeName)
             {
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                     if (assembly.GetType(typeName) is Type t)

@@ -5,8 +5,6 @@ using System.Threading;
 using IKVM.CoreLib.Collections;
 using IKVM.CoreLib.Threading;
 
-using Type = IKVM.Reflection.Type;
-
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
@@ -101,7 +99,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        public IIkvmReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeArguments)
+        public IIkvmReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IIkvmReflectionTypeSymbol[] genericTypeArguments)
         {
             if (genericTypeArguments is null)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
@@ -112,7 +110,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (_genericTypeSymbols == null)
                 Interlocked.CompareExchange(ref _genericTypeSymbols, new(TypeSymbolListEqualityComparer.Instance), null);
 
-            return _genericTypeSymbols.GetOrAdd(_module.ResolveTypeSymbols(genericTypeArguments), CreateGenericTypeSymbol);
+            return _genericTypeSymbols.GetOrAdd(genericTypeArguments, CreateGenericTypeSymbol);
         }
 
         /// <summary>

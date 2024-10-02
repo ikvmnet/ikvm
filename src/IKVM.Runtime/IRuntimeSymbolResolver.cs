@@ -50,6 +50,14 @@ namespace IKVM.Runtime
         ITypeSymbol ResolveRuntimeType(string typeName);
 
         /// <summary>
+        /// Attempts to resolve the named type from the IKVM runtime assembly.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type);
+
+        /// <summary>
         /// Resolves the known Java base assembly.
         /// </summary>
         /// <returns></returns>

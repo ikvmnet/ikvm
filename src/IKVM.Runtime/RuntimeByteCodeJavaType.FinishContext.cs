@@ -388,8 +388,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
                                 // see if there exists a "managed JNI" class for this type
-                                var nativeCodeType = context.Resolver.ResolveRuntimeType("IKVM.Java.Externs." + classFile.Name.Replace("$", "+"));
-                                if (nativeCodeType != null)
+                                if (context.Resolver.TryResolveRuntimeType("IKVM.Java.Externs." + classFile.Name.Replace("$", "+"), out var nativeCodeType))
                                 {
                                     if (!m.IsStatic)
                                         nargs = ArrayUtil.Concat(wrapper, args);

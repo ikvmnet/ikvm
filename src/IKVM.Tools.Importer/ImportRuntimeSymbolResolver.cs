@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 using IKVM.CoreLib.Diagnostics;
@@ -40,7 +41,7 @@ namespace IKVM.Tools.Importer
         readonly IDiagnosticHandler _diagnostics;
         readonly Universe _universe;
         readonly IkvmReflectionSymbolContext _symbols;
-        readonly bool _bootstrap;
+        readonly ImportOptions _options;
 
         IAssemblySymbol? _coreAssembly;
         readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
@@ -67,7 +68,7 @@ namespace IKVM.Tools.Importer
             _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             _universe = universe ?? throw new ArgumentNullException(nameof(universe));
             _symbols = symbols ?? throw new ArgumentNullException(nameof(symbols));
-            _bootstrap = options.Bootstrap;
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <inheritdoc />
@@ -90,9 +91,25 @@ namespace IKVM.Tools.Importer
         /// </summary>
         IAssemblySymbol? FindRuntimeAssembly()
         {
+            // search for already loaded runtime
             foreach (var assembly in _universe.GetAssemblies())
                 if (assembly.GetType("IKVM.Runtime.JVM") is Type)
                     return GetSymbol(assembly);
+
+            // user explicitly specified path to runtime
+            if (_options.Runtime != null)
+                if (_options.Runtime.Exists)
+                    return GetSymbol(_universe.LoadFile(_options.Runtime.FullName));
+
+            // fallback to resolution against universe
+            try
+            {
+                return GetSymbol(_universe.Load("IKVM.Runtime"));
+            }
+            catch (FileNotFoundException)
+            {
+                // ignore, we tried
+            }
 
             return null;
         }
@@ -101,7 +118,7 @@ namespace IKVM.Tools.Importer
         public IAssemblySymbol? GetBaseAssembly()
         {
             // bootstrap mode is used for builing the main assembly, and thus should not return the existing base assembly
-            if (_bootstrap)
+            if (_options.Bootstrap)
                 return null;
 
             return (_baseAssembly ??= FindBaseAssembly()) ?? throw new DiagnosticEventException(DiagnosticEvent.BootstrapClassesMissing());
@@ -115,6 +132,16 @@ namespace IKVM.Tools.Importer
             foreach (var assembly in _universe.GetAssemblies())
                 if (assembly.GetType("java.lang.Object") is Type)
                     return GetSymbol(assembly);
+
+            // fallback to resolution against universe
+            try
+            {
+                return GetSymbol(_universe.Load("IKVM.Java"));
+            }
+            catch (FileNotFoundException)
+            {
+                // ignore, we tried
+            }
 
             return null;
         }
@@ -167,15 +194,29 @@ namespace IKVM.Tools.Importer
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? ResolveRuntimeType(string typeName)
+        public ITypeSymbol ResolveRuntimeType(string typeName)
         {
-            return GetRuntimeAssembly().GetType(typeName);
+            return GetRuntimeAssembly().GetType(typeName) ?? throw new TypeLoadException();
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? ResolveBaseType(string typeName)
+        public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
         {
-            return GetBaseAssembly().GetType(typeName);
+            var t = GetRuntimeAssembly().GetType(typeName);
+            if (t != null)
+            {
+                type = t;
+                return true;
+            }
+
+            type = null;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbol ResolveBaseType(string typeName)
+        {
+            return GetBaseAssembly()?.GetType(typeName) ?? throw new TypeLoadException();
         }
 
         /// <inheritdoc />

@@ -99,7 +99,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeArguments)
+        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeArguments)
         {
             if (genericTypeArguments is null)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
@@ -110,7 +110,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (_genericTypeSymbols == null)
                 Interlocked.CompareExchange(ref _genericTypeSymbols, new(TypeSymbolListEqualityComparer.Instance), null);
 
-            return _genericTypeSymbols.GetOrAdd(_module.ResolveTypeSymbols(genericTypeArguments), CreateGenericTypeSymbol);
+            return _genericTypeSymbols.GetOrAdd(genericTypeArguments, CreateGenericTypeSymbol);
         }
 
         /// <summary>

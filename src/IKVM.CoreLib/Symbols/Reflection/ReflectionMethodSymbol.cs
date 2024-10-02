@@ -44,7 +44,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
         {
-            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
+            return _specTable.GetOrCreateGenericMethodSymbol(ResolveTypeSymbols(method.GetGenericArguments()));
         }
 
         #endregion

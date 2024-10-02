@@ -38,7 +38,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _module = _builder;
 
-            _typeTable = new IkvmReflectionTypeTable(context, this, null);
+            _typeTable = new IkvmReflectionTypeTable(context, this);
             _methodTable = new IkvmReflectionMethodTable(context, this, null);
             _fieldTable = new IkvmReflectionFieldTable(context, this, null);
         }
@@ -60,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             if (type.IsTypeDefinition())
                 return _typeTable.GetOrCreateTypeSymbol(type);
             else if (type.IsGenericType)
-                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
+                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
             else if (type.IsSZArray)
                 return ResolveTypeSymbol(type.GetElementType()).GetOrCreateSZArrayTypeSymbol();
             else if (type.IsArray)

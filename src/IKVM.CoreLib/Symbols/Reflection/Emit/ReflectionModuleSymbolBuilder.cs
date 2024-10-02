@@ -59,7 +59,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             if (type.IsTypeDefinition())
                 return _typeTable.GetOrCreateTypeSymbol(type);
             else if (type.IsGenericType)
-                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
+                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
             else if (type.IsSZArray())
                 return ResolveTypeSymbol(type.GetElementType()!).GetOrCreateSZArrayTypeSymbol();
             else if (type.IsArray)
@@ -212,7 +212,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public void DefineManifestResource(string name, Stream stream, System.Reflection.ResourceAttributes attribute)
         {
 #if NETFRAMEWORK
-                UnderlyingModuleBuilder.DefineManifestResource(name, stream, attribute);
+            UnderlyingModuleBuilder.DefineManifestResource(name, stream, attribute);
 #else
             throw new NotSupportedException();
 #endif
@@ -222,7 +222,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IResourceWriter DefineResource(string name, string description)
         {
 #if NETFRAMEWORK
-                return UnderlyingModuleBuilder.DefineResource(name, description);
+            return UnderlyingModuleBuilder.DefineResource(name, description);
 #else
             throw new NotImplementedException();
 #endif
@@ -232,7 +232,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IResourceWriter DefineResource(string name, string description, System.Reflection.ResourceAttributes attribute)
         {
 #if NETFRAMEWORK
-                return UnderlyingModuleBuilder.DefineResource(name, description, attribute);
+            return UnderlyingModuleBuilder.DefineResource(name, description, attribute);
 #else
             throw new NotImplementedException();
 #endif

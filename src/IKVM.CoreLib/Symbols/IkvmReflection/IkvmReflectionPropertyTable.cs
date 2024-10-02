@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
@@ -20,6 +21,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         IndexRangeDictionary<IIkvmReflectionPropertySymbol> _table = new();
         ReaderWriterLockSlim? _lock;
+
+        ConcurrentDictionary<int, IIkvmReflectionPropertySymbol>? _byToken;
 
         /// <summary>
         /// Initializes a new instance.
@@ -47,22 +50,49 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (property.Module.MetadataToken != _module.MetadataToken)
                 throw new ArgumentException(nameof(property));
 
+            var token = property.MetadataToken;
+            if (token == 0)
+                throw new InvalidOperationException();
+
+            // pseudo tokens: since IKVM.Reflection does not remove pseudo tokens after creation, we can keep using these
+            // but they are non-sequential per-type, so we need to use a real dictionary
+            if (token < 0)
+            {
+                // we fall back to lookup by name if there is no valid metadata token
+                if (_byToken == null)
+                    Interlocked.CompareExchange(ref _byToken, new(), null);
+
+                var value = (_context, _module, _type, property);
+                return _byToken.GetOrAdd(token, _ => CreatePropertySymbol(value._context, value._module, value._type, value.property));
+            }
+
             // create lock on demand
             if (_lock == null)
                 Interlocked.CompareExchange(ref _lock, new ReaderWriterLockSlim(), null);
 
             using (_lock.CreateUpgradeableReadLock())
             {
-                var row = MetadataTokens.GetRowNumber(MetadataTokens.PropertyDefinitionHandle(property.MetadataToken));
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.PropertyDefinitionHandle(token));
                 if (_table[row] == null)
                     using (_lock.CreateWriteLock())
-                        if (property is PropertyBuilder builder)
-                            return _table[row] ??= new IkvmReflectionPropertySymbolBuilder(_context, (IIkvmReflectionModuleSymbolBuilder)_module, (IIkvmReflectionTypeSymbolBuilder)_type, builder);
-                        else
-                            return _table[row] ??= new IkvmReflectionPropertySymbol(_context, _module, _type, property);
-                else
-                    return _table[row] ?? throw new InvalidOperationException();
+                        _table[row] ??= CreatePropertySymbol(_context, _module, _type, property);
+
+                return _table[row] ?? throw new InvalidOperationException();
             }
+        }
+
+        /// <summary>
+        /// Creates a new symbol.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static IIkvmReflectionPropertySymbol CreatePropertySymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol type, PropertyInfo property)
+        {
+            if (property is PropertyBuilder builder)
+                return new IkvmReflectionPropertySymbolBuilder(context, (IIkvmReflectionModuleSymbolBuilder)module, (IIkvmReflectionTypeSymbolBuilder)type, builder);
+            else
+                return new IkvmReflectionPropertySymbol(context, module, type, property);
         }
 
         /// <summary>

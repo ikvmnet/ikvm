@@ -38,10 +38,6 @@ using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.Reflection;
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
 namespace IKVM.Runtime
 {
 
@@ -1048,18 +1044,33 @@ namespace IKVM.Runtime
 
         internal object[] GetJavaModuleAttributes(IModuleSymbol mod)
         {
-            var attrs = new List<JavaModuleAttribute>();
+            var l = mod.GetCustomAttributes(TypeOfJavaModuleAttribute);
+            var a = new object[l.Length];
 
-            foreach (var cad in mod.GetCustomAttributes(TypeOfJavaModuleAttribute))
+            for (int i = 0; i < l.Length; i++)
             {
-                var args = cad.ConstructorArguments;
+                JavaModuleAttribute attr;
+
+                var args = l[i].ConstructorArguments;
                 if (args.Length == 0)
-                    attrs.Add(new JavaModuleAttribute());
+                    attr = new JavaModuleAttribute();
                 else
-                    attrs.Add(new JavaModuleAttribute(DecodeArray<string>(args[0])));
+                    attr = new JavaModuleAttribute(DecodeArray<string>(args[0]));
+
+                foreach (var arg in l[i].NamedArguments)
+                {
+                    switch (arg.MemberName)
+                    {
+                        case nameof(JavaModuleAttribute.Jars):
+                            attr.Jars = DecodeArray<string>(arg.TypedValue);
+                            break;
+                    }
+                }
+
+                a[i] = attr;
             }
 
-            return attrs.ToArray();
+            return a;
         }
 
         internal bool IsNoPackagePrefix(ITypeSymbol type)

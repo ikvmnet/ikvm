@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
@@ -20,6 +21,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         IndexRangeDictionary<IIkvmReflectionFieldSymbol> _table = new();
         ReaderWriterLockSlim? _lock;
+
+        ConcurrentDictionary<int, IIkvmReflectionFieldSymbol>? _byToken;
 
         /// <summary>
         /// Initializes a new instance.
@@ -47,22 +50,49 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (field.Module.MetadataToken != _module.MetadataToken)
                 throw new ArgumentException(nameof(field));
 
+            var token = field.MetadataToken;
+            if (token == 0)
+                throw new InvalidOperationException();
+
+            // pseudo tokens: since IKVM.Reflection does not remove pseudo tokens after creation, we can keep using these
+            // but they are non-sequential per-type, so we need to use a real dictionary
+            if (token < 0)
+            {
+                // we fall back to lookup by name if there is no valid metadata token
+                if (_byToken == null)
+                    Interlocked.CompareExchange(ref _byToken, new(), null);
+
+                var value = (_context, _module, _type, field);
+                return _byToken.GetOrAdd(token, _ => CreateFieldSymbol(value._context, value._module, value._type, value.field));
+            }
+
             // create lock on demand
             if (_lock == null)
                 Interlocked.CompareExchange(ref _lock, new ReaderWriterLockSlim(), null);
 
             using (_lock.CreateUpgradeableReadLock())
             {
-                var row = MetadataTokens.GetRowNumber(MetadataTokens.FieldDefinitionHandle(field.MetadataToken));
+                var row = MetadataTokens.GetRowNumber(MetadataTokens.FieldDefinitionHandle(token));
                 if (_table[row] == null)
                     using (_lock.CreateWriteLock())
-                        if (field is FieldBuilder builder)
-                            return _table[row] ??= new IkvmReflectionFieldSymbolBuilder(_context, (IIkvmReflectionModuleSymbolBuilder)_module, (IIkvmReflectionTypeSymbolBuilder?)_type, builder);
-                        else
-                            return _table[row] ??= new IkvmReflectionFieldSymbol(_context, _module, _type, field);
-                else
-                    return _table[row] ?? throw new InvalidOperationException();
+                        _table[row] ??= CreateFieldSymbol(_context, _module, _type, field);
+
+                return _table[row] ?? throw new InvalidOperationException();
             }
+        }
+
+        /// <summary>
+        /// Creates a new symbol.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static IIkvmReflectionFieldSymbol CreateFieldSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol? type, FieldInfo field)
+        {
+            if (field is FieldBuilder builder)
+                return new IkvmReflectionFieldSymbolBuilder(context, (IIkvmReflectionModuleSymbolBuilder)module, (IIkvmReflectionTypeSymbolBuilder?)type, builder);
+            else
+                return new IkvmReflectionFieldSymbol(context, module, type, field);
         }
 
         /// <summary>

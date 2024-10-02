@@ -152,7 +152,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(Type[] genericTypeDefinition)
+        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition)
         {
             return _specTable.GetOrCreateGenericTypeSymbol(genericTypeDefinition);
         }

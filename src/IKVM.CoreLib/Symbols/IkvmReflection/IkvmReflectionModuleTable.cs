@@ -51,11 +51,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 if (_moduleSymbols[row] == null)
                     using (_moduleLock.CreateWriteLock())
                         if (module is ModuleBuilder builder)
-                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbolBuilder(_context, _assembly, builder);
+                            _moduleSymbols[row] = new IkvmReflectionModuleSymbolBuilder(_context, _assembly, builder);
                         else
-                            return _moduleSymbols[row] = new IkvmReflectionModuleSymbol(_context, _assembly, module);
-                else
-                    return _moduleSymbols[row] ?? throw new InvalidOperationException();
+                            _moduleSymbols[row] = new IkvmReflectionModuleSymbol(_context, _assembly, module);
+
+                return _moduleSymbols[row] ?? throw new InvalidOperationException();
             }
         }
 

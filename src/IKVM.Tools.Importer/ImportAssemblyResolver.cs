@@ -1,27 +1,4 @@
-﻿/*
- Copyright (C) 2010-2013 Jeroen Frijters
-
- This software is provided 'as-is', without any express or implied
- warranty.  In no event will the authors be held liable for any damages
- arising from the use of this software.
-
- Permission is granted to anyone to use this software for any purpose,
- including commercial applications, and to alter it and redistribute it
- freely, subject to the following restrictions:
-
- 1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
- 2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
- 3. This notice may not be removed or altered from any source distribution.
-
- Jeroen Frijters
- jeroen@frijters.net
-
-*/
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -32,7 +9,7 @@ namespace IKVM.Tools.Importer
 {
 
     /// <summary>
-    /// Resolves assemblies from the universe of types.
+    /// Resolves assemblies for the universe of types.
     /// </summary>
     class ImportAssemblyResolver
     {
@@ -41,7 +18,6 @@ namespace IKVM.Tools.Importer
         readonly ImportOptions options;
         readonly IDiagnosticHandler diagnostics;
         readonly List<string> libpaths = new List<string>();
-        readonly Version coreLibVersion;
 
         /// <summary>
         /// Initializes a new instance.
@@ -69,12 +45,6 @@ namespace IKVM.Tools.Importer
 
             // add LIB environmental variable
             AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
-
-            // either load the corelib from the references, or from what already exists
-            if (options.NoStdLib)
-                coreLibVersion = LoadCoreLib(options.References).GetName().Version;
-            else
-                coreLibVersion = universe.Load(universe.CoreLibName).GetName().Version;
         }
 
         /// <summary>
@@ -88,45 +58,30 @@ namespace IKVM.Tools.Importer
         /// <param name="path"></param>
         /// <returns></returns>
         /// <exception cref="DiagnosticEventException"></exception>
-        internal Assembly LoadFile(string path)
+        Assembly LoadFile(string path)
         {
-            string ex = null;
-
             try
             {
-                using (var module = universe.OpenRawModule(path))
-                {
-                    if (coreLibVersion != null)
-                    {
-                        // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of the corelib
-                        foreach (var asmref in module.GetReferencedAssemblies())
-                            if (asmref.Name == universe.CoreLibName && asmref.Version > coreLibVersion)
-                                throw new DiagnosticEventException(DiagnosticEvent.CoreAssemblyVersionMismatch(asmref.Name, universe.CoreLibName));
-                    }
+                using var module = universe.OpenRawModule(path);
+                var asm = universe.LoadAssembly(module);
+                if (asm.Location != module.Location && CanonicalizePath(asm.Location) != CanonicalizePath(module.Location))
+                    diagnostics.AssemblyLocationIgnored(path, asm.Location, asm.FullName);
 
-                    var asm = universe.LoadAssembly(module);
-                    if (asm.Location != module.Location && CanonicalizePath(asm.Location) != CanonicalizePath(module.Location))
-                        diagnostics.AssemblyLocationIgnored(path, asm.Location, asm.FullName);
-
-                    return asm;
-                }
+                return asm;
             }
-            catch (IOException x)
+            catch (IOException e)
             {
-                ex = x.Message;
+                diagnostics.ErrorReadingFile(path, e.Message);
             }
-            catch (UnauthorizedAccessException x)
+            catch (UnauthorizedAccessException e)
             {
-                ex = x.Message;
+                diagnostics.ErrorReadingFile(path, e.Message);
             }
-            catch (IKVM.Reflection.BadImageFormatException x)
+            catch (IKVM.Reflection.BadImageFormatException e)
             {
-                ex = x.Message;
+                diagnostics.ErrorReadingFile(path, e.Message);
             }
 
-            // TODO
-            Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, ex);
-            Environment.Exit(1);
             return null;
         }
 
@@ -175,14 +130,6 @@ namespace IKVM.Tools.Importer
             }
 
             return path;
-        }
-
-        internal Assembly LoadWithPartialName(string name)
-        {
-            foreach (string path in FindAssemblyPath(name + ".dll"))
-                return LoadFile(path);
-
-            return null;
         }
 
         internal bool ResolveReference(Dictionary<string, Assembly> cache, List<Assembly> references, string reference)
@@ -249,6 +196,10 @@ namespace IKVM.Tools.Importer
             foreach (var asm in universe.GetAssemblies())
                 if (Match(asm.GetName(), name))
                     return asm;
+
+            // try to locate from library paths
+            foreach (var lib in FindAssemblyPath(name.Name + ".dll"))
+                return LoadFile(lib);
 
             if (args.RequestingAssembly != null)
                 return universe.CreateMissingAssembly(args.Name);
@@ -318,8 +269,6 @@ namespace IKVM.Tools.Importer
             foreach (var coreLib in FindAssemblyPath(universe.CoreLibName + ".dll"))
                 return LoadFile(coreLib);
 
-            Console.Error.WriteLine($"Error: unable to find '{universe.CoreLibName}.dll'.");
-            Environment.Exit(1);
             return null;
         }
 
@@ -337,6 +286,19 @@ namespace IKVM.Tools.Importer
             }
             else
             {
+                // check that named assembly exists in references
+                foreach (var reference in options.References)
+                {
+                    if (File.Exists(reference) && Path.GetFileName(reference) == path)
+                        yield return reference;
+
+                    // for legacy compat, we try again after appending .dll
+                    var p = path + ".dll";
+                    if (File.Exists(reference) && Path.GetFileName(reference) == p)
+                        yield return reference;
+                }
+
+                // check for files in libpaths
                 foreach (var libpath in libpaths)
                 {
                     var p = Path.Combine(libpath, path);

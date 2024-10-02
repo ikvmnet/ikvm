@@ -244,7 +244,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (type.IsTypeDefinition())
                 return _typeTable.GetOrCreateTypeSymbol(type);
             else if (type.IsGenericType)
-                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(type.GetGenericArguments());
+                return ResolveTypeSymbol(type.GetGenericTypeDefinition()).GetOrCreateGenericTypeSymbol(ResolveTypeSymbols(type.GetGenericArguments()));
             else if (type.IsSZArray())
                 return ResolveTypeSymbol(type.GetElementType()!).GetOrCreateSZArrayTypeSymbol();
             else if (type.IsArray)

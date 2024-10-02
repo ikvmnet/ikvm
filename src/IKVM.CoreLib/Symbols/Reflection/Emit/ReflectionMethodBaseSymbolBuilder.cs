@@ -124,10 +124,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
 
         /// <inheritdoc />
-        public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
+        public MethodImplAttributes MethodImplementationFlags => UnderlyingMethodBase.MethodImplementationFlags;
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetGenericArguments()
+        public virtual ITypeSymbol[] GetGenericArguments()
         {
             return ResolveTypeSymbols(UnderlyingMethodBase.GetGenericArguments());
         }

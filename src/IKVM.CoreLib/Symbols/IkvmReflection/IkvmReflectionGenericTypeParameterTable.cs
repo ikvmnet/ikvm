@@ -57,9 +57,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 if (_table[pos] == null)
                     using (_lock.CreateWriteLock())
                         if (genericTypeParameter is GenericTypeParameterBuilder builder)
-                            return _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbolBuilder(_context, (IIkvmReflectionModuleSymbolBuilder)_module, (IIkvmReflectionMemberSymbolBuilder)_member, builder);
+                            _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbolBuilder(_context, (IIkvmReflectionModuleSymbolBuilder)_module, (IIkvmReflectionMemberSymbolBuilder)_member, builder);
                         else
-                            return _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbol(_context, _module, _member, genericTypeParameter);
+                            _table[pos] ??= new IkvmReflectionGenericTypeParameterSymbol(_context, _module, _member, genericTypeParameter);
 
                 return _table[pos] ?? throw new InvalidOperationException();
             }

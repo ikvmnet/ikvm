@@ -30,11 +30,13 @@ namespace IKVM.Tools.Importer
         /// <inheritdoc />
         public override bool IsEnabled(Diagnostic diagnostic)
         {
-            //if (diagnostic.Level is DiagnosticLevel.Trace or DiagnosticLevel.Info)
-            //    return false;
-
-            if (diagnostic.Level == DiagnosticLevel.Warning && _options.NoWarn.Any(i => i.Id == diagnostic.Id))
+            // trace messages aren't useful for the command line
+            if (diagnostic.Level is DiagnosticLevel.Trace)
                 return false;
+
+            // nowarn empty means all
+            if (diagnostic.Level == DiagnosticLevel.Warning && _options.NoWarn != null)
+                return _options.NoWarn.Length == 0 || _options.NoWarn.Any(i => i == diagnostic) == false;
 
             return true;
         }

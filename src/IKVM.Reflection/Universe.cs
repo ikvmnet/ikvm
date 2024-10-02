@@ -584,10 +584,10 @@ namespace IKVM.Reflection
 
             if (asm != null)
             {
+                // cache assembly by both the lookup name and the resolved name
                 var defname = asm.FullName;
-                if (refname != defname)
-                    assembliesByName.Add(refname, asm);
-
+                assembliesByName[refname] = asm;
+                assembliesByName[defname] = asm;
                 return asm;
             }
 

@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly IReflectionTypeSymbol? _type;
         readonly IReflectionMethodSymbol _method;
 
-        ConcurrentDictionary<Type[], IReflectionMethodSymbol>? _genericMethodSymbols;
+        ConcurrentDictionary<IReflectionTypeSymbol[], IReflectionMethodSymbol>? _genericMethodSymbols;
 
         /// <summary>
         /// Initializes a new instance.
@@ -36,7 +36,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(Type[] genericTypeArguments)
+        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(IReflectionTypeSymbol[] genericTypeArguments)
         {
             if (genericTypeArguments is null)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
@@ -45,7 +45,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 throw new InvalidOperationException();
 
             if (_genericMethodSymbols == null)
-                Interlocked.CompareExchange(ref _genericMethodSymbols, new(TypeListEqualityComparer.Instance), null);
+                Interlocked.CompareExchange(ref _genericMethodSymbols, new(TypeSymbolListEqualityComparer.Instance), null);
 
             return _genericMethodSymbols.GetOrAdd(genericTypeArguments, CreateGenericMethodSymbol);
         }
@@ -55,9 +55,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        readonly IReflectionMethodSymbol CreateGenericMethodSymbol(Type[] genericTypeArguments)
+        readonly IReflectionMethodSymbol CreateGenericMethodSymbol(IReflectionTypeSymbol[] genericTypeArguments)
         {
-            return new ReflectionMethodSymbol(_context, _module, _type, _method.UnderlyingMethod.MakeGenericMethod(genericTypeArguments));
+            return new ReflectionMethodSymbol(_context, _module, _type, _method.UnderlyingMethod.MakeGenericMethod(genericTypeArguments.Unpack()));
         }
     }
 
