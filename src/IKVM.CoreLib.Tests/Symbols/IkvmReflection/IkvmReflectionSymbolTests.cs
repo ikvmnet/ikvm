@@ -472,6 +472,30 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             incompleteMethod.Should().BeSameAs(method);
         }
 
+        [TestMethod]
+        public void CanGetGenericDelegateInvoke()
+        {
+            var c = new IkvmReflectionSymbolContext(universe!);
+            var a = c.DefineAssembly(new AssemblyNameInfo("DynamicAssembly"));
+            var m = a.DefineModule("DynamicModule", "DynamicModule.dll"); 
+
+            var tb = m.DefineType("DynamicGenericDelegate", System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Sealed, c.GetOrCreateTypeSymbol(coreAssembly!.GetType("System.MulticastDelegate")));
+            var gtp = tb.DefineGenericParameters("T1");
+            var mb = tb.DefineMethod("Invoke", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.Virtual, null, [gtp[0]]);
+            mb.SetImplementationFlags(System.Reflection.MethodImplAttributes.Runtime);
+
+            var type = m.DefineType("DynamicType2");
+            var method = type.DefineMethod("CallDelegate", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static);
+            var il = method.GetILGenerator();
+            il.Emit(System.Reflection.Emit.OpCodes.Ldind_I4, 0);
+            il.Emit(System.Reflection.Emit.OpCodes.Ldnull);
+            il.Emit(System.Reflection.Emit.OpCodes.Castclass, tb);
+            il.EmitCall(System.Reflection.Emit.OpCodes.Callvirt, mb, null);
+
+            tb.Complete();
+            type.Complete();
+        }
+
     }
 
 }

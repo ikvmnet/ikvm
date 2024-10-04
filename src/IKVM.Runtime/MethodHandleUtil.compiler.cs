@@ -39,14 +39,7 @@ namespace IKVM.Runtime
 
         internal IMethodSymbol GetDelegateInvokeMethod(ITypeSymbol delegateType)
         {
-            if (ReflectUtil.ContainsTypeBuilder(delegateType))
-            {
-                return delegateType.GetGenericTypeDefinition().GetMethod("Invoke");
-            }
-            else
-            {
-                return delegateType.GetMethod("Invoke");
-            }
+            return delegateType.GetMethod("Invoke");
         }
 
         internal IConstructorSymbol GetDelegateConstructor(ITypeSymbol delegateType)
