@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit

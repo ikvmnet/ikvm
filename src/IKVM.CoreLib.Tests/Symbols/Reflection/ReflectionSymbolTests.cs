@@ -421,6 +421,34 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             moduleSymbol.GetType("DynamicType1").Should().BeSameAs(type1Symbol);
         }
 
+        [TestMethod]
+        public void CanGetMethodsFromTypeBuilder()
+        {
+            var c = new ReflectionSymbolContext();
+            var a = c.DefineAssembly(new AssemblyNameInfo("DynamicAssembly"));
+            var m = a.DefineModule("DynamicModule", "DynamicModule.dll");
+            var type = m.DefineType("DynamicType");
+
+            var method = type.DefineMethod("DynamicMethod1", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static);
+            var il = method.GetILGenerator();
+            il.Emit(OpCodes.Ret);
+
+            // before complete
+            type.GetMethods().Should().HaveCount(5);
+            var incompleteMethod = type.GetMethod("DynamicMethod1");
+
+            // complete the type
+            type.Complete();
+
+            // after complete
+            type.GetMethods().Should().HaveCount(5);
+            var completeMethod = type.GetMethod("DynamicMethod1");
+
+            // all the methods should be the same
+            incompleteMethod.Should().BeSameAs(completeMethod);
+            incompleteMethod.Should().BeSameAs(method);
+        }
+
     }
 
 }

@@ -181,7 +181,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         #endregion
 
         /// <inheritdoc />
-        public override string ToString() => UnderlyingAssembly.ToString();
+        public override string? ToString() => UnderlyingAssembly.ToString();
 
     }
 

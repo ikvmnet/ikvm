@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -22,6 +24,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         IkvmReflectionEventTable _eventTable;
         IkvmReflectionGenericTypeParameterTable _genericTypeParameterTable;
         IkvmReflectionTypeSpecTable _specTable;
+
+        List<IIkvmReflectionMethodSymbolBuilder>? _incompleteMethods;
 
         /// <summary>
         /// Initializes a new instance.
@@ -237,31 +241,46 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers)
         {
-            return ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), returnTypeRequiredCustomModifiers?.Unpack(), returnTypeOptionalCustomModifiers?.Unpack(), parameterTypes?.Unpack(), parameterTypeRequiredCustomModifiers?.Unpack(), parameterTypeOptionalCustomModifiers?.Unpack()));
+            var m = ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), returnTypeRequiredCustomModifiers?.Unpack(), returnTypeOptionalCustomModifiers?.Unpack(), parameterTypes?.Unpack(), parameterTypeRequiredCustomModifiers?.Unpack(), parameterTypeOptionalCustomModifiers?.Unpack()));
+            _incompleteMethods ??= [];
+            _incompleteMethods.Add(m);
+            return m;
         }
 
         /// <inheritdoc />
         public IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), parameterTypes?.Unpack()));
+            var m = ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention, returnType?.Unpack(), parameterTypes?.Unpack()));
+            _incompleteMethods ??= [];
+            _incompleteMethods.Add(m);
+            return m;
         }
 
         /// <inheritdoc />
         public IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention)
         {
-            return ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention));
+            var m = ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, (CallingConventions)callingConvention));
+            _incompleteMethods ??= [];
+            _incompleteMethods.Add(m);
+            return m;
         }
 
         /// <inheritdoc />
         public IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes)
         {
-            return ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes));
+            var m = ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes));
+            _incompleteMethods ??= [];
+            _incompleteMethods.Add(m);
+            return m;
         }
 
         /// <inheritdoc />
         public IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes)
         {
-            return ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, returnType?.Unpack(), parameterTypes?.Unpack()));
+            var m = ResolveMethodSymbol(UnderlyingTypeBuilder.DefineMethod(name, (MethodAttributes)attributes, returnType?.Unpack(), parameterTypes?.Unpack()));
+            _incompleteMethods ??= [];
+            _incompleteMethods.Add(m);
+            return m;
         }
 
         /// <inheritdoc />
@@ -517,6 +536,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public IConstructorSymbol? TypeInitializer => ResolveConstructorSymbol(UnderlyingType.TypeInitializer);
 
         /// <inheritdoc />
+        public override bool IsComplete => _builder == null;
+
+        /// <inheritdoc />
         public int GetArrayRank()
         {
             return UnderlyingType.GetArrayRank();
@@ -726,13 +748,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name));
+            else
+                return GetIncompleteMethods().FirstOrDefault(i => i.Name == name);
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, types.Unpack(), modifiers?.Unpack()));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, types.Unpack(), modifiers?.Unpack()));
+            else
+                throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -750,7 +778,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), modifiers?.Unpack()));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), modifiers?.Unpack()));
+            else
+                throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -762,13 +793,31 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
         {
-            return ResolveMethodSymbols(UnderlyingType.GetMethods((BindingFlags)bindingAttr));
+            if (IsComplete)
+                return ResolveMethodSymbols(UnderlyingType.GetMethods((BindingFlags)bindingAttr));
+            else
+                return GetIncompleteMethods(bindingAttr);
         }
 
         /// <inheritdoc />
         public IMethodSymbol[] GetMethods()
         {
-            return ResolveMethodSymbols(UnderlyingType.GetMethods());
+            if (IsComplete)
+                return ResolveMethodSymbols(UnderlyingType.GetMethods());
+            else
+                return GetIncompleteMethods();
+        }
+
+        /// <summary>
+        /// Gets the set of incomplete methods.
+        /// </summary>
+        /// <returns></returns>
+        IMethodSymbol[] GetIncompleteMethods(System.Reflection.BindingFlags bindingAttr = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance)
+        {
+            if (_incompleteMethods == null)
+                return [];
+            else
+                return SymbolUtil.FilterMethods(this, _incompleteMethods, bindingAttr).Cast<IMethodSymbol>().ToArray();
         }
 
         /// <inheritdoc />
@@ -897,6 +946,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
                 {
                     _type = _builder.CreateType();
                     _builder = null;
+                    _incompleteMethods = null;
                 }
 
                 // force module to reresolve

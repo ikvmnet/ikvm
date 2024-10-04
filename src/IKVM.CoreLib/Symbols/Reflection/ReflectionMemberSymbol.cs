@@ -208,6 +208,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         #endregion
 
+        public override string? ToString() => UnderlyingMember.ToString();
+
     }
 
 }

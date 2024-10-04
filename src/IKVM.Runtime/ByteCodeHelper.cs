@@ -1112,6 +1112,7 @@ namespace IKVM.Runtime
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static T GetDelegateForInvokeExact<T>(object methodHandle)
             where T : class, Delegate
         {

@@ -126,6 +126,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         #endregion
 
+        /// <inheritdoc />
+        public override string? ToString() => UnderlyingParameter.ToString();
+
     }
 
 }

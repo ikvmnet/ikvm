@@ -4,6 +4,7 @@ using System.Linq;
 
 using FluentAssertions;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
@@ -251,7 +252,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanReadCustomAttributes()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var s = c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+ClassWithAttributeWithType"));
             var a = s.GetCustomAttribute(c.GetOrCreateTypeSymbol(thisAssembly.GetType("IKVM.CoreLib.Tests.Symbols.IkvmReflection.IkvmReflectionSymbolTests+AttributeWithType")));
             var v = a.Value.ConstructorArguments[0].Value;
@@ -261,7 +262,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveAssemblyBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var assemblySymbol = c.GetOrCreateAssemblySymbol(a);
             assemblySymbol.Should().BeOfType<IkvmReflectionAssemblySymbolBuilder>();
@@ -271,7 +272,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveModuleBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var moduleSymbol = c.GetOrCreateModuleSymbol(m);
@@ -282,7 +283,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveTypeBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
 
@@ -295,7 +296,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleTypeBuilders()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
 
@@ -314,7 +315,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMethodBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -328,7 +329,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleMethodBuilders()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -347,7 +348,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveFieldBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -361,7 +362,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleFieldBuilders()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -380,7 +381,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolvePropertyBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
@@ -394,12 +395,12 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultiplePropertyBuilders()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
 
-            var property1 = t.DefineProperty("DynamicProperty1", PropertyAttributes.None, coreAssembly.GetType("System.Object"), []);
+            var property1 = t.DefineProperty("DynamicProperty1", PropertyAttributes.None, coreAssembly!.GetType("System.Object"), []);
             var property1Symbol = c.GetOrCreatePropertySymbol(property1);
             property1Symbol.Should().BeOfType<IkvmReflectionPropertySymbolBuilder>();
             property1Symbol.Should().BeSameAs(c.GetOrCreatePropertySymbol(property1));
@@ -413,12 +414,12 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveEventBuilder()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
 
-            var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, coreAssembly.GetType("System.EventHandler"));
+            var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, coreAssembly!.GetType("System.EventHandler"));
             var event1Symbol = c.GetOrCreateEventSymbol(event1);
             event1Symbol.Should().BeOfType<IkvmReflectionEventSymbolBuilder>();
             event1Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event1));
@@ -427,12 +428,12 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void CanResolveMultipleEventBuilders()
         {
-            var c = new IkvmReflectionSymbolContext(universe);
+            var c = new IkvmReflectionSymbolContext(universe!);
             var a = universe.DefineDynamicAssembly(new AssemblyName("DynamicAssembly"), AssemblyBuilderAccess.Save);
             var m = a.DefineDynamicModule("DynamicModule", "DynamicModule.dll");
             var t = m.DefineType("DynamicType");
 
-            var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, coreAssembly.GetType("System.EventHandler"));
+            var event1 = t.DefineEvent("DynamicEvent", EventAttributes.None, coreAssembly!.GetType("System.EventHandler"));
             var event1Symbol = c.GetOrCreateEventSymbol(event1);
             event1Symbol.Should().BeOfType<IkvmReflectionEventSymbolBuilder>();
             event1Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event1));
@@ -441,6 +442,34 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             var event2Symbol = c.GetOrCreateEventSymbol(event2);
             event2Symbol.Should().BeOfType<IkvmReflectionEventSymbolBuilder>();
             event2Symbol.Should().BeSameAs(c.GetOrCreateEventSymbol(event2));
+        }
+
+        [TestMethod]
+        public void CanGetMethodsFromTypeBuilder()
+        {
+            var c = new IkvmReflectionSymbolContext(universe!);
+            var a = c.DefineAssembly(new AssemblyNameInfo("DynamicAssembly"));
+            var m = a.DefineModule("DynamicModule", "DynamicModule.dll");
+            var type = m.DefineType("DynamicType");
+
+            var method = type.DefineMethod("DynamicMethod1", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static);
+            var il = method.GetILGenerator();
+            il.Emit(System.Reflection.Emit.OpCodes.Ret);
+
+            // before complete
+            type.GetMethods().Should().HaveCount(5);
+            var incompleteMethod = type.GetMethod("DynamicMethod1");
+
+            // complete the type
+            type.Complete();
+
+            // after complete
+            type.GetMethods().Should().HaveCount(5);
+            var completeMethod = type.GetMethod("DynamicMethod1");
+
+            // all the methods should be the same
+            incompleteMethod.Should().BeSameAs(completeMethod);
+            incompleteMethod.Should().BeSameAs(method);
         }
 
     }

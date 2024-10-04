@@ -209,7 +209,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         #endregion
 
         /// <inheritdoc />
-        public override string ToString() => UnderlyingMember.ToString()!;
+        public override string? ToString() => UnderlyingMember.ToString();
 
     }
 

@@ -122,7 +122,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         #endregion
 
         /// <inheritdoc />
-        public override string ToString() => UnderlyingParameter.ToString()!;
+        public override string? ToString() => UnderlyingParameter.ToString();
 
     }
 
