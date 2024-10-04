@@ -730,19 +730,28 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr));
+            else
+                return GetIncompleteMethods(bindingAttr).FirstOrDefault(i => i.Name == name);
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, types.Unpack()));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name, types.Unpack()));
+            else
+                throw new NotImplementedException();
         }
 
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), null));
+            if (IsComplete)
+                return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), null));
+            else
+                throw new NotImplementedException();
         }
 
         /// <inheritdoc />
