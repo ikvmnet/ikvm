@@ -67,7 +67,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IModuleSymbolBuilder DefineModule(string name, string fileName)
         {
 #if NETFRAMEWORK
-            return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name, fileName));
+            if (fileName == null)
+                return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name));
+            else
+                return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name, fileName));
 #else
             return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name));
 #endif
@@ -77,7 +80,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IModuleSymbolBuilder DefineModule(string name, string fileName, bool emitSymbolInfo)
         {
 #if NETFRAMEWORK
-            return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name, fileName, emitSymbolInfo));
+            if (fileName == null)
+                return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name, emitSymbolInfo));
+            else
+                return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name, fileName, emitSymbolInfo));
 #else
             return GetOrCreateModuleSymbol(UnderlyingAssemblyBuilder.DefineDynamicModule(name));
 #endif

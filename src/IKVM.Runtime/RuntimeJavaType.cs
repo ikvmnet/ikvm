@@ -1193,7 +1193,7 @@ namespace IKVM.Runtime
                 while (type.HasElementType)
                     type = type.GetElementType();
 
-                Debug.Assert(!(type.AsReflection() is TypeBuilder));
+                Debug.Assert(type.IsComplete);
             }
         }
 
