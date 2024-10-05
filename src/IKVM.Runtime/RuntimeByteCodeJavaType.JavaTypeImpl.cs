@@ -2481,7 +2481,7 @@ namespace IKVM.Runtime
                     }
                     else if (m.IsClassInitializer)
                     {
-                        method = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
+                        method = typeBuilder.DefineTypeInitializer();
                     }
                     else
                     {

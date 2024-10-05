@@ -2744,7 +2744,7 @@ namespace IKVM.Runtime
 
                 var tb = compiler.finish.DefineIndyCallSiteType();
                 var fb = tb.DefineField("value", typeofIndyCallSite, FieldAttributes.Static | FieldAttributes.Assembly);
-                var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, compiler.clazz.ClassLoader));
+                var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldnull);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldftn, CreateBootstrapStub(compiler, cpi, delegateType, tb, fb, methodGetTarget));
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Newobj, compiler.finish.Context.MethodHandleUtil.GetDelegateConstructor(delegateType));
@@ -3102,7 +3102,7 @@ namespace IKVM.Runtime
                 {
                     var tb = compiler.finish.DefineMethodTypeConstantType(handle);
                     var field = tb.DefineField("value", compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
-                    var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, compiler.clazz.ClassLoader));
+                    var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
                     var delegateType = compiler.finish.Context.MethodHandleUtil.CreateDelegateTypeForLoadConstant(args, ret);
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Stsfld, field);

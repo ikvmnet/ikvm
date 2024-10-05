@@ -159,13 +159,6 @@ namespace IKVM.CoreLib.Text
         {
             Debug.Assert(chars.Length >= bytes.Length * 2);
 
-#if SYSTEM_PRIVATE_CORELIB
-            if ((AdvSimd.Arm64.IsSupported || Ssse3.IsSupported) && bytes.Length >= 4)
-            {
-                EncodeToUtf16_Vector128(bytes, chars, casing);
-                return;
-            }
-#endif
             for (int pos = 0; pos < bytes.Length; pos++)
             {
                 ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
@@ -175,9 +168,7 @@ namespace IKVM.CoreLib.Text
         public static unsafe string ToString(ReadOnlySpan<byte> bytes, Casing casing = Casing.Upper)
         {
 #if NETFRAMEWORK || NETSTANDARD2_0
-            Span<char> result = bytes.Length > 16 ?
-                new char[bytes.Length * 2].AsSpan() :
-                stackalloc char[bytes.Length * 2];
+            var result = bytes.Length > 16 ? new char[bytes.Length * 2].AsSpan() : stackalloc char[bytes.Length * 2];
 
             int pos = 0;
             foreach (byte b in bytes)
@@ -185,6 +176,7 @@ namespace IKVM.CoreLib.Text
                 ToCharsBuffer(b, result, pos, casing);
                 pos += 2;
             }
+
             return result.ToString();
 #else
             return string.Create(bytes.Length * 2, (RosPtr: (IntPtr)(&bytes), casing), static (chars, args) =>

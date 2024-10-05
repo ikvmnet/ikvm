@@ -24,10 +24,11 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
         <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     </ItemGroup>

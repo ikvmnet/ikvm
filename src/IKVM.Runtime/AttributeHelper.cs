@@ -1015,9 +1015,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal AssemblyNameInfo[] GetInternalsVisibleToAttributes(IAssemblySymbol assembly)
+        internal AssemblyIdentity[] GetInternalsVisibleToAttributes(IAssemblySymbol assembly)
         {
-            var list = new List<AssemblyNameInfo>();
+            var list = new List<AssemblyIdentity>();
 
             foreach (var cad in assembly.GetCustomAttributes())
             {

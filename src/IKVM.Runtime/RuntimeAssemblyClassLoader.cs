@@ -75,7 +75,7 @@ namespace IKVM.Runtime
             IModuleSymbol[] modules;
             Dictionary<string, string> nameMap;
             bool hasDotNetModule;
-            AssemblyNameInfo[] internalsVisibleTo;
+            AssemblyIdentity[] internalsVisibleTo;
             string[] jarList;
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
             sun.misc.URLClassPath urlClassPath;
@@ -384,7 +384,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal bool InternalsVisibleTo(AssemblyNameInfo otherName)
+            internal bool InternalsVisibleTo(AssemblyIdentity otherName)
             {
                 if (internalsVisibleTo == null)
                     Interlocked.CompareExchange(ref internalsVisibleTo, loader.Context.AttributeHelper.GetInternalsVisibleToAttributes(assembly), null);
@@ -393,7 +393,7 @@ namespace IKVM.Runtime
                 {
                     // we match the simple name and PublicKeyToken (because the AssemblyName constructor used
                     // by GetInternalsVisibleToAttributes() only sets the PublicKeyToken, even if a PublicKey is specified)
-                    if (ReflectUtil.MatchNameAndPublicKeyToken(name, otherName))
+                    if (AssemblyIdentity.MemberwiseEqual(name, otherName) == true && AssemblyIdentity.KeysEqual(name, otherName))
                         return true;
                 }
 
@@ -1108,7 +1108,7 @@ namespace IKVM.Runtime
             if (acl == null)
                 return false;
 
-            var otherName = acl.GetAssembly(friend).GetName();
+            var otherName = acl.GetAssembly(friend).GetIdentity();
 #endif
 
             return GetLoader(GetAssembly(wrapper)).InternalsVisibleTo(otherName);

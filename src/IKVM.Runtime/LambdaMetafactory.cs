@@ -441,7 +441,7 @@ namespace IKVM.Runtime
                 var instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
 
                 // static constructor
-                var cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.ClassLoader);
+                var cctor = tb.DefineTypeInitializer();
                 var ilgenCCtor = context.Context.CodeEmitterFactory.Create(cctor);
                 ilgenCCtor.Emit(OpCodes.Newobj, ctor);
                 ilgenCCtor.Emit(OpCodes.Stsfld, instField);

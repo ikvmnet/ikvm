@@ -121,26 +121,18 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static IConstructorSymbolBuilder DefineTypeInitializer(ITypeSymbolBuilder typeBuilder, RuntimeClassLoader loader)
-        {
-            return typeBuilder.DefineTypeInitializer();
-        }
-
-        internal static bool MatchNameAndPublicKeyToken(AssemblyNameInfo name1, AssemblyNameInfo name2)
-        {
-            return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase) && CompareKeys(name1.PublicKeyOrToken, name2.PublicKeyOrToken);
-        }
-
-        static bool CompareKeys(ImmutableArray<byte> b1, ImmutableArray<byte> b2)
-        {
-            return b1.AsSpan().SequenceEqual(b2.AsSpan());
-        }
-
         internal static bool IsConstructor(IMethodBaseSymbol method)
         {
             return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
         }
 
+        /// <summary>
+        /// Defines a constructor.
+        /// </summary>
+        /// <param name="tb"></param>
+        /// <param name="attribs"></param>
+        /// <param name="parameterTypes"></param>
+        /// <returns></returns>
         internal static IConstructorSymbolBuilder DefineConstructor(ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ITypeSymbol[] parameterTypes)
         {
             return tb.DefineConstructor(attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, parameterTypes);

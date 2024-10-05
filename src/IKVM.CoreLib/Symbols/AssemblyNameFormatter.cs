@@ -1,18 +1,21 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
 
 using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    internal static class AssemblyNameFormatter
+    static class AssemblyNameFormatter
     {
 
-        public static string ComputeDisplayName(string name, Version? version, string? cultureName, byte[]? pkt, AssemblyNameFlags flags = 0, AssemblyContentType contentType = 0, byte[]? pk = null)
+        public static string ComputeDisplayName(string name, Version? version, string? cultureName, ImmutableArray<byte> pkt, AssemblyNameFlags flags, AssemblyContentType contentType, ImmutableArray<byte> pk)
         {
             const int PUBLIC_KEY_TOKEN_LEN = 8;
+
             Debug.Assert(name.Length != 0);
 
             var vsb = new ValueStringBuilder(stackalloc char[256]);
@@ -57,7 +60,7 @@ namespace IKVM.CoreLib.Symbols
                 vsb.AppendQuoted(cultureName);
             }
 
-            byte[]? keyOrToken = pkt ?? pk;
+            var keyOrToken = pkt.IsDefaultOrEmpty == false ? pkt : pk;
             if (keyOrToken != null)
             {
                 if (pkt != null)
@@ -78,7 +81,7 @@ namespace IKVM.CoreLib.Symbols
                 }
                 else
                 {
-                    HexConverter.EncodeToUtf16(keyOrToken, vsb.AppendSpan(keyOrToken.Length * 2), HexConverter.Casing.Lower);
+                    HexConverter.EncodeToUtf16(keyOrToken.AsSpan(), vsb.AppendSpan(keyOrToken.Length * 2), HexConverter.Casing.Lower);
                 }
             }
 
@@ -88,12 +91,10 @@ namespace IKVM.CoreLib.Symbols
             if (contentType == AssemblyContentType.WindowsRuntime)
                 vsb.Append(", ContentType=WindowsRuntime");
 
-            // NOTE: By design (desktop compat) AssemblyName.FullName and ToString() do not include ProcessorArchitecture.
-
             return vsb.ToString();
         }
 
-        private static void AppendQuoted(this ref ValueStringBuilder vsb, string s)
+        static void AppendQuoted(this ref ValueStringBuilder vsb, string s)
         {
             bool needsQuoting = false;
             const char quoteChar = '\"';
@@ -136,7 +137,7 @@ namespace IKVM.CoreLib.Symbols
                 vsb.Append(quoteChar);
         }
 
-        private static void AppendSpanFormattable(this ref ValueStringBuilder vsb, ushort value)
+        static void AppendSpanFormattable(this ref ValueStringBuilder vsb, ushort value)
         {
             vsb.Append(value.ToString());
         }

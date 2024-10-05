@@ -13,61 +13,68 @@ namespace IKVM.CoreLib.Symbols.Reflection
     {
 
         /// <summary>
-        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
+        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyIdentity"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyName"></param>
         /// <returns></returns>
-        public static AssemblyNameInfo Pack(this AssemblyName n)
+        public static AssemblyIdentity Pack(this AssemblyName assemblyName)
         {
-            return new AssemblyNameInfo(n.Name ?? throw new InvalidOperationException(), n.Version, n.CultureName, n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty);
+            var pk = assemblyName.GetPublicKey()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty;
+            var hasPublicKey = pk.Length > 0;
+            var pkt = assemblyName.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty;
+
+#pragma warning disable SYSLIB0037 // Type or member is obsolete
+            return new AssemblyIdentity(
+                assemblyName.Name ?? throw new InvalidOperationException(),
+                assemblyName.Version,
+                assemblyName.CultureName,
+                hasPublicKey ? pk : pkt,
+                hasPublicKey,
+                assemblyName.ContentType,
+                assemblyName.ProcessorArchitecture);
+#pragma warning restore SYSLIB0037 // Type or member is obsolete
         }
 
         /// <summary>
-        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyNameInfo"/>.
+        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyIdentity"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNames"></param>
         /// <returns></returns>
-        public static AssemblyNameInfo[] Pack(this AssemblyName[] n)
+        public static AssemblyIdentity[] Pack(this AssemblyName[] assemblyNames)
         {
-            if (n.Length == 0)
+            if (assemblyNames.Length == 0)
                 return [];
 
-            var a = new AssemblyNameInfo[n.Length];
-            for (int i = 0; i < n.Length; i++)
-                a[i] = n[i].Pack();
+            var a = new AssemblyIdentity[assemblyNames.Length];
+            for (int i = 0; i < assemblyNames.Length; i++)
+                a[i] = assemblyNames[i].Pack();
 
             return a;
         }
 
         /// <summary>
-        /// Converts a <see cref="AssemblyNameInfo"/> to a <see cref="AssemblyName"/>.
+        /// Converts a <see cref="AssemblyIdentity"/> to a <see cref="AssemblyName"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNameInfo"></param>
         /// <returns></returns>
-        public static AssemblyName Unpack(this AssemblyNameInfo n)
+        public static AssemblyName Unpack(this AssemblyIdentity assemblyNameInfo)
         {
-            return new AssemblyName()
-            {
-                Name = n.Name,
-                Version = n.Version,
-                CultureName = n.CultureName,
-                Flags = (AssemblyNameFlags)n.Flags,
-            };
+            return assemblyNameInfo.ToAssemblyName();
         }
 
         /// <summary>
-        /// Converts a set of <see cref="AssemblyNameInfo"/> to a set of <see cref="AssemblyName"/>.
+        /// Converts a set of <see cref="AssemblyIdentity"/> to a set of <see cref="AssemblyName"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNameInfos"></param>
         /// <returns></returns>
-        public static AssemblyName[] Unpack(this AssemblyNameInfo[] n)
+        public static AssemblyName[] Unpack(this AssemblyIdentity[] assemblyNameInfos)
         {
-            if (n.Length == 0)
+            if (assemblyNameInfos.Length == 0)
                 return [];
 
-            var a = new AssemblyName[n.Length];
-            for (int i = 0; i < n.Length; i++)
-                a[i] = n[i].Unpack();
+            var a = new AssemblyName[assemblyNameInfos.Length];
+            for (int i = 0; i < assemblyNameInfos.Length; i++)
+                a[i] = assemblyNameInfos[i].Unpack();
 
             return a;
         }

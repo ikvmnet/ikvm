@@ -558,7 +558,7 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        cb = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
+                        cb = typeBuilder.DefineTypeInitializer();
                         context.AttributeHelper.HideFromJava(cb);
                     }
                     var ilGenerator = context.CodeEmitterFactory.Create(cb);

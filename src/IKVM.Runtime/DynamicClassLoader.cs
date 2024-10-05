@@ -33,7 +33,8 @@ using IKVM.CoreLib.Symbols;
 
 using static System.Diagnostics.DebuggableAttribute;
 
-using System.Collections.Immutable;
+using IKVM.CoreLib.Symbols.Reflection;
+
 
 
 #if IMPORTER
@@ -135,18 +136,24 @@ namespace IKVM.Runtime
             // each assembly class loader gets its own dynamic class loader
             if (loader is RuntimeAssemblyClassLoader acl)
             {
-                var name = acl.MainAssembly.GetName().Name + context.Options.DynamicAssemblySuffixAndPublicKey;
-                foreach (var attr in acl.MainAssembly.AsReflection().GetCustomAttributes<InternalsVisibleToAttribute>())
+                // search for the InternalsVisibleToAttribute on the assembly that specifies the dynamic assembly name
+                // the name may have a public key suffix for Framework
+                var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName);
+                var internalsVisibleToName = acl.MainAssembly.GetIdentity().Name + context.Options.DynamicAssemblySuffixAndPublicKey;
+
+                foreach (var attr in acl.MainAssembly.GetCustomAttributes(internalsVisibleToAttribute))
                 {
-                    if (attr.AssemblyName == name)
+                    var attributeConstructorArgValue = (string)attr.ConstructorArguments[0].Value;
+                    if (attributeConstructorArgValue == internalsVisibleToName)
                     {
-                        byte[] kp = [];
+                        var kp = Array.Empty<byte>();
 #if NETFRAMEWORK
                         kp = DynamicClassLoader.ForgedKeyPair.Instance.PublicKey;
 #endif
-
-                        var n = new AssemblyNameInfo(name, publicKeyOrToken: kp.ToImmutableArray());
-                        return new DynamicClassLoader(context, loader.Diagnostics, DynamicClassLoader.CreateModuleBuilder(context, n), true);
+                        // desired assembly name, which may contain token
+                        var assemblyName = new AssemblyName(internalsVisibleToName);
+                        assemblyName.SetPublicKey(kp);
+                        return new DynamicClassLoader(context, loader.Diagnostics, DynamicClassLoader.CreateModuleBuilder(context, assemblyName.Pack()), true);
                     }
                 }
             }
@@ -447,7 +454,7 @@ namespace IKVM.Runtime
 
         internal static IModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
-            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyNameInfo("jniproxy"), null);
+            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), null);
             return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
         }
 
@@ -519,13 +526,13 @@ namespace IKVM.Runtime
 
         public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context)
         {
-            return CreateModuleBuilder(context, new AssemblyNameInfo("ikvm_dynamic_assembly__" + (uint)Environment.TickCount));
+            return CreateModuleBuilder(context, new AssemblyIdentity("ikvm_dynamic_assembly__" + (uint)Environment.TickCount));
         }
 
-        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyNameInfo name)
+        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyIdentity name)
         {
             var now = DateTime.Now;
-            name = new AssemblyNameInfo(name.Name, new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond));
+            name = new AssemblyIdentity(name.Name, new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond));
             var attribs = new List<ICustomAttributeBuilder>();
 
 #if NETFRAMEWORK
@@ -549,7 +556,7 @@ namespace IKVM.Runtime
             return moduleBuilder;
         }
 
-        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyNameInfo name, ICustomAttributeBuilder[] assemblyAttributes)
+        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ICustomAttributeBuilder[] assemblyAttributes)
         {
             return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes);
         }

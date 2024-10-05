@@ -216,13 +216,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public AssemblyNameInfo GetName()
+        public AssemblyIdentity GetIdentity()
         {
             return UnderlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
-        public AssemblyNameInfo[] GetReferencedAssemblies()
+        public AssemblyIdentity[] GetReferencedAssemblies()
         {
             return UnderlyingAssembly.GetReferencedAssemblies().Pack();
         }

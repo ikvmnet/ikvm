@@ -96,13 +96,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public AssemblyNameInfo GetName()
+        public AssemblyIdentity GetIdentity()
         {
             return UnderlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
-        public AssemblyNameInfo[] GetReferencedAssemblies()
+        public AssemblyIdentity[] GetReferencedAssemblies()
         {
             return UnderlyingAssembly.GetReferencedAssemblies().Pack();
         }

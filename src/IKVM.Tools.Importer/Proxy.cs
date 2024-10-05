@@ -360,7 +360,7 @@ namespace IKVM.Tools.Importer
 
         void CreateStaticInitializer(ITypeSymbolBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
         {
-            var ilgen = loader.Context.CodeEmitterFactory.Create(ReflectUtil.DefineTypeInitializer(tb, loader));
+            var ilgen = loader.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
             var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType);
             var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(loader.Context, tb, ilgen);
             ilgen.Emit(OpCodes.Stloc, callerID);

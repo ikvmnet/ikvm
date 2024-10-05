@@ -425,7 +425,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         public void CanGetMethodsFromTypeBuilder()
         {
             var c = new ReflectionSymbolContext();
-            var a = c.DefineAssembly(new AssemblyNameInfo("DynamicAssembly"));
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"));
             var m = a.DefineModule("DynamicModule", "DynamicModule.dll");
             var type = m.DefineType("DynamicType");
 

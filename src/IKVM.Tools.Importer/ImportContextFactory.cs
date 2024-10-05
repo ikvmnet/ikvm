@@ -494,7 +494,7 @@ namespace IKVM.Tools.Importer
                     {
                         var forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
-                            diagnostics.NonPrimaryAssemblyReference(asm.Location, forwarder.Assembly.GetName().Name);
+                            diagnostics.NonPrimaryAssemblyReference(asm.Location, forwarder.Assembly.GetIdentity().Name);
                     }
                 }
             }

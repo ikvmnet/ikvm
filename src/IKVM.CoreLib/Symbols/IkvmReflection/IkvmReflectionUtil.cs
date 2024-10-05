@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
@@ -15,61 +16,79 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         /// <summary>
-        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyNameInfo"/>.
+        /// Converts a <see cref="AssemblyName"/> to a <see cref="AssemblyIdentity"/>.
         /// </summary>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static AssemblyNameInfo Pack(this AssemblyName n)
+        public static AssemblyIdentity Pack(this AssemblyName assemblyName)
         {
-            return new AssemblyNameInfo(n.Name, n.Version, n.CultureName, (System.Reflection.AssemblyNameFlags)n.Flags, n.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty);
+            var pk = assemblyName.GetPublicKey()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty;
+            var hasPublicKey = pk.Length > 0;
+            var pkt = assemblyName.GetPublicKeyToken()?.ToImmutableArray() ?? ImmutableArray<byte>.Empty;
+
+            return new AssemblyIdentity(
+                assemblyName.Name ?? throw new InvalidOperationException(),
+                assemblyName.Version,
+                assemblyName.CultureName,
+                hasPublicKey ? pk : pkt,
+                hasPublicKey,
+                (System.Reflection.AssemblyContentType)assemblyName.ContentType,
+                (System.Reflection.ProcessorArchitecture)assemblyName.ProcessorArchitecture);
         }
 
         /// <summary>
-        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyNameInfo"/>.
+        /// Converts a set of <see cref="AssemblyName"/> to a set of <see cref="AssemblyIdentity"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNames"></param>
         /// <returns></returns>
-        public static AssemblyNameInfo[] Pack(this AssemblyName[] n)
+        public static AssemblyIdentity[] Pack(this AssemblyName[] assemblyNames)
         {
-            if (n.Length == 0)
+            if (assemblyNames.Length == 0)
                 return [];
 
-            var a = new AssemblyNameInfo[n.Length];
-            for (int i = 0; i < n.Length; i++)
-                a[i] = n[i].Pack();
+            var a = new AssemblyIdentity[assemblyNames.Length];
+            for (int i = 0; i < assemblyNames.Length; i++)
+                a[i] = assemblyNames[i].Pack();
 
             return a;
         }
 
         /// <summary>
-        /// Converts a <see cref="AssemblyNameInfo"/> to a <see cref="AssemblyName"/>.
+        /// Converts a <see cref="AssemblyIdentity"/> to a <see cref="AssemblyName"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNameInfo"></param>
         /// <returns></returns>
-        public static AssemblyName Unpack(this AssemblyNameInfo n)
+        public static AssemblyName Unpack(this AssemblyIdentity assemblyNameInfo)
         {
-            return new AssemblyName()
-            {
-                Name = n.Name,
-                Version = n.Version,
-                CultureName = n.CultureName,
-                Flags = (AssemblyNameFlags)n.Flags,
-            };
+            AssemblyName assemblyName = new();
+            assemblyName.Name = assemblyNameInfo.Name;
+            assemblyName.CultureName = assemblyNameInfo.CultureName;
+            assemblyName.Version = assemblyNameInfo.Version;
+            assemblyName.Flags = (AssemblyNameFlags)assemblyNameInfo.Flags;
+            assemblyName.ContentType = (AssemblyContentType)assemblyNameInfo.ContentType;
+            assemblyName.ProcessorArchitecture = (ProcessorArchitecture)assemblyNameInfo.ProcessorArchitecture;
+
+            if (assemblyNameInfo.HasPublicKey)
+                assemblyName.SetPublicKey(assemblyNameInfo.PublicKey.ToArray());
+            else if (assemblyNameInfo.PublicKeyToken.IsDefaultOrEmpty == false)
+                assemblyName.SetPublicKeyToken(assemblyNameInfo.PublicKeyToken.ToArray());
+
+            return assemblyName;
         }
 
         /// <summary>
-        /// Converts a set of <see cref="AssemblyNameInfo"/> to a set of <see cref="AssemblyName"/>.
+        /// Converts a set of <see cref="AssemblyIdentity"/> to a set of <see cref="AssemblyName"/>.
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="assemblyNameInfos"></param>
         /// <returns></returns>
-        public static AssemblyName[] Unpack(this AssemblyNameInfo[] n)
+        public static AssemblyName[] Unpack(this AssemblyIdentity[] assemblyNameInfos)
         {
-            if (n.Length == 0)
+            if (assemblyNameInfos.Length == 0)
                 return [];
 
-            var a = new AssemblyName[n.Length];
-            for (int i = 0; i < n.Length; i++)
-                a[i] = n[i].Unpack();
+            var a = new AssemblyName[assemblyNameInfos.Length];
+            for (int i = 0; i < assemblyNameInfos.Length; i++)
+                a[i] = assemblyNameInfos[i].Unpack();
 
             return a;
         }

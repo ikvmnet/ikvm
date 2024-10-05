@@ -135,9 +135,9 @@ namespace IKVM.Tools.Importer
             peerReferences.Add(ccl);
         }
 
-        internal AssemblyNameInfo GetAssemblyName()
+        internal AssemblyIdentity GetAssemblyName()
         {
-            return assemblyBuilder.GetName();
+            return assemblyBuilder.GetIdentity();
         }
 
         private static PermissionSet Combine(PermissionSet p1, PermissionSet p2)
@@ -481,18 +481,15 @@ namespace IKVM.Tools.Importer
         {
             internalsVisibleTo.Add(ccl);
             var asm = ccl.assemblyBuilder;
-            var asmName = asm.GetName();
-            var name = asmName.Name;
-            var pubkey = asmName.PublicKeyOrToken;
+            var asmIdentity = asm.GetIdentity();
 
-            if (pubkey.IsEmpty && asmName.PublicKeyOrToken.IsEmpty == false)
-                pubkey = asmName.PublicKeyOrToken;
-
-            if (pubkey != null && pubkey.Length != 0)
+            var name = asmIdentity.Name;
+            var publicKeyToken = asmIdentity.PublicKeyToken;
+            if (publicKeyToken.Length > 0)
             {
                 var sb = new StringBuilder(name);
                 sb.Append(", PublicKey=");
-                foreach (byte b in pubkey)
+                foreach (byte b in publicKeyToken)
                     sb.AppendFormat("{0:X2}", b);
 
                 name = sb.ToString();
@@ -1897,7 +1894,7 @@ namespace IKVM.Tools.Importer
 
                 if (classDef.Clinit != null)
                 {
-                    var cb = ReflectUtil.DefineTypeInitializer(typeBuilder, classLoader);
+                    var cb = typeBuilder.DefineTypeInitializer();
                     var ilgen = Context.CodeEmitterFactory.Create(cb);
                     // TODO emit code to make sure super class is initialized
                     classDef.Clinit.Body.Emit(classLoader, ilgen);
@@ -2507,7 +2504,7 @@ namespace IKVM.Tools.Importer
 
         private static bool IsSigned(IAssemblySymbol asm)
         {
-            return asm.GetName().PublicKeyOrToken.IsEmpty == false;
+            return asm.GetIdentity().IsStrongName;
         }
 
         /// <summary>
@@ -2618,7 +2615,7 @@ namespace IKVM.Tools.Importer
                 // if it's an IKVM compiled assembly, make sure that it was compiled against same version of the runtime
                 foreach (var asmref in reference.GetReferencedAssemblies())
                 {
-                    if (asmref.Name == runtimeAssembly.GetName().Name)
+                    if (asmref.Name == runtimeAssembly.GetIdentity().Name)
                     {
                         if (IsSigned(runtimeAssembly))
                         {
@@ -2628,8 +2625,7 @@ namespace IKVM.Tools.Importer
                         }
                         else
                         {
-                            if (asmref.PublicKeyOrToken.IsEmpty == false)
-                                throw new DiagnosticEventException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
+                            throw new DiagnosticEventException(DiagnosticEvent.RuntimeMismatch(reference.Location, runtimeAssembly.FullName, asmref.FullName));
                         }
                     }
                 }
