@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 using IKVM.CoreLib.Diagnostics.Tracing;
 using IKVM.Runtime.Accessors;
@@ -25,9 +26,9 @@ namespace IKVM.Runtime
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
 #if NETFRAMEWORK
-            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey);
+            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(Debugger.IsAttached, dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey);
 #else
-            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey);
+            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(Debugger.IsAttached, dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey);
 #endif
             internal static readonly RuntimeContext context = new RuntimeContext(contextOptions, DiagnosticEventSource.Instance, new Resolver());
             internal static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);

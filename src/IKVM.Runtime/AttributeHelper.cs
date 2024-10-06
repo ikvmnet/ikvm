@@ -996,6 +996,9 @@ namespace IKVM.Runtime
 
         internal RemappedClassAttribute[] GetRemappedClasses(IAssemblySymbol coreAssembly)
         {
+            if (coreAssembly == null)
+                throw new ArgumentNullException(nameof(coreAssembly));
+
             var attrs = new List<RemappedClassAttribute>();
 
             foreach (var cad in coreAssembly.GetCustomAttributes(TypeOfRemappedClassAttribute))

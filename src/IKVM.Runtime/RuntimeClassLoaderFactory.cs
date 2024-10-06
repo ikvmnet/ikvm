@@ -153,18 +153,18 @@ namespace IKVM.Runtime
                 if (wrapper == null)
                 {
                     var opt = CodeGenOptions.None;
-                    if (JVM.EmitSymbols)
+                    if (context.Options.EmitSymbols)
                         opt |= CodeGenOptions.DisableOptimizations;
-#if NETFRAMEWORK
-                    if (!AppDomain.CurrentDomain.IsFullyTrusted)
+                    if (AppDomain.CurrentDomain.IsFullyTrusted == false)
                         opt |= CodeGenOptions.NoAutomagicSerialization;
-#endif
+
                     wrapper = new RuntimeClassLoader(context, opt, javaClassLoader);
                     SetWrapperForClassLoader(javaClassLoader, wrapper);
                 }
                 return wrapper;
             }
         }
+
 #endif
 
         /// <summary>

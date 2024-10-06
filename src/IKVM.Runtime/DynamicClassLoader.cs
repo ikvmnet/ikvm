@@ -210,9 +210,7 @@ namespace IKVM.Runtime
     internal sealed class DynamicClassLoader : RuntimeJavaTypeFactory
     {
 
-#if !IMPORTER
         static IAssemblySymbolBuilder jniProxyAssemblyBuilder;
-#endif
 
         readonly RuntimeContext context;
         readonly IDiagnosticHandler diagnostics;
@@ -450,21 +448,15 @@ namespace IKVM.Runtime
 
         }
 
-#if !IMPORTER
-
         internal static IModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
             jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), null);
             return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
         }
 
-#endif
-
         internal sealed override IModuleSymbolBuilder ModuleBuilder => moduleBuilder;
 
-#if !IMPORTER
-
-#if NETFRAMEWORK
+#if NETFRAMEWORK && !IMPORTER
 
         internal sealed class ForgedKeyPair : StrongNameKeyPair
         {
@@ -524,44 +516,67 @@ namespace IKVM.Runtime
 
 #endif
 
+        /// <summary>
+        /// Creates a new dynamic module.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context)
         {
             return CreateModuleBuilder(context, new AssemblyIdentity("ikvm_dynamic_assembly__" + (uint)Environment.TickCount));
         }
 
+        /// <summary>
+        /// Creates a new dynamic module.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyIdentity name)
         {
+            // set version on assembly
             var now = DateTime.Now;
-            name = new AssemblyIdentity(name.Name, new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond));
-            var attribs = new List<ICustomAttributeBuilder>();
+            name = new AssemblyIdentity(
+                name.Name,
+                new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond),
+                name.CultureName,
+                name.HasPublicKey ? name.PublicKey : name.PublicKeyToken,
+                name.HasPublicKey,
+                name.ContentType,
+                name.ProcessorArchitecture);
 
-#if NETFRAMEWORK
-            if (!AppDomain.CurrentDomain.IsFullyTrusted)
-                attribs.Add(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(System.Security.SecurityTransparentAttribute).FullName).GetConstructor([]), []));
-#endif
+            var attribs = Array.Empty<ICustomAttributeBuilder>();
+            if (AppDomain.CurrentDomain.IsFullyTrusted == false)
+                attribs = [context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(System.Security.SecurityTransparentAttribute).FullName).GetConstructor([]), [])];
 
-            var assemblyBuilder = DefineDynamicAssembly(context, name, attribs.ToArray());
+            var assemblyBuilder = DefineDynamicAssembly(context, name, attribs);
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 
             // determine debugging mode
             var debugMode = DebuggingModes.Default | DebuggingModes.IgnoreSymbolStoreSequencePoints;
-            if (JVM.EmitSymbols)
+            if (context.Options.EmitSymbols)
                 debugMode |= DebuggingModes.DisableOptimizations;
 
+            // add debugging mode to assembly
             context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugMode);
 
-            var moduleBuilder = assemblyBuilder.DefineModule(name.Name, null, JVM.EmitSymbols);
-
+            // create new module
+            var moduleBuilder = assemblyBuilder.DefineModule(name.Name, null, context.Options.EmitSymbols);
             moduleBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.JavaModuleAttribute).FullName).GetConstructor([]), []));
             return moduleBuilder;
         }
 
+        /// <summary>
+        /// Creates a new dynamic assembly.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <param name="assemblyAttributes"></param>
+        /// <returns></returns>
         static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ICustomAttributeBuilder[] assemblyAttributes)
         {
             return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes);
         }
-
-#endif
 
     }
 

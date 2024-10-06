@@ -285,9 +285,10 @@ namespace IKVM.Tools.Importer
         static RuntimeContextOptions CreateContextOptions(IServiceProvider services)
         {
             var u = services.GetRequiredService<Universe>();
+            var o = services.GetRequiredService<ImportOptions>();
             var isNetFX = u.CoreLibName == "mscorlib";
             var dynamicSuffix = isNetFX ? RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey : RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey;
-            return new RuntimeContextOptions(services.GetRequiredService<ImportOptions>().Bootstrap, dynamicSuffix);
+            return new RuntimeContextOptions(o.Debug != ImportDebug.Unspecified, o.Bootstrap, dynamicSuffix);
         }
 
         /// <summary>
