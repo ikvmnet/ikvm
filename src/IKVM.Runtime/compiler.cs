@@ -2729,19 +2729,8 @@ namespace IKVM.Runtime
                 methodLookup.Link();
 
                 var typeofIndyCallSite = typeofOpenIndyCallSite.MakeGenericType(delegateType);
-                IMethodSymbol methodCreateBootStrap;
-                IMethodSymbol methodGetTarget;
-                if (ReflectUtil.ContainsTypeBuilder(typeofIndyCallSite))
-                {
-                    methodCreateBootStrap = typeofOpenIndyCallSite.GetMethod("CreateBootstrap");
-                    methodGetTarget = typeofOpenIndyCallSite.GetMethod("GetTarget");
-                }
-                else
-                {
-                    methodCreateBootStrap = typeofIndyCallSite.GetMethod("CreateBootstrap");
-                    methodGetTarget = typeofIndyCallSite.GetMethod("GetTarget");
-                }
-
+                var methodCreateBootStrap = typeofIndyCallSite.GetMethod("CreateBootstrap");
+                var methodGetTarget = typeofIndyCallSite.GetMethod("GetTarget");
                 var tb = compiler.finish.DefineIndyCallSiteType();
                 var fb = tb.DefineField("value", typeofIndyCallSite, FieldAttributes.Static | FieldAttributes.Assembly);
                 var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
