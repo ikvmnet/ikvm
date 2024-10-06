@@ -1443,26 +1443,46 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal virtual string[] GetEnclosingMethod()
         {
             return null;
         }
 
+        /// <summary>
+        /// Gets the annotations declared on this type. Expected to return actual runtime instances.
+        /// </summary>
+        /// <returns></returns>
         internal virtual object[] GetDeclaredAnnotations()
         {
             return null;
         }
 
+        /// <summary>
+        /// Gets the annotations declared on the specified method of this type. Expected to return actual runtime instances.
+        /// </summary>
+        /// <param name="mw"></param>
+        /// <returns></returns>
         internal virtual object[] GetMethodAnnotations(RuntimeJavaMethod mw)
         {
             return null;
         }
 
+        /// <summary>
+        /// Gets the annotations declared on the specified parameters of the specified method of this type. Expected to return actual runtime instances.
+        /// </summary>
+        /// <param name="mw"></param>
+        /// <returns></returns>
         internal virtual object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
         {
             return null;
         }
 
+        /// <summary>
+        /// Gets the annotations declared on the specified fieldof this type. Expected to return actual runtime instances.
+        /// </summary>
+        /// <param name="fw"></param>
+        /// <returns></returns>
         internal virtual object[] GetFieldAnnotations(RuntimeJavaField fw)
         {
             return null;

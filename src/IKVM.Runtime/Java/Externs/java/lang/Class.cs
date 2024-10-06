@@ -450,26 +450,38 @@ namespace IKVM.Java.Externs.java.lang
             return tw.GetGenericSignature();
         }
 
-        internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] objAnn)
+        /// <summary>
+        /// Converts an array of annotation instances to a IMap.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <param name="annotations"></param>
+        /// <returns></returns>
+        internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] annotations)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             var map = new global::java.util.LinkedHashMap();
-            if (objAnn != null)
+
+            if (annotations != null)
             {
-                foreach (object obj in objAnn)
+                foreach (var obj in annotations)
                 {
-                    var a = obj as global::java.lang.annotation.Annotation;
-                    if (a != null)
+                    // annotation is an actual annotation instance
+                    if (obj is global::java.lang.annotation.Annotation annotation)
                     {
-                        map.put(a.annotationType(), FreezeOrWrapAttribute(a));
+                        map.put(annotation.annotationType(), FreezeOrWrapAttribute(annotation));
+                        continue;
                     }
-                    else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
+
+                    // annotation is a DynamicAnnotationAttribute, which encapsulates an annotation
+                    if (obj is IKVM.Attributes.DynamicAnnotationAttribute dynamicAttribute)
                     {
-                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
-                        if (a != null)
-                            map.put(a.annotationType(), a);
+                        annotation = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), dynamicAttribute.Definition);
+                        if (annotation != null)
+                            map.put(annotation.annotationType(), annotation);
+
+                        continue;
                     }
                 }
             }

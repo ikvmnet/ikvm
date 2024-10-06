@@ -107,6 +107,18 @@ namespace IKVM.Runtime
 #endif
         }
 
+        public static ParameterInfo AsReflection(this IParameterSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+			return ((IIkvmReflectionParameterSymbol)symbol).UnderlyingParameter;
+#else
+            return ((IReflectionParameterSymbol)symbol).UnderlyingParameter;
+#endif
+        }
+
         public static FieldInfo AsReflection(this IFieldSymbol symbol)
         {
             if (symbol == null)

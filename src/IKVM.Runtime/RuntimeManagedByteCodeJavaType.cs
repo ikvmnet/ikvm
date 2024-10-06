@@ -1104,7 +1104,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        object[] CastArray(CustomAttribute[] l)
+        object[] CastArray(object[] l)
         {
             var a = new object[l.Length];
             for (int i = 0; i < l.Length; i++)
@@ -1115,7 +1115,7 @@ namespace IKVM.Runtime
 
         internal override object[] GetDeclaredAnnotations()
         {
-            return CastArray(type.GetCustomAttributes(false));
+            return CastArray(type.AsReflection().GetCustomAttributes(false));
         }
 
         internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
@@ -1127,7 +1127,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            return CastArray(mb.GetCustomAttributes(false));
+            return CastArray(mb.AsReflection().GetCustomAttributes(false));
         }
 
         internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
@@ -1150,7 +1150,7 @@ namespace IKVM.Runtime
 
             var attribs = new object[parameters.Length - skip - skipEnd][];
             for (int i = skip; i < parameters.Length - skipEnd; i++)
-                attribs[i - skip] = CastArray(parameters[i].GetCustomAttributes(false));
+                attribs[i - skip] = CastArray(parameters[i].AsReflection().GetCustomAttributes(false));
 
             return attribs;
         }
@@ -1159,10 +1159,10 @@ namespace IKVM.Runtime
         {
             var field = fw.GetField();
             if (field != null)
-                return CastArray(field.GetCustomAttributes(false));
+                return CastArray(field.AsReflection().GetCustomAttributes(false));
 
             if (fw is RuntimeManagedByteCodePropertyJavaField prop)
-                return CastArray(prop.GetProperty().GetCustomAttributes(false));
+                return CastArray(prop.GetProperty().AsReflection().GetCustomAttributes(false));
 
             return Array.Empty<object>();
         }
