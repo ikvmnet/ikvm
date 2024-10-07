@@ -49,14 +49,7 @@ namespace IKVM.Runtime
 
         private IConstructorSymbol GetDelegateOrPackedArgsConstructor(ITypeSymbol type)
         {
-            if (ReflectUtil.ContainsTypeBuilder(type))
-            {
-                return type.GetGenericTypeDefinition().GetConstructors()[0];
-            }
-            else
-            {
-                return type.GetConstructors()[0];
-            }
+            return type.GetConstructors()[0];
         }
 
         // for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased

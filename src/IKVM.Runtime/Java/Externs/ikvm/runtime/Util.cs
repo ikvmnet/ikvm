@@ -117,7 +117,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             var ts = JVM.Context.Resolver.GetSymbol(type);
 
             int rank = 0;
-            while (ReflectUtil.IsVector(ts))
+            while (ts.IsSZArray)
             {
                 ts = ts.GetElementType();
                 rank++;

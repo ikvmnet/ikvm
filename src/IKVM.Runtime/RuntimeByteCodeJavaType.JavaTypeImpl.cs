@@ -73,7 +73,6 @@ namespace IKVM.Runtime
 
             internal JavaTypeImpl(RuntimeJavaType host, ClassFile f, RuntimeByteCodeJavaType wrapper)
             {
-                wrapper.ClassLoader.Diagnostics.GenericCompilerInfo("constructing JavaTypeImpl for " + f.Name);
                 this.host = host;
                 this.classFile = f;
                 this.wrapper = (RuntimeDynamicOrImportJavaType)wrapper;

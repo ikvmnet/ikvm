@@ -91,21 +91,6 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal static bool ContainsTypeBuilder(ITypeSymbol type)
-        {
-            while (type.HasElementType)
-                type = type.GetElementType();
-
-            if (!type.IsGenericType || type.IsGenericTypeDefinition)
-                return type is ITypeSymbolBuilder;
-
-            foreach (var arg in type.GetGenericArguments())
-                if (ContainsTypeBuilder(arg))
-                    return true;
-
-            return type.GetGenericTypeDefinition() is ITypeSymbolBuilder;
-        }
-
         internal static bool IsDynamicMethod(IMethodSymbol method)
         {
             // there's no way to distinguish a baked DynamicMethod from a RuntimeMethodInfo and
@@ -177,11 +162,6 @@ namespace IKVM.Runtime
             }
 
             return false;
-        }
-
-        internal static bool IsVector(ITypeSymbol type)
-        {
-            return type.IsSZArray;
         }
 
 #if IMPORTER
