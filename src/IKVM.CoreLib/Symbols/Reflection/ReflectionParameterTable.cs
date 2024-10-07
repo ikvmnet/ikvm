@@ -20,7 +20,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         IndexRangeDictionary<IReflectionParameterSymbol> _table = new();
         ReaderWriterLockSlim? _lock;
-        IReflectionParameterSymbol? _returnParameter;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,7 +27,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="member"></param>
-        /// <param name="property"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionParameterTable(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionMemberSymbol member)
         {
@@ -56,14 +54,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_lock.CreateUpgradeableReadLock())
             {
                 var position = parameter.Position;
-                if (position == -1)
-                    return _returnParameter ??= new ReflectionParameterSymbol(_context, _module, _member, parameter);
-
                 if (_table[position] == null)
                     using (_lock.CreateWriteLock())
-                        return _table[position] ??= new ReflectionParameterSymbol(_context, _module, _member, parameter);
+                        _table[position] ??= new ReflectionParameterSymbol(_context, _module, _member, parameter);
 
-                return _table[position] ?? throw new InvalidOperationException();
+                var item = _table[position] ?? throw new InvalidOperationException();
+                if (item.IsComplete == false && item is IReflectionParameterSymbolBuilder builder)
+                    builder.OnComplete(parameter);
+
+                return item;
             }
         }
 
@@ -86,12 +85,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
             using (_lock.CreateUpgradeableReadLock())
             {
                 var position = parameter.Position - 1;
-                if (position == -1)
-                    return (IReflectionParameterSymbolBuilder)(_returnParameter ??= new ReflectionParameterSymbolBuilder(_context, _module, (IReflectionMethodBaseSymbol)_member, parameter));
-
                 if (_table[position] == null)
                     using (_lock.CreateWriteLock())
-                        return (IReflectionParameterSymbolBuilder)(_table[position] ??= new ReflectionParameterSymbolBuilder(_context, _module, (IReflectionMethodBaseSymbol)_member, parameter));
+                        _table[position] ??= new ReflectionParameterSymbolBuilder(_context, _module, (IReflectionMethodBaseSymbol)_member, parameter);
 
                 return (IReflectionParameterSymbolBuilder?)_table[position] ?? throw new InvalidOperationException();
             }

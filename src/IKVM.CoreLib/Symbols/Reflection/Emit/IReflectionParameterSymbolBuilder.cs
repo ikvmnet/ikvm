@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
 
@@ -16,7 +17,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <summary>
         /// Invoked when the owning method of this parameter is completed.
         /// </summary>
-        void OnComplete();
+        void OnComplete(ParameterInfo parameter);
 
     }
 

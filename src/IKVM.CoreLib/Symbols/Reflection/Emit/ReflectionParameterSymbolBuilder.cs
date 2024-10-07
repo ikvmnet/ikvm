@@ -111,7 +111,14 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public int Position => UnderlyingParameter.Position;
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete
+        {
+            get
+            {
+                lock (this)
+                    return _builder == null;
+            }
+        }
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
@@ -153,15 +160,22 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #endregion
 
         /// <inheritdoc />
-        public void OnComplete()
+        public void OnComplete(ParameterInfo parameter)
         {
-            if (ResolvingMember is IReflectionMethodBaseSymbolBuilder b)
-                _parameter = b.UnderlyingMethodBase.GetParameters()[Position];
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
 
-            if (ResolvingMember is IReflectionPropertySymbolBuilder p)
-                _parameter = p.UnderlyingPropertyBuilder.GetIndexParameters()[Position];
-
-            _builder = null;
+            if (IsComplete == false)
+            {
+                lock (this)
+                {
+                    if (IsComplete == false)
+                    {
+                        _parameter = parameter;
+                        _builder = null;
+                    }
+                }
+            }
         }
 
     }

@@ -153,10 +153,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
                 if (i is IReflectionGenericTypeParameterSymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var i in GetParameters())
-                if (i is IReflectionParameterSymbolBuilder b)
-                    b.OnComplete();
-
             base.OnComplete();
         }
 
