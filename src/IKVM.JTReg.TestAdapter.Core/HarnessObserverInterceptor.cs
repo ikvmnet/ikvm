@@ -2,8 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-
-using Castle.DynamicProxy;
+using System.Reflection;
 
 namespace IKVM.JTReg.TestAdapter.Core
 {
@@ -11,10 +10,13 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Generates an implementation of 'com.sun.javatest.Harness$Observer'.
     /// </summary>
-    class HarnessObserverInterceptor : IInterceptor
+    class HarnessObserverInterceptor : DispatchProxy
     {
 
-        static readonly ProxyGenerator DefaultProxyGenerator = new ProxyGenerator();
+        static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods()
+            .Where(i => i.Name == "Create")
+            .Where(i => i.GetGenericArguments().Length == 2)
+            .First();
 
         /// <summary>
         /// Creates a new implementation of 'com.sun.javatest.Harness$Observer'.
@@ -22,23 +24,25 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         public static dynamic Create(string source, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests)
         {
-            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.Harness.Observer.Type, new HarnessObserverInterceptor(source, testSuite, context, tests));
+            var proxy = (HarnessObserverInterceptor)CreateMethodInfo.MakeGenericMethod(JTRegTypes.Harness.Observer.Type, typeof(HarnessObserverInterceptor)).Invoke(null, []);
+            proxy.Init(source, testSuite, context, tests);
+            return proxy;
         }
 
-        readonly string source;
-        readonly dynamic testSuite;
-        readonly IJTRegExecutionContext context;
-        readonly ConcurrentDictionary<string, JTRegTestCase> tests;
+        string source;
+        dynamic testSuite;
+        IJTRegExecutionContext context;
+        ConcurrentDictionary<string, JTRegTestCase> tests;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes the instance.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="testSuite"></param>
         /// <param name="context"></param>
         /// <param name="tests"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public HarnessObserverInterceptor(string source, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests)
+        void Init(string source, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests)
         {
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.testSuite = testSuite ?? throw new ArgumentNullException(nameof(testSuite));
@@ -46,47 +50,43 @@ namespace IKVM.JTReg.TestAdapter.Core
             this.tests = new ConcurrentDictionary<string, JTRegTestCase>(tests?.Where(i => i.Source == source).ToDictionary(i => i.FullyQualifiedName, i => i) ?? new Dictionary<string, JTRegTestCase>());
         }
 
-        /// <summary>
-        /// Invoked for any operation on the original type.
-        /// </summary>
-        /// <param name="invocation"></param>
-        public void Intercept(IInvocation invocation)
+        /// <inheritdoc />
+        protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
-            switch (invocation.Method.Name)
+            switch (targetMethod.Name)
             {
                 case "startingTestRun":
-                    startingTestRun(invocation.Proxy, invocation.GetArgumentValue(0));
+                    startingTestRun(args[0]);
                     break;
                 case "startingTest":
-                    startingTest(invocation.Proxy, invocation.GetArgumentValue(0));
+                    startingTest(args[0]);
                     break;
                 case "error":
-                    error(invocation.Proxy, (string)invocation.GetArgumentValue(0));
+                    error((string)args[0]);
                     break;
                 case "stoppingTestRun":
-                    stoppingTestRun(invocation.Proxy);
+                    stoppingTestRun();
                     break;
                 case "finishedTest":
-                    finishedTest(invocation.Proxy, invocation.GetArgumentValue(0));
+                    finishedTest(args[0]);
                     break;
                 case "finishedTesting":
-                    finishedTesting(invocation.Proxy);
+                    finishedTesting();
                     break;
                 case "finishedTestRun":
-                    finishedTestRun(invocation.Proxy, (bool)invocation.GetArgumentValue(0));
-                    break;
-                default:
-                    invocation.Proceed();
+                    finishedTestRun((bool)args[0]);
                     break;
             }
+
+            throw new InvalidOperationException();
         }
 
-        public void startingTestRun(dynamic self, dynamic parameters)
+        void startingTestRun(dynamic parameters)
         {
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: starting test run");
         }
 
-        public void startingTest(dynamic self, dynamic testResult)
+        void startingTest(dynamic testResult)
         {
             var desc = testResult.getDescription();
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, desc);
@@ -96,17 +96,17 @@ namespace IKVM.JTReg.TestAdapter.Core
             context.RecordStart(test);
         }
 
-        public void error(dynamic self, string message)
+        void error(string message)
         {
             context.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: error: '{message}'");
         }
 
-        public void stoppingTestRun(dynamic self)
+        void stoppingTestRun()
         {
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: stopping test run");
         }
 
-        public void finishedTest(dynamic self, dynamic testResult)
+        void finishedTest(dynamic testResult)
         {
             var desc = testResult.getDescription();
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, desc);
@@ -118,12 +118,12 @@ namespace IKVM.JTReg.TestAdapter.Core
             context.RecordResult(rslt);
         }
 
-        public void finishedTesting(dynamic self)
+        void finishedTesting()
         {
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: finished testing");
         }
 
-        public void finishedTestRun(dynamic self, bool success)
+        void finishedTestRun(bool success)
         {
             context.SendMessage(success ? JTRegTestMessageLevel.Informational : JTRegTestMessageLevel.Warning, $"JTReg: finished test run with overall result '{success}'");
         }

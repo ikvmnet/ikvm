@@ -29,28 +29,53 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
+            if (collectable && saveable)
+                throw new NotSupportedException("Assembly cannot be both colletable and saveable.");
 
 #if NET
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
+            if (saveable)
+                throw new NotSupportedException("Assembly cannot be saveable.");
+            else if (collectable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
+            else
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run));
 #else
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave));
+            if (saveable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave));
+            else if (collectable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
+            else
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run));
 #endif
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
+            if (collectable && saveable)
+                throw new NotSupportedException("Assembly cannot be both colletable and saveable.");
+
 #if NET
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+            if (saveable)
+                throw new NotSupportedException("Assembly cannot be saveable.");
+            else if (collectable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+            else
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, assemblyAttributes?.Unpack()));
 #else
-            return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave,assemblyAttributes?.Unpack()));
+            if (saveable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave, assemblyAttributes?.Unpack()));
+            else if (collectable)
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+            else
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, assemblyAttributes?.Unpack()));
 #endif
         }
 

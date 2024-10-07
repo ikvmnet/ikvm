@@ -1,6 +1,6 @@
 ﻿using System;
-
-using Castle.DynamicProxy;
+using System.Linq;
+using System.Reflection;
 
 namespace IKVM.JTReg.TestAdapter.Core
 {
@@ -8,54 +8,57 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Generates an implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
     /// </summary>
-    class ErrorHandlerInterceptor : IInterceptor
+    class ErrorHandlerInterceptor : DispatchProxy
     {
 
-        static readonly ProxyGenerator DefaultProxyGenerator = new ProxyGenerator();
+        static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods()
+            .Where(i => i.Name == "Create")
+            .Where(i => i.GetGenericArguments().Length == 2)
+            .First();
 
         /// <summary>
         /// Creates a new implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
         /// </summary>
         /// <returns></returns>
-        public static dynamic Create(IJTRegLoggerContext logger)
+        public static ErrorHandlerInterceptor Create(IJTRegLoggerContext logger)
         {
-            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.TestFinder.ErrorHandler.Type, new ErrorHandlerInterceptor(logger));
+            var proxy = (ErrorHandlerInterceptor)CreateMethodInfo.MakeGenericMethod(JTRegTypes.TestFinder.ErrorHandler.Type, typeof(ErrorHandlerInterceptor)).Invoke(null, []);
+            proxy.SetLogger(logger);
+            return proxy;
         }
 
-        readonly IJTRegLoggerContext logger;
+        IJTRegLoggerContext logger;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Sets the logger instance.
         /// </summary>
         /// <param name="logger"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public ErrorHandlerInterceptor(IJTRegLoggerContext logger)
+        public void SetLogger(IJTRegLoggerContext logger)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
-        /// 
+        /// Intercepts method calls to the underlying type.
         /// </summary>
-        /// <param name="invocation"></param>
-        public void Intercept(IInvocation invocation)
+        /// <param name="targetMethod"></param>
+        /// <param name="args"></param>
+        protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
-            switch (invocation.Method.Name)
+            switch (targetMethod.Name)
             {
                 case "error":
-                    error(invocation.Proxy, (string)invocation.GetArgumentValue(0));
-                    break;
-                default:
-                    invocation.Proceed();
+                    error((string)args[0]);
                     break;
             }
+
+            throw new InvalidOperationException();
         }
 
-        public void error(dynamic proxy, string msg)
+        void error(string msg)
         {
             logger.SendMessage(JTRegTestMessageLevel.Error, msg);
         }
-
     }
 
 }

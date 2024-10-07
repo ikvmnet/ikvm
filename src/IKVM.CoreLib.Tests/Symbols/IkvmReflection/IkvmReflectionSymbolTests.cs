@@ -448,7 +448,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         public void CanGetMethodsFromTypeBuilder()
         {
             var c = new IkvmReflectionSymbolContext(universe!);
-            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"));
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"), false, true);
             var m = a.DefineModule("DynamicModule", "DynamicModule.dll");
             var type = m.DefineType("DynamicType");
 
@@ -476,7 +476,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         public void CanGetGenericDelegateInvoke()
         {
             var c = new IkvmReflectionSymbolContext(universe!);
-            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"));
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"), false, true);
             var m = a.DefineModule("DynamicModule", "DynamicModule.dll"); 
 
             var tb = m.DefineType("DynamicGenericDelegate", System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Sealed, c.GetOrCreateTypeSymbol(coreAssembly!.GetType("System.MulticastDelegate")));

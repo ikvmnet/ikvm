@@ -63,15 +63,15 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <summary>
         /// Sets the entry point for this assembly, assuming that a console application is being built.
         /// </summary>
-        /// <param name="mainMethodProxy"></param>
-        void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy);
+        /// <param name="entryMethod"></param>
+        void SetEntryPoint(IMethodSymbol entryMethod);
 
         /// <summary>
         /// Sets the entry point for this assembly and defines the type of the portable executable (PE file) being built.
         /// </summary>
-        /// <param name="mainMethodProxy"></param>
-        /// <param name="target"></param>
-        void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, PEFileKinds target);
+        /// <param name="entryMethod"></param>
+        /// <param name="fileKind"></param>
+        void SetEntryPoint(IMethodSymbol entryMethod, PEFileKinds fileKind);
 
         /// <summary>
         /// Adds a forwarded type to this assembly.

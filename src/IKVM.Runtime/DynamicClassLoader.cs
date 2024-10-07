@@ -575,7 +575,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ICustomAttributeBuilder[] assemblyAttributes)
         {
-            return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes);
+            return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes, false, false);
         }
 
     }

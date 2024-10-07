@@ -106,13 +106,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
+        public void SetEntryPoint(IMethodSymbol mainMethodProxy)
         {
             UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack());
         }
 
         /// <inheritdoc />
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
+        public void SetEntryPoint(IMethodSymbol mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
         {
             UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack(), (IKVM.Reflection.Emit.PEFileKinds)target);
         }

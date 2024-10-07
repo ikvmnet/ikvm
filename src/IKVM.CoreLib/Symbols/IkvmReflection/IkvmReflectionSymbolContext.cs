@@ -32,19 +32,28 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
+            if (collectable)
+                throw new NotSupportedException("IKVM Reflection cannot produce collectable assemblies.");
+            if (saveable == false)
+                throw new NotSupportedException("IKVM Reflection can only produce saveable assemblies.");
+
 
             return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save));
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
+            if (collectable)
+                throw new NotSupportedException("IKVM Reflection cannot produce collectable assemblies.");
+            if (saveable == false)
+                throw new NotSupportedException("IKVM Reflection can only produce saveable assemblies.");
 
             return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save, assemblyAttributes?.Unpack()));
         }

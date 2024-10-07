@@ -124,15 +124,23 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy)
+        public void SetEntryPoint(IMethodSymbol mainMethodProxy)
         {
-            throw new NotImplementedException();
+#if NETFRAMEWORK
+            UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack());
+#else
+            throw new NotSupportedException();
+#endif
         }
 
         /// <inheritdoc />
-        public void SetEntryPoint(IMethodSymbolBuilder mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
+        public void SetEntryPoint(IMethodSymbol mainMethodProxy, IKVM.CoreLib.Symbols.Emit.PEFileKinds target)
         {
-            throw new NotImplementedException();
+#if NETFRAMEWORK
+            UnderlyingAssemblyBuilder.SetEntryPoint(mainMethodProxy.Unpack(), (System.Reflection.Emit.PEFileKinds)target);
+#else
+            throw new NotSupportedException();
+#endif
         }
 
         /// <inheritdoc />

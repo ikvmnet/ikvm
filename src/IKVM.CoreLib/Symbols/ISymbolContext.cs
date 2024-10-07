@@ -13,15 +13,20 @@ namespace IKVM.CoreLib.Symbols
         /// Defines a dynamic assembly that has the specified name and access rights.
         /// </summary>
         /// <param name="name"></param>
+        /// <param name="collectable"></param>
+        /// <param name="saveable"></param>
         /// <returns></returns>
-        IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name);
+        IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, bool collectable = true, bool saveable = false);
 
         /// <summary>
         /// Defines a dynamic assembly that has the specified name and access rights.
         /// </summary>
         /// <param name="name"></param>
+        /// <param name="assemblyAttributes"></param>
+        /// <param name="collectable"></param>
+        /// <param name="saveable"></param>
         /// <returns></returns>
-        IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes);
+        IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes, bool collectable = true, bool saveable = false);
 
         /// <summary>
         /// Initializes an instance of the <see cref="ICustomAttributeBuilder"/> interface given the constructor for the custom attribute and the arguments to the constructor.
