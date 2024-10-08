@@ -79,8 +79,6 @@ namespace IKVM.Runtime
             return new CodeEmitter(context, method.GetILGenerator(), method.DeclaringType);
         }
 
-#if IMPORTER == false
-
         /// <summary>
         /// Creates a new instance.
         /// </summary>
@@ -88,10 +86,8 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public CodeEmitter Create(DynamicMethod dm)
         {
-            return new CodeEmitter(context, new ReflectionILGenerator((ReflectionSymbolContext)context.Resolver.Symbols, dm.GetILGenerator()), null);
+            return new CodeEmitter(context, new ReflectionILGenerator((ReflectionSymbolContext)context.Resolver.Symbols, dm.GetILGenerator(), true), null);
         }
-
-#endif
 
     }
 
