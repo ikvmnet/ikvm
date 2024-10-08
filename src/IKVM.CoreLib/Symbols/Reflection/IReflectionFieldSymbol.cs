@@ -11,6 +11,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         FieldInfo UnderlyingField { get; }
 
+        /// <summary>
+        /// Gets the underlying <see cref="FieldInfo"/> used for IL emit operations.
+        /// </summary>
+        FieldInfo UnderlyingEmitField { get; }
+
+        /// <summary>
+        /// Gets the underlying <see cref="FieldInfo"/> used for IL emit operations against dynamic methods.
+        /// </summary>
+        FieldInfo UnderlyingDynamicEmitField { get; }
+
     }
 
 }

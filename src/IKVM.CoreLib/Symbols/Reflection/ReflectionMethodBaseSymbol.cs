@@ -36,6 +36,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public abstract MethodBase UnderlyingMethodBase { get; }
 
         /// <inheritdoc />
+        public virtual MethodBase UnderlyingEmitMethodBase => UnderlyingMethodBase;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
 
         /// <inheritdoc />

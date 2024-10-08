@@ -2,7 +2,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
 
-using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
@@ -11,8 +10,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     class ReflectionMethodSymbolBuilder : ReflectionMethodBaseSymbolBuilder, IReflectionMethodSymbolBuilder
     {
 
-        MethodBuilder? _builder;
-        MethodInfo _method;
+        readonly MethodBuilder _builder;
+        MethodInfo? _method;
 
         ReflectionGenericTypeParameterTable _genericTypeParameterTable;
         ReflectionMethodSpecTable _specTable;
@@ -31,19 +30,27 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _method = _builder;
             _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, resolvingModule, this);
             _specTable = new ReflectionMethodSpecTable(context, resolvingModule, resolvingType, this);
         }
 
         /// <inheritdoc />
-        public MethodInfo UnderlyingMethod => _method;
+        public MethodInfo UnderlyingMethod => _method ?? _builder;
+
+        /// <inheritdoc />
+        public MethodInfo UnderlyingEmitMethod => _builder;
+
+        /// <inheritdoc />
+        public MethodInfo UnderlyingDynamicEmitMethod => _method ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
 
         /// <inheritdoc />
-        public MethodBuilder UnderlyingMethodBuilder => _builder ?? throw new InvalidOperationException();
+        public override MethodBase UnderlyingEmitMethodBase => UnderlyingEmitMethod;
+
+        /// <inheritdoc />
+        public MethodBuilder UnderlyingMethodBuilder => _builder;
 
         #region IReflectionMethodSymbolBuilder
 
@@ -163,7 +170,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _method != null;
 
         /// <inheritdoc />
         public IMethodSymbol GetBaseDefinition()
@@ -189,7 +196,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override void OnComplete()
         {
             _method = (MethodInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
-            _builder = null;
             base.OnComplete();
         }
     }

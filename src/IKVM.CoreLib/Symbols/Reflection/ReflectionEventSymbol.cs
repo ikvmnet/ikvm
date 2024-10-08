@@ -26,6 +26,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public EventInfo UnderlyingEvent => _event;
 
         /// <inheritdoc />
+        public EventInfo UnderlyingEmitEvent => _event;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingEvent;
 
         #region IEventSymbol

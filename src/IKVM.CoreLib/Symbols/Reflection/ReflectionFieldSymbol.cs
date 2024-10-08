@@ -26,6 +26,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public FieldInfo UnderlyingField => _field;
 
         /// <inheritdoc />
+        public FieldInfo UnderlyingEmitField => UnderlyingField;
+
+        /// <inheritdoc />
+        public FieldInfo UnderlyingDynamicEmitField => UnderlyingEmitField;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingField;
 
         #region IFieldSymbol

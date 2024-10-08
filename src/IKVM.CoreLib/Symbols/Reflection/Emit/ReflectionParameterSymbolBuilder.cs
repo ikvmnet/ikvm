@@ -14,7 +14,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         readonly IReflectionModuleSymbol _module;
         readonly IReflectionMemberSymbol _member;
 
-        ParameterBuilder? _builder;
+        readonly ParameterBuilder _builder;
+        readonly ReflectionParameterBuilderInfo _builderInfo;
         ParameterInfo _parameter;
 
         object? _constant;
@@ -32,7 +33,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _member = member ?? throw new ArgumentNullException(nameof(member));
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _parameter = new ReflectionParameterBuilderInfo(builder, () => _constant);
+            _builderInfo = new ReflectionParameterBuilderInfo(builder, () => _constant);
         }
 
         /// <inheritdoc />
@@ -42,10 +43,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IReflectionMemberSymbol ResolvingMember => _member;
 
         /// <inheritdoc />
-        public ParameterInfo UnderlyingParameter => _parameter;
+        public ParameterInfo UnderlyingParameter => _parameter ?? _builderInfo;
 
         /// <inheritdoc />
-        public ParameterBuilder UnderlyingParameterBuilder => _builder ?? throw new InvalidOperationException();
+        public ParameterInfo UnderlyingEmitParameter => _parameter ?? throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public ParameterBuilder UnderlyingParameterBuilder => _builder;
 
         #region IParameterSymbolBuilder
 
@@ -111,14 +115,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public int Position => UnderlyingParameter.Position;
 
         /// <inheritdoc />
-        public override bool IsComplete
-        {
-            get
-            {
-                lock (this)
-                    return _builder == null;
-            }
-        }
+        public override bool IsComplete => _parameter != null;
 
         /// <inheritdoc />
         public CustomAttribute[] GetCustomAttributes(bool inherit = false)
@@ -165,17 +162,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
-            if (IsComplete == false)
-            {
-                lock (this)
-                {
-                    if (IsComplete == false)
-                    {
-                        _parameter = parameter;
-                        _builder = null;
-                    }
-                }
-            }
+            _parameter = parameter;
         }
 
     }

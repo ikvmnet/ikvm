@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.SymbolStore;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -14,25 +15,86 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         readonly ReflectionSymbolContext _context;
         readonly ILGenerator _il;
+        readonly bool _dynamic = false;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="il"></param>
-        public ReflectionILGenerator(ReflectionSymbolContext context, ILGenerator il)
+        /// <param name="dynamic"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ReflectionILGenerator(ReflectionSymbolContext context, ILGenerator il, bool dynamic = false)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _il = il ?? throw new ArgumentNullException(nameof(il));
+            _dynamic = dynamic;
         }
 
         /// <inheritdoc />
         public int ILOffset => _il.ILOffset;
 
+        /// <summary>
+        /// Gets the underlying emit type for the given <see cref="ITypeSymbol"/>.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(symbol))]
+        Type? GetEmitType(ITypeSymbol? symbol)
+        {
+            var n = symbol.Name;
+            if (_dynamic)
+                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingDynamicEmitType;
+            else
+                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingEmitType;
+        }
+
+        /// <summary>
+        /// Gets the underlying emit type for the given <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(symbol))]
+        FieldInfo? GetEmitField(IFieldSymbol? symbol)
+        {
+            if (_dynamic)
+                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingDynamicEmitField;
+            else
+                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingEmitField;
+        }
+
+        /// <summary>
+        /// Gets the underlying emit type for the given <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(symbol))]
+        ConstructorInfo? GetEmitConstructor(IConstructorSymbol? symbol)
+        {
+            if (_dynamic)
+                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingDynamicEmitConstructor;
+            else
+                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingEmitConstructor;
+        }
+
+        /// <summary>
+        /// Gets the underlying emit type for the given <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(symbol))]
+        MethodInfo? GetEmitMethod(IMethodSymbol? symbol)
+        {
+            if (_dynamic)
+                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingDynamicEmitMethod;
+            else
+                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingEmitMethod;
+        }
+
         /// <inheritdoc />
         public void BeginCatchBlock(ITypeSymbol? exceptionType)
         {
-            _il.BeginCatchBlock(exceptionType?.Unpack()!);
-
+            _il.BeginCatchBlock(GetEmitType(exceptionType)!);
         }
 
         /// <inheritdoc />
@@ -68,13 +130,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public ILocalBuilder DeclareLocal(ITypeSymbol localType, bool pinned)
         {
-            return new ReflectionLocalBuilder(_context, _il.DeclareLocal(localType.Unpack(), pinned));
+            return new ReflectionLocalBuilder(_context, _il.DeclareLocal(GetEmitType(localType), pinned));
         }
 
         /// <inheritdoc />
         public ILocalBuilder DeclareLocal(ITypeSymbol localType)
         {
-            return new ReflectionLocalBuilder(_context, _il.DeclareLocal(localType.Unpack()));
+            return new ReflectionLocalBuilder(_context, _il.DeclareLocal(GetEmitType(localType)));
         }
 
         /// <inheritdoc />
@@ -84,15 +146,45 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void Emit(OpCode opcode, ILocalBuilder local)
+        public void Emit(OpCode opcode, ITypeSymbol cls)
         {
-            _il.Emit(opcode, local.Unpack());
+            _il.Emit(opcode, GetEmitType(cls));
         }
 
         /// <inheritdoc />
-        public void Emit(OpCode opcode, ITypeSymbol cls)
+        public void Emit(OpCode opcode, IFieldSymbol field)
         {
-            _il.Emit(opcode, cls.Unpack());
+            _il.Emit(opcode, GetEmitField(field));
+        }
+
+        /// <inheritdoc />
+        public void Emit(OpCode opcode, IConstructorSymbol con)
+        {
+            _il.Emit(opcode, GetEmitConstructor(con));
+        }
+
+        /// <inheritdoc />
+        public void Emit(OpCode opcode, IMethodSymbol method)
+        {
+            _il.Emit(opcode, GetEmitMethod(method));
+        }
+
+        /// <inheritdoc />
+        public void Emit(OpCode opcode, ISignatureHelper signature)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public void Emit(OpCode opcode, ILabel[] labels)
+        {
+            _il.Emit(opcode, labels.Unpack());
+        }
+
+        /// <inheritdoc />
+        public void Emit(OpCode opcode, ILocalBuilder local)
+        {
+            _il.Emit(opcode, local.Unpack());
         }
 
         /// <inheritdoc />
@@ -111,37 +203,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public void Emit(OpCode opcode, sbyte arg)
         {
             _il.Emit(opcode, arg);
-        }
-
-        /// <inheritdoc />
-        public void Emit(OpCode opcode, IMethodSymbol meth)
-        {
-            _il.Emit(opcode, meth.Unpack());
-        }
-
-        /// <inheritdoc />
-        public void Emit(OpCode opcode, ISignatureHelper signature)
-        {
-            throw new NotImplementedException();
-            //_il.Emit(opcode, signature.Unpack());
-        }
-
-        /// <inheritdoc />
-        public void Emit(OpCode opcode, ILabel[] labels)
-        {
-            _il.Emit(opcode, labels.Unpack());
-        }
-
-        /// <inheritdoc />
-        public void Emit(OpCode opcode, IFieldSymbol field)
-        {
-            _il.Emit(opcode, field.Unpack());
-        }
-
-        /// <inheritdoc />
-        public void Emit(OpCode opcode, IConstructorSymbol con)
-        {
-            _il.Emit(opcode, con.Unpack());
         }
 
         /// <inheritdoc />

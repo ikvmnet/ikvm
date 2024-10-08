@@ -13,6 +13,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         Type UnderlyingType { get; }
 
         /// <summary>
+        /// Gets the underlying <see cref="Type"/> used for IL emit operations.
+        /// </summary>
+        Type UnderlyingEmitType { get; }
+
+        /// <summary>
+        /// Gets the underlying <see cref="Type"/> used for IL emit operations for dynamic methods.
+        /// </summary>
+        Type UnderlyingDynamicEmitType { get; }
+
+        /// <summary>
         /// Gets or creates a <see cref="IReflectionMethodBaseSymbol"/> for the given <see cref="MethodBase"/>.
         /// </summary>
         /// <param name="method"></param>

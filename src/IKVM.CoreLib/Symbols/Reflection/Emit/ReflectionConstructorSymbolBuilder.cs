@@ -10,8 +10,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     class ReflectionConstructorSymbolBuilder : ReflectionMethodBaseSymbolBuilder, IReflectionConstructorSymbolBuilder
     {
 
-        ConstructorBuilder? _builder;
-        ConstructorInfo _ctor;
+        readonly ConstructorBuilder _builder;
+        ConstructorInfo? _ctor;
 
         ReflectionILGenerator? _il;
 
@@ -27,17 +27,25 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _ctor = _builder;
         }
 
         /// <inheritdoc />
-        public ConstructorInfo UnderlyingConstructor => _ctor;
+        public ConstructorInfo UnderlyingConstructor => _ctor ?? _builder;
+
+        /// <inheritdoc />
+        public ConstructorInfo UnderlyingEmitConstructor => _builder;
+
+        /// <inheritdoc />
+        public ConstructorInfo UnderlyingDynamicEmitConstructor => _ctor ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
 
         /// <inheritdoc />
-        public ConstructorBuilder UnderlyingConstructorBuilder => _builder ?? throw new InvalidOperationException();
+        public override MethodBase UnderlyingEmitMethodBase => UnderlyingEmitConstructor;
+
+        /// <inheritdoc />
+        public ConstructorBuilder UnderlyingConstructorBuilder => _builder;
 
         #region IConstructorSymbolBuilder
 
@@ -85,7 +93,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IConstructorSymbol
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _ctor != null;
 
         #endregion
 
@@ -104,7 +112,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override void OnComplete()
         {
             _ctor = (ConstructorInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
-            _builder = null;
             base.OnComplete();
         }
 

@@ -15,12 +15,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly IReflectionModuleSymbol _module;
         readonly IReflectionTypeSymbol _elementType;
 
-        IndexRangeDictionary<IReflectionTypeSymbol> _asArray;
+        IndexRangeDictionary<ReflectionArrayTypeSymbol> _asArray;
         ReaderWriterLockSlim? _asArrayLock;
-        IReflectionTypeSymbol? _asSZArray;
-        IReflectionTypeSymbol? _asPointer;
-        IReflectionTypeSymbol? _asByRef;
-        ConcurrentDictionary<IReflectionTypeSymbol[], IReflectionTypeSymbol>? _genericTypeSymbols;
+        ReflectionSZArrayTypeSymbol? _asSZArray;
+        ReflectionPointerTypeSymbol? _asPointer;
+        ReflectionByRefTypeSymbol? _asByRef;
+        ConcurrentDictionary<IReflectionTypeSymbol[], ReflectionGenericSpecTypeSymbol>? _genericTypeSymbols;
 
         /// <summary>
         /// Initializes a new instance.
@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
-            _asArray = new IndexRangeDictionary<IReflectionTypeSymbol>();
+            _asArray = new IndexRangeDictionary<ReflectionArrayTypeSymbol>();
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             {
                 if (_asArray[rank] == null)
                     using (_asArrayLock.CreateWriteLock())
-                        _asArray[rank] = new ReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakeArrayType(rank));
+                        _asArray[rank] = new ReflectionArrayTypeSymbol(_context, _module, _elementType, rank);
 
                 return _asArray[rank] ?? throw new InvalidOperationException();
             }
@@ -65,7 +65,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreateSZArrayTypeSymbol()
         {
             if (_asSZArray == null)
-                Interlocked.CompareExchange(ref _asSZArray, new ReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakeArrayType()), null);
+                Interlocked.CompareExchange(ref _asSZArray, new ReflectionSZArrayTypeSymbol(_context, _module, _elementType), null);
 
             return _asSZArray;
         }
@@ -77,7 +77,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreatePointerTypeSymbol()
         {
             if (_asPointer == null)
-                Interlocked.CompareExchange(ref _asPointer, new ReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakePointerType()), null);
+                Interlocked.CompareExchange(ref _asPointer, new ReflectionPointerTypeSymbol(_context, _module, _elementType), null);
 
             return _asPointer;
         }
@@ -89,7 +89,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreateByRefTypeSymbol()
         {
             if (_asByRef == null)
-                Interlocked.CompareExchange(ref _asByRef, new ReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakeByRefType()), null);
+                Interlocked.CompareExchange(ref _asByRef, new ReflectionByRefTypeSymbol(_context, _module, _elementType), null);
 
             return _asByRef;
         }
@@ -118,10 +118,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        readonly IReflectionTypeSymbol CreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeArguments)
+        readonly ReflectionGenericSpecTypeSymbol CreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeArguments)
         {
-            return new ReflectionTypeSymbol(_context, _module, _elementType.UnderlyingType.MakeGenericType(genericTypeArguments.Unpack()));
+            return new ReflectionGenericSpecTypeSymbol(_context, _module, _elementType, genericTypeArguments);
         }
+
     }
 
 }

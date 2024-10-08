@@ -32,6 +32,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public abstract MemberInfo UnderlyingMember { get; }
 
+        /// <inheritdoc />
+        public virtual MemberInfo UnderlyingEmitMember => UnderlyingMember;
+
         /// <summary>
         /// Gets the <see cref="IReflectionModuleSymbol" /> which contains the metadata of this member.
         /// </summary>
@@ -208,6 +211,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         #endregion
 
+        /// <inheritdoc />
         public override string? ToString() => UnderlyingMember.ToString();
 
     }

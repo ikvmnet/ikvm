@@ -23,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        [return: NotNullIfNotNull("genericTypeParameter")]
+        [return: NotNullIfNotNull(nameof(genericTypeParameter))]
         public IReflectionGenericTypeParameterSymbolBuilder? ResolveGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
             return Context.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);

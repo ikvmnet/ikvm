@@ -12,6 +12,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         PropertyInfo UnderlyingProperty { get; }
 
         /// <summary>
+        /// Gets the underlying <see cref="PropertyInfo"/> used for IL emit operations.
+        /// </summary>
+        PropertyInfo UnderlyingEmitProperty { get; }
+
+        /// <summary>
         /// Gets or creates a <see cref="IReflectionParameterSymbol"/> for the given <see cref="ParameterInfo"/>.
         /// </summary>
         /// <param name="parameter"></param>

@@ -11,6 +11,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         EventInfo UnderlyingEvent { get; }
 
+        /// <summary>
+        /// Gets the underlying <see cref="EventInfo"/> used for IL emit operations.
+        /// </summary>
+        EventInfo UnderlyingEmitEvent { get; }
+
 
     }
 

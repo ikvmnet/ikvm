@@ -10,8 +10,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     class ReflectionEventSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionEventSymbolBuilder
     {
 
-        EventBuilder? _builder;
-        EventInfo _event;
+        readonly EventBuilder _builder;
+        readonly ReflectionEventBuilderInfo _builderInfo;
+        EventInfo? _event;
 
         /// <summary>
         /// Initializes a new instance.
@@ -25,11 +26,14 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _event = new ReflectionEventBuilderInfo(_builder);
+            _builderInfo = new ReflectionEventBuilderInfo(_builder);
         }
 
         /// <inheritdoc />
-        public EventInfo UnderlyingEvent => _event;
+        public EventInfo UnderlyingEvent => _event ?? _builderInfo;
+
+        /// <inheritdoc />
+        public EventInfo UnderlyingEmitEvent => UnderlyingEvent;
 
         /// <inheritdoc />
         public EventBuilder UnderlyingEventBuilder => _builder ?? throw new NotImplementedException();
@@ -98,7 +102,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IMethodSymbol? RaiseMethod => ResolveMethodSymbol(UnderlyingEvent.RaiseMethod);
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _event != null;
 
         /// <inheritdoc />
         public IMethodSymbol? GetAddMethod()
@@ -154,7 +158,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override void OnComplete()
         {
             _event = (EventInfo?)ResolvingModule.UnderlyingModule.ResolveMember(MetadataToken) ?? throw new InvalidOperationException();
-            _builder = null;
             base.OnComplete();
         }
 

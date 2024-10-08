@@ -35,6 +35,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public Type UnderlyingType => _type;
 
         /// <inheritdoc />
+        public Type UnderlyingEmitType => UnderlyingType;
+
+        /// <inheritdoc />
+        public Type UnderlyingDynamicEmitType => _type;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingType;
 
         /// <summary>

@@ -27,7 +27,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public abstract MethodBase UnderlyingMethodBase { get; }
 
         /// <inheritdoc />
+        public virtual MethodBase UnderlyingEmitMethodBase => UnderlyingMethodBase;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingEmitMember => UnderlyingEmitMethodBase;
 
         #region IReflectionMethodBaseSymbol
 

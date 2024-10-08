@@ -34,6 +34,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public abstract MemberInfo UnderlyingMember { get; }
 
         /// <inheritdoc />
+        public virtual MemberInfo UnderlyingEmitMember => UnderlyingMember;
+
+        /// <inheritdoc />
         public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
         /// <inheritdoc />
@@ -336,6 +339,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
 
         }
+
+        /// <inheritdoc />
+        public override string? ToString() => UnderlyingMember.ToString();
 
     }
 

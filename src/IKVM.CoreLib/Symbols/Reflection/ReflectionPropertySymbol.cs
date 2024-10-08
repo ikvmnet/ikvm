@@ -29,6 +29,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public PropertyInfo UnderlyingProperty => _property;
 
         /// <inheritdoc />
+        public PropertyInfo UnderlyingEmitProperty => UnderlyingProperty;
+
+        /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
 
         #region IReflectionPropertySymbol

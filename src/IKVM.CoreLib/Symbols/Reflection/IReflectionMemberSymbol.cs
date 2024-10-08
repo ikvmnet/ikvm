@@ -21,6 +21,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         MemberInfo UnderlyingMember { get; }
 
+        /// <summary>
+        /// Gets the underlying <see cref="MemberInfo"/> used for IL emit operations.
+        /// </summary>
+        MemberInfo UnderlyingEmitMember { get; }
+
     }
 
 }

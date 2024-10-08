@@ -3,132 +3,97 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
-namespace IKVM.CoreLib.Symbols.Reflection.Emit
+namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionGenericTypeParameterSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionGenericTypeParameterSymbolBuilder
+    abstract class ReflectionTypeSymbolBase : ReflectionMemberSymbol, IReflectionTypeSymbol
     {
 
-        readonly IReflectionMemberSymbol? _resolvingMember;
-        readonly GenericTypeParameterBuilder _builder;
-        Type? _type;
-
-        ReflectionTypeSpecTable _specTable;
+        protected ReflectionMethodTable _methodTable;
+        protected ReflectionFieldTable _fieldTable;
+        protected ReflectionPropertyTable _propertyTable;
+        protected ReflectionEventTable _eventTable;
+        protected ReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        protected ReflectionTypeSpecTable _specTable;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
-        /// <param name="resolvingMember"></param>
-        /// <param name="builder"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionGenericTypeParameterSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionMemberSymbolBuilder resolvingMember, GenericTypeParameterBuilder builder) :
-            base(context, resolvingModule, resolvingMember as IReflectionTypeSymbolBuilder)
+        public ReflectionTypeSymbolBase(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule) :
+            base(context, resolvingModule, null)
         {
-            _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _specTable = new ReflectionTypeSpecTable();
+            _methodTable = new ReflectionMethodTable(context, resolvingModule, this);
+            _fieldTable = new ReflectionFieldTable(context, resolvingModule, this);
+            _propertyTable = new ReflectionPropertyTable(context, resolvingModule, this);
+            _eventTable = new ReflectionEventTable(context, resolvingModule, this);
+            _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, resolvingModule, this);
+            _specTable = new ReflectionTypeSpecTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
-        public Type UnderlyingType => _type ?? _builder;
+        public abstract Type UnderlyingType { get; }
 
         /// <inheritdoc />
-        public Type UnderlyingEmitType => UnderlyingType;
+        public virtual Type UnderlyingEmitType => UnderlyingType;
 
         /// <inheritdoc />
-        public Type UnderlyingDynamicEmitType => _type ?? throw new InvalidOperationException();
+        public virtual Type UnderlyingDynamicEmitType => UnderlyingEmitType;
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingType;
 
-        #region IReflectionGenericTypeParameterSymbolBuilder
-
-        /// <inheritdoc />
-        public GenericTypeParameterBuilder UnderlyingGenericTypeParameterBuilder => _builder ?? throw new InvalidOperationException();
-
-        #endregion
-
         #region IReflectionTypeSymbol
-
-        /// <inheritdoc />
-        public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
-        {
-            throw new NotSupportedException();
-        }
 
         /// <inheritdoc />
         public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
         {
-            throw new NotSupportedException();
+            return _methodTable.GetOrCreateConstructorSymbol(ctor);
         }
 
         /// <inheritdoc />
-        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
         {
-            throw new NotSupportedException();
+            if (method is ConstructorInfo ctor)
+                return GetOrCreateConstructorSymbol(ctor);
+            else
+                return GetOrCreateMethodSymbol((MethodInfo)method);
         }
 
         /// <inheritdoc />
         public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
-        {
-            throw new NotSupportedException();
+            if (method.IsMethodDefinition())
+                return _methodTable.GetOrCreateMethodSymbol(method);
+            else
+                return ResolveMethodSymbol(method.GetGenericMethodDefinition()).GetOrCreateGenericMethodSymbol(method);
         }
 
         /// <inheritdoc />
         public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
-        {
-            throw new NotSupportedException();
+            return _fieldTable.GetOrCreateFieldSymbol(field);
         }
 
         /// <inheritdoc />
         public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
-        {
-            throw new NotSupportedException();
+            return _propertyTable.GetOrCreatePropertySymbol(property);
         }
 
         /// <inheritdoc />
         public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
-            throw new NotSupportedException();
+            return _eventTable.GetOrCreateEventSymbol(@event);
         }
 
         /// <inheritdoc />
-        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericType)
         {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type type)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeSymbol(GenericTypeParameterBuilder genericType)
-        {
-            throw new NotSupportedException();
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericType);
         }
 
         /// <inheritdoc />
@@ -163,24 +128,12 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         #endregion
 
-        #region ITypeSymbolBuilder
+        #region IReflectionTypeSymbolBuilder
 
         /// <inheritdoc />
-        public void SetBaseTypeConstraint(ITypeSymbol? baseTypeConstraint)
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
-            UnderlyingGenericTypeParameterBuilder.SetBaseTypeConstraint(baseTypeConstraint?.Unpack());
-        }
-
-        /// <inheritdoc />
-        public void SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes genericParameterAttributes)
-        {
-            UnderlyingGenericTypeParameterBuilder.SetGenericParameterAttributes((GenericParameterAttributes)genericParameterAttributes);
-        }
-
-        /// <inheritdoc />
-        public void SetInterfaceConstraints(params ITypeSymbol[]? interfaceConstraints)
-        {
-            UnderlyingGenericTypeParameterBuilder.SetInterfaceConstraints(interfaceConstraints?.Unpack());
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
         #endregion
@@ -194,7 +147,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public string? AssemblyQualifiedName => UnderlyingType.AssemblyQualifiedName;
 
         /// <inheritdoc />
-        public System.Reflection.TypeAttributes Attributes => (System.Reflection.TypeAttributes)UnderlyingType.Attributes;
+        public TypeAttributes Attributes => UnderlyingType.Attributes;
 
         /// <inheritdoc />
         public ITypeSymbol? BaseType => ResolveTypeSymbol(UnderlyingType.BaseType);
@@ -212,7 +165,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public string? Namespace => UnderlyingType.Namespace;
 
         /// <inheritdoc />
-        public System.Reflection.GenericParameterAttributes GenericParameterAttributes => (System.Reflection.GenericParameterAttributes)UnderlyingType.GenericParameterAttributes;
+        public GenericParameterAttributes GenericParameterAttributes => UnderlyingType.GenericParameterAttributes;
 
         /// <inheritdoc />
         public int GenericParameterPosition => UnderlyingType.GenericParameterPosition;
@@ -347,9 +300,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol? GetConstructor(System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
+        public IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types)
         {
-            return ResolveConstructorSymbol(UnderlyingType.GetConstructor((BindingFlags)bindingAttr, binder: null, types.Unpack(), modifiers: null));
+            return ResolveConstructorSymbol(UnderlyingType.GetConstructor(bindingAttr, binder: null, types.Unpack(), modifiers: null));
         }
 
         /// <inheritdoc />
@@ -365,9 +318,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol[] GetConstructors(System.Reflection.BindingFlags bindingAttr)
+        public IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr)
         {
-            return ResolveConstructorSymbols(UnderlyingType.GetConstructors((BindingFlags)bindingAttr));
+            return ResolveConstructorSymbols(UnderlyingType.GetConstructors(bindingAttr));
         }
 
         /// <inheritdoc />
@@ -413,9 +366,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IEventSymbol? GetEvent(string name, System.Reflection.BindingFlags bindingAttr)
+        public IEventSymbol? GetEvent(string name, BindingFlags bindingAttr)
         {
-            return ResolveEventSymbol(UnderlyingType.GetEvent(name, (BindingFlags)bindingAttr));
+            return ResolveEventSymbol(UnderlyingType.GetEvent(name, bindingAttr));
         }
 
         /// <inheritdoc />
@@ -425,9 +378,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IEventSymbol[] GetEvents(System.Reflection.BindingFlags bindingAttr)
+        public IEventSymbol[] GetEvents(BindingFlags bindingAttr)
         {
-            return ResolveEventSymbols(UnderlyingType.GetEvents((BindingFlags)bindingAttr));
+            return ResolveEventSymbols(UnderlyingType.GetEvents(bindingAttr));
         }
 
         /// <inheritdoc />
@@ -437,9 +390,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IFieldSymbol? GetField(string name, System.Reflection.BindingFlags bindingAttr)
+        public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
         {
-            return ResolveFieldSymbol(UnderlyingType.GetField(name, (BindingFlags)bindingAttr));
+            return ResolveFieldSymbol(UnderlyingType.GetField(name, bindingAttr));
         }
 
         /// <inheritdoc />
@@ -449,9 +402,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public IFieldSymbol[] GetFields(System.Reflection.BindingFlags bindingAttr)
+        public IFieldSymbol[] GetFields(BindingFlags bindingAttr)
         {
-            return ResolveFieldSymbols(UnderlyingType.GetFields((BindingFlags)bindingAttr));
+            return ResolveFieldSymbols(UnderlyingType.GetFields(bindingAttr));
         }
 
         /// <inheritdoc />
@@ -710,12 +663,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         #endregion
-
-        /// <inheritdoc />
-        public override void OnComplete()
-        {
-
-        }
 
     }
 

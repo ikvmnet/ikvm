@@ -31,6 +31,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public MethodInfo UnderlyingMethod => _method;
 
         /// <inheritdoc />
+        public MethodInfo UnderlyingEmitMethod => UnderlyingMethod;
+
+        /// <inheritdoc />
+        public MethodInfo UnderlyingDynamicEmitMethod => UnderlyingEmitMethod;
+
+        /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
 
         #region IReflectionMethodSymbol

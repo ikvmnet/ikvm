@@ -10,8 +10,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     class ReflectionPropertySymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionPropertySymbolBuilder
     {
 
-        PropertyBuilder? _builder;
-        PropertyInfo _property;
+        PropertyBuilder _builder;
+        PropertyInfo? _property;
 
         ReflectionParameterTable _parameterTable;
 
@@ -27,18 +27,23 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _property = _builder;
             _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
 
         /// <inheritdoc />
-        public PropertyInfo UnderlyingProperty => _property;
+        public PropertyInfo UnderlyingProperty => _property ?? _builder;
+
+        /// <inheritdoc />
+        public PropertyInfo UnderlyingEmitProperty => UnderlyingProperty;
 
         /// <inheritdoc />
         public PropertyBuilder UnderlyingPropertyBuilder => _builder ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingEmitMember => UnderlyingEmitProperty;
 
         #region IReflectionPropertySymbolBuilder
 
@@ -124,7 +129,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public IMethodSymbol? SetMethod => ResolveMethodSymbol(UnderlyingProperty.SetMethod);
 
         /// <inheritdoc />
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _property != null;
 
         /// <inheritdoc />
         public object? GetRawConstantValue()
@@ -198,7 +203,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override void OnComplete()
         {
             _property = (PropertyInfo?)ResolvingModule.UnderlyingModule.ResolveMember(MetadataToken) ?? throw new InvalidOperationException();
-            _builder = null;
             base.OnComplete();
         }
 

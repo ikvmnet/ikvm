@@ -10,8 +10,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     class ReflectionFieldSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionFieldSymbolBuilder
     {
 
-        FieldBuilder? _builder;
-        FieldInfo _field;
+        readonly FieldBuilder _builder;
+        FieldInfo? _field;
 
         /// <summary>
         /// Initializes a new instance.
@@ -25,17 +25,22 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _field = _builder;
         }
 
         /// <inheritdoc />
-        public FieldInfo UnderlyingField => _field;
+        public FieldInfo UnderlyingField => _field ?? _builder;
+
+        /// <inheritdoc />
+        public FieldInfo UnderlyingEmitField => _builder;
+
+        /// <inheritdoc />
+        public FieldInfo UnderlyingDynamicEmitField => _field ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingField;
 
         /// <inheritdoc />
-        public FieldBuilder UnderlyingFieldBuilder => _builder ?? throw new InvalidOperationException();
+        public FieldBuilder UnderlyingFieldBuilder => _builder;
 
         #region IFieldSymbolBuilder
 
@@ -110,7 +115,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public bool IsStatic => UnderlyingField.IsStatic;
 
         /// <inheritdoc/>
-        public override bool IsComplete => _builder == null;
+        public override bool IsComplete => _field != null;
 
         /// <inheritdoc/>
         public ITypeSymbol[] GetOptionalCustomModifiers()
@@ -136,7 +141,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public override void OnComplete()
         {
             _field = ResolvingModule.UnderlyingModule.ResolveField(MetadataToken) ?? throw new InvalidOperationException();
-            _builder = null;
             base.OnComplete();
         }
 

@@ -7,9 +7,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
     {
 
         /// <summary>
-        /// Gets the underlying <see cref="ConstructorInfo"/>.
+        /// Gets the underlying <see cref="MethodBase"/>.
         /// </summary>
         MethodBase UnderlyingMethodBase { get; }
+
+        /// <summary>
+        /// Gets the underlying <see cref="MethodBase"/>.
+        /// </summary>
+        MethodBase UnderlyingEmitMethodBase { get; }
 
         /// <summary>
         /// Gets or creates a <see cref="IReflectionParameterSymbol"/> for the given <see cref="ParameterInfo"/>.

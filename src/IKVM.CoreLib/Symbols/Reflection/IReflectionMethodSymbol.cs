@@ -13,6 +13,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         MethodInfo UnderlyingMethod { get; }
 
         /// <summary>
+        /// Gets the underlying <see cref="MethodInfo"/> used for IL emit operations.
+        /// </summary>
+        MethodInfo UnderlyingEmitMethod { get; }
+
+        /// <summary>
+        /// Gets the underlying <see cref="MethodInfo"/> used for IL emit operations against dynamic methods.
+        /// </summary>
+        MethodInfo UnderlyingDynamicEmitMethod { get; }
+
+        /// <summary>
         /// Gets or creates a <see cref="ITypeSymbol"/> for the given generic type parameter.
         /// </summary>
         /// <param name="genericTypeParameter"></param>
