@@ -8,7 +8,7 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Generates an implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
     /// </summary>
-    class ErrorHandlerInterceptor : DispatchProxy
+    public class ErrorHandlerInterceptor : DispatchProxy
     {
 
         static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods()
@@ -52,13 +52,14 @@ namespace IKVM.JTReg.TestAdapter.Core
                     break;
             }
 
-            throw new InvalidOperationException();
+            return null;
         }
 
         void error(string msg)
         {
             logger.SendMessage(JTRegTestMessageLevel.Error, msg);
         }
+
     }
 
 }

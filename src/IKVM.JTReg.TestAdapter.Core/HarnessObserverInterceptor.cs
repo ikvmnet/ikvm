@@ -78,7 +78,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                     break;
             }
 
-            throw new InvalidOperationException();
+            return null;
         }
 
         void startingTestRun(dynamic parameters)
