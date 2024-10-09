@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -310,6 +311,66 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         #endregion
+
+        /// <inheritdoc />
+        public override IMethodSymbol? GetMethod(string name)
+        {
+            if (IsComplete)
+                return base.GetMethod(name);
+            else
+                return GetIncompleteMethods().FirstOrDefault(i => i.Name == name);
+        }
+
+        /// <inheritdoc />
+        public override IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            if (IsComplete)
+                return base.GetMethod(name, bindingAttr, types, modifiers);
+            else
+                throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public override IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            if (IsComplete)
+                return base.GetMethod(name, bindingAttr, callConvention, types, modifiers);
+            else
+                throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public override IMethodSymbol[] GetMethods()
+        {
+            if (IsComplete)
+                return base.GetMethods();
+            else
+                return GetIncompleteMethods();
+        }
+
+        /// <inheritdoc />
+        public override IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
+        {
+            if (IsComplete)
+                return base.GetMethods(bindingAttr);
+            else
+                return GetIncompleteMethods(bindingAttr);
+        }
+
+        /// <summary>
+        /// Gets the set of incomplete methods.
+        /// </summary>
+        /// <returns></returns>
+        IMethodSymbol[] GetIncompleteMethods(BindingFlags bindingAttr = BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
+        {
+            if (_incompleteMethods == null)
+                return [];
+            else
+                return SymbolUtil.FilterMethods(this, _incompleteMethods, bindingAttr).Cast<IMethodSymbol>().ToArray();
+        }
+
+        /// <inheritdoc />
+        public override bool IsComplete => _type != null;
 
         /// <inheritdoc />
         public void Complete()

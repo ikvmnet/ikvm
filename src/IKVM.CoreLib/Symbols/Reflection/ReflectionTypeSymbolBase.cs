@@ -483,49 +483,49 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
+        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
+        public virtual IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, types.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
+        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), null));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name)
+        public virtual IMethodSymbol? GetMethod(string name)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, types.Unpack(), modifiers?.Unpack()));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), modifiers?.Unpack()));
         }
@@ -537,13 +537,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
+        public virtual IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMethodSymbols(UnderlyingType.GetMethods((BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetMethods()
+        public virtual IMethodSymbol[] GetMethods()
         {
             return ResolveMethodSymbols(UnderlyingType.GetMethods());
         }
