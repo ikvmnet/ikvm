@@ -10,7 +10,7 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Generates an implementation of 'com.sun.javatest.Harness$Observer'.
     /// </summary>
-    class HarnessObserverInterceptor : DispatchProxy
+    public class HarnessObserverInterceptor : DispatchProxy
     {
 
         static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods()
