@@ -8,13 +8,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         readonly IReflectionTypeSymbol _elementType;
 
-        ReflectionMethodTable _methodTable;
-        ReflectionFieldTable _fieldTable;
-        ReflectionPropertyTable _propertyTable;
-        ReflectionEventTable _eventTable;
-        ReflectionGenericTypeParameterTable _genericTypeParameterTable;
-        ReflectionTypeSpecTable _specTable;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>

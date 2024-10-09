@@ -15,6 +15,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="elementType"></param>
+        /// <param name="genericTypeArguments"></param>
         public ReflectionGenericSpecTypeSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol elementType, IReflectionTypeSymbol[] genericTypeArguments) :
             base(context, resolvingModule, elementType)
         {

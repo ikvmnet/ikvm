@@ -32,10 +32,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public override Type UnderlyingType => _type ?? _builder;
+        public override Type UnderlyingType => UnderlyingTypeBuilder;
 
         /// <inheritdoc />
-        public override Type UnderlyingEmitType => _builder;
+        public override Type UnderlyingEmitType => UnderlyingTypeBuilder;
 
         /// <inheritdoc />
         public override Type UnderlyingDynamicEmitType => _type ?? throw new InvalidOperationException();
@@ -392,27 +392,27 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-            foreach (var i in GetGenericArguments())
+            foreach (var i in GetGenericArguments() ?? [])
                 if (i is IReflectionGenericTypeParameterSymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var i in GetConstructors(DefaultBindingFlags))
+            foreach (var i in GetConstructors(DefaultBindingFlags) ?? [])
                 if (i is IReflectionConstructorSymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var i in GetMethods(DefaultBindingFlags))
+            foreach (var i in GetMethods(DefaultBindingFlags) ?? [])
                 if (i is IReflectionMethodSymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var i in GetFields(DefaultBindingFlags))
+            foreach (var i in GetFields(DefaultBindingFlags) ?? [])
                 if (i is IReflectionFieldSymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var i in GetProperties(DefaultBindingFlags))
+            foreach (var i in GetProperties(DefaultBindingFlags) ?? [])
                 if (i is IReflectionPropertySymbolBuilder b)
                     b.OnComplete();
 
-            foreach (var m in GetEvents(DefaultBindingFlags))
+            foreach (var m in GetEvents(DefaultBindingFlags) ?? [])
                 if (m is IReflectionPropertySymbolBuilder b)
                     b.OnComplete();
         }

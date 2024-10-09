@@ -141,310 +141,310 @@ namespace IKVM.CoreLib.Symbols.Reflection
         #region ITypeSymbol
 
         /// <inheritdoc />
-        public IAssemblySymbol Assembly => ResolveAssemblySymbol(UnderlyingType.Assembly);
+        public virtual IAssemblySymbol Assembly => ResolveAssemblySymbol(UnderlyingType.Assembly);
 
         /// <inheritdoc />
-        public string? AssemblyQualifiedName => UnderlyingType.AssemblyQualifiedName;
+        public virtual string? AssemblyQualifiedName => UnderlyingType.AssemblyQualifiedName;
 
         /// <inheritdoc />
-        public TypeAttributes Attributes => UnderlyingType.Attributes;
+        public virtual TypeAttributes Attributes => UnderlyingType.Attributes;
 
         /// <inheritdoc />
-        public ITypeSymbol? BaseType => ResolveTypeSymbol(UnderlyingType.BaseType);
+        public virtual ITypeSymbol? BaseType => ResolveTypeSymbol(UnderlyingType.BaseType);
 
         /// <inheritdoc />
-        public bool ContainsGenericParameters => UnderlyingType.ContainsGenericParameters;
+        public virtual bool ContainsGenericParameters => UnderlyingType.ContainsGenericParameters;
 
         /// <inheritdoc />
-        public IMethodBaseSymbol? DeclaringMethod => ResolveMethodBaseSymbol(UnderlyingType.DeclaringMethod);
+        public virtual IMethodBaseSymbol? DeclaringMethod => ResolveMethodBaseSymbol(UnderlyingType.DeclaringMethod);
 
         /// <inheritdoc />
-        public string? FullName => UnderlyingType.FullName;
+        public virtual string? FullName => UnderlyingType.FullName;
 
         /// <inheritdoc />
-        public string? Namespace => UnderlyingType.Namespace;
+        public virtual string? Namespace => UnderlyingType.Namespace;
 
         /// <inheritdoc />
-        public GenericParameterAttributes GenericParameterAttributes => UnderlyingType.GenericParameterAttributes;
+        public virtual GenericParameterAttributes GenericParameterAttributes => UnderlyingType.GenericParameterAttributes;
 
         /// <inheritdoc />
-        public int GenericParameterPosition => UnderlyingType.GenericParameterPosition;
+        public virtual int GenericParameterPosition => UnderlyingType.GenericParameterPosition;
 
         /// <inheritdoc />
-        public ITypeSymbol[] GenericTypeArguments => ResolveTypeSymbols(UnderlyingType.GenericTypeArguments);
+        public virtual ITypeSymbol[] GenericTypeArguments => ResolveTypeSymbols(UnderlyingType.GenericTypeArguments);
 
         /// <inheritdoc />
-        public bool HasElementType => UnderlyingType.HasElementType;
+        public virtual bool HasElementType => UnderlyingType.HasElementType;
 
         /// <inheritdoc />
-        public TypeCode TypeCode => Type.GetTypeCode(UnderlyingType);
+        public virtual TypeCode TypeCode => Type.GetTypeCode(UnderlyingType);
 
         /// <inheritdoc />
-        public bool IsAbstract => UnderlyingType.IsAbstract;
+        public virtual bool IsAbstract => UnderlyingType.IsAbstract;
 
         /// <inheritdoc />
-        public bool IsSZArray => UnderlyingType.IsSZArray();
+        public virtual bool IsSZArray => UnderlyingType.IsSZArray();
 
         /// <inheritdoc />
-        public bool IsArray => UnderlyingType.IsArray;
+        public virtual bool IsArray => UnderlyingType.IsArray;
 
         /// <inheritdoc />
-        public bool IsAutoLayout => UnderlyingType.IsAutoLayout;
+        public virtual bool IsAutoLayout => UnderlyingType.IsAutoLayout;
 
         /// <inheritdoc />
-        public bool IsExplicitLayout => UnderlyingType.IsExplicitLayout;
+        public virtual bool IsExplicitLayout => UnderlyingType.IsExplicitLayout;
 
         /// <inheritdoc />
-        public bool IsByRef => UnderlyingType.IsByRef;
+        public virtual bool IsByRef => UnderlyingType.IsByRef;
 
         /// <inheritdoc />
-        public bool IsClass => UnderlyingType.IsClass;
+        public virtual bool IsClass => UnderlyingType.IsClass;
 
         /// <inheritdoc />
-        public bool IsEnum => UnderlyingType.IsEnum;
+        public virtual bool IsEnum => UnderlyingType.IsEnum;
 
         /// <inheritdoc />
-        public bool IsInterface => UnderlyingType.IsInterface;
+        public virtual bool IsInterface => UnderlyingType.IsInterface;
 
         /// <inheritdoc />
-        public bool IsConstructedGenericType => UnderlyingType.IsConstructedGenericType;
+        public virtual bool IsConstructedGenericType => UnderlyingType.IsConstructedGenericType;
 
         /// <inheritdoc />
-        public bool IsGenericParameter => UnderlyingType.IsGenericParameter;
+        public virtual bool IsGenericParameter => UnderlyingType.IsGenericParameter;
 
         /// <inheritdoc />
-        public bool IsGenericType => UnderlyingType.IsGenericType;
+        public virtual bool IsGenericType => UnderlyingType.IsGenericType;
 
         /// <inheritdoc />
-        public bool IsGenericTypeDefinition => UnderlyingType.IsGenericTypeDefinition;
+        public virtual bool IsGenericTypeDefinition => UnderlyingType.IsGenericTypeDefinition;
 
         /// <inheritdoc />
-        public bool IsLayoutSequential => UnderlyingType.IsLayoutSequential;
+        public virtual bool IsLayoutSequential => UnderlyingType.IsLayoutSequential;
 
         /// <inheritdoc />
-        public bool IsNested => UnderlyingType.IsNested;
+        public virtual bool IsNested => UnderlyingType.IsNested;
 
         /// <inheritdoc />
-        public bool IsNestedAssembly => UnderlyingType.IsNestedAssembly;
+        public virtual bool IsNestedAssembly => UnderlyingType.IsNestedAssembly;
 
         /// <inheritdoc />
-        public bool IsNestedFamANDAssem => UnderlyingType.IsNestedFamANDAssem;
+        public virtual bool IsNestedFamANDAssem => UnderlyingType.IsNestedFamANDAssem;
 
         /// <inheritdoc />
-        public bool IsNestedFamORAssem => UnderlyingType.IsNestedFamORAssem;
+        public virtual bool IsNestedFamORAssem => UnderlyingType.IsNestedFamORAssem;
 
         /// <inheritdoc />
-        public bool IsNestedFamily => UnderlyingType.IsNestedFamily;
+        public virtual bool IsNestedFamily => UnderlyingType.IsNestedFamily;
 
         /// <inheritdoc />
-        public bool IsNestedPrivate => UnderlyingType.IsNestedPrivate;
+        public virtual bool IsNestedPrivate => UnderlyingType.IsNestedPrivate;
 
         /// <inheritdoc />
-        public bool IsNestedPublic => UnderlyingType.IsNestedPublic;
+        public virtual bool IsNestedPublic => UnderlyingType.IsNestedPublic;
 
         /// <inheritdoc />
-        public bool IsNotPublic => UnderlyingType.IsNotPublic;
+        public virtual bool IsNotPublic => UnderlyingType.IsNotPublic;
 
         /// <inheritdoc />
-        public bool IsPointer => UnderlyingType.IsPointer;
+        public virtual bool IsPointer => UnderlyingType.IsPointer;
 
 #if NET8_0_OR_GREATER
 
         /// <inheritdoc />
-        public bool IsFunctionPointer => UnderlyingType.IsFunctionPointer;
+        public virtual bool IsFunctionPointer => UnderlyingType.IsFunctionPointer;
 
         /// <inheritdoc />
-        public bool IsUnmanagedFunctionPointer => UnderlyingType.IsUnmanagedFunctionPointer;
+        public virtual bool IsUnmanagedFunctionPointer => UnderlyingType.IsUnmanagedFunctionPointer;
 
 #else
 
         /// <inheritdoc />
-        public bool IsFunctionPointer => throw new NotImplementedException();
+        public virtual  bool IsFunctionPointer => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
+        public virtual  bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
 
 #endif
 
         /// <inheritdoc />
-        public bool IsPrimitive => UnderlyingType.IsPrimitive;
+        public virtual bool IsPrimitive => UnderlyingType.IsPrimitive;
 
         /// <inheritdoc />
-        public bool IsPublic => UnderlyingType.IsPublic;
+        public virtual bool IsPublic => UnderlyingType.IsPublic;
 
         /// <inheritdoc />
-        public bool IsSealed => UnderlyingType.IsSealed;
+        public virtual bool IsSealed => UnderlyingType.IsSealed;
 
         /// <inheritdoc />
-        public bool IsSerializable => UnderlyingType.IsSerializable;
+        public virtual bool IsSerializable => UnderlyingType.IsSerializable;
 
         /// <inheritdoc />
-        public bool IsValueType => UnderlyingType.IsValueType;
+        public virtual bool IsValueType => UnderlyingType.IsValueType;
 
         /// <inheritdoc />
-        public bool IsVisible => UnderlyingType.IsVisible;
+        public virtual bool IsVisible => UnderlyingType.IsVisible;
 
         /// <inheritdoc />
-        public bool IsSignatureType => throw new NotImplementedException();
+        public virtual bool IsSignatureType => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public bool IsSpecialName => UnderlyingType.IsSpecialName;
+        public virtual bool IsSpecialName => UnderlyingType.IsSpecialName;
 
         /// <inheritdoc />
-        public IConstructorSymbol? TypeInitializer => ResolveConstructorSymbol(UnderlyingType.TypeInitializer);
+        public virtual IConstructorSymbol? TypeInitializer => ResolveConstructorSymbol(UnderlyingType.TypeInitializer);
 
         /// <inheritdoc />
-        public int GetArrayRank()
+        public virtual int GetArrayRank()
         {
             return UnderlyingType.GetArrayRank();
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types)
+        public virtual IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types)
         {
             return ResolveConstructorSymbol(UnderlyingType.GetConstructor(bindingAttr, binder: null, types.Unpack(), modifiers: null));
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol? GetConstructor(ITypeSymbol[] types)
+        public virtual IConstructorSymbol? GetConstructor(ITypeSymbol[] types)
         {
             return ResolveConstructorSymbol(UnderlyingType.GetConstructor(types.Unpack()));
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol[] GetConstructors()
+        public virtual IConstructorSymbol[] GetConstructors()
         {
             return ResolveConstructorSymbols(UnderlyingType.GetConstructors());
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr)
+        public virtual IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr)
         {
             return ResolveConstructorSymbols(UnderlyingType.GetConstructors(bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetDefaultMembers()
+        public virtual IMemberSymbol[] GetDefaultMembers()
         {
             return ResolveMemberSymbols(UnderlyingType.GetDefaultMembers());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetElementType()
+        public virtual ITypeSymbol? GetElementType()
         {
             return ResolveTypeSymbol(UnderlyingType.GetElementType());
         }
 
         /// <inheritdoc />
-        public string? GetEnumName(object value)
+        public virtual string? GetEnumName(object value)
         {
             return UnderlyingType.GetEnumName(value);
         }
 
         /// <inheritdoc />
-        public string[] GetEnumNames()
+        public virtual string[] GetEnumNames()
         {
             return UnderlyingType.GetEnumNames();
         }
 
         /// <inheritdoc />
-        public ITypeSymbol GetEnumUnderlyingType()
+        public virtual ITypeSymbol GetEnumUnderlyingType()
         {
             return ResolveTypeSymbol(UnderlyingType.GetEnumUnderlyingType());
         }
 
         /// <inheritdoc />
-        public Array GetEnumValues()
+        public virtual Array GetEnumValues()
         {
             return UnderlyingType.GetEnumValues();
         }
 
         /// <inheritdoc />
-        public IEventSymbol? GetEvent(string name)
+        public virtual IEventSymbol? GetEvent(string name)
         {
             return ResolveEventSymbol(UnderlyingType.GetEvent(name));
         }
 
         /// <inheritdoc />
-        public IEventSymbol? GetEvent(string name, BindingFlags bindingAttr)
+        public virtual IEventSymbol? GetEvent(string name, BindingFlags bindingAttr)
         {
             return ResolveEventSymbol(UnderlyingType.GetEvent(name, bindingAttr));
         }
 
         /// <inheritdoc />
-        public IEventSymbol[] GetEvents()
+        public virtual IEventSymbol[] GetEvents()
         {
             return ResolveEventSymbols(UnderlyingType.GetEvents());
         }
 
         /// <inheritdoc />
-        public IEventSymbol[] GetEvents(BindingFlags bindingAttr)
+        public virtual IEventSymbol[] GetEvents(BindingFlags bindingAttr)
         {
             return ResolveEventSymbols(UnderlyingType.GetEvents(bindingAttr));
         }
 
         /// <inheritdoc />
-        public IFieldSymbol? GetField(string name)
+        public virtual IFieldSymbol? GetField(string name)
         {
             return ResolveFieldSymbol(UnderlyingType.GetField(name));
         }
 
         /// <inheritdoc />
-        public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
+        public virtual IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
         {
             return ResolveFieldSymbol(UnderlyingType.GetField(name, bindingAttr));
         }
 
         /// <inheritdoc />
-        public IFieldSymbol[] GetFields()
+        public virtual IFieldSymbol[] GetFields()
         {
             return ResolveFieldSymbols(UnderlyingType.GetFields());
         }
 
         /// <inheritdoc />
-        public IFieldSymbol[] GetFields(BindingFlags bindingAttr)
+        public virtual IFieldSymbol[] GetFields(BindingFlags bindingAttr)
         {
             return ResolveFieldSymbols(UnderlyingType.GetFields(bindingAttr));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetGenericArguments()
+        public virtual ITypeSymbol[] GetGenericArguments()
         {
             return ResolveTypeSymbols(UnderlyingType.GetGenericArguments());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetGenericParameterConstraints()
+        public virtual ITypeSymbol[] GetGenericParameterConstraints()
         {
             return ResolveTypeSymbols(UnderlyingType.GetGenericParameterConstraints());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol GetGenericTypeDefinition()
+        public virtual ITypeSymbol GetGenericTypeDefinition()
         {
             return ResolveTypeSymbol(UnderlyingType.GetGenericTypeDefinition());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetInterface(string name)
+        public virtual ITypeSymbol? GetInterface(string name)
         {
             return ResolveTypeSymbol(UnderlyingType.GetInterface(name));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetInterface(string name, bool ignoreCase)
+        public virtual ITypeSymbol? GetInterface(string name, bool ignoreCase)
         {
             return ResolveTypeSymbol(UnderlyingType.GetInterface(name, ignoreCase));
         }
 
         /// <inheritdoc />
-        public InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType)
+        public virtual InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType)
         {
             return ResolveInterfaceMapping(UnderlyingType.GetInterfaceMap(interfaceType.Unpack()));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetInterfaces(bool inherit = true)
+        public virtual ITypeSymbol[] GetInterfaces(bool inherit = true)
         {
             if (inherit)
                 return ResolveTypeSymbols(UnderlyingType.GetInterfaces());
@@ -453,51 +453,33 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name)
+        public virtual IMemberSymbol[] GetMember(string name)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.BindingFlags bindingAttr)
+        public virtual IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(UnderlyingType.GetMember(name, (BindingFlags)bindingAttr));
+            return ResolveMemberSymbols(UnderlyingType.GetMember(name, bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
+        public virtual IMemberSymbol[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(UnderlyingType.GetMember(name, (MemberTypes)type, (BindingFlags)bindingAttr));
+            return ResolveMemberSymbols(UnderlyingType.GetMember(name, type, bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMembers(System.Reflection.BindingFlags bindingAttr)
+        public virtual IMemberSymbol[] GetMembers(BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(UnderlyingType.GetMembers((BindingFlags)bindingAttr));
+            return ResolveMemberSymbols(UnderlyingType.GetMembers(bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMembers()
+        public virtual IMemberSymbol[] GetMembers()
         {
             return ResolveMemberSymbols(UnderlyingType.GetMembers());
-        }
-
-        /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
-        {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr));
-        }
-
-        /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
-        {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, types.Unpack()));
-        }
-
-        /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
-        {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), null));
         }
 
         /// <inheritdoc />
@@ -507,31 +489,49 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr)
         {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, (CallingConventions)callConvention, types.Unpack(), modifiers?.Unpack()));
+            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, bindingAttr));
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
+        {
+            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, types.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public virtual IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types)
+        {
+            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, bindingAttr, null, types.Unpack(), null));
+        }
+
+        /// <inheritdoc />
+        public virtual IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, bindingAttr, null, types.Unpack(), modifiers?.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers?.Unpack()));
+        }
+
+        /// <inheritdoc />
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
-        {
-            return ResolveMethodSymbol(UnderlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, types.Unpack(), modifiers?.Unpack()));
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, int genericParameterCount, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
@@ -549,115 +549,115 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetNestedType(string name)
+        public virtual ITypeSymbol? GetNestedType(string name)
         {
             return ResolveTypeSymbol(UnderlyingType.GetNestedType(name));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
+        public virtual ITypeSymbol? GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveTypeSymbol(UnderlyingType.GetNestedType(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetNestedTypes()
+        public virtual ITypeSymbol[] GetNestedTypes()
         {
             return ResolveTypeSymbols(UnderlyingType.GetNestedTypes());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetNestedTypes(System.Reflection.BindingFlags bindingAttr)
+        public virtual ITypeSymbol[] GetNestedTypes(System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveTypeSymbols(UnderlyingType.GetNestedTypes((BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol[] GetProperties()
+        public virtual IPropertySymbol[] GetProperties()
         {
             return ResolvePropertySymbols(UnderlyingType.GetProperties());
         }
 
         /// <inheritdoc />
-        public IPropertySymbol[] GetProperties(System.Reflection.BindingFlags bindingAttr)
+        public virtual IPropertySymbol[] GetProperties(System.Reflection.BindingFlags bindingAttr)
         {
             return ResolvePropertySymbols(UnderlyingType.GetProperties((BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol? GetProperty(string name, ITypeSymbol[] types)
+        public virtual IPropertySymbol? GetProperty(string name, ITypeSymbol[] types)
         {
             return ResolvePropertySymbol(UnderlyingType.GetProperty(name, types.Unpack()));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types)
+        public virtual IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types)
         {
             return ResolvePropertySymbol(UnderlyingType.GetProperty(name, returnType?.Unpack(), types.Unpack()));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol? GetProperty(string name, System.Reflection.BindingFlags bindingAttr)
+        public virtual IPropertySymbol? GetProperty(string name, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolvePropertySymbol(UnderlyingType.GetProperty(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol? GetProperty(string name)
+        public virtual IPropertySymbol? GetProperty(string name)
         {
             return ResolvePropertySymbol(UnderlyingType.GetProperty(name));
         }
 
         /// <inheritdoc />
-        public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType)
+        public virtual IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType)
         {
             return ResolvePropertySymbol(UnderlyingType.GetProperty(name, returnType?.Unpack()));
         }
 
         /// <inheritdoc />
-        public bool IsAssignableFrom(ITypeSymbol? c)
+        public virtual bool IsAssignableFrom(ITypeSymbol? c)
         {
             return UnderlyingType.IsAssignableFrom(c?.Unpack());
         }
 
         /// <inheritdoc />
-        public bool IsEnumDefined(object value)
+        public virtual bool IsEnumDefined(object value)
         {
             return UnderlyingType.IsEnumDefined(value);
         }
 
         /// <inheritdoc />
-        public bool IsSubclassOf(ITypeSymbol c)
+        public virtual bool IsSubclassOf(ITypeSymbol c)
         {
             return UnderlyingType.IsSubclassOf(c.Unpack());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol MakeArrayType()
+        public virtual ITypeSymbol MakeArrayType()
         {
             return ResolveTypeSymbol(UnderlyingType.MakeArrayType());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol MakeArrayType(int rank)
+        public virtual ITypeSymbol MakeArrayType(int rank)
         {
             return ResolveTypeSymbol(UnderlyingType.MakeArrayType(rank));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol MakeByRefType()
+        public virtual ITypeSymbol MakeByRefType()
         {
             return ResolveTypeSymbol(UnderlyingType.MakeByRefType());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol MakePointerType()
+        public virtual ITypeSymbol MakePointerType()
         {
             return ResolveTypeSymbol(UnderlyingType.MakePointerType());
         }
 
         /// <inheritdoc />
-        public ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments)
+        public virtual ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments)
         {
             return ResolveTypeSymbol(UnderlyingType.MakeGenericType(typeArguments.Unpack()));
         }
