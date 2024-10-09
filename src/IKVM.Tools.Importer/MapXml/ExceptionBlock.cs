@@ -25,9 +25,8 @@
 using System.Linq;
 using System.Xml.Linq;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -75,7 +74,7 @@ namespace IKVM.Tools.Importer.MapXml
 
             if (Catch != null)
             {
-                Type type;
+                ITypeSymbol type;
                 if (Catch.Type != null)
                 {
                     type = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Catch.Type);

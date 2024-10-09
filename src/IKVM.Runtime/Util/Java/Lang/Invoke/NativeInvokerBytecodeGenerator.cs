@@ -29,10 +29,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 using java.lang.invoke;
 
@@ -63,11 +63,11 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
         readonly RuntimeContext context;
         readonly java.lang.invoke.LambdaForm lambdaForm;
         readonly java.lang.invoke.MethodType invokerType;
-        readonly Type delegateType;
+        readonly ITypeSymbol delegateType;
         readonly DynamicMethod dm;
         readonly CodeEmitter ilgen;
         readonly int packedArgPos;
-        readonly Type packedArgType;
+        readonly ITypeSymbol packedArgType;
         readonly CodeEmitterLocal[] locals;
         readonly List<object> constants = new List<object>();
 
@@ -112,10 +112,10 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             this.delegateType = context.MethodHandleUtil.GetMemberWrapperDelegateType(invokerType);
             var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
-            var paramTypes = MethodHandleUtil.GetParameterTypes(typeof(object[]), mi);
+            var paramTypes = MethodHandleUtil.GetParameterTypes(context.Types.Object.MakeArrayType(), mi);
 
             // HACK the code we generate is not verifiable (known issue: locals aren't typed correctly), so we stick the DynamicMethod into mscorlib (a security critical assembly)
-            this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType, paramTypes, typeof(object).Module, true);
+            this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), typeof(object).Module, true);
             this.ilgen = context.CodeEmitterFactory.Create(this.dm);
             if (invokerType.parameterCount() > MethodHandleUtil.MaxArity)
             {
@@ -124,7 +124,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             }
             else
             {
-                this.packedArgPos = Int32.MaxValue;
+                this.packedArgPos = int.MaxValue;
             }
 
             locals = new CodeEmitterLocal[lambdaForm.names.Length];
@@ -334,7 +334,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
-            internal override Type TypeAsTBD
+            internal override ITypeSymbol TypeAsTBD
             {
                 get { throw new InvalidOperationException(); }
             }
@@ -439,7 +439,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             emitReturn(onStack);
 
             ilgen.DoEmit();
-            return dm.CreateDelegate(delegateType, constants.ToArray());
+            return dm.CreateDelegate(delegateType.AsReflection(), constants.ToArray());
         }
 
         void emitArrayLoad(Name name)
@@ -816,12 +816,12 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             ilgen.EmitLeave(L_done);
 
             // Exceptional case
-            ilgen.BeginCatchBlock(typeof(Exception));
+            ilgen.BeginCatchBlock(context.Types.Exception);
 
             // [IKVM] map the exception and store it in a local and exit the handler
             ilgen.EmitLdc_I4(0);
-            ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.MapException.MakeGenericMethod(typeof(Exception)));
-            CodeEmitterLocal exception = ilgen.DeclareLocal(typeof(Exception));
+            ilgen.Emit(OpCodes.Call, context.ByteCodeHelperMethods.MapException.MakeGenericMethod(context.Types.Exception));
+            CodeEmitterLocal exception = ilgen.DeclareLocal(context.Types.Exception);
             ilgen.Emit(OpCodes.Stloc, exception);
             ilgen.EmitLeave(L_handler);
             ilgen.EndExceptionBlock();

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using IKVM.CoreLib.Diagnostics;
 
 namespace IKVM.Tools.Core.Diagnostics
 {
 
-    abstract class DiagnosticChannelFormatterOptions
+    abstract class DiagnosticChannelFormatterOptions : DiagnosticFormatterOptions
     {
 
         /// <summary>

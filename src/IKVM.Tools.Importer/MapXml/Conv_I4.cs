@@ -22,9 +22,8 @@
   
 */
 
+using System.Reflection.Emit;
 using System.Xml.Linq;
-
-using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {

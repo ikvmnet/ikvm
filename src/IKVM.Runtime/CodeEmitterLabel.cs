@@ -22,12 +22,7 @@
   
 */
 
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -35,14 +30,14 @@ namespace IKVM.Runtime
     sealed class CodeEmitterLabel
 	{
 
-		internal readonly Label Label;
+		internal readonly ILabel Label;
 		internal int Temp;
 
 		/// <summary>
 		/// Initializes a new instance.
 		/// </summary>
 		/// <param name="label"></param>
-		internal CodeEmitterLabel(Label label)
+		internal CodeEmitterLabel(ILabel label)
 		{
 			this.Label = label;
 		}

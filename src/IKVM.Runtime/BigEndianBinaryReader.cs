@@ -205,7 +205,7 @@ namespace IKVM.Runtime
             fixed (byte* p = buf.Slice(pos, len).Span)
                 s = Encoding.ASCII.GetString(p, buf.Length);
 #else
-        var s = Encoding.ASCII.GetString(buf.Slice(pos, len).Span);
+            var s = Encoding.ASCII.GetString(buf.Slice(pos, len).Span);
 #endif
             pos += len;
             return s;

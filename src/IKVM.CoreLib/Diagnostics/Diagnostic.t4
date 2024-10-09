@@ -56,13 +56,13 @@ public static class Util
         }
     }
 
-    public static string ToCommentString(string input)
+    public static string ToCommentString(Diagnostic diagnostic)
     {
         using (var writer = new StringWriter())
         {
             using (var provider = CodeDomProvider.CreateProvider("CSharp"))
             {
-                provider.GenerateCodeFromStatement(new CodeCommentStatement(input, true), writer, null);
+                provider.GenerateCodeFromStatement(new CodeCommentStatement(diagnostic.Level + ": " + diagnostic.Message, true), writer, null);
                 return writer.ToString().Trim();
             }
         }

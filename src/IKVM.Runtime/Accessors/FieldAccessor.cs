@@ -102,11 +102,10 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), Array.Empty<Type>());
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldsfld, Field);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Func<TField>)dm.CreateDelegate(typeof(Func<TField>));
 #endif
@@ -123,12 +122,11 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TField) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Stsfld, Field);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Action<TField>)dm.CreateDelegate(typeof(Action<TField>));
 #endif
@@ -231,13 +229,12 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldfld, Field);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (GetterDelegate)dm.CreateDelegate(typeof(GetterDelegate));
 #endif
@@ -253,14 +250,13 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TField) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Stfld, Field);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (SetterDelegate)dm.CreateDelegate(typeof(SetterDelegate));
 #endif
@@ -276,12 +272,12 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
-            il.EmitLdarg(0);
+            il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(Field.IsStatic ? OpCodes.Ldsflda: OpCodes.Ldflda, Field);
-            il.EmitLdarg(1);
+            il.Emit(OpCodes.Ldarg_1);
 
             switch (typeof(TField))
             {
@@ -305,7 +301,6 @@ namespace IKVM.Runtime.Accessors
             }
 
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (ExchangeDelegate)dm.CreateDelegate(typeof(ExchangeDelegate));
 #endif
@@ -321,13 +316,13 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorCompareExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField), typeof(TField) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
-            il.EmitLdarg(0);
+            il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(Field.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, Field);
-            il.EmitLdarg(1);
-            il.EmitLdarg(2);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
 
             switch (typeof(TField))
             {
@@ -351,7 +346,6 @@ namespace IKVM.Runtime.Accessors
             }
 
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (CompareExchangeDelegate)dm.CreateDelegate(typeof(CompareExchangeDelegate));
 #endif

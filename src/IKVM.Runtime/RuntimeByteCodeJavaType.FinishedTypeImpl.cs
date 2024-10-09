@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -46,16 +47,16 @@ namespace IKVM.Runtime
         sealed class FinishedTypeImpl : DynamicImpl
         {
 
-            readonly Type type;
+            readonly ITypeSymbol type;
             readonly RuntimeJavaType[] innerclasses;
             readonly RuntimeJavaType declaringTypeWrapper;
             readonly Modifiers reflectiveModifiers;
-            readonly MethodInfo clinitMethod;
-            readonly MethodInfo finalizeMethod;
+            readonly IMethodSymbol clinitMethod;
+            readonly IMethodSymbol finalizeMethod;
             readonly Metadata metadata;
             readonly RuntimeJavaType host;
 
-            internal FinishedTypeImpl(Type type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, RuntimeJavaType host)
+            internal FinishedTypeImpl(ITypeSymbol type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, IMethodSymbol clinitMethod, IMethodSymbol finalizeMethod, RuntimeJavaType host)
             {
                 this.type = type;
                 this.innerclasses = innerclasses;
@@ -93,7 +94,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override Type Type
+            internal override ITypeSymbol Type
             {
                 get
                 {
@@ -105,7 +106,7 @@ namespace IKVM.Runtime
             {
                 if (clinitMethod != null)
                 {
-                    ilgen.Emit(OpCodes.Call, clinitMethod);
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, clinitMethod);
                 }
             }
 
@@ -114,14 +115,14 @@ namespace IKVM.Runtime
                 return this;
             }
 
-            internal override MethodBase LinkMethod(RuntimeJavaMethod mw)
+            internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
             {
                 // we should never be called, because all methods on a finished type are already linked
                 Debug.Assert(false);
                 return mw.GetMethod();
             }
 
-            internal override FieldInfo LinkField(RuntimeJavaField fw)
+            internal override IFieldSymbol LinkField(RuntimeJavaField fw)
             {
                 // we should never be called, because all fields on a finished type are already linked
                 Debug.Assert(false);
@@ -178,7 +179,7 @@ namespace IKVM.Runtime
                 return Metadata.GetFieldAnnotations(metadata, index);
             }
 
-            internal override MethodInfo GetFinalizeMethod()
+            internal override IMethodSymbol GetFinalizeMethod()
             {
                 return finalizeMethod;
             }

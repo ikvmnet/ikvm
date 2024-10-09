@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Linq;
-
-using IKVM.Reflection;
 
 namespace IKVM.Tools.Importer.MapXml
 {

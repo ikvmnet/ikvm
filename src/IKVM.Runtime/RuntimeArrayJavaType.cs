@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -43,7 +44,7 @@ namespace IKVM.Runtime
 
         volatile RuntimeJavaType[] interfaces;
         readonly RuntimeJavaType ultimateElementTypeWrapper;
-        Type arrayType;
+        ITypeSymbol arrayType;
         bool finished;
 
         /// <summary>
@@ -66,9 +67,9 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => ultimateElementTypeWrapper.ClassLoader;
 
-        internal static MethodInfo GetCloneMethod(RuntimeContext context)
+        internal static IMethodSymbol GetCloneMethod(RuntimeContext context)
         {
-            return context.Types.Array.GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+            return context.Types.Array.GetMethod("Clone", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, []);
         }
 
         protected override void LazyPublishMembers()
@@ -111,14 +112,14 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override Type TypeAsTBD
+        internal override ITypeSymbol TypeAsTBD
         {
             get
             {
                 while (arrayType == null)
                 {
                     bool prevFinished = finished;
-                    Type type = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
+                    var type = MakeArrayType(ultimateElementTypeWrapper.TypeAsArrayType, this.ArrayRank);
                     if (prevFinished)
                     {
                         // We were already finished prior to the call to MakeArrayType, so we can safely
@@ -179,6 +180,18 @@ namespace IKVM.Runtime
             return ultimateElementTypeWrapper;
         }
 
+        internal static ITypeSymbol MakeArrayType(ITypeSymbol type, int dims)
+        {
+            // NOTE this is not just an optimization, but it is also required to
+            // make sure that ReflectionOnly types stay ReflectionOnly types
+            // (in particular instantiations of generic types from mscorlib that
+            // have ReflectionOnly type parameters).
+            for (int i = 0; i < dims; i++)
+                type = type.MakeArrayType();
+
+            return type;
+        }
+
         internal static Type MakeArrayType(Type type, int dims)
         {
             // NOTE this is not just an optimization, but it is also required to
@@ -186,11 +199,11 @@ namespace IKVM.Runtime
             // (in particular instantiations of generic types from mscorlib that
             // have ReflectionOnly type parameters).
             for (int i = 0; i < dims; i++)
-            {
                 type = type.MakeArrayType();
-            }
+
             return type;
         }
+
     }
 
 }

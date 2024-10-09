@@ -7,7 +7,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Performs reflection on a module.
     /// </summary>
-    interface IModuleSymbol : ISymbol, ICustomAttributeSymbolProvider
+    interface IModuleSymbol : ISymbol, ICustomAttributeProvider
     {
 
         /// <summary>

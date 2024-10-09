@@ -23,13 +23,10 @@
 */
 
 using System;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -85,12 +82,11 @@ namespace IKVM.Tools.Importer.MapXml
             // HACK if the class name contains a comma, we assume it is a .NET type
             if (Type != null)
             {
-                var type = loader.Context.Resolver.ResolveCoreType(Type).AsReflection();
+                var type = loader.Context.Resolver.ResolveCoreType(Type);
                 var mi = type.GetMethod(Name, redirParamTypes);
                 if (mi == null)
-                {
                     throw new InvalidOperationException();
-                }
+
                 ilgen.Emit(OpCodes.Call, mi);
             }
             else

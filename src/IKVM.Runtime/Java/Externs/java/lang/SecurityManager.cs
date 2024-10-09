@@ -53,7 +53,7 @@ namespace IKVM.Java.Externs.java.lang
                 if (type == typeof(global::java.lang.SecurityManager))
                     continue;
 
-                stack.Add(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type).ClassObject);
+                stack.Add(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(type)).ClassObject);
             }
 
             return stack.ToArray();
