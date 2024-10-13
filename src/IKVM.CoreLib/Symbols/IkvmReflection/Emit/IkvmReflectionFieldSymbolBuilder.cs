@@ -51,18 +51,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             UnderlyingFieldBuilder.SetOffset(iOffset);
         }
 
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingFieldBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingFieldBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
         #endregion
 
         #region IFieldSymbol
@@ -128,6 +116,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public object? GetRawConstantValue()
         {
             return UnderlyingField.GetRawConstantValue();
+        }
+
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(CustomAttribute attribute)
+        {
+            UnderlyingFieldBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

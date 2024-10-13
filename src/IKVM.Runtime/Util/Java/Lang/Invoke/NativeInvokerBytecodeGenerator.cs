@@ -115,7 +115,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             var paramTypes = MethodHandleUtil.GetParameterTypes(context.Types.Object.MakeArrayType(), mi);
 
             // HACK the code we generate is not verifiable (known issue: locals aren't typed correctly), so we stick the DynamicMethod into mscorlib (a security critical assembly)
-            this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), typeof(object).Module, true);
+            this.dm = new DynamicMethod(lambdaForm.debugName, mi.ReturnType.GetUnderlyingType(), paramTypes.GetUnderlyingTypes(), typeof(object).Module, true);
             this.ilgen = context.CodeEmitterFactory.Create(this.dm);
             if (invokerType.parameterCount() > MethodHandleUtil.MaxArity)
             {
@@ -439,7 +439,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             emitReturn(onStack);
 
             ilgen.DoEmit();
-            return dm.CreateDelegate(delegateType.AsReflection(), constants.ToArray());
+            return dm.CreateDelegate(delegateType.GetUnderlyingType(), constants.ToArray());
         }
 
         void emitArrayLoad(Name name)

@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides custom attributes for reflection objects that support them.
     /// </summary>
-    interface ICustomAttributeProvider
+    interface ICustomAttributeProvider : ISymbol
     {
 
         /// <summary>

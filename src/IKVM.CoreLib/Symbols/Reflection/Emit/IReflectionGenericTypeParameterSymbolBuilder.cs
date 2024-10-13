@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
 
@@ -14,9 +15,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         GenericTypeParameterBuilder UnderlyingGenericTypeParameterBuilder { get; }
 
         /// <summary>
-        /// Invoked when the type containing this generic type parameter is completed.
+        /// Invoked when the type containing this generic type parameter is completed. Passed the completed type.
         /// </summary>
-        void OnComplete();
+        void OnComplete(Type type);
 
     }
 

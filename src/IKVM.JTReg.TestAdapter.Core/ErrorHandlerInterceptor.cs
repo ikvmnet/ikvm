@@ -11,7 +11,7 @@ namespace IKVM.JTReg.TestAdapter.Core
     public class ErrorHandlerInterceptor : DispatchProxy
     {
 
-        static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods()
+        static readonly MethodInfo CreateMethodInfo = typeof(DispatchProxy).GetMethods(BindingFlags.Static | BindingFlags.Public)
             .Where(i => i.Name == "Create")
             .Where(i => i.GetGenericArguments().Length == 2)
             .First();
@@ -22,7 +22,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         public static ErrorHandlerInterceptor Create(IJTRegLoggerContext logger)
         {
-            var proxy = (ErrorHandlerInterceptor)CreateMethodInfo.MakeGenericMethod(JTRegTypes.TestFinder.ErrorHandler.Type, typeof(ErrorHandlerInterceptor)).Invoke(null, []);
+            var proxy = (ErrorHandlerInterceptor)CreateMethodInfo.MakeGenericMethod([JTRegTypes.TestFinder.ErrorHandler.Type, typeof(ErrorHandlerInterceptor)]).Invoke(null, []);
             proxy.SetLogger(logger);
             return proxy;
         }

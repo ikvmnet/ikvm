@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -39,7 +41,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public Module UnderlyingModule => _module;
+        public virtual Module UnderlyingModule => _module;
+
+        /// <inheritdoc />
+        public virtual Module UnderlyingRuntimeModule => _module;
 
         /// <inheritdoc />
         public IReflectionAssemblySymbol ResolvingAssembly => _resolvingAssembly;
@@ -262,6 +267,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
+        {
+            if (type.IsTypeDefinition())
+                return (IReflectionTypeSymbolBuilder)_typeTable.GetOrCreateTypeSymbol(type);
+
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
         public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
         {
             if (method.DeclaringType is { } dt)
@@ -277,10 +291,25 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            return ResolveTypeSymbol((TypeBuilder)ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
         public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
             if (method.DeclaringType is { } dt)
                 return ResolveTypeSymbol(dt).GetOrCreateMethodSymbol(method);
+            else
+                return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateMethodSymbol(method);
             else
                 return _methodTable.GetOrCreateMethodSymbol(method);
         }
@@ -295,15 +324,36 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateFieldSymbol(field);
+            else
+                return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
         public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
             return ResolveTypeSymbol(property.DeclaringType!).GetOrCreatePropertySymbol(property);
         }
 
         /// <inheritdoc />
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return ResolveTypeSymbol(property.GetTypeBuilder()).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
         public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
             return ResolveTypeSymbol(@event.DeclaringType!).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return ResolveTypeSymbol(@event.GetTypeBuilder()).GetOrCreateEventSymbol(@event);
         }
 
         /// <inheritdoc />
@@ -315,6 +365,26 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 IReflectionPropertySymbol property => property.GetOrCreateParameterSymbol(parameter),
                 _ => throw new InvalidOperationException(),
             };
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(IReflectionMemberSymbolBuilder member, ParameterBuilder parameter)
+        {
+            return member switch
+            {
+                IReflectionMethodBaseSymbolBuilder method => method.GetOrCreateParameterSymbol(parameter),
+                IReflectionPropertySymbolBuilder property => property.GetOrCreateParameterSymbol(parameter),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <inheritdoc />
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericParameterType)
+        {
+            if (genericParameterType.DeclaringMethod is MethodBuilder dm)
+                return ResolveMethodSymbol(dm).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
+            else
+                return ResolveTypeSymbol((TypeBuilder)genericParameterType.DeclaringType!).GetOrCreateGenericTypeParameterSymbol(genericParameterType);
         }
 
         #endregion

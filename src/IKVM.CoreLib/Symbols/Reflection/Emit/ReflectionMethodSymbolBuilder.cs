@@ -1,22 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionMethodSymbolBuilder : ReflectionMethodBaseSymbolBuilder, IReflectionMethodSymbolBuilder
+    class ReflectionMethodSymbolBuilder : ReflectionMethodSymbol, IReflectionMethodSymbolBuilder
     {
 
         readonly MethodBuilder _builder;
         MethodInfo? _method;
 
-        ReflectionGenericTypeParameterTable _genericTypeParameterTable;
-        ReflectionMethodSpecTable _specTable;
-
         ReflectionILGenerator? _il;
+        List<CustomAttribute>? _incompleteCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -27,101 +28,41 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, MethodBuilder builder) :
-            base(context, resolvingModule, resolvingType)
+            base(context, resolvingModule, resolvingType, builder)
         {
-            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, resolvingModule, this);
-            _specTable = new ReflectionMethodSpecTable(context, resolvingModule, resolvingType, this);
+            _builder = builder;
         }
-
-        /// <inheritdoc />
-        public MethodInfo UnderlyingMethod => _method ?? _builder;
-
-        /// <inheritdoc />
-        public MethodInfo UnderlyingEmitMethod => _builder;
-
-        /// <inheritdoc />
-        public MethodInfo UnderlyingDynamicEmitMethod => _method ?? throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingEmitMethodBase => UnderlyingEmitMethod;
 
         /// <inheritdoc />
         public MethodBuilder UnderlyingMethodBuilder => _builder;
 
-        #region IReflectionMethodSymbolBuilder
-
         /// <inheritdoc />
-        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
-        {
-            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        #endregion
-
-        #region IReflectionMethodSymbol
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
-        {
-            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
-        {
-            return _specTable.GetOrCreateGenericMethodSymbol(ResolveTypeSymbols(method.GetGenericArguments()));
-        }
-
-        #endregion
-
-        #region IReflectionMethodBaseSymbol
-
-        #endregion
-
-        #region IReflectionMethodBaseSymbolBuilder
-
-        #endregion
+        public override MethodInfo UnderlyingRuntimeMethod => _method ?? throw new InvalidOperationException();
 
         #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public override void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
+        public void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
         {
             UnderlyingMethodBuilder.SetImplementationFlags((MethodImplAttributes)attributes);
         }
 
         /// <inheritdoc />
-        public override IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
+        public IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
         {
             return ResolveParameterSymbol(this, UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
         }
 
         /// <inheritdoc />
-        public override IILGenerator GetILGenerator()
+        public IILGenerator GetILGenerator()
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator());
         }
 
         /// <inheritdoc />
-        public override IILGenerator GetILGenerator(int streamSize)
+        public IILGenerator GetILGenerator(int streamSize)
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
-        }
-
-        /// <inheritdoc />
-        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
         }
 
         #endregion
@@ -161,43 +102,76 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IMethodSymbol
 
         /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
-
-        /// <inheritdoc />
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(UnderlyingMethod.ReturnType);
-
-        /// <inheritdoc />
-        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
-
-        /// <inheritdoc />
         public override bool IsComplete => _method != null;
 
+        public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => throw new NotImplementedException();
+
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
+
         /// <inheritdoc />
-        public IMethodSymbol GetBaseDefinition()
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            return ResolveMethodSymbol(UnderlyingMethod.GetBaseDefinition());
+            UnderlyingMethodBuilder.SetCustomAttribute(attribute.Unpack());
+            _incompleteCustomAttributes ??= [];
+            _incompleteCustomAttributes.Add(attribute);
+        }
+
+        #endregion
+
+        #region ICustomAttributeProvider
+
+        /// <inheritdoc />
+        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        {
+            if (IsComplete)
+                return ResolveCustomAttributes(UnderlyingRuntimeMethod.GetCustomAttributesData(inherit).ToArray());
+            else if (inherit == false || GetBaseDefinition() == null)
+                return _incompleteCustomAttributes?.ToArray() ?? [];
+            else
+                return Enumerable.Concat(_incompleteCustomAttributes?.ToArray() ?? [], ResolveCustomAttributes(GetBaseDefinition().Unpack().GetInheritedCustomAttributesData())).ToArray();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol GetGenericMethodDefinition()
+        public override CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
+            if (IsComplete)
+            {
+                var _attributeType = attributeType.Unpack();
+                return ResolveCustomAttributes(UnderlyingRuntimeMethod.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
+            }
+            else
+                return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
+        public override CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
+            if (IsComplete)
+            {
+                var _attributeType = attributeType.Unpack();
+                return ResolveCustomAttribute(UnderlyingRuntimeMethod.GetCustomAttributesData().FirstOrDefault(i => i.AttributeType == _attributeType));
+            }
+            else
+                return GetCustomAttributes(inherit).FirstOrDefault(i => i.AttributeType == attributeType);
         }
 
         #endregion
 
         /// <inheritdoc />
-        public override void OnComplete()
+        public void OnComplete()
         {
             _method = (MethodInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
-            base.OnComplete();
+            _incompleteCustomAttributes = null;
+
+            // apply the runtime generic type parameters
+            var genericTypeParameters = ResolveTypeSymbols(UnderlyingRuntimeMethod.GetGenericArguments()) ?? [];
+            for (int i = 0; i < genericTypeParameters.Length; i++)
+                if (genericTypeParameters[i] is IReflectionGenericTypeParameterSymbolBuilder b)
+                    b.OnComplete(genericTypeParameters[i].UnderlyingRuntimeType);
         }
+
     }
 
 }

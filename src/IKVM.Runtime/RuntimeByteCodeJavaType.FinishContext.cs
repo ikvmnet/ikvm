@@ -737,7 +737,7 @@ namespace IKVM.Runtime
                     }
 #if !IMPORTER
                     if (liveObjects != null)
-                        context.Resolver.ResolveRuntimeType("IKVM.Runtime.LiveObjectHolder`1").GetField("values", BindingFlags.Static | BindingFlags.Public).AsReflection().SetValue(null, liveObjects.ToArray());
+                        context.Resolver.ResolveRuntimeType("IKVM.Runtime.LiveObjectHolder`1").GetField("values", BindingFlags.Static | BindingFlags.Public).GetUnderlyingField().SetValue(null, liveObjects.ToArray());
 #endif
                 }
                 finally
@@ -1593,7 +1593,7 @@ namespace IKVM.Runtime
                 static JniProxyBuilder()
                 {
                     mod = DynamicClassLoader.CreateJniProxyModuleBuilder(JVM.Context);
-                    var cab = JVM.Context.Resolver.Symbols.CreateCustomAttribute(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]), []);
+                    var cab = CustomAttribute.Create(JVM.Context.Resolver.ResolveRuntimeType(typeof(JavaModuleAttribute).FullName).GetConstructor([]), []);
                     mod.SetCustomAttribute(cab);
                 }
 
@@ -2181,7 +2181,7 @@ namespace IKVM.Runtime
                 int id = nestedTypeBuilders == null ? 0 : nestedTypeBuilders.Count;
                 var tb = typeBuilder.DefineNestedType(NestedTypeName.ThreadLocal + id, TypeAttributes.NestedPrivate | TypeAttributes.Sealed, threadLocal.TypeAsBaseType);
                 var fb = tb.DefineField("field", context.Types.Object, FieldAttributes.Private | FieldAttributes.Static);
-                fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]), []));
+                fb.SetCustomAttribute(CustomAttribute.Create(context.Resolver.ResolveCoreType(typeof(ThreadStaticAttribute).FullName).GetConstructor([]), []));
 
                 var mbGet = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, context.Types.Object, []);
                 var ilgen = mbGet.GetILGenerator();

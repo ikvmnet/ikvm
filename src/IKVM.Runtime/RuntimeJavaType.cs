@@ -254,9 +254,9 @@ namespace IKVM.Runtime
                     {
                         var type = GetClassLiteralType();
                         if (IsForbiddenTypeParameterType(type))
-                            clazz = new java.lang.Class(type.AsReflection());
+                            clazz = new java.lang.Class(type.GetUnderlyingRuntimeType());
                         else
-                            clazz = (java.lang.Class)typeof(ClassLiteral<>).MakeGenericType(type.AsReflection()).GetProperty("Value").GetGetMethod().Invoke(null, []);
+                            clazz = (java.lang.Class)typeof(ClassLiteral<>).MakeGenericType(type.GetUnderlyingRuntimeType()).GetProperty("Value").GetGetMethod().Invoke(null, []);
                     }
 
                     clazz.typeWrapper = this;
@@ -1205,7 +1205,7 @@ namespace IKVM.Runtime
         {
             var t = IsRemapped ? TypeAsBaseType : TypeAsTBD;
             if (t != null)
-                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.AsReflection().TypeHandle);
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.GetUnderlyingRuntimeType().TypeHandle);
         }
 
 #endif
@@ -1503,7 +1503,7 @@ namespace IKVM.Runtime
             var mb = mw.GetMethod();
             if (mb != null)
             {
-                var attr = mb.AsReflection().GetCustomAttribute<AnnotationDefaultAttribute>();
+                var attr = mb.GetUnderlyingMethodBase().GetCustomAttribute<AnnotationDefaultAttribute>();
                 if (attr != null)
                     return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, attr.Value);
             }

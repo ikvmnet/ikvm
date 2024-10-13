@@ -141,7 +141,7 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             var field = GetField();
-            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.AsReflection().GetValue(null);
+            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.GetUnderlyingField().GetValue(null);
         }
 
         internal override void SetValue(object obj, object value)

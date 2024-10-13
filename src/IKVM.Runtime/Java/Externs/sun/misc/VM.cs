@@ -64,7 +64,7 @@ namespace IKVM.Java.Externs.sun.misc
                     // check that the assembly isn't the .NET corelib or the IKVM runtime
                     var clw = tw.ClassLoader;
                     if (clw is RuntimeAssemblyClassLoader acl)
-                        if (acl.GetAssembly(tw) == JVM.Context.Types.Object.Assembly || acl.GetAssembly(tw).AsReflection() == typeof(VM).Assembly)
+                        if (acl.GetAssembly(tw) == JVM.Context.Types.Object.Assembly || acl.GetAssembly(tw).GetUnderlyingAssembly() == typeof(VM).Assembly)
                             continue;
 
                     // associated Java class loader is our nearest

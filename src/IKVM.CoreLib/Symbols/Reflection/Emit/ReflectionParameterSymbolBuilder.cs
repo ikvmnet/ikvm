@@ -16,7 +16,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         readonly ParameterBuilder _builder;
         readonly ReflectionParameterBuilderInfo _builderInfo;
-        ParameterInfo _parameter;
+        ParameterInfo? _parameter;
 
         object? _constant;
 
@@ -37,19 +37,19 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
+        public ParameterBuilder UnderlyingParameterBuilder => _builder;
+
+        /// <inheritdoc />
+        public ParameterInfo UnderlyingParameter => _builderInfo;
+
+        /// <inheritdoc />
+        public ParameterInfo UnderlyingRuntimeParameter => _parameter ?? throw new InvalidOperationException();
+
+        /// <inheritdoc />
         public IReflectionModuleSymbol ResolvingModule => _module;
 
         /// <inheritdoc />
         public IReflectionMemberSymbol ResolvingMember => _member;
-
-        /// <inheritdoc />
-        public ParameterInfo UnderlyingParameter => _parameter ?? _builderInfo;
-
-        /// <inheritdoc />
-        public ParameterInfo UnderlyingEmitParameter => _parameter ?? throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public ParameterBuilder UnderlyingParameterBuilder => _builder;
 
         #region IParameterSymbolBuilder
 
@@ -60,15 +60,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingParameterBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingParameterBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingParameterBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

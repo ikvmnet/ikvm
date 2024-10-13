@@ -149,7 +149,7 @@ namespace IKVM.Runtime
             internal override object InvokeNonvirtualRemapped(object obj, object[] args)
             {
                 var mi = mbNonvirtualHelper ?? mbHelper;
-                return mi.AsReflection().Invoke(null, ArrayUtil.Concat(obj, args));
+                return mi.GetUnderlyingMethod().Invoke(null, ArrayUtil.Concat(obj, args));
             }
 
 #endif // !IMPORTER && !FIRST_PASS && !EXPORTER

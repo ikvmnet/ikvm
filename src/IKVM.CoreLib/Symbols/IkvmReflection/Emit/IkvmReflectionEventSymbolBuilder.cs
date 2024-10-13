@@ -63,16 +63,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             UnderlyingEventBuilder.AddOtherMethod(((IIkvmReflectionMethodSymbolBuilder)mdBuilder).UnderlyingMethodBuilder);
         }
 
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingEventBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
 
         /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        public override void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingEventBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingEventBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

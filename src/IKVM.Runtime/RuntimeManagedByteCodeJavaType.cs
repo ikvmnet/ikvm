@@ -1115,7 +1115,7 @@ namespace IKVM.Runtime
 
         internal override object[] GetDeclaredAnnotations()
         {
-            return CastArray(type.AsReflection().GetCustomAttributes(false));
+            return CastArray(type.GetUnderlyingType().GetCustomAttributes(false));
         }
 
         internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
@@ -1127,7 +1127,7 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            return CastArray(mb.AsReflection().GetCustomAttributes(false));
+            return CastArray(mb.GetUnderlyingMethodBase().GetCustomAttributes(false));
         }
 
         internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
@@ -1150,7 +1150,7 @@ namespace IKVM.Runtime
 
             var attribs = new object[parameters.Length - skip - skipEnd][];
             for (int i = skip; i < parameters.Length - skipEnd; i++)
-                attribs[i - skip] = CastArray(parameters[i].AsReflection().GetCustomAttributes(false));
+                attribs[i - skip] = CastArray(parameters[i].GetUnderlyingParameter().GetCustomAttributes(false));
 
             return attribs;
         }
@@ -1159,10 +1159,10 @@ namespace IKVM.Runtime
         {
             var field = fw.GetField();
             if (field != null)
-                return CastArray(field.AsReflection().GetCustomAttributes(false));
+                return CastArray(field.GetUnderlyingField().GetCustomAttributes(false));
 
             if (fw is RuntimeManagedByteCodePropertyJavaField prop)
-                return CastArray(prop.GetProperty().AsReflection().GetCustomAttributes(false));
+                return CastArray(prop.GetProperty().GetUnderlyingProperty().GetCustomAttributes(false));
 
             return Array.Empty<object>();
         }
@@ -1186,9 +1186,9 @@ namespace IKVM.Runtime
                 constructor = type.GetConstructor([context.Types.Object.MakeArrayType()]);
             }
 
-            private ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+            private CustomAttribute MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
             {
-                return context.Resolver.Symbols.CreateCustomAttribute(constructor, [AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation))]);
+                return CustomAttribute.Create(constructor, [AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation))]);
             }
 
             internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
@@ -1274,7 +1274,7 @@ namespace IKVM.Runtime
         {
             var attr = type.GetCustomAttribute(Context.Resolver.GetSymbol(typeof(LineNumberTableAttribute)));
             if (attr.HasValue && attr.Value.Constructor != null)
-                return ((LineNumberTableAttribute)attr.Value.Constructor.AsReflection().Invoke(attr.Value.ConstructorArguments.Cast<object>().ToArray())).GetLineNumber(ilOffset);
+                return ((LineNumberTableAttribute)attr.Value.Constructor.GetUnderlyingConstructor().Invoke(attr.Value.ConstructorArguments.Cast<object>().ToArray())).GetLineNumber(ilOffset);
 
             return -1;
         }

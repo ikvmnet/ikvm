@@ -1,19 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
+using IKVM.CoreLib.Collections;
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionConstructorSymbolBuilder : ReflectionMethodBaseSymbolBuilder, IReflectionConstructorSymbolBuilder
+    class ReflectionConstructorSymbolBuilder : ReflectionConstructorSymbol, IReflectionConstructorSymbolBuilder
     {
 
         readonly ConstructorBuilder _builder;
         ConstructorInfo? _ctor;
 
         ReflectionILGenerator? _il;
+        List<CustomAttribute>? _incompleteCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,39 +30,30 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionConstructorSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, ConstructorBuilder builder) :
-            base(context, resolvingModule, resolvingType)
+            base(context, resolvingModule, resolvingType, builder)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
         }
 
         /// <inheritdoc />
-        public ConstructorInfo UnderlyingConstructor => _ctor ?? _builder;
-
-        /// <inheritdoc />
-        public ConstructorInfo UnderlyingEmitConstructor => _builder;
-
-        /// <inheritdoc />
-        public ConstructorInfo UnderlyingDynamicEmitConstructor => _ctor ?? throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingEmitMethodBase => UnderlyingEmitConstructor;
-
-        /// <inheritdoc />
         public ConstructorBuilder UnderlyingConstructorBuilder => _builder;
+
+        /// <inheritdoc />
+        public override ConstructorInfo UnderlyingRuntimeConstructor => _ctor ?? throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => (IReflectionModuleSymbolBuilder)ResolvingModule;
 
         #region IConstructorSymbolBuilder
 
         /// <inheritdoc />
-        public override void SetImplementationFlags(MethodImplAttributes attributes)
+        public void SetImplementationFlags(MethodImplAttributes attributes)
         {
             UnderlyingConstructorBuilder.SetImplementationFlags(attributes);
         }
 
         /// <inheritdoc />
-        public override IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
+        public IParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
         {
             if (iSequence <= 0)
                 throw new ArgumentOutOfRangeException(nameof(iSequence));
@@ -65,27 +62,15 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public override IILGenerator GetILGenerator()
+        public IILGenerator GetILGenerator()
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator());
         }
 
         /// <inheritdoc />
-        public override IILGenerator GetILGenerator(int streamSize)
+        public IILGenerator GetILGenerator(int streamSize)
         {
             return _il ??= new ReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator(streamSize));
-        }
-
-        /// <inheritdoc />
-        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingConstructorBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
-        /// <inheritdoc />
-        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingConstructorBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
         }
 
         #endregion
@@ -97,22 +82,60 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         #endregion
 
-        #region IMethodBaseSymbol
+        #region ICustomAttributeProviderBuilder
 
         /// <inheritdoc />
-        public override ITypeSymbol[] GetGenericArguments()
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            // constructor never has generic arguments
-            return [];
+            UnderlyingConstructorBuilder.SetCustomAttribute(attribute.Unpack());
+            _incompleteCustomAttributes ??= [];
+            _incompleteCustomAttributes.Add(attribute);
+        }
+
+        #endregion
+
+        #region ICustomAttributeProvider
+
+        /// <inheritdoc />
+        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        {
+            if (IsComplete)
+                return ResolveCustomAttributes(UnderlyingRuntimeConstructor.GetCustomAttributesData(inherit).ToArray());
+            else
+                return _incompleteCustomAttributes?.ToArray() ?? [];
+        }
+
+        /// <inheritdoc />
+        public override CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        {
+            if (IsComplete)
+            {
+                var _attributeType = attributeType.Unpack();
+                return ResolveCustomAttributes(UnderlyingRuntimeConstructor.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
+            }
+            else
+                return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
+        }
+
+        /// <inheritdoc />
+        public override CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            if (IsComplete)
+            {
+                var _attributeType = attributeType.Unpack();
+                return ResolveCustomAttribute(UnderlyingRuntimeConstructor.GetCustomAttributesData().FirstOrDefault(i => i.AttributeType == _attributeType));
+            }
+            else
+                return GetCustomAttributes(inherit).FirstOrDefault(i => i.AttributeType == attributeType);
         }
 
         #endregion
 
         /// <inheritdoc />
-        public override void OnComplete()
+        public void OnComplete()
         {
             _ctor = (ConstructorInfo?)ResolvingModule.UnderlyingModule.ResolveMethod(MetadataToken) ?? throw new InvalidOperationException();
-            base.OnComplete();
+            _incompleteCustomAttributes = null;
         }
 
     }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -32,6 +35,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionAssemblySymbol[]? ResolveAssemblySymbols(Assembly[]? assemblies);
 
         /// <summary>
+        /// Resolves the symbol for the specified assembly builder.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(assembly))]
+        IReflectionAssemblySymbolBuilder ResolveAssemblySymbol(AssemblyBuilder assembly);
+
+        /// <summary>
         /// Resolves the symbol for the specified module.
         /// </summary>
         /// <param name="module"></param>
@@ -53,6 +64,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="modules"></param>
         /// <returns></returns>
         IEnumerable<IReflectionModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules);
+
+        /// <summary>
+        /// Resolves the symbol for the specified module.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(module))]
+        IReflectionModuleSymbolBuilder ResolveModuleSymbol(ModuleBuilder module);
 
         /// <summary>
         /// Resolves the symbol for the specified member.
@@ -94,6 +113,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IEnumerable<IReflectionTypeSymbol> ResolveTypeSymbols(IEnumerable<Type> types);
 
         /// <summary>
+        /// Resolves the symbol for the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(type))]
+        IReflectionTypeSymbolBuilder ResolveTypeSymbol(TypeBuilder type);
+
+        /// <summary>
         /// Resolves the symbol for the specified method.
         /// </summary>
         /// <param name="method"></param>
@@ -118,6 +145,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionConstructorSymbol[]? ResolveConstructorSymbols(ConstructorInfo[]? ctors);
 
         /// <summary>
+        /// Resolves the symbol for the specified constructor.
+        /// </summary>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(ctor))]
+        IReflectionConstructorSymbolBuilder ResolveConstructorSymbol(ConstructorBuilder ctor);
+
+        /// <summary>
         /// Resolves the symbol for the specified method.
         /// </summary>
         /// <param name="method"></param>
@@ -132,6 +167,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(methods))]
         IReflectionMethodSymbol[]? ResolveMethodSymbols(MethodInfo[]? methods);
+
+        /// <summary>
+        /// Resolves the symbol for the specified method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(method))]
+        IReflectionMethodSymbolBuilder ResolveMethodSymbol(MethodBuilder method);
 
         /// <summary>
         /// Resolves the symbol for the specified field.
@@ -150,6 +193,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionFieldSymbol[]? ResolveFieldSymbols(FieldInfo[]? fields);
 
         /// <summary>
+        /// Resolves the symbol for the specified field.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(field))]
+        IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field);
+
+        /// <summary>
         /// Resolves the symbol for the specified property.
         /// </summary>
         /// <param name="property"></param>
@@ -164,6 +215,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(properties))]
         IReflectionPropertySymbol[]? ResolvePropertySymbols(PropertyInfo[]? properties);
+
+        /// <summary>
+        /// Resolves the symbol for the specified property.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(property))]
+        IReflectionPropertySymbolBuilder ResolvePropertySymbol(PropertyBuilder property);
 
         /// <summary>
         /// Resolves the symbol for the specified event.
@@ -182,6 +241,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         IReflectionEventSymbol[]? ResolveEventSymbols(EventInfo[]? events);
 
         /// <summary>
+        /// Resolves the symbol for the specified event.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(@event))]
+        IReflectionEventSymbolBuilder ResolveEventSymbol(EventBuilder @event);
+
+        /// <summary>
         /// Resolves the symbol for the specified parameter.
         /// </summary>
         /// <param name="parameter"></param>
@@ -196,6 +263,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(parameters))]
         IReflectionParameterSymbol[]? ResolveParameterSymbols(ParameterInfo[]? parameters);
+
+        /// <summary>
+        /// Resolves the symbol for the specified generic type parameter.
+        /// </summary>
+        /// <param name="genericTypeParameter"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(genericTypeParameter))]
+        IReflectionGenericTypeParameterSymbolBuilder? ResolveGenericTypeParameterSymbol(GenericTypeParameterBuilder? genericTypeParameter);
+
+        /// <summary>
+        /// Resolves the symbol for the specified generic type parameters.
+        /// </summary>
+        /// <param name="genericTypeParameters"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(genericTypeParameters))]
+        IReflectionGenericTypeParameterSymbolBuilder[]? ResolveGenericTypeParameterSymbols(GenericTypeParameterBuilder[]? genericTypeParameters);
 
         /// <summary>
         /// Transforms a custom set of custom attribute data records to a symbol record.

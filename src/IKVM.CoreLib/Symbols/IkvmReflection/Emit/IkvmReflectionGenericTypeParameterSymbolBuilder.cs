@@ -1,5 +1,6 @@
 ﻿using System;
 
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
@@ -692,6 +693,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments)
         {
             return ResolveTypeSymbol(UnderlyingType.MakeGenericType(typeArguments.Unpack()));
+        }
+
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(CustomAttribute attribute)
+        {
+            UnderlyingGenericTypeParameterBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

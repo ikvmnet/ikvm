@@ -49,10 +49,10 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        ICustomAttributeBuilder compilerGeneratedAttribute;
-        ICustomAttributeBuilder ghostInterfaceAttribute;
-        ICustomAttributeBuilder deprecatedAttribute;
-        ICustomAttributeBuilder editorBrowsableNever;
+        CustomAttribute? compilerGeneratedAttribute;
+        CustomAttribute? ghostInterfaceAttribute;
+        CustomAttribute? deprecatedAttribute;
+        CustomAttribute? editorBrowsableNever;
         IConstructorSymbol implementsAttribute;
         IConstructorSymbol throwsAttribute;
         IConstructorSymbol sourceFileAttribute;
@@ -63,7 +63,7 @@ namespace IKVM.Runtime
         IConstructorSymbol methodParametersAttribute;
         IConstructorSymbol runtimeVisibleTypeAnnotationsAttribute;
         IConstructorSymbol constantPoolAttribute;
-        ICustomAttributeBuilder paramArrayAttribute;
+        CustomAttribute? paramArrayAttribute;
         IConstructorSymbol nonNestedInnerClassAttribute;
         IConstructorSymbol nonNestedOuterClassAttribute;
 
@@ -95,8 +95,8 @@ namespace IKVM.Runtime
         ITypeSymbol typeofConstantPoolAttribute;
         ITypeSymbol typeofDebuggableAttribute;
         ITypeSymbol typeofCustomAssemblyClassLoaderAttribute;
-        ICustomAttributeBuilder hideFromJavaAttribute;
-        ICustomAttributeBuilder hideFromReflection;
+        CustomAttribute? hideFromJavaAttribute;
+        CustomAttribute? hideFromReflection;
         IConstructorSymbol debuggableAttribute;
 
         ITypeSymbol TypeOfModifiers => typeofModifiers ??= context.Resolver.ResolveRuntimeType(typeof(Modifiers).FullName);
@@ -153,9 +153,9 @@ namespace IKVM.Runtime
 
         ITypeSymbol TypeOfCustomAssemblyClassLoaderAttribute => typeofCustomAssemblyClassLoaderAttribute ??= context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute).FullName);
 
-        ICustomAttributeBuilder HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([]), []);
+        CustomAttribute HideFromJavaAttributeBuilder => hideFromJavaAttribute ??= CustomAttribute.Create(TypeOfHideFromJavaAttribute.GetConstructor([]), []);
 
-        ICustomAttributeBuilder HideFromReflectionBuilder => hideFromReflection ??= context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk]);
+        CustomAttribute HideFromReflectionBuilder => hideFromReflection ??= CustomAttribute.Create(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [HideFromJavaFlags.Reflection | HideFromJavaFlags.StackTrace | HideFromJavaFlags.StackWalk]);
 
         /// <summary>
         /// Initializes a new instance.
@@ -292,7 +292,7 @@ namespace IKVM.Runtime
             }
         }
 
-        ICustomAttributeBuilder CreateCustomAttribute(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr)
+        CustomAttribute CreateCustomAttribute(RuntimeClassLoader loader, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             // TODO add error handling
             GetAttributeArgsAndTypes(loader, attr, out var argTypes, out var args);
@@ -331,7 +331,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                return context.Resolver.Symbols.CreateCustomAttribute(ci, args, namedProperties, propertyValues, namedFields, fieldValues);
+                return CustomAttribute.Create(ci, args, namedProperties, propertyValues, namedFields, fieldValues);
             }
             else
             {
@@ -363,33 +363,31 @@ namespace IKVM.Runtime
                 mw.Link();
 
                 var ci = (mw.GetMethod() as IConstructorSymbol) ?? ((IConstructorSymbol)mw.GetMethod());
-                return context.Resolver.Symbols.CreateCustomAttribute(ci, args, namedFields, fieldValues);
+                return CustomAttribute.Create(ci, args, namedFields, fieldValues);
             }
         }
 
-        ICustomAttributeBuilder GetEditorBrowsableNever()
+        CustomAttribute GetEditorBrowsableNever()
         {
             if (editorBrowsableNever == null)
             {
                 var typeofEditorBrowsableAttribute = context.Resolver.ResolveSystemType(typeof(EditorBrowsableAttribute).FullName);
                 var typeofEditorBrowsableState = context.Resolver.ResolveSystemType(typeof(EditorBrowsableState).FullName);
                 var ctor = typeofEditorBrowsableAttribute.GetConstructor([typeofEditorBrowsableState]);
-                editorBrowsableNever = context.Resolver.Symbols.CreateCustomAttribute(ctor, [EditorBrowsableState.Never]);
+                editorBrowsableNever = CustomAttribute.Create(ctor, [EditorBrowsableState.Never]);
             }
 
-            return editorBrowsableNever;
+            return editorBrowsableNever.Value;
         }
 
         internal void SetCompilerGenerated(ITypeSymbolBuilder tb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
-            tb.SetCustomAttribute(compilerGeneratedAttribute);
+            tb.SetCustomAttribute(compilerGeneratedAttribute ??= CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetCompilerGenerated(IMethodBaseSymbolBuilder mb)
         {
-            compilerGeneratedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []);
-            mb.SetCustomAttribute(compilerGeneratedAttribute);
+            mb.SetCustomAttribute(compilerGeneratedAttribute ??= CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetEditorBrowsableNever(ITypeSymbolBuilder tb)
@@ -409,26 +407,22 @@ namespace IKVM.Runtime
 
         internal void SetDeprecatedAttribute(IMethodBaseSymbolBuilder mb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
-            mb.SetCustomAttribute(deprecatedAttribute);
+            mb.SetCustomAttribute(deprecatedAttribute ??= CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetDeprecatedAttribute(ITypeSymbolBuilder tb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
-            tb.SetCustomAttribute(deprecatedAttribute);
+            tb.SetCustomAttribute(deprecatedAttribute ??= CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetDeprecatedAttribute(IFieldSymbolBuilder fb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
-            fb.SetCustomAttribute(deprecatedAttribute);
+            fb.SetCustomAttribute(CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetDeprecatedAttribute(IPropertySymbolBuilder pb)
         {
-            deprecatedAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []);
-            pb.SetCustomAttribute(deprecatedAttribute);
+            pb.SetCustomAttribute(deprecatedAttribute ??= CustomAttribute.Create(context.Resolver.ResolveSystemType(typeof(ObsoleteAttribute).FullName).GetConstructor([]), []));
         }
 
         internal void SetThrowsAttribute(IMethodBaseSymbolBuilder mb, string[] exceptions)
@@ -437,26 +431,25 @@ namespace IKVM.Runtime
             {
                 throwsAttribute ??= TypeOfThrowsAttribute.GetConstructor([context.Types.String.MakeArrayType()]);
                 exceptions = UnicodeUtil.EscapeInvalidSurrogates(exceptions);
-                mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(throwsAttribute, [exceptions]));
+                mb.SetCustomAttribute(CustomAttribute.Create(throwsAttribute, [exceptions]));
             }
         }
 
         internal void SetGhostInterface(ITypeSymbolBuilder typeBuilder)
         {
-            ghostInterfaceAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(TypeOfGhostInterfaceAttribute.GetConstructor([]), []);
-            typeBuilder.SetCustomAttribute(ghostInterfaceAttribute);
+            typeBuilder.SetCustomAttribute(ghostInterfaceAttribute ??= CustomAttribute.Create(TypeOfGhostInterfaceAttribute.GetConstructor([]), []));
         }
 
         internal void SetNonNestedInnerClass(ITypeSymbolBuilder typeBuilder, string className)
         {
             nonNestedInnerClassAttribute ??= TypeOfNonNestedInnerClassAttribute.GetConstructor([context.Types.String]);
-            typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(nonNestedInnerClassAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className)]));
+            typeBuilder.SetCustomAttribute(CustomAttribute.Create(nonNestedInnerClassAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className)]));
         }
 
         internal void SetNonNestedOuterClass(ITypeSymbolBuilder typeBuilder, string className)
         {
             nonNestedOuterClassAttribute ??= TypeOfNonNestedOuterClassAttribute.GetConstructor([context.Types.String]);
-            typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(nonNestedOuterClassAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className)]));
+            typeBuilder.SetCustomAttribute(CustomAttribute.Create(nonNestedOuterClassAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className)]));
         }
 
 #endif // IMPORTER
@@ -488,7 +481,7 @@ namespace IKVM.Runtime
 
         internal void HideFromJava(IMethodBaseSymbolBuilder mb, HideFromJavaFlags flags)
         {
-            mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [flags]));
+            mb.SetCustomAttribute(CustomAttribute.Create(TypeOfHideFromJavaAttribute.GetConstructor([TypeOfHideFromJavaFlags]), [flags]));
         }
 
         internal void HideFromJava(IFieldSymbolBuilder fb)
@@ -547,7 +540,7 @@ namespace IKVM.Runtime
             if (implementsAttribute == null)
                 implementsAttribute = TypeOfImplementsAttribute.GetConstructor([context.Types.String.MakeArrayType()]);
 
-            typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(implementsAttribute, [interfaces]));
+            typeBuilder.SetCustomAttribute(CustomAttribute.Create(implementsAttribute, [interfaces]));
         }
 
         internal bool IsGhostInterface(ITypeSymbol type)
@@ -694,56 +687,20 @@ namespace IKVM.Runtime
         internal void SetDebuggingModes(IAssemblySymbolBuilder assemblyBuilder, DebuggableAttribute.DebuggingModes modes)
         {
             debuggableAttribute ??= TypeOfDebuggableAttribute.GetConstructor([TypeOfDebuggableAttribute.GetNestedType(nameof(DebuggableAttribute.DebuggingModes))]);
-            assemblyBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(debuggableAttribute, [modes]));
+            assemblyBuilder.SetCustomAttribute(CustomAttribute.Create(debuggableAttribute, [modes]));
         }
 
-        internal void SetModifiers(IMethodBaseSymbolBuilder mb, Modifiers modifiers, bool isInternal)
+        internal void SetModifiers(ICustomAttributeProviderBuilder fb, Modifiers modifiers, bool isInternal)
         {
-            ICustomAttributeBuilder customAttributeBuilder;
             if (isInternal)
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
+                fb.SetCustomAttribute(CustomAttribute.Create(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]));
             else
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
-
-            mb.SetCustomAttribute(customAttributeBuilder);
-        }
-
-        internal void SetModifiers(IFieldSymbolBuilder fb, Modifiers modifiers, bool isInternal)
-        {
-            ICustomAttributeBuilder customAttributeBuilder;
-            if (isInternal)
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
-            else
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
-
-            fb.SetCustomAttribute(customAttributeBuilder);
-        }
-
-        internal void SetModifiers(IPropertySymbolBuilder pb, Modifiers modifiers, bool isInternal)
-        {
-            ICustomAttributeBuilder customAttributeBuilder;
-            if (isInternal)
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
-            else
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
-
-            pb.SetCustomAttribute(customAttributeBuilder);
-        }
-
-        internal void SetModifiers(ITypeSymbolBuilder tb, Modifiers modifiers, bool isInternal)
-        {
-            ICustomAttributeBuilder customAttributeBuilder;
-            if (isInternal)
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers, context.Types.Boolean]), [modifiers, isInternal]);
-            else
-                customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]);
-
-            tb.SetCustomAttribute(customAttributeBuilder);
+                fb.SetCustomAttribute(CustomAttribute.Create(TypeOfModifiersAttribute.GetConstructor([TypeOfModifiers]), [modifiers]));
         }
 
         internal void SetNameSig(IMethodBaseSymbolBuilder mb, string name, string sig)
         {
-            var customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(TypeOfNameSigAttribute.GetConstructor([context.Types.String, context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(name), UnicodeUtil.EscapeInvalidSurrogates(sig)]);
+            var customAttributeBuilder = CustomAttribute.Create(TypeOfNameSigAttribute.GetConstructor([context.Types.String, context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(name), UnicodeUtil.EscapeInvalidSurrogates(sig)]);
             mb.SetCustomAttribute(customAttributeBuilder);
         }
 
@@ -752,20 +709,20 @@ namespace IKVM.Runtime
             var argTypes = new ITypeSymbol[] { context.Types.String, TypeOfModifiers };
             var args = new object[] { UnicodeUtil.EscapeInvalidSurrogates(innerClass), modifiers };
             var ci = TypeOfInnerClassAttribute.GetConstructor(argTypes);
-            var customAttributeBuilder = context.Resolver.Symbols.CreateCustomAttribute(ci, args);
+            var customAttributeBuilder = CustomAttribute.Create(ci, args);
             typeBuilder.SetCustomAttribute(customAttributeBuilder);
         }
 
         internal void SetSourceFile(ITypeSymbolBuilder typeBuilder, string filename)
         {
             sourceFileAttribute ??= TypeOfSourceFileAttribute.GetConstructor([context.Types.String]);
-            typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(sourceFileAttribute, [filename]));
+            typeBuilder.SetCustomAttribute(CustomAttribute.Create(sourceFileAttribute, [filename]));
         }
 
         internal void SetSourceFile(IModuleSymbolBuilder moduleBuilder, string filename)
         {
             sourceFileAttribute ??= TypeOfSourceFileAttribute.GetConstructor([context.Types.String]);
-            moduleBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(sourceFileAttribute, [filename]));
+            moduleBuilder.SetCustomAttribute(CustomAttribute.Create(sourceFileAttribute, [filename]));
         }
 
         internal void SetLineNumberTable(IMethodBaseSymbolBuilder mb, IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter writer)
@@ -785,37 +742,37 @@ namespace IKVM.Runtime
                 arg = writer.ToArray();
             }
 
-            mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(con, [arg]));
+            mb.SetCustomAttribute(CustomAttribute.Create(con, [arg]));
         }
 
         internal void SetEnclosingMethodAttribute(ITypeSymbolBuilder tb, string className, string methodName, string methodSig)
         {
             enclosingMethodAttribute ??= TypeOfEnclosingMethodAttribute.GetConstructor([context.Types.String, context.Types.String, context.Types.String]);
-            tb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(enclosingMethodAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className), UnicodeUtil.EscapeInvalidSurrogates(methodName), UnicodeUtil.EscapeInvalidSurrogates(methodSig)]));
+            tb.SetCustomAttribute(CustomAttribute.Create(enclosingMethodAttribute, [UnicodeUtil.EscapeInvalidSurrogates(className), UnicodeUtil.EscapeInvalidSurrogates(methodName), UnicodeUtil.EscapeInvalidSurrogates(methodSig)]));
         }
 
         internal void SetSignatureAttribute(ITypeSymbolBuilder tb, string signature)
         {
             signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor([context.Types.String]);
-            tb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
+            tb.SetCustomAttribute(CustomAttribute.Create(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
         }
 
         internal void SetSignatureAttribute(IFieldSymbolBuilder fb, string signature)
         {
             signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor([context.Types.String]);
-            fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
+            fb.SetCustomAttribute(CustomAttribute.Create(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
         }
 
         internal void SetSignatureAttribute(IMethodBaseSymbolBuilder mb, string signature)
         {
             signatureAttribute ??= TypeOfSignatureAttribute.GetConstructor([context.Types.String]);
-            mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
+            mb.SetCustomAttribute(CustomAttribute.Create(signatureAttribute, [UnicodeUtil.EscapeInvalidSurrogates(signature)]));
         }
 
         internal void SetMethodParametersAttribute(IMethodBaseSymbolBuilder mb, Modifiers[] modifiers)
         {
             methodParametersAttribute ??= TypeOfMethodParametersAttribute.GetConstructor([TypeOfModifiers.MakeArrayType()]);
-            mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(methodParametersAttribute, [modifiers]));
+            mb.SetCustomAttribute(CustomAttribute.Create(methodParametersAttribute, [modifiers]));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(ITypeSymbolBuilder tb, ref readonly TypeAnnotationTable table)
@@ -825,7 +782,7 @@ namespace IKVM.Runtime
             table.WriteTo(ref encoder);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
-            tb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
+            tb.SetCustomAttribute(CustomAttribute.Create(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(IFieldSymbolBuilder fb, ref readonly TypeAnnotationTable table)
@@ -835,7 +792,7 @@ namespace IKVM.Runtime
             table.WriteTo(ref encoder);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
-            fb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
+            fb.SetCustomAttribute(CustomAttribute.Create(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
         internal void SetRuntimeVisibleTypeAnnotationsAttribute(IMethodBaseSymbolBuilder mb, ref readonly TypeAnnotationTable table)
@@ -845,19 +802,18 @@ namespace IKVM.Runtime
             table.WriteTo(ref encoder);
 
             runtimeVisibleTypeAnnotationsAttribute ??= TypeOfRuntimeVisibleTypeAnnotationsAttribute.GetConstructor([context.Types.Byte.MakeArrayType()]);
-            mb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
+            mb.SetCustomAttribute(CustomAttribute.Create(runtimeVisibleTypeAnnotationsAttribute, [builder.ToArray()]));
         }
 
         internal void SetConstantPoolAttribute(ITypeSymbolBuilder tb, object[] constantPool)
         {
             constantPoolAttribute ??= TypeOfConstantPoolAttribute.GetConstructor([context.Types.Object.MakeArrayType()]);
-            tb.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(constantPoolAttribute, [constantPool]));
+            tb.SetCustomAttribute(CustomAttribute.Create(constantPoolAttribute, [constantPool]));
         }
 
         internal void SetParamArrayAttribute(IParameterSymbolBuilder pb)
         {
-            paramArrayAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]), []);
-            pb.SetCustomAttribute(paramArrayAttribute);
+            pb.SetCustomAttribute(paramArrayAttribute ??= CustomAttribute.Create(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]), []));
         }
 
         internal NameSigAttribute GetNameSig(IMemberSymbol member)
@@ -903,11 +859,11 @@ namespace IKVM.Runtime
                 }
                 else if (args[0].ArgumentType == context.Types.Type.MakeArrayType())
                 {
-                    return new ThrowsAttribute(DecodeArray<ITypeSymbol>(args[0]).AsReflection());
+                    return new ThrowsAttribute(DecodeArray<ITypeSymbol>(args[0]).GetUnderlyingTypes());
                 }
                 else
                 {
-                    return new ThrowsAttribute(((ITypeSymbol)args[0].Value).AsReflection());
+                    return new ThrowsAttribute(((ITypeSymbol)args[0].Value).GetUnderlyingType());
                 }
             }
 
@@ -989,7 +945,7 @@ namespace IKVM.Runtime
         internal RemappedTypeAttribute GetRemappedType(ITypeSymbol type)
         {
             foreach (var cad in type.GetCustomAttributes(TypeOfRemappedTypeAttribute))
-                return new RemappedTypeAttribute(((ITypeSymbol)cad.ConstructorArguments[0].Value).AsReflection());
+                return new RemappedTypeAttribute(((ITypeSymbol)cad.ConstructorArguments[0].Value).GetUnderlyingType());
 
             return null;
         }
@@ -1004,7 +960,7 @@ namespace IKVM.Runtime
             foreach (var cad in coreAssembly.GetCustomAttributes(TypeOfRemappedClassAttribute))
             {
                 var args = cad.ConstructorArguments;
-                attrs.Add(new RemappedClassAttribute((string)args[0].Value, ((ITypeSymbol)args[1].Value).AsReflection()));
+                attrs.Add(new RemappedClassAttribute((string)args[0].Value, ((ITypeSymbol)args[1].Value).GetUnderlyingType()));
             }
 
             return attrs.ToArray();
@@ -1097,43 +1053,43 @@ namespace IKVM.Runtime
         internal void SetRemappedClass(IAssemblySymbolBuilder assemblyBuilder, string name, ITypeSymbol shadowType)
         {
             var remappedClassAttribute = TypeOfRemappedClassAttribute.GetConstructor([context.Types.String, context.Types.Type]);
-            assemblyBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(remappedClassAttribute, [name, shadowType]));
+            assemblyBuilder.SetCustomAttribute(CustomAttribute.Create(remappedClassAttribute, [name, shadowType]));
         }
 
         internal void SetRemappedType(ITypeSymbolBuilder typeBuilder, ITypeSymbol shadowType)
         {
             var remappedTypeAttribute = TypeOfRemappedTypeAttribute.GetConstructor([context.Types.Type]);
-            typeBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(remappedTypeAttribute, [shadowType]));
+            typeBuilder.SetCustomAttribute(CustomAttribute.Create(remappedTypeAttribute, [shadowType]));
         }
 
         internal void SetRemappedInterfaceMethod(ITypeSymbolBuilder typeBuilder, string name, string mappedTo, string[] throws)
         {
-            var cab = context.Resolver.Symbols.CreateCustomAttribute(TypeOfRemappedInterfaceMethodAttribute.GetConstructor([context.Types.String, context.Types.String, context.Types.String.MakeArrayType()]), [name, mappedTo, throws]);
+            var cab = CustomAttribute.Create(TypeOfRemappedInterfaceMethodAttribute.GetConstructor([context.Types.String, context.Types.String, context.Types.String.MakeArrayType()]), [name, mappedTo, throws]);
             typeBuilder.SetCustomAttribute(cab);
         }
 
         internal void SetExceptionIsUnsafeForMapping(ITypeSymbolBuilder typeBuilder)
         {
-            var cab = context.Resolver.Symbols.CreateCustomAttribute(TypeOfExceptionIsUnsafeForMappingAttribute.GetConstructor([]), []);
+            var cab = CustomAttribute.Create(TypeOfExceptionIsUnsafeForMappingAttribute.GetConstructor([]), []);
             typeBuilder.SetCustomAttribute(cab);
         }
 
         internal void SetRuntimeCompatibilityAttribute(IAssemblySymbolBuilder assemblyBuilder)
         {
             var runtimeCompatibilityAttribute = context.Resolver.ResolveCoreType(typeof(RuntimeCompatibilityAttribute).FullName);
-            assemblyBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(runtimeCompatibilityAttribute.GetConstructor([]), [], [runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows")], [true], [], []));
+            assemblyBuilder.SetCustomAttribute(CustomAttribute.Create(runtimeCompatibilityAttribute.GetConstructor([]), [], [runtimeCompatibilityAttribute.GetProperty("WrapNonExceptionThrows")], [true], [], []));
         }
 
         internal void SetInternalsVisibleToAttribute(IAssemblySymbolBuilder assemblyBuilder, string assemblyName)
         {
             var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName);
-            var cab = context.Resolver.Symbols.CreateCustomAttribute(internalsVisibleToAttribute.GetConstructor([context.Types.String]), [assemblyName]);
+            var cab = CustomAttribute.Create(internalsVisibleToAttribute.GetConstructor([context.Types.String]), [assemblyName]);
             assemblyBuilder.SetCustomAttribute(cab);
         }
 
         internal void SetCustomAssemblyClassLoaderAttribute(IAssemblySymbolBuilder assemblyBuilder, ITypeSymbol classLoaderType)
         {
-            var cab = context.Resolver.Symbols.CreateCustomAttribute(TypeOfCustomAssemblyClassLoaderAttribute.GetConstructor([context.Types.Type]), [classLoaderType]);
+            var cab = CustomAttribute.Create(TypeOfCustomAssemblyClassLoaderAttribute.GetConstructor([context.Types.Type]), [classLoaderType]);
             assemblyBuilder.SetCustomAttribute(cab);
         }
 

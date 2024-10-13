@@ -23,7 +23,7 @@ namespace IKVM.Runtime
     static class SymbolExtensions
     {
 
-        public static Assembly AsReflection(this IAssemblySymbol symbol)
+        public static Assembly GetUnderlyingAssembly(this IAssemblySymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -35,7 +35,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static Module AsReflection(this IModuleSymbol symbol)
+        public static Module GetUnderlyingModule(this IModuleSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -47,7 +47,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static Type AsReflection(this ITypeSymbol symbol)
+        public static Type GetUnderlyingType(this ITypeSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -59,19 +59,31 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static Type[] AsReflection(this ITypeSymbol[] symbols)
+        public static Type GetUnderlyingRuntimeType(this ITypeSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            throw new NotSupportedException();
+#else
+            return ((IReflectionTypeSymbol)symbol).UnderlyingRuntimeType;
+#endif
+        }
+
+        public static Type[] GetUnderlyingTypes(this ITypeSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
 
             var a = new Type[symbols.Length];
             for (int i = 0; i < symbols.Length; i++)
-                a[i] = AsReflection(symbols[i]);
+                a[i] = GetUnderlyingType(symbols[i]);
 
             return a;
         }
 
-        public static MethodBase AsReflection(this IMethodBaseSymbol symbol)
+        public static MethodBase GetUnderlyingMethodBase(this IMethodBaseSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -83,7 +95,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static ConstructorInfo AsReflection(this IConstructorSymbol symbol)
+        public static ConstructorInfo GetUnderlyingConstructor(this IConstructorSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -95,7 +107,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static MethodInfo AsReflection(this IMethodSymbol symbol)
+        public static MethodInfo GetUnderlyingMethod(this IMethodSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -107,7 +119,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static ParameterInfo AsReflection(this IParameterSymbol symbol)
+        public static ParameterInfo GetUnderlyingParameter(this IParameterSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -119,7 +131,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static FieldInfo AsReflection(this IFieldSymbol symbol)
+        public static FieldInfo GetUnderlyingField(this IFieldSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -131,19 +143,31 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static FieldInfo[] AsReflection(this IFieldSymbol[] symbols)
+        public static FieldInfo GetUnderlyingRuntimeField(this IFieldSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            throw new NotSupportedException();
+#else
+            return ((IReflectionFieldSymbol)symbol).UnderlyingRuntimeField;
+#endif
+        }
+
+        public static FieldInfo[] GetUnderlyingFields(this IFieldSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
 
             var a = new FieldInfo[symbols.Length];
             for (int i = 0; i < symbols.Length; i++)
-                a[i] = AsReflection(symbols[i]);
+                a[i] = GetUnderlyingField(symbols[i]);
 
             return a;
         }
 
-        public static PropertyInfo AsReflection(this IPropertySymbol symbol)
+        public static PropertyInfo GetUnderlyingProperty(this IPropertySymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -155,19 +179,19 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static PropertyInfo[] AsReflection(this IPropertySymbol[] symbols)
+        public static PropertyInfo[] GetUnderlyingProperties(this IPropertySymbol[] symbols)
         {
             if (symbols == null)
                 return null;
 
             var a = new PropertyInfo[symbols.Length];
             for (int i = 0; i < symbols.Length; i++)
-                a[i] = AsReflection(symbols[i]);
+                a[i] = GetUnderlyingProperty(symbols[i]);
 
             return a;
         }
 
-        public static AssemblyBuilder AsReflection(this IAssemblySymbolBuilder builder)
+        public static AssemblyBuilder GetUnderlyingAssemblyBuilder(this IAssemblySymbolBuilder builder)
         {
             if (builder == null)
                 return null;
@@ -179,7 +203,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static ModuleBuilder AsReflection(this IModuleSymbolBuilder builder)
+        public static ModuleBuilder GetUnderlyingModuleBuilder(this IModuleSymbolBuilder builder)
         {
             if (builder == null)
                 return null;
@@ -191,7 +215,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static TypeBuilder AsReflection(this ITypeSymbolBuilder builder)
+        public static TypeBuilder GetUnderlyingTypeBuilder(this ITypeSymbolBuilder builder)
         {
             if (builder == null)
                 return null;
@@ -203,7 +227,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static ConstructorBuilder AsReflection(this IConstructorSymbolBuilder builder)
+        public static ConstructorBuilder GetUnderlyingConstructorBuilder(this IConstructorSymbolBuilder builder)
         {
             if (builder == null)
                 return null;
@@ -215,7 +239,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static MethodBuilder AsReflection(this IMethodSymbolBuilder builder)
+        public static MethodBuilder GetUnderlyingMethodBuilder(this IMethodSymbolBuilder builder)
         {
             if (builder == null)
                 return null;
@@ -227,7 +251,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static FieldBuilder AsReflection(this IFieldSymbolBuilder builder)
+        public static FieldBuilder GetUnderlyingFieldBuilder(this IFieldSymbolBuilder builder)
         {
             if (builder == null)
                 return null;

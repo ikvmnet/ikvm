@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IMemberSymbolBuilder : ISymbolBuilder<IMemberSymbol>, IMemberSymbol
+    interface IMemberSymbolBuilder : ISymbolBuilder<IMemberSymbol>, IMemberSymbol, ICustomAttributeProviderBuilder
     {
 
 

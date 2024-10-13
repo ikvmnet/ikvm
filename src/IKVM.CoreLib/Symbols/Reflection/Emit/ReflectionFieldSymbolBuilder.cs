@@ -7,7 +7,7 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionFieldSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionFieldSymbolBuilder
+    class ReflectionFieldSymbolBuilder : ReflectionFieldSymbol, IReflectionFieldSymbolBuilder
     {
 
         readonly FieldBuilder _builder;
@@ -22,25 +22,26 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder) :
-            base(context, resolvingModule, resolvingType)
+            base(context, resolvingModule, resolvingType, builder)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
         }
 
         /// <inheritdoc />
-        public FieldInfo UnderlyingField => _field ?? _builder;
-
-        /// <inheritdoc />
-        public FieldInfo UnderlyingEmitField => _builder;
-
-        /// <inheritdoc />
-        public FieldInfo UnderlyingDynamicEmitField => _field ?? throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public override MemberInfo UnderlyingMember => UnderlyingField;
-
-        /// <inheritdoc />
         public FieldBuilder UnderlyingFieldBuilder => _builder;
+
+        /// <inheritdoc />
+        public override FieldInfo UnderlyingRuntimeField => _field ?? throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => (IReflectionModuleSymbolBuilder)ResolvingModule;
+
+        #region IFieldSymbol
+
+        /// <inheritdoc/>
+        public override bool IsComplete => _field != null;
+
+        #endregion
 
         #region IFieldSymbolBuilder
 
@@ -56,92 +57,22 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingFieldBuilder.SetOffset(iOffset);
         }
 
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingFieldBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingFieldBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
         #endregion
 
-        #region IFieldSymbol
+        #region ICustomAttributeProviderBuilder
 
-        /// <inheritdoc/>
-        public FieldAttributes Attributes => UnderlyingField.Attributes;
-
-        /// <inheritdoc/>
-        public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);
-
-        /// <inheritdoc/>
-        public bool IsSpecialName => UnderlyingField.IsSpecialName;
-
-        /// <inheritdoc/>
-        public bool IsAssembly => UnderlyingField.IsAssembly;
-
-        /// <inheritdoc/>
-        public bool IsFamily => UnderlyingField.IsFamily;
-
-        /// <inheritdoc/>
-        public bool IsFamilyAndAssembly => UnderlyingField.IsFamilyAndAssembly;
-
-        /// <inheritdoc/>
-        public bool IsFamilyOrAssembly => UnderlyingField.IsFamilyOrAssembly;
-
-        /// <inheritdoc/>
-        public bool IsInitOnly => UnderlyingField.IsInitOnly;
-
-        /// <inheritdoc/>
-        public bool IsLiteral => UnderlyingField.IsLiteral;
-
-        /// <inheritdoc/>
-        public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
-
-        /// <inheritdoc/>
-        public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;
-
-        /// <inheritdoc/>
-        public bool IsPrivate => UnderlyingField.IsPrivate;
-
-        /// <inheritdoc/>
-        public bool IsPublic => UnderlyingField.IsPublic;
-
-        /// <inheritdoc/>
-        public bool IsStatic => UnderlyingField.IsStatic;
-
-        /// <inheritdoc/>
-        public override bool IsComplete => _field != null;
-
-        /// <inheritdoc/>
-        public ITypeSymbol[] GetOptionalCustomModifiers()
+        /// <inheritdoc />
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
-        }
-
-        /// <inheritdoc/>
-        public ITypeSymbol[] GetRequiredCustomModifiers()
-        {
-            return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
-        }
-
-        /// <inheritdoc/>
-        public object? GetRawConstantValue()
-        {
-            return UnderlyingField.GetRawConstantValue();
+            UnderlyingFieldBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion
 
         /// <inheritdoc/>
-        public override void OnComplete()
+        public void OnComplete()
         {
             _field = ResolvingModule.UnderlyingModule.ResolveField(MetadataToken) ?? throw new InvalidOperationException();
-            base.OnComplete();
         }
 
     }

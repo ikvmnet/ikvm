@@ -1104,10 +1104,7 @@ namespace IKVM.Runtime
                 }
 
                 if (fld.IsTransient)
-                {
-                    var transientAttrib = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]), []);
-                    field.SetCustomAttribute(transientAttrib);
-                }
+                    field.SetCustomAttribute(CustomAttribute.Create(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]), []));
 
 #if IMPORTER
                 {
@@ -1264,10 +1261,7 @@ namespace IKVM.Runtime
 #if IMPORTER
 
                     if (annotationBuilder != null)
-                    {
-                        var cab = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).GetConstructor([wrapper.Context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName)]);
-                        typeBuilder.SetCustomAttribute(cab);
-                    }
+                        typeBuilder.SetCustomAttribute(CustomAttribute.Create(wrapper.Context.Resolver.ResolveRuntimeType(typeof(AnnotationAttributeAttribute).FullName).GetConstructor([wrapper.Context.Types.String]), [UnicodeUtil.EscapeInvalidSurrogates(annotationBuilder.AttributeTypeName)]));
 
                     if (!wrapper.IsInterface && wrapper.IsMapUnsafeException)
                     {
@@ -1470,7 +1464,7 @@ namespace IKVM.Runtime
 
                     if (o.classFile.Annotations != null)
                     {
-                        ICustomAttributeBuilder attributeUsageAttribute = null;
+                        CustomAttribute? attributeUsageAttribute = null;
                         bool hasAttributeUsageAttribute = false;
                         foreach (object[] def in o.classFile.Annotations)
                         {
@@ -1523,7 +1517,9 @@ namespace IKVM.Runtime
                                                 }
                                             }
 
-                                            attributeUsageAttribute = context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]), [targets]);
+                                            attributeUsageAttribute = CustomAttribute.Create(
+                                                context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]),
+                                                [targets]);
                                         }
                                     }
                                 }
@@ -1542,7 +1538,7 @@ namespace IKVM.Runtime
 
                         if (attributeUsageAttribute != null && !hasAttributeUsageAttribute)
                         {
-                            attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute);
+                            attributeTypeBuilder.SetCustomAttribute(attributeUsageAttribute.Value);
                         }
                     }
 
@@ -1839,12 +1835,12 @@ namespace IKVM.Runtime
                     attributeTypeBuilder.Complete();
                 }
 
-                ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+                CustomAttribute MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     Link();
 
                     var ctor = defineConstructor != null ? defineConstructor : context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").GetConstructor([context.Types.Object.MakeArrayType()]);
-                    return context.Resolver.Symbols.CreateCustomAttribute(ctor, new object[] { AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation)) });
+                    return CustomAttribute.Create(ctor, [AnnotationDefaultAttribute.Escape(QualifyClassNames(loader, annotation))]);
                 }
 
                 internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
@@ -2851,12 +2847,10 @@ namespace IKVM.Runtime
                         ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                         ilgen.DoEmit();
                     }
+
 #if IMPORTER
                     if (classFile.Methods[index].AnnotationDefault != null)
-                    {
-                        var cab = wrapper.Context.Resolver.Symbols.CreateCustomAttribute(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]);
-                        mb.SetCustomAttribute(cab);
-                    }
+                        mb.SetCustomAttribute(CustomAttribute.Create(wrapper.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor([wrapper.Context.Types.Object]), [AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault)]));
 #endif
                 }
 

@@ -9,7 +9,7 @@ using System.Resources;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IModuleSymbolBuilder : ISymbolBuilder<IModuleSymbol>, IModuleSymbol
+    interface IModuleSymbolBuilder : ISymbolBuilder<IModuleSymbol>, IModuleSymbol, ICustomAttributeProviderBuilder
     {
 
         /// <summary>
@@ -162,19 +162,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="interfaces"></param>
         /// <returns></returns>
         ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, ITypeSymbol[]? interfaces);
-
-        /// <summary>
-        /// Set a custom attribute using a custom attribute builder.
-        /// </summary>
-        /// <param name="customBuilder"></param>
-        void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
-
-        /// <summary>
-        /// Sets a custom attribute using a specified custom attribute blob.
-        /// </summary>
-        /// <param name="con"></param>
-        /// <param name="binaryAttribute"></param>
-        void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
 
         /// <summary>
         /// Explicitely adds a reference to the specified assembly.

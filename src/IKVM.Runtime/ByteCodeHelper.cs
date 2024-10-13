@@ -128,7 +128,7 @@ namespace IKVM.Runtime
             Profiler.Count("DynamicMultianewarray");
 
             var wrapper = RuntimeJavaType.FromClass(clazz);
-            var obj = multianewarray(wrapper.TypeAsArrayType.AsReflection().TypeHandle, lengths);
+            var obj = multianewarray(wrapper.TypeAsArrayType.GetUnderlyingType().TypeHandle, lengths);
             if (wrapper.IsGhostArray)
                 GhostTag.SetTag(obj, wrapper);
 
@@ -147,7 +147,7 @@ namespace IKVM.Runtime
                 throw new global::java.lang.NegativeArraySizeException();
 
             var wrapper = RuntimeJavaType.FromClass(clazz);
-            var obj = Array.CreateInstance(wrapper.TypeAsArrayType.AsReflection(), length);
+            var obj = Array.CreateInstance(wrapper.TypeAsArrayType.GetUnderlyingType(), length);
             if (wrapper.IsGhost || wrapper.IsGhostArray)
                 GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
 
@@ -1108,7 +1108,7 @@ namespace IKVM.Runtime
                 mode |= MapFlags.NoRemapping;
 
             var exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? JVM.Context.Resolver.ResolveCoreType(typeof(System.Exception).FullName) : exceptionTypeWrapper.TypeAsBaseType;
-            return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).AsReflection().Invoke(null, [x, mode]);
+            return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).GetUnderlyingMethod().Invoke(null, [x, mode]);
 #endif
         }
 

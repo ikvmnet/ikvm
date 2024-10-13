@@ -23,21 +23,21 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public FieldInfo UnderlyingField => _field;
+        public virtual FieldInfo UnderlyingField => _field;
 
         /// <inheritdoc />
-        public FieldInfo UnderlyingEmitField => UnderlyingField;
-
-        /// <inheritdoc />
-        public FieldInfo UnderlyingDynamicEmitField => UnderlyingEmitField;
+        public virtual FieldInfo UnderlyingRuntimeField => _field;
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingField;
 
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeField;
+
         #region IFieldSymbol
 
         /// <inheritdoc/>
-        public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)UnderlyingField.Attributes;
+        public FieldAttributes Attributes => UnderlyingField.Attributes;
 
         /// <inheritdoc/>
         public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);

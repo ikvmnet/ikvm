@@ -108,13 +108,13 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            return GetField().AsReflection().GetValue(obj);
+            return GetField().GetUnderlyingField().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            GetField().AsReflection().SetValue(obj, value);
+            GetField().GetUnderlyingField().SetValue(obj, value);
         }
 
 #endif

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -588,6 +589,80 @@ namespace IKVM.CoreLib.Reflection
 #else
             return type.IsArray && type.Name.EndsWith("[]");
 #endif
+        }
+
+        /// <summary>
+        /// Implements GetcustomAttributeData with support for examining inheritence.
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<CustomAttributeData> GetCustomAttributesData(this Type type, bool inherit)
+        {
+            foreach (var i in type.GetCustomAttributesData())
+                yield return i;
+
+            if (inherit)
+                for (var baseType = type.BaseType; baseType != null; baseType = baseType.BaseType)
+                    foreach (var cad in baseType.GetCustomAttributesData())
+                        if (cad.AttributeType.GetCustomAttribute<AttributeUsageAttribute>()?.Inherited ?? false)
+                            yield return cad;
+        }
+
+        /// <summary>
+        /// Implements GetcustomAttributeData with support for examining inheritence.
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<CustomAttributeData> GetInheritedCustomAttributesData(this Type type)
+        {
+            for (var baseType = type.BaseType; baseType != null; baseType = baseType.BaseType)
+                foreach (var cad in baseType.GetCustomAttributesData())
+                    if (cad.AttributeType.GetCustomAttribute<AttributeUsageAttribute>()?.Inherited ?? false)
+                        yield return cad;
+        }
+
+        /// <summary>
+        /// Implements GetcustomAttributeData with support for examining inheritence.
+        /// </summary>
+        /// <param name="inherit"></param>
+        /// <returns></returns>
+        public static IEnumerable<CustomAttributeData> GetCustomAttributesData(this MethodInfo method, bool inherit)
+        {
+            foreach (var i in method.GetCustomAttributesData())
+                yield return i;
+
+            if (inherit)
+                for (var baseMethod = method.GetBaseDefinition(); baseMethod != null; baseMethod = baseMethod.GetBaseDefinition())
+                    foreach (var cad in baseMethod.GetCustomAttributesData())
+                        if (cad.AttributeType.GetCustomAttribute<AttributeUsageAttribute>()?.Inherited ?? false)
+                            yield return cad;
+        }
+
+        /// <summary>
+        /// Implements GetcustomAttributeData with support for examining inheritence.
+        /// </summary>
+        /// <param name="inherit"></param>
+        /// <returns></returns>
+        public static IEnumerable<CustomAttributeData> GetInheritedCustomAttributesData(this MethodInfo method)
+        {
+            for (var baseMethod = method.GetBaseDefinition(); baseMethod != null; baseMethod = baseMethod.GetBaseDefinition())
+                foreach (var cad in baseMethod.GetCustomAttributesData())
+                    if (cad.AttributeType.GetCustomAttribute<AttributeUsageAttribute>()?.Inherited ?? false)
+                        yield return cad;
+        }
+
+        /// <summary>
+        /// Implements GetcustomAttributeData with support for examining inheritence.
+        /// </summary>
+        /// <param name="inherit"></param>
+        /// <returns></returns>
+        public static IEnumerable<CustomAttributeData> GetCustomAttributesData(this MemberInfo member, bool inherit)
+        {
+            if (member is Type type)
+                return GetCustomAttributesData(type, inherit);
+
+            if (member is MethodInfo method)
+                return GetCustomAttributesData(method, inherit);
+
+            return member.GetCustomAttributesData();
         }
 
     }

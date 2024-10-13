@@ -29,9 +29,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the underlying <see cref="Assembly"/> instance.
         /// </summary>
-        public Assembly UnderlyingAssembly => _assembly;
+        public virtual Assembly UnderlyingAssembly => _assembly;
 
-        #region IAssemblySymbol
+        /// <summary>
+        /// Gets the underlying <see cref="Assembly"/> instance.
+        /// </summary>
+        public virtual Assembly UnderlyingRuntimeAssembly => _assembly;
+
+        #region IReflectionAssemblySymbol
 
         /// <inheritdoc />
         public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)

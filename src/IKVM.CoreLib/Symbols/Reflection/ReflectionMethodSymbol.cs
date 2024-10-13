@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -28,21 +31,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public MethodInfo UnderlyingMethod => _method;
+        public virtual MethodInfo UnderlyingMethod => _method;
 
         /// <inheritdoc />
-        public MethodInfo UnderlyingEmitMethod => UnderlyingMethod;
-
-        /// <inheritdoc />
-        public MethodInfo UnderlyingDynamicEmitMethod => UnderlyingEmitMethod;
+        public virtual MethodInfo UnderlyingRuntimeMethod => _method;
 
         /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingRuntimeMethodBase => UnderlyingRuntimeMethod;
 
         #region IReflectionMethodSymbol
 
         /// <inheritdoc />
         public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        /// <inheritdoc />
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
             return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }

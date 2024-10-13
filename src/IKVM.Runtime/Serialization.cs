@@ -43,8 +43,8 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        ICustomAttributeBuilder serializableAttribute;
-        ICustomAttributeBuilder securityCriticalAttribute;
+        CustomAttribute? serializableAttribute;
+        CustomAttribute? securityCriticalAttribute;
         RuntimeJavaType typeOfISerializable;
         RuntimeJavaType typeofIObjectreference;
         RuntimeJavaType typeOfExternalizable;
@@ -58,9 +58,9 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        ICustomAttributeBuilder SerializableAttribute => serializableAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]), []);
+        CustomAttribute SerializableAttribute => serializableAttribute ??= CustomAttribute.Create(context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]), []);
 
-        ICustomAttributeBuilder SecurityCriticalAttribute => securityCriticalAttribute ??= context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]), []);
+        CustomAttribute SecurityCriticalAttribute => securityCriticalAttribute ??= CustomAttribute.Create(context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]), []);
 
         RuntimeJavaType TypeOfISerializable => typeOfISerializable ??= context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(ISerializable).FullName));
 

@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
@@ -335,6 +336,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         #endregion
 
+        #region ICustomAttributeProviderBuilder
+
+        /// <inheritdoc />
+        public abstract void SetCustomAttribute(CustomAttribute attribute);
+
+        #endregion
+
         /// <inheritdoc />
         public virtual void OnComplete()
         {
@@ -343,7 +351,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         /// <inheritdoc />
         public override string ToString() => UnderlyingMember.ToString()!;
-
     }
 
 }

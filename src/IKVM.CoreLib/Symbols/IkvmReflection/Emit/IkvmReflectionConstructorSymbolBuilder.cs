@@ -68,16 +68,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingConstructorBuilder.GetILGenerator(streamSize));
         }
 
-        /// <inheritdoc />
-        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingConstructorBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
 
         /// <inheritdoc />
-        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        public override void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingConstructorBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
+            UnderlyingConstructorBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

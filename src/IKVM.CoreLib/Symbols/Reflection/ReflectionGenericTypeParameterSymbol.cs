@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -32,16 +34,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public Type UnderlyingType => _type;
+        public virtual Type UnderlyingType => _type;
 
         /// <inheritdoc />
-        public Type UnderlyingEmitType => UnderlyingType;
-
-        /// <inheritdoc />
-        public Type UnderlyingDynamicEmitType => _type;
+        public virtual Type UnderlyingRuntimeType => _type;
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingType;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeType;
 
         /// <summary>
         /// Gets the method base that declares this type parameter.
@@ -65,6 +67,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         #region IReflectionTypeSymbol
 
         /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition)
+        {
+            return _specTable.GetOrCreateGenericTypeSymbol(genericTypeDefinition);
+        }
+
+        /// <inheritdoc />
         public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
         {
             throw new NotSupportedException();
@@ -76,10 +84,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
             throw new NotSupportedException();
         }
 
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
         {
             throw new NotSupportedException();
+        }
+
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -88,10 +106,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
             throw new NotSupportedException();
         }
 
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
             throw new NotSupportedException();
+        }
+
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -100,10 +128,20 @@ namespace IKVM.CoreLib.Symbols.Reflection
             throw new NotSupportedException();
         }
 
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type type)
         {
             throw new NotSupportedException();
+        }
+
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -128,12 +166,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreateByRefTypeSymbol()
         {
             return _specTable.GetOrCreateByRefTypeSymbol();
-        }
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition)
-        {
-            return _specTable.GetOrCreateGenericTypeSymbol(genericTypeDefinition);
         }
 
         #endregion
@@ -662,7 +694,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return ResolveTypeSymbol(UnderlyingType.MakeGenericType(typeArguments.Unpack()));
         }
 
-#endregion
+        #endregion
 
     }
 

@@ -24,6 +24,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public override Type UnderlyingType => _type;
 
+        /// <inheritdoc />
+        public override Type UnderlyingRuntimeType => _type;
+
         #region IReflectionSymbol
 
         /// <inheritdoc />

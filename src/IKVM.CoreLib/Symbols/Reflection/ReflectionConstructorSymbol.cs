@@ -23,16 +23,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public ConstructorInfo UnderlyingConstructor => _ctor;
+        public virtual ConstructorInfo UnderlyingConstructor => _ctor;
 
         /// <inheritdoc />
-        public ConstructorInfo UnderlyingEmitConstructor => UnderlyingConstructor;
-
-        /// <inheritdoc />
-        public ConstructorInfo UnderlyingDynamicEmitConstructor => UnderlyingEmitConstructor;
+        public virtual ConstructorInfo UnderlyingRuntimeConstructor => UnderlyingConstructor;
 
         /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingRuntimeMethodBase => UnderlyingRuntimeConstructor;
 
     }
 

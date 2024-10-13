@@ -14,12 +14,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the underlying <see cref="ConstructorInfo"/> used for IL emit operations.
         /// </summary>
-        ConstructorInfo UnderlyingEmitConstructor { get; }
-
-        /// <summary>
-        /// Gets the underlying <see cref="ConstructorInfo"/> used for IL emit operations against dynamic methods.
-        /// </summary>
-        ConstructorInfo UnderlyingDynamicEmitConstructor { get; }
+        ConstructorInfo UnderlyingRuntimeConstructor { get; }
 
     }
 

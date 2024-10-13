@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
 using IKVM.CoreLib.Collections;
@@ -58,16 +57,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
                     
                 return _moduleSymbols[row] ?? throw new InvalidOperationException();
             }
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="IReflectionModuleSymbolBuilder"/> cached for the module.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
-        {
-            return (IReflectionModuleSymbolBuilder)GetOrCreateModuleSymbol((Module)module);
         }
 
     }

@@ -378,17 +378,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         {
             return (IConstructorSymbolBuilder)ResolveConstructorSymbol(UnderlyingTypeBuilder.DefineTypeInitializer());
         }
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingTypeBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingTypeBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
 
         #endregion
 
@@ -941,6 +930,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public ITypeSymbol MakeByRefType()
         {
             return ResolveTypeSymbol(_type.MakeByRefType());
+        }
+
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(CustomAttribute attribute)
+        {
+            UnderlyingTypeBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

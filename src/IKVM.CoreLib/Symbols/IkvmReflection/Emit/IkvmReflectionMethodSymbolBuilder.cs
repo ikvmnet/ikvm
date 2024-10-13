@@ -106,18 +106,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             return _il ??= new IkvmReflectionILGenerator(Context, UnderlyingMethodBuilder.GetILGenerator(streamSize));
         }
 
-        /// <inheritdoc />
-        public override void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public override void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingMethodBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
         #endregion
 
         #region IMethodSymbolBuilder
@@ -182,6 +170,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
         {
             return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
+        }
+
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
+
+        /// <inheritdoc />
+        public override void SetCustomAttribute(CustomAttribute attribute)
+        {
+            UnderlyingMethodBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

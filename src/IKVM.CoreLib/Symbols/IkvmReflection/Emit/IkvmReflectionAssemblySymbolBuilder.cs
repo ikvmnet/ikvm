@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
@@ -76,15 +75,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingAssemblyBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingAssemblyBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingAssemblyBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         /// <inheritdoc />

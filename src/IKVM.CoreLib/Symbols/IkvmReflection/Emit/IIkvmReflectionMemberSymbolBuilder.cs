@@ -1,10 +1,9 @@
 ﻿using IKVM.CoreLib.Symbols.Emit;
-using IKVM.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
-    interface IIkvmReflectionMemberSymbolBuilder : IIkvmReflectionSymbolBuilder, IMemberSymbolBuilder, IIkvmReflectionMemberSymbol
+    interface IIkvmReflectionMemberSymbolBuilder : IIkvmReflectionSymbolBuilder, IMemberSymbolBuilder, IIkvmReflectionMemberSymbol, IIkvmReflectionCustomAttributeProviderBuilder
     {
 
         /// <summary>

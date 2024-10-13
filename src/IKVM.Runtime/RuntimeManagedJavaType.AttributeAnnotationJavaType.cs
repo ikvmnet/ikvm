@@ -376,7 +376,7 @@ namespace IKVM.Runtime
                     }
                     else if (mw.ReturnType.IsArray)
                     {
-                        return Array.CreateInstance(mw.ReturnType.TypeAsArrayType.AsReflection(), 0);
+                        return Array.CreateInstance(mw.ReturnType.TypeAsArrayType.GetUnderlyingType(), 0);
                     }
                 }
 
@@ -491,7 +491,7 @@ namespace IKVM.Runtime
                     this.type = type;
                 }
 
-                ICustomAttributeBuilder MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
+                CustomAttribute MakeCustomAttributeBuilder(RuntimeClassLoader loader, object annotation)
                 {
                     object[] arr = (object[])annotation;
                     object ctorArg = null;
@@ -534,7 +534,7 @@ namespace IKVM.Runtime
                         // TODO required argument is missing
                     }
 
-                    return loader.Context.Resolver.Symbols.CreateCustomAttribute(
+                    return CustomAttribute.Create(
                         ctorArg == null ? defCtor : singleOneArgCtor,
                         ctorArg == null ? [] : new object[] { ctorArg },
                         properties.ToArray(),
@@ -583,11 +583,11 @@ namespace IKVM.Runtime
                 internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder assemblyBuilder, object annotation)
                 {
 #if IMPORTER
-                    var ab = assemblyBuilder.AsReflection();
+                    var ab = assemblyBuilder.GetUnderlyingAssemblyBuilder();
 
                     if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName))
                     {
-                        ab.__AddTypeForwarder((Type)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
+                        assemblyBuilder.AddTypeForwarder((ITypeSymbol)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
                     }
                     else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyVersionAttribute).FullName))
                     {

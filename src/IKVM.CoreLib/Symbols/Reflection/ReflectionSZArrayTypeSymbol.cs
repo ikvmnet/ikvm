@@ -22,10 +22,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public override Type UnderlyingType => ElementType.UnderlyingType.MakeArrayType();
 
         /// <inheritdoc />
-        public override Type UnderlyingEmitType => ElementType.UnderlyingEmitType.MakeArrayType();
-
-        /// <inheritdoc />
-        public override Type UnderlyingDynamicEmitType => ElementType.UnderlyingDynamicEmitType.MakeArrayType();
+        public override Type UnderlyingRuntimeType => ElementType.UnderlyingRuntimeType.MakeArrayType();
 
     }
 

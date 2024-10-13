@@ -7,13 +7,11 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionPropertySymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionPropertySymbolBuilder
+    class ReflectionPropertySymbolBuilder : ReflectionPropertySymbol, IReflectionPropertySymbolBuilder
     {
 
-        PropertyBuilder _builder;
+        readonly PropertyBuilder _builder;
         PropertyInfo? _property;
-
-        ReflectionParameterTable _parameterTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,44 +22,34 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionPropertySymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, PropertyBuilder builder) :
-            base(context, resolvingModule, resolvingType)
+            base(context, resolvingModule, resolvingType, builder)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
-
-        /// <inheritdoc />
-        public PropertyInfo UnderlyingProperty => _property ?? _builder;
-
-        /// <inheritdoc />
-        public PropertyInfo UnderlyingEmitProperty => UnderlyingProperty;
 
         /// <inheritdoc />
         public PropertyBuilder UnderlyingPropertyBuilder => _builder ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
-        public override MemberInfo UnderlyingMember => UnderlyingProperty;
+        public override PropertyInfo UnderlyingRuntimeProperty => _property ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
-        public override MemberInfo UnderlyingEmitMember => UnderlyingEmitProperty;
+        public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => (IReflectionModuleSymbolBuilder)ResolvingModule;
 
-        #region IReflectionPropertySymbolBuilder
+        #region ICustomAttributeProviderBuilder
 
         /// <inheritdoc />
-        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+            UnderlyingPropertyBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion
 
-        #region IReflectionPropertySymbol
+        #region IPropertySymbol
 
         /// <inheritdoc />
-        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
-        {
-            return _parameterTable.GetOrCreateParameterSymbol(parameter);
-        }
+        public override bool IsComplete => _property != null;
 
         #endregion
 
@@ -91,119 +79,12 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingPropertyBuilder.AddOtherMethod(((IReflectionMethodSymbolBuilder)mdBuilder).UnderlyingMethodBuilder);
         }
 
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingPropertyBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingPropertyBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
-        }
-
-        #endregion
-
-        #region IPropertySymbol
-
-        /// <inheritdoc />
-        public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)UnderlyingProperty.Attributes;
-
-        /// <inheritdoc />
-        public bool CanRead => UnderlyingProperty.CanRead;
-
-        /// <inheritdoc />
-        public bool CanWrite => UnderlyingProperty.CanWrite;
-
-        /// <inheritdoc />
-        public bool IsSpecialName => UnderlyingProperty.IsSpecialName;
-
-        /// <inheritdoc />
-        public ITypeSymbol PropertyType => ResolveTypeSymbol(UnderlyingProperty.PropertyType);
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetMethod => ResolveMethodSymbol(UnderlyingProperty.GetMethod);
-
-        /// <inheritdoc />
-        public IMethodSymbol? SetMethod => ResolveMethodSymbol(UnderlyingProperty.SetMethod);
-
-        /// <inheritdoc />
-        public override bool IsComplete => _property != null;
-
-        /// <inheritdoc />
-        public object? GetRawConstantValue()
-        {
-            return UnderlyingProperty.GetRawConstantValue();
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetAccessors()
-        {
-            return ResolveMethodSymbols(UnderlyingProperty.GetAccessors());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetAccessors(bool nonPublic)
-        {
-            return ResolveMethodSymbols(UnderlyingProperty.GetAccessors(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public IParameterSymbol[] GetIndexParameters()
-        {
-            return ResolveParameterSymbols(UnderlyingProperty.GetIndexParameters());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetGetMethod()
-        {
-            return ResolveMethodSymbol(UnderlyingProperty.GetGetMethod());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetGetMethod(bool nonPublic)
-        {
-            return ResolveMethodSymbol(UnderlyingProperty.GetGetMethod(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetSetMethod()
-        {
-            return ResolveMethodSymbol(UnderlyingProperty.GetSetMethod());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetSetMethod(bool nonPublic)
-        {
-            return ResolveMethodSymbol(UnderlyingProperty.GetSetMethod(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol GetModifiedPropertyType()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetOptionalCustomModifiers()
-        {
-            return ResolveTypeSymbols(UnderlyingProperty.GetOptionalCustomModifiers());
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetRequiredCustomModifiers()
-        {
-            return ResolveTypeSymbols(UnderlyingProperty.GetRequiredCustomModifiers());
-        }
-
         #endregion
 
         /// <inheritdoc />
-        public override void OnComplete()
+        public void OnComplete()
         {
             _property = (PropertyInfo?)ResolvingModule.UnderlyingModule.ResolveMember(MetadataToken) ?? throw new InvalidOperationException();
-            base.OnComplete();
         }
 
     }

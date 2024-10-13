@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -383,21 +384,58 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Unpacks the <see cref="ICustomAttributeBuilder"/>.
+        /// Unpacks the <see cref="CustomAttribute"/>.
         /// </summary>
         /// <param name="customAttributes"></param>
         /// <returns></returns>
-        public static CustomAttributeBuilder Unpack(this ICustomAttributeBuilder customAttributes)
+        public static CustomAttributeBuilder Unpack(this CustomAttribute attributes)
         {
-            return ((ReflectionCustomAttributeBuilder)customAttributes).UnderlyingBuilder;
+            // unpack constructor arg values
+            var constructorValues = new object?[attributes.ConstructorArguments.Length];
+            for (int i = 0; i < attributes.ConstructorArguments.Length; i++)
+                constructorValues[i] = UnpackCustomAttributeValue(attributes.ConstructorArguments[i]);
+
+            // unpack named arguments into sets of properties and fields
+            List<PropertyInfo>? namedProperties = null;
+            List<object?>? propertyValues = null;
+            List<FieldInfo>? namedFields = null;
+            List<object?>? fieldValues = null;
+
+            // split named arguments into two sets
+            foreach (var i in attributes.NamedArguments)
+            {
+                var v = UnpackCustomAttributeValue(i.TypedValue.Value);
+                if (i.IsField == false)
+                {
+                    namedProperties ??= new();
+                    namedProperties.Add(((IPropertySymbol)i.MemberInfo).Unpack());
+                    propertyValues ??= new();
+                    propertyValues.Add(v);
+                }
+                else
+                {
+                    namedFields ??= new();
+                    namedFields.Add(((IFieldSymbol)i.MemberInfo).Unpack());
+                    fieldValues ??= new();
+                    fieldValues.Add(v);
+                }
+            }
+
+            return new CustomAttributeBuilder(
+                attributes.Constructor.Unpack(),
+                constructorValues,
+                namedProperties?.ToArray() ?? [],
+                propertyValues?.ToArray() ?? [],
+                namedFields?.ToArray() ?? [],
+                fieldValues?.ToArray() ?? []);
         }
 
         /// <summary>
-        /// Unpacks the <see cref="ICustomAttributeBuilder"/>s.
+        /// Unpacks the <see cref="CustomAttribute"/>s.
         /// </summary>
         /// <param name="customAttributes"></param>
         /// <returns></returns>
-        public static CustomAttributeBuilder[] Unpack(this ICustomAttributeBuilder[] customAttributes)
+        public static CustomAttributeBuilder[] Unpack(this CustomAttribute[] customAttributes)
         {
             if (customAttributes.Length == 0)
                 return [];
@@ -405,6 +443,53 @@ namespace IKVM.CoreLib.Symbols.Reflection
             var a = new CustomAttributeBuilder[customAttributes.Length];
             for (int i = 0; i < customAttributes.Length; i++)
                 a[i] = customAttributes[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the <see cref="CustomAttribute"/>s.
+        /// </summary>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public static CustomAttributeBuilder[] Unpack(this ImmutableArray<CustomAttribute> attributes)
+        {
+            if (attributes.Length == 0)
+                return [];
+
+            var a = new CustomAttributeBuilder[attributes.Length];
+            for (int i = 0; i < attributes.Length; i++)
+                a[i] = attributes[i].Unpack();
+
+            return a;
+        }
+
+        /// <summary>
+        /// Unpacks the attribute value object.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        static object? UnpackCustomAttributeValue(object? value)
+        {
+            return value switch
+            {
+                IReadOnlyList<object> l => UnpackCustomAttributeArrayValue(l),
+                ITypeSymbol t => t.Unpack(),
+                CustomAttributeTypedArgument a => UnpackCustomAttributeValue(a.Value),
+                _ => value,
+            };
+        }
+
+        /// <summary>
+        /// Unpacks the attribute value array.
+        /// </summary>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        static object?[] UnpackCustomAttributeArrayValue(IReadOnlyList<object> items)
+        {
+            var a = new object?[items.Count];
+            for (int i = 0; i < items.Count; i++)
+                a[i] = UnpackCustomAttributeValue(items[i]);
 
             return a;
         }

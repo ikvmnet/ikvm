@@ -628,9 +628,9 @@ namespace IKVM.Runtime.JNI
 
                 wrapper.Finish();
 #if NETFRAMEWORK
-                return pEnv->MakeLocalRef(FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType.AsReflection()));
+                return pEnv->MakeLocalRef(FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingType()));
 #else
-                return pEnv->MakeLocalRef(RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType.AsReflection()));
+                return pEnv->MakeLocalRef(RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingType()));
 #endif
             }
             catch (RetargetableJavaException e)
@@ -709,7 +709,7 @@ namespace IKVM.Runtime.JNI
                         // possible with remapped types
                         throw new NotSupportedException($"Remapped type {mw.DeclaringType.Name} doesn't support constructor invocation on an existing instance");
                     }
-                    else if (!mb.DeclaringType.AsReflection().IsInstanceOfType(obj))
+                    else if (!mb.DeclaringType.GetUnderlyingType().IsInstanceOfType(obj))
                     {
                         // we're trying to initialize an existing instance of a remapped type
                         throw new NotSupportedException($"Unable to partially construct object of type {obj.GetType().FullName} to type {mb.DeclaringType.FullName}");
@@ -734,10 +734,10 @@ namespace IKVM.Runtime.JNI
             if (mw.HasCallerID || mw.IsDynamicOnly)
                 throw new NotSupportedException();
 
-            if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.AsReflection().IsInstanceOfType(obj))
+            if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.GetUnderlyingType().IsInstanceOfType(obj))
                 return mw.InvokeNonvirtualRemapped(obj, argarray);
 
-            var del = (Delegate)Activator.CreateInstance(mw.GetDelegateType().AsReflection(), [obj, mw.GetMethod().AsReflection().MethodHandle.GetFunctionPointer()]);
+            var del = (Delegate)Activator.CreateInstance(mw.GetDelegateType().GetUnderlyingType(), [obj, mw.GetMethod().GetUnderlyingMethodBase().MethodHandle.GetFunctionPointer()]);
             try
             {
                 return del.DynamicInvoke(argarray);
@@ -2157,7 +2157,7 @@ namespace IKVM.Runtime.JNI
             try
             {
                 // we want to support (non-primitive) value types so we can't cast to object[]
-                var a = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType.AsReflection(), len);
+                var a = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType.GetUnderlyingType(), len);
                 var o = pEnv->UnwrapRef(init);
                 if (o != null)
                     for (int i = 0; i < a.Length; i++)
@@ -2776,7 +2776,7 @@ namespace IKVM.Runtime.JNI
 
                     // don't allow dotted names!
                     if (methodSig.IndexOf('.') < 0)
-                        fi = wrapper.TypeAsTBD.GetField(METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic).AsReflection();
+                        fi = wrapper.TypeAsTBD.GetField(METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic).GetUnderlyingField();
 
                     if (fi == null)
                     {

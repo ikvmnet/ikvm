@@ -378,7 +378,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 && tw.Context.MethodHandleUtil.HasOnlyBasicTypes(mw.GetParameters(), mw.ReturnType)
                 && type.parameterCount() <= MethodHandleUtil.MaxArity)
             {
-                return Delegate.CreateDelegate(tw.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType).AsReflection(), mi);
+                return Delegate.CreateDelegate(tw.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(mw.GetParameters(), mw.ReturnType).GetUnderlyingType(), mi);
             }
             else
             {
@@ -466,7 +466,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
-            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()).AsReflection());
+            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()).GetUnderlyingType());
             var ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
             Interlocked.CompareExchange(ref site.ics, ics, null);
         }

@@ -24,10 +24,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public override Type UnderlyingType => ElementType.UnderlyingType.MakeArrayType(rank);
 
         /// <inheritdoc />
-        public override Type UnderlyingEmitType => ElementType.UnderlyingEmitType.MakeArrayType(rank);
-
-        /// <inheritdoc />
-        public override Type UnderlyingDynamicEmitType => ElementType.UnderlyingDynamicEmitType.MakeArrayType(rank);
+        public override Type UnderlyingRuntimeType => ElementType.UnderlyingRuntimeType.MakeArrayType(rank);
 
     }
 

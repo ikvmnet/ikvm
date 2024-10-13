@@ -3,7 +3,7 @@
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>, IAssemblySymbol
+    interface IAssemblySymbolBuilder : ISymbolBuilder<IAssemblySymbol>, IAssemblySymbol, ICustomAttributeProviderBuilder
     {
 
         /// <summary>
@@ -29,19 +29,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="emitSymbolInfo"></param>
         /// <returns></returns>
         IModuleSymbolBuilder DefineModule(string name, string fileName, bool emitSymbolInfo);
-
-        /// <summary>
-        /// Set a custom attribute using a custom attribute builder.
-        /// </summary>
-        /// <param name="customBuilder"></param>
-        void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
-
-        /// <summary>
-        /// Sets a custom attribute using a specified custom attribute blob.
-        /// </summary>
-        /// <param name="con"></param>
-        /// <param name="binaryAttribute"></param>
-        void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
 
         /// <summary>
         /// Sets a Win32 icon on the generated assembly.

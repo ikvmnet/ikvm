@@ -319,19 +319,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers);
 
         /// <summary>
-        /// Set a custom attribute using a custom attribute builder.
-        /// </summary>
-        /// <param name="customBuilder"></param>
-        void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
-
-        /// <summary>
-        /// Sets a custom attribute using a specified custom attribute blob.
-        /// </summary>
-        /// <param name="con"></param>
-        /// <param name="binaryAttribute"></param>
-        void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
-
-        /// <summary>
         /// Finishes the type, updating the associated symbol.
         /// </summary>
         void Complete();

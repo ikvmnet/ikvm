@@ -42,11 +42,10 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         [return: NotNullIfNotNull(nameof(symbol))]
         Type? GetEmitType(ITypeSymbol? symbol)
         {
-            var n = symbol.Name;
             if (_dynamic)
-                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingDynamicEmitType;
+                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingRuntimeType;
             else
-                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingEmitType;
+                return ((IReflectionTypeSymbol?)symbol)?.UnderlyingType;
         }
 
         /// <summary>
@@ -58,9 +57,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         FieldInfo? GetEmitField(IFieldSymbol? symbol)
         {
             if (_dynamic)
-                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingDynamicEmitField;
+                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingRuntimeField;
             else
-                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingEmitField;
+                return ((IReflectionFieldSymbol?)symbol)?.UnderlyingField;
         }
 
         /// <summary>
@@ -72,9 +71,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         ConstructorInfo? GetEmitConstructor(IConstructorSymbol? symbol)
         {
             if (_dynamic)
-                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingDynamicEmitConstructor;
+                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingRuntimeConstructor;
             else
-                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingEmitConstructor;
+                return ((IReflectionConstructorSymbol?)symbol)?.UnderlyingConstructor;
         }
 
         /// <summary>
@@ -86,9 +85,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         MethodInfo? GetEmitMethod(IMethodSymbol? symbol)
         {
             if (_dynamic)
-                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingDynamicEmitMethod;
+                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingRuntimeMethod;
             else
-                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingEmitMethod;
+                return ((IReflectionMethodSymbol?)symbol)?.UnderlyingMethod;
         }
 
         /// <inheritdoc />

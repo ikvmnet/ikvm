@@ -39,7 +39,7 @@ namespace IKVM.Runtime
             static ThreadGroupAccessor threadGroupAccessor;
             static SystemAccessor systemAccessor;
 
-            internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.GetBaseAssembly().AsReflection());
+            internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.GetBaseAssembly().GetUnderlyingAssembly());
 
             internal static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 

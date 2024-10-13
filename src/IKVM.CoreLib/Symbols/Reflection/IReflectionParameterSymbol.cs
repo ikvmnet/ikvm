@@ -22,9 +22,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         ParameterInfo UnderlyingParameter { get; }
 
         /// <summary>
-        /// Gets the underlying <see cref="ParameterInfo"/> used for IL emit operations.
+        /// Gets the underlying <see cref="ParameterInfo"/>.
         /// </summary>
-        ParameterInfo UnderlyingEmitParameter { get; }
+        ParameterInfo UnderlyingRuntimeParameter { get; }
 
     }
 

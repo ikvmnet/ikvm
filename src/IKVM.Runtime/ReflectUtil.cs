@@ -67,7 +67,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
             return false;
 #else
-            return asm.AsReflection().IsDynamic;
+            return asm.GetUnderlyingAssembly().IsDynamic;
 #endif
         }
 
@@ -77,7 +77,7 @@ namespace IKVM.Runtime
                 type = type.GetElementType();
 
             var asm = type.Assembly;
-            if (asm != null && asm.AsReflection().ReflectionOnly)
+            if (asm != null && asm.GetUnderlyingAssembly().ReflectionOnly)
                 return true;
 
             if (!type.IsGenericType || type.IsGenericTypeDefinition)

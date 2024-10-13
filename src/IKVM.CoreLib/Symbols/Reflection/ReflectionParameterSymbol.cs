@@ -37,7 +37,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public ParameterInfo UnderlyingParameter => _parameter;
 
         /// <inheritdoc />
-        public ParameterInfo UnderlyingEmitParameter => UnderlyingParameter;
+        public ParameterInfo UnderlyingRuntimeParameter => UnderlyingParameter;
 
         #region IParameterSymbol
 

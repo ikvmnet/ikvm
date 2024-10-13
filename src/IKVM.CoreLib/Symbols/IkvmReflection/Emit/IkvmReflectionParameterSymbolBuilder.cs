@@ -56,15 +56,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingParameterBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
-
-        /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
-        {
-            UnderlyingParameterBuilder.SetCustomAttribute(((IkvmReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingParameterBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion

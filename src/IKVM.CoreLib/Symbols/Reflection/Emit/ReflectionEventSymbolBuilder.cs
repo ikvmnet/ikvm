@@ -7,11 +7,10 @@ using IKVM.CoreLib.Symbols.Emit;
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
-    class ReflectionEventSymbolBuilder : ReflectionMemberSymbolBuilder, IReflectionEventSymbolBuilder
+    class ReflectionEventSymbolBuilder : ReflectionEventSymbol, IReflectionEventSymbolBuilder
     {
 
         readonly EventBuilder _builder;
-        readonly ReflectionEventBuilderInfo _builderInfo;
         EventInfo? _event;
 
         /// <summary>
@@ -23,23 +22,19 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ReflectionEventSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder resolvingType, EventBuilder builder) :
-            base(context, resolvingModule, resolvingType)
+            base(context, resolvingModule, resolvingType, new ReflectionEventBuilderInfo(builder))
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            _builderInfo = new ReflectionEventBuilderInfo(_builder);
         }
 
         /// <inheritdoc />
-        public EventInfo UnderlyingEvent => _event ?? _builderInfo;
+        public EventBuilder UnderlyingEventBuilder => _builder;
 
         /// <inheritdoc />
-        public EventInfo UnderlyingEmitEvent => UnderlyingEvent;
+        public override EventInfo UnderlyingRuntimeEvent => _event ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
-        public EventBuilder UnderlyingEventBuilder => _builder ?? throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override MemberInfo UnderlyingMember => UnderlyingEvent;
+        public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => (IReflectionModuleSymbolBuilder)ResolvingModule;
 
         #region IEventSymbolBuilder
 
@@ -67,16 +62,14 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingEventBuilder.AddOtherMethod(((IReflectionMethodSymbolBuilder)mdBuilder).UnderlyingMethodBuilder);
         }
 
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingEventBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
+        #endregion
+
+        #region ICustomAttributeProviderBuilder
 
         /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingEventBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingEventBuilder.SetCustomAttribute(attribute.Unpack());
         }
 
         #endregion
@@ -84,81 +77,14 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IEventSymbol
 
         /// <inheritdoc />
-        public System.Reflection.EventAttributes Attributes => UnderlyingEvent.Attributes;
-
-        /// <inheritdoc />
-        public ITypeSymbol? EventHandlerType => ResolveTypeSymbol(UnderlyingEvent.EventHandlerType);
-
-        /// <inheritdoc />
-        public bool IsSpecialName => UnderlyingEvent.IsSpecialName;
-
-        /// <inheritdoc />
-        public IMethodSymbol? AddMethod => ResolveMethodSymbol(UnderlyingEvent.AddMethod);
-
-        /// <inheritdoc />
-        public IMethodSymbol? RemoveMethod => ResolveMethodSymbol(UnderlyingEvent.RemoveMethod);
-
-        /// <inheritdoc />
-        public IMethodSymbol? RaiseMethod => ResolveMethodSymbol(UnderlyingEvent.RaiseMethod);
-
-        /// <inheritdoc />
         public override bool IsComplete => _event != null;
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetAddMethod()
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetAddMethod());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetAddMethod(bool nonPublic)
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetAddMethod(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRemoveMethod()
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetRemoveMethod());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRemoveMethod(bool nonPublic)
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetRemoveMethod(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRaiseMethod()
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetRaiseMethod());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRaiseMethod(bool nonPublic)
-        {
-            return ResolveMethodSymbol(UnderlyingEvent.GetRaiseMethod(nonPublic));
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetOtherMethods()
-        {
-            return ResolveMethodSymbols(UnderlyingEvent.GetOtherMethods());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetOtherMethods(bool nonPublic)
-        {
-            return ResolveMethodSymbols(UnderlyingEvent.GetOtherMethods(nonPublic));
-        }
 
         #endregion
 
         /// <inheritdoc />
-        public override void OnComplete()
+        public void OnComplete()
         {
             _event = (EventInfo?)ResolvingModule.UnderlyingModule.ResolveMember(MetadataToken) ?? throw new InvalidOperationException();
-            base.OnComplete();
         }
 
     }

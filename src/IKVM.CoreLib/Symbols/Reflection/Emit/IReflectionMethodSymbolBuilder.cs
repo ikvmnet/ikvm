@@ -13,13 +13,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// </summary>
         MethodBuilder UnderlyingMethodBuilder { get; }
 
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionGenericTypeParameterSymbolBuilder"/> for the given <see cref="GenericTypeParameterBuilder"/>.
-        /// </summary>
-        /// <param name="genericTypeParameter"></param>
-        /// <returns></returns>
-        IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter);
-
     }
 
 }

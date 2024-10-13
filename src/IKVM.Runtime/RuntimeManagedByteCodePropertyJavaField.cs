@@ -104,7 +104,7 @@ namespace IKVM.Runtime
             if (getter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            return getter.AsReflection().Invoke(obj, []);
+            return getter.GetUnderlyingMethod().Invoke(obj, []);
         }
 
         internal override void SetValue(object obj, object value)
@@ -113,7 +113,7 @@ namespace IKVM.Runtime
             if (setter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            setter.AsReflection().Invoke(obj, new object[] { value });
+            setter.GetUnderlyingMethod().Invoke(obj, new object[] { value });
         }
 
 #endif

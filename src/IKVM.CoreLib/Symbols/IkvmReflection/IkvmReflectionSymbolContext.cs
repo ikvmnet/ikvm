@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Symbols.Emit;
@@ -46,7 +47,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes, bool collectable, bool saveable)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
@@ -55,7 +56,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (saveable == false)
                 throw new NotSupportedException("IKVM Reflection can only produce saveable assemblies.");
 
-            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save, assemblyAttributes?.Unpack()));
+            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save, attributes.Unpack()));
         }
 
         /// <summary>
@@ -330,30 +331,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IIkvmReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
             return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs)
-        {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IFieldSymbol[] namedFields, object?[] fieldValues)
-        {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedFields.Unpack(), UnpackArguments(fieldValues)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues)
-        {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues, IFieldSymbol[] namedFields, object?[] fieldValues)
-        {
-            return new IkvmReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues), namedFields.Unpack(), UnpackArguments(fieldValues)));
         }
 
         /// <summary>

@@ -500,8 +500,8 @@ namespace IKVM.Runtime
             FieldTypeWrapper.Finish();
             ResolveField();
 
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.AsReflection() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.AsReflection(), true, ft, [typeof(object)]);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingType(), true, ft, [typeof(object)]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -547,8 +547,8 @@ namespace IKVM.Runtime
             FieldTypeWrapper.Finish();
             ResolveField();
 
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.AsReflection() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.AsReflection(), true, typeof(void), [typeof(object), ft]);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingType(), true, typeof(void), [typeof(object), ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -592,8 +592,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeVolatileGetDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.AsReflection() : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, [typeof(object)], DeclaringType.TypeAsTBD.Module.AsReflection(), true);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingType() : typeof(object);
+            var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, [typeof(object)], DeclaringType.TypeAsTBD.Module.GetUnderlyingModule(), true);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -637,8 +637,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeVolatileSetDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.AsReflection() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.AsReflection(), true, typeof(void), [typeof(object), ft]);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingType(), true, typeof(void), [typeof(object), ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -685,8 +685,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeCompareAndSwapDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.AsReflection() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.AsReflection(), true, typeof(bool), [typeof(object), ft, ft]);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingType(), true, typeof(bool), [typeof(object), ft, ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)

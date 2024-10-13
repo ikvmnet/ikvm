@@ -1,4 +1,7 @@
 ﻿using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -28,6 +31,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return _parameterTable.GetOrCreateParameterSymbol(parameter);
         }
 
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
         #endregion
 
         #region IMethodBaseSymbol
@@ -36,10 +45,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public abstract MethodBase UnderlyingMethodBase { get; }
 
         /// <inheritdoc />
-        public virtual MethodBase UnderlyingEmitMethodBase => UnderlyingMethodBase;
+        public abstract MethodBase UnderlyingRuntimeMethodBase { get; }
 
         /// <inheritdoc />
-        public override MemberInfo UnderlyingMember => UnderlyingMethodBase;
+        public override sealed MemberInfo UnderlyingMember => UnderlyingMethodBase;
+
+        /// <inheritdoc />
+        public override sealed MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeMethodBase;
 
         /// <inheritdoc />
         public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;

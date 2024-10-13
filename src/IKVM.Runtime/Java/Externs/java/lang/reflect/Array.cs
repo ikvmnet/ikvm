@@ -609,7 +609,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
                 var wrapper = RuntimeJavaType.FromClass(componentType);
                 wrapper.Finish();
 
-                var obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType.AsReflection(), length);
+                var obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType.GetUnderlyingType(), length);
                 if (wrapper.IsGhost || wrapper.IsGhostArray)
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
 
@@ -646,7 +646,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
                 var wrapper = RuntimeJavaType.FromClass(componentType).MakeArrayType(dimensions.Length);
                 wrapper.Finish();
 
-                var obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.AsReflection().TypeHandle, dimensions);
+                var obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.GetUnderlyingType().TypeHandle, dimensions);
                 if (wrapper.IsGhostArray)
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper);
 

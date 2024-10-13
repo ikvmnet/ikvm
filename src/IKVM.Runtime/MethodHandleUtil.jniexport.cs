@@ -59,7 +59,7 @@ namespace IKVM.Runtime
             var ret = RuntimeJavaType.FromClass(type.returnType());
             ret.Finish();
 
-            return CreateMethodHandleDelegateType(args, ret).AsReflection();
+            return CreateMethodHandleDelegateType(args, ret).GetUnderlyingType();
         }
 
         static ITypeSymbol[] GetParameterTypes(IMethodBaseSymbol mb)
@@ -194,7 +194,7 @@ namespace IKVM.Runtime
                 if (!ReflectUtil.CanOwnDynamicMethod(owner))
                     owner = typeof(DynamicMethodBuilder);
 
-                dm = new DynamicMethod(name, mi.ReturnType.AsReflection(), paramTypes.AsReflection(), owner, true);
+                dm = new DynamicMethod(name, mi.ReturnType.GetUnderlyingType(), paramTypes.GetUnderlyingTypes(), owner, true);
                 ilgen = context.CodeEmitterFactory.Create(dm);
 
                 if (type.parameterCount() > MaxArity)
@@ -348,7 +348,7 @@ namespace IKVM.Runtime
                 FinishTypes(type);
 
                 var tw = mw.DeclaringType;
-                var owner = tw.TypeAsBaseType.AsReflection();
+                var owner = tw.TypeAsBaseType.GetUnderlyingType();
                 var dm = new DynamicMethodBuilder(context, "MemberName:" + mw.DeclaringType.Name + "::" + mw.Name + mw.Signature, type, null, mw.HasCallerID ? DynamicCallerIDProvider.Instance : null, null, owner, true);
                 for (int i = 0, count = type.parameterCount(); i < count; i++)
                 {
@@ -516,8 +516,8 @@ namespace IKVM.Runtime
                 //ilgen.DumpMethod();
                 ilgen.DoEmit();
                 return ValidateDelegate(firstArg == 0
-                    ? dm.CreateDelegate(delegateType.AsReflection())
-                    : dm.CreateDelegate(delegateType.AsReflection(), container == null ? firstBoundValue : Activator.CreateInstance(container.AsReflection(), firstBoundValue, secondBoundValue)));
+                    ? dm.CreateDelegate(delegateType.GetUnderlyingType())
+                    : dm.CreateDelegate(delegateType.GetUnderlyingType(), container == null ? firstBoundValue : Activator.CreateInstance(container.GetUnderlyingType(), firstBoundValue, secondBoundValue)));
             }
 
             internal void BoxArgs(int start)
@@ -644,7 +644,7 @@ namespace IKVM.Runtime
             if (mh._invokeExactDelegate == null)
             {
                 type._invokeExactDynamicMethod ??= DynamicMethodBuilder.CreateInvokeExact(context, type);
-                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type).AsReflection(), mh);
+                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type).GetUnderlyingType(), mh);
                 var del = mh._invokeExactDelegate as T;
                 if (del != null)
                     return del;

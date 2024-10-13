@@ -256,10 +256,10 @@ namespace IKVM.Java.Externs.java.io
                         throw x.ToJava();
                     }
 
-                    var dmObjGetter = DynamicMethodUtil.Create("__<ObjFieldGetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(object[])]);
-                    var dmPrimGetter = DynamicMethodUtil.Create("__<PrimFieldGetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(byte[])]);
-                    var dmObjSetter = DynamicMethodUtil.Create("__<ObjFieldSetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(object[])]);
-                    var dmPrimSetter = DynamicMethodUtil.Create("__<PrimFieldSetter>", tw.TypeAsBaseType.AsReflection(), true, null, [typeof(object), typeof(byte[])]);
+                    var dmObjGetter = DynamicMethodUtil.Create("__<ObjFieldGetter>", tw.TypeAsBaseType.GetUnderlyingType(), true, null, [typeof(object), typeof(object[])]);
+                    var dmPrimGetter = DynamicMethodUtil.Create("__<PrimFieldGetter>", tw.TypeAsBaseType.GetUnderlyingType(), true, null, [typeof(object), typeof(byte[])]);
+                    var dmObjSetter = DynamicMethodUtil.Create("__<ObjFieldSetter>", tw.TypeAsBaseType.GetUnderlyingType(), true, null, [typeof(object), typeof(object[])]);
+                    var dmPrimSetter = DynamicMethodUtil.Create("__<PrimFieldSetter>", tw.TypeAsBaseType.GetUnderlyingType(), true, null, [typeof(object), typeof(byte[])]);
                     var ilgenObjGetter = JVM.Context.CodeEmitterFactory.Create(dmObjGetter);
                     var ilgenPrimGetter = JVM.Context.CodeEmitterFactory.Create(dmPrimGetter);
                     var ilgenObjSetter = JVM.Context.CodeEmitterFactory.Create(dmObjSetter);

@@ -26,10 +26,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public override Type UnderlyingType => ElementType.UnderlyingType.MakeGenericType(genericTypeArguments.Select(i => i.UnderlyingType).ToArray());
 
         /// <inheritdoc />
-        public override Type UnderlyingEmitType => ElementType.UnderlyingEmitType.MakeGenericType(genericTypeArguments.Select(i => i.UnderlyingEmitType).ToArray());
-
-        /// <inheritdoc />
-        public override Type UnderlyingDynamicEmitType => ElementType.UnderlyingDynamicEmitType.MakeGenericType(genericTypeArguments.Select(i => i.UnderlyingDynamicEmitType).ToArray());
+        public override Type UnderlyingRuntimeType => ElementType.UnderlyingRuntimeType.MakeGenericType(genericTypeArguments.Select(i => i.UnderlyingRuntimeType).ToArray());
 
     }
 

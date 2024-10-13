@@ -38,18 +38,30 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public abstract Type UnderlyingType { get; }
 
         /// <inheritdoc />
-        public virtual Type UnderlyingEmitType => UnderlyingType;
+        public abstract Type UnderlyingRuntimeType { get; }
 
         /// <inheritdoc />
-        public virtual Type UnderlyingDynamicEmitType => UnderlyingEmitType;
+        public override sealed MemberInfo UnderlyingMember => UnderlyingType;
 
         /// <inheritdoc />
-        public override MemberInfo UnderlyingMember => UnderlyingType;
+        public override sealed MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeType;
 
         #region IReflectionTypeSymbol
 
         /// <inheritdoc />
+        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition)
+        {
+            return _specTable.GetOrCreateGenericTypeSymbol(genericTypeDefinition);
+        }
+
+        /// <inheritdoc />
         public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return _methodTable.GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <inheritdoc />
+        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
         {
             return _methodTable.GetOrCreateConstructorSymbol(ctor);
         }
@@ -73,7 +85,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            return _methodTable.GetOrCreateMethodSymbol(method);
+        }
+
+        /// <inheritdoc />
         public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        {
+            return _fieldTable.GetOrCreateFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
         {
             return _fieldTable.GetOrCreateFieldSymbol(field);
         }
@@ -85,7 +109,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return _propertyTable.GetOrCreatePropertySymbol(property);
+        }
+
+        /// <inheritdoc />
         public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        {
+            return _eventTable.GetOrCreateEventSymbol(@event);
+        }
+
+        /// <inheritdoc />
+        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
         {
             return _eventTable.GetOrCreateEventSymbol(@event);
         }
@@ -94,6 +130,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericType)
         {
             return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericType);
+        }
+
+        /// <inheritdoc />
+        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
         /// <inheritdoc />
@@ -118,22 +160,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionTypeSymbol GetOrCreateByRefTypeSymbol()
         {
             return _specTable.GetOrCreateByRefTypeSymbol();
-        }
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeDefinition)
-        {
-            return _specTable.GetOrCreateGenericTypeSymbol(genericTypeDefinition);
-        }
-
-        #endregion
-
-        #region IReflectionTypeSymbolBuilder
-
-        /// <inheritdoc />
-        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
-        {
-            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
         #endregion
@@ -513,12 +539,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
         public virtual IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
             return ResolveMethodSymbol(UnderlyingType.GetMethod(name, bindingAttr, null, callConvention, types.Unpack(), modifiers?.Unpack()));
@@ -531,15 +551,21 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, ITypeSymbol[] types, ParameterModifier[]? modifiers)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
         public virtual IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public virtual IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
+        public virtual IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
         {
-            return ResolveMethodSymbols(UnderlyingType.GetMethods((BindingFlags)bindingAttr));
+            return ResolveMethodSymbols(UnderlyingType.GetMethods(bindingAttr));
         }
 
         /// <inheritdoc />
@@ -557,7 +583,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public virtual ITypeSymbol? GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
         {
-            return ResolveTypeSymbol(UnderlyingType.GetNestedType(name, (BindingFlags)bindingAttr));
+            return ResolveTypeSymbol(UnderlyingType.GetNestedType(name, bindingAttr));
         }
 
         /// <inheritdoc />

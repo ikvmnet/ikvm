@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
@@ -18,6 +19,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         Type? _type;
 
         List<IReflectionMethodSymbolBuilder>? _incompleteMethods;
+        List<CustomAttribute>? _incompleteCustomAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,64 +34,16 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         }
 
         /// <inheritdoc />
-        public override Type UnderlyingType => UnderlyingTypeBuilder;
-
-        /// <inheritdoc />
-        public override Type UnderlyingEmitType => UnderlyingTypeBuilder;
-
-        /// <inheritdoc />
-        public override Type UnderlyingDynamicEmitType => _type ?? throw new InvalidOperationException();
-
-        /// <inheritdoc />
         public TypeBuilder UnderlyingTypeBuilder => _builder;
 
         /// <inheritdoc />
+        public override Type UnderlyingType => _builder;
+
+        /// <inheritdoc />
+        public override Type UnderlyingRuntimeType => _type ?? throw new InvalidOperationException();
+
+        /// <inheritdoc />
         public IReflectionModuleSymbolBuilder ResolvingModuleBuilder => (IReflectionModuleSymbolBuilder)ResolvingModule;
-
-        #region IReflectionSymbolBuilder
-
-        /// <inheritdoc />
-        [return: NotNullIfNotNull("genericTypeParameter")]
-        public IReflectionGenericTypeParameterSymbolBuilder? ResolveGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
-        {
-            return Context.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        #endregion
-
-        #region IReflectionTypeSymbolBuilder
-
-        /// <inheritdoc />
-        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
-        {
-            return _methodTable.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
-        {
-            return _methodTable.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
-        {
-            return _fieldTable.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
-        {
-            return _propertyTable.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
-        {
-            return _eventTable.GetOrCreateEventSymbol(@event);
-        }
-
-        #endregion
 
         #region ITypeSymbolBuilder
 
@@ -298,19 +252,21 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             return (IConstructorSymbolBuilder)ResolveConstructorSymbol(UnderlyingTypeBuilder.DefineTypeInitializer());
         }
-        /// <inheritdoc />
-        public void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute)
-        {
-            UnderlyingTypeBuilder.SetCustomAttribute(con.Unpack(), binaryAttribute);
-        }
 
         /// <inheritdoc />
-        public void SetCustomAttribute(ICustomAttributeBuilder customBuilder)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            UnderlyingTypeBuilder.SetCustomAttribute(((ReflectionCustomAttributeBuilder)customBuilder).UnderlyingBuilder);
+            UnderlyingTypeBuilder.SetCustomAttribute(attribute.Unpack());
+            _incompleteCustomAttributes ??= [];
+            _incompleteCustomAttributes.Add(attribute);
         }
 
         #endregion
+
+        #region ITypeSymbol
+
+        /// <inheritdoc />
+        public override bool IsComplete => _type != null;
 
         /// <inheritdoc />
         public override IMethodSymbol? GetMethod(string name)
@@ -369,8 +325,34 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
                 return SymbolUtil.FilterMethods(this, _incompleteMethods, bindingAttr).Cast<IMethodSymbol>().ToArray();
         }
 
+        #endregion
+
+        #region ICustomAttributeProvider
+
         /// <inheritdoc />
-        public override bool IsComplete => _type != null;
+        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        {
+            if (IsComplete)
+                return ResolveCustomAttributes(UnderlyingRuntimeMember.GetCustomAttributesData(inherit).ToArray());
+            else if (inherit == false || BaseType == null)
+                return _incompleteCustomAttributes?.ToArray() ?? [];
+            else
+                return Enumerable.Concat(_incompleteCustomAttributes?.ToArray() ?? [], ResolveCustomAttributes(BaseType.Unpack().GetInheritedCustomAttributesData())).ToArray();
+        }
+
+        /// <inheritdoc />
+        public override CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(inherit).FirstOrDefault(i => i.AttributeType == attributeType);
+        }
+
+        /// <inheritdoc />
+        public override CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return GetCustomAttributes(inherit).Where(i => i.AttributeType == attributeType).ToArray();
+        }
+
+        #endregion
 
         /// <inheritdoc />
         public void Complete()
@@ -379,7 +361,11 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             {
                 // complete type
                 if (_builder.IsCreated() == false)
-                    _type = _builder.CreateType()!;
+                {
+                    _type = _builder.CreateType() ?? throw new InvalidOperationException();
+                    _incompleteMethods = null;
+                    _incompleteCustomAttributes = null;
+                }
 
                 // force module to reresolve
                 Context.GetOrCreateModuleSymbol(ResolvingModule.UnderlyingModule);
@@ -392,9 +378,13 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         {
             const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-            foreach (var i in GetGenericArguments() ?? [])
-                if (i is IReflectionGenericTypeParameterSymbolBuilder b)
-                    b.OnComplete();
+            // apply the runtime generic type parameters and pass them to the symbols for completion
+            var srcGenericArgs = UnderlyingRuntimeType.GetGenericArguments() ?? [];
+            var dstGenericArgs = GetGenericArguments() ?? [];
+            Debug.Assert(srcGenericArgs.Length == dstGenericArgs.Length);
+            for (int i = 0; i < srcGenericArgs.Length; i++)
+                if (dstGenericArgs[i] is IReflectionGenericTypeParameterSymbolBuilder b)
+                    b.OnComplete(srcGenericArgs[i]);
 
             foreach (var i in GetConstructors(DefaultBindingFlags) ?? [])
                 if (i is IReflectionConstructorSymbolBuilder b)

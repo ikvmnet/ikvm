@@ -1,4 +1,7 @@
 ﻿using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -12,9 +15,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         PropertyInfo UnderlyingProperty { get; }
 
         /// <summary>
-        /// Gets the underlying <see cref="PropertyInfo"/> used for IL emit operations.
+        /// Gets the underlying <see cref="PropertyInfo"/>.
         /// </summary>
-        PropertyInfo UnderlyingEmitProperty { get; }
+        PropertyInfo UnderlyingRuntimeProperty { get; }
 
         /// <summary>
         /// Gets or creates a <see cref="IReflectionParameterSymbol"/> for the given <see cref="ParameterInfo"/>.
@@ -22,6 +25,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="parameter"></param>
         /// <returns></returns>
         public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter);
+
+        /// <summary>
+        /// Gets or creates a <see cref="IReflectionParameterSymbolBuilder"/> for the given <see cref="ParameterBuilder"/>.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter);
 
     }
 

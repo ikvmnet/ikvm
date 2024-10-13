@@ -487,11 +487,11 @@ namespace IKVM.Runtime
             {
                 if (delegates == null)
                 {
-                    if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) == false && assemblyLoader.Assembly.AsReflection().GetManifestResourceInfo("ikvm.exports") != null)
+                    if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) == false && assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo("ikvm.exports") != null)
                     {
                         var wildcardExports = new List<string>();
 
-                        using (var stream = assemblyLoader.Assembly.AsReflection().GetManifestResourceStream("ikvm.exports"))
+                        using (var stream = assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceStream("ikvm.exports"))
                         {
                             var rdr = new BinaryReader(stream);
                             var assemblyCount = rdr.ReadInt32();
@@ -847,7 +847,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm.AsReflection(), JVM.Properties.HomePath), name)).toURI().toURL();
+            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm.GetUnderlyingAssembly(), JVM.Properties.HomePath), name)).toURI().toURL();
 #endif
         }
 
@@ -857,7 +857,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             // cannot find resources in dynamic assembly
-            if (assemblyLoader.Assembly.AsReflection().IsDynamic)
+            if (assemblyLoader.Assembly.GetUnderlyingAssembly().IsDynamic)
                 yield break;
 
             var found = false;
@@ -873,14 +873,14 @@ namespace IKVM.Runtime
             if (assemblyLoader.HasJavaModule == false)
             {
                 // attempt to find an assembly resource with the exact name
-                if (unmangledName != "" && assemblyLoader.Assembly.AsReflection().GetManifestResourceInfo(unmangledName) != null)
+                if (unmangledName != "" && assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(unmangledName) != null)
                 {
                     found = true;
                     yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
                 }
 
                 // the JavaResourceAttribute can be used to manufacture a named Java resource
-                foreach (var res in assemblyLoader.Assembly.AsReflection().GetCustomAttributes<JavaResourceAttribute>())
+                foreach (var res in assemblyLoader.Assembly.GetUnderlyingAssembly().GetCustomAttributes<JavaResourceAttribute>())
                 {
                     if (res.JavaName == unmangledName)
                     {
@@ -892,7 +892,7 @@ namespace IKVM.Runtime
 
             // find an assembly resource with the managed resource name
             var name = JVM.MangleResourceName(unmangledName);
-            if (assemblyLoader.Assembly.AsReflection().GetManifestResourceInfo(name) != null)
+            if (assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(name) != null)
             {
                 found = true;
                 yield return MakeResourceURL(assemblyLoader.Assembly, name);
@@ -921,7 +921,7 @@ namespace IKVM.Runtime
                         yield return (java.net.URL)urls.nextElement();
                     }
 
-                    if (loader.Assembly.AsReflection().GetManifestResourceInfo(name) != null)
+                    if (loader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(name) != null)
                     {
                         found = true;
                         yield return MakeResourceURL(loader.Assembly, name);
@@ -934,7 +934,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.ClassLoader == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly.AsReflection(), JVM.Properties.HomePath), unmangledName)).toURI().toURL();
+                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly.GetUnderlyingAssembly(), JVM.Properties.HomePath), unmangledName)).toURI().toURL();
             }
 #endif
         }
@@ -1070,7 +1070,7 @@ namespace IKVM.Runtime
         internal virtual java.security.ProtectionDomain GetProtectionDomain()
         {
             if (protectionDomain == null)
-                Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly.AsReflection()), null);
+                Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly.GetUnderlyingAssembly()), null);
 
             return protectionDomain;
         }
@@ -1129,7 +1129,7 @@ namespace IKVM.Runtime
             var list = new List<KeyValuePair<string, string[]>>();
             foreach (var m in assemblyLoader.Assembly.GetModules(false))
             {
-                var attr = m.AsReflection().GetCustomAttributes<PackageListAttribute>();
+                var attr = m.GetUnderlyingModule().GetCustomAttributes<PackageListAttribute>();
                 foreach (var p in attr)
                     list.Add(new KeyValuePair<string, string[]>(p.jar, p.packages));
             }
@@ -1174,7 +1174,7 @@ namespace IKVM.Runtime
 
             var attribs = assembly.GetCustomAttribute(Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName), false);
             if (attribs.HasValue)
-                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).AsReflection();
+                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).GetUnderlyingType();
 
             return null;
         }
@@ -1301,7 +1301,7 @@ namespace IKVM.Runtime
 
             public object run()
             {
-                ctor.Invoke(classLoader, [assembly.AsReflection()]);
+                ctor.Invoke(classLoader, [assembly.GetUnderlyingAssembly()]);
                 return null;
             }
         }

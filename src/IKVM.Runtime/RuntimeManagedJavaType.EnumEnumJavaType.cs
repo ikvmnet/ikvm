@@ -98,7 +98,7 @@ namespace IKVM.Runtime
                 internal override object GetValue(object obj)
                 {
                     if (val == null)
-                        System.Threading.Interlocked.CompareExchange(ref val, Activator.CreateInstance(this.DeclaringType.TypeAsTBD.AsReflection(), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[] { this.Name, ordinal }, null), null);
+                        System.Threading.Interlocked.CompareExchange(ref val, Activator.CreateInstance(this.DeclaringType.TypeAsTBD.GetUnderlyingType(), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[] { this.Name, ordinal }, null), null);
 
                     return val;
                 }
@@ -147,7 +147,7 @@ namespace IKVM.Runtime
                 internal override object Invoke(object obj, object[] args)
                 {
                     var values = DeclaringType.GetFields();
-                    var array = (object[])Array.CreateInstance(DeclaringType.TypeAsArrayType.AsReflection(), values.Length);
+                    var array = (object[])Array.CreateInstance(DeclaringType.TypeAsArrayType.GetUnderlyingType(), values.Length);
                     for (int i = 0; i < values.Length; i++)
                         array[i] = values[i].GetValue(null);
 

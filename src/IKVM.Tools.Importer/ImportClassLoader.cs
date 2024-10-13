@@ -516,7 +516,7 @@ namespace IKVM.Tools.Importer
             // global main method decorated with appropriate apartment type
             var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, Context.Types.Int32, [Context.Types.String.MakeArrayType()]);
             if (apartmentAttributeType != null)
-                mainMethodProxy.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(apartmentAttributeType.GetConstructor([]), []));
+                mainMethodProxy.SetCustomAttribute(CustomAttribute.Create(apartmentAttributeType.GetConstructor([]), []));
 
             var ilgen = Context.CodeEmitterFactory.Create(mainMethodProxy);
 
@@ -605,7 +605,7 @@ namespace IKVM.Tools.Importer
                 foreach (object[] args in packages.ToArray())
                 {
                     args[1] = UnicodeUtil.EscapeInvalidSurrogates((string[])args[1]);
-                    mb.SetCustomAttribute(Context.Resolver.Symbols.CreateCustomAttribute(packageListAttributeCtor, args));
+                    mb.SetCustomAttribute(CustomAttribute.Create(packageListAttributeCtor, args));
                 }
                 // We can't add the resource when we're a module, because a multi-module assembly has a single resource namespace
                 // and since you cannot combine -target:module with -sharedclassloader we don't need an export map
@@ -672,13 +672,11 @@ namespace IKVM.Tools.Importer
                 }
 
                 list = UnicodeUtil.EscapeInvalidSurrogates(list);
-                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([Context.Types.String.MakeArrayType()]), [list], propInfos, propValues);
-                mb.SetCustomAttribute(cab);
+                mb.SetCustomAttribute(CustomAttribute.Create(typeofJavaModuleAttribute.GetConstructor([Context.Types.String.MakeArrayType()]), [list], propInfos, propValues));
             }
             else
             {
-                var cab = Context.Resolver.Symbols.CreateCustomAttribute(typeofJavaModuleAttribute.GetConstructor([]), [], propInfos, propValues);
-                mb.SetCustomAttribute(cab);
+                mb.SetCustomAttribute(CustomAttribute.Create(typeofJavaModuleAttribute.GetConstructor([]), [], propInfos, propValues));
             }
         }
 
@@ -1490,7 +1488,7 @@ namespace IKVM.Tools.Importer
                             DeclaringType.Context.AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
                             DeclaringType.Context.AttributeHelper.SetNameSig(mbHelper, m.Name, m.Sig);
                             AddDeclaredExceptions(DeclaringType.Context, mbHelper, m.Throws);
-                            mbHelper.SetCustomAttribute(DeclaringType.Context.Resolver.Symbols.CreateCustomAttribute(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([DeclaringType.Context.Types.String]), ["This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead."]));
+                            mbHelper.SetCustomAttribute(CustomAttribute.Create(DeclaringType.Context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([DeclaringType.Context.Types.String]), ["This function will be removed from future versions. Please use extension methods from ikvm.extensions namespace instead."]));
                         }
                         return mbCore;
                     }
@@ -3011,10 +3009,7 @@ namespace IKVM.Tools.Importer
 
             // configure Win32 file version
             if (state.fileversion != null)
-            {
-                var filever = Context.Resolver.Symbols.CreateCustomAttribute(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor([Context.Types.String]), [state.fileversion]);
-                assemblyBuilder.SetCustomAttribute(filever);
-            }
+                assemblyBuilder.SetCustomAttribute(CustomAttribute.Create(Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyFileVersionAttribute).FullName).GetConstructor([Context.Types.String]), [state.fileversion]));
 
             // apply assembly annotations
             if (state.assemblyAttributeAnnotations != null)

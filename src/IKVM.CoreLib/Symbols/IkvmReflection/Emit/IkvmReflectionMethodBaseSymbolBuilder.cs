@@ -53,12 +53,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         public abstract IILGenerator GetILGenerator(int streamSize);
 
         /// <inheritdoc />
-        public abstract void SetCustomAttribute(IConstructorSymbol con, byte[] binaryAttribute);
-
-        /// <inheritdoc />
-        public abstract void SetCustomAttribute(ICustomAttributeBuilder customBuilder);
-
-        /// <inheritdoc />
         public IIkvmReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
         {
             return _parameterTable.GetOrCreateParameterSymbol(parameter);

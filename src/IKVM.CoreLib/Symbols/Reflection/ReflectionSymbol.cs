@@ -27,6 +27,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        #region IReflectionSymbol
+
         /// <summary>
         /// Gets the associated <see cref="ReflectionSymbolContext"/>.
         /// </summary>
@@ -434,6 +436,33 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(genericTypeParameter))]
+        public IReflectionGenericTypeParameterSymbolBuilder? ResolveGenericTypeParameterSymbol(GenericTypeParameterBuilder? genericTypeParameter)
+        {
+            if (genericTypeParameter == null)
+                return null;
+
+            return _context.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(genericTypeParameters))]
+        public IReflectionGenericTypeParameterSymbolBuilder[]? ResolveGenericTypeParameterSymbols(GenericTypeParameterBuilder[]? genericTypeParameters)
+        {
+            if (genericTypeParameters == null)
+                return null;
+            if (genericTypeParameters.Length == 0)
+                return [];
+
+            var a = new IReflectionGenericTypeParameterSymbolBuilder[genericTypeParameters.Length];
+            for (int i = 0; i < genericTypeParameters.Length; i++)
+                if (ResolveGenericTypeParameterSymbol(genericTypeParameters[i]) is { } symbol)
+                    a[i] = symbol;
+
+            return a;
+        }
+
+        /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(attributes))]
         public CustomAttribute[]? ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
         {
@@ -552,6 +581,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             return info != null ? new ManifestResourceInfo((System.Reflection.ResourceLocation)info.ResourceLocation, info.FileName, ResolveAssemblySymbol(info.ReferencedAssembly)) : null;
         }
+
+        #endregion
 
     }
 

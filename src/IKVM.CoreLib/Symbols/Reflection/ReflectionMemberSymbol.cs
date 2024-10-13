@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
+using IKVM.CoreLib.Reflection;
+
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
@@ -21,7 +23,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="resolvingType"></param>
-        /// <param name="member"></param>
         public ReflectionMemberSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType) :
             base(context)
         {
@@ -33,7 +34,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public abstract MemberInfo UnderlyingMember { get; }
 
         /// <inheritdoc />
-        public virtual MemberInfo UnderlyingEmitMember => UnderlyingMember;
+        public abstract MemberInfo UnderlyingRuntimeMember { get; }
 
         /// <summary>
         /// Gets the <see cref="IReflectionModuleSymbol" /> which contains the metadata of this member.
@@ -166,10 +167,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual ITypeSymbol? DeclaringType => ResolveTypeSymbol(UnderlyingMember.DeclaringType)!;
 
         /// <inheritdoc />
-        public virtual System.Reflection.MemberTypes MemberType => (System.Reflection.MemberTypes)UnderlyingMember.MemberType;
+        public virtual MemberTypes MemberType => UnderlyingMember.MemberType;
 
         /// <inheritdoc />
-        public virtual int MetadataToken => UnderlyingMember.MetadataToken;
+        public virtual int MetadataToken => UnderlyingMember.GetMetadataTokenSafe();
 
         /// <inheritdoc />
         public virtual string Name => UnderlyingMember.Name;

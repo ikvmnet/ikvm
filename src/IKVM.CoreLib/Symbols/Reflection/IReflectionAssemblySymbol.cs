@@ -12,6 +12,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         Assembly UnderlyingAssembly { get; }
 
         /// <summary>
+        /// Gets a reference to the underlying <see cref="Assembly"/>.
+        /// </summary>
+        Assembly UnderlyingRuntimeAssembly { get; }
+
+        /// <summary>
         /// Gets or creates a <see cref="IReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
         /// <param name="module"></param>

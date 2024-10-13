@@ -57,12 +57,12 @@ namespace IKVM.Runtime
 
             internal override object GhostWrap(object obj)
             {
-                return type.GetMethod("Cast").AsReflection().Invoke(null, [obj]);
+                return type.GetMethod("Cast").GetUnderlyingMethod().Invoke(null, [obj]);
             }
 
             internal override object GhostUnwrap(object obj)
             {
-                return type.GetMethod("ToObject").AsReflection().Invoke(obj, []);
+                return type.GetMethod("ToObject").GetUnderlyingMethod().Invoke(obj, []);
             }
 
 #endif

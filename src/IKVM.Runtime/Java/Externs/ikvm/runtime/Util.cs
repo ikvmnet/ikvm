@@ -24,7 +24,6 @@
 using System;
 
 using IKVM.Attributes;
-using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
 
@@ -168,9 +167,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var wrapper = RuntimeJavaType.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
-                return wrapper.TypeAsTBD.AsReflection();
+                return wrapper.TypeAsTBD.GetUnderlyingRuntimeType();
             else
-                return wrapper.TypeAsBaseType.AsReflection();
+                return wrapper.TypeAsBaseType.GetUnderlyingRuntimeType();
         }
 
         /// <summary>
@@ -184,9 +183,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
             wrapper.Finish();
 
             if (wrapper.IsRemapped && wrapper.IsFinal)
-                return wrapper.TypeAsTBD.AsReflection();
+                return wrapper.TypeAsTBD.GetUnderlyingRuntimeType();
             else
-                return wrapper.TypeAsBaseType.AsReflection();
+                return wrapper.TypeAsBaseType.GetUnderlyingRuntimeType();
         }
 
         [HideFromJava]

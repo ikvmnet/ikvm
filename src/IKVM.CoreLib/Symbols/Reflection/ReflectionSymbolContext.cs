@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -54,11 +55,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ICustomAttributeBuilder[]? assemblyAttributes, bool collectable, bool saveable)
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes, bool collectable, bool saveable)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
-
             if (collectable && saveable)
                 throw new NotSupportedException("Assembly cannot be both colletable and saveable.");
 
@@ -66,16 +66,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (saveable)
                 throw new NotSupportedException("Assembly cannot be saveable.");
             else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, attributes.Unpack()));
             else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, assemblyAttributes?.Unpack()));
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, attributes.Unpack()));
 #else
             if (saveable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave, assemblyAttributes?.Unpack()));
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave, attributes.Unpack()));
             else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, assemblyAttributes?.Unpack()));
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, attributes.Unpack()));
             else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, assemblyAttributes?.Unpack()));
+                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, attributes.Unpack()));
 #endif
         }
 
@@ -347,30 +347,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
         {
             return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs)
-        {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IFieldSymbol[] namedFields, object?[] fieldValues)
-        {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedFields.Unpack(), UnpackArguments(fieldValues)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues)
-        {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues)));
-        }
-
-        /// <inheritdoc />
-        public ICustomAttributeBuilder CreateCustomAttribute(IConstructorSymbol con, object?[] constructorArgs, IPropertySymbol[] namedProperties, object?[] propertyValues, IFieldSymbol[] namedFields, object?[] fieldValues)
-        {
-            return new ReflectionCustomAttributeBuilder(new CustomAttributeBuilder(con.Unpack(), UnpackArguments(constructorArgs), namedProperties.Unpack(), UnpackArguments(propertyValues), namedFields.Unpack(), UnpackArguments(fieldValues)));
         }
 
         /// <summary>

@@ -55,12 +55,12 @@ namespace IKVM.Runtime
 
         internal override object GetValue(object obj)
         {
-            return GetField().AsReflection().GetValue(obj);
+            return GetField().GetUnderlyingRuntimeField().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
-            GetField().AsReflection().SetValue(obj, value);
+            GetField().GetUnderlyingRuntimeField().SetValue(obj, value);
         }
 
 #endif

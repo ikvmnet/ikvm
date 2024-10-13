@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -26,18 +29,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public PropertyInfo UnderlyingProperty => _property;
+        public virtual PropertyInfo UnderlyingProperty => _property;
 
         /// <inheritdoc />
-        public PropertyInfo UnderlyingEmitProperty => UnderlyingProperty;
+        public virtual PropertyInfo UnderlyingRuntimeProperty => UnderlyingProperty;
 
         /// <inheritdoc />
         public override MemberInfo UnderlyingMember => UnderlyingProperty;
+
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeProperty;
 
         #region IReflectionPropertySymbol
 
         /// <inheritdoc />
         public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        {
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
         {
             return _parameterTable.GetOrCreateParameterSymbol(parameter);
         }

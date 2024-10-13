@@ -34,6 +34,8 @@ using IKVM.CoreLib.Symbols;
 using static System.Diagnostics.DebuggableAttribute;
 
 using IKVM.CoreLib.Symbols.Reflection;
+using System.Collections.Immutable;
+
 
 
 
@@ -108,7 +110,7 @@ namespace IKVM.Runtime
                 try
                 {
                     type.Finish();
-                    return type.TypeAsTBD.Assembly.AsReflection();
+                    return type.TypeAsTBD.Assembly.GetUnderlyingAssembly();
                 }
                 catch (RetargetableJavaException e)
                 {
@@ -450,7 +452,7 @@ namespace IKVM.Runtime
 
         internal static IModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
-            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), null);
+            jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), []);
             return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
         }
 
@@ -545,9 +547,9 @@ namespace IKVM.Runtime
                 name.ContentType,
                 name.ProcessorArchitecture);
 
-            var attribs = Array.Empty<ICustomAttributeBuilder>();
+            var attribs = ImmutableArray<CustomAttribute>.Empty;
             if (AppDomain.CurrentDomain.IsFullyTrusted == false)
-                attribs = [context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveCoreType(typeof(System.Security.SecurityTransparentAttribute).FullName).GetConstructor([]), [])];
+                attribs = [CustomAttribute.Create(context.Resolver.ResolveCoreType(typeof(System.Security.SecurityTransparentAttribute).FullName).GetConstructor([]), [])];
 
             var assemblyBuilder = DefineDynamicAssembly(context, name, attribs);
             context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
@@ -562,7 +564,7 @@ namespace IKVM.Runtime
 
             // create new module
             var moduleBuilder = assemblyBuilder.DefineModule(name.Name, null, context.Options.EmitSymbols);
-            moduleBuilder.SetCustomAttribute(context.Resolver.Symbols.CreateCustomAttribute(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.JavaModuleAttribute).FullName).GetConstructor([]), []));
+            moduleBuilder.SetCustomAttribute(CustomAttribute.Create(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.JavaModuleAttribute).FullName).GetConstructor([]), []));
             return moduleBuilder;
         }
 
@@ -573,7 +575,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="assemblyAttributes"></param>
         /// <returns></returns>
-        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ICustomAttributeBuilder[] assemblyAttributes)
+        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ImmutableArray<CustomAttribute> assemblyAttributes)
         {
             return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes, false, false);
         }

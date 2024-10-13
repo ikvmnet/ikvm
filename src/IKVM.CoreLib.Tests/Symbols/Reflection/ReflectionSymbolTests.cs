@@ -23,6 +23,38 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             T? field;
         }
 
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+        class AttributeWithWithDefaultCtor : Attribute
+        {
+
+            public AttributeWithWithDefaultCtor()
+            {
+
+            }
+
+        }
+
+        [AttributeUsage(AttributeTargets.Class)]
+        class AttributeWithType : Attribute
+        {
+
+            public AttributeWithType(Type type)
+            {
+                Type = type;
+            }
+
+            public Type Type { get; }
+
+        }
+
+        [AttributeWithType(typeof(object))]
+        class ClassWithAttributeWithType
+        {
+
+
+
+        }
+
         [TestMethod]
         public void SameTypeShouldBeSame()
         {
@@ -183,27 +215,6 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             p[1].ParameterType.Should().Be(c.GetOrCreateTypeSymbol(typeof(object)));
         }
 
-        [AttributeUsage(AttributeTargets.Class)]
-        class AttributeWithType : Attribute
-        {
-
-            public AttributeWithType(Type type)
-            {
-                Type = type;
-            }
-
-            public Type Type { get; }
-
-        }
-
-        [AttributeWithType(typeof(object))]
-        class ClassWithAttributeWithType
-        {
-
-
-
-        }
-
         [TestMethod]
         public void CanReadCustomAttributes()
         {
@@ -212,6 +223,36 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var a = s.GetCustomAttribute(c.GetOrCreateTypeSymbol(typeof(AttributeWithType)));
             var v = a.Value.ConstructorArguments[0].Value;
             v.Should().BeOfType<ReflectionTypeSymbol>();
+        }
+
+        [TestMethod]
+        public void CanReadCustomAttributesFromTypeBuilder()
+        {
+            var c = new ReflectionSymbolContext();
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"), false, false);
+            var m = a.DefineModule("DynamicModule");
+            var type = m.DefineType("DynamicType");
+
+            type.SetCustomAttribute(CustomAttribute.Create(c.GetOrCreateTypeSymbol(typeof(AttributeWithWithDefaultCtor)).GetConstructors()[0], []));
+            var ca = type.GetCustomAttribute(c.GetOrCreateTypeSymbol(typeof(AttributeWithWithDefaultCtor)));
+            ca.Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public void CanReadCustomAttributesFromMethodBuilder()
+        {
+            var c = new ReflectionSymbolContext();
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"), false, false);
+            var m = a.DefineModule("DynamicModule");
+            var type = m.DefineType("DynamicType");
+
+            var method = type.DefineMethod("DynamicMethod1", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static);
+            var il = method.GetILGenerator();
+            il.Emit(OpCodes.Ret);
+
+            method.SetCustomAttribute(CustomAttribute.Create(c.GetOrCreateTypeSymbol(typeof(AttributeWithWithDefaultCtor)).GetConstructors()[0], []));
+            var ca = method.GetCustomAttribute(c.GetOrCreateTypeSymbol(typeof(AttributeWithWithDefaultCtor)));
+            ca.Should().NotBeNull();
         }
 
         [TestMethod]

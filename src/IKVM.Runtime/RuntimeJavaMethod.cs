@@ -491,7 +491,7 @@ namespace IKVM.Runtime
 #else
             try
             {
-                return mb.AsReflection().Invoke(obj, args);
+                return mb.GetUnderlyingMethodBase().Invoke(obj, args);
             }
             catch (TargetInvocationException e)
             {

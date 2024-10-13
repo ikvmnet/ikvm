@@ -270,7 +270,7 @@ namespace IKVM.Runtime
             // since the reflection implementation lives inside this assembly, all internal members would
             // be accessible through Java reflection.
 #if !FIRST_PASS && !IMPORTER && !EXPORTER
-            if (type.Assembly.AsReflection() == typeof(RuntimeManagedJavaType).Assembly)
+            if (type.Assembly.GetUnderlyingAssembly() == typeof(RuntimeManagedJavaType).Assembly)
                 return false;
 #endif
 

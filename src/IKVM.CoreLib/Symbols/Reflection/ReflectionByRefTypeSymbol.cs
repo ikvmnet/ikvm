@@ -22,10 +22,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public override Type UnderlyingType => ElementType.UnderlyingType.MakeByRefType();
 
         /// <inheritdoc />
-        public override Type UnderlyingEmitType => ElementType.UnderlyingEmitType.MakeByRefType();
-
-        /// <inheritdoc />
-        public override Type UnderlyingDynamicEmitType => ElementType.UnderlyingDynamicEmitType.MakeByRefType();
+        public override Type UnderlyingRuntimeType => ElementType.UnderlyingRuntimeType.MakeByRefType();
 
     }
 

@@ -272,7 +272,7 @@ namespace IKVM.Runtime
                 p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
                 p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
                 p["sun.boot.library.path"] = GetBootLibraryPath();
-                p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.GetBaseAssembly().AsReflection(), HomePath);
+                p["sun.boot.class.path"] = VfsTable.GetAssemblyClassesPath(Vfs.Context, Context.Resolver.GetBaseAssembly().GetUnderlyingAssembly(), HomePath);
                 p["sun.cds.enableSharedLookupCache"] = "false";
 
                 // unlimited direct memory

@@ -23,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         IndexRangeDictionary<IIkvmReflectionTypeSymbol> _table = new();
         ReaderWriterLockSlim? _lock;
 
-        ConcurrentDictionary<string, IIkvmReflectionTypeSymbol> _byName;
+        ConcurrentDictionary<string, IIkvmReflectionTypeSymbol>? _byName;
         ConcurrentDictionary<int, IIkvmReflectionTypeSymbol>? _byToken;
 
         /// <summary>
