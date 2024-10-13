@@ -67,7 +67,7 @@ namespace IKVM.Runtime.Vfs
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(Context.Context.Resolver.GetSymbol(assembly));
 
             try
             {
@@ -109,7 +109,7 @@ namespace IKVM.Runtime.Vfs
             }
             catch
             {
-                return Type.EmptyTypes;
+                return [];
             }
         }
 
@@ -124,7 +124,7 @@ namespace IKVM.Runtime.Vfs
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new PlatformNotSupportedException();
 #else
-            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(Context.Context.Resolver.GetSymbol(assembly));
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 
@@ -132,7 +132,7 @@ namespace IKVM.Runtime.Vfs
             foreach (var type in GetAssemblyTypes())
             {
                 // attempt to find Java type name
-                var name = acl.GetTypeNameAndType(type, out var isJavaType);
+                var name = acl.GetTypeNameAndType(Context.Context.Resolver.GetSymbol(type), out var isJavaType);
                 if (name is null)
                     continue;
 
@@ -162,14 +162,14 @@ namespace IKVM.Runtime.Vfs
 #else
             var lst = new HashSet<string>();
 
-            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(assembly);
+            var acl = Context.Context.AssemblyClassLoaderFactory.FromAssembly(Context.Context.Resolver.GetSymbol(assembly));
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
 
             // search for any type that would be within the package
             foreach (var type in GetAssemblyTypes())
             {
-                var name = acl.GetTypeNameAndType(type, out var isJavaType);
+                var name = acl.GetTypeNameAndType(Context.Context.Resolver.GetSymbol(type), out var isJavaType);
                 if (name is null)
                     continue;
 

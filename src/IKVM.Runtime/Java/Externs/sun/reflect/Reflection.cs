@@ -61,7 +61,7 @@ namespace IKVM.Java.Externs.sun.reflect
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return mb.Name.StartsWith("__<", StringComparison.Ordinal) ? HideFromJavaFlags.All : JVM.Context.AttributeHelper.GetHideFromJavaFlags(mb);
+            return mb.Name.StartsWith("__<", StringComparison.Ordinal) ? HideFromJavaFlags.All : JVM.Context.AttributeHelper.GetHideFromJavaFlags(JVM.Context.Resolver.GetSymbol(mb));
 #endif
         }
 
@@ -118,7 +118,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     continue;
 
                 if (--realFramesToSkip == 0)
-                    return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType).ClassObject;
+                    return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(method.DeclaringType)).ClassObject;
             }
 #endif
         }

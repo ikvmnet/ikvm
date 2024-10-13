@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -44,7 +45,7 @@ namespace IKVM.Runtime
         internal sealed class RemappedJavaType : RuntimeManagedByteCodeJavaType
         {
 
-            readonly Type remappedType;
+            readonly ITypeSymbol remappedType;
 
             /// <summary>
             /// initializes a new instance.
@@ -53,20 +54,25 @@ namespace IKVM.Runtime
             /// <param name="name"></param>
             /// <param name="type"></param>
             /// <exception cref="InvalidOperationException"></exception>
-            internal RemappedJavaType(RuntimeContext context, string name, Type type) :
+            internal RemappedJavaType(RuntimeContext context, string name, ITypeSymbol type) :
                 base(context, name, type)
             {
                 var attr = Context.AttributeHelper.GetRemappedType(type) ?? throw new InvalidOperationException();
-                remappedType = attr.Type;
+                remappedType = Context.Resolver.GetSymbol(attr.Type);
             }
 
-            internal override Type TypeAsTBD => remappedType;
+            internal override ITypeSymbol TypeAsTBD => remappedType;
 
             internal override bool IsRemapped => true;
 
             protected override void LazyPublishMethods()
             {
-                const BindingFlags bindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+                const System.Reflection.BindingFlags bindingFlags =
+                    System.Reflection.BindingFlags.DeclaredOnly |
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Static |
+                    System.Reflection.BindingFlags.Instance;
 
                 var list = new List<RuntimeJavaMethod>();
 
@@ -79,7 +85,7 @@ namespace IKVM.Runtime
                 // if we're a remapped interface, we need to get the methods from the real interface
                 if (remappedType.IsInterface)
                 {
-                    var nestedHelper = type.GetNestedType("__Helper", BindingFlags.Public | BindingFlags.Static);
+                    var nestedHelper = type.GetNestedType("__Helper", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                     foreach (var m in Context.AttributeHelper.GetRemappedInterfaceMethods(type))
                     {
                         var method = remappedType.GetMethod(m.MappedTo);
@@ -104,7 +110,7 @@ namespace IKVM.Runtime
                 SetMethods(list.ToArray());
             }
 
-            private void AddMethod(List<RuntimeJavaMethod> list, MethodBase method)
+            private void AddMethod(List<RuntimeJavaMethod> list, IMethodBaseSymbol method)
             {
                 var flags = Context.AttributeHelper.GetHideFromJavaFlags(method);
                 if ((flags & HideFromJavaFlags.Code) == 0 && (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_")) && (!remappedType.IsSealed || method.IsStatic))
@@ -114,40 +120,39 @@ namespace IKVM.Runtime
             protected override void LazyPublishFields()
             {
                 var list = new List<RuntimeJavaField>();
-                var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                var fields = type.GetFields(System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
                 foreach (var field in fields)
                 {
-                    HideFromJavaFlags hideFromJavaFlags = Context.AttributeHelper.GetHideFromJavaFlags(field);
+                    var hideFromJavaFlags = Context.AttributeHelper.GetHideFromJavaFlags(field);
                     if ((hideFromJavaFlags & HideFromJavaFlags.Code) == 0)
                         list.Add(CreateFieldWrapper(field, hideFromJavaFlags));
                 }
+
                 SetFields(list.ToArray());
             }
 
-            RuntimeJavaMethod CreateRemappedMethodWrapper(MethodBase mb, HideFromJavaFlags hideFromJavaflags)
+            RuntimeJavaMethod CreateRemappedMethodWrapper(IMethodBaseSymbol mb, HideFromJavaFlags hideFromJavaflags)
             {
                 var modifiers = Context.AttributeHelper.GetModifiers(mb, false);
                 var flags = MemberFlags.None;
                 GetNameSigFromMethodBase(mb, out var name, out var sig, out var retType, out var paramTypes, ref flags);
 
-                var mbHelper = mb as MethodInfo;
+                var mbHelper = mb as IMethodSymbol;
                 var hideFromReflection = mbHelper != null && (hideFromJavaflags & HideFromJavaFlags.Reflection) != 0;
-                MethodInfo mbNonvirtualHelper = null;
+                IMethodSymbol mbNonvirtualHelper = null;
                 if (!mb.IsStatic && !mb.IsConstructor)
                 {
-                    ParameterInfo[] parameters = mb.GetParameters();
-                    Type[] argTypes = new Type[parameters.Length + 1];
+                    var parameters = mb.GetParameters();
+                    var argTypes = new ITypeSymbol[parameters.Length + 1];
                     argTypes[0] = remappedType;
                     for (int i = 0; i < parameters.Length; i++)
-                    {
                         argTypes[i + 1] = parameters[i].ParameterType;
-                    }
-                    MethodInfo helper = type.GetMethod("instancehelper_" + mb.Name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static, null, argTypes, null);
+
+                    var helper = type.GetMethod("instancehelper_" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, argTypes);
                     if (helper != null)
-                    {
                         mbHelper = helper;
-                    }
-                    mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, BindingFlags.NonPublic | BindingFlags.Static, null, argTypes, null);
+
+                    mbNonvirtualHelper = type.GetMethod("nonvirtualhelper/" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static, argTypes);
                 }
 
                 return new RemappedJavaMethod(this, name, sig, mb, retType, paramTypes, modifiers, hideFromReflection, mbHelper, mbNonvirtualHelper);

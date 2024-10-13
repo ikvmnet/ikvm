@@ -101,11 +101,10 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), Array.Empty<Type>());
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(Property.GetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.GetMethod);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Func<TProperty>)dm.CreateDelegate(typeof(Func<TProperty>));
 #endif
@@ -122,12 +121,11 @@ namespace IKVM.Runtime.Accessors
             throw new NotImplementedException();
 #else
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TProperty) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(Property.SetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.SetMethod);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Action<TProperty>)dm.CreateDelegate(typeof(Action<TProperty>));
 #endif
@@ -204,13 +202,12 @@ namespace IKVM.Runtime.Accessors
                 throw new InternalException($"Property {Property.Name} cannot be read.");
 
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), new[] { typeof(TObject) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(Property.GetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.GetMethod);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Func<TObject, TProperty>)dm.CreateDelegate(typeof(Func<TObject, TProperty>));
 #endif
@@ -229,14 +226,13 @@ namespace IKVM.Runtime.Accessors
                 throw new InternalException($"Property {Property.Name} cannot be written.");
 
             var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(Property.SetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.SetMethod);
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (Action<TObject, TProperty>)dm.CreateDelegate(typeof(Action<TObject, TProperty>));
 #endif

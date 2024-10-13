@@ -21,15 +21,7 @@
   jeroen@frijters.net
   
 */
-using System;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -40,8 +32,8 @@ namespace IKVM.Runtime
         public sealed class GhostJavaType : RuntimeManagedByteCodeJavaType
         {
 
-            volatile FieldInfo ghostRefField;
-            volatile Type typeAsBaseType;
+            volatile IFieldSymbol ghostRefField;
+            volatile ITypeSymbol typeAsBaseType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -49,33 +41,15 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="type"></param>
-            internal GhostJavaType(RuntimeContext context, string name, Type type) :
+            internal GhostJavaType(RuntimeContext context, string name, ITypeSymbol type) :
                 base(context, name, type)
             {
 
             }
 
-            internal override Type TypeAsBaseType
-            {
-                get
-                {
-                    if (typeAsBaseType == null)
-                        typeAsBaseType = type.GetNestedType("__Interface");
+            internal override ITypeSymbol TypeAsBaseType => typeAsBaseType ??= type.GetNestedType("__Interface");
 
-                    return typeAsBaseType;
-                }
-            }
-
-            internal override FieldInfo GhostRefField
-            {
-                get
-                {
-                    if (ghostRefField == null)
-                        ghostRefField = type.GetField("__<ref>");
-
-                    return ghostRefField;
-                }
-            }
+            internal override IFieldSymbol GhostRefField => ghostRefField ??= type.GetField("__<ref>");
 
             internal override bool IsGhost => true;
 
@@ -83,12 +57,12 @@ namespace IKVM.Runtime
 
             internal override object GhostWrap(object obj)
             {
-                return type.GetMethod("Cast").Invoke(null, new object[] { obj });
+                return type.GetMethod("Cast").GetUnderlyingMethod().Invoke(null, [obj]);
             }
 
             internal override object GhostUnwrap(object obj)
             {
-                return type.GetMethod("ToObject").Invoke(obj, new object[0]);
+                return type.GetMethod("ToObject").GetUnderlyingMethod().Invoke(obj, []);
             }
 
 #endif

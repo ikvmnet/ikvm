@@ -6,7 +6,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Obtains information about the attributes of a member and provides access to member metadata.
     /// </summary>
-    interface IMemberSymbol : ISymbol, ICustomAttributeSymbolProvider
+    interface IMemberSymbol : ISymbol, ICustomAttributeProvider
     {
 
         /// <summary>

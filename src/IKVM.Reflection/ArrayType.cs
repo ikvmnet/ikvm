@@ -69,7 +69,7 @@ namespace IKVM.Reflection
             list.Add(new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32));
             list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, int32)));
 
-            for (var type = elementType; type.__IsVector; type = type.GetElementType())
+            for (var type = elementType; type.IsSZArray; type = type.GetElementType())
             {
                 Array.Resize(ref int32, int32.Length + 1);
                 int32[int32.Length - 1] = int32[0];

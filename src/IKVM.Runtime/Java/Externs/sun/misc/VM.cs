@@ -59,12 +59,12 @@ namespace IKVM.Java.Externs.sun.misc
                 if (global::IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(m))
                     continue;
 
-                if (m.DeclaringType != null && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(m.DeclaringType) is RuntimeJavaType tw and not null)
+                if (m.DeclaringType != null && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(m.DeclaringType)) is { } tw)
                 {
-                    // check that the assembly isn't java.base or the IKVM runtime
+                    // check that the assembly isn't the .NET corelib or the IKVM runtime
                     var clw = tw.ClassLoader;
                     if (clw is RuntimeAssemblyClassLoader acl)
-                        if (acl.GetAssembly(tw) == typeof(object).Assembly || acl.GetAssembly(tw) == typeof(VM).Assembly)
+                        if (acl.GetAssembly(tw) == JVM.Context.Types.Object.Assembly || acl.GetAssembly(tw).GetUnderlyingAssembly() == typeof(VM).Assembly)
                             continue;
 
                     // associated Java class loader is our nearest

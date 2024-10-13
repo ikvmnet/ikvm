@@ -11,7 +11,7 @@ namespace IKVM.Tools.Importer
     {
 
         /// <summary>
-        /// Encapsulates a <see cref="ImportContext"/> in a remote <see cref="AppDomain"/>.
+        /// Encapsulates a <see cref="ImportContextFactory"/> in a remote <see cref="AppDomain"/>.
         /// </summary>
         class ExecutionContextDispatcher : MarshalByRefObject
         {

@@ -24,18 +24,14 @@
 
 using System;
 using System.Collections.Generic;
-
-using IKVM.CoreLib.Diagnostics;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
+
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+
+#if IMPORTER
+using IKVM.Tools.Importer;
 #endif
 
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
@@ -228,29 +224,29 @@ namespace IKVM.Runtime
 
         private static bool Float_floatToRawIntBits(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter").AsReflection(), "ToInt");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter"), "ToInt");
             return true;
         }
 
         private static bool Float_intBitsToFloat(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter").AsReflection(), "ToFloat");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.FloatConverter"), "ToFloat");
             return true;
         }
 
         private static bool Double_doubleToRawLongBits(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter").AsReflection(), "ToLong");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter"), "ToLong");
             return true;
         }
 
         static bool Double_longBitsToDouble(EmitIntrinsicContext eic)
         {
-            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter").AsReflection(), "ToDouble");
+            EmitConversion(eic.Emitter, eic.Method.DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.DoubleConverter"), "ToDouble");
             return true;
         }
 
-        static void EmitConversion(CodeEmitter ilgen, Type converterType, string method)
+        static void EmitConversion(CodeEmitter ilgen, ITypeSymbol converterType, string method)
         {
             var converter = ilgen.UnsafeAllocTempLocal(converterType);
             ilgen.Emit(OpCodes.Ldloca, converter);
@@ -374,7 +370,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                throw new FatalCompilerErrorException(DiagnosticEvent.CallerIDRequiresHasCallerIDAnnotation());
+                throw new DiagnosticEventException(DiagnosticEvent.CallerIDRequiresHasCallerIDAnnotation());
             }
         }
 
@@ -1003,7 +999,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static MethodInfo MakeExchange(RuntimeContext context, Type type)
+        internal static IMethodSymbol MakeExchange(RuntimeContext context, ITypeSymbol type)
         {
             return context.InterlockedMethods.ExchangeOfT.MakeGenericMethod(type);
         }

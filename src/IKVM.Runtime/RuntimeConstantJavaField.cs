@@ -23,18 +23,10 @@
 */
 using System;
 using System.Diagnostics;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -64,7 +56,7 @@ namespace IKVM.Runtime
         /// <param name="constant"></param>
         /// <param name="flags"></param>
         /// <exception cref="InternalException"></exception>
-        internal RuntimeConstantJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, object constant, MemberFlags flags) :
+        internal RuntimeConstantJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, IFieldSymbol field, object constant, MemberFlags flags) :
             base(declaringType, fieldType, name, sig, modifiers, field, flags)
         {
             if (IsStatic == false)
@@ -149,7 +141,7 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             var field = GetField();
-            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.GetValue(null);
+            return FieldTypeWrapper.IsPrimitive || field == null ? GetConstantValue() : field.GetUnderlyingField().GetValue(null);
         }
 
         internal override void SetValue(object obj, object value)

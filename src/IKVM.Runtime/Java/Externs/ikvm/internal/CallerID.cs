@@ -37,7 +37,7 @@ namespace IKVM.Java.Externs.ikvm.@internal
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).ClassObject;
+            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(obj.GetType().DeclaringType)).ClassObject;
 #endif
         }
 
@@ -46,7 +46,7 @@ namespace IKVM.Java.Externs.ikvm.@internal
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(obj.GetType().DeclaringType).ClassLoader.GetJavaClassLoader();
+            return JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(obj.GetType().DeclaringType)).ClassLoader.GetJavaClassLoader();
 #endif
         }
 
@@ -55,7 +55,7 @@ namespace IKVM.Java.Externs.ikvm.@internal
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).GetJavaClassLoader();
 #endif
         }
 

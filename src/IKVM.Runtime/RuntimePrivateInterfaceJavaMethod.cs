@@ -21,17 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -50,7 +43,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimePrivateInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimePrivateInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
 

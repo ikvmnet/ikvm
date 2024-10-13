@@ -21,17 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -39,7 +32,7 @@ namespace IKVM.Runtime
     sealed class RuntimeConstructorAccessStubJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly ConstructorInfo stub;
+        readonly IConstructorSymbol stub;
 
         /// <summary>
         /// Initializes a new instance.
@@ -51,7 +44,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeConstructorAccessStubJavaMethod(RuntimeJavaType declaringType, string sig, ConstructorInfo core, ConstructorInfo stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeConstructorAccessStubJavaMethod(RuntimeJavaType declaringType, string sig, IConstructorSymbol core, IConstructorSymbol stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, StringConstants.INIT, sig, core, declaringType.Context.PrimitiveJavaTypeFactory.VOID, parameterTypes, modifiers, flags)
         {
             this.stub = stub;

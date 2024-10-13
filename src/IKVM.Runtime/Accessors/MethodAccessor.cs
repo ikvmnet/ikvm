@@ -139,7 +139,7 @@ namespace IKVM.Runtime.Accessors
 
             // generate new dynamic method
             var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type, false, delegateReturnType, delegateParameterTypes);
-            var il = JVM.Context.CodeEmitterFactory.Create(dm);
+            var il = dm.GetILGenerator();
 
             // advance through each argument
             var n = 0;
@@ -147,34 +147,33 @@ namespace IKVM.Runtime.Accessors
             // load first argument, which is the instance if non-static
             if (Method.IsStatic == false && Method.IsConstructor == false)
             {
-                il.EmitLdarg(n++);
+                il.Emit(OpCodes.Ldarg, n++);
                 if (delegateParameterTypes[0] != Type)
-                    il.EmitCastclass(Type);
+                    il.Emit(OpCodes.Castclass, Type);
             }
 
             // emit conversion code for the remainder of the arguments
             for (var i = 0; i < parameters.Length; i++)
             {
                 var delegateParameterType = delegateParameterTypes[n];
-                il.EmitLdarg(n++);
+                il.Emit(OpCodes.Ldarg, n++);
                 if (parameters[i].ParameterType != delegateParameterType)
-                    il.EmitCastclass(parameters[i].ParameterType);
+                    il.Emit(OpCodes.Castclass, parameters[i].ParameterType);
             }
 
             if (Method.IsConstructor)
-                il.Emit(OpCodes.Newobj, Method);
+                il.Emit(OpCodes.Newobj, (ConstructorInfo)Method);
             else if (Method.IsStatic || Method.IsVirtual == false)
-                il.Emit(OpCodes.Call, Method);
+                il.Emit(OpCodes.Call, (MethodInfo)Method);
             else
-                il.Emit(OpCodes.Callvirt, Method);
+                il.Emit(OpCodes.Callvirt, (MethodInfo)Method);
 
             // convert to delegate value
             if (delegateReturnType != typeof(void))
                 if (Method.IsConstructor && delegateReturnType != Type || Method.IsConstructor == false && delegateReturnType != ((MethodInfo)Method).ReturnType)
-                    il.EmitCastclass(delegateReturnType);
+                    il.Emit(OpCodes.Castclass, delegateReturnType);
 
             il.Emit(OpCodes.Ret);
-            il.DoEmit();
 
             return (TDelegate)dm.CreateDelegate(typeof(TDelegate));
 #endif

@@ -2,7 +2,7 @@
   "profiles": {
     "javac": {
         "commandName": "Project",
-        "commandLineArgs": "@C:\\dev\\ikvm\\src\\javadoc\\obj\\Debug\\net8.0\\osx-arm64\\javadoc.javac.rsp",
+        "commandLineArgs": "",
         "environmentVariables": {
 
         }
