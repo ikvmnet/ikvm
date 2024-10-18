@@ -7,9 +7,10 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 using IKVM.Runtime;
-using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 
@@ -77,6 +78,7 @@ namespace IKVM.Tools.Exporter
 
             // build universe and resolver against universe and references
             var universe = new Universe(coreLibName);
+            var symbols = new IkvmReflectionSymbolContext(universe);
             var assemblyResolver = new AssemblyResolver();
             assemblyResolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
             assemblyResolver.Init(universe, options.NoStdLib, references, libpaths);
@@ -144,12 +146,11 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(bootstrap: true), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, true), compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
                 {
-
                     var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
                     if (runtimeAssemblyPath != null)
                         runtimeAssembly = assemblyResolver.LoadFile(runtimeAssemblyPath);
@@ -171,10 +172,10 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, false), compiler);
                 }
 
-                if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
+                if (context.AttributeHelper.IsJavaModule(context.Resolver.GetSymbol(assembly.ManifestModule)))
                 {
                     diagnostics.ExportingImportsNotSupported();
                     return 1;
@@ -242,6 +243,12 @@ namespace IKVM.Tools.Exporter
             foreach (var reference in references)
                 if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
                     return coreLibName;
+
+            foreach (var libpath in libpaths)
+                if (Directory.Exists(libpath))
+                    foreach (var reference in Directory.EnumerateFiles(libpath, "*.dll"))
+                        if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                            return coreLibName;
 
             return null;
         }
@@ -344,7 +351,7 @@ namespace IKVM.Tools.Exporter
             javaType.Context.StubGenerator.Write(stream, javaType, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
-        bool ExportNamespace(IList<string> namespaces, Type type)
+        bool ExportNamespace(IList<string> namespaces, ITypeSymbol type)
         {
             if (namespaces.Count == 0)
                 return true;
@@ -360,7 +367,7 @@ namespace IKVM.Tools.Exporter
         int ProcessTypes(RuntimeContext context, Type[] types)
         {
             int rc = 0;
-            foreach (var t in types)
+            foreach (var t in types.Select(context.Resolver.GetSymbol))
             {
                 if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !context.AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !context.AttributeHelper.IsJavaModule(t.Module)))
                 {

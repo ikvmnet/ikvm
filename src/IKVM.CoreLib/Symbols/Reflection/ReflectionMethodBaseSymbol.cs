@@ -1,153 +1,134 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
+﻿using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IMethodBaseSymbol
+    abstract class ReflectionMethodBaseSymbol : ReflectionMemberSymbol, IReflectionMethodBaseSymbol
     {
 
-        readonly MethodBase _method;
-
-        ParameterInfo[]? _parametersSource;
-        ReflectionParameterSymbol?[]? _parameters;
-        ReflectionParameterSymbol? _returnParameter;
+        ReflectionParameterTable _parameterTable;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="type"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodBase method) :
-            base(context, module, type, method)
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
+        public ReflectionMethodBaseSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol? resolvingType) :
+            base(context, resolvingModule, resolvingType)
         {
-            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _parameterTable = new ReflectionParameterTable(context, resolvingModule, this);
         }
 
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the type by method.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        internal ReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        #region IReflectionMethodBaseSymbol
+
+        /// <inheritdoc />
+        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            Debug.Assert(parameter.Member == _method);
-
-            if (_parametersSource == null)
-                Interlocked.CompareExchange(ref _parametersSource, _method.GetParameters().OrderBy(i => i.Position).ToArray(), null);
-            if (_parameters == null)
-                Interlocked.CompareExchange(ref _parameters, new ReflectionParameterSymbol?[_parametersSource.Length], null);
-
-            // index of current record
-            var idx = parameter.Position;
-            Debug.Assert(idx >= -1);
-            Debug.Assert(idx < _parametersSource.Length);
-
-            // check that our list is long enough to contain the entire table
-            if (idx >= 0 && _parameters.Length < idx)
-                throw new IndexOutOfRangeException();
-
-            // if not yet created, create, allow multiple instances, but only one is eventually inserted
-            ref var rec = ref _returnParameter;
-            if (idx >= 0)
-                rec = ref _parameters[idx];
-            if (rec == null)
-                Interlocked.CompareExchange(ref rec, new ReflectionParameterSymbol(Context, this, parameter), null);
-
-            // this should never happen
-            if (rec is not ReflectionParameterSymbol sym)
-                throw new InvalidOperationException();
-
-            return sym;
-        }
-
-        /// <summary>
-        /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
-        /// </summary>
-        internal new MethodBase ReflectionObject => _method;
-
-        /// <inheritdoc />
-        public MethodAttributes Attributes => _method.Attributes;
-
-        /// <inheritdoc />
-        public CallingConventions CallingConvention => _method.CallingConvention;
-
-        /// <inheritdoc />
-        public bool ContainsGenericParameters => _method.ContainsGenericParameters;
-
-        /// <inheritdoc />
-        public bool IsAbstract => _method.IsAbstract;
-
-        /// <inheritdoc />
-        public bool IsAssembly => _method.IsAssembly;
-
-        /// <inheritdoc />
-        public bool IsConstructor => _method.IsConstructor;
-
-        /// <inheritdoc />
-        public bool IsFamily => _method.IsFamily;
-
-        /// <inheritdoc />
-        public bool IsFamilyAndAssembly => _method.IsFamilyAndAssembly;
-
-        /// <inheritdoc />
-        public bool IsFamilyOrAssembly => _method.IsFamilyOrAssembly;
-
-        /// <inheritdoc />
-        public bool IsFinal => _method.IsFinal;
-
-        /// <inheritdoc />
-        public bool IsGenericMethod => _method.IsGenericMethod;
-
-        /// <inheritdoc />
-        public bool IsGenericMethodDefinition => _method.IsGenericMethodDefinition;
-
-        /// <inheritdoc />
-        public bool IsHideBySig => _method.IsHideBySig;
-
-        /// <inheritdoc />
-        public bool IsPrivate => _method.IsPrivate;
-
-        /// <inheritdoc />
-        public bool IsPublic => _method.IsPublic;
-
-        /// <inheritdoc />
-        public bool IsStatic => _method.IsStatic;
-
-        /// <inheritdoc />
-        public bool IsVirtual => _method.IsVirtual;
-
-        /// <inheritdoc />
-        public bool IsSpecialName => _method.IsSpecialName;
-
-        /// <inheritdoc />
-        public MethodImplAttributes MethodImplementationFlags => _method.MethodImplementationFlags;
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetGenericArguments()
-        {
-            return ResolveTypeSymbols(_method.GetGenericArguments());
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
         }
 
         /// <inheritdoc />
-        public MethodImplAttributes GetMethodImplementationFlags()
+        public IReflectionParameterSymbolBuilder GetOrCreateParameterSymbol(ParameterBuilder parameter)
         {
-            return _method.GetMethodImplementationFlags();
+            return _parameterTable.GetOrCreateParameterSymbol(parameter);
+        }
+
+        #endregion
+
+        #region IMethodBaseSymbol
+
+        /// <inheritdoc />
+        public abstract MethodBase UnderlyingMethodBase { get; }
+
+        /// <inheritdoc />
+        public abstract MethodBase UnderlyingRuntimeMethodBase { get; }
+
+        /// <inheritdoc />
+        public override sealed MemberInfo UnderlyingMember => UnderlyingMethodBase;
+
+        /// <inheritdoc />
+        public override sealed MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeMethodBase;
+
+        /// <inheritdoc />
+        public virtual System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;
+
+        /// <inheritdoc />
+        public virtual System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)UnderlyingMethodBase.CallingConvention;
+
+        /// <inheritdoc />
+        public virtual bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
+
+        /// <inheritdoc />
+        public virtual bool IsAbstract => UnderlyingMethodBase.IsAbstract;
+
+        /// <inheritdoc />
+        public virtual bool IsAssembly => UnderlyingMethodBase.IsAssembly;
+
+        /// <inheritdoc />
+        public virtual bool IsConstructor => UnderlyingMethodBase.IsConstructor;
+
+        /// <inheritdoc />
+        public virtual bool IsFamily => UnderlyingMethodBase.IsFamily;
+
+        /// <inheritdoc />
+        public virtual bool IsFamilyAndAssembly => UnderlyingMethodBase.IsFamilyAndAssembly;
+
+        /// <inheritdoc />
+        public virtual bool IsFamilyOrAssembly => UnderlyingMethodBase.IsFamilyOrAssembly;
+
+        /// <inheritdoc />
+        public virtual bool IsFinal => UnderlyingMethodBase.IsFinal;
+
+        /// <inheritdoc />
+        public virtual bool IsGenericMethod => UnderlyingMethodBase.IsGenericMethod;
+
+        /// <inheritdoc />
+        public virtual bool IsGenericMethodDefinition => UnderlyingMethodBase.IsGenericMethodDefinition;
+
+        /// <inheritdoc />
+        public virtual bool IsHideBySig => UnderlyingMethodBase.IsHideBySig;
+
+        /// <inheritdoc />
+        public virtual bool IsPrivate => UnderlyingMethodBase.IsPrivate;
+
+        /// <inheritdoc />
+        public virtual bool IsPublic => UnderlyingMethodBase.IsPublic;
+
+        /// <inheritdoc />
+        public virtual bool IsStatic => UnderlyingMethodBase.IsStatic;
+
+        /// <inheritdoc />
+        public virtual bool IsVirtual => UnderlyingMethodBase.IsVirtual;
+
+        /// <inheritdoc />
+        public virtual bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
+
+        /// <inheritdoc />
+        public virtual System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
+
+        /// <inheritdoc />
+        public virtual ITypeSymbol[] GetGenericArguments()
+        {
+            return ResolveTypeSymbols(UnderlyingMethodBase.GetGenericArguments());
         }
 
         /// <inheritdoc />
-        public IParameterSymbol[] GetParameters()
+        public virtual System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
-            return ResolveParameterSymbols(_method.GetParameters());
+            return (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.GetMethodImplementationFlags();
         }
+
+        /// <inheritdoc />
+        public virtual IParameterSymbol[] GetParameters()
+        {
+            return ResolveParameterSymbols(UnderlyingMethodBase.GetParameters());
+        }
+
+        #endregion
 
     }
 

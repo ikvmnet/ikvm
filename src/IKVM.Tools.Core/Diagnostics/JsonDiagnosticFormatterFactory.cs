@@ -15,9 +15,10 @@ namespace IKVM.Tools.Core.Diagnostics
         /// Initializes a new instance.
         /// </summary>
         /// <param name="channels"></param>
+        /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public JsonDiagnosticFormatterFactory(DiagnosticChannelProvider channels) :
-            base(channels, "json")
+        public JsonDiagnosticFormatterFactory(DiagnosticChannelProvider channels, DiagnosticOptions options) :
+            base(channels, options, "json")
         {
 
         }

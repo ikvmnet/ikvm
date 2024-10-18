@@ -22,12 +22,7 @@
   
 */
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-#else
-using System.Reflection;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -51,7 +46,7 @@ namespace IKVM.Runtime
         /// <param name="flags"></param>
         /// <param name="call"></param>
         /// <param name="callvirt"></param>
-        internal RuntimeSimpleCallJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt) :
+        internal RuntimeSimpleCallJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             this.call = call;

@@ -9,6 +9,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Diagnostics.SymbolStore;
 using System.Runtime.CompilerServices;
@@ -940,6 +941,24 @@ namespace IKVM.Reflection.Emit
         #endregion
 
         #region Exceptions
+
+        public virtual void ThrowException(Type excType)
+        {
+            if (excType is null)
+                throw new ArgumentNullException(nameof(excType));
+
+            // TODO figure out how to load type here
+            //if (!excType.IsSubclassOf( typeof(Exception)) && excType != typeof(Exception))
+            //throw new ArgumentException(nameof(excType));
+
+            var con = excType.GetConstructor(Type.EmptyTypes);
+            if (con == null)
+                throw new ArgumentException(nameof(excType));
+
+            Emit(OpCodes.Newobj, con);
+            Emit(OpCodes.Throw);
+        }
+
         public Label BeginExceptionBlock()
         {
             // Begin an Exception block.  Creating an Exception block records some information,

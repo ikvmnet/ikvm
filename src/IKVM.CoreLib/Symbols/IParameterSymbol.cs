@@ -1,12 +1,14 @@
 ﻿using System.Reflection;
 
+using IKVM.CoreLib.Symbols.Reflection;
+
 namespace IKVM.CoreLib.Symbols
 {
 
     /// <summary>
     /// Discovers the attributes of a parameter and provides access to parameter metadata.
     /// </summary>
-    interface IParameterSymbol : ISymbol, ICustomAttributeSymbolProvider
+    interface IParameterSymbol : ISymbol, ICustomAttributeProvider
     {
 
         /// <summary>
@@ -73,6 +75,18 @@ namespace IKVM.CoreLib.Symbols
         /// Gets a value that identifies this parameter in metadata.
         /// </summary>
         int MetadataToken { get; }
+
+        /// <summary>
+        /// Returns an array of types representing the optional custom modifiers of the parameter.
+        /// </summary>
+        /// <returns></returns>
+        ITypeSymbol[] GetOptionalCustomModifiers();
+
+        /// <summary>
+        /// Returns an array of types representing the required custom modifiers of the parameter.
+        /// </summary>
+        /// <returns></returns>
+        ITypeSymbol[] GetRequiredCustomModifiers();
 
     }
 

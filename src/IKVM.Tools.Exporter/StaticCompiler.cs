@@ -24,7 +24,6 @@
 using System;
 
 using IKVM.Reflection;
-using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 

@@ -21,15 +21,10 @@
   jeroen@frijters.net
   
 */
-using System;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection.Emit;
-#endif
+
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -37,16 +32,16 @@ namespace IKVM.Runtime
     sealed class CodeEmitterLocal
 	{
 
-		private Type type;
+		private ITypeSymbol type;
 		private string name;
-		private LocalBuilder local;
+		private ILocalBuilder local;
 
-		internal CodeEmitterLocal(Type type)
+		internal CodeEmitterLocal(ITypeSymbol type)
 		{
 			this.type = type;
 		}
 
-		internal Type LocalType
+		internal ITypeSymbol LocalType
 		{
 			get { return type; }
 		}
@@ -61,22 +56,19 @@ namespace IKVM.Runtime
 			get { return local == null ? 0xFFFF : local.LocalIndex; }
 		}
 
-		internal void Emit(ILGenerator ilgen, OpCode opcode)
+		internal void Emit(IILGenerator ilgen, OpCode opcode)
         {
             // it's a temporary local that is only allocated on-demand
             local ??= ilgen.DeclareLocal(type);
 			ilgen.Emit(opcode, local);
 		}
 
-		internal void Declare(ILGenerator ilgen)
+		internal void Declare(IILGenerator ilgen)
 		{
 			local = ilgen.DeclareLocal(type);
 
-#if NETFRAMEWORK || IMPORTER
             if (name != null)
 				local.SetLocalSymInfo(name);
-#endif
-
         }
 
     }

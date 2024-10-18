@@ -162,7 +162,7 @@ namespace IKVM.Reflection
         {
             return Array.Empty<EventInfo>();
         }
-
+                
         public virtual PropertyInfo[] __GetDeclaredProperties()
         {
             return Array.Empty<PropertyInfo>();
@@ -200,7 +200,7 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_ARRAY || sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
 
-        public bool __IsVector
+        public bool IsSZArray
         {
             get { return sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
@@ -215,9 +215,14 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_PTR; }
         }
 
-        public bool __IsFunctionPointer
+        public bool IsFunctionPointer
         {
             get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
+        }
+
+        public bool IsUnmanagedFunctionPointer
+        {
+            get { throw new NotSupportedException(); }
         }
 
         public bool IsValueType
@@ -546,6 +551,21 @@ namespace IKVM.Reflection
                     return true;
 
             return false;
+        }
+
+        public Array GetEnumValues()
+        {
+            if (!IsEnum)
+                throw new ArgumentException();
+
+            var l = __GetDeclaredFields();
+            var a = new object[l.Length];
+
+            for (int i = 0; i < l.Length; i++)
+                if (l[i].IsLiteral)
+                    a[i] = l[i];
+
+            return a;
         }
 
         public override string ToString()
@@ -1173,7 +1193,7 @@ namespace IKVM.Reflection
             get
             {
                 // this property can only be called after __IsBuiltIn, HasElementType, __IsFunctionPointer or IsGenericParameter returned true
-                System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || __IsFunctionPointer || IsGenericParameter);
+                System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || IsFunctionPointer || IsGenericParameter);
                 return sigElementType;
             }
         }
@@ -1642,7 +1662,7 @@ namespace IKVM.Reflection
                 {
                     return false;
                 }
-                else if (this.__IsVector && !type.__IsVector)
+                else if (this.IsSZArray && !type.IsSZArray)
                 {
                     return false;
                 }

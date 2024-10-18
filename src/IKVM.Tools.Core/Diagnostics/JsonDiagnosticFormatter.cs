@@ -25,15 +25,14 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <inheritdoc />
-        protected override void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel)
+        protected override void WriteImpl(in DiagnosticEvent @event, DiagnosticLevel level, IDiagnosticChannel channel)
         {
             var encoding = channel.Encoding ?? Encoding.UTF8;
-            using var buffer = MemoryPool<byte>.Shared.Rent(8192);
+            var buffer = MemoryPool<byte>.Shared.Rent(8192);
             var writer = new MemoryBufferWriter<byte>(buffer.Memory);
-            JsonDiagnosticFormat.Write(@event.Diagnostic.Id, @event.Diagnostic.Level, @event.Diagnostic.Message, @event.Args, @event.Exception, @event.Location, ref writer, encoding);
+            JsonDiagnosticFormat.Write(@event.Diagnostic.Id, level, @event.Diagnostic.Message, @event.Args, @event.Exception, @event.Location, ref writer, encoding);
             WriteLine(writer, encoding);
             channel.Writer.Write(buffer, writer.WrittenCount);
-            return;
         }
 
         /// <summary>

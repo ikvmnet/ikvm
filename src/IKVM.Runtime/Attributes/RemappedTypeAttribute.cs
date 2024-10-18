@@ -34,7 +34,7 @@ namespace IKVM.Attributes
     public sealed class RemappedTypeAttribute : Attribute
     {
 
-        private Type type;
+        readonly Type type;
 
 #if EXPORTER
 
@@ -45,6 +45,10 @@ namespace IKVM.Attributes
 
 #endif
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
         public RemappedTypeAttribute(Type type)
         {
             this.type = type;

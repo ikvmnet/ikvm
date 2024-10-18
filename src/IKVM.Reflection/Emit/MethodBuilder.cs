@@ -47,7 +47,7 @@ namespace IKVM.Reflection.Emit
 
         // user configurable values
         Type returnType;
-        Type[] parameterTypes;
+        Type[] parameterTypes = Array.Empty<Type>();
         PackedCustomModifiers customModifiers;
         MethodAttributes attributes;
         MethodImplAttributes implFlags;
@@ -87,6 +87,7 @@ namespace IKVM.Reflection.Emit
             if ((attributes & MethodAttributes.Static) == 0)
                 callingConvention |= CallingConventions.HasThis;
             this.callingConvention = callingConvention;
+            this.returnType = Module.Universe.System_Void;
         }
 
         public ILGenerator GetILGenerator()
@@ -285,7 +286,7 @@ namespace IKVM.Reflection.Emit
             parameters ??= new List<ParameterBuilder>();
 
             ModuleBuilder.ParamTable.AddVirtualRecord();
-            var pb = new ParameterBuilder(ModuleBuilder, position, attributes, strParamName);
+            var pb = new ParameterBuilder(this, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
                 parameters.Add(pb);
@@ -510,7 +511,7 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            internal override Module Module
+            public override Module Module
             {
                 get { return method.Module; }
             }

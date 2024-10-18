@@ -22,7 +22,8 @@
   
 */
 using System;
-using System.Threading;
+
+using IKVM.CoreLib.Symbols;
 
 #if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
@@ -39,34 +40,34 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        Type typeOfObject;
-        Type typeOfValueType;
-        Type typeOfEnum;
-        Type typeOfType;
-        Type typeOfString;
-        Type typeOfException;
-        Type typeOfArray;
-        Type typeOfAttribute;
-        Type typeOfDelegate;
-        Type typeOfMulticastDelegate;
-        Type typeOfRuntimeTypeHandle;
+        ITypeSymbol typeOfObject;
+        ITypeSymbol typeOfValueType;
+        ITypeSymbol typeOfEnum;
+        ITypeSymbol typeOfType;
+        ITypeSymbol typeOfString;
+        ITypeSymbol typeOfException;
+        ITypeSymbol typeOfArray;
+        ITypeSymbol typeOfAttribute;
+        ITypeSymbol typeOfDelegate;
+        ITypeSymbol typeOfMulticastDelegate;
+        ITypeSymbol typeOfRuntimeTypeHandle;
 
-        Type typeOfIntPtr;
-        Type typeOfVoid;
-        Type typeOfBoolean;
-        Type typeOfByte;
-        Type typeOfSByte;
-        Type typeOfChar;
-        Type typeOfInt16;
-        Type typeOfUInt16;
-        Type typeOfInt32;
-        Type typeOfUInt32;
-        Type typeOfInt64;
-        Type typeOfUInt64;
-        Type typeOfSingle;
-        Type typeOfDouble;
+        ITypeSymbol typeOfIntPtr;
+        ITypeSymbol typeOfVoid;
+        ITypeSymbol typeOfBoolean;
+        ITypeSymbol typeOfByte;
+        ITypeSymbol typeOfSByte;
+        ITypeSymbol typeOfChar;
+        ITypeSymbol typeOfInt16;
+        ITypeSymbol typeOfUInt16;
+        ITypeSymbol typeOfInt32;
+        ITypeSymbol typeOfUInt32;
+        ITypeSymbol typeOfInt64;
+        ITypeSymbol typeOfUInt64;
+        ITypeSymbol typeOfSingle;
+        ITypeSymbol typeOfDouble;
 
-        Type typeOfIsVolatile;
+        ITypeSymbol typeOfIsVolatile;
 
         /// <summary>
         /// Initializes a new instance.
@@ -83,62 +84,62 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        Type Import(System.Type type)
+        ITypeSymbol Import(System.Type type)
         {
-            return context.Resolver.ResolveCoreType(type.FullName).AsReflection();
+            return context.Resolver.ResolveCoreType(type.FullName);
         }
 
-        public Type Object => typeOfObject ??= Import(typeof(System.Object));
+        public ITypeSymbol Object => typeOfObject ??= Import(typeof(System.Object));
 
-        public Type ValueType => typeOfValueType ??= Import(typeof(System.ValueType));
+        public ITypeSymbol ValueType => typeOfValueType ??= Import(typeof(System.ValueType));
 
-        public Type Enum => typeOfEnum ??= Import(typeof(System.Enum));
+        public ITypeSymbol Enum => typeOfEnum ??= Import(typeof(System.Enum));
 
-        public Type Type => typeOfType ??= Import(typeof(System.Type));
+        public ITypeSymbol Type => typeOfType ??= Import(typeof(System.Type));
 
-        public Type String => typeOfString ??= Import(typeof(System.String));
+        public ITypeSymbol String => typeOfString ??= Import(typeof(System.String));
 
-        public Type Exception => typeOfException ??= Import(typeof(System.Exception));
+        public ITypeSymbol Exception => typeOfException ??= Import(typeof(System.Exception));
 
-        public Type Array => typeOfArray ??= Import(typeof(System.Array));
+        public ITypeSymbol Array => typeOfArray ??= Import(typeof(System.Array));
 
-        public Type Attribute => typeOfAttribute ??= Import(typeof(System.Attribute));
+        public ITypeSymbol Attribute => typeOfAttribute ??= Import(typeof(System.Attribute));
 
-        public Type Delegate => typeOfDelegate ??= Import(typeof(System.Delegate));
+        public ITypeSymbol Delegate => typeOfDelegate ??= Import(typeof(System.Delegate));
 
-        public Type MulticastDelegate => typeOfMulticastDelegate ??= Import(typeof(System.MulticastDelegate));
+        public ITypeSymbol MulticastDelegate => typeOfMulticastDelegate ??= Import(typeof(System.MulticastDelegate));
 
-        public Type RuntimeTypeHandle => typeOfRuntimeTypeHandle ??= Import(typeof(System.RuntimeTypeHandle));
+        public ITypeSymbol RuntimeTypeHandle => typeOfRuntimeTypeHandle ??= Import(typeof(System.RuntimeTypeHandle));
 
-        public Type IntPtr => typeOfIntPtr ??= Import(typeof(IntPtr));
+        public ITypeSymbol IntPtr => typeOfIntPtr ??= Import(typeof(IntPtr));
 
-        public Type Void => typeOfVoid ??= Import(typeof(void));
+        public ITypeSymbol Void => typeOfVoid ??= Import(typeof(void));
 
-        public Type Boolean => typeOfBoolean ??= Import(typeof(bool));
+        public ITypeSymbol Boolean => typeOfBoolean ??= Import(typeof(bool));
 
-        public Type Byte => typeOfByte ??= Import(typeof(byte));
+        public ITypeSymbol Byte => typeOfByte ??= Import(typeof(byte));
 
-        public Type SByte => typeOfSByte ??= Import(typeof(sbyte));
+        public ITypeSymbol SByte => typeOfSByte ??= Import(typeof(sbyte));
 
-        public Type Char => typeOfChar ??= Import(typeof(char));
+        public ITypeSymbol Char => typeOfChar ??= Import(typeof(char));
 
-        public Type Int16 => typeOfInt16 ??= Import(typeof(short));
+        public ITypeSymbol Int16 => typeOfInt16 ??= Import(typeof(short));
 
-        public Type UInt16 => typeOfUInt16 ??= Import(typeof(ushort));
+        public ITypeSymbol UInt16 => typeOfUInt16 ??= Import(typeof(ushort));
 
-        public Type Int32 => typeOfInt32 ??= Import(typeof(int));
+        public ITypeSymbol Int32 => typeOfInt32 ??= Import(typeof(int));
 
-        public Type UInt32 => typeOfUInt32 ??= Import(typeof(uint));
+        public ITypeSymbol UInt32 => typeOfUInt32 ??= Import(typeof(uint));
 
-        public Type Int64 => typeOfInt64 ??= Import(typeof(long));
+        public ITypeSymbol Int64 => typeOfInt64 ??= Import(typeof(long));
 
-        public Type UInt64 => typeOfUInt64 ??= Import(typeof(ulong));
+        public ITypeSymbol UInt64 => typeOfUInt64 ??= Import(typeof(ulong));
 
-        public Type Single => typeOfSingle ??= Import(typeof(float));
+        public ITypeSymbol Single => typeOfSingle ??= Import(typeof(float));
 
-        public Type Double => typeOfDouble ??= Import(typeof(double));
+        public ITypeSymbol Double => typeOfDouble ??= Import(typeof(double));
 
-        public Type IsVolatile => typeOfIsVolatile ??= Import(typeof(System.Runtime.CompilerServices.IsVolatile));
+        public ITypeSymbol IsVolatile => typeOfIsVolatile ??= Import(typeof(System.Runtime.CompilerServices.IsVolatile));
 
     }
 

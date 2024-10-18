@@ -1,19 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 
 using IKVM.CoreLib.Diagnostics.Tracing;
 using IKVM.Runtime.Accessors;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Vfs;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
 
 namespace IKVM.Runtime
 {
@@ -34,8 +25,12 @@ namespace IKVM.Runtime
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
-            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions();
-            internal static readonly RuntimeContext context = new RuntimeContext(contextOptions, DiagnosticEventSource.Instance, new Resolver(), false);
+#if NETFRAMEWORK
+            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(Debugger.IsAttached, dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey);
+#else
+            internal static readonly RuntimeContextOptions contextOptions = new RuntimeContextOptions(Debugger.IsAttached, dynamicAssemblySuffixAndPublicKey: RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey);
+#endif
+            internal static readonly RuntimeContext context = new RuntimeContext(contextOptions, DiagnosticEventSource.Instance, new Resolver());
             internal static readonly VfsTable vfs = VfsTable.BuildDefaultTable(new VfsRuntimeContext(context), Properties.HomePath);
             internal static readonly Lazy<object> systemThreadGroup = new Lazy<object>(() => ThreadGroupAccessor.Init());
             internal static readonly Lazy<object> mainThreadGroup = new Lazy<object>(() => ThreadGroupAccessor.Init(null, SystemThreadGroup, "main"));
@@ -44,7 +39,7 @@ namespace IKVM.Runtime
             static ThreadGroupAccessor threadGroupAccessor;
             static SystemAccessor systemAccessor;
 
-            internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.ResolveBaseAssembly().AsReflection());
+            internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, context.Resolver.GetBaseAssembly().GetUnderlyingAssembly());
 
             internal static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
 
