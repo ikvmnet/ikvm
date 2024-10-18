@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading;
 
+using IKVM.CoreLib.Threading;
+using IKVM.CoreLib.Collections;
+using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
@@ -14,6 +18,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         ReflectionGenericTypeParameterTable _genericTypeParameterTable;
         ReflectionMethodSpecTable _specTable;
+
+        ReflectionParameterSpecInfo[]? _specParameters;
+        ReflectionParameterSpecInfo? _specReturnParameter;
 
         /// <summary>
         /// Initializes a new instance.
@@ -69,8 +76,53 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
 
+        /// <summary>
+        /// Gets the return type of the method.
+        /// </summary>
+        /// <returns></returns>
+        IParameterSymbol GetReturnParameter()
+        {
+            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
+                return GetReturnParameterForMethodOnTypeBuilderInstantiation();
+            else
+                return ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
+        }
+
+        /// <summary>
+        /// Gets the return parameter in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
+        /// </summary>
+        /// <returns></returns>
+        IParameterSymbol GetReturnParameterForMethodOnTypeBuilderInstantiation()
+        {
+            if (_specReturnParameter == null)
+                Interlocked.CompareExchange(ref _specReturnParameter, new ReflectionParameterSpecInfo(_method, _method.ReturnParameter, _method.DeclaringType!.GetGenericArguments()), null);
+
+            return ResolveParameterSymbol(_specReturnParameter);
+        }
+
         /// <inheritdoc />
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(UnderlyingMethod.ReturnType);
+        public ITypeSymbol ReturnType => GetReturnType();
+
+        /// <summary>
+        /// Gets the return type of the method.
+        /// </summary>
+        /// <returns></returns>
+        ITypeSymbol GetReturnType()
+        {
+            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
+                return GetReturnTypeForMethodOnTypeBuilderInstantiation();
+            else
+                return ResolveTypeSymbol(UnderlyingMethod.ReturnType);
+        }
+
+        /// <summary>
+        /// Gets the return type in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
+        /// </summary>
+        /// <returns></returns>
+        ITypeSymbol GetReturnTypeForMethodOnTypeBuilderInstantiation()
+        {
+            return ResolveTypeSymbol(_method.ReturnType.SubstituteGenericTypes(_method.DeclaringType!.GetGenericArguments()));
+        }
 
         /// <inheritdoc />
         public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
@@ -85,6 +137,40 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IMethodSymbol GetGenericMethodDefinition()
         {
             return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
+        }
+
+        /// <inheritdoc />
+        public override IParameterSymbol[] GetParameters()
+        {
+            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
+                return GetParametersForMethodOnTypeBuilderInstantiation();
+            else
+                return base.GetParameters();
+        }
+
+        /// <summary>
+        /// Gets the parameters in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
+        /// </summary>
+        /// <returns></returns>
+        IParameterSymbol[] GetParametersForMethodOnTypeBuilderInstantiation()
+        {
+            // we cache the spec parameters to avoid creating them repeatidly
+            if (_specParameters == null)
+            {
+                var l = _method.GetParameters();
+                var a = new ReflectionParameterSpecInfo[l.Length];
+                for (int i = 0; i < l.Length; i++)
+                    a[i] = new ReflectionParameterSpecInfo(_method, l[i], _method.DeclaringType!.GetGenericArguments());
+
+                Interlocked.CompareExchange(ref _specParameters, a, null);
+            }
+
+            // resolve into symbols
+            var symbols = new IParameterSymbol[_specParameters.Length];
+            for (int i = 0; i < _specParameters.Length; i++)
+                symbols[i] = ResolveParameterSymbol(_specParameters[i]);
+
+            return symbols;
         }
 
         /// <inheritdoc />

@@ -11,10 +11,18 @@ namespace IKVM.CoreLib.Reflection
     static class ReflectionExtensions
     {
 
+        static readonly ParameterExpression _constructorInfoParameter = Expression.Parameter(typeof(ConstructorInfo), "p");
+        static readonly ParameterExpression _methodInfoParameter = Expression.Parameter(typeof(MethodInfo), "p");
+        static readonly ParameterExpression _fieldInfoParameter = Expression.Parameter(typeof(FieldInfo), "p");
+
         static readonly ParameterExpression _assemblyBuilderRuntimeAssemblyParameter = Expression.Parameter(typeof(AssemblyBuilder), "p");
         static readonly ParameterExpression _propertyBuilderParameter = Expression.Parameter(typeof(PropertyBuilder), "p");
         static readonly ParameterExpression _eventBuilderParameter = Expression.Parameter(typeof(EventBuilder), "p");
         static readonly ParameterExpression _parameterBuilderParameter = Expression.Parameter(typeof(ParameterBuilder), "p");
+
+        static readonly Type _constructorOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.ConstructorOnTypeBuilderInstantiation", true)!;
+        static readonly Type _methodOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.MethodOnTypeBuilderInstantiation", true)!;
+        static readonly Type _fieldOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.FieldOnTypeBuilderInstantiation", true)!;
 
 #if NET
 
@@ -25,12 +33,54 @@ namespace IKVM.CoreLib.Reflection
         static readonly Type _eventBuilderType = typeof(EventBuilder).Assembly.GetType("System.Reflection.Emit.RuntimeEventBuilder", true)!;
         static readonly Type _parameterBuilderType = typeof(ParameterBuilder).Assembly.GetType("System.Reflection.Emit.RuntimeParameterBuilder", true)!;
 
+        static readonly Func<ConstructorInfo, ConstructorInfo> _getConstructorOnTypeBuilderInstantiationConstructorFunc = Expression.Lambda<Func<ConstructorInfo, ConstructorInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_constructorInfoParameter, _constructorOnTypeBuilderInstantiationType),
+                    _constructorOnTypeBuilderInstantiationType.GetField("_ctor", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _constructorInfoParameter)
+            .Compile();
+
+        static readonly Func<MethodInfo, MethodInfo> _getMethodOnTypeBuilderInstantiationMethodFunc = Expression.Lambda<Func<MethodInfo, MethodInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_methodInfoParameter, _methodOnTypeBuilderInstantiationType),
+                    _methodOnTypeBuilderInstantiationType.GetField("_method", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _methodInfoParameter)
+            .Compile();
+
+        static readonly Func<FieldInfo, FieldInfo> _getFieldOnTypeBuilderInstantiationFieldFunc = Expression.Lambda<Func<FieldInfo, FieldInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_fieldInfoParameter, _fieldOnTypeBuilderInstantiationType),
+                    _fieldOnTypeBuilderInstantiationType.GetField("_field", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _fieldInfoParameter)
+            .Compile();
+
 #else
 
         static readonly Type _assemblyBuilderType = typeof(AssemblyBuilder).Assembly.GetType("System.Reflection.Emit.AssemblyBuilder", true)!;
         static readonly Type _propertyBuilderType = typeof(PropertyBuilder).Assembly.GetType("System.Reflection.Emit.PropertyBuilder", true)!;
         static readonly Type _eventBuilderType = typeof(EventBuilder).Assembly.GetType("System.Reflection.Emit.EventBuilder", true)!;
         static readonly Type _parameterBuilderType = typeof(ParameterBuilder).Assembly.GetType("System.Reflection.Emit.ParameterBuilder", true)!;
+
+        static readonly Func<ConstructorInfo, ConstructorInfo> _getConstructorOnTypeBuilderInstantiationConstructorFunc = Expression.Lambda<Func<ConstructorInfo, ConstructorInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_constructorInfoParameter, _constructorOnTypeBuilderInstantiationType),
+                    _constructorOnTypeBuilderInstantiationType.GetField("m_ctor", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _constructorInfoParameter)
+            .Compile();
+
+        static readonly Func<MethodInfo, MethodInfo> _getMethodOnTypeBuilderInstantiationMethodFunc = Expression.Lambda<Func<MethodInfo, MethodInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_methodInfoParameter, _methodOnTypeBuilderInstantiationType),
+                    _methodOnTypeBuilderInstantiationType.GetField("m_method", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _methodInfoParameter)
+            .Compile();
+
+        static readonly Func<FieldInfo, FieldInfo> _getFieldOnTypeBuilderInstantiationFieldFunc = Expression.Lambda<Func<FieldInfo, FieldInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_fieldInfoParameter, _fieldOnTypeBuilderInstantiationType),
+                    _fieldOnTypeBuilderInstantiationType.GetField("m_field", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _fieldInfoParameter)
+            .Compile();
 
 #endif
 
@@ -74,6 +124,27 @@ namespace IKVM.CoreLib.Reflection
         static readonly Type _assemblyBuilderType = typeof(AssemblyBuilder).Assembly.GetType("System.Reflection.Emit.AssemblyBuilder", true)!;
         static readonly Type _eventBuilderType = typeof(EventBuilder).Assembly.GetType("System.Reflection.Emit.EventBuilder", true)!;
         static readonly Type _parameterBuilderType = typeof(ParameterBuilder).Assembly.GetType("System.Reflection.Emit.ParameterBuilder", true)!;
+
+        static readonly Func<ConstructorInfo, ConstructorInfo> _getConstructorOnTypeBuilderInstantiationConstructorFunc = Expression.Lambda<Func<ConstructorInfo, ConstructorInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_constructorInfoParameter, _constructorOnTypeBuilderInstantiationType),
+                    _constructorOnTypeBuilderInstantiationType.GetField("m_ctor", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _constructorInfoParameter)
+            .Compile();
+
+        static readonly Func<MethodInfo, MethodInfo> _getMethodOnTypeBuilderInstantiationMethodFunc = Expression.Lambda<Func<MethodInfo, MethodInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_methodInfoParameter, _methodOnTypeBuilderInstantiationType),
+                    _methodOnTypeBuilderInstantiationType.GetField("m_method", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _methodInfoParameter)
+            .Compile();
+
+        static readonly Func<FieldInfo, FieldInfo> _getFieldOnTypeBuilderInstantiationFieldFunc = Expression.Lambda<Func<FieldInfo, FieldInfo>>(
+                Expression.Field(
+                    Expression.ConvertChecked(_fieldInfoParameter, _fieldOnTypeBuilderInstantiationType),
+                    _fieldOnTypeBuilderInstantiationType.GetField("m_field", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException()),
+                _fieldInfoParameter)
+            .Compile();
 
         static readonly Func<AssemblyBuilder, Assembly> _getAssemblyBuilderRuntimeAssemblyFunc = Expression.Lambda<Func<AssemblyBuilder, Assembly>>(
                 Expression.Call(
@@ -120,6 +191,11 @@ namespace IKVM.CoreLib.Reflection
                     typeof(EventAttributes)),
                 _eventBuilderParameter)
             .Compile();
+
+        /// <summary>
+        /// Gets the <see cref="MethodOnTypeBuilderInstantiation"/> type.
+        /// </summary>
+        public static Type MethodOnTypeBuilderInstantiationType => _methodOnTypeBuilderInstantiationType;
 
         /// <summary>
         /// Gets the metadata token for the specified <see cref="Type"/>.
@@ -212,6 +288,15 @@ namespace IKVM.CoreLib.Reflection
             }
 #endif
 
+#if NET8_0_OR_GREATER || NETFRAMEWORK
+            // field is instance of FieldOnTypeBuilderInstantiation
+            if (_fieldOnTypeBuilderInstantiationType.IsInstanceOfType(field))
+            {
+                var f = _getFieldOnTypeBuilderInstantiationFieldFunc(field);
+                return f.GetMetadataTokenSafe();
+            }
+#endif
+
             return field.GetMetadataToken();
         }
 
@@ -275,6 +360,15 @@ namespace IKVM.CoreLib.Reflection
             }
 #endif
 
+#if NET8_0_OR_GREATER || NETFRAMEWORK
+            // ctor is instance of ConstructorOnTypeBuilderInstantiation
+            if (_constructorOnTypeBuilderInstantiationType.IsInstanceOfType(ctor))
+            {
+                var c = _getConstructorOnTypeBuilderInstantiationConstructorFunc(ctor);
+                return c.GetMetadataTokenSafe();
+            }
+#endif
+
             return ctor.GetMetadataToken();
         }
 
@@ -306,17 +400,35 @@ namespace IKVM.CoreLib.Reflection
             }
 #endif
 
+#if NET8_0_OR_GREATER || NETFRAMEWORK
+            // method is instance of MethodOnTypeBuilderInstantiation
+            if (_methodOnTypeBuilderInstantiationType.IsInstanceOfType(method))
+            {
+                var m = _getMethodOnTypeBuilderInstantiationMethodFunc(method);
+                return m.GetMetadataTokenSafe();
+            }
+#endif
+
+#if NET6_0
+            // method is instance of MethodOnTypeBuilderInstantiation
+            if (_methodOnTypeBuilderInstantiationType.IsInstanceOfType(method))
+            {
+                var m = _getMethodOnTypeBuilderInstantiationMethodFunc(method);
+                return m.GetMetadataTokenSafe();
+            }
+#endif
+
             return method.GetMetadataToken();
         }
 
         /// <summary>
         /// Gets the metadata row number for the specified <see cref="MethodInfo"/>.
         /// </summary>
-        /// <param name="ctor"></param>
+        /// <param name="method"></param>
         /// <returns></returns>
-        public static int GetMetadataTokenRowNumberSafe(this MethodInfo ctor)
+        public static int GetMetadataTokenRowNumberSafe(this MethodInfo method)
         {
-            return MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(ctor.GetMetadataTokenSafe()));
+            return MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(method.GetMetadataTokenSafe()));
         }
 
         /// <summary>

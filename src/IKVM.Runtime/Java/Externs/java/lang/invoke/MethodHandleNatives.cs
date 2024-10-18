@@ -466,7 +466,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
-            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()).GetUnderlyingType());
+            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(JVM.Context.MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()).GetUnderlyingRuntimeType());
             var ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
             Interlocked.CompareExchange(ref site.ics, ics, null);
         }

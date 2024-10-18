@@ -54,76 +54,76 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public override sealed MemberInfo UnderlyingRuntimeMember => UnderlyingRuntimeMethodBase;
 
         /// <inheritdoc />
-        public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;
+        public virtual System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)UnderlyingMethodBase.Attributes;
 
         /// <inheritdoc />
-        public System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)UnderlyingMethodBase.CallingConvention;
+        public virtual System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)UnderlyingMethodBase.CallingConvention;
 
         /// <inheritdoc />
-        public bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
+        public virtual bool ContainsGenericParameters => UnderlyingMethodBase.ContainsGenericParameters;
 
         /// <inheritdoc />
-        public bool IsAbstract => UnderlyingMethodBase.IsAbstract;
+        public virtual bool IsAbstract => UnderlyingMethodBase.IsAbstract;
 
         /// <inheritdoc />
-        public bool IsAssembly => UnderlyingMethodBase.IsAssembly;
+        public virtual bool IsAssembly => UnderlyingMethodBase.IsAssembly;
 
         /// <inheritdoc />
-        public bool IsConstructor => UnderlyingMethodBase.IsConstructor;
+        public virtual bool IsConstructor => UnderlyingMethodBase.IsConstructor;
 
         /// <inheritdoc />
-        public bool IsFamily => UnderlyingMethodBase.IsFamily;
+        public virtual bool IsFamily => UnderlyingMethodBase.IsFamily;
 
         /// <inheritdoc />
-        public bool IsFamilyAndAssembly => UnderlyingMethodBase.IsFamilyAndAssembly;
+        public virtual bool IsFamilyAndAssembly => UnderlyingMethodBase.IsFamilyAndAssembly;
 
         /// <inheritdoc />
-        public bool IsFamilyOrAssembly => UnderlyingMethodBase.IsFamilyOrAssembly;
+        public virtual bool IsFamilyOrAssembly => UnderlyingMethodBase.IsFamilyOrAssembly;
 
         /// <inheritdoc />
-        public bool IsFinal => UnderlyingMethodBase.IsFinal;
+        public virtual bool IsFinal => UnderlyingMethodBase.IsFinal;
 
         /// <inheritdoc />
-        public bool IsGenericMethod => UnderlyingMethodBase.IsGenericMethod;
+        public virtual bool IsGenericMethod => UnderlyingMethodBase.IsGenericMethod;
 
         /// <inheritdoc />
-        public bool IsGenericMethodDefinition => UnderlyingMethodBase.IsGenericMethodDefinition;
+        public virtual bool IsGenericMethodDefinition => UnderlyingMethodBase.IsGenericMethodDefinition;
 
         /// <inheritdoc />
-        public bool IsHideBySig => UnderlyingMethodBase.IsHideBySig;
+        public virtual bool IsHideBySig => UnderlyingMethodBase.IsHideBySig;
 
         /// <inheritdoc />
-        public bool IsPrivate => UnderlyingMethodBase.IsPrivate;
+        public virtual bool IsPrivate => UnderlyingMethodBase.IsPrivate;
 
         /// <inheritdoc />
-        public bool IsPublic => UnderlyingMethodBase.IsPublic;
+        public virtual bool IsPublic => UnderlyingMethodBase.IsPublic;
 
         /// <inheritdoc />
-        public bool IsStatic => UnderlyingMethodBase.IsStatic;
+        public virtual bool IsStatic => UnderlyingMethodBase.IsStatic;
 
         /// <inheritdoc />
-        public bool IsVirtual => UnderlyingMethodBase.IsVirtual;
+        public virtual bool IsVirtual => UnderlyingMethodBase.IsVirtual;
 
         /// <inheritdoc />
-        public bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
+        public virtual bool IsSpecialName => UnderlyingMethodBase.IsSpecialName;
 
         /// <inheritdoc />
-        public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
+        public virtual System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.MethodImplementationFlags;
 
         /// <inheritdoc />
-        public ITypeSymbol[] GetGenericArguments()
+        public virtual ITypeSymbol[] GetGenericArguments()
         {
             return ResolveTypeSymbols(UnderlyingMethodBase.GetGenericArguments());
         }
 
         /// <inheritdoc />
-        public System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
+        public virtual System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
             return (System.Reflection.MethodImplAttributes)UnderlyingMethodBase.GetMethodImplementationFlags();
         }
 
         /// <inheritdoc />
-        public IParameterSymbol[] GetParameters()
+        public virtual IParameterSymbol[] GetParameters()
         {
             return ResolveParameterSymbols(UnderlyingMethodBase.GetParameters());
         }

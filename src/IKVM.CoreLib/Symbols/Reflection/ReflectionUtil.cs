@@ -524,6 +524,41 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return method.IsGenericMethod == false || method.IsGenericMethodDefinition;
         }
 
+        /// <summary>
+        /// Substitutes generic type parameters into the specified type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="genericTypeArguments"></param>
+        /// <returns></returns>
+        public static Type SubstituteGenericTypes(this Type type, Type[] genericTypeArguments)
+        {
+            if (type.IsGenericParameter)
+                return genericTypeArguments[type.GenericParameterPosition];
+
+            if (type.IsGenericType)
+            {
+                var anySubstituted = false;
+                var typeDef = type.GetGenericTypeDefinition();
+                var genericTypeParameters = typeDef.GetGenericArguments();
+
+                for (int i = 0; i < genericTypeParameters.Length; i++)
+                {
+                    var typeParameter = SubstituteGenericTypes(genericTypeParameters[i], genericTypeArguments);
+                    if (genericTypeParameters[i] != typeParameter)
+                    {
+                        genericTypeParameters[i] = typeParameter;
+                        anySubstituted = true;
+                    }
+                }
+
+                // if any parameters were substituted
+                if (anySubstituted)
+                    return typeDef.MakeGenericType(genericTypeParameters);
+            }
+
+            return type;
+        }
+
     }
 
 }

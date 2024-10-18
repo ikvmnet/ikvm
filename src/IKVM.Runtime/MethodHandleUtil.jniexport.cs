@@ -644,7 +644,7 @@ namespace IKVM.Runtime
             if (mh._invokeExactDelegate == null)
             {
                 type._invokeExactDynamicMethod ??= DynamicMethodBuilder.CreateInvokeExact(context, type);
-                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type).GetUnderlyingType(), mh);
+                mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type).GetUnderlyingRuntimeType(), mh);
                 var del = mh._invokeExactDelegate as T;
                 if (del != null)
                     return del;

@@ -25,6 +25,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         protected IReflectionTypeSymbol ElementType => _elementType;
 
+        /// <inheritdoc />
+        public override bool IsComplete => ElementType.IsComplete;
+
     }
 
 }

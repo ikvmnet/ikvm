@@ -490,6 +490,25 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             incompleteMethod.Should().BeSameAs(method);
         }
 
+        /// <summary>
+        /// Generics closed over a type builder need to be handled specially.
+        /// </summary>
+        [TestMethod]
+        public void CanCreateRuntimeGenericTypeOfTypeBuilder()
+        {
+            var c = new ReflectionSymbolContext();
+            var a = c.DefineAssembly(new AssemblyIdentity("DynamicAssembly"), false, false);
+            var m = a.DefineModule("DynamicModule");
+            var type = m.DefineType("DynamicType");
+            var funcType = c.GetOrCreateTypeSymbol(typeof(Func<,>));
+            var realFuncType = funcType.MakeGenericType(type, type);
+            var invokeMethod = realFuncType.GetMethod("Invoke");
+            invokeMethod.Should().NotBeNull();
+            invokeMethod.GetParameters().Should().HaveCount(1);
+            invokeMethod.GetParameters()[0].ParameterType.Should().BeSameAs(type);
+            invokeMethod.ReturnType.Should().BeSameAs(type);
+        }
+
     }
 
 }

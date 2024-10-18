@@ -30,7 +30,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public ReflectionMethodSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, MethodBuilder builder) :
             base(context, resolvingModule, resolvingType, builder)
         {
-            _builder = builder;
+            _builder = builder ?? throw new ArgumentNullException(nameof(builder));
         }
 
         /// <inheritdoc />
