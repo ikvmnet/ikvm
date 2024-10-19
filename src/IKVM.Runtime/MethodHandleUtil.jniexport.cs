@@ -194,7 +194,7 @@ namespace IKVM.Runtime
                 if (!ReflectUtil.CanOwnDynamicMethod(owner))
                     owner = typeof(DynamicMethodBuilder);
 
-                dm = new DynamicMethod(name, mi.ReturnType.GetUnderlyingType(), paramTypes.GetUnderlyingTypes(), owner, true);
+                dm = new DynamicMethod(name, mi.ReturnType.GetUnderlyingRuntimeType(), paramTypes.GetUnderlyingRuntimeTypes(), owner, true);
                 ilgen = context.CodeEmitterFactory.Create(dm);
 
                 if (type.parameterCount() > MaxArity)
@@ -516,8 +516,8 @@ namespace IKVM.Runtime
                 //ilgen.DumpMethod();
                 ilgen.DoEmit();
                 return ValidateDelegate(firstArg == 0
-                    ? dm.CreateDelegate(delegateType.GetUnderlyingType())
-                    : dm.CreateDelegate(delegateType.GetUnderlyingType(), container == null ? firstBoundValue : Activator.CreateInstance(container.GetUnderlyingType(), firstBoundValue, secondBoundValue)));
+                    ? dm.CreateDelegate(delegateType.GetUnderlyingRuntimeType())
+                    : dm.CreateDelegate(delegateType.GetUnderlyingRuntimeType(), container == null ? firstBoundValue : Activator.CreateInstance(container.GetUnderlyingRuntimeType(), firstBoundValue, secondBoundValue)));
             }
 
             internal void BoxArgs(int start)

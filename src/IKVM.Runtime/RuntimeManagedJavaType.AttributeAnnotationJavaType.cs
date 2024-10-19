@@ -376,7 +376,7 @@ namespace IKVM.Runtime
                     }
                     else if (mw.ReturnType.IsArray)
                     {
-                        return Array.CreateInstance(mw.ReturnType.TypeAsArrayType.GetUnderlyingType(), 0);
+                        return Array.CreateInstance(mw.ReturnType.TypeAsArrayType.GetUnderlyingRuntimeType(), 0);
                     }
                 }
 

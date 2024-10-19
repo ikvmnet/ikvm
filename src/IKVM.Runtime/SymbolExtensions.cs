@@ -59,6 +59,18 @@ namespace IKVM.Runtime
 #endif
         }
 
+        public static Type[] GetUnderlyingTypes(this ITypeSymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new Type[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = GetUnderlyingType(symbols[i]);
+
+            return a;
+        }
+
         public static Type GetUnderlyingRuntimeType(this ITypeSymbol symbol)
         {
             if (symbol == null)
@@ -71,14 +83,14 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static Type[] GetUnderlyingTypes(this ITypeSymbol[] symbols)
+        public static Type[] GetUnderlyingRuntimeTypes(this ITypeSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
 
             var a = new Type[symbols.Length];
             for (int i = 0; i < symbols.Length; i++)
-                a[i] = GetUnderlyingType(symbols[i]);
+                a[i] = GetUnderlyingRuntimeType(symbols[i]);
 
             return a;
         }

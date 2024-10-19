@@ -65,7 +65,7 @@ namespace IKVM.Runtime
 
             internal override object CreateInstance(object[] args)
             {
-                return Activator.CreateInstance(DeclaringType.TypeAsTBD.GetUnderlyingType());
+                return Activator.CreateInstance(DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType());
             }
 
 #endif

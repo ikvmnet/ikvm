@@ -67,7 +67,7 @@ namespace IKVM.Runtime
 
             internal override object Invoke(object obj, object[] args)
             {
-                return Enum.ToObject(DeclaringType.TypeAsTBD.GetUnderlyingType(), args[0]);
+                return Enum.ToObject(DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), args[0]);
             }
 
 #endif

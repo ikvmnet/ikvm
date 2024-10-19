@@ -286,9 +286,9 @@ namespace IKVM.Java.Externs.sun.reflect
             public object newInstance(object[] args)
             {
 #if NETFRAMEWORK
-                var obj = FormatterServices.GetUninitializedObject(type.GetUnderlyingType());
+                var obj = FormatterServices.GetUninitializedObject(type.GetUnderlyingRuntimeType());
 #else
-                var obj = RuntimeHelpers.GetUninitializedObject(type.GetUnderlyingType());
+                var obj = RuntimeHelpers.GetUninitializedObject(type.GetUnderlyingRuntimeType());
 #endif
                 if (mw != null)
                     mw.Invoke(obj, ConvertArgs(mw.DeclaringType.ClassLoader, mw.GetParameters(), args));
@@ -587,7 +587,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     // generate new dynamic method
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType.GetUnderlyingType(), np, typeof(object), new[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
+                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), np, typeof(object), new[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
                     var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
                     // labels
@@ -831,7 +831,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     // resolve the runtime method info
                     mw.ResolveMethod();
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtil.Create($"__<FastConstructorAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsTBD.GetUnderlyingType(), np, typeof(object), new[] { typeof(object[]) });
+                    var dm = DynamicMethodUtil.Create($"__<FastConstructorAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), np, typeof(object), new[] { typeof(object[]) });
                     var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
                     // labels
@@ -1007,7 +1007,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     throw x.ToJava();
                 }
 
-                var dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType.GetUnderlyingType(), true, typeof(object), null);
+                var dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), true, typeof(object), null);
                 var il = JVM.Context.CodeEmitterFactory.Create(dm);
                 il.Emit(OpCodes.Ldtoken, type);
                 il.Emit(OpCodes.Call, GetTypeFromHandleMethod);
@@ -1052,7 +1052,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                 try
                 {
-                    return Activator.CreateInstance(type.GetUnderlyingType());
+                    return Activator.CreateInstance(type.GetUnderlyingRuntimeType());
                 }
                 catch (TargetInvocationException x)
                 {
@@ -1319,7 +1319,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     {
                         throw GetIllegalArgumentException(obj);
                     }
-                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingType().IsInstanceOfType(obj))
+                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                     {
                         throw GetUnsupportedRemappedFieldException(obj);
                     }
@@ -1364,7 +1364,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     {
                         throw SetIllegalArgumentException(obj);
                     }
-                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingType().IsInstanceOfType(obj))
+                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                     {
                         throw GetUnsupportedRemappedFieldException(obj);
                     }
@@ -2070,7 +2070,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                 fw.ResolveField();
 
-                var dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, [typeof(IReflectionException), typeof(object), typeof(object)]);
+                var dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, [typeof(IReflectionException), typeof(object), typeof(object)]);
                 var il = JVM.Context.CodeEmitterFactory.Create(dm);
                 if (fw.IsStatic)
                 {
@@ -2118,7 +2118,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                 fw.ResolveField();
 
-                var dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, null, [typeof(IReflectionException), typeof(object), fieldType, typeof(object)]);
+                var dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, null, [typeof(IReflectionException), typeof(object), fieldType, typeof(object)]);
                 var il = JVM.Context.CodeEmitterFactory.Create(dm);
                 if (fw.IsStatic)
                 {

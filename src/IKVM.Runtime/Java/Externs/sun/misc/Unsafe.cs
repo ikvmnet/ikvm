@@ -1734,9 +1734,9 @@ namespace IKVM.Java.Externs.sun.misc
             }
 
 #if NETFRAMEWORK
-            return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingType());
+            return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingRuntimeType());
 #else
-            return RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingType());
+            return RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingRuntimeType());
 #endif
         }
 
@@ -1854,8 +1854,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetArrayVolatileDelegate(RuntimeJavaType tw)
         {
-            var et = tw.IsPrimitive ? tw.TypeAsTBD.GetUnderlyingType() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeGetArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD.GetUnderlyingType(), true, et, new[] { typeof(object[]), typeof(long) });
+            var et = tw.IsPrimitive ? tw.TypeAsTBD.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGetArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD.GetUnderlyingRuntimeType(), true, et, [typeof(object[]), typeof(long)]);
             var il = dm.GetILGenerator();
 
             // load reference to element
@@ -1865,17 +1865,17 @@ namespace IKVM.Java.Externs.sun.misc
             il.Emit(OpCodes.Ldc_I4, ArrayIndexScale(tw.MakeArrayType(1)));
             il.Emit(OpCodes.Div);
             il.Emit(OpCodes.Conv_Ovf_I);
-            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetUnderlyingType());
+            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetUnderlyingRuntimeType());
 
             if (tw.IsWidePrimitive == false)
             {
                 il.Emit(OpCodes.Volatile);
-                EmitLdind(il, tw.TypeAsLocalOrStackType.GetUnderlyingType());
+                EmitLdind(il, tw.TypeAsLocalOrStackType.GetUnderlyingRuntimeType());
             }
             else
             {
                 // Java volatile semantics require atomicity, CLR volatile semantics do not
-                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedRead), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { tw.TypeAsTBD.MakeByRefType().GetUnderlyingType() }, null);
+                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedRead), BindingFlags.NonPublic | BindingFlags.Static, null, [tw.TypeAsTBD.MakeByRefType().GetUnderlyingRuntimeType()], null);
                 il.Emit(OpCodes.Call, mi);
             }
 
@@ -1912,8 +1912,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutArrayVolatileDelegate(RuntimeJavaType tw)
         {
-            var et = tw.IsPrimitive ? tw.TypeAsTBD.GetUnderlyingType() : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafePutArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD.GetUnderlyingType(), true, typeof(void), new[] { typeof(object[]), typeof(long), et });
+            var et = tw.IsPrimitive ? tw.TypeAsTBD.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafePutArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD.GetUnderlyingRuntimeType(), true, typeof(void), new[] { typeof(object[]), typeof(long), et });
             var il = dm.GetILGenerator();
 
             // load reference to element
@@ -1923,19 +1923,19 @@ namespace IKVM.Java.Externs.sun.misc
             il.Emit(OpCodes.Ldc_I4, ArrayIndexScale(tw.MakeArrayType(1)));
             il.Emit(OpCodes.Div);
             il.Emit(OpCodes.Conv_Ovf_I);
-            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetUnderlyingType());
+            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetUnderlyingRuntimeType());
 
             il.Emit(OpCodes.Ldarg_2);
 
             if (tw.IsWidePrimitive == false)
             {
                 il.Emit(OpCodes.Volatile);
-                EmitStind(il, tw.TypeAsLocalOrStackType.GetUnderlyingType());
+                EmitStind(il, tw.TypeAsLocalOrStackType.GetUnderlyingRuntimeType());
             }
             else
             {
                 // Java volatile semantics require atomicity, CLR volatile semantics do not
-                var mi = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), new[] { tw.TypeAsTBD.MakeByRefType().GetUnderlyingType() });
+                var mi = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), new[] { tw.TypeAsTBD.MakeByRefType().GetUnderlyingRuntimeType() });
                 il.Emit(OpCodes.Call, mi);
             }
 
@@ -2475,11 +2475,11 @@ namespace IKVM.Java.Externs.sun.misc
             var e = Expression.Parameter(typeof(object));
             return Expression.Lambda<Func<object[], long, object, object, object>>(
                 Expression.Call(
-                    compareAndSwapArrayMethodInfo.MakeGenericMethod(tw.TypeAsTBD.GetUnderlyingType()),
-                    Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD.GetUnderlyingType()),
+                    compareAndSwapArrayMethodInfo.MakeGenericMethod(tw.TypeAsTBD.GetUnderlyingRuntimeType()),
+                    Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD.GetUnderlyingRuntimeType()),
                     i,
-                    Expression.Convert(v, tw.TypeAsTBD.GetUnderlyingType()),
-                    Expression.Convert(e, tw.TypeAsTBD.GetUnderlyingType())),
+                    Expression.Convert(v, tw.TypeAsTBD.GetUnderlyingRuntimeType()),
+                    Expression.Convert(e, tw.TypeAsTBD.GetUnderlyingRuntimeType())),
                 p, i, v, e)
                 .Compile();
         }

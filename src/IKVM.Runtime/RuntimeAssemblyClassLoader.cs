@@ -1174,7 +1174,7 @@ namespace IKVM.Runtime
 
             var attribs = assembly.GetCustomAttribute(Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName), false);
             if (attribs.HasValue)
-                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).GetUnderlyingType();
+                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).GetUnderlyingRuntimeType();
 
             return null;
         }
