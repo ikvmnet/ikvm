@@ -24,20 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
-using IKVM.Attributes;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -61,13 +53,13 @@ namespace IKVM.Runtime
         internal const string GenericAttributeAnnotationReturnValueTypeName = "ikvm.internal.AttributeAnnotationReturnValue`1";
         internal const string GenericAttributeAnnotationMultipleTypeName = "ikvm.internal.AttributeAnnotationMultiple`1";
 
-        readonly Type type;
+        readonly ITypeSymbol type;
         RuntimeJavaType baseTypeWrapper;
         RuntimeJavaType[] innerClasses;
         RuntimeJavaType outerClass;
         RuntimeJavaType[] interfaces;
 
-        static Modifiers GetModifiers(Type type)
+        static Modifiers GetModifiers(ITypeSymbol type)
         {
             Modifiers modifiers = 0;
             if (type.IsPublic)
@@ -113,7 +105,7 @@ namespace IKVM.Runtime
 
         // NOTE when this is called on a remapped type, the "warped" underlying type name is returned.
         // E.g. GetName(typeof(object)) returns "cli.System.Object".
-        internal static string GetName(RuntimeContext context, Type type)
+        internal static string GetName(RuntimeContext context, ITypeSymbol type)
         {
             Debug.Assert(!type.Name.EndsWith("[]") && !context.AttributeHelper.IsJavaModule(type.Module));
 
@@ -129,8 +121,9 @@ namespace IKVM.Runtime
                 var sb = new System.Text.StringBuilder();
                 sb.Append(MangleTypeName(type.GetGenericTypeDefinition().FullName));
                 sb.Append("_$$$_");
-                string sep = "";
-                foreach (Type t1 in type.GetGenericArguments())
+
+                var sep = "";
+                foreach (var t1 in type.GetGenericArguments())
                 {
                     var t = t1;
                     sb.Append(sep);
@@ -143,7 +136,7 @@ namespace IKVM.Runtime
                     //   class Base<T> { } 
                     //   class Derived : Base<Derived> { }
                     //
-                    while (ReflectUtil.IsVector(t))
+                    while (t.IsSZArray)
                     {
                         t = t.GetElementType();
                         sb.Append('A');
@@ -271,20 +264,20 @@ namespace IKVM.Runtime
 
         // TODO from a perf pov it may be better to allow creation of TypeWrappers,
         // but to simply make sure they don't have ClassObject
-        internal static bool IsAllowedOutside(Type type)
+        internal static bool IsAllowedOutside(ITypeSymbol type)
         {
             // SECURITY we never expose types from IKVM.Runtime, because doing so would lead to a security hole,
             // since the reflection implementation lives inside this assembly, all internal members would
             // be accessible through Java reflection.
 #if !FIRST_PASS && !IMPORTER && !EXPORTER
-            if (type.Assembly == typeof(RuntimeManagedJavaType).Assembly)
+            if (type.Assembly.GetUnderlyingAssembly() == typeof(RuntimeManagedJavaType).Assembly)
                 return false;
 #endif
 
             return true;
         }
 
-        internal static RuntimeJavaType Create(RuntimeContext context, Type type, string name)
+        internal static RuntimeJavaType Create(RuntimeContext context, ITypeSymbol type, string name)
         {
             if (type.ContainsGenericParameters)
             {
@@ -302,13 +295,13 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        RuntimeManagedJavaType(RuntimeContext context, Type type, string name) :
+        RuntimeManagedJavaType(RuntimeContext context, ITypeSymbol type, string name) :
             base(context, TypeFlags.None, GetModifiers(type), name)
         {
             Debug.Assert(!type.IsByRef, type.FullName);
             Debug.Assert(!type.IsPointer, type.FullName);
             Debug.Assert(!type.Name.EndsWith("[]"), type.FullName);
-            Debug.Assert(type is not TypeBuilder, type.FullName);
+            Debug.Assert(type is not ITypeSymbolBuilder, type.FullName);
             Debug.Assert(!Context.AttributeHelper.IsJavaModule(type.Module));
 
             this.type = type;
@@ -318,7 +311,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => type.IsGenericType ? Context.ClassLoaderFactory.GetGenericClassLoader(this) : Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 
-        internal static string GetDelegateInvokeStubName(Type delegateType)
+        internal static string GetDelegateInvokeStubName(ITypeSymbol delegateType)
         {
             var delegateInvoke = delegateType.GetMethod("Invoke");
             var parameters = delegateInvoke.GetParameters();
@@ -336,8 +329,9 @@ namespace IKVM.Runtime
             // special support for enums
             if (type.IsEnum)
             {
-                Type underlyingType = EnumHelper.GetUnderlyingType(type);
-                Type javaUnderlyingType;
+                var underlyingType = type.GetEnumUnderlyingType();
+
+                ITypeSymbol javaUnderlyingType;
                 if (underlyingType == Context.Types.SByte)
                 {
                     javaUnderlyingType = Context.Types.Byte;
@@ -360,7 +354,7 @@ namespace IKVM.Runtime
                 }
 
                 var fieldType = Context.ClassLoaderFactory.GetJavaTypeFromType(javaUnderlyingType);
-                var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+                var fields = type.GetFields(System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 var fieldsList = new List<RuntimeJavaField>();
                 for (int i = 0; i < fields.Length; i++)
                 {
@@ -383,7 +377,7 @@ namespace IKVM.Runtime
             else
             {
                 var fieldsList = new List<RuntimeJavaField>();
-                var fields = type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                var fields = type.GetFields(System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
                 for (int i = 0; i < fields.Length; i++)
                 {
                     // TODO for remapped types, instance fields need to be converted to static getter/setter methods
@@ -413,7 +407,7 @@ namespace IKVM.Runtime
                 if (type == Context.Types.MulticastDelegate)
                     methodsList.Add("<init>()V", new MulticastDelegateCtorJavaMethod(this));
 
-                var constructors = type.GetConstructors(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                var constructors = type.GetConstructors(System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
                 for (int i = 0; i < constructors.Length; i++)
                 {
                     if (MakeMethodDescriptor(constructors[i], out var name, out var sig, out var args, out var ret))
@@ -431,7 +425,7 @@ namespace IKVM.Runtime
                     methodsList.Add("<init>()V", new ValueTypeDefaultCtorJavaMethod(this));
                 }
 
-                var methods = type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+                var methods = type.GetMethods(System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
                 for (int i = 0; i < methods.Length; i++)
                 {
                     if (methods[i].IsStatic && type.IsInterface)
@@ -547,10 +541,8 @@ namespace IKVM.Runtime
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
                 // support serializing .NET exceptions (by replacing them with a placeholder exception)
-                if (typeof(Exception).IsAssignableFrom(type) && !typeof(java.io.Serializable.__Interface).IsAssignableFrom(type) && !methodsList.ContainsKey("writeReplace()Ljava.lang.Object;"))
-                {
+                if (Context.Types.Exception.IsAssignableFrom(type) && Context.Resolver.GetSymbol(typeof(java.io.Serializable.__Interface)).IsAssignableFrom(type) == false && methodsList.ContainsKey("writeReplace()Ljava.lang.Object;") == false)
                     methodsList.Add("writeReplace()Ljava.lang.Object;", new ExceptionWriteReplaceJavaMethod(this));
-                }
 
 #endif
 
@@ -560,7 +552,7 @@ namespace IKVM.Runtime
             }
         }
 
-        void InterfaceMethodStubHelper(Dictionary<string, RuntimeJavaMethod> methodsList, MethodBase method, string name, string sig, RuntimeJavaType[] args, RuntimeJavaType ret)
+        void InterfaceMethodStubHelper(Dictionary<string, RuntimeJavaMethod> methodsList, IMethodBaseSymbol method, string name, string sig, RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             var key = name + sig;
             methodsList.TryGetValue(key, out var existing);
@@ -580,11 +572,11 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static bool IsUnsupportedAbstractMethod(MethodBase mb)
+        internal static bool IsUnsupportedAbstractMethod(IMethodBaseSymbol mb)
         {
             if (mb.IsAbstract)
             {
-                var mi = (MethodInfo)mb;
+                var mi = (IMethodSymbol)mb;
                 if (mi.ReturnType.IsByRef || IsPointerType(mi.ReturnType) || mb.IsGenericMethodDefinition)
                     return true;
 
@@ -596,7 +588,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        static bool IsPointerType(Type type)
+        static bool IsPointerType(ITypeSymbol type)
         {
             while (type.HasElementType)
             {
@@ -607,13 +599,13 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER || EXPORTER
-            return type.__IsFunctionPointer;
+            return type.IsFunctionPointer;
 #else
             return false;
 #endif
         }
 
-        bool MakeMethodDescriptor(MethodBase mb, out string name, out string sig, out RuntimeJavaType[] args, out RuntimeJavaType ret)
+        bool MakeMethodDescriptor(IMethodBaseSymbol mb, out string name, out string sig, out RuntimeJavaType[] args, out RuntimeJavaType ret)
         {
             if (mb.IsGenericMethodDefinition)
             {
@@ -642,7 +634,7 @@ namespace IKVM.Runtime
 
                 if (type.IsByRef)
                 {
-                    type = RuntimeArrayJavaType.MakeArrayType(type.GetElementType(), 1);
+                    type = type.GetElementType().MakeArrayType();
                     if (mb.IsAbstract)
                     {
                         // Since we cannot override methods with byref arguments, we don't report abstract
@@ -660,7 +652,7 @@ namespace IKVM.Runtime
                 sb.Append(tw.SigName);
             }
             sb.Append(')');
-            if (mb is ConstructorInfo)
+            if (mb is IConstructorSymbol)
             {
                 ret = Context.PrimitiveJavaTypeFactory.VOID;
                 name = mb.IsStatic ? "<clinit>" : "<init>";
@@ -670,7 +662,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                var type = ((MethodInfo)mb).ReturnType;
+                var type = ((IMethodSymbol)mb).ReturnType;
                 if (IsPointerType(type) || type.IsByRef)
                 {
                     name = null;
@@ -688,7 +680,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType[] Interfaces => interfaces ??= GetImplementedInterfacesAsTypeWrappers(Context, type);
 
-        static bool IsAttribute(RuntimeContext context, Type type)
+        static bool IsAttribute(RuntimeContext context, ITypeSymbol type)
         {
             if (!type.IsAbstract && type.IsSubclassOf(context.Types.Attribute) && type.IsVisible)
             {
@@ -712,7 +704,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        static bool IsDelegate(RuntimeContext context, Type type)
+        static bool IsDelegate(RuntimeContext context, ITypeSymbol type)
         {
             // HACK non-public delegates do not get the special treatment (because they are likely to refer to
             // non-public types in the arg list and they're not really useful anyway)
@@ -741,7 +733,7 @@ namespace IKVM.Runtime
 
         RuntimeJavaType[] GetInnerClasses()
         {
-            var nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic);
+            var nestedTypes = type.GetNestedTypes(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
             var list = new List<RuntimeJavaType>(nestedTypes.Length);
             for (int i = 0; i < nestedTypes.Length; i++)
                 if (!nestedTypes[i].IsGenericTypeDefinition)
@@ -778,7 +770,7 @@ namespace IKVM.Runtime
 
         internal override Modifiers ReflectiveModifiers => DeclaringTypeWrapper != null ? Modifiers | Modifiers.Static : Modifiers;
 
-        RuntimeJavaField CreateFieldWrapperDotNet(Modifiers modifiers, string name, Type fieldType, FieldInfo field)
+        RuntimeJavaField CreateFieldWrapperDotNet(Modifiers modifiers, string name, ITypeSymbol fieldType, IFieldSymbol field)
         {
             var type = Context.ClassLoaderFactory.GetJavaTypeFromType(fieldType);
             if (field.IsLiteral)
@@ -792,7 +784,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        static bool IsRemappedImplDerived(RuntimeContext context, Type type)
+        static bool IsRemappedImplDerived(RuntimeContext context, ITypeSymbol type)
         {
             for (; type != null; type = type.BaseType)
                 if (!context.ClassLoaderFactory.IsRemappedType(type) && context.ClassLoaderFactory.GetJavaTypeFromType(type).IsRemapped)
@@ -801,7 +793,7 @@ namespace IKVM.Runtime
             return false;
         }
 
-        RuntimeJavaMethod CreateMethodWrapper(string name, string sig, RuntimeJavaType[] argTypeWrappers, RuntimeJavaType retTypeWrapper, MethodBase mb, bool privateInterfaceImplHack)
+        RuntimeJavaMethod CreateMethodWrapper(string name, string sig, RuntimeJavaType[] argTypeWrappers, RuntimeJavaType retTypeWrapper, IMethodBaseSymbol mb, bool privateInterfaceImplHack)
         {
             var exmods = Context.AttributeHelper.GetModifiers(mb, true);
             var mods = exmods.Modifiers;
@@ -809,13 +801,13 @@ namespace IKVM.Runtime
             if (name == "Finalize" && sig == "()V" && !mb.IsStatic && IsRemappedImplDerived(Context, TypeAsBaseType))
             {
                 // TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
-                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
+                var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (IMethodSymbol)mb, Context.PrimitiveJavaTypeFactory.VOID, [], mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
                 mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
                 return mw;
             }
 
             var parameters = mb.GetParameters();
-            var args = new Type[parameters.Length];
+            var args = new ITypeSymbol[parameters.Length];
             var hasByRefArgs = false;
             bool[] byrefs = null;
 
@@ -838,7 +830,7 @@ namespace IKVM.Runtime
 
             if (hasByRefArgs)
             {
-                if (mb is not ConstructorInfo && !mb.IsStatic)
+                if (mb.IsConstructor == false && !mb.IsStatic)
                     mods |= Modifiers.Final;
 
                 return new ByRefJavaMethod(args, byrefs, this, name, sig, mb, retTypeWrapper, argTypeWrappers, mods, false);
@@ -849,7 +841,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override Type TypeAsTBD => type;
+        internal override ITypeSymbol TypeAsTBD => type;
 
         internal override bool IsRemapped => Context.ClassLoaderFactory.IsRemappedType(type);
 
@@ -920,7 +912,12 @@ namespace IKVM.Runtime
 
         internal override object[] GetDeclaredAnnotations()
         {
-            return type.GetCustomAttributes(false);
+            var l = type.GetCustomAttributes();
+            var a = new object[l.Length];
+            for (int i = 0; i < l.Length; i++)
+                a[i] = l[i];
+
+            return a;
         }
 
         internal override object[] GetFieldAnnotations(RuntimeJavaField fw)
@@ -929,7 +926,12 @@ namespace IKVM.Runtime
             if (fi == null)
                 return null;
 
-            return fi.GetCustomAttributes(false);
+            var l = fi.GetCustomAttributes();
+            var a = new object[l.Length];
+            for (int i = 0; i < l.Length; i++)
+                a[i] = l[i];
+
+            return a;
         }
 
         internal override object[] GetMethodAnnotations(RuntimeJavaMethod mw)
@@ -938,7 +940,12 @@ namespace IKVM.Runtime
             if (mb == null)
                 return null;
 
-            return mb.GetCustomAttributes(false);
+            var l = mb.GetCustomAttributes();
+            var a = new object[l.Length];
+            for (int i = 0; i < l.Length; i++)
+                a[i] = l[i];
+
+            return a;
         }
 
         internal override object[][] GetParameterAnnotations(RuntimeJavaMethod mw)
@@ -950,10 +957,18 @@ namespace IKVM.Runtime
             var parameters = mb.GetParameters();
             var attribs = new object[parameters.Length][];
             for (int i = 0; i < parameters.Length; i++)
-                attribs[i] = parameters[i].GetCustomAttributes(false);
+            {
+                var l = parameters[i].GetCustomAttributes();
+                var a = new object[l.Length];
+                for (int j = 0; j < l.Length; j++)
+                    a[j] = l[j];
+
+                attribs[i] = a;
+            }
 
             return attribs;
         }
+
 #endif
 
         internal override bool IsFastClassLiteralSafe => type != Context.Types.Void && !type.IsPrimitive && !IsRemapped;
@@ -972,13 +987,11 @@ namespace IKVM.Runtime
                 return false;
 
             // check accessibility for nested types
-            for (Type type = TypeAsTBD; type.IsNested; type = type.DeclaringType)
+            for (var type = TypeAsTBD; type.IsNested; type = type.DeclaringType)
             {
                 // we don't support family (protected) access
                 if (!type.IsNestedAssembly && !type.IsNestedFamORAssem && !type.IsNestedPublic)
-                {
                     return false;
-                }
             }
 
             return true;

@@ -30,8 +30,8 @@ using System.Runtime.Serialization;
 using System.Security;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
-using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
 using MethodBase = System.Reflection.MethodBase;
 
@@ -218,8 +218,8 @@ namespace IKVM.Runtime
             {
                 for (int i = skip; i < st.FrameCount; i++)
                 {
-                    StackFrame frame = st.GetFrame(i);
-                    MethodBase m = frame.GetMethod();
+                    var frame = st.GetFrame(i);
+                    var m = frame.GetMethod();
                     if (m == null)
                     {
                         continue;
@@ -256,7 +256,7 @@ namespace IKVM.Runtime
                     }
 
                     fileName ??= exceptionHelper.GetFileName(frame);
-                    stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(type), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
+                    stackTrace.Add(new StackTraceElement(exceptionHelper.GetClassNameFromType(JVM.Context.Resolver.GetSymbol(type)), GetMethodName(m), fileName, IsNative(m) ? -2 : lineNumber));
                 }
 
                 if (cleanStackTrace && isLast)
@@ -341,7 +341,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        string GetClassNameFromType(Type type)
+        string GetClassNameFromType(ITypeSymbol type)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -378,18 +378,16 @@ namespace IKVM.Runtime
             int ilOffset = frame.GetILOffset();
             if (ilOffset != StackFrame.OFFSET_UNKNOWN)
             {
-                MethodBase mb = frame.GetMethod();
+                var mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
-                    if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
-                    {
+                    var mbs = context.Resolver.GetSymbol(mb);
+                    if (context.ClassLoaderFactory.IsRemappedType(mbs.DeclaringType))
                         return -1;
-                    }
-                    RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+
+                    var tw = context.ClassLoaderFactory.GetJavaTypeFromType(mbs.DeclaringType);
                     if (tw != null)
-                    {
-                        return tw.GetSourceLineNumber(mb, ilOffset);
-                    }
+                        return tw.GetSourceLineNumber(mbs, ilOffset);
                 }
             }
 
@@ -398,18 +396,16 @@ namespace IKVM.Runtime
 
         string GetFileName(StackFrame frame)
         {
-            MethodBase mb = frame.GetMethod();
+            var mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
-                if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
-                {
+                var mbs = context.Resolver.GetSymbol(mb);
+                if (context.ClassLoaderFactory.IsRemappedType(mbs.DeclaringType))
                     return null;
-                }
-                RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+
+                var tw = context.ClassLoaderFactory.GetJavaTypeFromType(mbs.DeclaringType);
                 if (tw != null)
-                {
                     return tw.GetSourceFileName();
-                }
             }
 
             return null;

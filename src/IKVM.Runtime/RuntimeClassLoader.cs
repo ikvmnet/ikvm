@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.CoreLib.Diagnostics;
 
@@ -99,7 +100,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER || EXPORTER
 
-        internal void SetRemappedType(Type type, RuntimeJavaType tw)
+        internal void SetRemappedType(ITypeSymbol type, RuntimeJavaType tw)
         {
             lock (types)
                 types.Add(tw.Name, tw);
@@ -541,7 +542,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            var typeArguments = new Type[typeParamNames.Count];
+            var typeArguments = new ITypeSymbol[typeParamNames.Count];
             for (int i = 0; i < typeArguments.Length; i++)
             {
                 var s = typeParamNames[i];
@@ -741,13 +742,13 @@ namespace IKVM.Runtime
         /// </remarks>.
         /// <param name="signature"></param>
         /// <returns></returns>
-        internal Type[] ArgTypeListFromSig(string signature)
+        internal ITypeSymbol[] ArgTypeListFromSig(string signature)
         {
             if (signature[1] == ')')
-                return Type.EmptyTypes;
+                return [];
 
             var javaTypes = ArgJavaTypeListFromSig(signature, LoadMode.LoadOrThrow);
-            var types = new Type[javaTypes.Length];
+            var types = new ITypeSymbol[javaTypes.Length];
             for (int i = 0; i < javaTypes.Length; i++)
                 types[i] = javaTypes[i].TypeAsSignatureType;
 
@@ -909,7 +910,7 @@ namespace IKVM.Runtime
             if (javaClassLoader == null)
                 return "null";
             else
-                return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(javaClassLoader.GetType()).Name, javaClassLoader.GetHashCode());
+                return string.Format("{0}@{1:X}", Context.ClassLoaderFactory.GetJavaTypeFromType(Context.Resolver.GetSymbol(javaClassLoader.GetType())).Name, javaClassLoader.GetHashCode());
         }
 
 #endif

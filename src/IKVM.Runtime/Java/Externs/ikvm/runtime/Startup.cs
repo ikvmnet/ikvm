@@ -17,7 +17,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm));
+            JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)));
 #endif
         }
 

@@ -21,17 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -39,10 +32,10 @@ namespace IKVM.Runtime
     sealed class RuntimeManagedByteCodeAccessStubJavaField : RuntimeJavaField
     {
 
-        readonly MethodInfo getter;
-        readonly MethodInfo setter;
+        readonly IMethodSymbol getter;
+        readonly IMethodSymbol setter;
 
-        static Modifiers GetModifiers(PropertyInfo property)
+        static Modifiers GetModifiers(IPropertySymbol property)
         {
             // NOTE we only support the subset of modifiers that is expected for "access stub" properties
             var getter = property.GetGetMethod(true);
@@ -61,7 +54,7 @@ namespace IKVM.Runtime
         /// <param name="wrapper"></param>
         /// <param name="property"></param>
         /// <param name="propertyType"></param>
-        internal RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, PropertyInfo property, RuntimeJavaType propertyType) :
+        internal RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, IPropertySymbol property, RuntimeJavaType propertyType) :
             this(wrapper, property, null, propertyType, GetModifiers(property), MemberFlags.HideFromReflection | MemberFlags.AccessStub)
         {
 
@@ -74,7 +67,7 @@ namespace IKVM.Runtime
         /// <param name="property"></param>
         /// <param name="field"></param>
         /// <param name="propertyType"></param>
-        internal RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, PropertyInfo property, FieldInfo field, RuntimeJavaType propertyType) :
+        internal RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, IPropertySymbol property, IFieldSymbol field, RuntimeJavaType propertyType) :
             this(wrapper, property, field, propertyType, wrapper.Context.AttributeHelper.GetModifiersAttribute(property).Modifiers, MemberFlags.AccessStub)
         {
 
@@ -89,7 +82,7 @@ namespace IKVM.Runtime
         /// <param name="propertyType"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        private RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, PropertyInfo property, FieldInfo field, RuntimeJavaType propertyType, Modifiers modifiers, MemberFlags flags) :
+        private RuntimeManagedByteCodeAccessStubJavaField(RuntimeJavaType wrapper, IPropertySymbol property, IFieldSymbol field, RuntimeJavaType propertyType, Modifiers modifiers, MemberFlags flags) :
             base(wrapper, propertyType, property.Name, propertyType.SigName, modifiers, field, flags)
         {
             this.getter = property.GetGetMethod(true);
@@ -115,16 +108,16 @@ namespace IKVM.Runtime
         internal override object GetValue(object obj)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            return GetField().GetValue(obj);
+            return GetField().GetUnderlyingField().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
             // we can only be invoked on type 2 access stubs (because type 1 access stubs are HideFromReflection), so we know we have a field
-            GetField().SetValue(obj, value);
+            GetField().GetUnderlyingField().SetValue(obj, value);
         }
 
-#endif 
+#endif
 
     }
 

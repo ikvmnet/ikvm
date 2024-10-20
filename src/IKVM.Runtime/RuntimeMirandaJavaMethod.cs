@@ -21,13 +21,9 @@
   jeroen@frijters.net
   
 */
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection.Emit;
-#else
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
 
 namespace IKVM.Runtime
 {

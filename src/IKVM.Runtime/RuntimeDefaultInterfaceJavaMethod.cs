@@ -21,17 +21,10 @@
   jeroen@frijters.net
   
 */
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -39,7 +32,7 @@ namespace IKVM.Runtime
     sealed class RuntimeDefaultInterfaceJavaMethod : RuntimeSmartJavaMethod
     {
 
-        MethodInfo impl;
+        IMethodSymbol impl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,13 +46,13 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeDefaultInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodInfo ifmethod, MethodInfo impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeDefaultInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodSymbol ifmethod, IMethodSymbol impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, ifmethod, returnType, parameterTypes, modifiers, flags)
         {
             this.impl = impl;
         }
 
-        internal static MethodInfo GetImpl(RuntimeJavaMethod mw)
+        internal static IMethodSymbol GetImpl(RuntimeJavaMethod mw)
         {
             var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
             if (dimw != null)
@@ -68,7 +61,7 @@ namespace IKVM.Runtime
                 return ((RuntimeGhostJavaMethod)mw).GetDefaultImpl();
         }
 
-        internal static void SetImpl(RuntimeJavaMethod mw, MethodInfo impl)
+        internal static void SetImpl(RuntimeJavaMethod mw, IMethodSymbol impl)
         {
             var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
             if (dimw != null)

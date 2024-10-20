@@ -33,27 +33,32 @@ namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
-	public sealed class ThrowsAttribute : Attribute
-	{
+    public sealed class ThrowsAttribute : Attribute
+    {
 
-		internal string[] classes;
-		internal Type[] types;
+        internal string[] classes;
+        internal Type[] types;
 
-		// this constructor is used by ikvmc, the other constructors are for use in other .NET languages
-		public ThrowsAttribute(string[] classes)
-		{
-			this.classes = UnicodeUtil.UnescapeInvalidSurrogates(classes);
-		}
+        // this constructor is used by ikvmc, the other constructors are for use in other .NET languages
+        public ThrowsAttribute(string[] classes)
+        {
+            this.classes = UnicodeUtil.UnescapeInvalidSurrogates(classes);
+        }
 
-		public ThrowsAttribute(Type type)
-			: this(new Type[] { type })
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        public ThrowsAttribute(Type type) :
+            this(new Type[] { type })
+        {
 
-		public ThrowsAttribute(params Type[] types)
-		{
-			this.types = types;
-		}
+        }
+
+        public ThrowsAttribute(params Type[] types)
+        {
+            this.types = types;
+        }
 
         // dotted Java class names (e.g. java.lang.Throwable)
         [Obsolete]

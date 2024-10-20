@@ -22,20 +22,10 @@
   
 */
 using System.Diagnostics;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -55,7 +45,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             Debug.Assert(!(fieldType == declaringType.Context.PrimitiveJavaTypeFactory.DOUBLE || fieldType == declaringType.Context.PrimitiveJavaTypeFactory.LONG) || !IsVolatile);
@@ -65,12 +55,12 @@ namespace IKVM.Runtime
 
         internal override object GetValue(object obj)
         {
-            return GetField().GetValue(obj);
+            return GetField().GetUnderlyingRuntimeField().GetValue(obj);
         }
 
         internal override void SetValue(object obj, object value)
         {
-            GetField().SetValue(obj, value);
+            GetField().GetUnderlyingRuntimeField().SetValue(obj, value);
         }
 
 #endif
@@ -134,7 +124,7 @@ namespace IKVM.Runtime
                 if (IsFinal)
                 {
                     il.Emit(OpCodes.Ldsflda, fi);
-                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).AsReflection().GetMethod(nameof(UnsafeGetImplByRefNoInline), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
+                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
                 }
                 else
                 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace IKVM.Tools.Core.Diagnostics
             AllowSynchronousContinuations = true
         };
 
-        readonly IBufferWriter<byte> _writer;
+        readonly PipeWriter _writer;
         readonly Channel<(IMemoryOwner<byte> Owner, int Length)> _channel = Channel.CreateUnbounded<(IMemoryOwner<byte> Owner, int Length)>(unboundedChannelOptions);
 
         Task? _task;
@@ -31,7 +32,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="writer"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public AsyncDiagnosticChannelWriter(IBufferWriter<byte> writer)
+        public AsyncDiagnosticChannelWriter(PipeWriter writer)
         {
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
@@ -71,7 +72,7 @@ namespace IKVM.Tools.Core.Diagnostics
                 {
                     while (await _channel.Reader.WaitToReadAsync(cancellationToken))
                         while (_channel.Reader.TryRead(out var item))
-                            WriteData(item.Owner, item.Length);
+                            await WriteData(item.Owner, item.Length, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -85,12 +86,13 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="owner"></param>
         /// <param name="length"></param>
-        void WriteData(IMemoryOwner<byte> owner, int length)
+        async ValueTask WriteData(IMemoryOwner<byte> owner, int length, CancellationToken cancellationToken)
         {
             // allocate memory and copy data
             var buffer = _writer.GetMemory(length);
             owner.Memory.Slice(0, length).CopyTo(buffer);
             _writer.Advance(length);
+            await _writer.FlushAsync(cancellationToken);
 
             // we are finished with the owner
             owner.Dispose();
@@ -114,7 +116,14 @@ namespace IKVM.Tools.Core.Diagnostics
                     item.Owner.Dispose();
 
                 // complete the channel
-                _channel.Writer.Complete();
+                try
+                {
+                    _channel.Writer.Complete();
+                }
+                catch (ChannelClosedException)
+                {
+                    // ignore
+                }
             }
         }
 

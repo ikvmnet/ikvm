@@ -240,7 +240,7 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(JVM.Context.AssemblyClassLoaderFactory.FromAssembly(assembly));
+            JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().AddDelegate(JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(assembly)));
 #endif
         }
 
@@ -518,7 +518,7 @@ namespace IKVM.Runtime
                 SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
 
                 // find the main method and ensure it is accessible
-                var method = ClassAccessor.InvokeGetMethod(clazz, "main", ClassAccessor.InitArray(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(typeof(string[])).ClassObject), CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
+                var method = ClassAccessor.InvokeGetMethod(clazz, "main", ClassAccessor.InitArray(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Types.String.MakeArrayType()).ClassObject), CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
                 MethodAccessor.InvokeSetAccessible(method, true);
 
                 try

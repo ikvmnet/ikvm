@@ -1,5 +1,6 @@
-﻿using System;
-using System.Diagnostics.Tracing;
+﻿using System.Threading;
+
+using IKVM.JTReg.TestAdapter.Core;
 
 namespace IKVM.ConsoleApp
 {
@@ -7,21 +8,29 @@ namespace IKVM.ConsoleApp
     public class Program
     {
 
-        public static void Main(string[] args)
+        class MyDiscoverycontext : IJTRegDiscoveryContext
         {
-            var l = new Listener();
-            var o = new java.lang.Object();
-            java.lang.System.loadLibrary("hi");
+
+            public JTRegTestOptions Options => new JTRegTestOptions()
+            {
+
+            };
+
+            public void SendMessage(JTRegTestMessageLevel level, string message)
+            {
+
+            }
+
+            public void SendTestCase(JTRegTestCase testCase)
+            {
+
+            }
+
         }
 
-    }
-
-    class Listener : EventListener
-    {
-
-        protected override void OnEventWritten(EventWrittenEventArgs eventData)
+        public static void Main(string[] args)
         {
-            Console.WriteLine(eventData);
+            JTRegTestManager.Instance.DiscoverTests(@"D:\ikvm\src\IKVM.JTReg.TestAdapter.Tests\bin\Debug\net478\IKVM.JTReg.TestAdapter.Tests.dll", new MyDiscoverycontext(), CancellationToken.None);
         }
 
     }

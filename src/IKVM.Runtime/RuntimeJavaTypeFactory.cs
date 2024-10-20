@@ -21,18 +21,16 @@
   jeroen@frijters.net
   
 */
-
-using System;
 using System.Collections.Generic;
 
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
+
 #if IMPORTER || EXPORTER
-using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
-using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
-using System.Reflection;
 using System.Reflection.Emit;
 
 using ProtectionDomain = java.security.ProtectionDomain;
@@ -46,7 +44,7 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaTypeFactory
     {
 
-        internal abstract ModuleBuilder ModuleBuilder { get; }
+        internal abstract IModuleSymbolBuilder ModuleBuilder { get; }
 
         internal abstract RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain);
 
@@ -54,9 +52,9 @@ namespace IKVM.Runtime
 
         internal abstract string AllocMangledName(RuntimeByteCodeJavaType tw);
 
-        internal abstract Type DefineUnloadable(string name);
+        internal abstract ITypeSymbol DefineUnloadable(string name);
 
-        internal abstract Type DefineDelegate(int parameterCount, bool returnVoid);
+        internal abstract ITypeSymbol DefineDelegate(int parameterCount, bool returnVoid);
 
         internal abstract bool HasInternalAccess { get; }
 

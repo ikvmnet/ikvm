@@ -86,7 +86,7 @@ namespace IKVM.Reflection
             get { return parameterInfo.MetadataToken; }
         }
 
-        internal override Module Module
+        public override Module Module
         {
             get { return method.Module; }
         }

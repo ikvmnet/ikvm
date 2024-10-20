@@ -1,7 +1,7 @@
 ﻿namespace IKVM.Tools.Core.Diagnostics
 {
 
-    class ConsoleDiagnosticFormatterOptions
+    class ConsoleDiagnosticFormatterOptions : DiagnosticFormatterOptions
     {
 
 

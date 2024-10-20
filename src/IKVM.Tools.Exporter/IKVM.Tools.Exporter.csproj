@@ -93,11 +93,8 @@
         <Compile Include="..\IKVM.Runtime\RuntimeManagedJavaTypeFactory.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeContext.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\RuntimeContextOptions.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\IRuntimeSymbolResolver.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\SymbolExtensions.cs" LinkBase="IKVM.Runtime" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\IKVM.Tools.Importer\AssemblyResolver.cs" LinkBase="IKVM.Tools.Importer" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />

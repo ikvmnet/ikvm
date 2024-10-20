@@ -25,26 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-
-using System.Collections;
-using System.Collections.Generic;
-
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -52,7 +34,7 @@ namespace IKVM.Runtime
     abstract class Annotation
     {
 
-#if IMPORTER
+#if !EXPORTER
 
         internal static Annotation LoadAssemblyCustomAttribute(RuntimeClassLoader loader, object[] def)
         {
@@ -77,10 +59,6 @@ namespace IKVM.Runtime
 
             return null;
         }
-
-#endif
-
-#if !EXPORTER
 
         // NOTE this method returns null if the type could not be found
         // or if the type is not a Custom Attribute and we're not in the static compiler
@@ -111,7 +89,7 @@ namespace IKVM.Runtime
 
             owner.Diagnostics.GenericCompilerWarning($"Unable to load annotation class {annotationClass}");
 #if IMPORTER
-            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute").AsReflection());
+            return new RuntimeManagedByteCodeJavaType.CompiledAnnotation(owner.Context, owner.Context.Resolver.ResolveRuntimeType("IKVM.Attributes.DynamicAnnotationAttribute"));
 #else
             return null;
 #endif
@@ -119,49 +97,47 @@ namespace IKVM.Runtime
 
 #endif
 
-        private static object LookupEnumValue(RuntimeContext context, Type enumType, string value)
+        static object LookupEnumValue(RuntimeContext context, ITypeSymbol enumType, string value)
         {
-            FieldInfo field = enumType.GetField(value, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            var field = enumType.GetField(value, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
             if (field != null)
-            {
                 return field.GetRawConstantValue();
-            }
+
             // both __unspecified and missing values end up here
-            return EnumHelper.GetPrimitiveValue(context, EnumHelper.GetUnderlyingType(enumType), 0);
+            return EnumHelper.GetPrimitiveValue(context, enumType.GetEnumUnderlyingType(), 0);
         }
 
-        protected static object ConvertValue(RuntimeClassLoader loader, Type targetType, object obj)
+        protected static object ConvertValue(RuntimeClassLoader loader, ITypeSymbol targetType, object obj)
         {
             if (targetType.IsEnum)
             {
                 // TODO check the obj descriptor matches the type we expect
                 if (((object[])obj)[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
                 {
-                    object[] arr = (object[])obj;
+                    var arr = (object[])obj;
+
                     object value = null;
                     for (int i = 1; i < arr.Length; i++)
                     {
                         // TODO check the obj descriptor matches the type we expect
-                        string s = ((object[])arr[i])[2].ToString();
-                        object newval = LookupEnumValue(loader.Context, targetType, s);
+                        var s = ((object[])arr[i])[2].ToString();
+                        var newval = LookupEnumValue(loader.Context, targetType, s);
                         if (value == null)
-                        {
                             value = newval;
-                        }
                         else
-                        {
                             value = EnumHelper.OrBoxedIntegrals(loader.Context, value, newval);
-                        }
                     }
+
                     return value;
                 }
                 else
                 {
-                    string s = ((object[])obj)[2].ToString();
+                    var s = ((object[])obj)[2].ToString();
                     if (s == "__unspecified")
                     {
                         // TODO we should probably return null and handle that
                     }
+
                     return LookupEnumValue(loader.Context, targetType, s);
                 }
             }
@@ -173,13 +149,12 @@ namespace IKVM.Runtime
             else if (targetType.IsArray)
             {
                 // TODO check the obj descriptor matches the type we expect
-                object[] arr = (object[])obj;
-                Type elementType = targetType.GetElementType();
-                object[] targetArray = new object[arr.Length - 1];
+                var arr = (object[])obj;
+                var elementType = targetType.GetElementType();
+                var targetArray = new object[arr.Length - 1];
                 for (int i = 1; i < arr.Length; i++)
-                {
                     targetArray[i - 1] = ConvertValue(loader, elementType, arr[i]);
-                }
+
                 return targetArray;
             }
             else
@@ -323,14 +298,14 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract void Apply(RuntimeClassLoader loader, TypeBuilder tb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, MethodBuilder mb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, FieldBuilder fb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, ParameterBuilder pb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, AssemblyBuilder ab, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, PropertyBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation);
 
-        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
+        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, IMethodSymbolBuilder mb, ref IParameterSymbolBuilder pb, object annotation)
         {
 
         }

@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -202,7 +204,7 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("LazyPublishMembers called on " + this);
         }
 
-        internal override Type TypeAsTBD
+        internal override ITypeSymbol TypeAsTBD
         {
             get
             {
