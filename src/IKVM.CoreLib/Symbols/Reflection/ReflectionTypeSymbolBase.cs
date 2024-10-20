@@ -93,13 +93,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            return _fieldTable.GetOrCreateFieldSymbol(field);
+            return _fieldTable.GetOrCreateFieldSymbol(field, null, null);
         }
 
         /// <inheritdoc />
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
-            return _fieldTable.GetOrCreateFieldSymbol(field);
+            return _fieldTable.GetOrCreateFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
         }
 
         /// <inheritdoc />
@@ -285,10 +285,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 #else
 
         /// <inheritdoc />
-        public virtual  bool IsFunctionPointer => throw new NotImplementedException();
+        public virtual bool IsFunctionPointer => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public virtual  bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
+        public virtual bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
 
 #endif
 

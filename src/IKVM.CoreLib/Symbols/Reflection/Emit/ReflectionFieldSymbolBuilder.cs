@@ -2,8 +2,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
 
-using IKVM.CoreLib.Symbols.Emit;
-
 namespace IKVM.CoreLib.Symbols.Reflection.Emit
 {
 
@@ -13,6 +11,9 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         readonly FieldBuilder _builder;
         FieldInfo? _field;
 
+        readonly ITypeSymbol[]? _requiredCustomModifiers;
+        readonly ITypeSymbol[]? _optionalCustomModifiers;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,10 +22,12 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder) :
+        public ReflectionFieldSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers) :
             base(context, resolvingModule, resolvingType, builder)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
+            _requiredCustomModifiers = requiredCustomModifiers ?? throw new ArgumentNullException(nameof(requiredCustomModifiers));
+            _optionalCustomModifiers = optionalCustomModifiers ?? throw new ArgumentNullException(nameof(optionalCustomModifiers));
         }
 
         /// <inheritdoc />
@@ -40,6 +43,18 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
         /// <inheritdoc/>
         public override bool IsComplete => _field != null;
+
+        /// <inheritdoc/>
+        public override ITypeSymbol[] GetRequiredCustomModifiers()
+        {
+            return _requiredCustomModifiers ?? [];
+        }
+
+        /// <inheritdoc/>
+        public override ITypeSymbol[] GetOptionalCustomModifiers()
+        {
+            return _optionalCustomModifiers ?? [];
+        }
 
         #endregion
 

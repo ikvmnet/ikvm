@@ -72,9 +72,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets or creates a <see cref="IReflectionFieldSymbolBuilder"/> for the given <see cref="FieldBuilder"/>.
         /// </summary>
-        /// <param name="method"></param>
+        /// <param name="field"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
         /// <returns></returns>
-        IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field);
+        IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers);
 
         /// <summary>
         /// Gets or creates a <see cref="IReflectionPropertySymbol"/> for the given <see cref="PropertyInfo"/>.

@@ -74,7 +74,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         #region IMethodSymbol
 
         /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
+        public IParameterSymbol ReturnParameter => GetReturnParameter();
 
         /// <summary>
         /// Gets the return type of the method.
@@ -84,6 +84,8 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
                 return GetReturnParameterForMethodOnTypeBuilderInstantiation();
+            else if (IsComplete)
+                return ResolveParameterSymbol(UnderlyingRuntimeMethod.ReturnParameter);
             else
                 return ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
         }

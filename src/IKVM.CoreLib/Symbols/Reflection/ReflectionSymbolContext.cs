@@ -290,9 +290,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? optionalCustomModifiers, ITypeSymbol[]? requiredCustomModifiers)
         {
-            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field, optionalCustomModifiers, requiredCustomModifiers);
         }
 
         /// <summary>

@@ -106,7 +106,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             throw new NotSupportedException();
         }
 
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
             throw new NotImplementedException();
         }

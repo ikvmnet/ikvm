@@ -79,13 +79,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool IsStatic => UnderlyingField.IsStatic;
 
         /// <inheritdoc/>
-        public ITypeSymbol[] GetOptionalCustomModifiers()
+        public virtual ITypeSymbol[] GetOptionalCustomModifiers()
         {
             return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
         }
 
         /// <inheritdoc/>
-        public ITypeSymbol[] GetRequiredCustomModifiers()
+        public virtual ITypeSymbol[] GetRequiredCustomModifiers()
         {
             return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
         }

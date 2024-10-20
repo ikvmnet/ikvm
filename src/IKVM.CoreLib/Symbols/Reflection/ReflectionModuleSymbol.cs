@@ -320,16 +320,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (field.DeclaringType is { } dt)
                 return ResolveTypeSymbol(dt).GetOrCreateFieldSymbol(field);
             else
-                return _fieldTable.GetOrCreateFieldSymbol(field);
+                return _fieldTable.GetOrCreateFieldSymbol(field, ResolveTypeSymbols(field.GetRequiredCustomModifiers()), ResolveTypeSymbols(field.GetOptionalCustomModifiers()));
         }
 
         /// <inheritdoc />
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
             if (field.DeclaringType is { } dt)
-                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateFieldSymbol(field);
+                return ResolveTypeSymbol((TypeBuilder)dt).GetOrCreateFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
             else
-                return _fieldTable.GetOrCreateFieldSymbol(field);
+                return _fieldTable.GetOrCreateFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
         }
 
         /// <inheritdoc />

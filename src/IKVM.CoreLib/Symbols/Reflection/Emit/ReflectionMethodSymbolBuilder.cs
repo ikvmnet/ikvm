@@ -42,15 +42,24 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         #region IMethodBaseSymbolBuilder
 
         /// <inheritdoc />
-        public void SetImplementationFlags(System.Reflection.MethodImplAttributes attributes)
+        public void SetImplementationFlags(MethodImplAttributes attributes)
         {
-            UnderlyingMethodBuilder.SetImplementationFlags((MethodImplAttributes)attributes);
+            UnderlyingMethodBuilder.SetImplementationFlags(attributes);
         }
 
         /// <inheritdoc />
-        public IParameterSymbolBuilder DefineParameter(int position, System.Reflection.ParameterAttributes attributes, string? strParamName)
+        public IParameterSymbolBuilder DefineParameter(int position, ParameterAttributes attributes, string? strParamName)
         {
-            return ResolveParameterSymbol(this, UnderlyingMethodBuilder.DefineParameter(position, (ParameterAttributes)attributes, strParamName));
+            return ResolveParameterSymbol(this, UnderlyingMethodBuilder.DefineParameter(position, attributes, strParamName));
+        }
+
+        /// <inheritdoc />
+        public override IParameterSymbol[] GetParameters()
+        {
+            if (IsComplete)
+                return ResolveParameterSymbols(UnderlyingRuntimeMethod.GetParameters());
+            else
+                return base.GetParameters();
         }
 
         /// <inheritdoc />

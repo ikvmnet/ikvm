@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 
 using IKVM.CoreLib.Collections;
@@ -40,8 +39,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Gets or creates the <see cref="IReflectionFieldSymbol"/> cached for the type by field.
         /// </summary>
         /// <param name="field"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
         /// <returns></returns>
-        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
             if (field is null)
                 throw new ArgumentNullException(nameof(field));
@@ -58,10 +59,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 if (_table[row] == null)
                     using (_lock.CreateWriteLock())
                         if (field is FieldBuilder builder)
-                            return _table[row] ??= new ReflectionFieldSymbolBuilder(_context, (IReflectionModuleSymbolBuilder)_module, (IReflectionTypeSymbolBuilder?)_type, builder);
+                            return _table[row] ??= new ReflectionFieldSymbolBuilder(_context, (IReflectionModuleSymbolBuilder)_module, (IReflectionTypeSymbolBuilder?)_type, builder, requiredCustomModifiers, optionalCustomModifiers);
                         else
                             return _table[row] ??= new ReflectionFieldSymbol(_context, _module, _type, field);
-                    
+
                 return _table[row] ?? throw new InvalidOperationException();
             }
         }
@@ -70,10 +71,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Gets or creates the <see cref="IReflectionFieldSymbolBuilder"/> cached for the type by field.
         /// </summary>
         /// <param name="field"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
         /// <returns></returns>
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
-            return (IReflectionFieldSymbolBuilder)GetOrCreateFieldSymbol((FieldInfo)field);
+            return (IReflectionFieldSymbolBuilder)GetOrCreateFieldSymbol((FieldInfo)field, requiredCustomModifiers, optionalCustomModifiers);
         }
 
     }

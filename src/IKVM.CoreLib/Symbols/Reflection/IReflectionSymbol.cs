@@ -196,9 +196,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Resolves the symbol for the specified field.
         /// </summary>
         /// <param name="field"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(field))]
-        IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field);
+        IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field, ITypeSymbol[] requiredCustomModifiers, ITypeSymbol[] optionalCustomModifiers);
 
         /// <summary>
         /// Resolves the symbol for the specified property.

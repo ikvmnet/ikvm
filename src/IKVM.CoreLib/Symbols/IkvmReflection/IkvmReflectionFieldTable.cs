@@ -90,7 +90,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         static IIkvmReflectionFieldSymbol CreateFieldSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol? type, FieldInfo field)
         {
             if (field is FieldBuilder builder)
-                return new IkvmReflectionFieldSymbolBuilder(context, (IIkvmReflectionModuleSymbolBuilder)module, (IIkvmReflectionTypeSymbolBuilder?)type, builder);
+                return new IkvmReflectionFieldSymbolBuilder(context, (IIkvmReflectionModuleSymbolBuilder)module, (IIkvmReflectionTypeSymbolBuilder?)type, builder, [], []);
             else
                 return new IkvmReflectionFieldSymbol(context, module, type, field);
         }

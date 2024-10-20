@@ -2,8 +2,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -111,6 +113,22 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 return _module.GetOrCreateFieldSymbol(field);
 
             return base.ResolveFieldSymbol(field);
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(field))]
+        public override IReflectionFieldSymbolBuilder? ResolveFieldSymbol(FieldBuilder? field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
+        {
+            if (field is null)
+                return null;
+
+            if (field == UnderlyingMember)
+                return (IReflectionFieldSymbolBuilder)this;
+
+            if (field.Module == _module.UnderlyingModule)
+                return _module.GetOrCreateFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
+
+            return base.ResolveFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
         }
 
         /// <inheritdoc />

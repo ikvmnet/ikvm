@@ -286,12 +286,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         [return: NotNullIfNotNull(nameof(field))]
-        public virtual IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field)
+        public virtual IReflectionFieldSymbolBuilder ResolveFieldSymbol(FieldBuilder field, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers)
         {
             if (field is null)
                 throw new ArgumentNullException(nameof(field));
 
-            return _context.GetOrCreateFieldSymbol(field);
+            return _context.GetOrCreateFieldSymbol(field, requiredCustomModifiers, optionalCustomModifiers);
         }
 
         /// <inheritdoc />

@@ -913,7 +913,7 @@ namespace IKVM.Runtime.StubGen
         object[] GetAnnotation(CustomAttribute cad)
         {
             // attribute is either a AnnotationAttributeBase or a DynamicAnnotationAttribute with a single object[] in our internal annotation format
-            if (cad.ConstructorArguments.Length == 1 && cad.ConstructorArguments[0].ArgumentType == context.Types.Object.MakeArrayType() && (cad.Constructor.DeclaringType.BaseType == context.Resolver.ResolveBaseType(typeof(ikvm.@internal.AnnotationAttributeBase).FullName) || cad.Constructor.DeclaringType == context.Resolver.ResolveBaseType(typeof(DynamicAnnotationAttribute).FullName)))
+            if (cad.ConstructorArguments.Length == 1 && cad.ConstructorArguments[0].ArgumentType == context.Types.Object.MakeArrayType() && (cad.Constructor.DeclaringType.BaseType == context.Resolver.ResolveBaseType(typeof(ikvm.@internal.AnnotationAttributeBase).FullName) || cad.Constructor.DeclaringType == context.Resolver.ResolveRuntimeType(typeof(DynamicAnnotationAttribute).FullName)))
             {
                 return UnpackArray((IList<CustomAttributeTypedArgument>)cad.ConstructorArguments[0].Value);
             }

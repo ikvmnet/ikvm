@@ -1,6 +1,5 @@
 ﻿using System;
 
-using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
@@ -12,6 +11,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
         FieldBuilder? _builder;
         FieldInfo _field;
+        readonly ITypeSymbol[] _optionalCustomModifiers;
+        readonly ITypeSymbol[] _requiredCustomModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -21,11 +22,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="resolvingType"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionFieldSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder) :
+        public IkvmReflectionFieldSymbolBuilder(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbolBuilder resolvingModule, IIkvmReflectionTypeSymbolBuilder? resolvingType, FieldBuilder builder, ITypeSymbol[] optionalCustomModifiers, ITypeSymbol[] requiredCustomModifiers) :
             base(context, resolvingModule, resolvingType)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
             _field = _builder;
+            _optionalCustomModifiers = optionalCustomModifiers;
+            _requiredCustomModifiers = requiredCustomModifiers;
         }
 
         /// <inheritdoc />
@@ -103,13 +106,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <inheritdoc/>
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc/>
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc/>
