@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 
-using IKVM.CoreLib.Threading;
-using IKVM.CoreLib.Collections;
 using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Reflection.Emit;
 
@@ -41,7 +39,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual MethodInfo UnderlyingMethod => _method;
 
         /// <inheritdoc />
-        public virtual MethodInfo UnderlyingRuntimeMethod => _method;
+        public virtual MethodInfo UnderlyingRuntimeMethod => GetUnderlyingRuntimeMethod();
+
+        /// <summary>
+        /// Gets the underlying runtime method.
+        /// </summary>
+        /// <returns></returns>
+        MethodInfo GetUnderlyingRuntimeMethod()
+        {
+            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
+                return GetUnderlyingRuntimeMethodForMethodOnTypeBuilderInstantiation();
+            else if (ReflectionExtensions.MethodBuilderInstantiationType.IsInstanceOfType(_method))
+                return GetUnderlyingRuntimeMethodForMethodBuilderInstantiationType();
+            else
+                return _method;
+        }
+
+        MethodInfo GetUnderlyingRuntimeMethodForMethodOnTypeBuilderInstantiation()
+        {
+            return _method;
+        }
+
+        MethodInfo GetUnderlyingRuntimeMethodForMethodBuilderInstantiationType()
+        {
+            return _method;
+        }
 
         /// <inheritdoc />
         public override MethodBase UnderlyingMethodBase => UnderlyingMethod;

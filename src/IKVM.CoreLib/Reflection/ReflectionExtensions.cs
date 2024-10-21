@@ -20,6 +20,7 @@ namespace IKVM.CoreLib.Reflection
         static readonly ParameterExpression _eventBuilderParameter = Expression.Parameter(typeof(EventBuilder), "p");
         static readonly ParameterExpression _parameterBuilderParameter = Expression.Parameter(typeof(ParameterBuilder), "p");
 
+        static readonly Type _methodBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.MethodBuilderInstantiation", true)!;
         static readonly Type _constructorOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.ConstructorOnTypeBuilderInstantiation", true)!;
         static readonly Type _methodOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.MethodOnTypeBuilderInstantiation", true)!;
         static readonly Type _fieldOnTypeBuilderInstantiationType = typeof(TypeBuilder).Assembly.GetType("System.Reflection.Emit.FieldOnTypeBuilderInstantiation", true)!;
@@ -191,6 +192,11 @@ namespace IKVM.CoreLib.Reflection
                     typeof(EventAttributes)),
                 _eventBuilderParameter)
             .Compile();
+
+        /// <summary>
+        /// Gets the <see cref="MethodBuilderInstantiation"/> type.
+        /// </summary>
+        public static Type MethodBuilderInstantiationType => _methodBuilderInstantiationType;
 
         /// <summary>
         /// Gets the <see cref="MethodOnTypeBuilderInstantiation"/> type.

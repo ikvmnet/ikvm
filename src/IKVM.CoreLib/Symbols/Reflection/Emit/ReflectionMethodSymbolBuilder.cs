@@ -96,6 +96,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             UnderlyingMethodBuilder.SetSignature(returnType?.Unpack(), returnTypeRequiredCustomModifiers?.Unpack(), returnTypeOptionalCustomModifiers?.Unpack(), parameterTypes?.Unpack(), parameterTypeRequiredCustomModifiers?.Unpack(), parameterTypeOptionalCustomModifiers?.Unpack());
         }
 
+        /// <inheritdoc />
         public IGenericTypeParameterSymbolBuilder[] DefineGenericParameters(params string[] names)
         {
             var l = UnderlyingMethodBuilder.DefineGenericParameters(names);
