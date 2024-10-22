@@ -23,9 +23,5 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="Symbols\" />
-    </ItemGroup>
 
 </Project>
