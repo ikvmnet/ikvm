@@ -1,4 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -17,7 +20,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="names"></param>
         /// <returns></returns>
-        IGenericTypeParameterSymbolBuilder[] DefineGenericParameters(params string[] names);
+        IImmutableList<IGenericTypeParameterSymbolBuilder> DefineGenericParameters(IImmutableList<string> names);
 
         /// <summary>
         /// Defines the initializer for this type.
@@ -37,7 +40,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IConstructorSymbolBuilder DefineConstructor(System.Reflection.MethodAttributes attributes, ITypeSymbol[]? parameterTypes);
+        IConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Adds a new constructor to the type, with the given attributes and signature.
@@ -46,7 +49,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="callingConvention"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IConstructorSymbolBuilder DefineConstructor(System.Reflection.MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol[]? parameterTypes);
+        IConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Adds a new constructor to the type, with the given attributes, signature, and custom modifiers.
@@ -57,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="requiredCustomModifiers"></param>
         /// <param name="optionalCustomModifiers"></param>
         /// <returns></returns>
-        IConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredCustomModifiers, ITypeSymbol[][]? optionalCustomModifiers);
+        IConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> requiredCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> optionalCustomModifiers);
 
         /// <summary>
         /// Defines the parameterless constructor. The constructor defined here will simply call the parameterless constructor of the parent.
@@ -93,7 +96,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="optionalCustomModifiers"></param>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        IFieldSymbolBuilder DefineField(string fieldName, ITypeSymbol type, ITypeSymbol[]? requiredCustomModifiers, ITypeSymbol[]? optionalCustomModifiers, FieldAttributes attributes);
+        IFieldSymbolBuilder DefineField(string fieldName, ITypeSymbol type, IImmutableList<ITypeSymbol> requiredCustomModifiers, IImmutableList<ITypeSymbol> optionalCustomModifiers, FieldAttributes attributes);
 
         /// <summary>
         /// Adds a new method to the type, with the specified name, method attributes, calling convention, method signature, and custom modifiers.
@@ -108,7 +111,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterTypeRequiredCustomModifiers"></param>
         /// <param name="parameterTypeOptionalCustomModifiers"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers);
+        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> returnTypeRequiredCustomModifiers, IImmutableList<ITypeSymbol> returnTypeOptionalCustomModifiers, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeRequiredCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeOptionalCustomModifiers);
 
         /// <summary>
         /// Adds a new method to the type, with the specified name, method attributes, calling convention, and method signature.
@@ -119,7 +122,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Adds a new method to the type, with the specified name, method attributes, and calling convention.
@@ -128,7 +131,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, System.Reflection.CallingConventions callingConvention);
+        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention);
 
         /// <summary>
         /// Adds a new method to the type, with the specified name and method attributes.
@@ -136,7 +139,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes);
+        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes);
 
         /// <summary>
         /// Adds a new method to the type, with the specified name, method attributes, and method signature.
@@ -146,7 +149,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineMethod(string name, System.Reflection.MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+        IMethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Specifies a given method body that implements a given method declaration, potentially with a different name.
@@ -163,7 +166,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parent"></param>
         /// <param name="interfaces"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, ITypeSymbol[]? interfaces);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, ITypeSymbol? parent, IImmutableList<ITypeSymbol> interfaces);
 
         /// <summary>
         /// Defines a nested type, given its name, attributes, size, and the type that it extends.
@@ -174,7 +177,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="packSize"></param>
         /// <param name="typeSize"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, System.Reflection.Emit.PackingSize packSize, int typeSize);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packSize, int typeSize);
 
         /// <summary>
         /// Defines a nested type, given its name, attributes, the type that it extends, and the packing size.
@@ -184,7 +187,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parent"></param>
         /// <param name="packSize"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, System.Reflection.Emit.PackingSize packSize);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packSize);
 
         /// <summary>
         /// Defines a nested type, given its name.
@@ -200,7 +203,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attr"></param>
         /// <param name="parent"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, ITypeSymbol? parent);
 
         /// <summary>
         /// Defines a nested type, given its name and attributes.
@@ -208,7 +211,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="attr"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr);
 
         /// <summary>
         /// Defines a nested type, given its name, attributes, the total size of the type, and the type that it extends.
@@ -218,7 +221,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parent"></param>
         /// <param name="typeSize"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineNestedType(string name, System.Reflection.TypeAttributes attr, ITypeSymbol? parent, int typeSize);
+        ITypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, ITypeSymbol? parent, int typeSize);
 
         /// <summary>
         /// Defines a PInvoke method given its name, the name of the DLL in which the method is defined, the attributes of the method, the calling convention of the method, the return type of the method, the types of the parameters of the method, and the PInvoke flags.
@@ -232,7 +235,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet);
+        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet);
 
         /// <summary>
         /// Defines a PInvoke method given its name, the name of the DLL in which the method is defined, the name of the entry point, the attributes of the method, the calling convention of the method, the return type of the method, the types of the parameters of the method, and the PInvoke flags.
@@ -247,7 +250,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet);
+        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet);
 
         /// <summary>
         /// Defines a PInvoke method given its name, the name of the DLL in which the method is defined, the name of the entry point, the attributes of the method, the calling convention of the method, the return type of the method, the types of the parameters of the method, the PInvoke flags, and custom modifiers for the parameters and return type.
@@ -266,7 +269,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet);
+        IMethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> returnTypeRequiredCustomModifiers, IImmutableList<ITypeSymbol> returnTypeOptionalCustomModifiers, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeRequiredCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeOptionalCustomModifiers, CallingConvention nativeCallConv, CharSet nativeCharSet);
 
         /// <summary>
         /// Adds a new property to the type, with the given name and property signature.
@@ -276,7 +279,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, ITypeSymbol returnType, ITypeSymbol[]? parameterTypes);
+        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, ITypeSymbol returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Adds a new property to the type, with the given name, attributes, calling convention, and property signature.
@@ -287,7 +290,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[]? parameterTypes);
+        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Adds a new property to the type, with the given name, property signature, and custom modifiers.
@@ -301,7 +304,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterTypeRequiredCustomModifiers"></param>
         /// <param name="parameterTypeOptionalCustomModifiers"></param>
         /// <returns></returns>
-        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, ITypeSymbol returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers);
+        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, ITypeSymbol returnType, IImmutableList<ITypeSymbol> returnTypeRequiredCustomModifiers, IImmutableList<ITypeSymbol> returnTypeOptionalCustomModifiers, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeRequiredCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeOptionalCustomModifiers);
 
         /// <summary>
         /// Adds a new property to the type, with the given name, calling convention, property signature, and custom modifiers.
@@ -316,7 +319,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterTypeRequiredCustomModifiers"></param>
         /// <param name="parameterTypeOptionalCustomModifiers"></param>
         /// <returns></returns>
-        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, ITypeSymbol[]? returnTypeRequiredCustomModifiers, ITypeSymbol[]? returnTypeOptionalCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? parameterTypeRequiredCustomModifiers, ITypeSymbol[][]? parameterTypeOptionalCustomModifiers);
+        IPropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, ITypeSymbol returnType, IImmutableList<ITypeSymbol> returnTypeRequiredCustomModifiers, IImmutableList<ITypeSymbol> returnTypeOptionalCustomModifiers, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeRequiredCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> parameterTypeOptionalCustomModifiers);
 
         /// <summary>
         /// Finishes the type, updating the associated symbol.

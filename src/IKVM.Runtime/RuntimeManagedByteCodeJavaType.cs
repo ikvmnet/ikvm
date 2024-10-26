@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -678,7 +679,7 @@ namespace IKVM.Runtime
             SetMethods(methods.ToArray());
         }
 
-        private void AddMethods(IMethodSymbol[] add, List<RuntimeJavaMethod> methods)
+        private void AddMethods(IReadOnlyList<IMethodSymbol> add, List<RuntimeJavaMethod> methods)
         {
             foreach (var method in add)
                 AddMethodOrConstructor(method, Context.AttributeHelper.GetHideFromJavaFlags(method), methods);

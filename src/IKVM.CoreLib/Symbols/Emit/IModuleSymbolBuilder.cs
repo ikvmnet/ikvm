@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Reflection;
@@ -71,7 +72,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Defines a global method with the specified name, attributes, calling convention, return type, custom modifiers for the return type, parameter types, and custom modifiers for the parameter types.
@@ -86,7 +87,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="requiredParameterTypeCustomModifiers"></param>
         /// <param name="optionalParameterTypeCustomModifiers"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? requiredReturnTypeCustomModifiers, ITypeSymbol[]? optionalReturnTypeCustomModifiers, ITypeSymbol[]? parameterTypes, ITypeSymbol[][]? requiredParameterTypeCustomModifiers, ITypeSymbol[][]? optionalParameterTypeCustomModifiers);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> requiredReturnTypeCustomModifiers, IImmutableList<ITypeSymbol> optionalReturnTypeCustomModifiers, IImmutableList<ITypeSymbol> parameterTypes, IImmutableList<IImmutableList<ITypeSymbol>> requiredParameterTypeCustomModifiers, IImmutableList<IImmutableList<ITypeSymbol>> optionalParameterTypeCustomModifiers);
 
         /// <summary>
         /// Defines a global method with the specified name, attributes, return type, and parameter types.
@@ -96,7 +97,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+        IMethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> parameterTypes);
 
         /// <summary>
         /// Constructs a TypeBuilder for a private type with the specified name in this module.
@@ -161,7 +162,79 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parent"></param>
         /// <param name="interfaces"></param>
         /// <returns></returns>
-        ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, ITypeSymbol[]? interfaces);
+        ITypeSymbolBuilder DefineType(string name, TypeAttributes attr, ITypeSymbol? parent, IImmutableList<ITypeSymbol> interfaces);
+
+        /// <summary>
+        /// Defines a nested type, given its name.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name);
+
+        /// <summary>
+        /// Defines a nested type, given its name and attributes.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr);
+
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, and the type that it extends.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr, ITypeSymbol? parent);
+
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <param name="parent"></param>
+        /// <param name="interfaces"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr, ITypeSymbol? parent, IImmutableList<ITypeSymbol> interfaces);
+
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <param name="parent"></param>
+        /// <param name="typeSize"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr, ITypeSymbol? parent, int typeSize);
+
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, the type that it extends, and the packing size.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <param name="parent"></param>
+        /// <param name="packSize"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packSize);
+
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
+        /// </summary>
+        /// <param name="enclosingType"></param>
+        /// <param name="name"></param>
+        /// <param name="attr"></param>
+        /// <param name="parent"></param>
+        /// <param name="packSize"></param>
+        /// <param name="typeSize"></param>
+        /// <returns></returns>
+        ITypeSymbolBuilder DefineNestedType(ITypeSymbolBuilder enclosingType, string name, TypeAttributes attr, ITypeSymbol? parent, PackingSize packSize, int typeSize);
 
         /// <summary>
         /// Explicitely adds a reference to the specified assembly.
@@ -180,6 +253,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
         void Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine);
+
     }
 
 }

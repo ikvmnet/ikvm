@@ -18,8 +18,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="resolvingMember"></param>
         /// <param name="builder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionGenericTypeParameterSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionMemberSymbolBuilder resolvingMember, GenericTypeParameterBuilder builder) :
-            base(context, resolvingModule, resolvingMember, builder)
+        public ReflectionGenericTypeParameterSymbolBuilder(ReflectionSymbolContext context, IReflectionModuleSymbolBuilder resolvingModule, IReflectionMemberSymbolBuilder resolvingMember) :
+            base(context, resolvingModule, resolvingMember,)
         {
             _builder = builder ?? throw new ArgumentNullException(nameof(builder));
         }

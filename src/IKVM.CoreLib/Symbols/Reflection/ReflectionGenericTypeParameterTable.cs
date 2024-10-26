@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the module by type.
+        /// Gets or creates the <see cref="ReflectionTypeDefSymbol"/> cached for the module by type.
         /// </summary>
         /// <param name="genericTypeParameter"></param>
         /// <returns></returns>

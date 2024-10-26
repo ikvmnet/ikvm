@@ -13,7 +13,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
     {
 
         readonly IReflectionMemberSymbol _resolvingMember;
-        readonly Type _type;
 
         ReflectionTypeSpecTable _specTable;
 
@@ -25,11 +24,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="resolvingMember"></param>
         /// <param name="type"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionGenericTypeParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMemberSymbol resolvingMember, Type type) :
+        public ReflectionGenericTypeParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMemberSymbol resolvingMember) :
             base(context, resolvingModule, resolvingMember as IReflectionTypeSymbol)
         {
             _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
-            _type = type ?? throw new ArgumentNullException(nameof(type));
             _specTable = new ReflectionTypeSpecTable();
         }
 
@@ -485,19 +483,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name)
+        public IMemberSymbol[] GetMembers(string name)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMembers(string name, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMembers(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name, (MemberTypes)type, (BindingFlags)bindingAttr));
         }

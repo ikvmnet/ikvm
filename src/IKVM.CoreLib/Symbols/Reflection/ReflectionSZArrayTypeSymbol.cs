@@ -19,10 +19,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override Type UnderlyingType => ElementType.UnderlyingType.MakeArrayType();
+        public override Type UnderlyingType => SpecifiedType.UnderlyingType.MakeArrayType();
 
         /// <inheritdoc />
-        public override Type UnderlyingRuntimeType => ElementType.UnderlyingRuntimeType.MakeArrayType();
+        public override Type UnderlyingRuntimeType => SpecifiedType.UnderlyingRuntimeType.MakeArrayType();
 
     }
 

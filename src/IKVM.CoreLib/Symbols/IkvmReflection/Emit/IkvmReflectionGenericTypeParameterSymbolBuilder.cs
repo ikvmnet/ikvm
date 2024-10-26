@@ -486,19 +486,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name)
+        public IMemberSymbol[] GetMembers(string name)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMembers(string name, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name, (BindingFlags)bindingAttr));
         }
 
         /// <inheritdoc />
-        public IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMembers(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(UnderlyingType.GetMember(name, (MemberTypes)type, (BindingFlags)bindingAttr));
         }

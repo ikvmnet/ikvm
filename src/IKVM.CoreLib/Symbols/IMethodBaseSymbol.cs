@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -108,13 +109,13 @@ namespace IKVM.CoreLib.Symbols
         /// Returns an array of <see cref="ITypeSymbol" /> objects that represent the type arguments of a generic method or the type parameters of a generic method definition.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetGenericArguments();
+        ImmutableArray<ITypeSymbol> GetGenericArguments();
 
         /// <summary>
         /// When overridden in a derived class, gets the parameters of the specified method or constructor.
         /// </summary>
         /// <returns></returns>
-        IParameterSymbol[] GetParameters();
+        ImmutableArray<IParameterSymbol> GetParameters();
 
         /// <summary>
         /// When overridden in a derived class, returns the MethodImplAttributes flags.

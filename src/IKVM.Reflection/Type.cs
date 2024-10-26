@@ -162,7 +162,7 @@ namespace IKVM.Reflection
         {
             return Array.Empty<EventInfo>();
         }
-                
+
         public virtual PropertyInfo[] __GetDeclaredProperties()
         {
             return Array.Empty<PropertyInfo>();
@@ -935,9 +935,7 @@ namespace IKVM.Reflection
         public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
         {
             // first we try an exact match and only if that fails we fall back to using the binder
-            return GetMemberByName(name, bindingAttr,
-                delegate (MethodInfo method) { return method.MethodSignature.MatchParameterTypes(types); })
-                ?? GetMethodWithBinder<MethodInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+            return GetMemberByName(name, bindingAttr, (MethodInfo m) => m.MethodSignature.MatchParameterTypes(types)) ?? GetMethodWithBinder<MethodInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
         }
 
         private T GetMethodWithBinder<T>(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
@@ -1809,7 +1807,7 @@ namespace IKVM.Reflection
                     type.FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
         }
 
-         void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
+        void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
         {
             MethodBase[] methods = null;
 
@@ -1970,7 +1968,7 @@ namespace IKVM.Reflection
             return CreateMissingMethod(name, callingConvention, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length));
         }
 
-         MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+        MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
             var sig = new MethodSignature(returnType ?? Module.Universe.System_Void, Util.Copy(parameterTypes), customModifiers, callingConvention, 0);
             var method = new MissingMethod(this, name, sig);

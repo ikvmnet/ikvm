@@ -20,7 +20,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         ReflectionSZArrayTypeSymbol? _asSZArray;
         ReflectionPointerTypeSymbol? _asPointer;
         ReflectionByRefTypeSymbol? _asByRef;
-        ConcurrentDictionary<IReflectionTypeSymbol[], ReflectionGenericSpecTypeSymbol>? _genericTypeSymbols;
+        ConcurrentDictionary<IReflectionTypeSymbol[], ReflectionGenericInstantiationTypeSymbol>? _genericTypeSymbols;
 
         /// <summary>
         /// Initializes a new instance.
@@ -118,9 +118,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        readonly ReflectionGenericSpecTypeSymbol CreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeArguments)
+        readonly ReflectionGenericInstantiationTypeSymbol CreateGenericTypeSymbol(IReflectionTypeSymbol[] genericTypeArguments)
         {
-            return new ReflectionGenericSpecTypeSymbol(_context, _module, _elementType, genericTypeArguments);
+            return new ReflectionGenericInstantiationTypeSymbol(_context, _module, _elementType, genericTypeArguments);
         }
 
     }

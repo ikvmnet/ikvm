@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionTypeSymbol : ReflectionTypeSymbolBase
+    class ReflectionTypeDefSymbol : ReflectionTypeSymbolBase
     {
 
         readonly Type _type;
@@ -15,7 +15,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
         /// <param name="type"></param>
-        public ReflectionTypeSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, Type type) :
+        public ReflectionTypeDefSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, Type type) :
             base(context, resolvingModule)
         {
             _type = type ?? throw new ArgumentNullException(nameof(type));

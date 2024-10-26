@@ -20,7 +20,7 @@
         /// Sets the interfaces a type must implement in order to be substituted for the type parameter.
         /// </summary>
         /// <param name="interfaceConstraints"></param>
-        void SetInterfaceConstraints(params ITypeSymbol[]? interfaceConstraints);
+        void SetInterfaceConstraints(params ITypeSymbol[] interfaceConstraints);
 
 
     }

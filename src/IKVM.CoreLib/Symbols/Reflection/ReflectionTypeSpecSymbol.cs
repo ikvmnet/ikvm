@@ -6,27 +6,27 @@ namespace IKVM.CoreLib.Symbols.Reflection
     abstract class ReflectionTypeSpecSymbol : ReflectionTypeSymbolBase
     {
 
-        readonly IReflectionTypeSymbol _elementType;
+        readonly IReflectionTypeSymbol _specifiedType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="resolvingModule"></param>
-        /// <param name="elementType"></param>
-        public ReflectionTypeSpecSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol elementType) :
+        /// <param name="specifiedType"></param>
+        public ReflectionTypeSpecSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol specifiedType) :
             base(context, resolvingModule)
         {
-            _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
+            _specifiedType = specifiedType ?? throw new ArgumentNullException(nameof(specifiedType));
         }
 
         /// <summary>
         /// Gets the element type.
         /// </summary>
-        protected IReflectionTypeSymbol ElementType => _elementType;
+        protected IReflectionTypeSymbol SpecifiedType => _specifiedType;
 
         /// <inheritdoc />
-        public override bool IsComplete => ElementType.IsComplete;
+        public override bool IsComplete => SpecifiedType.IsComplete;
 
     }
 

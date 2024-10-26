@@ -1,0 +1,393 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+
+using IKVM.CoreLib.Text;
+
+namespace IKVM.CoreLib.Symbols
+{
+
+    internal static class TypeNameParserHelpers
+    {
+
+        const int maxDepth = 32;
+        internal const int SZArray = -1;
+        internal const int Pointer = -2;
+        internal const int ByRef = -3;
+        const char EscapeCharacter = '\\';
+
+        // Keep this in sync with GetFullTypeNameLength/NeedsEscaping
+        private static readonly string s_endOfFullTypeNameDelimitersSearchValues = "[]&*,+\\";
+
+        internal static string GetGenericTypeFullName(ReadOnlySpan<char> fullTypeName, ReadOnlySpan<TypeSymbolNameParserResult> genericArgs)
+        {
+            Debug.Assert(genericArgs.Length > 0);
+
+            ValueStringBuilder result = new(stackalloc char[128]);
+            result.Append(fullTypeName);
+
+            result.Append('[');
+            foreach (var genericArg in genericArgs)
+            {
+                result.Append('[');
+                result.Append(genericArg.AssemblyQualifiedName); // see recursion comments in TypeName.FullName
+                result.Append(']');
+                result.Append(',');
+            }
+            result[result.Length - 1] = ']'; // replace ',' with ']'
+
+            return result.ToString();
+        }
+
+        /// <returns>Positive length or negative value for invalid name</returns>
+        internal static int GetFullTypeNameLength(ReadOnlySpan<char> input, out bool isNestedType)
+        {
+            isNestedType = false;
+
+            // NET 6+ guarantees that MemoryExtensions.IndexOfAny has worst-case complexity
+            // O(m * i) if a match is found, or O(m * n) if a match is not found, where:
+            //   i := index of match position
+            //   m := number of needles
+            //   n := length of search space (haystack)
+            //
+            // Downlevel versions of .NET do not make this guarantee, instead having a
+            // worst-case complexity of O(m * n) even if a match occurs at the beginning of
+            // the search space. Since we're running this in a loop over untrusted user
+            // input, that makes the total loop complexity potentially O(m * n^2), where
+            // 'n' is adversary-controlled. To avoid DoS issues here, we'll loop manually.
+
+            int offset = input.IndexOfAny(s_endOfFullTypeNameDelimitersSearchValues.AsSpan());
+            if (offset < 0)
+            {
+                return input.Length; // no type name end chars were found, the whole input is the type name
+            }
+
+            if (input[offset] == EscapeCharacter) // this is very rare (IL Emit or pure IL)
+            {
+                offset = GetUnescapedOffset(input, startOffset: offset); // this is slower, but very rare so acceptable
+            }
+            isNestedType = offset > 0 && offset < input.Length && input[offset] == '+';
+            return offset;
+
+            static int GetUnescapedOffset(ReadOnlySpan<char> input, int startOffset)
+            {
+                int offset = startOffset;
+                for (; offset < input.Length; offset++)
+                {
+                    char c = input[offset];
+                    if (c == EscapeCharacter)
+                    {
+                        offset++; // skip the escaped char
+
+                        if (offset == input.Length || // invalid name that ends with escape character
+                            !NeedsEscaping(input[offset])) // invalid name, escapes a char that does not need escaping
+                        {
+                            return -1;
+                        }
+                    }
+                    else if (NeedsEscaping(c))
+                    {
+                        break;
+                    }
+                }
+                return offset;
+            }
+
+            // Keep this in sync with s_endOfFullTypeNameDelimitersSearchValues
+            static bool NeedsEscaping(char c) => c is '[' or ']' or '&' or '*' or ',' or '+' or EscapeCharacter;
+        }
+
+        internal static ReadOnlySpan<char> GetName(ReadOnlySpan<char> fullName)
+        {
+            // The two-value form of MemoryExtensions.LastIndexOfAny does not suffer
+            // from the behavior mentioned in the comment at the top of GetFullTypeNameLength.
+            // It always takes O(m * i) worst-case time and is safe to use here.
+
+            int offset = fullName.LastIndexOfAny('.', '+');
+
+            if (offset > 0 && fullName[offset - 1] == EscapeCharacter) // this should be very rare (IL Emit & pure IL)
+            {
+                offset = GetUnescapedOffset(fullName, startIndex: offset);
+            }
+
+            return offset < 0 ? fullName : fullName.Slice(offset + 1);
+
+            static int GetUnescapedOffset(ReadOnlySpan<char> fullName, int startIndex)
+            {
+                int offset = startIndex;
+                for (; offset >= 0; offset--)
+                {
+                    if (fullName[offset] is '.' or '+')
+                    {
+                        if (offset == 0 || fullName[offset - 1] != EscapeCharacter)
+                        {
+                            break;
+                        }
+                        offset--; // skip the escaping character
+                    }
+                }
+                return offset;
+            }
+        }
+
+        // this method handles escaping of the ] just to let the AssemblyNameParser fail for the right input
+        internal static ReadOnlySpan<char> GetAssemblyNameCandidate(ReadOnlySpan<char> input)
+        {
+            // The only delimiter which can terminate an assembly name is ']'.
+            // Otherwise EOL serves as the terminator.
+            int offset = input.IndexOf(']');
+
+            if (offset > 0 && input[offset - 1] == EscapeCharacter) // this should be very rare (IL Emit & pure IL)
+            {
+                offset = GetUnescapedOffset(input, startIndex: offset);
+            }
+
+            return offset < 0 ? input : input.Slice(0, offset);
+
+            static int GetUnescapedOffset(ReadOnlySpan<char> input, int startIndex)
+            {
+                int offset = startIndex;
+                for (; offset < input.Length; offset++)
+                {
+                    if (input[offset] is ']')
+                    {
+                        if (input[offset - 1] != EscapeCharacter)
+                        {
+                            break;
+                        }
+                    }
+                }
+                return offset;
+            }
+        }
+
+        internal static string GetRankOrModifierStringRepresentation(int rankOrModifier, ref ValueStringBuilder builder)
+        {
+            if (rankOrModifier == ByRef)
+            {
+                builder.Append('&');
+            }
+            else if (rankOrModifier == Pointer)
+            {
+                builder.Append('*');
+            }
+            else if (rankOrModifier == SZArray)
+            {
+                builder.Append("[]");
+            }
+            else if (rankOrModifier == 1)
+            {
+                builder.Append("[*]");
+            }
+            else
+            {
+                Debug.Assert(rankOrModifier >= 2);
+
+                // O(rank) work, so we have to assume the rank is trusted. We don't put a hard cap on this,
+                // but within the TypeName parser, we do require the input string to contain the correct number
+                // of commas. This forces the input string to have at least O(rank) length, so there's no
+                // alg. complexity attack possible here. Callers can of course pass any arbitrary value to
+                // TypeName.MakeArrayTypeName, but per first sentence in this comment, we have to assume any
+                // such arbitrary value which is programmatically fed in originates from a trustworthy source.
+
+                builder.Append('[');
+                builder.Append(',', rankOrModifier - 1);
+                builder.Append(']');
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Are there any captured generic args? We'll look for "[[" and "[" that is not followed by "]", "*" and ",".
+        /// </summary>
+        internal static bool IsBeginningOfGenericArgs(ref ReadOnlySpan<char> span, out bool doubleBrackets)
+        {
+            doubleBrackets = false;
+
+            if (!span.IsEmpty && span[0] == '[')
+            {
+                // There are no spaces allowed before the first '[', but spaces are allowed after that.
+                ReadOnlySpan<char> trimmed = span.Slice(1).TrimStart();
+                if (!trimmed.IsEmpty)
+                {
+                    if (trimmed[0] == '[')
+                    {
+                        doubleBrackets = true;
+                        span = trimmed.Slice(1).TrimStart();
+                        return true;
+                    }
+                    if (!(trimmed[0] is ',' or '*' or ']')) // [] or [*] or [,] or [,,,, ...]
+                    {
+                        span = trimmed;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        internal static bool TryGetTypeNameInfo(ref ReadOnlySpan<char> input, ref List<int>? nestedNameLengths, ref int recursiveDepth, out int totalLength)
+        {
+            bool isNestedType;
+
+            totalLength = 0;
+            do
+            {
+                int length = GetFullTypeNameLength(input.Slice(totalLength), out isNestedType);
+                if (length <= 0)
+                {
+                    // invalid type names:
+                    // -1: invalid escaping
+                    // 0: pair of unescaped "++" characters
+                    return false;
+                }
+
+                // Compat: Ignore leading '.' for type names without namespace. .NET Framework historically ignored leading '.' here. It is likely
+                // that code out there depends on this behavior. For example, type names formed by concatenating namespace and name, without checking for
+                // empty namespace (bug), are going to have superfluous leading '.'.
+                // This behavior means that types that start with '.' are not round-trippable via type name.
+                if (length > 1 && input[0] == '.' && input.Slice(0, length).LastIndexOf('.') == 0)
+                {
+                    input = input.Slice(1);
+                    length--;
+                }
+
+                if (isNestedType)
+                {
+                    if (!TryDive(ref recursiveDepth))
+                    {
+                        return false;
+                    }
+
+                    (nestedNameLengths ??= new()).Add(length);
+                    totalLength += 1; // skip the '+' sign in next search
+                }
+                totalLength += length;
+            } while (isNestedType);
+
+            return true;
+        }
+
+        internal static bool TryParseNextDecorator(ref ReadOnlySpan<char> input, out int rankOrModifier)
+        {
+            // Then try pulling a single decorator.
+            // Whitespace cannot precede the decorator, but it can follow the decorator.
+
+            ReadOnlySpan<char> originalInput = input; // so we can restore on 'false' return
+
+            if (TryStripFirstCharAndTrailingSpaces(ref input, '*'))
+            {
+                rankOrModifier = Pointer;
+                return true;
+            }
+
+            if (TryStripFirstCharAndTrailingSpaces(ref input, '&'))
+            {
+                rankOrModifier = ByRef;
+                return true;
+            }
+
+            if (TryStripFirstCharAndTrailingSpaces(ref input, '['))
+            {
+                // SZArray := []
+                // MDArray := [*] or [,] or [,,,, ...]
+
+                int rank = 1;
+                bool hasSeenAsterisk = false;
+
+            ReadNextArrayToken:
+
+                if (TryStripFirstCharAndTrailingSpaces(ref input, ']'))
+                {
+                    // End of array marker
+                    rankOrModifier = rank == 1 && !hasSeenAsterisk ? SZArray : rank;
+                    return true;
+                }
+
+                if (!hasSeenAsterisk)
+                {
+                    if (rank == 1 && TryStripFirstCharAndTrailingSpaces(ref input, '*'))
+                    {
+                        // [*]
+                        hasSeenAsterisk = true;
+                        goto ReadNextArrayToken;
+                    }
+                    else if (TryStripFirstCharAndTrailingSpaces(ref input, ','))
+                    {
+                        // [,,, ...]
+                        // The runtime restricts arrays to rank 32, but we don't enforce that here.
+                        // Instead, the max rank is controlled by the total number of commas present
+                        // in the array decorator.
+                        checked { rank++; }
+                        goto ReadNextArrayToken;
+                    }
+                }
+
+                // Don't know what this token is.
+                // Fall through to 'return false' statement.
+            }
+
+            input = originalInput; // ensure 'ref input' not mutated
+            rankOrModifier = 0;
+            return false;
+        }
+
+        internal static bool TryStripFirstCharAndTrailingSpaces(ref ReadOnlySpan<char> span, char value)
+        {
+            if (!span.IsEmpty && span[0] == value)
+            {
+                span = span.Slice(1).TrimStart();
+                return true;
+            }
+            return false;
+        }
+
+        internal static void ThrowArgumentException_InvalidTypeName(int errorIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static void ThrowInvalidOperation_MaxNodesExceeded(int limit)
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static void ThrowInvalidOperation_NotGenericType()
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static void ThrowInvalidOperation_NotNestedType()
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static void ThrowInvalidOperation_NoElement()
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static void ThrowInvalidOperation_HasToBeArrayClass()
+        {
+            throw new InvalidOperationException();
+        }
+
+        internal static bool IsMaxDepthExceeded(int depth) => depth > maxDepth;
+
+        internal static bool TryDive(ref int depth)
+        {
+            depth++;
+            return !IsMaxDepthExceeded(depth);
+        }
+
+        internal static void ThrowInvalidOperation_NotSimpleName(string fullName)
+        {
+            throw new InvalidOperationException();
+        }
+
+    }
+
+}

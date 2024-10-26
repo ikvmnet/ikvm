@@ -64,7 +64,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                             if (type is TypeBuilder builder)
                                 return _table[row] = new ReflectionTypeSymbolBuilder(_context, (IReflectionModuleSymbolBuilder)_module, builder);
                             else
-                                return _table[row] = new ReflectionTypeSymbol(_context, _module, type);
+                                return _table[row] = new ReflectionTypeDefSymbol(_context, _module, type);
 
                 return _table[row] ?? throw new InvalidOperationException();
             }

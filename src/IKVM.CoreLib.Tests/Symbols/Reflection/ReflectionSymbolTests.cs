@@ -61,7 +61,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var c = new ReflectionSymbolContext();
             var s1 = c.GetOrCreateTypeSymbol(typeof(object));
             var s2 = c.GetOrCreateTypeSymbol(typeof(object));
-            s1.Should().BeOfType<ReflectionTypeSymbol>();
+            s1.Should().BeOfType<ReflectionTypeDefSymbol>();
             s1.Should().BeSameAs(s2);
         }
 
@@ -222,7 +222,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var s = c.GetOrCreateTypeSymbol(typeof(ClassWithAttributeWithType));
             var a = s.GetCustomAttribute(c.GetOrCreateTypeSymbol(typeof(AttributeWithType)));
             var v = a.Value.ConstructorArguments[0].Value;
-            v.Should().BeOfType<ReflectionTypeSymbol>();
+            v.Should().BeOfType<ReflectionTypeDefSymbol>();
         }
 
         [TestMethod]
