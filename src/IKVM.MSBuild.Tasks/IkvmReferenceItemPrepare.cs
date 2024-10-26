@@ -34,7 +34,7 @@
         /// </summary>
         /// <param name="items"></param>
         /// <returns></returns>
-        static IList<IkvmReferenceItem> Sort(IList<IkvmReferenceItem> items)
+        static IList<IkvmReferenceItem> Sort(IReadOnlyList<IkvmReferenceItem> items)
         {
             // construct a map of nodes to their indegrees
             var m = items.ToDictionary(i => i, i => 0);
