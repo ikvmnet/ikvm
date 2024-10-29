@@ -1,7 +1,7 @@
 <Project>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.ByteCode" Version="9.2.1" />
+        <PackageReference Include="IKVM.ByteCode" Version="9.2.2" />
     </ItemGroup>
 
     <Choose>
