@@ -68,6 +68,8 @@ namespace IKVM.Runtime
         readonly BootstrapMethod[] bootstrapMethods;
         readonly TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
 
+        bool disposed;
+
 #if IMPORTER
 
         /// <summary>
@@ -1259,21 +1261,10 @@ namespace IKVM.Runtime
             return false;
         }
 
-        /// <summary>
-        /// Dispses of the instance.
-        /// </summary>
+        /// <inheritdoc />
         public void Dispose()
         {
             clazz.Dispose();
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Finalizes the instance.
-        /// </summary>
-        ~ClassFile()
-        {
-            Dispose();
         }
 
     }
