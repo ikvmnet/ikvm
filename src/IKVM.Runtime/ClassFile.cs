@@ -1265,6 +1265,7 @@ namespace IKVM.Runtime
         public void Dispose()
         {
             clazz.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
