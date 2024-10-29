@@ -1172,43 +1172,51 @@ namespace IKVM.Tools.Importer
 
         static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, byte[] buf)
         {
-            IKVM.Runtime.ClassFile cf;
+            IKVM.Runtime.ClassFile cf = null;
 
             try
             {
-                cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
-            }
-            catch (ClassFormatError)
-            {
-                return false;
-            }
-            catch (ByteCodeException)
-            {
-                return false;
-            }
 
-            if (cf.IKVMAssemblyAttribute == null)
-            {
-                return false;
-            }
-
-            if (cf.IKVMAssemblyAttribute.StartsWith("[["))
-            {
-                var r = new Regex(@"\[([^\[\]]+)\]");
-                var mc = r.Matches(cf.IKVMAssemblyAttribute);
-                foreach (Match m in mc)
+                try
                 {
-                    options.legacyStubReferences[m.Groups[1].Value] = null;
-                    IssueMessage(compiler, options, Message.StubsAreDeprecated, m.Groups[1].Value);
+                    cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
                 }
-            }
-            else
-            {
-                options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                IssueMessage(compiler, options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
-            }
+                catch (ClassFormatError)
+                {
+                    return false;
+                }
+                catch (ByteCodeException)
+                {
+                    return false;
+                }
 
-            return true;
+                if (cf.IKVMAssemblyAttribute == null)
+                {
+                    return false;
+                }
+
+                if (cf.IKVMAssemblyAttribute.StartsWith("[["))
+                {
+                    var r = new Regex(@"\[([^\[\]]+)\]");
+                    var mc = r.Matches(cf.IKVMAssemblyAttribute);
+                    foreach (Match m in mc)
+                    {
+                        options.legacyStubReferences[m.Groups[1].Value] = null;
+                        IssueMessage(compiler, options, Message.StubsAreDeprecated, m.Groups[1].Value);
+                    }
+                }
+                else
+                {
+                    options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
+                    IssueMessage(compiler, options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+                }
+
+                return true;
+            }
+            finally
+            {
+                cf?.Dispose();
+            }
         }
 
         static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, CompilerOptions options, ZipArchiveEntry ze, byte[] data)
@@ -1399,9 +1407,9 @@ namespace IKVM.Tools.Importer
             try
             {
                 var list = classesToExclude == null ? new List<string>() : new List<string>(classesToExclude);
-                using (StreamReader file = new StreamReader(filename))
+                using (var file = new StreamReader(filename))
                 {
-                    String line;
+                    string line;
                     while ((line = file.ReadLine()) != null)
                     {
                         line = line.Trim();
@@ -1411,6 +1419,7 @@ namespace IKVM.Tools.Importer
                         }
                     }
                 }
+
                 classesToExclude = list.ToArray();
             }
             catch (Exception x)
@@ -1423,8 +1432,7 @@ namespace IKVM.Tools.Importer
         {
             try
             {
-                using var file = File.OpenRead(filename);
-                var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(file), null, ClassFileParseOptions.None, null);
+                using var cf = new IKVM.Runtime.ClassFile(context, IKVM.ByteCode.Decoding.ClassFile.Read(filename), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)
