@@ -68,8 +68,6 @@ namespace IKVM.Runtime
         readonly BootstrapMethod[] bootstrapMethods;
         readonly TypeAnnotationTable runtimeVisibleTypeAnnotations = TypeAnnotationTable.Empty;
 
-        bool disposed;
-
 #if IMPORTER
 
         /// <summary>
