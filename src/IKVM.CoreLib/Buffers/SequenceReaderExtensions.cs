@@ -352,41 +352,6 @@ namespace IKVM.CoreLib.Buffers
             return result + alignment;
         }
 
-        /// <summary>
-        /// Skip consecutive instances of any of the given <paramref name="values"/>.
-        /// </summary>
-        /// <returns>How many positions the reader has been advanced.</returns>
-        public static long AdvancePastAny<T>(this ref SequenceReader<T> reader, scoped ReadOnlySpan<T> values)
-            where T : unmanaged, IEquatable<T>
-        {
-            var start = reader.Consumed;
-
-            do
-            {
-                // Advance past all matches in the current span
-                int i;
-                for (i = reader.CurrentSpanIndex; i < reader.CurrentSpan.Length && values.IndexOf(reader.CurrentSpan[i]) != -1; i++)
-                {
-                    continue;
-                }
-
-                int advanced = i - reader.CurrentSpanIndex;
-                if (advanced == 0)
-                {
-                    // Didn't advance at all in this span, exit.
-                    break;
-                }
-
-                reader.Advance(advanced);
-
-                // If we're at position 0 after advancing and not at the End,
-                // we're in a new span and should continue the loop.
-            }
-            while (reader.CurrentSpanIndex == 0 && !reader.End);
-
-            return reader.Consumed - start;
-        }
-
     }
 
 }

@@ -1,26 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+
+using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
 {
-
-    internal static class TypeNameParserHelpers
+    internal static class TypeSymbolNameParserHelpers
     {
-
-        const int maxDepth = 32;
         internal const int SZArray = -1;
         internal const int Pointer = -2;
         internal const int ByRef = -3;
-        const char EscapeCharacter = '\\';
-
+        private const char EscapeCharacter = '\\';
+#if NET8_0_OR_GREATER
         // Keep this in sync with GetFullTypeNameLength/NeedsEscaping
-        private static readonly string s_endOfFullTypeNameDelimitersSearchValues = "[]&*,+\\";
+        private static readonly SearchValues<char> s_endOfFullTypeNameDelimitersSearchValues = SearchValues.Create("[]&*,+\\");
+#endif
 
-        internal static string GetGenericTypeFullName(ReadOnlySpan<char> fullTypeName, ReadOnlySpan<TypeSymbolNameParserResult> genericArgs)
+        internal static string GetGenericTypeFullName(ReadOnlySpan<char> fullTypeName, ReadOnlySpan<TypeSymbolName> genericArgs)
         {
             Debug.Assert(genericArgs.Length > 0);
 
@@ -57,7 +61,8 @@ namespace IKVM.CoreLib.Symbols
             // input, that makes the total loop complexity potentially O(m * n^2), where
             // 'n' is adversary-controlled. To avoid DoS issues here, we'll loop manually.
 
-            int offset = input.IndexOfAny(s_endOfFullTypeNameDelimitersSearchValues.AsSpan());
+#if NET8_0_OR_GREATER
+            int offset = input.IndexOfAny(s_endOfFullTypeNameDelimitersSearchValues);
             if (offset < 0)
             {
                 return input.Length; // no type name end chars were found, the whole input is the type name
@@ -67,6 +72,9 @@ namespace IKVM.CoreLib.Symbols
             {
                 offset = GetUnescapedOffset(input, startOffset: offset); // this is slower, but very rare so acceptable
             }
+#else
+            int offset = GetUnescapedOffset(input, startOffset: 0);
+#endif
             isNestedType = offset > 0 && offset < input.Length && input[offset] == '+';
             return offset;
 
@@ -229,10 +237,10 @@ namespace IKVM.CoreLib.Symbols
             return false;
         }
 
-        internal static bool TryGetTypeNameInfo(ref ReadOnlySpan<char> input, ref List<int>? nestedNameLengths, ref int recursiveDepth, out int totalLength)
+        internal static bool TryGetTypeNameInfo(ref ReadOnlySpan<char> input,
+            ref List<int>? nestedNameLengths, ref int recursiveDepth, out int totalLength)
         {
             bool isNestedType;
-
             totalLength = 0;
             do
             {
@@ -243,16 +251,6 @@ namespace IKVM.CoreLib.Symbols
                     // -1: invalid escaping
                     // 0: pair of unescaped "++" characters
                     return false;
-                }
-
-                // Compat: Ignore leading '.' for type names without namespace. .NET Framework historically ignored leading '.' here. It is likely
-                // that code out there depends on this behavior. For example, type names formed by concatenating namespace and name, without checking for
-                // empty namespace (bug), are going to have superfluous leading '.'.
-                // This behavior means that types that start with '.' are not round-trippable via type name.
-                if (length > 1 && input[0] == '.' && input.Slice(0, length).LastIndexOf('.') == 0)
-                {
-                    input = input.Slice(1);
-                    length--;
                 }
 
                 if (isNestedType)
@@ -345,37 +343,43 @@ namespace IKVM.CoreLib.Symbols
             return false;
         }
 
+        [DoesNotReturn]
         internal static void ThrowArgumentException_InvalidTypeName(int errorIndex)
         {
-            throw new InvalidOperationException();
+            throw new ArgumentException();
         }
 
+        [DoesNotReturn]
         internal static void ThrowInvalidOperation_MaxNodesExceeded(int limit)
         {
             throw new InvalidOperationException();
         }
 
+        [DoesNotReturn]
         internal static void ThrowInvalidOperation_NotGenericType()
         {
             throw new InvalidOperationException();
         }
 
+        [DoesNotReturn]
         internal static void ThrowInvalidOperation_NotNestedType()
         {
             throw new InvalidOperationException();
         }
 
+        [DoesNotReturn]
         internal static void ThrowInvalidOperation_NoElement()
         {
             throw new InvalidOperationException();
         }
 
+        [DoesNotReturn]
         internal static void ThrowInvalidOperation_HasToBeArrayClass()
         {
             throw new InvalidOperationException();
         }
 
-        internal static bool IsMaxDepthExceeded(int depth) => depth > maxDepth;
+        internal static bool IsMaxDepthExceeded(int depth) => false;
 
         internal static bool TryDive(ref int depth)
         {
@@ -383,11 +387,5 @@ namespace IKVM.CoreLib.Symbols
             return !IsMaxDepthExceeded(depth);
         }
 
-        internal static void ThrowInvalidOperation_NotSimpleName(string fullName)
-        {
-            throw new InvalidOperationException();
-        }
-
     }
-
 }

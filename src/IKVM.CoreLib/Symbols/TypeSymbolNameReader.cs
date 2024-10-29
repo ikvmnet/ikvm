@@ -1,52 +1,38 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
-using IKVM.CoreLib.Buffers;
+using static IKVM.CoreLib.Symbols.TypeSymbolNameParserHelpers;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    ref struct TypeSymbolNameReader
+    [DebuggerDisplay("{_inputString}")]
+    ref struct TypeNameParser
     {
 
-        private readonly bool _throwOnError;
-        private ReadOnlySpan<char> _inputString;
-
-        private TypeSymbolNameReader(ReadOnlySpan<char> name, bool throwOnError, TypeNameParseOptions? options) : this()
+        public static TypeSymbolName? Parse(ReadOnlySpan<char> typeName, bool throwOnError)
         {
-            _inputString = name;
-            _throwOnError = throwOnError;
-            _parseOptions = options ?? s_defaults;
-        }
-
-        internal static TypeName? Parse(ReadOnlySpan<char> typeName, bool throwOnError, TypeNameParseOptions? options = default)
-        {
-            ReadOnlySpan<char> trimmedName = typeName.TrimStart(); // whitespaces at beginning are always OK
+            var trimmedName = typeName.TrimStart(); // whitespaces at beginning are always OK
             if (trimmedName.IsEmpty)
             {
                 if (throwOnError)
-                {
                     ThrowArgumentException_InvalidTypeName(errorIndex: 0); // whitespace input needs to report the error index as 0
-                }
 
                 return null;
             }
 
             int recursiveDepth = 0;
-            TypeNameParser parser = new(trimmedName, throwOnError, options);
-            TypeName? parsedName = parser.ParseNextTypeName(allowFullyQualifiedName: true, ref recursiveDepth);
+            var parser = new TypeNameParser(trimmedName, throwOnError);
+            var parsedName = parser.ParseNextTypeName(allowFullyQualifiedName: true, ref recursiveDepth);
 
             if (parsedName is null || !parser._inputString.IsEmpty) // unconsumed input == error
             {
                 if (throwOnError)
                 {
-                    if (IsMaxDepthExceeded(parser._parseOptions, recursiveDepth))
-                    {
-                        ThrowInvalidOperation_MaxNodesExceeded(parser._parseOptions.MaxNodes);
-                    }
+                    if (IsMaxDepthExceeded(recursiveDepth))
+                        ThrowInvalidOperation_MaxNodesExceeded(32);
 
                     int errorIndex = typeName.Length - parser._inputString.Length;
                     ThrowArgumentException_InvalidTypeName(errorIndex);
@@ -60,16 +46,30 @@ namespace IKVM.CoreLib.Symbols
             return parsedName;
         }
 
-        // this method should return null instead of throwing, so the caller can get errorIndex and include it in error msg
-        private TypeName? ParseNextTypeName(bool allowFullyQualifiedName, ref int recursiveDepth)
+        readonly bool _throwOnError;
+        ReadOnlySpan<char> _inputString;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="throwOnError"></param>
+        TypeNameParser(ReadOnlySpan<char> name, bool throwOnError) : this()
         {
-            if (!TryDive(_parseOptions, ref recursiveDepth))
+            _inputString = name;
+            _throwOnError = throwOnError;
+        }
+
+        // this method should return null instead of throwing, so the caller can get errorIndex and include it in error msg
+        TypeSymbolName? ParseNextTypeName(bool allowFullyQualifiedName, ref int recursiveDepth)
+        {
+            if (!TryDive(ref recursiveDepth))
             {
                 return null;
             }
 
             List<int>? nestedNameLengths = null;
-            if (!TryGetTypeNameInfo(_parseOptions, ref _inputString, ref nestedNameLengths, ref recursiveDepth, out int fullTypeNameLength))
+            if (!TryGetTypeNameInfo(ref _inputString, ref nestedNameLengths, ref recursiveDepth, out int fullTypeNameLength))
             {
                 return null;
             }
@@ -80,11 +80,7 @@ namespace IKVM.CoreLib.Symbols
             _inputString = _inputString.Slice(fullTypeNameLength);
 
             // Don't allocate now, as it may be an open generic type like "Name`1"
-#if SYSTEM_PRIVATE_CORELIB
-            List<TypeName>? genericArgs = null;
-#else
-            ImmutableArray<TypeName>.Builder? genericArgs = null;
-#endif
+            ImmutableArray<TypeSymbolName>.Builder? genericArgs = null;
 
             // Are there any captured generic args? We'll look for "[[" and "[".
             // There are no spaces allowed before the first '[', but spaces are allowed
@@ -99,7 +95,7 @@ namespace IKVM.CoreLib.Symbols
                 // Namespace.Type`2[GenericArgument1,GenericArgument2] - single square bracket syntax is legal only for non-fully qualified type names
                 // Namespace.Type`2[[GenericArgument1, AssemblyName1], GenericArgument2] - mixed mode
                 // Namespace.Type`2[GenericArgument1, [GenericArgument2, AssemblyName2]] - mixed mode
-                TypeName? genericArg = ParseNextTypeName(allowFullyQualifiedName: doubleBrackets, ref recursiveDepth);
+                TypeSymbolName? genericArg = ParseNextTypeName(allowFullyQualifiedName: doubleBrackets, ref recursiveDepth);
                 if (genericArg is null) // parsing failed
                 {
                     return null;
@@ -113,11 +109,7 @@ namespace IKVM.CoreLib.Symbols
 
                 if (genericArgs is null)
                 {
-#if SYSTEM_PRIVATE_CORELIB
-                    genericArgs = new List<TypeName>(2);
-#else
-                    genericArgs = ImmutableArray.CreateBuilder<TypeName>(2);
-#endif
+                    genericArgs = ImmutableArray.CreateBuilder<TypeSymbolName>(2);
                 }
                 genericArgs.Add(genericArg);
 
@@ -154,7 +146,7 @@ namespace IKVM.CoreLib.Symbols
             else
             {
                 // Every constructed generic type needs the generic type definition.
-                if (!TryDive(_parseOptions, ref recursiveDepth))
+                if (!TryDive(ref recursiveDepth))
                 {
                     return null;
                 }
@@ -168,7 +160,7 @@ namespace IKVM.CoreLib.Symbols
             // iterate over the decorators to ensure there are no illegal combinations
             while (TryParseNextDecorator(ref _inputString, out int parsedDecorator))
             {
-                if (!TryDive(_parseOptions, ref recursiveDepth))
+                if (!TryDive(ref recursiveDepth))
                 {
                     return null;
                 }
@@ -178,18 +170,10 @@ namespace IKVM.CoreLib.Symbols
                 previousDecorator = parsedDecorator;
             }
 
-            AssemblyNameInfo? assemblyName = null;
+            AssemblyIdentity? assemblyName = null;
             if (allowFullyQualifiedName && !TryParseAssemblyName(ref assemblyName))
             {
-#if SYSTEM_PRIVATE_CORELIB
-                // backward compat: throw FileLoadException for non-empty invalid strings
-                if (_throwOnError || !_inputString.TrimStart().StartsWith(","))
-                {
-                    throw new IO.FileLoadException(SR.InvalidAssemblyName, _inputString.ToString());
-                }
-#else
                 return null;
-#endif
             }
 
             // No matter what was parsed, the full name string is allocated only once.
@@ -197,8 +181,8 @@ namespace IKVM.CoreLib.Symbols
             // when needed for the first time .
             string fullName = fullTypeName.ToString();
 
-            TypeName? declaringType = GetDeclaringType(fullName, nestedNameLengths, assemblyName);
-            TypeName result = new(fullName, assemblyName, declaringType: declaringType);
+            TypeSymbolName? declaringType = GetDeclaringType(fullName, nestedNameLengths, assemblyName);
+            TypeSymbolName result = new(fullName, assemblyName, declaringType: declaringType);
             if (genericArgs is not null)
             {
                 result = new(fullName: null, assemblyName, elementOrGenericType: result, declaringType, genericArgs);
@@ -243,16 +227,14 @@ namespace IKVM.CoreLib.Symbols
             return true;
         }
 
-        private static TypeSymbolNameParserResult? GetDeclaringType(string fullTypeName, List<int>? nestedNameLengths, AssemblyIdentity? assemblyName)
+        private static TypeSymbolName? GetDeclaringType(string fullTypeName, List<int>? nestedNameLengths, AssemblyIdentity? assemblyName)
         {
             if (nestedNameLengths is null)
-            {
                 return null;
-            }
 
             // The loop below is protected by the dive check in GetFullTypeNameLength.
 
-            TypeSymbolNameParserResult? declaringType = null;
+            TypeSymbolName? declaringType = null;
             int nameOffset = 0;
             foreach (int nestedNameLength in nestedNameLengths)
             {

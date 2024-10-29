@@ -9,6 +9,13 @@ namespace IKVM.CoreLib.Symbols
     {
 
         /// <summary>
+        /// Resolves the named type from the core assembly.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        ITypeSymbol ResolveCoreType(string typeName);
+
+        /// <summary>
         /// Defines a dynamic assembly that has the specified name and access rights.
         /// </summary>
         /// <param name="name"></param>
@@ -26,6 +33,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="saveable"></param>
         /// <returns></returns>
         IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes, bool collectable = true, bool saveable = false);
+
     }
 
 }

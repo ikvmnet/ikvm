@@ -11,25 +11,31 @@ using IKVM.CoreLib.Reflection;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    abstract class TypeSymbolBuilderBase : ITypeSymbolBuilder
+    abstract class TypeSymbolBuilderBase<TContext> : ITypeSymbolBuilder
+        where TContext : ISymbolContext
     {
 
         const BindingFlags DefaultBindingFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance;
 
-        readonly ISymbolContext _context;
+        readonly TContext _context;
         readonly IModuleSymbolBuilder _module;
 
-        string _name;
-        TypeAttributes _attributes;
+        readonly TypeAttributes _attributes;
+        readonly string _namespace;
+        readonly string _name;
+        readonly ITypeSymbol? _declaringType;
+        readonly PackingSize _packingSize;
+        readonly int _typeSize;
         ITypeSymbol? _parentType;
-        ImmutableList<IGenericTypeParameterSymbolBuilder> _genericTypeParameters = ImmutableList<IGenericTypeParameterSymbolBuilder>.Empty;
+        IConstructorSymbol? _typeInitializer = null;
+        ImmutableList<ITypeSymbol> _genericTypeParameters = ImmutableList<ITypeSymbol>.Empty;
         ImmutableList<ITypeSymbol> _interfaces = ImmutableList<ITypeSymbol>.Empty;
-        ImmutableList<IFieldSymbolBuilder> _fields = ImmutableList<IFieldSymbolBuilder>.Empty;
-        ImmutableList<IConstructorSymbolBuilder> _constructors = ImmutableList<IConstructorSymbolBuilder>.Empty;
-        ImmutableList<IMethodSymbolBuilder> _methods = ImmutableList<IMethodSymbolBuilder>.Empty;
+        ImmutableList<IFieldSymbol> _fields = ImmutableList<IFieldSymbol>.Empty;
+        ImmutableList<IConstructorSymbol> _constructors = ImmutableList<IConstructorSymbol>.Empty;
+        ImmutableList<IMethodSymbol> _methods = ImmutableList<IMethodSymbol>.Empty;
         ImmutableList<(IMethodSymbol, IMethodSymbol)> _methodOverrides = ImmutableList<(IMethodSymbol, IMethodSymbol)>.Empty;
-        ImmutableList<IPropertySymbolBuilder> _properties = ImmutableList<IPropertySymbolBuilder>.Empty;
-        ImmutableList<IEventSymbolBuilder> _events = ImmutableList<IEventSymbolBuilder>.Empty;
+        ImmutableList<IPropertySymbol> _properties = ImmutableList<IPropertySymbol>.Empty;
+        ImmutableList<IEventSymbol> _events = ImmutableList<IEventSymbol>.Empty;
         ImmutableList<CustomAttribute> _customAttributes = ImmutableList<CustomAttribute>.Empty;
 
         /// <summary>
@@ -37,11 +43,34 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        public TypeSymbolBuilderBase(ISymbolContext context, IModuleSymbolBuilder module, TypeAttributes attributes)
+        /// <param name="attributes"></param>
+        /// <param name="name"></param>
+        /// <param name="packingSize"></param>
+        /// <param name="typeSize"></param>
+        /// <param name="declaringType"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public TypeSymbolBuilderBase(TContext context, IModuleSymbolBuilder module, TypeAttributes attributes, string name, ITypeSymbol? declaringType, PackingSize packingSize, int typeSize)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _attributes = attributes;
+            _declaringType = declaringType;
+            _packingSize = packingSize;
+            _typeSize = typeSize;
+
+            int iLast = name.LastIndexOf('.');
+            if (iLast <= 0)
+            {
+                // no name space
+                _namespace = string.Empty;
+                _name = name;
+            }
+            else
+            {
+                // split the name space
+                _namespace = name.Substring(0, iLast);
+                _name = name.Substring(iLast + 1);
+            }
         }
 
         /// <inheritdoc />
@@ -447,9 +476,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public IConstructorSymbolBuilder DefineTypeInitializer()
         {
-            var constructor = CreateTypeInitializerBuilder();
-            _constructors = _constructors.Add(constructor);
-            return constructor;
+            return (IConstructorSymbolBuilder)(_typeInitializer = CreateTypeInitializerBuilder());
         }
 
         protected abstract IConstructorSymbolBuilder CreateTypeInitializerBuilder();
@@ -468,234 +495,341 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         #region ITypeSymbol
 
-        public void Foo()
-        {
-            System.Reflection.Metadata.TypeName t;
-        }
-
+        /// <inheritdoc />
         public TypeAttributes Attributes => _attributes;
 
+        /// <inheritdoc />
         public IAssemblySymbol Assembly => _module.Assembly;
 
+        /// <inheritdoc />
         public IMethodBaseSymbol? DeclaringMethod => null;
 
+        /// <inheritdoc />
         public string? AssemblyQualifiedName => System.Reflection.Assembly.CreateQualifiedName(Assembly.FullName, FullName);
 
-        public string? FullName => _name;
+        /// <inheritdoc />
+        public string? FullName => string.IsNullOrEmpty(_namespace) ? _name : _namespace + "." + _name;
 
-        public string? Namespace => throw new NotImplementedException();
+        /// <inheritdoc />
+        public string? Namespace => _namespace;
 
-        public TypeCode TypeCode => throw new NotImplementedException();
+        /// <inheritdoc />
+        public TypeCode TypeCode => TypeCode.Object;
 
-        public ITypeSymbol? BaseType => throw new NotImplementedException();
+        /// <inheritdoc />
+        public ITypeSymbol? BaseType => _parentType;
 
-        public bool ContainsGenericParameters => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool ContainsGenericParameters => _genericTypeParameters.IsEmpty == false;
 
+        /// <inheritdoc />
         public GenericParameterAttributes GenericParameterAttributes => throw new NotImplementedException();
 
+        /// <inheritdoc />
         public int GenericParameterPosition => throw new NotImplementedException();
 
-        public IImmutableList<ITypeSymbol> GenericTypeArguments => throw new NotImplementedException();
+        /// <inheritdoc />
+        public IImmutableList<ITypeSymbol> GenericTypeArguments => _genericTypeParameters;
 
-        public bool IsConstructedGenericType => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsConstructedGenericType => false;
 
-        public bool IsGenericType => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsGenericType => _genericTypeParameters.Count > 0;
 
-        public bool IsGenericTypeDefinition => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsGenericTypeDefinition => IsGenericType;
 
-        public bool IsGenericParameter => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsGenericParameter => false;
 
-        public bool IsAutoLayout => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsAutoLayout => (_attributes & TypeAttributes.LayoutMask) == TypeAttributes.AutoLayout;
 
-        public bool IsExplicitLayout => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsExplicitLayout => (_attributes & TypeAttributes.LayoutMask) == TypeAttributes.ExplicitLayout;
 
-        public bool IsLayoutSequential => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsLayoutSequential => (_attributes & TypeAttributes.LayoutMask) == TypeAttributes.SequentialLayout;
 
-        public bool HasElementType => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool HasElementType => false;
 
-        public bool IsClass => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsClass => (_attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Class && !IsValueType;
 
-        public bool IsValueType => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsValueType => IsSubclassOf(Context.ResolveCoreType("System.ValueType"));
 
-        public bool IsInterface => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsInterface => (_attributes & TypeAttributes.Interface) != 0;
 
-        public bool IsPrimitive => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsPrimitive => false;
 
-        public bool IsSZArray => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsSZArray => false;
 
-        public bool IsArray => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsArray => false;
 
-        public bool IsEnum => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsEnum => IsSubclassOf(Context.ResolveCoreType("System.Enum"));
 
-        public bool IsPointer => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsPointer => false;
 
-        public bool IsFunctionPointer => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsFunctionPointer => false;
 
-        public bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsUnmanagedFunctionPointer => false;
 
-        public bool IsByRef => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsByRef => false;
 
-        public bool IsAbstract => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsAbstract => (_attributes & TypeAttributes.Abstract) != 0;
 
-        public bool IsSealed => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsSealed => (_attributes & TypeAttributes.Sealed) != 0;
 
-        public bool IsVisible => throw new NotImplementedException();
+        /// <inheritdoc />
+        public bool IsVisible => GetIsVisible();
 
-        public bool IsPublic => throw new NotImplementedException();
-
-        public bool IsNotPublic => throw new NotImplementedException();
-
-        public bool IsNested => throw new NotImplementedException();
-
-        public bool IsNestedAssembly => throw new NotImplementedException();
-
-        public bool IsNestedFamANDAssem => throw new NotImplementedException();
-
-        public bool IsNestedFamily => throw new NotImplementedException();
-
-        public bool IsNestedFamORAssem => throw new NotImplementedException();
-
-        public bool IsNestedPrivate => throw new NotImplementedException();
-
-        public bool IsNestedPublic => throw new NotImplementedException();
-
-        public bool IsSerializable => throw new NotImplementedException();
-
-        public bool IsSignatureType => throw new NotImplementedException();
-
-        public bool IsSpecialName => throw new NotImplementedException();
-
-        public IConstructorSymbol? TypeInitializer => throw new NotImplementedException();
-
-        public IModuleSymbol Module => throw new NotImplementedException();
-
-        public ITypeSymbol? DeclaringType => throw new NotImplementedException();
-
-        public MemberTypes MemberType => throw new NotImplementedException();
-
-        public int MetadataToken => throw new NotImplementedException();
-
-        public string Name => throw new NotImplementedException();
-
-        public bool IsMissing => throw new NotImplementedException();
-
-        public bool ContainsMissing => throw new NotImplementedException();
-
-        public bool IsComplete => throw new NotImplementedException();
-
-        public int GetArrayRank()
+        bool GetIsVisible()
         {
-            throw new NotImplementedException();
+            if (IsGenericParameter)
+                return true;
+
+            if (HasElementType)
+                return GetElementType()!.IsVisible;
+
+            var type = (ITypeSymbol)this;
+            while (type.IsNested)
+            {
+                if (!type.IsNestedPublic)
+                    return false;
+
+                // this should be null for non-nested types.
+                type = type.DeclaringType!;
+            }
+
+            // Now "type" should be a top level type
+            if (!type.IsPublic)
+                return false;
+
+            if (IsGenericType && !IsGenericTypeDefinition)
+            {
+                foreach (var t in GetGenericArguments())
+                {
+                    if (!t.IsVisible)
+                        return false;
+                }
+            }
+
+            return true;
         }
 
+        /// <inheritdoc />
+        public bool IsPublic => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public;
+
+        /// <inheritdoc />
+        public bool IsNotPublic => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NotPublic;
+
+        /// <inheritdoc />
+        public bool IsNested => DeclaringType != null;
+
+        /// <inheritdoc />
+        public bool IsNestedAssembly => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedAssembly;
+
+        /// <inheritdoc />
+        public bool IsNestedFamANDAssem => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedFamANDAssem;
+
+        /// <inheritdoc />
+        public bool IsNestedFamily => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedFamily;
+
+        /// <inheritdoc />
+        public bool IsNestedFamORAssem => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedFamORAssem;
+
+        /// <inheritdoc />
+        public bool IsNestedPrivate => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedPrivate;
+
+        /// <inheritdoc />
+        public bool IsNestedPublic => (_attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedPublic;
+
+        /// <inheritdoc />
+        public bool IsSerializable => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public bool IsSignatureType => false;
+
+        /// <inheritdoc />
+        public bool IsSpecialName => (_attributes & TypeAttributes.SpecialName) != 0;
+
+        /// <inheritdoc />
+        public IConstructorSymbol? TypeInitializer => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public IModuleSymbol Module => _module;
+
+        /// <inheritdoc />
+        public ITypeSymbol? DeclaringType => _declaringType;
+
+        /// <inheritdoc />
+        public MemberTypes MemberType => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public int MetadataToken => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public string Name => _name;
+
+        /// <inheritdoc />
+        public bool IsMissing => false;
+
+        /// <inheritdoc />
+        public bool ContainsMissing => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public bool IsComplete => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public int GetArrayRank()
+        {
+            return 0;
+        }
+
+        /// <inheritdoc />
         public IImmutableList<IMemberSymbol> GetDefaultMembers()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetElementType()
         {
-            throw new NotImplementedException();
+            return null;
         }
 
+        /// <inheritdoc />
         public string? GetEnumName(object value)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<string> GetEnumNames()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public ITypeSymbol GetEnumUnderlyingType()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<ITypeSymbol> GetGenericArguments()
         {
-            throw new NotImplementedException();
+            return _genericTypeParameters;
         }
 
+        /// <inheritdoc />
         public IImmutableList<ITypeSymbol> GetGenericParameterConstraints()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public ITypeSymbol GetGenericTypeDefinition()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetInterface(string name)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public ITypeSymbol? GetInterface(string name, bool ignoreCase)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<ITypeSymbol> GetInterfaces(bool inherit = true)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IConstructorSymbol> GetDeclaredConstructors()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IConstructorSymbol? GetConstructor(IImmutableList<ITypeSymbol> types)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IConstructorSymbol? GetConstructor(BindingFlags bindingFlags, IImmutableList<ITypeSymbol> types)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IConstructorSymbol> GetConstructors()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IConstructorSymbol> GetConstructors(BindingFlags bindingFlags)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IFieldSymbol? GetField(string name)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IFieldSymbol? GetField(string name, BindingFlags bindingFlags)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IFieldSymbol> GetFields()
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IFieldSymbol> GetFields(BindingFlags bindingFlags)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public IImmutableList<IMethodSymbol> GetDeclaredMethods()
         {
-            throw new NotImplementedException();
+            return _methods;
         }
 
         /// <inheritdoc />
@@ -707,27 +841,27 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags, IImmutableList<ITypeSymbol>? types, IImmutableList<ParameterModifier>? modifiers)
         {
-            return SymbolUtil.SelectMethod(this, DefaultBindingFlags, name, types, modifiers);
+            return SymbolUtil.SelectMethod(this, bindingFlags, name, types, modifiers);
         }
 
         public IMethodSymbol? GetMethod(string name, IImmutableList<ITypeSymbol> types)
         {
-            throw new NotImplementedException();
+            return SymbolUtil.SelectMethod(this, DefaultBindingFlags, null, types, null);
         }
 
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags)
         {
-            throw new NotImplementedException();
+            return SymbolUtil.SelectMethod(this, bindingFlags, null, null, null);
         }
 
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags, IImmutableList<ITypeSymbol> types)
         {
-            throw new NotImplementedException();
+            return SymbolUtil.SelectMethod(this, bindingFlags, null, types, null);
         }
 
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags, CallingConventions callConvention, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers)
         {
-            throw new NotImplementedException();
+            return SymbolUtil.SelectMethod(this, bindingFlags, null, types, modifiers);
         }
 
         public IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, CallingConventions callConvention, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers)

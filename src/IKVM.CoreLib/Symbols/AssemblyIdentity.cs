@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -131,6 +132,33 @@ namespace IKVM.CoreLib.Symbols
                 result.Add(hash[l - i]);
 
             return result.ToImmutable();
+        }
+
+        /// <summary>
+        /// Parses a span of characters into a assembly name.
+        /// </summary>
+        /// <param name="assemblyName">A span containing the characters representing the assembly name to parse.</param>
+        /// <returns>Parsed type name.</returns>
+        /// <exception cref="ArgumentException">Provided assembly name was invalid.</exception>
+        public static AssemblyIdentity Parse(ReadOnlySpan<char> assemblyName) => TryParse(assemblyName, out AssemblyIdentity? result) ? result! : throw new ArgumentException("Invalid assembly name.", nameof(assemblyName));
+
+        /// <summary>
+        /// Tries to parse a span of characters into an assembly name.
+        /// </summary>
+        /// <param name="assemblyName">A span containing the characters representing the assembly name to parse.</param>
+        /// <param name="result">Contains the result when parsing succeeds.</param>
+        /// <returns>true if assembly name was converted successfully, otherwise, false.</returns>
+        public static bool TryParse(ReadOnlySpan<char> assemblyName, [NotNullWhen(true)] out AssemblyIdentity? result)
+        {
+            AssemblyIdentityParser.AssemblyIdentityParts parts = default;
+            if (!assemblyName.IsEmpty && AssemblyIdentityParser.TryParse(assemblyName, ref parts))
+            {
+                result = new(parts._name, parts._version, parts._cultureName, parts._publicKeyOrToken?.ToImmutableArray() ?? [], parts._publicKeyOrToken != null);
+                return true;
+            }
+
+            result = null;
+            return false;
         }
 
         readonly string _name;
