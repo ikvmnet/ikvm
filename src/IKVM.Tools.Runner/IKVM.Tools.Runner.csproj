@@ -12,7 +12,7 @@
     <ItemGroup>
         <PackageReference Include="CliWrap" Version="3.6.6" />
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
-        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="System.Text.Json" Version="8.0.5" />
     </ItemGroup>
 
     <ItemGroup>
