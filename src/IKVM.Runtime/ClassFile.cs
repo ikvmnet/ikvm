@@ -1262,20 +1262,10 @@ namespace IKVM.Runtime
             return false;
         }
 
-        /// <summary>
-        /// Dispses of the instance.
-        /// </summary>
+        /// <inheritdoc />
         public void Dispose()
         {
             clazz.Dispose();
-        }
-
-        /// <summary>
-        /// Finalizes the instance.
-        /// </summary>
-        ~ClassFile()
-        {
-            Dispose();
         }
 
     }
