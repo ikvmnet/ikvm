@@ -4100,6 +4100,8 @@ security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrooteccca                           generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootevrsaca                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootrsaca                           generic-all
+security/infra/java/security/cert/CertPathValidator/certification.CAInterop.java#ssltlsrootecc2022                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification.CAInterop.java#ssltlsrootrsa2022                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#starfieldrootg2ca                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliarootcav2                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#teliasonerarootcav1                    generic-all
