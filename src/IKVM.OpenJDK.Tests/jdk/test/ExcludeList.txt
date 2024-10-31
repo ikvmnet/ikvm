@@ -76,6 +76,7 @@ com/sun/jdi/InvokeVarArgs.java                                                  
 com/sun/jdi/JITDebug.sh                                                                                                 generic-all
 com/sun/jdi/Java_gTest.java                                                                                             generic-all
 com/sun/jdi/JdbArgTest.sh                                                                                               generic-all
+com/sun/jdi/JdbExprTest.sh                                                                                              generic-all
 com/sun/jdi/JdbLockTest.sh                                                                                              generic-all
 com/sun/jdi/JdbMethodExitTest.sh                                                                                        generic-all
 com/sun/jdi/JdbMissStep.sh                                                                                              generic-all
@@ -465,6 +466,7 @@ java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.
 java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedTest.html                                generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.html                                            generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/TestDialogTypeAhead.html                                                        generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/FreezeTest/FreezeTest.java                                                      generic-all
 java/awt/LightweightDispatcher/LWDispatcherMemoryLeakTest.java                                                          generic-all
 java/awt/List/ActionAfterRemove/ActionAfterRemove.java                                                                  generic-all
 java/awt/List/EmptyListEventTest/EmptyListEventTest.java                                                                generic-all
@@ -4566,7 +4568,7 @@ java/awt/Modal/ToBack/ToBackDocModal1Test.java                                  
 java/awt/Modal/ToBack/ToBackDocModal2Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackDocModal3Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackDocModal4Test.java                                                                          generic-all
-java/awt/Modal/ToBack/ToBackDocModal5Test.java                                                                          macosx-all,windows-all
+java/awt/Modal/ToBack/ToBackDocModal5Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackDocModal6Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackModal1Test.java                                                                             macosx-all,windows-all
 java/awt/Modal/ToBack/ToBackModal2Test.java                                                                             macosx-all,windows-all
