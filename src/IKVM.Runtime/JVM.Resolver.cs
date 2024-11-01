@@ -1,12 +1,16 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.CoreLib.Symbols.Reflection;
 
 namespace IKVM.Runtime
@@ -20,14 +24,14 @@ namespace IKVM.Runtime
         /// <summary>
         /// Provides support for resolving managed types from the current JVM environment.
         /// </summary>
-        internal class Resolver : ISymbolResolver
+        internal class Resolver : IRuntimeSymbolResolver
         {
 
             /// <summary>
             /// Gets the set of assemblies from which to load core types.
             /// </summary>
             /// <returns></returns>
-            static IEnumerable<Assembly> GetCoreAssemblies()
+            static IEnumerable<Assembly> GetSystemAssemblies()
             {
                 yield return typeof(object).Assembly;
                 yield return typeof(RuntimeCompatibilityAttribute).Assembly;
@@ -39,42 +43,76 @@ namespace IKVM.Runtime
                 yield return typeof(Environment).Assembly;
             }
 
-            readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
+            readonly ReflectionSymbolContext _symbols = new();
 
-            readonly ReflectionSymbolContext _context = new();
-            readonly IAssemblySymbol[] _coreAssemblies;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _typeCache = new();
+            IAssemblySymbol _coreAssembly;
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
+
+            IAssemblySymbol[] _systemAssemblies;
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _systemTypeCache = new();
+
+            IAssemblySymbol _runtimeAssembly;
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _runtimeTypeCache = new();
+
+            IAssemblySymbol _baseAssembly;
+            readonly ConcurrentDictionary<string, ITypeSymbol?> _baseTypeCache = new();
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             public Resolver()
             {
-                _coreAssemblies = coreAssemblies.Select(_context.GetOrCreateAssemblySymbol).ToArray();
+                _coreAssembly = GetSymbol(typeof(object).Assembly);
+                _systemAssemblies = GetSystemAssemblies().Distinct().ToArray().Select(GetSymbol).ToArray();
+                _runtimeAssembly = GetSymbol(typeof(JVM).Assembly);
+                _baseAssembly = GetSymbol(typeof(java.lang.Object).Assembly);
             }
+
+            /// <inheritdoc />
+            public ISymbolContext Symbols => _symbols;
 
             /// <inheritdoc />
             public IAssemblySymbol ResolveAssembly(string assemblyName)
             {
-                return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
+                return GetSymbol(Assembly.Load(assemblyName));
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveBaseAssembly()
+            public IAssemblySymbol GetCoreAssembly()
             {
-                return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
+                return _coreAssembly;
             }
 
             /// <inheritdoc />
             public ITypeSymbol ResolveCoreType(string typeName)
             {
-                return _typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
+                return _coreTypeCache.GetOrAdd(typeName, ResolveCoreTypeImpl) ?? throw new InvalidOperationException();
             }
 
-            ITypeSymbol ResolveCoreTypeImpl(string typeName)
+            /// <summary>
+            /// Resolves the specified core type.
+            /// </summary>
+            /// <param name="typeName"></param>
+            /// <returns></returns>
+            ITypeSymbol? ResolveCoreTypeImpl(string typeName)
             {
-                // loop over core assemblies searching for type
-                foreach (var assembly in _coreAssemblies)
+                return _coreAssembly.GetType(typeName);
+            }
+
+            /// <inheritdoc />
+            public ITypeSymbol ResolveSystemType(string typeName)
+            {
+                return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new InvalidOperationException();
+            }
+
+            /// <summary>
+            /// Resolves the specified system type.
+            /// </summary>
+            /// <param name="typeName"></param>
+            /// <returns></returns>
+            ITypeSymbol? FindSystemType(string typeName)
+            {
+                foreach (var assembly in _systemAssemblies)
                     if (assembly.GetType(typeName) is ITypeSymbol t)
                         return t;
 
@@ -82,9 +120,145 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
+            public IAssemblySymbol GetRuntimeAssembly()
+            {
+                return _runtimeAssembly;
+            }
+
+            /// <inheritdoc />
             public ITypeSymbol ResolveRuntimeType(string typeName)
             {
-                return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
+                return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new InvalidOperationException();
+            }
+
+            /// <inheritdoc />
+            public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
+            {
+                var t = _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType);
+                if (t != null)
+                {
+                    type = t;
+                    return true;
+                }
+
+                type = null;
+                return false;
+            }
+
+            /// <summary>
+            /// Resolves the specified system type.
+            /// </summary>
+            /// <param name="typeName"></param>
+            /// <returns></returns>
+            ITypeSymbol? FindRuntimeType(string typeName)
+            {
+                return _runtimeAssembly.GetType(typeName);
+            }
+
+            /// <inheritdoc />
+            public IAssemblySymbol GetBaseAssembly()
+            {
+                return _baseAssembly;
+            }
+
+            /// <inheritdoc />
+            public ITypeSymbol ResolveBaseType(string typeName)
+            {
+                return _baseAssembly.GetType(typeName) ?? throw new InvalidOperationException();
+            }
+
+            /// <inheritdoc />
+            public ITypeSymbol? ResolveType(string typeName)
+            {
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    if (assembly.GetType(typeName) is Type t)
+                        return GetSymbol(t);
+
+                return null;
+            }
+
+            /// <inheritdoc />
+            public IAssemblySymbol GetSymbol(Assembly assembly)
+            {
+                return _symbols.GetOrCreateAssemblySymbol(assembly);
+            }
+
+            /// <inheritdoc />
+            public IAssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly)
+            {
+                return _symbols.GetOrCreateAssemblySymbol(assembly);
+            }
+
+            /// <inheritdoc />
+            public IModuleSymbol GetSymbol(Module module)
+            {
+                return _symbols.GetOrCreateModuleSymbol(module);
+            }
+
+            /// <inheritdoc />
+            public IModuleSymbolBuilder GetSymbol(ModuleBuilder module)
+            {
+                return _symbols.GetOrCreateModuleSymbol(module);
+            }
+
+            /// <inheritdoc />
+            public ITypeSymbol GetSymbol(Type type)
+            {
+                return _symbols.GetOrCreateTypeSymbol(type);
+            }
+
+            /// <inheritdoc />
+            public IMemberSymbol GetSymbol(MemberInfo member)
+            {
+                return member switch
+                {
+                    MethodBase method => GetSymbol(method),
+                    FieldInfo field => GetSymbol(field),
+                    PropertyInfo property => GetSymbol(property),
+                    EventInfo @event => GetSymbol(@event),
+                    _ => throw new InvalidOperationException(),
+                };
+            }
+
+            /// <inheritdoc />
+            public IMethodBaseSymbol GetSymbol(MethodBase method)
+            {
+                return method switch
+                {
+                    ConstructorInfo ctor => GetSymbol(ctor),
+                    MethodInfo mi => GetSymbol(mi),
+                    _ => throw new InvalidOperationException(),
+                };
+            }
+
+            /// <inheritdoc />
+            public IConstructorSymbol GetSymbol(ConstructorInfo ctor)
+            {
+                return _symbols.GetOrCreateConstructorSymbol(ctor);
+            }
+
+            /// <inheritdoc />
+            public IMethodSymbol GetSymbol(MethodInfo method)
+            {
+                return _symbols.GetOrCreateMethodSymbol(method);
+            }
+
+            /// <inheritdoc />
+            public IFieldSymbol GetSymbol(FieldInfo field)
+            {
+                return _symbols.GetOrCreateFieldSymbol(field);
+            }
+
+            /// <inheritdoc />
+            public IPropertySymbol GetSymbol(PropertyInfo property)
+            {
+                return _symbols.GetOrCreatePropertySymbol(property);
+            }
+
+            /// <inheritdoc />
+            public IEventSymbol GetSymbol(EventInfo @event)
+            {
+                return _symbols.GetOrCreateEventSymbol(@event);
             }
 
         }

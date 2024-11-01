@@ -23,16 +23,15 @@
 */
 using System;
 using System.Diagnostics;
+using System.Threading;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
-using System.Threading;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -47,7 +46,7 @@ namespace IKVM.Runtime
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
         volatile java.lang.reflect.Field reflectionField;
 #endif
-        FieldInfo field;
+        IFieldSymbol field;
         RuntimeJavaType fieldType;
 
         /// <summary>
@@ -60,7 +59,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
         /// <param name="flags"></param>
-        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, IFieldSymbol field, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             if (name == null)
@@ -97,7 +96,7 @@ namespace IKVM.Runtime
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
-        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, FieldInfo field) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, IFieldSymbol field) :
             this(declaringType, fieldType, name, sig, modifiers.Modifiers, field, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None))
         {
 
@@ -118,7 +117,7 @@ namespace IKVM.Runtime
         /// Gets the CLR <see cref="FieldInfo"/> that forms the implementation of the field.
         /// </summary>
         /// <returns></returns>
-        internal FieldInfo GetField()
+        internal IFieldSymbol GetField()
         {
             AssertLinked();
             return field;
@@ -431,7 +430,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static RuntimeJavaField Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldInfo fi, string name, string sig, ExModifiers modifiers)
+        internal static RuntimeJavaField Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers)
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
@@ -441,20 +440,10 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal virtual void ResolveField()
         {
-            var fb = field as FieldBuilder;
-            if (fb != null)
-            {
-#if NETFRAMEWORK
-                field = fb.DeclaringType.Module.ResolveField(fb.GetToken().Token);
-#else
-                BindingFlags flags = BindingFlags.DeclaredOnly;
-                flags |= fb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= fb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                field = DeclaringType.TypeAsTBD.GetField(fb.Name, flags);
-#endif
-            }
+
         }
 
 #if !FIRST_PASS
@@ -511,8 +500,8 @@ namespace IKVM.Runtime
             FieldTypeWrapper.Finish();
             ResolveField();
 
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, ft, new[] { typeof(object) });
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), true, ft, [typeof(object)]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -558,8 +547,8 @@ namespace IKVM.Runtime
             FieldTypeWrapper.Finish();
             ResolveField();
 
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), true, typeof(void), [typeof(object), ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -603,8 +592,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeVolatileGetDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, new[] { typeof(object) }, DeclaringType.TypeAsTBD.Module, true);
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, [typeof(object)], DeclaringType.TypeAsTBD.Module.GetUnderlyingModule(), true);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -648,8 +637,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeVolatileSetDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), true, typeof(void), [typeof(object), ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)
@@ -696,8 +685,8 @@ namespace IKVM.Runtime
         Delegate CreateUnsafeCompareAndSwapDelegate()
         {
             ResolveField();
-            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(bool), new[] { typeof(object), ft, ft });
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType.GetUnderlyingRuntimeType() : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), true, typeof(bool), [typeof(object), ft, ft]);
             var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
             if (IsStatic == false)

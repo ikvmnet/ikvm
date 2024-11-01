@@ -153,10 +153,10 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.PublicPackageOption) is string[] _publicpackages)
                 options.PublicPackages = AppendArray(options.PublicPackages, _publicpackages);
 
-            if (context.ParseResult.GetValueForOption(command.NoWarnOption) is Diagnostic[] _nowarn)
+            if (ParseDiagnosticIdListForOption(context, command.NoWarnOption, LIST_SEPARATOR, null) is Diagnostic[] _nowarn)
                 options.NoWarn = options.NoWarn != null ? AppendArray(options.NoWarn, _nowarn) : _nowarn;
 
-            if (context.ParseResult.GetValueForOption(command.WarnAsErrorOption) is Diagnostic[] _warnaserror)
+            if (ParseDiagnosticIdListForOption(context, command.WarnAsErrorOption, LIST_SEPARATOR, null) is Diagnostic[] _warnaserror)
                 options.WarnAsError = options.WarnAsError != null ? AppendArray(options.WarnAsError, _warnaserror) : _warnaserror;
 
             if (command.RuntimeOption != null)
@@ -239,10 +239,7 @@ namespace IKVM.Tools.Importer
         /// <returns></returns>
         T[] AppendArray<T>(T[] a, T[] b)
         {
-            var tmp = new T[a.Length + b.Length];
-            a.CopyTo(tmp, 0);
-            b.CopyTo(tmp, a.Length);
-            return tmp;
+            return [.. a, .. b];
         }
 
         /// <summary>
@@ -299,12 +296,27 @@ namespace IKVM.Tools.Importer
         /// <param name="option"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        int[]? ParseDiagnosticIdListForOption(BindingContext context, Option<string?> option, char[] separator, int[]? defaultValue)
+        Diagnostic[]? ParseDiagnosticIdListForOption(BindingContext context, Option<string?> option, char[] separator, Diagnostic[]? defaultValue)
         {
             if (context.ParseResult.GetValueForOption(option) is string v)
-                return (int[]?)v.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(SafeParseDiagnosticId).Where(i => i != null).OfType<int>().ToArray();
-            else
-                return defaultValue;
+            {
+                List<Diagnostic>? l = null;
+
+                foreach (var i in v.Split(separator, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var d = SafeParseDiagnosticId(i);
+                    if (d != null)
+                    {
+                        l ??= [];
+                        l.Add(d);
+                    }
+                }
+
+                if (l != null)
+                    return l.ToArray();
+            }
+
+            return defaultValue;
         }
 
         /// <summary>
@@ -312,10 +324,10 @@ namespace IKVM.Tools.Importer
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        int? SafeParseDiagnosticId(string value)
+        Diagnostic? SafeParseDiagnosticId(string value)
         {
             if (int.TryParse(value, out var i))
-                return i;
+                return Diagnostic.GetById(i);
 
             if (value.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase))
                 return SafeParseDiagnosticId(value["IKVM".Length..]);

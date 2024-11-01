@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.ikvm.runtime
@@ -48,19 +49,20 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 return ghostType;
 
             var t = o.GetType();
-            if (t.IsPrimitive || context.ClassLoaderFactory.IsRemappedType(t) && !t.IsSealed)
-                return context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t);
+            var ts = context.Resolver.GetSymbol(t);
+            if (t.IsPrimitive || context.ClassLoaderFactory.IsRemappedType(ts) && !ts.IsSealed)
+                return context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts);
 
             for (; ; )
             {
                 // if GetWrapperFromType returns null (or if tw.IsAbstract), that
                 // must mean that the Type of the object is an implementation helper class
                 // (e.g. an AtomicReferenceFieldUpdater or ThreadLocal instrinsic subclass)
-                var tw = context.ClassLoaderFactory.GetJavaTypeFromType(t);
+                var tw = context.ClassLoaderFactory.GetJavaTypeFromType(ts);
                 if (tw != null && (!tw.IsAbstract || tw.IsArray))
                     return tw;
 
-                t = t.BaseType;
+                ts = ts.BaseType;
             }
         }
 
@@ -70,13 +72,14 @@ namespace IKVM.Java.Externs.ikvm.runtime
             throw new NotImplementedException();
 #else
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).ClassObject;
+            var ts = JVM.Context.Resolver.GetSymbol(t);
+            if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || t == typeof(void))
+                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(t);
+            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
             if (tw != null)
                 return tw.ClassObject;
 
@@ -90,13 +93,14 @@ namespace IKVM.Java.Externs.ikvm.runtime
             throw new NotImplementedException();
 #else
             var t = Type.GetTypeFromHandle(handle);
-            if (t.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(t) || t == typeof(void))
-                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(t).MakeArrayType(rank).ClassObject;
+            var ts = JVM.Context.Resolver.GetSymbol(t);
+            if (ts.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || ts == JVM.Context.Types.Void)
+                return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).MakeArrayType(rank).ClassObject;
 
             if (!IsVisibleAsClass(t))
                 return null;
 
-            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(t);
+            var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
             if (tw != null)
                 return tw.MakeArrayType(rank).ClassObject;
 
@@ -109,20 +113,22 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var ts = JVM.Context.Resolver.GetSymbol(type);
+
             int rank = 0;
-            while (ReflectUtil.IsVector(type))
+            while (ts.IsSZArray)
             {
-                type = type.GetElementType();
+                ts = ts.GetElementType();
                 rank++;
             }
 
-            if (type.DeclaringType != null && JVM.Context.AttributeHelper.IsGhostInterface(type.DeclaringType))
-                type = type.DeclaringType;
+            if (ts.DeclaringType != null && JVM.Context.AttributeHelper.IsGhostInterface(ts.DeclaringType))
+                ts = ts.DeclaringType;
 
             if (!IsVisibleAsClass(type))
                 return null;
 
-            var wrapper = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
+            var wrapper = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
             if (wrapper == null)
                 return null;
 
@@ -138,20 +144,17 @@ namespace IKVM.Java.Externs.ikvm.runtime
             while (type.HasElementType)
             {
                 if (type.IsPointer || type.IsByRef)
-                {
                     return false;
-                }
+
                 type = type.GetElementType();
             }
+
             if (type.ContainsGenericParameters && !type.IsGenericTypeDefinition)
-            {
                 return false;
-            }
-            System.Reflection.Emit.TypeBuilder tb = type as System.Reflection.Emit.TypeBuilder;
-            if (tb != null && !tb.IsCreated())
-            {
+
+            if (type is ITypeSymbolBuilder tb && !tb.IsComplete)
                 return false;
-            }
+
             return true;
         }
 
@@ -164,9 +167,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
         {
             var wrapper = RuntimeJavaType.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
-                return wrapper.TypeAsTBD;
+                return wrapper.TypeAsTBD.GetUnderlyingRuntimeType();
             else
-                return wrapper.TypeAsBaseType;
+                return wrapper.TypeAsBaseType.GetUnderlyingRuntimeType();
         }
 
         /// <summary>
@@ -180,9 +183,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
             wrapper.Finish();
 
             if (wrapper.IsRemapped && wrapper.IsFinal)
-                return wrapper.TypeAsTBD;
+                return wrapper.TypeAsTBD.GetUnderlyingRuntimeType();
             else
-                return wrapper.TypeAsBaseType;
+                return wrapper.TypeAsBaseType.GetUnderlyingRuntimeType();
         }
 
         [HideFromJava]

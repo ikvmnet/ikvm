@@ -22,14 +22,9 @@
   
 */
 using System;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection.Emit;
-#endif
 
 namespace IKVM.Runtime
 {

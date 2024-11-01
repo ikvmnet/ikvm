@@ -23,14 +23,7 @@
 */
 using System;
 
-#if IMPORTER
-using IKVM.Tools.Importer;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -42,9 +35,9 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        readonly Type typeofMHA;
-        readonly Type[] typeofMHV;
-        readonly Type[] typeofMH;
+        readonly ITypeSymbol typeofMHA;
+        readonly ITypeSymbol[] typeofMHV;
+        readonly ITypeSymbol[] typeofMH;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,58 +46,56 @@ namespace IKVM.Runtime
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
 
-            typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8").AsReflection();
-            typeofMHV = new Type[] {
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`1").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`2").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`3").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`4").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`5").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`6").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`7").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`8").AsReflection(),
-            };
-            typeofMH = new Type[] {
+            typeofMHA = context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHA`8");
+            typeofMHV = [
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`1"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`2"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`3"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`4"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`5"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`6"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`7"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MHV`8"),
+            ];
+            typeofMH = [
                 null,
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`1").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`2").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`3").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`4").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`5").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`6").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`7").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`8").AsReflection(),
-                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`9").AsReflection(),
-            };
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`1"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`2"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`3"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`4"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`5"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`6"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`7"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`8"),
+                context.Resolver.ResolveRuntimeType("IKVM.Runtime.MH`9"),
+            ];
         }
 
-        internal bool IsPackedArgsContainer(Type type)
+        internal bool IsPackedArgsContainer(ITypeSymbol type)
         {
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeofMHA;
         }
 
-        internal Type CreateMethodHandleDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal ITypeSymbol CreateMethodHandleDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
-            Type[] typeArgs = new Type[args.Length];
+            var typeArgs = new ITypeSymbol[args.Length];
             for (int i = 0; i < args.Length; i++)
-            {
                 typeArgs[i] = args[i].TypeAsSignatureType;
-            }
+
             return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
         }
 
-        internal Type CreateMemberWrapperDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal ITypeSymbol CreateMemberWrapperDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
-            Type[] typeArgs = new Type[args.Length];
+            var typeArgs = new ITypeSymbol[args.Length];
             for (int i = 0; i < args.Length; i++)
-            {
                 typeArgs[i] = AsBasicType(args[i]);
-            }
+
             return CreateDelegateType(typeArgs, AsBasicType(ret));
         }
 
-        Type CreateDelegateType(Type[] types, Type retType)
+        ITypeSymbol CreateDelegateType(ITypeSymbol[] types, ITypeSymbol retType)
         {
             if (types.Length == 0 && retType == context.Types.Void)
             {
@@ -144,14 +135,14 @@ namespace IKVM.Runtime
             }
         }
 
-        Type[] SubArray(Type[] inArray, int start, int length)
+        ITypeSymbol[] SubArray(ITypeSymbol[] inArray, int start, int length)
         {
-            var outArray = new Type[length];
+            var outArray = new ITypeSymbol[length];
             Array.Copy(inArray, start, outArray, 0, length);
             return outArray;
         }
 
-        internal Type AsBasicType(RuntimeJavaType tw)
+        internal ITypeSymbol AsBasicType(RuntimeJavaType tw)
         {
             if (tw == context.PrimitiveJavaTypeFactory.BOOLEAN || tw == context.PrimitiveJavaTypeFactory.BYTE || tw == context.PrimitiveJavaTypeFactory.CHAR || tw == context.PrimitiveJavaTypeFactory.SHORT || tw == context.PrimitiveJavaTypeFactory.INT)
                 return context.Types.Int32;
@@ -161,7 +152,7 @@ namespace IKVM.Runtime
                 return context.Types.Object;
         }
 
-        internal  bool HasOnlyBasicTypes(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal bool HasOnlyBasicTypes(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
             foreach (var tw in args)
                 if (!IsBasicType(tw))

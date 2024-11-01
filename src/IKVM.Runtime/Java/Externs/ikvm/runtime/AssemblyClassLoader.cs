@@ -24,7 +24,7 @@
 using System;
 using System.Reflection;
 
-using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
@@ -47,7 +47,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            JVM.Context.ClassLoaderFactory.SetWrapperForClassLoader(_this, JVM.Context.AssemblyClassLoaderFactory.FromAssembly(assembly));
+            JVM.Context.ClassLoaderFactory.SetWrapperForClassLoader(_this, JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(assembly)));
 #endif
         }
 
@@ -139,7 +139,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
 #if !FIRST_PASS
 
-        static global::java.net.URL GetCodeBase(Assembly assembly)
+        static global::java.net.URL GetCodeBase(IAssemblySymbol assembly)
         {
             try
             {
@@ -182,7 +182,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        static global::java.util.jar.Manifest GetManifestForAssemblyJar(Assembly assembly, string resourceName)
+        static global::java.util.jar.Manifest GetManifestForAssemblyJar(IAssemblySymbol assembly, string resourceName)
         {
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
@@ -262,7 +262,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #else
             // note that we don't do a security check here, because if you have the Assembly object,
             // you can already get at all the types in it.
-            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+            return JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).GetJavaClassLoader();
 #endif
         }
 

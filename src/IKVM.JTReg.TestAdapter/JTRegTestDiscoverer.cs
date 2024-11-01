@@ -43,6 +43,13 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="cancellationToken"></param>
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink, CancellationToken cancellationToken)
         {
+            if (discoveryContext is null)
+                throw new ArgumentNullException(nameof(discoveryContext));
+            if (logger is null)
+                throw new ArgumentNullException(nameof(logger));
+            if (discoverySink is null)
+                throw new ArgumentNullException(nameof(discoverySink));
+
             foreach (var source in sources)
             {
                 if (Path.GetExtension(source) is not ".exe" and not ".dll")

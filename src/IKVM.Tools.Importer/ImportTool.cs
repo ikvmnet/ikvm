@@ -1,12 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.Reflection;
+using IKVM.Reflection.Diagnostics;
+using IKVM.Runtime;
 using IKVM.Tools.Core.CommandLine;
 using IKVM.Tools.Core.Diagnostics;
 
@@ -18,7 +27,7 @@ namespace IKVM.Tools.Importer
     /// <summary>
     /// Main entry point for the application.
     /// </summary>
-    public class ImportTool
+    public partial class ImportTool
     {
 
         /// <summary>
@@ -48,43 +57,172 @@ namespace IKVM.Tools.Importer
         /// Executes the importer.
         /// </summary>
         /// <param name="options"></param>
-        /// <param name="diagnostics"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static Task<int> ExecuteAsync(ImportOptions options, IDiagnosticHandler diagnostics, CancellationToken cancellationToken = default)
-        {
-            return ExecuteImplAsync(options, _ => diagnostics, cancellationToken);
-        }
-
-        /// <summary>
-        /// Executes the importer.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="diagnostics"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        static Task<int> ExecuteImplAsync(ImportOptions options, Func<IServiceProvider, IDiagnosticHandler> diagnostics, CancellationToken cancellationToken)
+        async Task<int> ExecuteImplAsync(ImportOptions options, CancellationToken cancellationToken)
         {
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
             services.AddSingleton(options);
-            services.AddSingleton(diagnostics);
+            services.AddSingleton<DiagnosticOptions>(p => GetDiagnosticOptions(p, p.GetRequiredService<ImportOptions>()));
+            services.AddSingleton<ImportDiagnosticHandler>(p => GetDiagnostics(p, p.GetRequiredService<ImportOptions>().Log));
+            services.AddSingleton<IDiagnosticHandler>(p => p.GetRequiredService<ImportDiagnosticHandler>());
+            services.AddSingleton(p => CreateResolver(p.GetRequiredService<IDiagnosticHandler>(), p.GetRequiredService<ImportOptions>()));
+            services.AddSingleton(p => p.GetRequiredService<ImportAssemblyResolver>().Universe);
+            services.AddSingleton<IkvmReflectionSymbolContext>();
+            services.AddSingleton<IRuntimeSymbolResolver, ImportRuntimeSymbolResolver>();
+            services.AddSingleton<RuntimeContextOptions>(p => CreateContextOptions(p));
+            services.AddSingleton<RuntimeContext>();
+            services.AddSingleton<StaticCompiler>();
+            services.AddSingleton<ImportContextFactory>();
             using var provider = services.BuildServiceProvider();
-            return ExecuteImplAsync(options, provider, cancellationToken);
+
+            try
+            {
+                try
+                {
+                    // convert options to imports
+                    var imports = provider.GetRequiredService<ImportContextFactory>().Create(options);
+                    if (imports.Count == 0)
+                        throw new DiagnosticEventException(DiagnosticEvent.NoTargetsFound());
+
+                    // execute the compiler
+                    return await Task.Run(() => Execute(
+                        provider.GetRequiredService<RuntimeContext>(),
+                        provider.GetRequiredService<StaticCompiler>(),
+                        provider.GetRequiredService<IDiagnosticHandler>(),
+                        imports));
+                }
+                catch (DiagnosticEventException e)
+                {
+                    ExceptionDispatchInfo.Capture(e).Throw();
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    throw new DiagnosticEventException(DiagnosticEvent.GenericCompilerError(e.Message));
+                }
+            }
+            catch (DiagnosticEventException e)
+            {
+                provider.GetRequiredService<ImportDiagnosticHandler>().Report(e.Event);
+                return e.Event.Diagnostic.Id;
+            }
         }
 
         /// <summary>
-        /// Executes the importer.
+        /// Executes the imports.
         /// </summary>
-        /// <param name="services"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="runtime"></param>
+        /// <param name="compiler"></param>
+        /// <param name="diagnostic"></param>
+        /// <param name="imports"></param>
         /// <returns></returns>
-        static Task<int> ExecuteImplAsync(ImportOptions options, IServiceProvider services, CancellationToken cancellationToken)
+        int Execute(RuntimeContext runtime, StaticCompiler compiler, IDiagnosticHandler diagnostic, List<ImportContext> imports)
         {
-            if (services is null)
-                throw new ArgumentNullException(nameof(services));
+            return ImportClassLoader.Compile(runtime, compiler, diagnostic, imports);
+        }
 
-            return Task.Run(() => ImportContext.Execute(options));
+        /// <summary>
+        /// Creates the universe of types.
+        /// </summary>
+        /// <returns></returns>
+        ImportAssemblyResolver CreateResolver(IDiagnosticHandler diagnostics, ImportOptions options)
+        {
+            if (diagnostics is null)
+                throw new ArgumentNullException(nameof(diagnostics));
+            if (options is null)
+                throw new ArgumentNullException(nameof(options));
+
+            var universeOptions = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
+            if (options.Deterministic == false)
+                universeOptions |= UniverseOptions.DeterministicOutput;
+
+            // discover the core lib from the references
+            var coreLibName = FindCoreLibName(options.References, options.Libraries);
+            if (coreLibName == null)
+            {
+                diagnostics.CoreClassesMissing();
+                throw new Exception();
+            }
+
+            // create a new universe of types
+            var universe = new Universe(universeOptions, coreLibName);
+
+            // warn when unable to resolve a member
+            universe.ResolvedMissingMember += (Module requestingModule, MemberInfo member) =>
+            {
+                if (requestingModule != null && member is IKVM.Reflection.Type type)
+                    diagnostics.UnableToResolveType(requestingModule.Name, type.FullName, member.Module.FullyQualifiedName);
+            };
+
+            // enable embedded symbol writer
+            if (options.Debug == ImportDebug.Portable)
+                universe.SetSymbolWriterFactory(module => new PortablePdbSymbolWriter(module));
+
+            // universe resolver calls back into import
+            var resolver = new ImportAssemblyResolver(universe, options, diagnostics);
+            universe.AssemblyResolve += resolver.AssemblyResolve;
+
+            return resolver;
+        }
+
+        /// <summary>
+        /// Finds the first potential core library in the reference set.
+        /// </summary>
+        /// <param name="references"></param>
+        /// <param name="libpaths"></param>
+        /// <returns></returns>
+        string FindCoreLibName(IList<string> references, IList<DirectoryInfo> libpaths)
+        {
+            if (references != null)
+                foreach (var reference in references)
+                    if (GetAssemblyNameIfCoreLib(reference) is string coreLibName)
+                        return coreLibName;
+
+            if (libpaths != null)
+                foreach (var libpath in libpaths)
+                    foreach (var dll in libpath.GetFiles("*.dll"))
+                        if (GetAssemblyNameIfCoreLib(dll.FullName) is string coreLibName)
+                            return coreLibName;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given assembly is a core library.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        string GetAssemblyNameIfCoreLib(string file)
+        {
+            if (File.Exists(file) == false)
+                return null;
+
+            using var st = File.OpenRead(file);
+            using var pe = new PEReader(st);
+            var mr = pe.GetMetadataReader();
+
+            foreach (var handle in mr.TypeDefinitions)
+                if (IsSystemObject(mr, handle))
+                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given type definition handle refers to "System.Object".
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="th"></param>
+        /// <returns></returns>
+        bool IsSystemObject(MetadataReader reader, TypeDefinitionHandle th)
+        {
+            var td = reader.GetTypeDefinition(th);
+            var ns = reader.GetString(td.Namespace);
+            var nm = reader.GetString(td.Name);
+
+            return ns == "System" && nm == "Object";
         }
 
         /// <summary>
@@ -93,12 +231,12 @@ namespace IKVM.Tools.Importer
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static Task ExecuteAsync(ImportOptions options, CancellationToken cancellationToken = default)
+        Task ExecuteAsync(ImportOptions options, CancellationToken cancellationToken = default)
         {
             if (options is null)
                 throw new ArgumentNullException(nameof(options));
 
-            return ExecuteImplAsync(options, p => GetDiagnostics(p, options.Log), cancellationToken);
+            return ExecuteImplAsync(options, cancellationToken);
         }
 
         /// <summary>
@@ -107,14 +245,50 @@ namespace IKVM.Tools.Importer
         /// <param name="services"></param>
         /// <param name="spec"></param>
         /// <returns></returns>
-        static FormattedDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
+        static ImportDiagnosticHandler GetDiagnostics(IServiceProvider services, string spec)
         {
             if (services is null)
                 throw new ArgumentNullException(nameof(services));
             if (string.IsNullOrWhiteSpace(spec))
                 throw new ArgumentException($"'{nameof(spec)}' cannot be null or whitespace.", nameof(spec));
 
-            return ActivatorUtilities.CreateInstance<FormattedDiagnosticHandler>(services, spec);
+            return ActivatorUtilities.CreateInstance<ImportDiagnosticHandler>(services, spec);
+        }
+
+        /// <summary>
+        /// Generates a diagnostic instance from the diagnostics options.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        static DiagnosticOptions GetDiagnosticOptions(IServiceProvider services, ImportOptions options)
+        {
+            if (services is null)
+                throw new ArgumentNullException(nameof(services));
+            if (options is null)
+                throw new ArgumentNullException(nameof(options));
+
+            return new DiagnosticOptions()
+            {
+                NoWarn = options.NoWarn != null && options.NoWarn.Length == 0,
+                NoWarnDiagnostics = options.NoWarn?.ToImmutableArray() ?? [],
+                WarnAsError = options.WarnAsError != null && options.WarnAsError.Length == 0,
+                WarnAsErrorDiagnostics = options.WarnAsError?.ToImmutableArray() ?? [],
+            };
+        }
+
+        /// <summary>
+        /// Creates the <see cref="RuntimeContextOptions"/>.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        static RuntimeContextOptions CreateContextOptions(IServiceProvider services)
+        {
+            var u = services.GetRequiredService<Universe>();
+            var o = services.GetRequiredService<ImportOptions>();
+            var isNetFX = u.CoreLibName == "mscorlib";
+            var dynamicSuffix = isNetFX ? RuntimeContextOptions.SignedDefaultDynamicAssemblySuffixAndPublicKey : RuntimeContextOptions.UnsignedDefaultDynamicAssemblySuffixAndPublicKey;
+            return new RuntimeContextOptions(o.Debug != ImportDebug.Unspecified, o.Bootstrap, dynamicSuffix);
         }
 
         /// <summary>

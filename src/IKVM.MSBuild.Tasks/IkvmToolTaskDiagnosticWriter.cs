@@ -62,7 +62,7 @@ namespace IKVM.MSBuild.Tasks
                 }
 
                 if (writer != null)
-                    await WriteLogsync(writer, @event, cancellationToken);
+                    await WriteLogAsync(writer, @event, cancellationToken);
             }
             catch (Exception e)
             {
@@ -77,7 +77,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="event"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task WriteLogsync(TextWriter writer, IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
+        async Task WriteLogAsync(TextWriter writer, IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
             await TextDiagnosticFormat.WriteAsync(@event.Id, Convert(@event.Level), @event.Message, @event.Args, null, Convert(@event.Location), writer, cancellationToken);
             await writer.WriteLineAsync();

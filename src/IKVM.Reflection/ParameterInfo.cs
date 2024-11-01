@@ -32,7 +32,7 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        internal ParameterInfo()
+        public ParameterInfo()
         {
 
         }
@@ -76,7 +76,7 @@ namespace IKVM.Reflection
 
         public abstract int MetadataToken { get; }
 
-        internal abstract Module Module { get; }
+        public abstract Module Module { get; }
 
         public Type[] GetOptionalCustomModifiers()
         {
@@ -201,7 +201,7 @@ namespace IKVM.Reflection
             get { return forward.MetadataToken; }
         }
 
-        internal override Module Module
+        public override Module Module
         {
             get { return member.Module; }
         }

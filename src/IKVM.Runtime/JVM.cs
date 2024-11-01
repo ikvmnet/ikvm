@@ -1,12 +1,9 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Text;
-using System.Threading;
 
-using IKVM.CoreLib.Diagnostics.Tracing;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Runtime
@@ -22,7 +19,6 @@ namespace IKVM.Runtime
         static bool initialized;
 
 #if EXPORTER == false
-        static int emitSymbols;
         internal static bool RelaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
@@ -90,42 +86,6 @@ namespace IKVM.Runtime
             }
 #endif
         }
-
-#if !IMPORTER && !EXPORTER
-
-        internal static bool EmitSymbols
-        {
-            get
-            {
-                if (emitSymbols == 0)
-                {
-                    var state = 2;
-
-#if NETFRAMEWORK
-                    // check app.config on Framework
-                    if (string.Equals(System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"] ?? "", "true", StringComparison.OrdinalIgnoreCase))
-                        state = 1;
-#endif
-
-                    // respect the IKVM_EMIT_SYMBOLs environmental variable
-                    if (string.Equals(Environment.GetEnvironmentVariable("IKVM_EMIT_SYMBOLS") ?? "", "true", StringComparison.OrdinalIgnoreCase))
-                        state = 1;
-
-                    // by default enable symbols if a debugger is attached
-                    if (state == 2 && Debugger.IsAttached)
-                        state = 1;
-
-                    // make sure we only set the value once, because it isn't allowed to changed as that could cause
-                    // the compiler to try emitting symbols into a ModuleBuilder that doesn't accept them (and would
-                    // throw an InvalidOperationException)
-                    Interlocked.CompareExchange(ref emitSymbols, state, 0);
-                }
-
-                return emitSymbols == 1;
-            }
-        }
-
-#endif
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 

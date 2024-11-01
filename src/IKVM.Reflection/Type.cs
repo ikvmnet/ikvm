@@ -200,7 +200,7 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_ARRAY || sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
 
-        public bool __IsVector
+        public bool IsSZArray
         {
             get { return sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
@@ -215,9 +215,14 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_PTR; }
         }
 
-        public bool __IsFunctionPointer
+        public bool IsFunctionPointer
         {
             get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
+        }
+
+        public bool IsUnmanagedFunctionPointer
+        {
+            get { throw new NotSupportedException(); }
         }
 
         public bool IsValueType
@@ -546,6 +551,21 @@ namespace IKVM.Reflection
                     return true;
 
             return false;
+        }
+
+        public Array GetEnumValues()
+        {
+            if (!IsEnum)
+                throw new ArgumentException();
+
+            var l = __GetDeclaredFields();
+            var a = new object[l.Length];
+
+            for (int i = 0; i < l.Length; i++)
+                if (l[i].IsLiteral)
+                    a[i] = l[i];
+
+            return a;
         }
 
         public override string ToString()
@@ -915,9 +935,7 @@ namespace IKVM.Reflection
         public MethodInfo GetMethod(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
         {
             // first we try an exact match and only if that fails we fall back to using the binder
-            return GetMemberByName(name, bindingAttr,
-                delegate (MethodInfo method) { return method.MethodSignature.MatchParameterTypes(types); })
-                ?? GetMethodWithBinder<MethodInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+            return GetMemberByName(name, bindingAttr, (MethodInfo m) => m.MethodSignature.MatchParameterTypes(types)) ?? GetMethodWithBinder<MethodInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
         }
 
         private T GetMethodWithBinder<T>(string name, BindingFlags bindingAttr, Binder binder, Type[] types, ParameterModifier[] modifiers)
@@ -1173,7 +1191,7 @@ namespace IKVM.Reflection
             get
             {
                 // this property can only be called after __IsBuiltIn, HasElementType, __IsFunctionPointer or IsGenericParameter returned true
-                System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || __IsFunctionPointer || IsGenericParameter);
+                System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || IsFunctionPointer || IsGenericParameter);
                 return sigElementType;
             }
         }
@@ -1642,7 +1660,7 @@ namespace IKVM.Reflection
                 {
                     return false;
                 }
-                else if (this.__IsVector && !type.__IsVector)
+                else if (this.IsSZArray && !type.IsSZArray)
                 {
                     return false;
                 }
@@ -1789,7 +1807,7 @@ namespace IKVM.Reflection
                     type.FillInImplicitInterfaceMethods(interfaceMethods, targetMethods);
         }
 
-         void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
+        void FillInImplicitInterfaceMethods(MethodInfo[] interfaceMethods, MethodInfo[] targetMethods)
         {
             MethodBase[] methods = null;
 
@@ -1950,7 +1968,7 @@ namespace IKVM.Reflection
             return CreateMissingMethod(name, callingConvention, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, parameterTypes.Length));
         }
 
-         MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+        MethodBase CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
             var sig = new MethodSignature(returnType ?? Module.Universe.System_Void, Util.Copy(parameterTypes), customModifiers, callingConvention, 0);
             var method = new MissingMethod(this, name, sig);

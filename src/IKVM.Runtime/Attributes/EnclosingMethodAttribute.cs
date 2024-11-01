@@ -23,35 +23,38 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-#if IMPORTER || EXPORTER
-using Type = IKVM.Reflection.Type;
-#endif
 
 namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
-	public sealed class EnclosingMethodAttribute : Attribute
-	{
+    public sealed class EnclosingMethodAttribute : Attribute
+    {
 
-		private string className;
-		private string methodName;
-		private string methodSig;
+        string className;
+        readonly string methodName;
+        readonly string methodSig;
 
-		public EnclosingMethodAttribute(string className, string methodName, string methodSig)
-		{
-			this.className = UnicodeUtil.UnescapeInvalidSurrogates(className);
-			this.methodName = UnicodeUtil.UnescapeInvalidSurrogates(methodName);
-			this.methodSig = UnicodeUtil.UnescapeInvalidSurrogates(methodSig);
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="methodName"></param>
+        /// <param name="methodSig"></param>
+        public EnclosingMethodAttribute(string className, string methodName, string methodSig)
+        {
+            this.className = UnicodeUtil.UnescapeInvalidSurrogates(className);
+            this.methodName = UnicodeUtil.UnescapeInvalidSurrogates(methodName);
+            this.methodSig = UnicodeUtil.UnescapeInvalidSurrogates(methodSig);
+        }
 
-		internal EnclosingMethodAttribute SetClassName(RuntimeContext context, Type type)
-		{
-			className ??= context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name;
-			return this;
-		}
+        internal EnclosingMethodAttribute SetClassName(RuntimeContext context, ITypeSymbol type)
+        {
+            className ??= context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name;
+            return this;
+        }
 
         public string ClassName => className;
 

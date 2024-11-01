@@ -20,7 +20,7 @@
         /// <summary>
         /// Gets the custom attributes for the return type.
         /// </summary>
-        ICustomAttributeSymbolProvider ReturnTypeCustomAttributes { get; }
+        ICustomAttributeProvider ReturnTypeCustomAttributes { get; }
 
         /// <summary>
         /// When overridden in a derived class, returns the <see cref="IMethodSymbol"> object for the method on the direct or indirect base class in which the method represented by this instance was first declared.

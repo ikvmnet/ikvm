@@ -23,6 +23,7 @@
 */
 using System;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
@@ -34,7 +35,7 @@ namespace IKVM.Tools.Exporter
     {
 
         readonly RuntimeContext context;
-        readonly Type genericType;
+        readonly ITypeSymbol genericType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,30 +45,30 @@ namespace IKVM.Tools.Exporter
         public FakeTypes(RuntimeContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1").AsReflection();
+            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1");
         }
 
-        internal Type GetAttributeType(Type type)
+        internal ITypeSymbol GetAttributeType(ITypeSymbol type)
         {
             return genericType.MakeGenericType(type);
         }
 
-        internal Type GetAttributeReturnValueType(Type type)
+        internal ITypeSymbol GetAttributeReturnValueType(ITypeSymbol type)
         {
             return genericType.MakeGenericType(type);
         }
 
-        internal Type GetAttributeMultipleType(Type type)
+        internal ITypeSymbol GetAttributeMultipleType(ITypeSymbol type)
         {
             return genericType.MakeGenericType(type);
         }
 
-        internal Type GetDelegateType(Type type)
+        internal ITypeSymbol GetDelegateType(ITypeSymbol type)
         {
             return genericType.MakeGenericType(type);
         }
 
-        internal Type GetEnumType(Type type)
+        internal ITypeSymbol GetEnumType(ITypeSymbol type)
         {
             return genericType.MakeGenericType(type);
         }

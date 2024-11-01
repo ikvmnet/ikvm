@@ -24,12 +24,7 @@
 using System;
 using System.Collections.Generic;
 
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -44,14 +39,14 @@ namespace IKVM.Runtime
         /// Initializes a new instance.
         /// </summary>
         internal BootstrapClassLoader(RuntimeContext context) :
-            base(context, context.Resolver.ResolveBaseAssembly().AsReflection(), [typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName])
+            base(context, context.Resolver.GetBaseAssembly(), [typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName])
         {
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
             RegisterNativeLibrary(LibJava.Instance.Handle);
 #endif
         }
 
-        internal override RuntimeJavaType GetJavaTypeFromAssemblyType(Type type)
+        internal override RuntimeJavaType GetJavaTypeFromAssemblyType(ITypeSymbol type)
         {
             // we have to special case the fake types here
             if (type.IsGenericType && !type.IsGenericTypeDefinition)

@@ -72,7 +72,7 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
+                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(type));
 
                 if (tw == null)
                 {
@@ -359,6 +359,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 var wrapper = RuntimeJavaType.FromClass(thisClass);
                 wrapper.Finish();
+
                 var decl = wrapper.DeclaringTypeWrapper;
                 if (decl == null)
                     return null;
@@ -368,7 +369,7 @@ namespace IKVM.Java.Externs.java.lang
                     throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
 
                 decl.Finish();
-                RuntimeJavaType[] declInner = decl.InnerClasses;
+                var declInner = decl.InnerClasses;
                 for (int i = 0; i < declInner.Length; i++)
                 {
                     if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.ClassLoader) == wrapper)
@@ -398,8 +399,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 // The protection domain for statically compiled code is created lazily (not at global::java.lang.Class creation time),
                 // to work around boot strap issues.
-                var acl = wrapper.ClassLoader as RuntimeAssemblyClassLoader;
-                if (acl != null)
+                if (wrapper.ClassLoader is RuntimeAssemblyClassLoader acl)
                     pd = acl.GetProtectionDomain();
                 else if (wrapper is RuntimeAnonymousJavaType)
                 {
@@ -445,36 +445,47 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getGenericSignature0(global::java.lang.Class thisClass)
         {
-            RuntimeJavaType tw = RuntimeJavaType.FromClass(thisClass);
+            var tw = RuntimeJavaType.FromClass(thisClass);
             tw.Finish();
             return tw.GetGenericSignature();
         }
 
-        internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] objAnn)
+        /// <summary>
+        /// Converts an array of annotation instances to a IMap.
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <param name="annotations"></param>
+        /// <returns></returns>
+        internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] annotations)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            global::java.util.LinkedHashMap map = new global::java.util.LinkedHashMap();
-            if (objAnn != null)
+            var map = new global::java.util.LinkedHashMap();
+
+            if (annotations != null)
             {
-                foreach (object obj in objAnn)
+                foreach (var obj in annotations)
                 {
-                    global::java.lang.annotation.Annotation a = obj as global::java.lang.annotation.Annotation;
-                    if (a != null)
+                    // annotation is an actual annotation instance
+                    if (obj is global::java.lang.annotation.Annotation annotation)
                     {
-                        map.put(a.annotationType(), FreezeOrWrapAttribute(a));
+                        map.put(annotation.annotationType(), FreezeOrWrapAttribute(annotation));
+                        continue;
                     }
-                    else if (obj is IKVM.Attributes.DynamicAnnotationAttribute)
+
+                    // annotation is a DynamicAnnotationAttribute, which encapsulates an annotation
+                    if (obj is IKVM.Attributes.DynamicAnnotationAttribute dynamicAttribute)
                     {
-                        a = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), ((IKVM.Attributes.DynamicAnnotationAttribute)obj).Definition);
-                        if (a != null)
-                        {
-                            map.put(a.annotationType(), a);
-                        }
+                        annotation = (global::java.lang.annotation.Annotation)JVM.NewAnnotation(loader.GetJavaClassLoader(), dynamicAttribute.Definition);
+                        if (annotation != null)
+                            map.put(annotation.annotationType(), annotation);
+
+                        continue;
                     }
                 }
             }
+
             return map;
 #endif
         }
@@ -500,9 +511,10 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredAnnotationsImpl(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
+            var wrapper = RuntimeJavaType.FromClass(thisClass);
+
             try
             {
                 wrapper.Finish();
@@ -511,6 +523,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 throw x.ToJava();
             }
+
             return AnnotationsToMap(wrapper.ClassLoader, wrapper.GetDeclaredAnnotations());
 #endif
         }
@@ -518,16 +531,17 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredFields0(global::java.lang.Class thisClass, bool publicOnly)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             Profiler.Enter("Class.getDeclaredFields0");
+
             try
             {
-                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
-                // we need to finish the type otherwise all fields will not be in the field map yet
+                var wrapper = RuntimeJavaType.FromClass(thisClass);
                 wrapper.Finish();
-                RuntimeJavaField[] fields = wrapper.GetFields();
-                List<global::java.lang.reflect.Field> list = new List<global::java.lang.reflect.Field>();
+
+                var fields = wrapper.GetFields();
+                var list = new List<global::java.lang.reflect.Field>();
                 for (int i = 0; i < fields.Length; i++)
                 {
                     if (fields[i].IsHideFromReflection)
@@ -543,6 +557,7 @@ namespace IKVM.Java.Externs.java.lang
                         list.Add((global::java.lang.reflect.Field)fields[i].ToField(false, i));
                     }
                 }
+
                 return list.ToArray();
             }
             catch (RetargetableJavaException x)
@@ -606,7 +621,7 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredConstructors0(global::java.lang.Class thisClass, bool publicOnly)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             Profiler.Enter("Class.getDeclaredConstructors0");
             try
@@ -652,7 +667,7 @@ namespace IKVM.Java.Externs.java.lang
         public static global::java.lang.Class[] getDeclaredClasses0(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {

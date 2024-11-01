@@ -27,13 +27,13 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
-using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 #else
@@ -44,6 +44,7 @@ using System.Reflection;
 
 using IKVM.Java.Externs.java.lang.invoke;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.CoreLib.Reflection;
 
 #endif
 
@@ -99,7 +100,7 @@ namespace IKVM.Runtime
         {
             var type = Type.GetTypeFromHandle(typeHandle);
             int rank = 0;
-            while (ReflectUtil.IsVector(type))
+            while (type.IsSZArray())
             {
                 rank++;
                 type = type.GetElementType();
@@ -127,7 +128,7 @@ namespace IKVM.Runtime
             Profiler.Count("DynamicMultianewarray");
 
             var wrapper = RuntimeJavaType.FromClass(clazz);
-            var obj = multianewarray(wrapper.TypeAsArrayType.TypeHandle, lengths);
+            var obj = multianewarray(wrapper.TypeAsArrayType.GetUnderlyingRuntimeType().TypeHandle, lengths);
             if (wrapper.IsGhostArray)
                 GhostTag.SetTag(obj, wrapper);
 
@@ -146,7 +147,7 @@ namespace IKVM.Runtime
                 throw new global::java.lang.NegativeArraySizeException();
 
             var wrapper = RuntimeJavaType.FromClass(clazz);
-            var obj = Array.CreateInstance(wrapper.TypeAsArrayType, length);
+            var obj = Array.CreateInstance(wrapper.TypeAsArrayType.GetUnderlyingRuntimeType(), length);
             if (wrapper.IsGhost || wrapper.IsGhostArray)
                 GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
 
@@ -573,8 +574,8 @@ namespace IKVM.Runtime
             }
             else
             {
-                object[] src1 = src as object[];
-                object[] dst1 = dest as object[];
+                var src1 = src as object[];
+                var dst1 = dest as object[];
                 if (src1 != null && dst1 != null)
                 {
                     // for small copies, don't bother comparing the types as this is relatively expensive
@@ -594,8 +595,7 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                else if (src.GetType() != dest.GetType() &&
-                        (IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
+                else if (src.GetType() != dest.GetType() && (IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
                 {
                     // we don't want to allow copying a primitive into an object array!
                     throw new global::java.lang.ArrayStoreException();
@@ -616,12 +616,21 @@ namespace IKVM.Runtime
 #endif // !FIRST_PASS
         }
 
-        private static bool IsPrimitiveArrayType(Type type)
+        private static bool IsPrimitiveArrayType(ITypeSymbol type)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             return type.IsArray && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive;
+#endif
+        }
+
+        private static bool IsPrimitiveArrayType(Type type)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return type.IsArray && IsPrimitiveArrayType(JVM.Context.Resolver.GetSymbol(type.GetElementType()));
 #endif
         }
 
@@ -1040,7 +1049,7 @@ namespace IKVM.Runtime
                 throw new ArgumentOutOfRangeException();
 
             // check for InitializeModule method present on classloader
-            var classLoader = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).GetJavaClassLoader();
+            var classLoader = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).GetJavaClassLoader();
             if (classLoader != null)
             {
                 var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
@@ -1098,11 +1107,12 @@ namespace IKVM.Runtime
             if (exceptionTypeWrapper.IsSubTypeOf(JVM.Context.JavaBase.TypeOfCliSystemException))
                 mode |= MapFlags.NoRemapping;
 
-            var exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? typeof(System.Exception) : exceptionTypeWrapper.TypeAsBaseType;
-            return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).Invoke(null, new object[] { x, mode });
+            var exceptionType = exceptionTypeWrapper == JVM.Context.JavaBase.TypeOfjavaLangThrowable ? JVM.Context.Resolver.ResolveCoreType(typeof(System.Exception).FullName) : exceptionTypeWrapper.TypeAsBaseType;
+            return (Exception)JVM.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(exceptionType).GetUnderlyingMethod().Invoke(null, [x, mode]);
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static T GetDelegateForInvokeExact<T>(object methodHandle)
             where T : class, Delegate
         {

@@ -22,18 +22,10 @@
   
 */
 using System;
-
-using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.Attributes;
 
 namespace IKVM.Runtime
 {
@@ -71,7 +63,7 @@ namespace IKVM.Runtime
                 ilgen.MarkLabel(label2);
                 ilgen.EmitThrow("java.lang.NullPointerException");
                 ilgen.MarkLabel(label1);
-                ilgen.Emit(OpCodes.Call, DeclaringType.Context.Types.Object.GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+                ilgen.Emit(OpCodes.Call, DeclaringType.Context.Types.Object.GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic, []));
             }
 
             internal override void EmitCallvirt(CodeEmitter ilgen)

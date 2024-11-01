@@ -24,14 +24,8 @@
 using System.Diagnostics;
 
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -39,8 +33,8 @@ namespace IKVM.Runtime
     sealed class RuntimeGhostJavaMethod : RuntimeSmartJavaMethod
     {
 
-        MethodInfo ghostMethod;
-        MethodInfo defaultImpl;
+        IMethodSymbol ghostMethod;
+        IMethodSymbol defaultImpl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -54,7 +48,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, MethodInfo ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, IMethodSymbol ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             // make sure we weren't handed the ghostMethod in the wrapper value type
@@ -66,12 +60,12 @@ namespace IKVM.Runtime
 
         protected override void CallImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, defaultImpl);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, defaultImpl);
         }
 
         protected override void CallvirtImpl(CodeEmitter ilgen)
         {
-            ilgen.Emit(OpCodes.Call, ghostMethod);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ghostMethod);
         }
 
 #endif
@@ -86,26 +80,26 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal void SetDefaultImpl(MethodInfo impl)
+        internal void SetDefaultImpl(IMethodSymbol impl)
         {
             this.defaultImpl = impl;
         }
 
-        internal MethodInfo GetDefaultImpl()
+        internal IMethodSymbol GetDefaultImpl()
         {
             return defaultImpl;
         }
 
 #if IMPORTER
 
-        internal void SetGhostMethod(MethodBuilder mb)
+        internal void SetGhostMethod(IMethodSymbolBuilder mb)
         {
             this.ghostMethod = mb;
         }
 
-        internal MethodBuilder GetGhostMethod()
+        internal IMethodSymbolBuilder GetGhostMethod()
         {
-            return (MethodBuilder)ghostMethod;
+            return (IMethodSymbolBuilder)ghostMethod;
         }
 
 #endif

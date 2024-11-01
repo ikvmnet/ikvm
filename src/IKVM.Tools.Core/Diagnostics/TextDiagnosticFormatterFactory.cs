@@ -15,9 +15,10 @@ namespace IKVM.Tools.Core.Diagnostics
         /// Initializes a new instance.
         /// </summary>
         /// <param name="channels"></param>
+        /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public TextDiagnosticFormatterFactory(DiagnosticChannelProvider channels) :
-            base(channels, "text")
+        public TextDiagnosticFormatterFactory(DiagnosticChannelProvider channels, DiagnosticOptions options) :
+            base(channels, options, "text")
         {
 
         }

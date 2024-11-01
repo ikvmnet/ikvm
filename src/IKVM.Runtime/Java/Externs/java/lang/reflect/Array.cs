@@ -23,6 +23,7 @@
 */
 using System;
 
+using IKVM.CoreLib.Reflection;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
@@ -353,52 +354,60 @@ namespace IKVM.Java.Externs.java.lang.reflect
             {
                 throw new global::java.lang.NullPointerException();
             }
-            Type type = arrayObj.GetType();
-            if (ReflectUtil.IsVector(type) && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type.GetElementType()).IsPrimitive)
+
+            var type = arrayObj.GetType();
+            if (type.IsSZArray() && JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(JVM.Context.Resolver.GetSymbol(type).GetElementType()).IsPrimitive)
             {
-                global::java.lang.Boolean booleanValue = value as global::java.lang.Boolean;
+                var booleanValue = value as global::java.lang.Boolean;
                 if (booleanValue != null)
                 {
                     setBoolean(arrayObj, index, booleanValue.booleanValue());
                     return;
                 }
-                global::java.lang.Byte byteValue = value as global::java.lang.Byte;
+
+                var byteValue = value as global::java.lang.Byte;
                 if (byteValue != null)
                 {
                     setByte(arrayObj, index, byteValue.byteValue());
                     return;
                 }
-                global::java.lang.Character charValue = value as global::java.lang.Character;
+
+                var charValue = value as global::java.lang.Character;
                 if (charValue != null)
                 {
                     setChar(arrayObj, index, charValue.charValue());
                     return;
                 }
-                global::java.lang.Short shortValue = value as global::java.lang.Short;
+
+                var shortValue = value as global::java.lang.Short;
                 if (shortValue != null)
                 {
                     setShort(arrayObj, index, shortValue.shortValue());
                     return;
                 }
-                global::java.lang.Integer intValue = value as global::java.lang.Integer;
+
+                var intValue = value as global::java.lang.Integer;
                 if (intValue != null)
                 {
                     setInt(arrayObj, index, intValue.intValue());
                     return;
                 }
-                global::java.lang.Float floatValue = value as global::java.lang.Float;
+
+                var floatValue = value as global::java.lang.Float;
                 if (floatValue != null)
                 {
                     setFloat(arrayObj, index, floatValue.floatValue());
                     return;
                 }
-                global::java.lang.Long longValue = value as global::java.lang.Long;
+
+                var longValue = value as global::java.lang.Long;
                 if (longValue != null)
                 {
                     setLong(arrayObj, index, longValue.longValue());
                     return;
                 }
-                global::java.lang.Double doubleValue = value as global::java.lang.Double;
+
+                var doubleValue = value as global::java.lang.Double;
                 if (doubleValue != null)
                 {
                     setDouble(arrayObj, index, doubleValue.doubleValue());
@@ -422,16 +431,14 @@ namespace IKVM.Java.Externs.java.lang.reflect
         public static void setBoolean(object arrayObj, int index, bool value)
         {
             if (arrayObj == null)
-            {
                 throw new global::java.lang.NullPointerException();
-            }
-            bool[] arr = arrayObj as bool[];
+
+            var arr = arrayObj as bool[];
             if (arr != null)
             {
                 if (index < 0 || index >= arr.Length)
-                {
                     throw new global::java.lang.ArrayIndexOutOfBoundsException();
-                }
+
                 arr[index] = value;
             }
             else
@@ -443,16 +450,14 @@ namespace IKVM.Java.Externs.java.lang.reflect
         public static void setByte(object arrayObj, int index, byte value)
         {
             if (arrayObj == null)
-            {
                 throw new global::java.lang.NullPointerException();
-            }
-            byte[] arr = arrayObj as byte[];
+
+            var arr = arrayObj as byte[];
             if (arr != null)
             {
                 if (index < 0 || index >= arr.Length)
-                {
                     throw new global::java.lang.ArrayIndexOutOfBoundsException();
-                }
+
                 arr[index] = value;
             }
             else
@@ -464,16 +469,14 @@ namespace IKVM.Java.Externs.java.lang.reflect
         public static void setChar(object arrayObj, int index, char value)
         {
             if (arrayObj == null)
-            {
                 throw new global::java.lang.NullPointerException();
-            }
-            char[] arr = arrayObj as char[];
+
+            var arr = arrayObj as char[];
             if (arr != null)
             {
                 if (index < 0 || index >= arr.Length)
-                {
                     throw new global::java.lang.ArrayIndexOutOfBoundsException();
-                }
+
                 arr[index] = value;
             }
             else
@@ -603,13 +606,13 @@ namespace IKVM.Java.Externs.java.lang.reflect
             }
             try
             {
-                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(componentType);
+                var wrapper = RuntimeJavaType.FromClass(componentType);
                 wrapper.Finish();
-                object obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
+
+                var obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType.GetUnderlyingType(), length);
                 if (wrapper.IsGhost || wrapper.IsGhostArray)
-                {
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper.MakeArrayType(1));
-                }
+
                 return obj;
             }
             catch (RetargetableJavaException x)
@@ -640,13 +643,13 @@ namespace IKVM.Java.Externs.java.lang.reflect
             }
             try
             {
-                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(componentType).MakeArrayType(dimensions.Length);
+                var wrapper = RuntimeJavaType.FromClass(componentType).MakeArrayType(dimensions.Length);
                 wrapper.Finish();
-                object obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.TypeHandle, dimensions);
+
+                var obj = IKVM.Runtime.ByteCodeHelper.multianewarray(wrapper.TypeAsArrayType.GetUnderlyingType().TypeHandle, dimensions);
                 if (wrapper.IsGhostArray)
-                {
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper);
-                }
+
                 return obj;
             }
             catch (RetargetableJavaException x)

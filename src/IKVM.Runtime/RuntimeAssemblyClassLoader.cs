@@ -22,27 +22,19 @@
   
 */
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Runtime.Serialization;
-using System.Runtime.CompilerServices;
-
-using IKVM.CoreLib.Diagnostics;
-using IKVM.Attributes;
-using IKVM.Runtime.Syntax;
-
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-
-using Type = IKVM.Reflection.Type;
-#else
-using IKVM.Runtime.Vfs;
-
+using System.IO;
 using System.Reflection;
-#endif
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Threading;
+
+using IKVM.Attributes;
+using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols;
+using IKVM.Runtime.Syntax;
+using IKVM.Runtime.Vfs;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
@@ -68,7 +60,7 @@ namespace IKVM.Runtime
         Dictionary<int, List<int>> exports;
         string[] exportedAssemblyNames;
         AssemblyLoader[] exportedAssemblies;
-        Dictionary<Assembly, AssemblyLoader> exportedLoaders;
+        Dictionary<IAssemblySymbol, AssemblyLoader> exportedLoaders;
 
         /// <summary>
         /// Manages a loaded assembly.
@@ -77,13 +69,13 @@ namespace IKVM.Runtime
         {
 
             readonly RuntimeAssemblyClassLoader loader;
-            readonly Assembly assembly;
+            readonly IAssemblySymbol assembly;
 
             bool[] isJavaModule;
-            Module[] modules;
+            IModuleSymbol[] modules;
             Dictionary<string, string> nameMap;
             bool hasDotNetModule;
-            AssemblyName[] internalsVisibleTo;
+            AssemblyIdentity[] internalsVisibleTo;
             string[] jarList;
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
             sun.misc.URLClassPath urlClassPath;
@@ -94,7 +86,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="loader"></param>
             /// <param name="assembly"></param>
-            internal AssemblyLoader(RuntimeAssemblyClassLoader loader, Assembly assembly)
+            internal AssemblyLoader(RuntimeAssemblyClassLoader loader, IAssemblySymbol assembly)
             {
                 this.loader = loader ?? throw new ArgumentNullException(nameof(loader));
                 this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
@@ -114,8 +106,7 @@ namespace IKVM.Runtime
                             var map = jma.GetClassMap();
                             if (map != null)
                             {
-                                if (nameMap == null)
-                                    nameMap = new Dictionary<string, string>();
+                                nameMap ??= [];
 
                                 for (int j = 0; j < map.Length; j += 2)
                                 {
@@ -152,7 +143,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal Assembly Assembly
+            internal IAssemblySymbol Assembly
             {
                 get { return assembly; }
             }
@@ -174,7 +165,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="name"></param>
             /// <returns></returns>
-            Type GetType(string name)
+            ITypeSymbol GetType(string name)
             {
                 try
                 {
@@ -197,12 +188,12 @@ namespace IKVM.Runtime
             }
 
             /// <summary>
-            /// Attempts to load a type with the specified name from the given <see cref="Module"/>.
+            /// Attempts to load a type with the specified name from the given <see cref="IModuleSymbol"/>.
             /// </summary>
             /// <param name="module"></param>
             /// <param name="name"></param>
             /// <returns></returns>
-            Type GetType(Module module, string name)
+            ITypeSymbol GetType(IModuleSymbol module, string name)
             {
                 try
                 {
@@ -224,13 +215,12 @@ namespace IKVM.Runtime
                 return null;
             }
 
-            Type GetJavaType(Module module, string name)
+            ITypeSymbol GetJavaType(IModuleSymbol module, string name)
             {
                 try
                 {
                     string n = null;
-                    if (nameMap != null)
-                        nameMap.TryGetValue(name, out n);
+                    nameMap?.TryGetValue(name, out n);
 
                     var t = GetType(module, n ?? name);
                     if (t == null)
@@ -300,6 +290,7 @@ namespace IKVM.Runtime
                     // let that generated the manufactured nested classes
                     // (note that for generic outer types, we need to duplicate this in ClassLoaderWrapper.LoadGenericClass)
                     RuntimeJavaType outer = null;
+
                     if (name.EndsWith(RuntimeManagedJavaType.DelegateInterfaceSuffix))
                     {
                         outer = DoLoad(name.Substring(0, name.Length - RuntimeManagedJavaType.DelegateInterfaceSuffix.Length));
@@ -336,7 +327,7 @@ namespace IKVM.Runtime
             /// <param name="type"></param>
             /// <param name="isJavaType"></param>
             /// <returns></returns>
-            internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
+            internal JavaTypeName? GetTypeNameAndType(ITypeSymbol type, out bool isJavaType)
             {
                 // find the module index of the type's module
                 var module = type.Module;
@@ -373,7 +364,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal RuntimeJavaType CreateJavaTypeForAssemblyType(Type type)
+            internal RuntimeJavaType CreateJavaTypeForAssemblyType(ITypeSymbol type)
             {
                 var name = GetTypeNameAndType(type, out bool isJavaType);
                 if (name == null)
@@ -393,7 +384,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal bool InternalsVisibleTo(AssemblyName otherName)
+            internal bool InternalsVisibleTo(AssemblyIdentity otherName)
             {
                 if (internalsVisibleTo == null)
                     Interlocked.CompareExchange(ref internalsVisibleTo, loader.Context.AttributeHelper.GetInternalsVisibleToAttributes(assembly), null);
@@ -402,10 +393,8 @@ namespace IKVM.Runtime
                 {
                     // we match the simple name and PublicKeyToken (because the AssemblyName constructor used
                     // by GetInternalsVisibleToAttributes() only sets the PublicKeyToken, even if a PublicKey is specified)
-                    if (ReflectUtil.MatchNameAndPublicKeyToken(name, otherName))
-                    {
+                    if (AssemblyIdentity.MemberwiseEqual(name, otherName) == true && AssemblyIdentity.KeysEqual(name, otherName))
                         return true;
-                    }
                 }
 
                 return false;
@@ -438,7 +427,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="context"></param>
         /// <param name="assembly"></param>
-        internal RuntimeAssemblyClassLoader(RuntimeContext context, Assembly assembly) :
+        internal RuntimeAssemblyClassLoader(RuntimeContext context, IAssemblySymbol assembly) :
             this(context, assembly, null)
         {
 
@@ -450,7 +439,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="assembly"></param>
         /// <param name="fixedReferences"></param>
-        internal RuntimeAssemblyClassLoader(RuntimeContext context, Assembly assembly, string[] fixedReferences) :
+        internal RuntimeAssemblyClassLoader(RuntimeContext context, IAssemblySymbol assembly, string[] fixedReferences) :
             base(context, CodeGenOptions.None, null)
         {
             this.assemblyLoader = new AssemblyLoader(this, assembly);
@@ -459,11 +448,11 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static void PreloadExportedAssemblies(StaticCompiler compiler, Assembly assembly)
+        internal static void PreloadExportedAssemblies(StaticCompiler compiler, IAssemblySymbol assembly)
         {
             if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
             {
-                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                using (var stream = assembly.GetManifestResourceStream("ikvm.exports"))
                 {
                     var rdr = new BinaryReader(stream);
                     var assemblyCount = rdr.ReadInt32();
@@ -498,18 +487,18 @@ namespace IKVM.Runtime
             {
                 if (delegates == null)
                 {
-                    if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) == false && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
+                    if (ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) == false && assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo("ikvm.exports") != null)
                     {
                         var wildcardExports = new List<string>();
 
-                        using (var stream = assemblyLoader.Assembly.GetManifestResourceStream("ikvm.exports"))
+                        using (var stream = assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceStream("ikvm.exports"))
                         {
                             var rdr = new BinaryReader(stream);
                             var assemblyCount = rdr.ReadInt32();
                             exports = new Dictionary<int, List<int>>();
                             exportedAssemblies = new AssemblyLoader[assemblyCount];
                             exportedAssemblyNames = new string[assemblyCount];
-                            exportedLoaders = new Dictionary<Assembly, AssemblyLoader>();
+                            exportedLoaders = new Dictionary<IAssemblySymbol, AssemblyLoader>();
 
                             for (int i = 0; i < assemblyCount; i++)
                             {
@@ -554,9 +543,9 @@ namespace IKVM.Runtime
                 DoInitializeExports();
         }
 
-        internal Assembly MainAssembly => assemblyLoader.Assembly;
+        internal IAssemblySymbol MainAssembly => assemblyLoader.Assembly;
 
-        internal Assembly GetAssembly(RuntimeJavaType wrapper)
+        internal IAssemblySymbol GetAssembly(RuntimeJavaType wrapper)
         {
             Debug.Assert(wrapper.ClassLoader == this);
 
@@ -566,7 +555,7 @@ namespace IKVM.Runtime
             return wrapper.TypeAsBaseType.Assembly;
         }
 
-        Assembly LoadAssemblyOrClearName(ref string name, bool exported)
+        IAssemblySymbol LoadAssemblyOrClearName(ref string name, bool exported)
         {
             // previous load attempt failed
             if (name == null)
@@ -574,7 +563,7 @@ namespace IKVM.Runtime
 
             try
             {
-                return Context.Resolver.ResolveAssembly(name).AsReflection();
+                return Context.Resolver.ResolveAssembly(name);
             }
             catch
             {
@@ -610,7 +599,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
+        internal JavaTypeName? GetTypeNameAndType(ITypeSymbol type, out bool isJavaType)
         {
             return GetLoader(type.Assembly).GetTypeNameAndType(type, out isJavaType);
         }
@@ -628,9 +617,9 @@ namespace IKVM.Runtime
             return loader;
         }
 
-        internal List<Assembly> GetAllAvailableAssemblies()
+        internal List<IAssemblySymbol> GetAllAvailableAssemblies()
         {
-            var list = new List<Assembly>();
+            var list = new List<IAssemblySymbol>();
             list.Add(assemblyLoader.Assembly);
 
             LazyInitExports();
@@ -648,7 +637,7 @@ namespace IKVM.Runtime
             return list;
         }
 
-        AssemblyLoader GetLoader(Assembly assembly)
+        AssemblyLoader GetLoader(IAssemblySymbol assembly)
         {
             if (assemblyLoader.Assembly == assembly)
                 return assemblyLoader;
@@ -656,7 +645,7 @@ namespace IKVM.Runtime
             return GetLoaderForExportedAssembly(assembly);
         }
 
-        AssemblyLoader GetLoaderForExportedAssembly(Assembly assembly)
+        AssemblyLoader GetLoaderForExportedAssembly(IAssemblySymbol assembly)
         {
             LazyInitExports();
 
@@ -691,7 +680,7 @@ namespace IKVM.Runtime
         /// <param name="type"></param>
         /// <returns></returns>
         /// <exception cref="InternalException"></exception>
-        internal virtual RuntimeJavaType GetJavaTypeFromAssemblyType(Type type)
+        internal virtual RuntimeJavaType GetJavaTypeFromAssemblyType(ITypeSymbol type)
         {
             if (type.Name.EndsWith("[]"))
                 throw new InternalException();
@@ -716,7 +705,7 @@ namespace IKVM.Runtime
                 if (javaType.TypeAsTBD != type && (!javaType.IsRemapped || javaType.TypeAsBaseType != type))
                 {
 #if IMPORTER
-                    throw new FatalCompilerErrorException(DiagnosticEvent.AssemblyContainsDuplicateClassNames(type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName));
+                    throw new DiagnosticEventException(DiagnosticEvent.AssemblyContainsDuplicateClassNames(type.FullName, javaType.TypeAsTBD.FullName, javaType.Name, type.Assembly.FullName));
 #else
                     throw new InternalException($"\nType \"{type.FullName}\" and \"{javaType.TypeAsTBD.FullName}\" both map to the same name \"{javaType.Name}\".");
 #endif
@@ -853,12 +842,12 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER
 
-        static java.net.URL MakeResourceURL(Assembly asm, string name)
+        static java.net.URL MakeResourceURL(IAssemblySymbol asm, string name)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm, JVM.Properties.HomePath), name)).toURI().toURL();
+            return new java.io.File(Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, asm.GetUnderlyingAssembly(), JVM.Properties.HomePath), name)).toURI().toURL();
 #endif
         }
 
@@ -868,7 +857,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             // cannot find resources in dynamic assembly
-            if (assemblyLoader.Assembly.IsDynamic)
+            if (assemblyLoader.Assembly.GetUnderlyingAssembly().IsDynamic)
                 yield break;
 
             var found = false;
@@ -884,14 +873,14 @@ namespace IKVM.Runtime
             if (assemblyLoader.HasJavaModule == false)
             {
                 // attempt to find an assembly resource with the exact name
-                if (unmangledName != "" && assemblyLoader.Assembly.GetManifestResourceInfo(unmangledName) != null)
+                if (unmangledName != "" && assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(unmangledName) != null)
                 {
                     found = true;
                     yield return MakeResourceURL(assemblyLoader.Assembly, unmangledName);
                 }
 
                 // the JavaResourceAttribute can be used to manufacture a named Java resource
-                foreach (var res in assemblyLoader.Assembly.GetCustomAttributes<JavaResourceAttribute>())
+                foreach (var res in assemblyLoader.Assembly.GetUnderlyingAssembly().GetCustomAttributes<JavaResourceAttribute>())
                 {
                     if (res.JavaName == unmangledName)
                     {
@@ -903,7 +892,7 @@ namespace IKVM.Runtime
 
             // find an assembly resource with the managed resource name
             var name = JVM.MangleResourceName(unmangledName);
-            if (assemblyLoader.Assembly.GetManifestResourceInfo(name) != null)
+            if (assemblyLoader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(name) != null)
             {
                 found = true;
                 yield return MakeResourceURL(assemblyLoader.Assembly, name);
@@ -932,7 +921,7 @@ namespace IKVM.Runtime
                         yield return (java.net.URL)urls.nextElement();
                     }
 
-                    if (loader.Assembly.GetManifestResourceInfo(name) != null)
+                    if (loader.Assembly.GetUnderlyingAssembly().GetManifestResourceInfo(name) != null)
                     {
                         found = true;
                         yield return MakeResourceURL(loader.Assembly, name);
@@ -945,7 +934,7 @@ namespace IKVM.Runtime
             {
                 var tw = FindLoadedClass(unmangledName.Substring(0, unmangledName.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.ClassLoader == this && !tw.IsArray && !tw.IsDynamic)
-                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly, JVM.Properties.HomePath), unmangledName)).toURI().toURL();
+                    yield return new java.io.File(Path.Combine(VfsTable.GetAssemblyClassesPath(JVM.Vfs.Context, assemblyLoader.Assembly.GetUnderlyingAssembly(), JVM.Properties.HomePath), unmangledName)).toURI().toURL();
             }
 #endif
         }
@@ -1081,7 +1070,7 @@ namespace IKVM.Runtime
         internal virtual java.security.ProtectionDomain GetProtectionDomain()
         {
             if (protectionDomain == null)
-                Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly), null);
+                Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly.GetUnderlyingAssembly()), null);
 
             return protectionDomain;
         }
@@ -1104,26 +1093,24 @@ namespace IKVM.Runtime
 #else
                 // we're OK if the type being accessed (wrapper) is a dynamic type
                 // or if the dynamic assembly has internal access
-                return GetAssembly(wrapper).Equals(GetTypeWrapperFactory().ModuleBuilder.Assembly)
-                    || GetTypeWrapperFactory().HasInternalAccess;
+                return GetAssembly(wrapper).Equals(GetTypeWrapperFactory().ModuleBuilder.Assembly) || GetTypeWrapperFactory().HasInternalAccess;
 #endif
             }
-            AssemblyName otherName;
+
 #if IMPORTER
-            ImportClassLoader ccl = other as ImportClassLoader;
+            var ccl = other as ImportClassLoader;
             if (ccl == null)
-            {
                 return false;
-            }
-            otherName = ccl.GetAssemblyName();
+
+            var otherName = ccl.GetAssemblyName();
 #else
-            RuntimeAssemblyClassLoader acl = other as RuntimeAssemblyClassLoader;
+            var acl = other as RuntimeAssemblyClassLoader;
             if (acl == null)
-            {
                 return false;
-            }
-            otherName = acl.GetAssembly(friend).GetName();
+
+            var otherName = acl.GetAssembly(friend).GetIdentity();
 #endif
+
             return GetLoader(GetAssembly(wrapper)).InternalsVisibleTo(otherName);
         }
 
@@ -1142,7 +1129,7 @@ namespace IKVM.Runtime
             var list = new List<KeyValuePair<string, string[]>>();
             foreach (var m in assemblyLoader.Assembly.GetModules(false))
             {
-                var attr = m.GetCustomAttributes<PackageListAttribute>();
+                var attr = m.GetUnderlyingModule().GetCustomAttributes<PackageListAttribute>();
                 foreach (var p in attr)
                     list.Add(new KeyValuePair<string, string[]>(p.jar, p.packages));
             }
@@ -1185,9 +1172,9 @@ namespace IKVM.Runtime
                 }
             }
 
-            var attribs = assembly.GetCustomAttributes(typeof(CustomAssemblyClassLoaderAttribute), false);
-            if (attribs.Length == 1)
-                return ((CustomAssemblyClassLoaderAttribute)attribs[0]).Type;
+            var attribs = assembly.GetCustomAttribute(Context.Resolver.ResolveRuntimeType(typeof(CustomAssemblyClassLoaderAttribute).FullName), false);
+            if (attribs.HasValue)
+                return ((ITypeSymbol)attribs.Value.ConstructorArguments[0].Value).GetUnderlyingRuntimeType();
 
             return null;
         }
@@ -1297,7 +1284,7 @@ namespace IKVM.Runtime
 
             readonly ConstructorInfo ctor;
             readonly object classLoader;
-            readonly Assembly assembly;
+            readonly IAssemblySymbol assembly;
 
             /// <summary>
             /// Initializes a new instance.
@@ -1305,7 +1292,7 @@ namespace IKVM.Runtime
             /// <param name="ctor"></param>
             /// <param name="classLoader"></param>
             /// <param name="assembly"></param>
-            internal CustomClassLoaderCtorCaller(ConstructorInfo ctor, object classLoader, Assembly assembly)
+            internal CustomClassLoaderCtorCaller(ConstructorInfo ctor, object classLoader, IAssemblySymbol assembly)
             {
                 this.ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
                 this.classLoader = classLoader ?? throw new ArgumentNullException(nameof(classLoader));
@@ -1314,7 +1301,7 @@ namespace IKVM.Runtime
 
             public object run()
             {
-                ctor.Invoke(classLoader, new object[] { assembly });
+                ctor.Invoke(classLoader, [assembly.GetUnderlyingAssembly()]);
                 return null;
             }
         }

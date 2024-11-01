@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found main method in class "{arg0}".
+/// Info: Found main method in class "{arg0}".
         /// </remarks>
         void MainMethodFound(string arg0);
 
@@ -18,7 +18,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OutputFileIs' diagnostic.
         /// </summary>
         /// <remarks>
-/// Output file is "{arg0}".
+/// Info: Output file is "{arg0}".
         /// </remarks>
         void OutputFileIs(string arg0);
 
@@ -26,7 +26,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AutoAddRef' diagnostic.
         /// </summary>
         /// <remarks>
-/// Automatically adding reference to "{arg0}".
+/// Info: Automatically adding reference to "{arg0}".
         /// </remarks>
         void AutoAddRef(string arg0);
 
@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodFromManifest' diagnostic.
         /// </summary>
         /// <remarks>
-/// Using main class "{arg0}" based on jar manifest.
+/// Info: Using main class "{arg0}" based on jar manifest.
         /// </remarks>
         void MainMethodFromManifest(string arg0);
 
@@ -42,7 +42,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericCompilerInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Info: {arg0}
         /// </remarks>
         void GenericCompilerInfo(string arg0);
 
@@ -50,7 +50,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericClassLoadingInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Info: {arg0}
         /// </remarks>
         void GenericClassLoadingInfo(string arg0);
 
@@ -58,7 +58,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericVerifierInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Info: {arg0}
         /// </remarks>
         void GenericVerifierInfo(string arg0);
 
@@ -66,7 +66,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericRuntimeInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Info: {arg0}
         /// </remarks>
         void GenericRuntimeInfo(string arg0);
 
@@ -74,7 +74,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericJniInfo' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Info: {arg0}
         /// </remarks>
         void GenericJniInfo(string arg0);
 
@@ -82,7 +82,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class "{arg0}" not found.
+/// Warning: Class "{arg0}" not found.
         /// </remarks>
         void ClassNotFound(string arg0);
 
@@ -90,7 +90,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}". (class format error "{arg1}")
+/// Warning: Unable to compile class "{arg0}". (class format error "{arg1}")
         /// </remarks>
         void ClassFormatError(string arg0, string arg1);
 
@@ -98,7 +98,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate class name: "{arg0}".
+/// Warning: Duplicate class name: "{arg0}".
         /// </remarks>
         void DuplicateClassName(string arg0);
 
@@ -106,7 +106,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'IllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}". (illegal access error "{arg1}")
+/// Warning: Unable to compile class "{arg0}". (illegal access error "{arg1}")
         /// </remarks>
         void IllegalAccessError(string arg0, string arg1);
 
@@ -114,7 +114,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'VerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}". (verification error "{arg1}")
+/// Warning: Unable to compile class "{arg0}". (verification error "{arg1}")
         /// </remarks>
         void VerificationError(string arg0, string arg1);
 
@@ -122,7 +122,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'NoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}". (missing class "{arg1}")
+/// Warning: Unable to compile class "{arg0}". (missing class "{arg1}")
         /// </remarks>
         void NoClassDefFoundError(string arg0, string arg1);
 
@@ -130,7 +130,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericUnableToCompileError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile class "{arg0}". ("{arg1}": "{arg2}")
+/// Warning: Unable to compile class "{arg0}". ("{arg1}": "{arg2}")
         /// </remarks>
         void GenericUnableToCompileError(string arg0, string arg1, string arg2);
 
@@ -138,7 +138,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateResourceName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Skipping resource (name clash): "{arg0}"
+/// Warning: Skipping resource (name clash): "{arg0}"
         /// </remarks>
         void DuplicateResourceName(string arg0);
 
@@ -146,7 +146,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'SkippingReferencedClass' diagnostic.
         /// </summary>
         /// <remarks>
-/// Skipping class: "{arg0}". (class is already available in referenced assembly "{arg1}")
+/// Warning: Skipping class: "{arg0}". (class is already available in referenced assembly "{arg1}")
         /// </remarks>
         void SkippingReferencedClass(string arg0, string arg1);
 
@@ -154,7 +154,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'NoJniRuntime' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load runtime JNI assembly.
+/// Warning: Unable to load runtime JNI assembly.
         /// </remarks>
         void NoJniRuntime();
 
@@ -162,7 +162,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedNoClassDefFoundError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoClassDefFoundError in "{arg0}". ("{arg1}").
+/// Warning: Emitted java.lang.NoClassDefFoundError in "{arg0}". ("{arg1}").
         /// </remarks>
         void EmittedNoClassDefFoundError(string arg0, string arg1);
 
@@ -170,7 +170,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedIllegalAccessError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IllegalAccessError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.IllegalAccessError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedIllegalAccessError(string arg0, string arg1);
 
@@ -178,7 +178,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedInstantiationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.InstantiationError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.InstantiationError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedInstantiationError(string arg0, string arg1);
 
@@ -186,7 +186,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedIncompatibleClassChangeError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.IncompatibleClassChangeError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.IncompatibleClassChangeError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedIncompatibleClassChangeError(string arg0, string arg1);
 
@@ -194,7 +194,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedNoSuchFieldError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchFieldError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.NoSuchFieldError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedNoSuchFieldError(string arg0, string arg1);
 
@@ -202,7 +202,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedAbstractMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.AbstractMethodError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.AbstractMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedAbstractMethodError(string arg0, string arg1);
 
@@ -210,7 +210,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedNoSuchMethodError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.NoSuchMethodError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.NoSuchMethodError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedNoSuchMethodError(string arg0, string arg1);
 
@@ -218,7 +218,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedLinkageError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.LinkageError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.LinkageError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedLinkageError(string arg0, string arg1);
 
@@ -226,7 +226,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedVerificationError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.VerificationError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.VerificationError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedVerificationError(string arg0, string arg1);
 
@@ -234,7 +234,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'EmittedClassFormatError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Emitted java.lang.ClassFormatError in "{arg0}". ("{arg1}")
+/// Warning: Emitted java.lang.ClassFormatError in "{arg0}". ("{arg1}")
         /// </remarks>
         void EmittedClassFormatError(string arg0, string arg1);
 
@@ -242,7 +242,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error emitting "{arg0}" custom attribute. ("{arg1}")
+/// Warning: Error emitting "{arg0}" custom attribute. ("{arg1}")
         /// </remarks>
         void InvalidCustomAttribute(string arg0, string arg1);
 
@@ -250,7 +250,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'IgnoredCustomAttribute' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom attribute "{arg0}" was ignored. ("{arg1}")
+/// Warning: Custom attribute "{arg0}" was ignored. ("{arg1}")
         /// </remarks>
         void IgnoredCustomAttribute(string arg0, string arg1);
 
@@ -258,7 +258,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AssumeAssemblyVersionMatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Assuming assembly reference "{arg0}" matches "{arg1}", you may need to supply runtime policy
+/// Warning: Assuming assembly reference "{arg0}" matches "{arg1}", you may need to supply runtime policy
         /// </remarks>
         void AssumeAssemblyVersionMatch(string arg0, string arg1);
 
@@ -266,7 +266,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidDirectoryInLibOptionPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{arg0}" specified in -lib option is not valid.
+/// Warning: Directory "{arg0}" specified in -lib option is not valid.
         /// </remarks>
         void InvalidDirectoryInLibOptionPath(string arg0);
 
@@ -274,7 +274,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidDirectoryInLibEnvironmentPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Directory "{arg0}" specified in LIB environment is not valid.
+/// Warning: Directory "{arg0}" specified in LIB environment is not valid.
         /// </remarks>
         void InvalidDirectoryInLibEnvironmentPath(string arg0);
 
@@ -282,7 +282,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'LegacySearchRule' diagnostic.
         /// </summary>
         /// <remarks>
-/// Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference.
+/// Warning: Found assembly "{arg0}" using legacy search rule, please append '.dll' to the reference.
         /// </remarks>
         void LegacySearchRule(string arg0);
 
@@ -290,7 +290,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AssemblyLocationIgnored' diagnostic.
         /// </summary>
         /// <remarks>
-/// Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}".
+/// Warning: Assembly "{arg0}" is ignored as previously loaded assembly "{arg1}" has the same identity "{arg2}".
         /// </remarks>
         void AssemblyLocationIgnored(string arg0, string arg1, string arg2);
 
@@ -298,7 +298,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InterfaceMethodCantBeInternal' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring @ikvm.lang.Internal annotation on interface method. ("{arg0}.{arg1}{arg2}")
+/// Warning: Ignoring @ikvm.lang.Internal annotation on interface method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void InterfaceMethodCantBeInternal(string arg0, string arg1, string arg2);
 
@@ -306,7 +306,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateAssemblyReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate assembly reference "{arg0}"
+/// Warning: Duplicate assembly reference "{arg0}"
         /// </remarks>
         void DuplicateAssemblyReference(string arg0);
 
@@ -314,7 +314,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnableToResolveType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found.
+/// Warning: Reference in "{arg0}" to type "{arg1}" claims it is defined in "{arg2}", but it could not be found.
         /// </remarks>
         void UnableToResolveType(string arg0, string arg1, string arg2);
 
@@ -322,7 +322,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'StubsAreDeprecated' diagnostic.
         /// </summary>
         /// <remarks>
-/// Compiling stubs is deprecated. Please add a reference to assembly "{arg0}" instead.
+/// Warning: Compiling stubs is deprecated. Please add a reference to assembly "{arg0}" instead.
         /// </remarks>
         void StubsAreDeprecated(string arg0);
 
@@ -330,7 +330,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'WrongClassName' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to compile "{arg0}" (wrong name: "{arg1}")
+/// Warning: Unable to compile "{arg0}" (wrong name: "{arg1}")
         /// </remarks>
         void WrongClassName(string arg0, string arg1);
 
@@ -338,7 +338,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ReflectionCallerClassRequiresCallerID' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reflection.getCallerClass() called from non-CallerID method. ("{arg0}.{arg1}{arg2}")
+/// Warning: Reflection.getCallerClass() called from non-CallerID method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void ReflectionCallerClassRequiresCallerID(string arg0, string arg1, string arg2);
 
@@ -346,7 +346,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'LegacyAssemblyAttributesFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.
+/// Warning: Legacy assembly attributes container found. Please use the -assemblyattributes:<file> option.
         /// </remarks>
         void LegacyAssemblyAttributesFound();
 
@@ -354,7 +354,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnableToCreateLambdaFactory' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to create static lambda factory.
+/// Warning: Unable to create static lambda factory.
         /// </remarks>
         void UnableToCreateLambdaFactory();
 
@@ -362,7 +362,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnknownWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void UnknownWarning(string arg0);
 
@@ -370,7 +370,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
+/// Warning: Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         void DuplicateIkvmLangProperty(string arg0, string arg1);
 
@@ -378,7 +378,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MalformedIkvmLangProperty' diagnostic.
         /// </summary>
         /// <remarks>
-/// Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
+/// Warning: Ignoring duplicate ikvm.lang.Property annotation on {arg0}.{arg1}.
         /// </remarks>
         void MalformedIkvmLangProperty(string arg0, string arg1);
 
@@ -386,7 +386,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericCompilerWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void GenericCompilerWarning(string arg0);
 
@@ -394,7 +394,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericClassLoadingWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void GenericClassLoadingWarning(string arg0);
 
@@ -402,7 +402,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericVerifierWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void GenericVerifierWarning(string arg0);
 
@@ -410,7 +410,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericRuntimeWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void GenericRuntimeWarning(string arg0);
 
@@ -418,7 +418,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericJniWarning' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Warning: {arg0}
         /// </remarks>
         void GenericJniWarning(string arg0);
 
@@ -426,7 +426,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnableToCreateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to create proxy "{arg0}". ("{arg1}")
+/// Error: Unable to create proxy "{arg0}". ("{arg1}")
         /// </remarks>
         void UnableToCreateProxy(string arg0, string arg1);
 
@@ -434,7 +434,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DuplicateProxy' diagnostic.
         /// </summary>
         /// <remarks>
-/// Duplicate proxy "{arg0}".
+/// Error: Duplicate proxy "{arg0}".
         /// </remarks>
         void DuplicateProxy(string arg0);
 
@@ -442,7 +442,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MapXmlUnableToResolveOpCode' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve opcode in remap file: {arg0}.
+/// Error: Unable to resolve opcode in remap file: {arg0}.
         /// </remarks>
         void MapXmlUnableToResolveOpCode(string arg0);
 
@@ -450,7 +450,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MapXmlError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Error in remap file: {arg0}.
+/// Error: Error in remap file: {arg0}.
         /// </remarks>
         void MapXmlError(string arg0);
 
@@ -458,7 +458,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InputFileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Source file '{arg0}' not found.
+/// Error: Source file '{arg0}' not found.
         /// </remarks>
         void InputFileNotFound(string arg0);
 
@@ -466,7 +466,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnknownFileType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown file type: {arg0}.
+/// Error: Unknown file type: {arg0}.
         /// </remarks>
         void UnknownFileType(string arg0);
 
@@ -474,7 +474,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnknownElementInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown element {arg0} in remap file, line {arg1}, column {arg2}.
+/// Error: Unknown element {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         void UnknownElementInMapFile(string arg0, string arg1, string arg2);
 
@@ -482,7 +482,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnknownAttributeInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}.
+/// Error: Unknown attribute {arg0} in remap file, line {arg1}, column {arg2}.
         /// </remarks>
         void UnknownAttributeInMapFile(string arg0, string arg1, string arg2);
 
@@ -490,7 +490,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidMemberNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {arg0} name '{arg1}' in remap file in class {arg2}.
+/// Error: Invalid {arg0} name '{arg1}' in remap file in class {arg2}.
         /// </remarks>
         void InvalidMemberNameInMapFile(string arg0, string arg1, string arg2);
 
@@ -498,7 +498,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidMemberSignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}.
+/// Error: Invalid {arg0} signature '{arg3}' in remap file for {arg0} {arg1}.{arg2}.
         /// </remarks>
         void InvalidMemberSignatureInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -506,7 +506,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidPropertyNameInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}.
+/// Error: Invalid property {arg0} name '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         void InvalidPropertyNameInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -514,7 +514,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidPropertySignatureInMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}.
+/// Error: Invalid property {arg0} signature '{arg3}' in remap file for property {arg1}.{arg2}.
         /// </remarks>
         void InvalidPropertySignatureInMapFile(string arg0, string arg1, string arg2, string arg3);
 
@@ -522,7 +522,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'NonPrimaryAssemblyReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead.
+/// Error: Referenced assembly "{arg0}" is not the primary assembly of a shared class loader group, please reference primary assembly "{arg1}" instead.
         /// </remarks>
         void NonPrimaryAssemblyReference(string arg0, string arg1);
 
@@ -530,7 +530,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MissingType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found.
+/// Error: Reference to type "{arg0}" claims it is defined in "{arg1}", but it could not be found.
         /// </remarks>
         void MissingType(string arg0, string arg1);
 
@@ -538,7 +538,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MissingReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'.
+/// Error: The type '{arg0}' is defined in an assembly that is notResponseFileDepthExceeded referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         void MissingReference(string arg0, string arg1);
 
@@ -546,7 +546,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'CallerSensitiveOnUnsupportedMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// CallerSensitive annotation on unsupported method. ("{arg0}.{arg1}{arg2}")
+/// Error: CallerSensitive annotation on unsupported method. ("{arg0}.{arg1}{arg2}")
         /// </remarks>
         void CallerSensitiveOnUnsupportedMethod(string arg0, string arg1, string arg2);
 
@@ -554,7 +554,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RemappedTypeMissingDefaultInterfaceMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0} does not implement default interface method {arg1}.
+/// Error: {arg0} does not implement default interface method {arg1}.
         /// </remarks>
         void RemappedTypeMissingDefaultInterfaceMethod(string arg0, string arg1);
 
@@ -562,7 +562,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericCompilerError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Error: {arg0}
         /// </remarks>
         void GenericCompilerError(string arg0);
 
@@ -570,7 +570,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericClassLoadingError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Error: {arg0}
         /// </remarks>
         void GenericClassLoadingError(string arg0);
 
@@ -578,7 +578,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericVerifierError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Error: {arg0}
         /// </remarks>
         void GenericVerifierError(string arg0);
 
@@ -586,7 +586,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericRuntimeError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Error: {arg0}
         /// </remarks>
         void GenericRuntimeError(string arg0);
 
@@ -594,7 +594,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericJniError' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Error: {arg0}
         /// </remarks>
         void GenericJniError(string arg0);
 
@@ -602,7 +602,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ExportingImportsNotSupported' diagnostic.
         /// </summary>
         /// <remarks>
-/// Exporting previously imported assemblies is not supported.
+/// Error: Exporting previously imported assemblies is not supported.
         /// </remarks>
         void ExportingImportsNotSupported();
 
@@ -610,7 +610,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ResponseFileDepthExceeded' diagnostic.
         /// </summary>
         /// <remarks>
-/// Response file nesting depth exceeded.
+/// Fatal: Response file nesting depth exceeded.
         /// </remarks>
         void ResponseFileDepthExceeded();
 
@@ -618,7 +618,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ErrorReadingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to read file: {arg0}. ({arg1})
+/// Fatal: Unable to read file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorReadingFile(string arg0, string arg1);
 
@@ -626,7 +626,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'NoTargetsFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// No targets found
+/// Fatal: No targets found
         /// </remarks>
         void NoTargetsFound();
 
@@ -634,7 +634,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'FileFormatLimitationExceeded' diagnostic.
         /// </summary>
         /// <remarks>
-/// File format limitation exceeded: {arg0}.
+/// Fatal: File format limitation exceeded: {arg0}.
         /// </remarks>
         void FileFormatLimitationExceeded(string arg0);
 
@@ -642,7 +642,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'CannotSpecifyBothKeyFileAndContainer' diagnostic.
         /// </summary>
         /// <remarks>
-/// You cannot specify both a key file and container.
+/// Fatal: You cannot specify both a key file and container.
         /// </remarks>
         void CannotSpecifyBothKeyFileAndContainer();
 
@@ -650,7 +650,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'DelaySignRequiresKey' diagnostic.
         /// </summary>
         /// <remarks>
-/// You cannot delay sign without a key file or container.
+/// Fatal: You cannot delay sign without a key file or container.
         /// </remarks>
         void DelaySignRequiresKey();
 
@@ -658,7 +658,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidStrongNameKeyPair' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid key {arg0} specified. ("{arg1}")
+/// Fatal: Invalid key {arg0} specified. ("{arg1}")
         /// </remarks>
         void InvalidStrongNameKeyPair(string arg0, string arg1);
 
@@ -666,7 +666,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ReferenceNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Reference not found: {arg0}
+/// Fatal: Reference not found: {arg0}
         /// </remarks>
         void ReferenceNotFound(string arg0);
 
@@ -674,7 +674,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'OptionsMustPreceedChildLevels' diagnostic.
         /// </summary>
         /// <remarks>
-/// You can only specify options before any child levels.
+/// Fatal: You can only specify options before any child levels.
         /// </remarks>
         void OptionsMustPreceedChildLevels();
 
@@ -682,7 +682,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnrecognizedTargetType' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -target option.
+/// Fatal: Invalid value '{arg0}' for -target option.
         /// </remarks>
         void UnrecognizedTargetType(string arg0);
 
@@ -690,7 +690,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnrecognizedPlatform' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -platform option.
+/// Fatal: Invalid value '{arg0}' for -platform option.
         /// </remarks>
         void UnrecognizedPlatform(string arg0);
 
@@ -698,7 +698,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnrecognizedApartment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -apartment option.
+/// Fatal: Invalid value '{arg0}' for -apartment option.
         /// </remarks>
         void UnrecognizedApartment(string arg0);
 
@@ -706,7 +706,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MissingFileSpecification' diagnostic.
         /// </summary>
         /// <remarks>
-/// Missing file specification for '{arg0}' option.
+/// Fatal: Missing file specification for '{arg0}' option.
         /// </remarks>
         void MissingFileSpecification(string arg0);
 
@@ -714,7 +714,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'PathTooLong' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path too long: {arg0}.
+/// Fatal: Path too long: {arg0}.
         /// </remarks>
         void PathTooLong(string arg0);
 
@@ -722,7 +722,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'PathNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Path not found: {arg0}.
+/// Fatal: Path not found: {arg0}.
         /// </remarks>
         void PathNotFound(string arg0);
 
@@ -730,7 +730,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidPath' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid path: {arg0}.
+/// Fatal: Invalid path: {arg0}.
         /// </remarks>
         void InvalidPath(string arg0);
 
@@ -738,7 +738,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidOptionSyntax' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid option: {arg0}.
+/// Fatal: Invalid option: {arg0}.
         /// </remarks>
         void InvalidOptionSyntax(string arg0);
 
@@ -746,7 +746,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ExternalResourceNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file does not exist: {arg0}.
+/// Fatal: External resource file does not exist: {arg0}.
         /// </remarks>
         void ExternalResourceNotFound(string arg0);
 
@@ -754,7 +754,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ExternalResourceNameInvalid' diagnostic.
         /// </summary>
         /// <remarks>
-/// External resource file may not include path specification: {arg0}.
+/// Fatal: External resource file may not include path specification: {arg0}.
         /// </remarks>
         void ExternalResourceNameInvalid(string arg0);
 
@@ -762,7 +762,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidVersionFormat' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid version specified: {arg0}.
+/// Fatal: Invalid version specified: {arg0}.
         /// </remarks>
         void InvalidVersionFormat(string arg0);
 
@@ -770,7 +770,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidFileAlignment' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid value '{arg0}' for -filealign option.
+/// Fatal: Invalid value '{arg0}' for -filealign option.
         /// </remarks>
         void InvalidFileAlignment(string arg0);
 
@@ -778,7 +778,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ErrorWritingFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to write file: {arg0}. ({arg1})
+/// Fatal: Unable to write file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorWritingFile(string arg0, string arg1);
 
@@ -786,7 +786,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnrecognizedOption' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unrecognized option: {arg0}.
+/// Fatal: Unrecognized option: {arg0}.
         /// </remarks>
         void UnrecognizedOption(string arg0);
 
@@ -794,7 +794,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'NoOutputFileSpecified' diagnostic.
         /// </summary>
         /// <remarks>
-/// No output file specified.
+/// Fatal: No output file specified.
         /// </remarks>
         void NoOutputFileSpecified();
 
@@ -802,7 +802,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'SharedClassLoaderCannotBeUsedOnModuleTarget' diagnostic.
         /// </summary>
         /// <remarks>
-/// Incompatible options: -target:module and -sharedclassloader cannot be combined.
+/// Fatal: Incompatible options: -target:module and -sharedclassloader cannot be combined.
         /// </remarks>
         void SharedClassLoaderCannotBeUsedOnModuleTarget();
 
@@ -810,7 +810,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load runtime assembly.
+/// Fatal: Unable to load runtime assembly.
         /// </remarks>
         void RuntimeNotFound();
 
@@ -818,7 +818,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainClassRequiresExe' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main class cannot be specified for library or module.
+/// Fatal: Main class cannot be specified for library or module.
         /// </remarks>
         void MainClassRequiresExe();
 
@@ -826,7 +826,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ExeRequiresMainClass' diagnostic.
         /// </summary>
         /// <remarks>
-/// No main method found.
+/// Fatal: No main method found.
         /// </remarks>
         void ExeRequiresMainClass();
 
@@ -834,7 +834,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'PropertiesRequireExe' diagnostic.
         /// </summary>
         /// <remarks>
-/// Properties cannot be specified for library or module.
+/// Fatal: Properties cannot be specified for library or module.
         /// </remarks>
         void PropertiesRequireExe();
 
@@ -842,7 +842,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ModuleCannotHaveClassLoader' diagnostic.
         /// </summary>
         /// <remarks>
-/// Cannot specify assembly class loader for modules.
+/// Fatal: Cannot specify assembly class loader for modules.
         /// </remarks>
         void ModuleCannotHaveClassLoader();
 
@@ -850,7 +850,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ErrorParsingMapFile' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to parse remap file: {arg0}. ({arg1})
+/// Fatal: Unable to parse remap file: {arg0}. ({arg1})
         /// </remarks>
         void ErrorParsingMapFile(string arg0, string arg1);
 
@@ -858,7 +858,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'BootstrapClassesMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Bootstrap classes missing and core assembly not found.
+/// Fatal: Bootstrap classes missing and core assembly not found.
         /// </remarks>
         void BootstrapClassesMissing();
 
@@ -866,7 +866,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'StrongNameRequiresStrongNamedRefs' diagnostic.
         /// </summary>
         /// <remarks>
-/// All referenced assemblies must be strong named, to be able to sign the output assembly.
+/// Fatal: All referenced assemblies must be strong named, to be able to sign the output assembly.
         /// </remarks>
         void StrongNameRequiresStrongNamedRefs();
 
@@ -874,7 +874,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main class not found.
+/// Fatal: Main class not found.
         /// </remarks>
         void MainClassNotFound();
 
@@ -882,7 +882,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MainMethodNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Main method not found.
+/// Fatal: Main method not found.
         /// </remarks>
         void MainMethodNotFound();
 
@@ -890,7 +890,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnsupportedMainMethod' diagnostic.
         /// </summary>
         /// <remarks>
-/// Redirected main method not supported.
+/// Fatal: Redirected main method not supported.
         /// </remarks>
         void UnsupportedMainMethod();
 
@@ -898,7 +898,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ExternalMainNotAccessible' diagnostic.
         /// </summary>
         /// <remarks>
-/// External main method must be public and in a public class.
+/// Fatal: External main method must be public and in a public class.
         /// </remarks>
         void ExternalMainNotAccessible();
 
@@ -906,7 +906,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassLoaderNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class not found.
+/// Fatal: Custom assembly class loader class not found.
         /// </remarks>
         void ClassLoaderNotFound();
 
@@ -914,7 +914,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassLoaderNotAccessible' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class is not accessible.
+/// Fatal: Custom assembly class loader class is not accessible.
         /// </remarks>
         void ClassLoaderNotAccessible();
 
@@ -922,7 +922,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassLoaderIsAbstract' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class is abstract.
+/// Fatal: Custom assembly class loader class is abstract.
         /// </remarks>
         void ClassLoaderIsAbstract();
 
@@ -930,7 +930,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassLoaderNotClassLoader' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader class does not extend java.lang.ClassLoader.
+/// Fatal: Custom assembly class loader class does not extend java.lang.ClassLoader.
         /// </remarks>
         void ClassLoaderNotClassLoader();
 
@@ -938,7 +938,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ClassLoaderConstructorMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Custom assembly class loader constructor is missing.
+/// Fatal: Custom assembly class loader constructor is missing.
         /// </remarks>
         void ClassLoaderConstructorMissing();
 
@@ -946,7 +946,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MapFileTypeNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{arg0}' referenced in remap file was not found.
+/// Fatal: Type '{arg0}' referenced in remap file was not found.
         /// </remarks>
         void MapFileTypeNotFound(string arg0);
 
@@ -954,7 +954,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MapFileClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Class '{arg0}' referenced in remap file was not found.
+/// Fatal: Class '{arg0}' referenced in remap file was not found.
         /// </remarks>
         void MapFileClassNotFound(string arg0);
 
@@ -962,7 +962,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MaximumErrorCountReached' diagnostic.
         /// </summary>
         /// <remarks>
-/// Maximum error count reached.
+/// Fatal: Maximum error count reached.
         /// </remarks>
         void MaximumErrorCountReached();
 
@@ -970,7 +970,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'LinkageError' diagnostic.
         /// </summary>
         /// <remarks>
-/// Link error: {arg0}
+/// Fatal: Link error: {arg0}
         /// </remarks>
         void LinkageError(string arg0);
 
@@ -978,7 +978,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeMismatch' diagnostic.
         /// </summary>
         /// <remarks>
-/// Referenced assembly {referencedAssemblyPath} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
+/// Fatal: Referenced assembly {referencedAssemblyPath} was compiled with an incompatible IKVM.Runtime version. Current runtime: {runtimeAssemblyName}. Referenced assembly runtime: {referencedAssemblyName}
         /// </remarks>
         void RuntimeMismatch(string referencedAssemblyPath, string runtimeAssemblyName, string referencedAssemblyName);
 
@@ -986,7 +986,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeMismatchStrongName' diagnostic.
         /// </summary>
         /// <remarks>
-///
+/// Fatal:
         /// </remarks>
         void RuntimeMismatchStrongName();
 
@@ -994,7 +994,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'CoreClassesMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Failed to find core classes in core library.
+/// Fatal: Failed to find core classes in core library.
         /// </remarks>
         void CoreClassesMissing();
 
@@ -1002,7 +1002,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'CriticalClassNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to load critical class '{arg0}'.
+/// Fatal: Unable to load critical class '{arg0}'.
         /// </remarks>
         void CriticalClassNotFound(string arg0);
 
@@ -1010,7 +1010,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'AssemblyContainsDuplicateClassNames' diagnostic.
         /// </summary>
         /// <remarks>
-/// Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'. ({arg3})
+/// Fatal: Type '{arg0}' and '{arg1}' both map to the same name '{arg2}'. ({arg3})
         /// </remarks>
         void AssemblyContainsDuplicateClassNames(string arg0, string arg1, string arg2, string arg3);
 
@@ -1018,7 +1018,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'CallerIDRequiresHasCallerIDAnnotation' diagnostic.
         /// </summary>
         /// <remarks>
-/// CallerID.getCallerID() requires a HasCallerID annotation.
+/// Fatal: CallerID.getCallerID() requires a HasCallerID annotation.
         /// </remarks>
         void CallerIDRequiresHasCallerIDAnnotation();
 
@@ -1026,7 +1026,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'UnableToResolveInterface' diagnostic.
         /// </summary>
         /// <remarks>
-/// Unable to resolve interface '{arg0}' on type '{arg1}'.
+/// Fatal: Unable to resolve interface '{arg0}' on type '{arg1}'.
         /// </remarks>
         void UnableToResolveInterface(string arg0, string arg1);
 
@@ -1034,7 +1034,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MissingBaseType' diagnostic.
         /// </summary>
         /// <remarks>
-/// The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved.
+/// Fatal: The base class or interface '{arg0}' in assembly '{arg1}' referenced by type '{arg2}' in '{arg3}' could not be resolved.
         /// </remarks>
         void MissingBaseType(string arg0, string arg1, string arg2, string arg3);
 
@@ -1042,7 +1042,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MissingBaseTypeReference' diagnostic.
         /// </summary>
         /// <remarks>
-/// The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'.
+/// Fatal: The type '{arg0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{arg1}'.
         /// </remarks>
         void MissingBaseTypeReference(string arg0, string arg1);
 
@@ -1050,7 +1050,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'FileNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// File not found: {arg0}.
+/// Fatal: File not found: {arg0}.
         /// </remarks>
         void FileNotFound(string arg0);
 
@@ -1058,7 +1058,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'RuntimeMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Runtime method '{arg0}' not found.
+/// Fatal: Runtime method '{arg0}' not found.
         /// </remarks>
         void RuntimeMethodMissing(string arg0);
 
@@ -1066,7 +1066,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'MapFileFieldNotFound' diagnostic.
         /// </summary>
         /// <remarks>
-/// Field '{arg0}' referenced in remap file was not found in class '{arg1}'.
+/// Fatal: Field '{arg0}' referenced in remap file was not found in class '{arg1}'.
         /// </remarks>
         void MapFileFieldNotFound(string arg0, string arg1);
 
@@ -1074,7 +1074,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GhostInterfaceMethodMissing' diagnostic.
         /// </summary>
         /// <remarks>
-/// Remapped class '{arg0}' does not implement ghost interface method. ({arg1}.{arg2}{arg3})
+/// Fatal: Remapped class '{arg0}' does not implement ghost interface method. ({arg1}.{arg2}{arg3})
         /// </remarks>
         void GhostInterfaceMethodMissing(string arg0, string arg1, string arg2, string arg3);
 
@@ -1082,7 +1082,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'ModuleInitializerMethodRequirements' diagnostic.
         /// </summary>
         /// <remarks>
-/// Method '{arg1}.{arg2}{arg3}' does not meet the requirements of a module initializer.
+/// Fatal: Method '{arg1}.{arg2}{arg3}' does not meet the requirements of a module initializer.
         /// </remarks>
         void ModuleInitializerMethodRequirements(string arg1, string arg2, string arg3);
 
@@ -1090,15 +1090,23 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'InvalidZip' diagnostic.
         /// </summary>
         /// <remarks>
-/// Invalid zip: {name}.
+/// Fatal: Invalid zip: {name}.
         /// </remarks>
         void InvalidZip(string name);
+
+        /// <summary>
+        /// The 'CoreAssemblyVersionMismatch' diagnostic.
+        /// </summary>
+        /// <remarks>
+/// Fatal: Unable to load assembly '{0}' as it depends on a higher version of {1} than the one currently loaded.
+        /// </remarks>
+        void CoreAssemblyVersionMismatch(string arg0, string arg1);
 
         /// <summary>
         /// The 'GenericRuntimeTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Trace: {arg0}
         /// </remarks>
         void GenericRuntimeTrace(string arg0);
 
@@ -1106,7 +1114,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericJniTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Trace: {arg0}
         /// </remarks>
         void GenericJniTrace(string arg0);
 
@@ -1114,7 +1122,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// The 'GenericCompilerTrace' diagnostic.
         /// </summary>
         /// <remarks>
-/// {arg0}
+/// Trace: {arg0}
         /// </remarks>
         void GenericCompilerTrace(string arg0);
 

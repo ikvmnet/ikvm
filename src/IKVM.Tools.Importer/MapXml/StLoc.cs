@@ -23,12 +23,11 @@
 */
 
 using System.Diagnostics;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -63,7 +62,7 @@ namespace IKVM.Tools.Importer.MapXml
         }
 
         RuntimeJavaType typeWrapper;
-        Type typeType;
+        ITypeSymbol typeType;
 
         public string Name { get; set; }
 

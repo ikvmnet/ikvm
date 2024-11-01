@@ -1,25 +1,33 @@
-﻿using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
+﻿using System;
+
+using IKVM.Reflection;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionConstructorSymbol : IkvmReflectionMethodBaseSymbol, IConstructorSymbol
+    class IkvmReflectionConstructorSymbol : IkvmReflectionMethodBaseSymbol, IIkvmReflectionConstructorSymbol
     {
+
+        readonly ConstructorInfo _ctor;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="type"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="ctor"></param>
-        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol type, ConstructorInfo ctor) :
-            base(context, module, type, ctor)
+        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol resolvingType, ConstructorInfo ctor) :
+            base(context, resolvingModule, resolvingType)
         {
-
+            _ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
         }
 
-        internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
+        /// <inheritdoc />
+        public ConstructorInfo UnderlyingConstructor => _ctor;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
 
     }
 

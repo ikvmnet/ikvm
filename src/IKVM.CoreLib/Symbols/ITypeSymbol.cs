@@ -1,4 +1,7 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -40,6 +43,11 @@ namespace IKVM.CoreLib.Symbols
         string? Namespace { get; }
 
         /// <summary>
+        /// Gets the underlying type code of the specified Type.
+        /// </summary>
+        TypeCode TypeCode { get; }
+
+        /// <summary>
         /// Gets the type from which the current <see cref="ITypeSymbol"/> directly inherits.
         /// </summary>
         ITypeSymbol? BaseType { get; }
@@ -62,7 +70,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets an array of the generic type arguments for this type.
         /// </summary>
-        ITypeSymbol[] GenericTypeArguments { get; }
+        IImmutableList<ITypeSymbol> GenericTypeArguments { get; }
 
         /// <summary>
         /// Gets a value that indicates whether this object represents a constructed generic type. You can create instances of a constructed generic type.
@@ -70,14 +78,19 @@ namespace IKVM.CoreLib.Symbols
         bool IsConstructedGenericType { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the current <see cref="ITypeSymbol"/> represents a type parameter in the definition of a generic type or method.
-        /// </summary>
-        bool IsGenericParameter { get; }
-
-        /// <summary>
         /// Gets a value indicating whether the current type is a generic type.
         /// </summary>
         bool IsGenericType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the current Type represents a generic type definition, from which other generic types can be constructed.
+        /// </summary>
+        bool IsGenericTypeDefinition { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the current <see cref="ITypeSymbol"/> represents a type parameter in the definition of a generic type or method.
+        /// </summary>
+        bool IsGenericParameter { get; }
 
         /// <summary>
         /// Gets a value indicating whether the fields of the current type are laid out automatically by the common language runtime.
@@ -120,6 +133,11 @@ namespace IKVM.CoreLib.Symbols
         bool IsPrimitive { get; }
 
         /// <summary>
+        /// Gets a value that indicates whether the type is an array type that can represent only a single-dimensional array with a zero lower bound.
+        /// </summary>
+        bool IsSZArray { get; }
+
+        /// <summary>
         /// Gets a value that indicates whether the type is an array.
         /// </summary>
         bool IsArray { get; }
@@ -133,6 +151,16 @@ namespace IKVM.CoreLib.Symbols
         /// Gets a value indicating whether the <see cref="ITypeSymbol"/> is a pointer.
         /// </summary>
         bool IsPointer { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="ITypeSymbol"/> is an unmanaged function pointer.
+        /// </summary>
+        bool IsFunctionPointer { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="ITypeSymbol"/> is an unmanaged function pointer.
+        /// </summary>
+        bool IsUnmanagedFunctionPointer { get; }
 
         /// <summary>
         /// Gets a value indicating whether the <see cref="ITypeSymbol"/> is passed by reference.
@@ -205,6 +233,16 @@ namespace IKVM.CoreLib.Symbols
         bool IsSerializable { get; }
 
         /// <summary>
+        /// Gets a value that indicates whether the type is a signature type.
+        /// </summary>
+        bool IsSignatureType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the type has a name that requires special handling.
+        /// </summary>
+        bool IsSpecialName { get; }
+
+        /// <summary>
         /// Gets the initializer for the type.
         /// </summary>
         IConstructorSymbol? TypeInitializer { get; }
@@ -219,7 +257,7 @@ namespace IKVM.CoreLib.Symbols
         /// Searches for the members defined for the current <see cref="ITypeSymbol"/> whose DefaultMemberAttribute is set.
         /// </summary>
         /// <returns></returns>
-        IMemberSymbol[] GetDefaultMembers();
+        IImmutableList<IMemberSymbol> GetDefaultMembers();
 
         /// <summary>
         /// When overridden in a derived class, returns the <see cref="ITypeSymbol"/> of the object encompassed or referred to by the current array, pointer or reference type.
@@ -238,7 +276,7 @@ namespace IKVM.CoreLib.Symbols
         /// Returns the names of the members of the current enumeration type.
         /// </summary>
         /// <returns></returns>
-        string[] GetEnumNames();
+        IImmutableList<string> GetEnumNames();
 
         /// <summary>
         /// Returns the underlying type of the current enumeration type.
@@ -250,13 +288,13 @@ namespace IKVM.CoreLib.Symbols
         /// Returns an array of <see cref="ITypeSymbol"/> objects that represent the type arguments of a closed generic type or the type parameters of a generic type definition.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetGenericArguments();
+        IImmutableList<ITypeSymbol> GetGenericArguments();
 
         /// <summary>
         /// Returns an array of <see cref="ITypeSymbol"/> objects that represent the constraints on the current generic type parameter.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetGenericParameterConstraints();
+        IImmutableList<ITypeSymbol> GetGenericParameterConstraints();
 
         /// <summary>
         /// Returns a <see cref="ITypeSymbol"/> object that represents a generic type definition from which the current generic type can be constructed.
@@ -280,10 +318,10 @@ namespace IKVM.CoreLib.Symbols
         ITypeSymbol? GetInterface(string name, bool ignoreCase);
 
         /// <summary>
-        /// When overridden in a derived class, gets all the interfaces implemented or inherited by the current <see cref="ITypeSymbol"/>.
+        /// When overridden in a derived class, gets all the interfaces implemented or if specified,inherited by the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetInterfaces();
+        IImmutableList<ITypeSymbol> GetInterfaces(bool inherit = true);
 
         /// <summary>
         /// Returns an interface mapping for the specified interface type.
@@ -293,69 +331,38 @@ namespace IKVM.CoreLib.Symbols
         InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType);
 
         /// <summary>
-        /// Searches for the public members with the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        IMemberSymbol[] GetMember(string name);
-
-        /// <summary>
-        /// Searches for the specified members, using the specified binding constraints.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
-        /// <returns></returns>
-        IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr);
-
-        /// <summary>
-        /// Searches for the specified members of the specified member type, using the specified binding constraints.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="type"></param>
-        /// <param name="bindingAttr"></param>
-        /// <returns></returns>
-        IMemberSymbol[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr);
-
-        /// <summary>
-        /// Returns all the public members of the current <see cref="ITypeSymbol"/>.
+        /// Returns all the declared constructors of the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IMemberSymbol[] GetMembers();
-
-        /// <summary>
-        /// When overridden in a derived class, searches for the members defined for the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
-        /// </summary>
-        /// <param name="bindingAttr"></param>
-        /// <returns></returns>
-        IMemberSymbol[] GetMembers(BindingFlags bindingAttr);
+        IImmutableList<IConstructorSymbol> GetDeclaredConstructors();
 
         /// <summary>
         /// Searches for a public instance constructor whose parameters match the types in the specified array.
         /// </summary>
         /// <param name="types"></param>
         /// <returns></returns>
-        IConstructorSymbol? GetConstructor(ITypeSymbol[] types);
+        IConstructorSymbol? GetConstructor(IImmutableList<ITypeSymbol> types);
 
         /// <summary>
         /// Searches for a constructor whose parameters match the specified argument types, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types);
+        IConstructorSymbol? GetConstructor(BindingFlags bindingFlags, IImmutableList<ITypeSymbol> types);
 
         /// <summary>
         /// Returns all the public constructors defined for the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IConstructorSymbol[] GetConstructors();
+        IImmutableList<IConstructorSymbol> GetConstructors();
 
         /// <summary>
         /// When overridden in a derived class, searches for the constructors defined for the current <see cref="ITypeSymbol"/>, using the specified BindingFlags.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr);
+        IImmutableList<IConstructorSymbol> GetConstructors(BindingFlags bindingFlags);
 
         /// <summary>
         /// Searches for the public field with the specified name.
@@ -368,22 +375,28 @@ namespace IKVM.CoreLib.Symbols
         /// Searches for the specified field, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IFieldSymbol? GetField(string name, BindingFlags bindingAttr);
+        IFieldSymbol? GetField(string name, BindingFlags bindingFlags);
 
         /// <summary>
         /// Returns all the public fields of the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IFieldSymbol[] GetFields();
+        IImmutableList<IFieldSymbol> GetFields();
 
         /// <summary>
         /// When overridden in a derived class, searches for the fields defined for the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IFieldSymbol[] GetFields(BindingFlags bindingAttr);
+        IImmutableList<IFieldSymbol> GetFields(BindingFlags bindingFlags);
+
+        /// <summary>
+        /// Returns all the declared methods of the current <see cref="ITypeSymbol"/>.
+        /// </summary>
+        /// <returns></returns>
+        IImmutableList<IMethodSymbol> GetDeclaredMethods();
 
         /// <summary>
         /// Searches for the public method with the specified name.
@@ -398,37 +411,97 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
+        IMethodSymbol? GetMethod(string name, IImmutableList<ITypeSymbol> types);
 
         /// <summary>
         /// Searches for the specified method, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr);
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags);
 
         /// <summary>
         /// Searches for the specified method whose parameters match the specified argument types, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types);
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags, IImmutableList<ITypeSymbol> types);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified argument types and modifiers, using the specified binding constraints and the specified calling convention.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="bindingFlags"></param>
+        /// <param name="callConvention"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingFlags, CallingConventions callConvention, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints and the specified calling convention.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="bindingFlags"></param>
+        /// <param name="callConvention"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, CallingConventions callConvention, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="bindingFlags"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers);
+
+        /// <summary>
+        /// Searches for the specified method whose parameters match the specified argument types and modifiers, using the specified binding constraints.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="bindingAttr"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers);
+
+        /// <summary>
+        /// Searches for the specified public method whose parameters match the specified generic parameter count, argument types and modifiers.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="genericParameterCount"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
+        /// <returns></returns>
+        IMethodSymbol? GetMethod(string name, int genericParameterCount, IImmutableList<ITypeSymbol> types, IImmutableList<ParameterModifier> modifiers);
 
         /// <summary>
         /// Returns all the public methods of the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IMethodSymbol[] GetMethods();
+        IImmutableList<IMethodSymbol> GetMethods();
 
         /// <summary>
         /// When overridden in a derived class, searches for the methods defined for the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IMethodSymbol[] GetMethods(BindingFlags bindingAttr);
+        IImmutableList<IMethodSymbol> GetMethods(BindingFlags bindingFlags);
+
+        /// <summary>
+        /// Returns all the declared properties of the current <see cref="ITypeSymbol"/>.
+        /// </summary>
+        /// <returns></returns>
+        IImmutableList<IPropertySymbol> GetDeclaredProperties();
 
         /// <summary>
         /// Searches for the public property with the specified name.
@@ -441,9 +514,9 @@ namespace IKVM.CoreLib.Symbols
         /// Searches for the specified property, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IPropertySymbol? GetProperty(string name, BindingFlags bindingAttr);
+        IPropertySymbol? GetProperty(string name, BindingFlags bindingFlags);
 
         /// <summary>
         /// Searches for the specified public property whose parameters match the specified argument types.
@@ -451,7 +524,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IPropertySymbol? GetProperty(string name, ITypeSymbol[] types);
+        IPropertySymbol? GetProperty(string name, IImmutableList<ITypeSymbol> types);
 
         /// <summary>
         /// Searches for the specified public property whose parameters match the specified argument types.
@@ -460,7 +533,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="returnType"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types);
+        IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, IImmutableList<ITypeSymbol> types);
 
         /// <summary>
         /// Searches for the public property with the specified name and return type.
@@ -474,42 +547,48 @@ namespace IKVM.CoreLib.Symbols
         /// Returns all the public properties of the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IPropertySymbol[] GetProperties();
+        IImmutableList<IPropertySymbol> GetProperties();
 
         /// <summary>
         /// When overridden in a derived class, searches for the properties of the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IPropertySymbol[] GetProperties(BindingFlags bindingAttr);
+        IImmutableList<IPropertySymbol> GetProperties(BindingFlags bindingFlags);
 
         /// <summary>
-        /// Returns the EventInfo object representing the specified public event.
+        /// Returns all the declared events of the current <see cref="ITypeSymbol"/>.
+        /// </summary>
+        /// <returns></returns>
+        IImmutableList<IEventSymbol> GetDeclaredEvents();
+
+        /// <summary>
+        /// Returns the <see cref="IEventSymbol"/> object representing the specified public event.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
         IEventSymbol? GetEvent(string name);
 
         /// <summary>
-        /// When overridden in a derived class, returns the EventInfo object representing the specified event, using the specified binding constraints.
+        /// When overridden in a derived class, returns the <see cref="IEventSymbol"/> object representing the specified event, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IEventSymbol? GetEvent(string name, BindingFlags bindingAttr);
+        IEventSymbol? GetEvent(string name, BindingFlags bindingFlags);
 
         /// <summary>
         /// Returns all the public events that are declared or inherited by the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        IEventSymbol[] GetEvents();
+        IImmutableList<IEventSymbol> GetEvents();
 
         /// <summary>
         /// When overridden in a derived class, searches for events that are declared or inherited by the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IEventSymbol[] GetEvents(BindingFlags bindingAttr);
+        IImmutableList<IEventSymbol> GetEvents(BindingFlags bindingFlags);
 
         /// <summary>
         /// Searches for the public nested type with the specified name.
@@ -522,22 +601,22 @@ namespace IKVM.CoreLib.Symbols
         /// When overridden in a derived class, searches for the specified nested type, using the specified binding constraints.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        ITypeSymbol? GetNestedType(string name, BindingFlags bindingAttr);
+        ITypeSymbol? GetNestedType(string name, BindingFlags bindingFlags);
 
         /// <summary>
         /// Returns the public types nested in the current <see cref="ITypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetNestedTypes();
+        IImmutableList<ITypeSymbol> GetNestedTypes();
 
         /// <summary>
         /// When overridden in a derived class, searches for the types nested in the current <see cref="ITypeSymbol"/>, using the specified binding constraints.
         /// </summary>
-        /// <param name="bindingAttr"></param>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        ITypeSymbol[] GetNestedTypes(BindingFlags bindingAttr);
+        IImmutableList<ITypeSymbol> GetNestedTypes(BindingFlags bindingFlags);
 
         /// <summary>
         /// Determines whether an instance of a specified type c can be assigned to a variable of the current type.
@@ -578,7 +657,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="typeArguments"></param>
         /// <returns></returns>
-        ITypeSymbol MakeGenericType(params ITypeSymbol[] typeArguments);
+        ITypeSymbol MakeGenericType(IImmutableList<ITypeSymbol> typeArguments);
 
         /// <summary>
         /// Returns a <see cref="ITypeSymbol"/> object that represents a pointer to the current type.

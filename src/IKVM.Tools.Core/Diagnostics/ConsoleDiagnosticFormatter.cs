@@ -32,8 +32,18 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <inheritdoc />
+        public bool CanWrite(in DiagnosticEvent @event)
+        {
+            return true;
+        }
+
+        /// <inheritdoc />
         public void Write(in DiagnosticEvent @event)
         {
+            // skip events we cannot write
+            if (CanWrite(@event) == false)
+                return;
+
             try
             {
                 WriteDiagnosticEvent(@event);
@@ -50,7 +60,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="level"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        protected virtual Markup WriteDiagnosticLevel(DiagnosticLevel level)
+        protected virtual Markup GetDiagnosticLevelMarkup(DiagnosticLevel level)
         {
             return level switch
             {
@@ -64,11 +74,22 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <summary>
+        /// Returns the output text for the given <see cref="DiagnosticLevel"/>.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        protected virtual void WriteDiagnosticLevel(DiagnosticLevel level)
+        {
+            AnsiConsole.Write(GetDiagnosticLevelMarkup(level));
+        }
+
+        /// <summary>
         /// Formats the output text for the given diagnostic code.
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        protected virtual void WriteDiagnosticCode(int code)
+        protected virtual void WriteDiagnosticCode(DiagnosticLevel level, int code)
         {
             AnsiConsole.Write("IKVM");
             AnsiConsole.Write($"{code:D4}");
@@ -79,7 +100,7 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="message"></param>
         /// <param name="args"></param>
-        protected virtual void WriteDiagnosticMessage(string message, ReadOnlySpan<object?> args)
+        protected virtual void WriteDiagnosticMessage(DiagnosticLevel level, string message, ReadOnlySpan<object?> args)
         {
             AnsiConsole.MarkupInterpolated(FormattableStringFactory.Create(message, args.ToArray()));
         }
@@ -92,9 +113,9 @@ namespace IKVM.Tools.Core.Diagnostics
         {
             WriteDiagnosticLevel(@event.Diagnostic.Level);
             AnsiConsole.Write(" ");
-            WriteDiagnosticCode(@event.Diagnostic.Id);
+            WriteDiagnosticCode(@event.Diagnostic.Level, @event.Diagnostic.Id);
             AnsiConsole.Write(": ");
-            WriteDiagnosticMessage(@event.Diagnostic.Message, @event.Args);
+            WriteDiagnosticMessage(@event.Diagnostic.Level, @event.Diagnostic.Message, @event.Args);
             AnsiConsole.WriteLine();
 
             if (@event.Exception != null)

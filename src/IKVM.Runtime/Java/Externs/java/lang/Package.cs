@@ -32,7 +32,7 @@ using IKVM.Runtime.Vfs;
 namespace IKVM.Java.Externs.java.lang
 {
 
-	static class Package
+    static class Package
     {
 
         static Dictionary<string, string> systemPackages;
@@ -48,7 +48,7 @@ namespace IKVM.Java.Externs.java.lang
             if (systemPackages == null)
             {
                 var dict = new Dictionary<string, string>();
-                var path = Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, JVM.Context.Resolver.ResolveBaseAssembly().AsReflection(), JVM.Properties.HomePath), "resources.jar");
+                var path = Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.Vfs.Context, JVM.Context.Resolver.GetBaseAssembly().GetUnderlyingAssembly(), JVM.Properties.HomePath), "resources.jar");
                 foreach (var pkgs in JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader().GetPackageInfo())
                     foreach (var pkg in pkgs.Value)
                         dict[pkg.Replace('.', '/') + "/"] = path;

@@ -31,6 +31,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Security;
 
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Util.Java.Security;
@@ -261,7 +262,7 @@ namespace IKVM.Java.Externs.sun.reflect
         {
 
             readonly RuntimeJavaMethod mw;
-            readonly Type type;
+            readonly ITypeSymbol type;
 
             /// <summary>
             /// Initializes a new instance.
@@ -285,9 +286,9 @@ namespace IKVM.Java.Externs.sun.reflect
             public object newInstance(object[] args)
             {
 #if NETFRAMEWORK
-                var obj = FormatterServices.GetUninitializedObject(type);
+                var obj = FormatterServices.GetUninitializedObject(type.GetUnderlyingRuntimeType());
 #else
-                var obj = RuntimeHelpers.GetUninitializedObject(type);
+                var obj = RuntimeHelpers.GetUninitializedObject(type.GetUnderlyingRuntimeType());
 #endif
                 if (mw != null)
                     mw.Invoke(obj, ConvertArgs(mw.DeclaringType.ClassLoader, mw.GetParameters(), args));
@@ -302,38 +303,38 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class BoxUtil
         {
 
-            static readonly MethodInfo valueOfByte = typeof(global::java.lang.Byte).GetMethod("valueOf", new Type[] { typeof(byte) });
-            static readonly MethodInfo valueOfBoolean = typeof(global::java.lang.Boolean).GetMethod("valueOf", new Type[] { typeof(bool) });
-            static readonly MethodInfo valueOfChar = typeof(global::java.lang.Character).GetMethod("valueOf", new Type[] { typeof(char) });
-            static readonly MethodInfo valueOfShort = typeof(global::java.lang.Short).GetMethod("valueOf", new Type[] { typeof(short) });
-            static readonly MethodInfo valueOfInt = typeof(global::java.lang.Integer).GetMethod("valueOf", new Type[] { typeof(int) });
-            static readonly MethodInfo valueOfFloat = typeof(global::java.lang.Float).GetMethod("valueOf", new Type[] { typeof(float) });
-            static readonly MethodInfo valueOfLong = typeof(global::java.lang.Long).GetMethod("valueOf", new Type[] { typeof(long) });
-            static readonly MethodInfo valueOfDouble = typeof(global::java.lang.Double).GetMethod("valueOf", new Type[] { typeof(double) });
-            static readonly MethodInfo byteValue = typeof(global::java.lang.Byte).GetMethod("byteValue", Type.EmptyTypes);
-            static readonly MethodInfo booleanValue = typeof(global::java.lang.Boolean).GetMethod("booleanValue", Type.EmptyTypes);
-            static readonly MethodInfo charValue = typeof(global::java.lang.Character).GetMethod("charValue", Type.EmptyTypes);
-            static readonly MethodInfo shortValue = typeof(global::java.lang.Short).GetMethod("shortValue", Type.EmptyTypes);
-            static readonly MethodInfo intValue = typeof(global::java.lang.Integer).GetMethod("intValue", Type.EmptyTypes);
-            static readonly MethodInfo floatValue = typeof(global::java.lang.Float).GetMethod("floatValue", Type.EmptyTypes);
-            static readonly MethodInfo longValue = typeof(global::java.lang.Long).GetMethod("longValue", Type.EmptyTypes);
-            static readonly MethodInfo doubleValue = typeof(global::java.lang.Double).GetMethod("doubleValue", Type.EmptyTypes);
+            static readonly IMethodSymbol valueOfByte = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("valueOf", [JVM.Context.Types.Byte]);
+            static readonly IMethodSymbol valueOfBoolean = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("valueOf", [JVM.Context.Types.Boolean]);
+            static readonly IMethodSymbol valueOfChar = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("valueOf", [JVM.Context.Types.Char]);
+            static readonly IMethodSymbol valueOfShort = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("valueOf", [JVM.Context.Types.Int16]);
+            static readonly IMethodSymbol valueOfInt = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("valueOf", [JVM.Context.Types.Int32]);
+            static readonly IMethodSymbol valueOfFloat = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("valueOf", [JVM.Context.Types.Single]);
+            static readonly IMethodSymbol valueOfLong = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("valueOf", [JVM.Context.Types.Int64]);
+            static readonly IMethodSymbol valueOfDouble = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("valueOf", [JVM.Context.Types.Double]);
+            static readonly IMethodSymbol byteValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("byteValue", []);
+            static readonly IMethodSymbol booleanValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("booleanValue", []);
+            static readonly IMethodSymbol charValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("charValue", []);
+            static readonly IMethodSymbol shortValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("shortValue", []);
+            static readonly IMethodSymbol intValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("intValue", []);
+            static readonly IMethodSymbol floatValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("floatValue", []);
+            static readonly IMethodSymbol longValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("longValue", []);
+            static readonly IMethodSymbol doubleValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("doubleValue", []);
 
             internal static void EmitUnboxArg(CodeEmitter ilgen, RuntimeJavaType type)
             {
                 if (type == ilgen.Context.PrimitiveJavaTypeFactory.BYTE)
                 {
-                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Byte));
+                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)));
                     ilgen.Emit(OpCodes.Call, byteValue);
                 }
                 else if (type == ilgen.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                 {
-                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Boolean));
+                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)));
                     ilgen.Emit(OpCodes.Call, booleanValue);
                 }
                 else if (type == ilgen.Context.PrimitiveJavaTypeFactory.CHAR)
                 {
-                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Character));
+                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)));
                     ilgen.Emit(OpCodes.Call, charValue);
                 }
                 else if (type == ilgen.Context.PrimitiveJavaTypeFactory.SHORT
@@ -343,10 +344,10 @@ namespace IKVM.Java.Externs.sun.reflect
                     || type == ilgen.Context.PrimitiveJavaTypeFactory.DOUBLE)
                 {
                     ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Byte));
+                    ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)));
                     CodeEmitterLabel next = ilgen.DefineLabel();
                     ilgen.EmitBrfalse(next);
-                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Byte));
+                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)));
                     ilgen.Emit(OpCodes.Call, byteValue);
                     ilgen.Emit(OpCodes.Conv_I1);
                     Expand(ilgen, type);
@@ -355,77 +356,77 @@ namespace IKVM.Java.Externs.sun.reflect
                     ilgen.MarkLabel(next);
                     if (type == ilgen.Context.PrimitiveJavaTypeFactory.SHORT)
                     {
-                        ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Short));
+                        ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)));
                         ilgen.Emit(OpCodes.Call, shortValue);
                     }
                     else
                     {
                         ilgen.Emit(OpCodes.Dup);
-                        ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Short));
+                        ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)));
                         next = ilgen.DefineLabel();
                         ilgen.EmitBrfalse(next);
-                        ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Short));
+                        ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)));
                         ilgen.Emit(OpCodes.Call, shortValue);
                         Expand(ilgen, type);
                         ilgen.EmitBr(done);
                         ilgen.MarkLabel(next);
                         ilgen.Emit(OpCodes.Dup);
-                        ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Character));
+                        ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)));
                         next = ilgen.DefineLabel();
                         ilgen.EmitBrfalse(next);
-                        ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Character));
+                        ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)));
                         ilgen.Emit(OpCodes.Call, charValue);
                         Expand(ilgen, type);
                         ilgen.EmitBr(done);
                         ilgen.MarkLabel(next);
                         if (type == ilgen.Context.PrimitiveJavaTypeFactory.INT)
                         {
-                            ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Integer));
+                            ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)));
                             ilgen.Emit(OpCodes.Call, intValue);
                         }
                         else
                         {
                             ilgen.Emit(OpCodes.Dup);
-                            ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Integer));
+                            ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)));
                             next = ilgen.DefineLabel();
                             ilgen.EmitBrfalse(next);
-                            ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Integer));
+                            ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)));
                             ilgen.Emit(OpCodes.Call, intValue);
                             Expand(ilgen, type);
                             ilgen.EmitBr(done);
                             ilgen.MarkLabel(next);
                             if (type == ilgen.Context.PrimitiveJavaTypeFactory.LONG)
                             {
-                                ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Long));
+                                ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)));
                                 ilgen.Emit(OpCodes.Call, longValue);
                             }
                             else
                             {
                                 ilgen.Emit(OpCodes.Dup);
-                                ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Long));
+                                ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)));
                                 next = ilgen.DefineLabel();
                                 ilgen.EmitBrfalse(next);
-                                ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Long));
+                                ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)));
                                 ilgen.Emit(OpCodes.Call, longValue);
                                 Expand(ilgen, type);
                                 ilgen.EmitBr(done);
                                 ilgen.MarkLabel(next);
                                 if (type == ilgen.Context.PrimitiveJavaTypeFactory.FLOAT)
                                 {
-                                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Float));
+                                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)));
                                     ilgen.Emit(OpCodes.Call, floatValue);
                                 }
                                 else if (type == ilgen.Context.PrimitiveJavaTypeFactory.DOUBLE)
                                 {
                                     ilgen.Emit(OpCodes.Dup);
-                                    ilgen.Emit(OpCodes.Isinst, typeof(global::java.lang.Float));
+                                    ilgen.Emit(OpCodes.Isinst, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)));
                                     next = ilgen.DefineLabel();
                                     ilgen.EmitBrfalse(next);
-                                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Float));
+                                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)));
                                     ilgen.Emit(OpCodes.Call, floatValue);
                                     ilgen.EmitBr(done);
                                     ilgen.MarkLabel(next);
-                                    ilgen.Emit(OpCodes.Castclass, typeof(global::java.lang.Double));
+                                    ilgen.Emit(OpCodes.Castclass, JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)));
                                     ilgen.Emit(OpCodes.Call, doubleValue);
                                 }
                                 else
@@ -506,13 +507,13 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class FastMethodAccessorImpl : global::sun.reflect.MethodAccessor
         {
 
-            internal static readonly ConstructorInfo nullPointerExceptionCtor;
-            internal static readonly ConstructorInfo nullPointerExceptionWithMessageCtor;
-            internal static readonly ConstructorInfo illegalArgumentExceptionCtor;
-            internal static readonly ConstructorInfo illegalArgumentExceptionWithMessageCtor;
-            internal static readonly ConstructorInfo illegalArgumentExceptionWithMessageAndCauseCtor;
-            internal static readonly ConstructorInfo illegalArgumentExceptionWithCauseCtor;
-            internal static readonly ConstructorInfo invocationTargetExceptionWithCauseCtor;
+            internal static readonly IConstructorSymbol nullPointerExceptionCtor;
+            internal static readonly IConstructorSymbol nullPointerExceptionWithMessageCtor;
+            internal static readonly IConstructorSymbol illegalArgumentExceptionCtor;
+            internal static readonly IConstructorSymbol illegalArgumentExceptionWithMessageCtor;
+            internal static readonly IConstructorSymbol illegalArgumentExceptionWithMessageAndCauseCtor;
+            internal static readonly IConstructorSymbol illegalArgumentExceptionWithCauseCtor;
+            internal static readonly IConstructorSymbol invocationTargetExceptionWithCauseCtor;
 
             delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
             Invoker invoker;
@@ -522,13 +523,13 @@ namespace IKVM.Java.Externs.sun.reflect
             /// </summary>
             static FastMethodAccessorImpl()
             {
-                nullPointerExceptionCtor = typeof(global::java.lang.NullPointerException).GetConstructor(Type.EmptyTypes);
-                nullPointerExceptionWithMessageCtor = typeof(global::java.lang.NullPointerException).GetConstructor(new[] { typeof(string) });
-                illegalArgumentExceptionCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(Type.EmptyTypes);
-                illegalArgumentExceptionWithMessageCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string) });
-                illegalArgumentExceptionWithMessageAndCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(string), typeof(Exception) });
-                illegalArgumentExceptionWithCauseCtor = typeof(global::java.lang.IllegalArgumentException).GetConstructor(new[] { typeof(Exception) });
-                invocationTargetExceptionWithCauseCtor = typeof(global::java.lang.reflect.InvocationTargetException).GetConstructor(new[] { typeof(Exception) });
+                nullPointerExceptionCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.NullPointerException)).GetConstructor([]);
+                nullPointerExceptionWithMessageCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.NullPointerException)).GetConstructor([JVM.Context.Types.String]);
+                illegalArgumentExceptionCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.IllegalArgumentException)).GetConstructor([]);
+                illegalArgumentExceptionWithMessageCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.IllegalArgumentException)).GetConstructor([JVM.Context.Types.String]);
+                illegalArgumentExceptionWithMessageAndCauseCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.IllegalArgumentException)).GetConstructor([JVM.Context.Types.String, JVM.Context.Types.Exception]);
+                illegalArgumentExceptionWithCauseCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.IllegalArgumentException)).GetConstructor([JVM.Context.Types.Exception]);
+                invocationTargetExceptionWithCauseCtor = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.reflect.InvocationTargetException)).GetConstructor([JVM.Context.Types.Exception]);
             }
 
             sealed class RunClassInit
@@ -586,7 +587,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     // generate new dynamic method
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType, np, typeof(object), new[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
+                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), np, typeof(object), new[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
                     var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
                     // labels
@@ -614,7 +615,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.MarkLabel(endIsNullLabel);
 
                         // temporary variables
-                        var e = il.AllocTempLocal(typeof(Exception));
+                        var e = il.AllocTempLocal(il.Context.Types.Exception);
 
                         // cast target to appropriate type
                         var endConvSelf = il.DefineLabel();
@@ -626,7 +627,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.EmitLeave(endConvSelf);
 
                         // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
                         il.Emit(OpCodes.Stloc, e);
                         il.Emit(OpCodes.Ldstr, "object is not an instance of declaring class");
                         il.Emit(OpCodes.Ldloc, e);
@@ -634,7 +635,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Throw);
 
                         // catch Exception, wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(Exception));
+                        il.BeginCatchBlock(il.Context.Types.Exception);
                         il.Emit(OpCodes.Newobj, illegalArgumentExceptionWithCauseCtor);
                         il.Emit(OpCodes.Throw);
 
@@ -685,7 +686,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         var o = p[n++] = il.AllocTempLocal(tw.TypeAsSignatureType);
 
                         // temporary variable for exceptions
-                        var e = il.AllocTempLocal(typeof(Exception));
+                        var e = il.AllocTempLocal(il.Context.Types.Exception);
 
                         // load and convert argument
                         var endConvArgn = il.DefineLabel();
@@ -699,7 +700,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.EmitLeave(endConvArgn);
 
                         // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
                         il.Emit(OpCodes.Stloc, e);
                         il.Emit(OpCodes.Ldstr, $"argument type mismatch on parameter {i}");
                         il.Emit(OpCodes.Ldloc, e);
@@ -707,7 +708,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Throw);
 
                         // catch Exception, wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(Exception));
+                        il.BeginCatchBlock(il.Context.Types.Exception);
                         il.Emit(OpCodes.Stloc, e);
                         il.Emit(OpCodes.Ldstr, $"exception on parameter {i}");
                         il.Emit(OpCodes.Ldloc, e);
@@ -721,7 +722,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     }
 
                     // storage for return value
-                    var rt = il.AllocTempLocal(typeof(object));
+                    var rt = il.AllocTempLocal(il.Context.Types.Object);
 
                     // call method and convert result
                     il.BeginExceptionBlock();
@@ -758,7 +759,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     il.EmitLeave(postLabel);
 
                     // catch exception from call and wrap
-                    il.BeginCatchBlock(typeof(Exception));
+                    il.BeginCatchBlock(il.Context.Types.Exception);
                     il.Emit(OpCodes.Ldc_I4_0);
                     il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(il.Context.Types.Exception));
                     il.Emit(OpCodes.Newobj, invocationTargetExceptionWithCauseCtor);
@@ -830,7 +831,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     // resolve the runtime method info
                     mw.ResolveMethod();
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtil.Create($"__<FastConstructorAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsTBD, np, typeof(object), new[] { typeof(object[]) });
+                    var dm = DynamicMethodUtil.Create($"__<FastConstructorAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsTBD.GetUnderlyingRuntimeType(), np, typeof(object), new[] { typeof(object[]) });
                     var il = JVM.Context.CodeEmitterFactory.Create(dm);
 
                     // labels
@@ -881,7 +882,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         var o = p[n++] = il.AllocTempLocal(tw.TypeAsSignatureType);
 
                         // temporary variable for exceptions
-                        var e = il.AllocTempLocal(typeof(Exception));
+                        var e = il.AllocTempLocal(il.Context.Types.Exception);
 
                         // load and convert argument
                         var endConvArgn = il.DefineLabel();
@@ -895,7 +896,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.EmitLeave(endConvArgn);
 
                         // catch InvalidCastException, store, add message, and wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(InvalidCastException));
+                        il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
                         il.Emit(OpCodes.Stloc, e);
                         il.Emit(OpCodes.Ldstr, $"argument type mismatch on parameter {i}");
                         il.Emit(OpCodes.Ldloc, e);
@@ -903,7 +904,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Throw);
 
                         // catch Exception, wrap with IllegalArgumentException
-                        il.BeginCatchBlock(typeof(Exception));
+                        il.BeginCatchBlock(il.Context.Types.Exception);
                         il.Emit(OpCodes.Stloc, e);
                         il.Emit(OpCodes.Ldstr, $"exception on parameter {i}");
                         il.Emit(OpCodes.Ldloc, e);
@@ -927,13 +928,13 @@ namespace IKVM.Java.Externs.sun.reflect
                     }
 
                     // call constructor
-                    var rt = il.AllocTempLocal(typeof(object));
+                    var rt = il.AllocTempLocal(il.Context.Types.Object);
                     mw.EmitNewobj(il);
                     il.Emit(OpCodes.Stloc, rt);
                     il.EmitLeave(postLabel);
 
                     // catch exception from call and wrap
-                    il.BeginCatchBlock(typeof(Exception));
+                    il.BeginCatchBlock(il.Context.Types.Exception);
                     il.Emit(OpCodes.Ldc_I4_0);
                     il.Emit(OpCodes.Call, il.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(il.Context.Types.Exception));
                     il.Emit(OpCodes.Newobj, FastMethodAccessorImpl.invocationTargetExceptionWithCauseCtor);
@@ -975,28 +976,29 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class FastSerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
 
-            static readonly MethodInfo GetTypeFromHandleMethod = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), new[] { typeof(RuntimeTypeHandle) });
+            static readonly IMethodSymbol GetTypeFromHandleMethod = JVM.Context.Types.Type.GetMethod(nameof(Type.GetTypeFromHandle), [JVM.Context.Types.RuntimeTypeHandle]);
 #if NETFRAMEWORK
-            static readonly MethodInfo GetUninitializedObjectMethod = typeof(FormatterServices).GetMethod(nameof(FormatterServices.GetUninitializedObject), new[] { typeof(Type) });
+            static readonly IMethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(FormatterServices)).GetMethod(nameof(FormatterServices.GetUninitializedObject), [JVM.Context.Types.Type]);
 #else
-            static readonly MethodInfo GetUninitializedObjectMethod = typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), new[] { typeof(Type) });
+            static readonly IMethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(RuntimeHelpers)).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), [JVM.Context.Types.Type]);
 #endif
+
             delegate object InvokeCtor();
             InvokeCtor invoker;
 
             internal FastSerializationConstructorAccessorImpl(global::java.lang.reflect.Constructor constructorToCall, global::java.lang.Class classToInstantiate)
             {
-                RuntimeJavaMethod constructor = RuntimeJavaMethod.FromExecutable(constructorToCall);
+                var constructor = RuntimeJavaMethod.FromExecutable(constructorToCall);
                 if (constructor.GetParameters().Length != 0)
-                {
                     throw new NotImplementedException("Serialization constructor cannot have parameters");
-                }
+
                 constructor.Link();
                 constructor.ResolveMethod();
-                Type type;
+
+                ITypeSymbol type;
                 try
                 {
-                    RuntimeJavaType wrapper = RuntimeJavaType.FromClass(classToInstantiate);
+                    var wrapper = RuntimeJavaType.FromClass(classToInstantiate);
                     wrapper.Finish();
                     type = wrapper.TypeAsBaseType;
                 }
@@ -1004,15 +1006,16 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     throw x.ToJava();
                 }
-                DynamicMethod dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType, true, typeof(object), null);
-                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
-                ilgen.Emit(OpCodes.Ldtoken, type);
-                ilgen.Emit(OpCodes.Call, GetTypeFromHandleMethod);
-                ilgen.Emit(OpCodes.Call, GetUninitializedObjectMethod);
-                ilgen.Emit(OpCodes.Dup);
-                constructor.EmitCall(ilgen);
-                ilgen.Emit(OpCodes.Ret);
-                ilgen.DoEmit();
+
+                var dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), true, typeof(object), null);
+                var il = JVM.Context.CodeEmitterFactory.Create(dm);
+                il.Emit(OpCodes.Ldtoken, type);
+                il.Emit(OpCodes.Call, GetTypeFromHandleMethod);
+                il.Emit(OpCodes.Call, GetUninitializedObjectMethod);
+                il.Emit(OpCodes.Dup);
+                constructor.EmitCall(il);
+                il.Emit(OpCodes.Ret);
+                il.DoEmit();
                 invoker = (InvokeCtor)dm.CreateDelegate(typeof(InvokeCtor));
             }
 
@@ -1035,7 +1038,7 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class ActivatorConstructorAccessor : global::sun.reflect.ConstructorAccessor
         {
 
-            private readonly Type type;
+            readonly ITypeSymbol type;
 
             internal ActivatorConstructorAccessor(RuntimeJavaMethod mw)
             {
@@ -1049,7 +1052,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                 try
                 {
-                    return Activator.CreateInstance(type);
+                    return Activator.CreateInstance(type.GetUnderlyingRuntimeType());
                 }
                 catch (TargetInvocationException x)
                 {
@@ -1316,7 +1319,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     {
                         throw GetIllegalArgumentException(obj);
                     }
-                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                     {
                         throw GetUnsupportedRemappedFieldException(obj);
                     }
@@ -1361,7 +1364,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     {
                         throw SetIllegalArgumentException(obj);
                     }
-                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+                    else if (fw.DeclaringType.IsRemapped && !fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                     {
                         throw GetUnsupportedRemappedFieldException(obj);
                     }
@@ -2049,9 +2052,11 @@ namespace IKVM.Java.Externs.sun.reflect
             }
 
 #if !NO_REF_EMIT
+
             private Delegate GenerateFastGetter(Type delegateType, Type fieldType, RuntimeJavaField fw)
             {
                 RuntimeJavaType fieldTypeWrapper;
+
                 try
                 {
                     fieldTypeWrapper = fw.FieldTypeWrapper.EnsureLoadable(fw.DeclaringType.ClassLoader);
@@ -2062,36 +2067,38 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     throw x.ToJava();
                 }
+
                 fw.ResolveField();
-                DynamicMethod dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
-                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
+
+                var dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, [typeof(IReflectionException), typeof(object), typeof(object)]);
+                var il = JVM.Context.CodeEmitterFactory.Create(dm);
                 if (fw.IsStatic)
                 {
-                    fw.EmitGet(ilgen);
-                    fieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
+                    fw.EmitGet(il);
+                    fieldTypeWrapper.EmitConvSignatureTypeToStackType(il);
                 }
                 else
                 {
-                    ilgen.BeginExceptionBlock();
-                    ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
-                    fw.EmitGet(ilgen);
-                    fieldTypeWrapper.EmitConvSignatureTypeToStackType(ilgen);
-                    CodeEmitterLocal local = ilgen.DeclareLocal(fieldType);
-                    ilgen.Emit(OpCodes.Stloc, local);
-                    CodeEmitterLabel label = ilgen.DefineLabel();
-                    ilgen.EmitLeave(label);
-                    ilgen.BeginCatchBlock(typeof(InvalidCastException));
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("GetIllegalArgumentException"));
-                    ilgen.Emit(OpCodes.Throw);
-                    ilgen.EndExceptionBlock();
-                    ilgen.MarkLabel(label);
-                    ilgen.Emit(OpCodes.Ldloc, local);
+                    il.BeginExceptionBlock();
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
+                    fw.EmitGet(il);
+                    fieldTypeWrapper.EmitConvSignatureTypeToStackType(il);
+                    CodeEmitterLocal local = il.DeclareLocal(il.Context.Resolver.GetSymbol(fieldType));
+                    il.Emit(OpCodes.Stloc, local);
+                    CodeEmitterLabel label = il.DefineLabel();
+                    il.EmitLeave(label);
+                    il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Callvirt, il.Context.Resolver.GetSymbol(typeof(IReflectionException)).GetMethod("GetIllegalArgumentException"));
+                    il.Emit(OpCodes.Throw);
+                    il.EndExceptionBlock();
+                    il.MarkLabel(label);
+                    il.Emit(OpCodes.Ldloc, local);
                 }
-                ilgen.Emit(OpCodes.Ret);
-                ilgen.DoEmit();
+                il.Emit(OpCodes.Ret);
+                il.DoEmit();
                 return dm.CreateDelegate(delegateType, this);
             }
 
@@ -2108,58 +2115,59 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     throw x.ToJava();
                 }
+
                 fw.ResolveField();
-                DynamicMethod dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
-                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
+
+                var dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType(), !fw.IsPublic || !fw.DeclaringType.IsPublic, null, [typeof(IReflectionException), typeof(object), fieldType, typeof(object)]);
+                var il = JVM.Context.CodeEmitterFactory.Create(dm);
                 if (fw.IsStatic)
                 {
                     if (fieldType == typeof(object))
                     {
-                        ilgen.BeginExceptionBlock();
-                        ilgen.Emit(OpCodes.Ldarg_2);
-                        fieldTypeWrapper.EmitCheckcast(ilgen);
-                        fieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
-                        fw.EmitSet(ilgen);
-                        CodeEmitterLabel label = ilgen.DefineLabel();
-                        ilgen.EmitLeave(label);
-                        ilgen.BeginCatchBlock(typeof(InvalidCastException));
-                        ilgen.Emit(OpCodes.Ldarg_0);
-                        ilgen.Emit(OpCodes.Ldarg_1);
-                        ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
-                        ilgen.Emit(OpCodes.Throw);
-                        ilgen.EndExceptionBlock();
-                        ilgen.MarkLabel(label);
+                        il.BeginExceptionBlock();
+                        il.Emit(OpCodes.Ldarg_2);
+                        fieldTypeWrapper.EmitCheckcast(il);
+                        fieldTypeWrapper.EmitConvStackTypeToSignatureType(il, null);
+                        fw.EmitSet(il);
+                        CodeEmitterLabel label = il.DefineLabel();
+                        il.EmitLeave(label);
+                        il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
+                        il.Emit(OpCodes.Ldarg_0);
+                        il.Emit(OpCodes.Ldarg_1);
+                        il.Emit(OpCodes.Callvirt, il.Context.Resolver.GetSymbol(typeof(IReflectionException)).GetMethod("SetIllegalArgumentException"));
+                        il.Emit(OpCodes.Throw);
+                        il.EndExceptionBlock();
+                        il.MarkLabel(label);
                     }
                     else
                     {
-                        ilgen.Emit(OpCodes.Ldarg_2);
-                        fw.EmitSet(ilgen);
+                        il.Emit(OpCodes.Ldarg_2);
+                        fw.EmitSet(il);
                     }
                 }
                 else
                 {
-                    ilgen.BeginExceptionBlock();
-                    ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
-                    ilgen.Emit(OpCodes.Ldarg_2);
+                    il.BeginExceptionBlock();
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Castclass, fw.DeclaringType.TypeAsBaseType);
+                    il.Emit(OpCodes.Ldarg_2);
                     if (fieldType == typeof(object))
-                    {
-                        fieldTypeWrapper.EmitCheckcast(ilgen);
-                    }
-                    fieldTypeWrapper.EmitConvStackTypeToSignatureType(ilgen, null);
-                    fw.EmitSet(ilgen);
-                    CodeEmitterLabel label = ilgen.DefineLabel();
-                    ilgen.EmitLeave(label);
-                    ilgen.BeginCatchBlock(typeof(InvalidCastException));
-                    ilgen.Emit(OpCodes.Ldarg_0);
-                    ilgen.Emit(OpCodes.Ldarg_1);
-                    ilgen.Emit(OpCodes.Callvirt, typeof(IReflectionException).GetMethod("SetIllegalArgumentException"));
-                    ilgen.Emit(OpCodes.Throw);
-                    ilgen.EndExceptionBlock();
-                    ilgen.MarkLabel(label);
+                        fieldTypeWrapper.EmitCheckcast(il);
+
+                    fieldTypeWrapper.EmitConvStackTypeToSignatureType(il, null);
+                    fw.EmitSet(il);
+                    var label = il.DefineLabel();
+                    il.EmitLeave(label);
+                    il.BeginCatchBlock(il.Context.Resolver.GetSymbol(typeof(InvalidCastException)));
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Callvirt, il.Context.Resolver.GetSymbol(typeof(IReflectionException)).GetMethod("SetIllegalArgumentException"));
+                    il.Emit(OpCodes.Throw);
+                    il.EndExceptionBlock();
+                    il.MarkLabel(label);
                 }
-                ilgen.Emit(OpCodes.Ret);
-                ilgen.DoEmit();
+                il.Emit(OpCodes.Ret);
+                il.DoEmit();
                 return dm.CreateDelegate(delegateType, this);
             }
 #endif // !NO_REF_EMIT

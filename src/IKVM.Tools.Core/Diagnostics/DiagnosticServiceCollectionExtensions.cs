@@ -13,11 +13,13 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <returns></returns>
         public static IServiceCollection AddToolsDiagnostics(this IServiceCollection services)
         {
+            services.AddSingleton<DiagnosticOptions>();
             services.AddSingleton<DiagnosticChannelProvider>();
             services.AddSingleton<DiagnosticFormatterProvider>();
             services.AddSingleton<IDiagnosticChannelFactory, FileDiagnosticChannelFactory>();
             services.AddSingleton<IDiagnosticFormatterFactory, JsonDiagnosticFormatterFactory>();
             services.AddSingleton<IDiagnosticFormatterFactory, TextDiagnosticFormatterFactory>();
+            services.AddSingleton<IDiagnosticFormatterFactory, ConsoleDiagnosticFormatterFactory>();
             services.AddSingleton<FormattedDiagnosticHandler>();
             return services;
         }

@@ -18,6 +18,7 @@ namespace IKVM.Tools.Core.Diagnostics
         static readonly char[] SEPARATOR = ['='];
 
         readonly DiagnosticChannelProvider _channels;
+        readonly DiagnosticOptions _options;
         readonly string _format;
         readonly string _formatPrefix;
 
@@ -25,10 +26,13 @@ namespace IKVM.Tools.Core.Diagnostics
         /// Initializes a new instance.
         /// </summary>
         /// <param name="channels"></param>
+        /// <param name="options"></param>
+        /// <param name="format"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public GenericChannelDiagnosticFormatterFactory(DiagnosticChannelProvider channels, string format)
+        public GenericChannelDiagnosticFormatterFactory(DiagnosticChannelProvider channels, DiagnosticOptions options, string format)
         {
             _channels = channels ?? throw new ArgumentNullException(nameof(channels));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
             _format = format ?? throw new ArgumentNullException(nameof(format));
             _formatPrefix = $"{_format},";
         }
@@ -56,6 +60,11 @@ namespace IKVM.Tools.Core.Diagnostics
             opts.WarningChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
             opts.ErrorChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
             opts.FatalChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
+
+            opts.NoWarn = _options.NoWarn;
+            opts.NoWarnDiagnostics = _options.NoWarnDiagnostics;
+            opts.WarnAsError = _options.WarnAsError;
+            opts.WarnAsErrorDiagnostics = _options.WarnAsErrorDiagnostics;
 
             // process options and create formatter
             return CreateFormatter(opts);

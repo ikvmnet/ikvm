@@ -21,16 +21,9 @@
   jeroen@frijters.net
   
 */
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -41,7 +34,7 @@ namespace IKVM.Runtime
     sealed class RuntimeManagedByteCodePropertyJavaField : RuntimeJavaField
     {
 
-        readonly PropertyInfo property;
+        readonly IPropertySymbol property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -49,13 +42,13 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, PropertyInfo property, ExModifiers modifiers) :
+        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, IPropertySymbol property, ExModifiers modifiers) :
             base(declaringType, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType), property.Name, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;
         }
 
-        internal PropertyInfo GetProperty()
+        internal IPropertySymbol GetProperty()
         {
             return property;
         }
@@ -111,7 +104,7 @@ namespace IKVM.Runtime
             if (getter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            return getter.Invoke(obj, new object[0]);
+            return getter.GetUnderlyingMethod().Invoke(obj, []);
         }
 
         internal override void SetValue(object obj, object value)
@@ -120,7 +113,7 @@ namespace IKVM.Runtime
             if (setter == null)
                 throw new java.lang.NoSuchMethodError();
 
-            setter.Invoke(obj, new object[] { value });
+            setter.GetUnderlyingMethod().Invoke(obj, new object[] { value });
         }
 
 #endif

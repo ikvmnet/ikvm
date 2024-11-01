@@ -1,11 +1,11 @@
 ﻿using System;
 
-using FieldInfo = IKVM.Reflection.FieldInfo;
+using IKVM.Reflection;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionFieldSymbol : IkvmReflectionMemberSymbol, IFieldSymbol
+    class IkvmReflectionFieldSymbol : IkvmReflectionMemberSymbol, IIkvmReflectionFieldSymbol
     {
 
         readonly FieldInfo _field;
@@ -14,60 +14,84 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingType"></param>
         /// <param name="field"></param>
-        public IkvmReflectionFieldSymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol type, FieldInfo field) :
-            base(context, type.ContainingModule, type, field)
+        public IkvmReflectionFieldSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol resolvingModule, IIkvmReflectionTypeSymbol? resolvingType, FieldInfo field) :
+            base(context, resolvingModule, resolvingType)
         {
             _field = field ?? throw new ArgumentNullException(nameof(field));
         }
 
-        internal new FieldInfo ReflectionObject => (FieldInfo)base.ReflectionObject;
+        /// <inheritdoc />
+        public FieldInfo UnderlyingField => _field;
 
-        public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)_field.Attributes;
+        /// <inheritdoc />
+        public override MemberInfo UnderlyingMember => UnderlyingField;
 
-        public ITypeSymbol FieldType => ResolveTypeSymbol(_field.FieldType);
+        #region IFieldSymbol
 
-        public bool IsAssembly => _field.IsAssembly;
+        /// <inheritdoc/>
+        public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)UnderlyingField.Attributes;
 
-        public bool IsFamily => _field.IsFamily;
+        /// <inheritdoc/>
+        public ITypeSymbol FieldType => ResolveTypeSymbol(UnderlyingField.FieldType);
 
-        public bool IsFamilyAndAssembly => _field.IsFamilyAndAssembly;
+        /// <inheritdoc/>
+        public bool IsSpecialName => UnderlyingField.IsSpecialName;
 
-        public bool IsFamilyOrAssembly => _field.IsFamilyOrAssembly;
+        /// <inheritdoc/>
+        public bool IsAssembly => UnderlyingField.IsAssembly;
 
-        public bool IsInitOnly => _field.IsInitOnly;
+        /// <inheritdoc/>
+        public bool IsFamily => UnderlyingField.IsFamily;
 
-        public bool IsLiteral => _field.IsLiteral;
+        /// <inheritdoc/>
+        public bool IsFamilyAndAssembly => UnderlyingField.IsFamilyAndAssembly;
 
-#pragma warning disable SYSLIB0050 // Type or member is obsolete
-        public bool IsNotSerialized => _field.IsNotSerialized;
-#pragma warning restore SYSLIB0050 // Type or member is obsolete
+        /// <inheritdoc/>
+        public bool IsFamilyOrAssembly => UnderlyingField.IsFamilyOrAssembly;
 
-        public bool IsPinvokeImpl => _field.IsPinvokeImpl;
+        /// <inheritdoc/>
+        public bool IsInitOnly => UnderlyingField.IsInitOnly;
 
-        public bool IsPrivate => _field.IsPrivate;
+        /// <inheritdoc/>
+        public bool IsLiteral => UnderlyingField.IsLiteral;
 
-        public bool IsPublic => _field.IsPublic;
+        /// <inheritdoc/>
+        public bool IsNotSerialized => UnderlyingField.IsNotSerialized;
 
-        public bool IsSpecialName => _field.IsSpecialName;
+        /// <inheritdoc/>
+        public bool IsPinvokeImpl => UnderlyingField.IsPinvokeImpl;
 
-        public bool IsStatic => _field.IsStatic;
+        /// <inheritdoc/>
+        public bool IsPrivate => UnderlyingField.IsPrivate;
 
+        /// <inheritdoc/>
+        public bool IsPublic => UnderlyingField.IsPublic;
+
+        /// <inheritdoc/>
+        public bool IsStatic => UnderlyingField.IsStatic;
+
+        /// <inheritdoc/>
         public ITypeSymbol[] GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(_field.GetOptionalCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingField.GetOptionalCustomModifiers());
         }
 
-        public object? GetRawConstantValue()
-        {
-            return _field.GetRawConstantValue();
-        }
-
+        /// <inheritdoc/>
         public ITypeSymbol[] GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(_field.GetRequiredCustomModifiers());
+            return ResolveTypeSymbols(UnderlyingField.GetRequiredCustomModifiers());
         }
+
+        /// <inheritdoc/>
+        public object? GetRawConstantValue()
+        {
+            return UnderlyingField.GetRawConstantValue();
+        }
+
+        #endregion
 
     }
 

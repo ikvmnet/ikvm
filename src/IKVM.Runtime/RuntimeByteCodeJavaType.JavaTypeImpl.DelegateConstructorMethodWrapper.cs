@@ -21,17 +21,11 @@
   jeroen@frijters.net
   
 */
-using System;
-
-#if IMPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
 using System.Reflection;
 using System.Reflection.Emit;
-#endif
+
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -45,8 +39,8 @@ namespace IKVM.Runtime
             sealed class DelegateConstructorMethodWrapper : RuntimeJavaMethod
             {
 
-                MethodBuilder constructor;
-                MethodInfo invoke;
+                IConstructorSymbolBuilder constructor;
+                IMethodSymbol invoke;
 
                 /// <summary>
                 /// Initializes a new instance.
@@ -59,14 +53,14 @@ namespace IKVM.Runtime
 
                 }
 
-                internal void DoLink(TypeBuilder typeBuilder)
+                internal void DoLink(ITypeSymbolBuilder typeBuilder)
                 {
                     var attribs = MethodAttributes.HideBySig | MethodAttributes.Public;
-                    constructor = ReflectUtil.DefineConstructor(typeBuilder, attribs, new Type[] { DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr });
+                    constructor = ReflectUtil.DefineConstructor(typeBuilder, attribs, [DeclaringType.Context.Types.Object, DeclaringType.Context.Types.IntPtr]);
                     constructor.SetImplementationFlags(MethodImplAttributes.Runtime);
                     var mw = GetParameters()[0].GetMethods()[0];
                     mw.Link();
-                    invoke = (MethodInfo)mw.GetMethod();
+                    invoke = (IMethodSymbol)mw.GetMethod();
                 }
 
                 internal override void EmitNewobj(CodeEmitter ilgen)

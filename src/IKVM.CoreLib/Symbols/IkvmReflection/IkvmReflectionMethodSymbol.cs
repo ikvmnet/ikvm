@@ -1,23 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 
-using MethodInfo = IKVM.Reflection.MethodInfo;
+using IKVM.Reflection;
+
 using Type = IKVM.Reflection.Type;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMethodSymbol : IkvmReflectionMethodBaseSymbol, IMethodSymbol
+    class IkvmReflectionMethodSymbol : IkvmReflectionMethodBaseSymbol, IIkvmReflectionMethodSymbol
     {
 
         readonly MethodInfo _method;
 
-        Type[]? _genericParametersSource;
-        IkvmReflectionTypeSymbol?[]? _genericParameters;
-        List<(Type[] Arguments, IkvmReflectionMethodSymbol Symbol)>? _genericTypes;
+        IkvmReflectionGenericTypeParameterTable _genericTypeParameterTable;
+        IkvmReflectionMethodSpecTable _specTable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,105 +23,66 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="module"></param>
         /// <param name="type"></param>
         /// <param name="method"></param>
-        public IkvmReflectionMethodSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol? type, MethodInfo method) :
-            base(context, module, type, method)
+        public IkvmReflectionMethodSymbol(IkvmReflectionSymbolContext context, IIkvmReflectionModuleSymbol module, IIkvmReflectionTypeSymbol? type, MethodInfo method) :
+            base(context, module, type)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
+            _genericTypeParameterTable = new IkvmReflectionGenericTypeParameterTable(context, module, this);
+            _specTable = new IkvmReflectionMethodSpecTable(context, module, type, this);
         }
 
-        /// <summary>
-        /// Gets or creates the <see cref="IkvmReflectionTypeSymbol"/> cached for the generic parameter type.
-        /// </summary>
-        /// <param name="genericParameterType"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal IkvmReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericParameterType)
+        /// <inheritdoc />
+        public MethodInfo UnderlyingMethod => _method;
+
+        /// <inheritdoc />
+        public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
+
+        #region IIkvmReflectionMethodSymbol
+
+        /// <inheritdoc />
+        public IIkvmReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
         {
-            if (genericParameterType is null)
-                throw new ArgumentNullException(nameof(genericParameterType));
-
-            Debug.Assert(genericParameterType.DeclaringMethod == _method);
-
-            // initialize tables
-            _genericParametersSource ??= _method.GetGenericArguments();
-            _genericParameters ??= new IkvmReflectionTypeSymbol?[_genericParametersSource.Length];
-
-            // position of the parameter in the list
-            var idx = genericParameterType.GenericParameterPosition;
-
-            // check that our list is long enough to contain the entire table
-            if (_genericParameters.Length < idx)
-                throw new IndexOutOfRangeException();
-
-            // if not yet created, create, allow multiple instances, but only one is eventually inserted
-            ref var rec = ref _genericParameters[idx];
-            if (rec == null)
-                Interlocked.CompareExchange(ref rec, new IkvmReflectionTypeSymbol(Context, ContainingModule, genericParameterType), null);
-
-            // this should never happen
-            if (rec is not IkvmReflectionTypeSymbol sym)
-                throw new InvalidOperationException();
-
-            return sym;
+            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
         }
 
-        /// <summary>
-        /// Gets or creates the <see cref="IkvmReflectionMethodSymbol"/> cached for the generic parameter type.
-        /// </summary>
-        /// <param name="genericMethodArguments"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal IkvmReflectionMethodSymbol GetOrCreateGenericTypeSymbol(Type[] genericMethodArguments)
+        /// <inheritdoc />
+        public IIkvmReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
         {
-            if (genericMethodArguments is null)
-                throw new ArgumentNullException(nameof(genericMethodArguments));
-
-            if (_method.IsGenericMethodDefinition == false)
-                throw new InvalidOperationException();
-
-            // initialize the available parameters
-            _genericParametersSource ??= _method.GetGenericArguments();
-            if (_genericParametersSource.Length != genericMethodArguments.Length)
-                throw new InvalidOperationException();
-
-            // initialize generic type map, and lock on it since we're potentially adding items
-            _genericTypes ??= [];
-            lock (_genericTypes)
-            {
-                // find existing entry
-                foreach (var i in _genericTypes)
-                    if (i.Arguments.SequenceEqual(genericMethodArguments))
-                        return i.Symbol;
-
-                // generate new symbol
-                var sym = new IkvmReflectionMethodSymbol(Context, ContainingModule, ContainingType, _method.MakeGenericMethod(genericMethodArguments));
-                _genericTypes.Add((genericMethodArguments, sym));
-                return sym;
-            }
+            return _specTable.GetOrCreateGenericMethodSymbol(method.GetGenericArguments());
         }
 
-        internal new MethodInfo ReflectionObject => (MethodInfo)base.ReflectionObject;
+        #endregion
 
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
+        #region IMethodSymbol
 
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
+        /// <inheritdoc />
+        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
 
-        public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+        /// <inheritdoc />
+        public ITypeSymbol ReturnType => ResolveTypeSymbol(UnderlyingMethod.ReturnType);
 
+        /// <inheritdoc />
+        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+
+        /// <inheritdoc />
         public IMethodSymbol GetBaseDefinition()
         {
-            return ResolveMethodSymbol(_method.GetBaseDefinition());
+            return ResolveMethodSymbol(UnderlyingMethod.GetBaseDefinition());
         }
 
+        /// <inheritdoc />
         public IMethodSymbol GetGenericMethodDefinition()
         {
-            return ResolveMethodSymbol(_method.GetGenericMethodDefinition());
+            return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
         }
 
+        /// <inheritdoc />
         public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
         {
-            return ResolveMethodSymbol(_method.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
+            return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
         }
+
+        #endregion
 
     }
 

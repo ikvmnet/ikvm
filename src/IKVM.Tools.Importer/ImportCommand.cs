@@ -200,15 +200,13 @@ namespace IKVM.Tools.Importer
                 aliases: ["-publicpackage"],
                 description: "Mark all classes with a package name starting with <prefix> as public to the assembly."));
 
-            Add(NoWarnOption = new Option<Diagnostic[]>(
+            Add(NoWarnOption = new Option<string?>(
                 aliases: ["-nowarn"],
-                description: "Disable specific warning messages.",
-                parseArgument: ParseDiagnosticArray));
+                description: "Disable specific warning messages."));
 
-            Add(WarnAsErrorOption = new Option<Diagnostic[]>(
+            Add(WarnAsErrorOption = new Option<string?>(
                 aliases: ["-warnaserror"],
-                description: "Report all warnings as errors.",
-                parseArgument: ParseDiagnosticArray));
+                description: "Report all warnings as errors."));
 
             if (root)
                 Add(RuntimeOption = new Option<FileInfo?>(
@@ -294,30 +292,6 @@ namespace IKVM.Tools.Importer
                     description: "Logging options."));
 
             ResourceOption.AddValidator(ValidateResource);
-        }
-
-        /// <summary>
-        /// Parse an option set of Diagnostic ID values.
-        /// </summary>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        Diagnostic[] ParseDiagnosticArray(ArgumentResult result)
-        {
-            var l = new List<Diagnostic>();
-
-            foreach (var i in result.Tokens)
-            {
-                foreach (var j in i.Value.Split(LIST_SEPARATOR, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (int.TryParse(j, out var id) && Diagnostic.GetById(id) is { } diagnostic)
-                        l.Add(diagnostic);
-
-                    if (j.StartsWith("IKVM", StringComparison.OrdinalIgnoreCase) && int.TryParse(j["IKVM".Length..], out var id2) && Diagnostic.GetById(id2) is { } diagnostic2)
-                        l.Add(diagnostic2);
-                }
-            }
-
-            return l.ToArray();
         }
 
         /// <summary>
@@ -427,9 +401,9 @@ namespace IKVM.Tools.Importer
 
         public Option<string[]> PublicPackageOption { get; set; }
 
-        public Option<Diagnostic[]> NoWarnOption { get; set; }
+        public Option<string?> NoWarnOption { get; set; }
 
-        public Option<Diagnostic[]> WarnAsErrorOption { get; set; }
+        public Option<string?> WarnAsErrorOption { get; set; }
 
         public Option<FileInfo?>? RuntimeOption { get; set; }
 

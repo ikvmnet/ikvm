@@ -353,7 +353,7 @@ namespace IKVM.Runtime.JNI
                     {
                         wrapper.Finish();
                         var cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-                        JVM.SetPendingException((Exception)cons.newInstance(msg == null ? new object[0] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID));
+                        JVM.SetPendingException((Exception)cons.newInstance(msg == null ? [] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID));
                         return JNI_OK;
                     }
                     catch (RetargetableJavaException x)
@@ -628,9 +628,9 @@ namespace IKVM.Runtime.JNI
 
                 wrapper.Finish();
 #if NETFRAMEWORK
-                return pEnv->MakeLocalRef(FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType));
+                return pEnv->MakeLocalRef(FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingRuntimeType()));
 #else
-                return pEnv->MakeLocalRef(RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType));
+                return pEnv->MakeLocalRef(RuntimeHelpers.GetUninitializedObject(wrapper.TypeAsBaseType.GetUnderlyingRuntimeType()));
 #endif
             }
             catch (RetargetableJavaException e)
@@ -709,7 +709,7 @@ namespace IKVM.Runtime.JNI
                         // possible with remapped types
                         throw new NotSupportedException($"Remapped type {mw.DeclaringType.Name} doesn't support constructor invocation on an existing instance");
                     }
-                    else if (!mb.DeclaringType.IsInstanceOfType(obj))
+                    else if (!mb.DeclaringType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                     {
                         // we're trying to initialize an existing instance of a remapped type
                         throw new NotSupportedException($"Unable to partially construct object of type {obj.GetType().FullName} to type {mb.DeclaringType.FullName}");
@@ -734,10 +734,10 @@ namespace IKVM.Runtime.JNI
             if (mw.HasCallerID || mw.IsDynamicOnly)
                 throw new NotSupportedException();
 
-            if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.IsInstanceOfType(obj))
+            if (mw.DeclaringType.IsRemapped && !mw.DeclaringType.TypeAsBaseType.GetUnderlyingRuntimeType().IsInstanceOfType(obj))
                 return mw.InvokeNonvirtualRemapped(obj, argarray);
 
-            var del = (Delegate)Activator.CreateInstance(mw.GetDelegateType(), new object[] { obj, mw.GetMethod().MethodHandle.GetFunctionPointer() });
+            var del = (Delegate)Activator.CreateInstance(mw.GetDelegateType().GetUnderlyingRuntimeType(), [obj, mw.GetMethod().GetUnderlyingMethodBase().MethodHandle.GetFunctionPointer()]);
             try
             {
                 return del.DynamicInvoke(argarray);
@@ -2157,7 +2157,7 @@ namespace IKVM.Runtime.JNI
             try
             {
                 // we want to support (non-primitive) value types so we can't cast to object[]
-                var a = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType, len);
+                var a = Array.CreateInstance(RuntimeJavaType.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz)).TypeAsArrayType.GetUnderlyingRuntimeType(), len);
                 var o = pEnv->UnwrapRef(init);
                 if (o != null)
                     for (int i = 0; i < a.Length; i++)
@@ -2776,7 +2776,7 @@ namespace IKVM.Runtime.JNI
 
                     // don't allow dotted names!
                     if (methodSig.IndexOf('.') < 0)
-                        fi = wrapper.TypeAsTBD.GetField(METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
+                        fi = wrapper.TypeAsTBD.GetField(METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic).GetUnderlyingField();
 
                     if (fi == null)
                     {

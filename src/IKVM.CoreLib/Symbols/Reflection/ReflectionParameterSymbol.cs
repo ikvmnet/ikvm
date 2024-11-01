@@ -5,67 +5,132 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionParameterSymbol : ReflectionSymbol, IParameterSymbol
+    class ReflectionParameterSymbol : ReflectionSymbol, IReflectionParameterSymbol
     {
 
+        readonly IReflectionModuleSymbol _resolvingModule;
+        readonly IReflectionMemberSymbol _resolvingMember;
         readonly ParameterInfo _parameter;
-        readonly ReflectionMethodBaseSymbol _method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="method"></param>
+        /// <param name="resolvingModule"></param>
+        /// <param name="resolvingMember"></param>
         /// <param name="parameter"></param>
-        public ReflectionParameterSymbol(ReflectionSymbolContext context, ReflectionMethodBaseSymbol method, ParameterInfo parameter) :
+        public ReflectionParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMemberSymbol? resolvingMember, ParameterInfo parameter) :
             base(context)
         {
-            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
+            _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
             _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
         }
 
-        internal ReflectionMethodBaseSymbol ContainingMethod => _method;
+        /// <inheritdoc />
+        public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
 
-        public ParameterAttributes Attributes => _parameter.Attributes;
+        /// <inheritdoc />
+        public IReflectionMemberSymbol ResolvingMember => _resolvingMember;
 
-        public object? DefaultValue => _parameter.DefaultValue;
+        /// <inheritdoc />
+        public ParameterInfo UnderlyingParameter => _parameter;
 
-        public bool HasDefaultValue => _parameter.HasDefaultValue;
+        /// <inheritdoc />
+        public ParameterInfo UnderlyingRuntimeParameter => UnderlyingParameter;
 
-        public bool IsIn => _parameter.IsIn;
+        #region IParameterSymbol
 
-        public bool IsLcid => _parameter.IsLcid;
+        /// <inheritdoc />
+        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)UnderlyingParameter.Attributes;
 
-        public bool IsOptional => _parameter.IsOptional;
+        /// <inheritdoc />
+        public object? DefaultValue => UnderlyingParameter.RawDefaultValue;
 
-        public bool IsOut => _parameter.IsOut;
+        /// <inheritdoc />
+        public bool HasDefaultValue => UnderlyingParameter.HasDefaultValue;
 
-        public bool IsRetval => _parameter.IsRetval;
+        /// <inheritdoc />
+        public bool IsIn => UnderlyingParameter.IsIn;
 
-        public IMemberSymbol Member => ResolveMemberSymbol(_parameter.Member);
+        /// <inheritdoc />
+        public bool IsLcid => UnderlyingParameter.IsLcid;
 
-        public int MetadataToken => _parameter.MetadataToken;
+        /// <inheritdoc />
+        public bool IsOptional => UnderlyingParameter.IsOptional;
 
-        public string? Name => _parameter.Name;
+        /// <inheritdoc />
+        public bool IsOut => UnderlyingParameter.IsOut;
 
-        public ITypeSymbol ParameterType => ResolveTypeSymbol(_parameter.ParameterType);
+        /// <inheritdoc />
+        public bool IsRetval => UnderlyingParameter.IsRetval;
 
-        public int Position => _parameter.Position;
+        /// <inheritdoc />
+        public IMemberSymbol Member => ResolveMemberSymbol(UnderlyingParameter.Member);
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        /// <inheritdoc />
+        public int MetadataToken => UnderlyingParameter.MetadataToken;
+
+        /// <inheritdoc />
+        public string? Name => UnderlyingParameter.Name;
+
+        /// <inheritdoc />
+        public ITypeSymbol ParameterType => ResolveTypeSymbol(UnderlyingParameter.ParameterType);
+
+        /// <inheritdoc />
+        public int Position => UnderlyingParameter.Position;
+
+        /// <inheritdoc />
+        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            var _attribyteType = attributeType.Unpack();
+            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attribyteType).ToArray());
         }
 
-        public bool IsDefined(ITypeSymbol attributeType)
+        /// <inheritdoc />
+        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
         {
-            return _parameter.IsDefined(((ReflectionTypeSymbol)attributeType).ReflectionObject);
+            if (inherit == true)
+                throw new NotSupportedException();
+
+            var _attributeType = attributeType.Unpack();
+            return ResolveCustomAttribute(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
         }
+
+        /// <inheritdoc />
+        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
+        {
+            return UnderlyingParameter.IsDefined(attributeType.Unpack(), inherit);
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbol[] GetOptionalCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingParameter.GetOptionalCustomModifiers());
+        }
+
+        /// <inheritdoc />
+        public ITypeSymbol[] GetRequiredCustomModifiers()
+        {
+            return ResolveTypeSymbols(UnderlyingParameter.GetRequiredCustomModifiers());
+        }
+
+        #endregion
+
+        /// <inheritdoc />
+        public override string? ToString() => UnderlyingParameter.ToString();
 
     }
 

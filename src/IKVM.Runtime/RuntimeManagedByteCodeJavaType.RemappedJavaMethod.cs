@@ -22,18 +22,10 @@
   
 */
 using System.Diagnostics;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
+using IKVM.CoreLib.Symbols;
 
 namespace IKVM.Runtime
 {
@@ -44,9 +36,9 @@ namespace IKVM.Runtime
         sealed class RemappedJavaMethod : RuntimeSmartJavaMethod
         {
 
-            readonly MethodInfo mbHelper;
+            readonly IMethodSymbol mbHelper;
 #if !IMPORTER
-            readonly MethodInfo mbNonvirtualHelper;
+            readonly IMethodSymbol mbNonvirtualHelper;
 #endif
 
             /// <summary>
@@ -62,7 +54,7 @@ namespace IKVM.Runtime
             /// <param name="hideFromReflection"></param>
             /// <param name="mbHelper"></param>
             /// <param name="mbNonvirtualHelper"></param>
-            internal RemappedJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodBase method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, MethodInfo mbHelper, MethodInfo mbNonvirtualHelper) :
+            internal RemappedJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, IMethodSymbol mbHelper, IMethodSymbol mbNonvirtualHelper) :
                 base(declaringType, name, sig, method, returnType, parameterTypes, modifiers.Modifiers, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None) | (hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None))
             {
                 this.mbHelper = mbHelper;
@@ -76,7 +68,7 @@ namespace IKVM.Runtime
             protected override void CallImpl(CodeEmitter ilgen)
             {
                 var mb = GetMethod();
-                var mi = mb as MethodInfo;
+                var mi = mb as IMethodSymbol;
                 if (mi != null)
                 {
                     if (!IsStatic && IsFinal)
@@ -114,7 +106,7 @@ namespace IKVM.Runtime
             protected override void NewobjImpl(CodeEmitter ilgen)
             {
                 var mb = GetMethod();
-                var mi = mb as MethodInfo;
+                var mi = mb as IMethodSymbol;
                 if (mi != null)
                 {
                     Debug.Assert(mi.Name == "newhelper");
@@ -157,25 +149,27 @@ namespace IKVM.Runtime
             internal override object InvokeNonvirtualRemapped(object obj, object[] args)
             {
                 var mi = mbNonvirtualHelper ?? mbHelper;
-                return mi.Invoke(null, ArrayUtil.Concat(obj, args));
+                return mi.GetUnderlyingMethod().Invoke(null, ArrayUtil.Concat(obj, args));
             }
+
 #endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
 #if EMITTERS
+
             internal override void EmitCallvirtReflect(CodeEmitter ilgen)
             {
                 var mb = mbHelper ?? GetMethod();
                 ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mb);
             }
+
 #endif // EMITTERS
 
             internal string GetGenericSignature()
             {
-                SignatureAttribute attr = DeclaringType.Context.AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
+                var attr = DeclaringType.Context.AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
                 if (attr != null)
-                {
                     return attr.Signature;
-                }
+
                 return null;
             }
 

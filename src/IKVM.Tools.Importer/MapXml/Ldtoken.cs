@@ -23,14 +23,11 @@
 */
 
 using System;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
-using IKVM.CoreLib.Diagnostics;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
@@ -79,15 +76,13 @@ namespace IKVM.Tools.Importer.MapXml
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             if (!Validate(context))
-            {
                 return;
-            }
 
-            MemberInfo member = Resolve(context);
-            Type type = member as Type;
-            MethodInfo method = member as MethodInfo;
-            ConstructorInfo constructor = member as ConstructorInfo;
-            FieldInfo field = member as FieldInfo;
+            var member = Resolve(context);
+            var type = member as ITypeSymbol;
+            var method = member as IMethodSymbol;
+            var constructor = member as IConstructorSymbol;
+            var field = member as IFieldSymbol;
 
             if (type != null)
             {
@@ -146,14 +141,13 @@ namespace IKVM.Tools.Importer.MapXml
             }
         }
 
-        private MemberInfo Resolve(CodeGenContext context)
+        private IMemberSymbol Resolve(CodeGenContext context)
         {
             if (Type != null)
             {
                 if (Class != null || Method != null || Field != null || Sig != null)
-                {
                     throw new NotImplementedException();
-                }
+
                 return context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
             }
             else if (Class != null)
@@ -167,18 +161,16 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     var mw = tw.GetMethodWrapper(Method, Sig, false);
                     if (mw == null)
-                    {
                         return null;
-                    }
+
                     return mw.GetMethod();
                 }
                 else if (Field != null)
                 {
                     var fw = tw.GetFieldWrapper(Field, Sig);
                     if (fw == null)
-                    {
                         return null;
-                    }
+
                     return fw.GetField();
                 }
                 else

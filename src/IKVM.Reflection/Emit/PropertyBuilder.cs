@@ -269,6 +269,17 @@ namespace IKVM.Reflection.Emit
                 return lazyPseudoToken;
         }
 
+        public override int MetadataToken
+        {
+            get
+            {
+                if (lazyPseudoToken == 0)
+                    lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
+
+                return GetCurrentToken();
+            }
+        }
+
     }
 
 }

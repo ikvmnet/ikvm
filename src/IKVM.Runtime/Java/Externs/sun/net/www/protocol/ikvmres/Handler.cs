@@ -87,7 +87,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var tw = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(asm).TryLoadClassByName(className);
+            var tw = JVM.Context.AssemblyClassLoaderFactory.FromAssembly(JVM.Context.Resolver.GetSymbol(asm)).TryLoadClassByName(className);
             if (tw != null)
                 return tw.ClassObject;
 

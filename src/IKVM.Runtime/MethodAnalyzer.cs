@@ -2856,37 +2856,27 @@ namespace IKVM.Runtime
 
         private int AllocErrorMessage(string message)
         {
-            if (errorMessages == null)
-            {
-                errorMessages = new List<string>();
-            }
-            int index = errorMessages.Count;
+            errorMessages ??= [];
+            var index = errorMessages.Count;
             errorMessages.Add(message);
             return index;
         }
 
-        private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, RuntimeJavaMethod mw)
+        string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, RuntimeJavaMethod mw)
         {
-#if NETFRAMEWORK
             if (cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
-#else
-            if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
-#endif
             {
 #if IMPORTER
                 StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", mw.ReturnType, cpi.GetRetType(), cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
 #endif
                 return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
             }
-            RuntimeJavaType[] here = cpi.GetArgTypes();
-            RuntimeJavaType[] there = mw.GetParameters();
+
+            var here = cpi.GetArgTypes();
+            var there = mw.GetParameters();
             for (int i = 0; i < here.Length; i++)
             {
-#if NETFRAMEWORK
                 if (here[i] != there[i] && !here[i].IsUnloadable && !there[i].IsUnloadable)
-#else
-                if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
-#endif
                 {
 #if IMPORTER
                     StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a argument type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", there[i], here[i], cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
@@ -2903,9 +2893,7 @@ namespace IKVM.Runtime
             {
                 var item = classFile.GetInvokeDynamic(new InvokeDynamicConstantHandle(checked((ushort)index)));
                 if (item != null)
-                {
                     return item;
-                }
             }
             catch (OverflowException)
             {

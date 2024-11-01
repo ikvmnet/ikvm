@@ -22,12 +22,11 @@
   
 */
 using System;
+using System.Reflection;
 
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
-
-using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer
 {
@@ -37,11 +36,11 @@ namespace IKVM.Tools.Importer
 
         readonly RuntimeContext context;
 
-        Type genericEnumEnumType;
-        Type genericDelegateInterfaceType;
-        Type genericAttributeAnnotationType;
-        Type genericAttributeAnnotationMultipleType;
-        Type genericAttributeAnnotationReturnValueType;
+        ITypeSymbol genericEnumEnumType;
+        ITypeSymbol genericDelegateInterfaceType;
+        ITypeSymbol genericAttributeAnnotationType;
+        ITypeSymbol genericAttributeAnnotationMultipleType;
+        ITypeSymbol genericAttributeAnnotationReturnValueType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -52,37 +51,38 @@ namespace IKVM.Tools.Importer
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        internal Type GetEnumType(Type enumType)
+        internal ITypeSymbol GetEnumType(ITypeSymbol enumType)
         {
             return genericEnumEnumType.MakeGenericType(enumType);
         }
 
-        internal Type GetDelegateType(Type delegateType)
+        internal ITypeSymbol GetDelegateType(ITypeSymbol delegateType)
         {
             return genericDelegateInterfaceType.MakeGenericType(delegateType);
         }
 
-        internal Type GetAttributeType(Type attributeType)
+        internal ITypeSymbol GetAttributeType(ITypeSymbol attributeType)
         {
             return genericAttributeAnnotationType.MakeGenericType(attributeType);
         }
 
-        internal Type GetAttributeMultipleType(Type attributeType)
+        internal ITypeSymbol GetAttributeMultipleType(ITypeSymbol attributeType)
         {
             return genericAttributeAnnotationMultipleType.MakeGenericType(attributeType);
         }
 
-        internal Type GetAttributeReturnValueType(Type attributeType)
+        internal ITypeSymbol GetAttributeReturnValueType(ITypeSymbol attributeType)
         {
             return genericAttributeAnnotationReturnValueType.MakeGenericType(attributeType);
         }
 
-        internal void Create(ModuleBuilder modb, RuntimeClassLoader loader)
+        internal void Create(IModuleSymbolBuilder modb, RuntimeClassLoader loader)
         {
-            var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+            var tb = modb.DefineType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName, TypeAttributes.Interface | System.Reflection.TypeAttributes.Abstract | System.Reflection.TypeAttributes.Public);
             tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.MulticastDelegate);
-            genericDelegateInterfaceType = tb.CreateType();
+            tb.Complete();
 
+            genericDelegateInterfaceType = tb;
             genericAttributeAnnotationType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationTypeName);
             genericAttributeAnnotationMultipleType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationMultipleTypeName);
             genericAttributeAnnotationReturnValueType = CreateAnnotationType(modb, RuntimeManagedJavaType.GenericAttributeAnnotationReturnValueTypeName);
@@ -91,21 +91,22 @@ namespace IKVM.Tools.Importer
 
         internal void Finish(RuntimeClassLoader loader)
         {
-            var tb = (TypeBuilder)genericEnumEnumType;
+            var tb = (ITypeSymbolBuilder)genericEnumEnumType;
             var enumTypeWrapper = loader.LoadClassByName("java.lang.Enum");
             enumTypeWrapper.Finish();
             tb.SetParent(enumTypeWrapper.TypeAsBaseType);
-            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, new Type[] { context.Types.String, context.Types.Int32 }));
-            ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Ldarg_1);
-            ilgen.Emit(OpCodes.Ldarg_2);
+            var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Private, [context.Types.String, context.Types.Int32]));
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_1);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ldarg_2);
             enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
-            ilgen.Emit(OpCodes.Ret);
+            ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
             ilgen.DoEmit();
-            genericEnumEnumType = tb.CreateType();
+            tb.Complete();
+            genericEnumEnumType = tb;
         }
 
-        private void CreateEnumEnum(ModuleBuilder modb, RuntimeClassLoader loader)
+        void CreateEnumEnum(IModuleSymbolBuilder modb, RuntimeClassLoader loader)
         {
             var tb = modb.DefineType(RuntimeManagedJavaType.GenericEnumEnumTypeName, TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public);
             var gtpb = tb.DefineGenericParameters("T")[0];
@@ -113,14 +114,15 @@ namespace IKVM.Tools.Importer
             genericEnumEnumType = tb;
         }
 
-        private Type CreateAnnotationType(ModuleBuilder modb, string name)
+        ITypeSymbol CreateAnnotationType(IModuleSymbolBuilder modb, string name)
         {
             var tb = modb.DefineType(name, TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
             tb.DefineGenericParameters("T")[0].SetBaseTypeConstraint(context.Types.Attribute);
-            return tb.CreateType();
+            tb.Complete();
+            return tb;
         }
 
-        internal void Load(Assembly assembly)
+        internal void Load(IAssemblySymbol assembly)
         {
             genericEnumEnumType = assembly.GetType(RuntimeManagedJavaType.GenericEnumEnumTypeName);
             genericDelegateInterfaceType = assembly.GetType(RuntimeManagedJavaType.GenericDelegateInterfaceTypeName);

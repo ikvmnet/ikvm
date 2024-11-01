@@ -1,15 +1,13 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
-using Assembly = IKVM.Reflection.Assembly;
-using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
-using EventInfo = IKVM.Reflection.EventInfo;
-using FieldInfo = IKVM.Reflection.FieldInfo;
-using MethodBase = IKVM.Reflection.MethodBase;
-using MethodInfo = IKVM.Reflection.MethodInfo;
-using Module = IKVM.Reflection.Module;
-using ParameterInfo = IKVM.Reflection.ParameterInfo;
-using PropertyInfo = IKVM.Reflection.PropertyInfo;
+using IKVM.CoreLib.Symbols.Emit;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
@@ -18,134 +16,348 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     /// <summary>
     /// Holds references to symbols derived from System.Reflection.
     /// </summary>
-    class IkvmReflectionSymbolContext
+    class IkvmReflectionSymbolContext : ISymbolContext
     {
 
-        readonly ConditionalWeakTable<Assembly, IkvmReflectionAssemblySymbol> _assemblies = new();
+        readonly Universe _universe;
+        readonly ConcurrentDictionary<string, WeakReference<IIkvmReflectionAssemblySymbol?>> _symbolByName = new();
+        readonly ConditionalWeakTable<Assembly, IIkvmReflectionAssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public IkvmReflectionSymbolContext()
+        /// <param name="universe"></param>
+        public IkvmReflectionSymbolContext(Universe universe)
         {
+            _universe = universe ?? throw new ArgumentNullException(nameof(universe));
+        }
 
+        /// <inheritdoc />
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, bool collectable, bool saveable)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (collectable)
+                throw new NotSupportedException("IKVM Reflection cannot produce collectable assemblies.");
+            if (saveable == false)
+                throw new NotSupportedException("IKVM Reflection can only produce saveable assemblies.");
+
+
+            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save));
+        }
+
+        /// <inheritdoc />
+        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes, bool collectable, bool saveable)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (collectable)
+                throw new NotSupportedException("IKVM Reflection cannot produce collectable assemblies.");
+            if (saveable == false)
+                throw new NotSupportedException("IKVM Reflection can only produce saveable assemblies.");
+
+            return GetOrCreateAssemblySymbol(_universe.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Save, attributes.Unpack()));
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionAssemblySymbol"/> indexed based on the assembly's name.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public IkvmReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
+        IIkvmReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
         {
-            if (assembly is null)
-                throw new ArgumentNullException(nameof(assembly));
+            var r = _symbolByName.GetOrAdd(assembly.FullName, _ => new(null));
 
-            return _assemblies.GetValue(assembly, _ => new IkvmReflectionAssemblySymbol(this, _));
+            lock (r)
+            {
+                // reference has no target, reset
+                if (r.TryGetTarget(out var s) == false)
+                {
+                    if (assembly is AssemblyBuilder builder)
+                    {
+                        // we were passed in a builder, so generate a symbol builder and set it as the builder and symbol.
+                        r.SetTarget(s = new IkvmReflectionAssemblySymbolBuilder(this, builder));
+                    }
+                    else
+                    {
+                        // we were passed a non builder, so generate a symbol and set it to the symbol
+                        // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
+                        r.SetTarget(s = new IkvmReflectionAssemblySymbol(this, assembly));
+                    }
+                }
+
+                return s ?? throw new InvalidOperationException();
+            }
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionAssemblySymbolBuilder"/> indexed based on the assembly's name.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IIkvmReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbolByName(AssemblyBuilder assembly)
+        {
+            return (IIkvmReflectionAssemblySymbolBuilder)GetOrCreateAssemblySymbolByName((Assembly)assembly);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public IIkvmReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
+        {
+            return _symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public IIkvmReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbol(AssemblyBuilder assembly)
+        {
+            return (IIkvmReflectionAssemblySymbolBuilder)_symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        public IkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        public IIkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
-            if (module is null)
-                throw new ArgumentNullException(nameof(module));
-
-            return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
+            if (module is ModuleBuilder builder)
+                return GetOrCreateModuleSymbol(builder);
+            else
+                return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionTypeSymbol"/> for the specified <see cref="Type"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionModuleSymbolBuilder"/> for the specified <see cref="ModuleBuilder"/>.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        public IIkvmReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
+        {
+            return GetOrCreateAssemblySymbol((AssemblyBuilder)module.Assembly).GetOrCreateModuleSymbol(module);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionTypeSymbol"/> for the specified <see cref="Type"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public IkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        public IIkvmReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
         {
-            if (type is null)
-                throw new ArgumentNullException(nameof(type));
-
-            return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+            if (type is TypeBuilder builder)
+                return GetOrCreateTypeSymbol(builder);
+            else
+                return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionTypeSymbolBuilder"/> for the specified <see cref="TypeBuilder"/>.
         /// </summary>
-        /// <param name="ctor"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        public IkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        public IIkvmReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
         {
-            if (ctor is null)
-                throw new ArgumentNullException(nameof(ctor));
-
-            return GetOrCreateAssemblySymbol(ctor.Module.Assembly).GetOrCreateModuleSymbol(ctor.Module).GetOrCreateTypeSymbol(ctor.DeclaringType!).GetOrCreateConstructorSymbol(ctor);
+            return GetOrCreateModuleSymbol((ModuleBuilder)type.Module).GetOrCreateTypeSymbol(type);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionMethodBaseSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionMemberSymbol"/> for the specified <see cref="MemberInfo"/>.
+        /// </summary>
+        /// <param name="member"></param>
+        /// <returns></returns>
+        public IIkvmReflectionMemberSymbol GetOrCreateMemberSymbol(MemberInfo member)
+        {
+            return member switch
+            {
+                MethodBase method => GetOrCreateMethodBaseSymbol(method),
+                FieldInfo field => GetOrCreateFieldSymbol(field),
+                PropertyInfo property => GetOrCreatePropertySymbol(property),
+                EventInfo @event => GetOrCreateEventSymbol(@event),
+                _ => throw new InvalidOperationException(),
+            };
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public IkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        public IIkvmReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
         {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            return GetOrCreateAssemblySymbol(method.Module.Assembly).GetOrCreateModuleSymbol(method.Module).GetOrCreateTypeSymbol(method.DeclaringType!).GetOrCreateMethodSymbol(method);
+            return method switch
+            {
+                ConstructorInfo ctor => GetOrCreateConstructorSymbol(ctor),
+                _ => GetOrCreateMethodSymbol((MethodInfo)method)
+            };
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        public IIkvmReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        {
+            return ctor switch
+            {
+                ConstructorBuilder builder => GetOrCreateConstructorSymbol(builder),
+                _ => GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor)
+            };
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// </summary>
+        /// <param name="ctor"></param>
+        /// <returns></returns>
+        public IIkvmReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)ctor.Module).GetOrCreateConstructorSymbol(ctor);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IIkvmReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
+        {
+            return method switch
+            {
+                MethodBuilder builder => GetOrCreateMethodSymbol(builder),
+                _ => GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method)
+            };
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionMethodSymbolBuilder"/> for the specified <see cref="MethodBuilder"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public IIkvmReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)method.Module).GetOrCreateMethodSymbol(method);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
         /// </summary>
         /// <param name="parameter"></param>
         /// <returns></returns>
-        public IkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
+        public IIkvmReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
         {
-            if (parameter is null)
-                throw new ArgumentNullException(nameof(parameter));
-
-            return GetOrCreateAssemblySymbol(parameter.Member.Module.Assembly).GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateTypeSymbol(parameter.Member.DeclaringType!).GetOrCreateMethodBaseSymbol((MethodBase)parameter.Member).GetOrCreateParameterSymbol(parameter);
+            return GetOrCreateModuleSymbol(parameter.Module).GetOrCreateParameterSymbol(parameter);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        public IkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        public IIkvmReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
         {
-            if (field is null)
-                throw new ArgumentNullException(nameof(field));
-
-            return GetOrCreateAssemblySymbol(field.Module.Assembly).GetOrCreateModuleSymbol(field.Module).GetOrCreateTypeSymbol(field.DeclaringType!).GetOrCreateFieldSymbol(field);
+            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        public IIkvmReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
-        public IkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        public IIkvmReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
         {
-            if (property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            return GetOrCreateAssemblySymbol(property.Module.Assembly).GetOrCreateModuleSymbol(property.Module).GetOrCreateTypeSymbol(property.DeclaringType!).GetOrCreatePropertySymbol(property);
+            return property switch
+            {
+                PropertyBuilder builder => GetOrCreatePropertySymbol(builder),
+                _ => GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property)
+            };
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IkvmReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
+        /// Gets or creates a <see cref="IIkvmReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        public IIkvmReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)property.Module).GetOrCreatePropertySymbol(property);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public IkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        public IIkvmReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
         {
-            if (@event is null)
-                throw new ArgumentNullException(nameof(@event));
+            return @event switch
+            {
+                EventBuilder builder => GetOrCreateEventSymbol(builder),
+                _ => GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event)
+            };
+        }
 
-            return GetOrCreateAssemblySymbol(@event.Module.Assembly).GetOrCreateModuleSymbol(@event.Module).GetOrCreateTypeSymbol(@event.DeclaringType!).GetOrCreateEventSymbol(@event);
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionEventSymbolBuilder"/> for the specified <see cref="EventBuilder"/>.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        public IIkvmReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)@event.Module).GetOrCreateEventSymbol(@event);
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="IIkvmReflectionGenericTypeParameterSymbolBuilder"/> for the specified <see cref="GenericTypeParameterBuilder"/>.
+        /// </summary>
+        /// <param name="genericTypeParameter"></param>
+        /// <returns></returns>
+        public IIkvmReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
+        {
+            return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
+        }
+
+        /// <summary>
+        /// Unpacks a single constructor argument.
+        /// </summary>
+        /// <param name="constructorArg"></param>
+        /// <returns></returns>
+        object? UnpackArgument(object? constructorArg)
+        {
+            if (constructorArg is ITypeSymbol type)
+                return type.Unpack();
+
+            return constructorArg;
+        }
+
+        /// <summary>
+        /// Unpacks a set of constructor arguments.
+        /// </summary>
+        /// <param name="constructorArgs"></param>
+        /// <returns></returns>
+        object?[] UnpackArguments(object?[] constructorArgs)
+        {
+            var l = new object?[constructorArgs.Length];
+            for (int i = 0; i < constructorArgs.Length; i++)
+                l[i] = UnpackArgument(constructorArgs[i]);
+
+            return l;
         }
 
     }
