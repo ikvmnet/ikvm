@@ -51,7 +51,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        IFieldSymbol? GetField(string name);
+        FieldSymbol? GetField(string name);
 
         /// <summary>
         /// Returns a field having the specified name and binding attributes.
@@ -59,27 +59,27 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="bindingAttr"></param>
         /// <returns></returns>
-        IFieldSymbol? GetField(string name, BindingFlags bindingAttr);
+        FieldSymbol? GetField(string name, BindingFlags bindingAttr);
 
         /// <summary>
         /// Returns the global fields defined on the module that match the specified binding flags.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IFieldSymbol[] GetFields(BindingFlags bindingFlags);
+        FieldSymbol[] GetFields(BindingFlags bindingFlags);
 
         /// <summary>
         /// Returns the global fields defined on the module.
         /// </summary>
         /// <returns></returns>
-        IFieldSymbol[] GetFields();
+        FieldSymbol[] GetFields();
 
         /// <summary>
         /// Returns a method having the specified name.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name);
+        MethodSymbol? GetMethod(string name);
 
         /// <summary>
         /// Returns a method having the specified name and parameter types.
@@ -87,7 +87,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name, ITypeSymbol[] types);
+        MethodSymbol? GetMethod(string name, TypeSymbol[] types);
 
         /// <summary>
         /// Returns a method having the specified name, binding information, calling convention, and parameter types and modifiers.
@@ -98,27 +98,27 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ITypeSymbol[] types, ParameterModifier[]? modifiers);
+        MethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, TypeSymbol[] types, ParameterModifier[]? modifiers);
 
         /// <summary>
         /// Returns the global methods defined on the module.
         /// </summary>
         /// <returns></returns>
-        IMethodSymbol[] GetMethods();
+        MethodSymbol[] GetMethods();
 
         /// <summary>
         /// Returns the global methods defined on the module that match the specified binding flags.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        IMethodSymbol[] GetMethods(BindingFlags bindingFlags);
+        MethodSymbol[] GetMethods(BindingFlags bindingFlags);
 
         /// <summary>
         /// Returns the specified type, performing a case-sensitive search.
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string className);
+        TypeSymbol? GetType(string className);
 
         /// <summary>
         /// Returns the specified type, searching the module with the specified case sensitivity.
@@ -126,7 +126,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="className"></param>
         /// <param name="ignoreCase"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string className, bool ignoreCase);
+        TypeSymbol? GetType(string className, bool ignoreCase);
 
         /// <summary>
         /// Returns the specified type, specifying whether to make a case-sensitive search of the module and whether to throw an exception if the type cannot be found.
@@ -135,20 +135,20 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="throwOnError"></param>
         /// <param name="ignoreCase"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string className, bool throwOnError, bool ignoreCase);
+        TypeSymbol? GetType(string className, bool throwOnError, bool ignoreCase);
 
         /// <summary>
         /// Returns all the types defined within this module.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetTypes();
+        TypeSymbol[] GetTypes();
 
         /// <summary>
         /// Returns the type identified by the specified metadata token.
         /// </summary>
         /// <param name="metadataToken"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveType(int metadataToken);
+        TypeSymbol ResolveType(int metadataToken);
 
         /// <summary>
         /// Returns the type identified by the specified metadata token, in the context defined by the specified generic type parameters.
@@ -157,14 +157,14 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="genericTypeArguments"></param>
         /// <param name="genericMethodArguments"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveType(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments);
+        TypeSymbol ResolveType(int metadataToken, TypeSymbol[]? genericTypeArguments, TypeSymbol[]? genericMethodArguments);
 
         /// <summary>
         /// Returns the field identified by a metadata token.
         /// </summary>
         /// <param name="metadataToken"></param>
         /// <returns></returns>
-        IFieldSymbol? ResolveField(int metadataToken);
+        FieldSymbol? ResolveField(int metadataToken);
 
         /// <summary>
         /// Returns the field identified by the specified metadata token, in the context defined by the specified generic type parameters.
@@ -173,14 +173,14 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="genericTypeArguments"></param>
         /// <param name="genericMethodArguments"></param>
         /// <returns></returns>
-        IFieldSymbol? ResolveField(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments);
+        FieldSymbol? ResolveField(int metadataToken, TypeSymbol[]? genericTypeArguments, TypeSymbol[]? genericMethodArguments);
 
         /// <summary>
         /// Returns the type or member identified by a metadata token.
         /// </summary>
         /// <param name="metadataToken"></param>
         /// <returns></returns>
-        IMemberSymbol? ResolveMember(int metadataToken);
+        MemberSymbol? ResolveMember(int metadataToken);
 
         /// <summary>
         /// Returns the type or member identified by the specified metadata token, in the context defined by the specified generic type parameters.
@@ -189,14 +189,14 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="genericTypeArguments"></param>
         /// <param name="genericMethodArguments"></param>
         /// <returns></returns>
-        IMemberSymbol? ResolveMember(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments);
+        MemberSymbol? ResolveMember(int metadataToken, TypeSymbol[]? genericTypeArguments, TypeSymbol[]? genericMethodArguments);
 
         /// <summary>
         /// Returns the method or constructor identified by the specified metadata token.
         /// </summary>
         /// <param name="metadataToken"></param>
         /// <returns></returns>
-        IMethodBaseSymbol? ResolveMethod(int metadataToken);
+        MethodBaseSymbol? ResolveMethod(int metadataToken);
 
         /// <summary>
         /// Returns the method or constructor identified by the specified metadata token, in the context defined by the specified generic type parameters.
@@ -205,7 +205,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="genericTypeArguments"></param>
         /// <param name="genericMethodArguments"></param>
         /// <returns></returns>
-        IMethodBaseSymbol? ResolveMethod(int metadataToken, ITypeSymbol[]? genericTypeArguments, ITypeSymbol[]? genericMethodArguments);
+        MethodBaseSymbol? ResolveMethod(int metadataToken, TypeSymbol[]? genericTypeArguments, TypeSymbol[]? genericMethodArguments);
 
         /// <summary>
         /// Returns the signature blob identified by a metadata token.

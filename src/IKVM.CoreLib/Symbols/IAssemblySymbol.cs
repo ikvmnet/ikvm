@@ -13,12 +13,12 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets a collection of the types defined in this assembly.
         /// </summary>
-        IEnumerable<ITypeSymbol> DefinedTypes { get; }
+        IEnumerable<TypeSymbol> DefinedTypes { get; }
 
         /// <summary>
         /// Gets a collection of the public types defined in this assembly that are visible outside the assembly.
         /// </summary>
-        IEnumerable<ITypeSymbol> ExportedTypes { get; }
+        IEnumerable<TypeSymbol> ExportedTypes { get; }
 
         /// <summary>
         /// Gets the display name of the assembly.
@@ -65,7 +65,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        Stream? GetManifestResourceStream(ITypeSymbol type, string name);
+        Stream? GetManifestResourceStream(TypeSymbol type, string name);
 
         /// <summary>
         /// Gets the specified module in this assembly.
@@ -104,7 +104,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string name);
+        TypeSymbol? GetType(string name);
 
         /// <summary>
         /// Gets the <see cref="ITypeSymbol"/> object with the specified name in the assembly instance and optionally throws an exception if the type is not found.
@@ -112,7 +112,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="throwOnError"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string name, bool throwOnError);
+        TypeSymbol? GetType(string name, bool throwOnError);
 
         /// <summary>
         /// Gets the <see cref="ITypeSymbol"/> object with the specified name in the assembly instance, with the options of ignoring the case, and of throwing an exception if the type is not found.
@@ -121,24 +121,24 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="throwOnError"></param>
         /// <param name="ignoreCase"></param>
         /// <returns></returns>
-        ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
+        TypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
 
         /// <summary>
         /// Gets all types defined in this assembly.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetTypes();
+        TypeSymbol[] GetTypes();
 
         /// <summary>
         /// Gets the public types defined in this assembly that are visible outside the assembly.
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol[] GetExportedTypes();
+        TypeSymbol[] GetExportedTypes();
 
         /// <summary>
         /// Gets the entry point of this assembly.
         /// </summary>
-        IMethodSymbol? EntryPoint { get; }
+        MethodSymbol? EntryPoint { get; }
 
     }
 

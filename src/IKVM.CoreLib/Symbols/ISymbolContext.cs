@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveCoreType(string typeName);
+        TypeSymbol ResolveCoreType(string typeName);
 
         /// <summary>
         /// Defines a dynamic assembly that has the specified name and access rights.

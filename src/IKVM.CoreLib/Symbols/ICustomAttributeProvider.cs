@@ -20,7 +20,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false);
+        CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false);
 
         /// <summary>
         /// Retrieves a custom attribute of a specified type that is applied to a specified member.
@@ -28,7 +28,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false);
+        CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false);
 
         /// <summary>
         /// Indicates whether one or more instance of <paramref name="attributeType" /> is defined on this member.
@@ -36,7 +36,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        bool IsDefined(ITypeSymbol attributeType, bool inherit = false);
+        bool IsDefined(TypeSymbol attributeType, bool inherit = false);
 
     }
 

@@ -1,15 +1,13 @@
-﻿using System.Collections.Immutable;
-
-namespace IKVM.CoreLib.Symbols
+﻿namespace IKVM.CoreLib.Symbols
 {
 
-    readonly struct InterfaceMapping(IMethodSymbol[] InterfaceMethods, ITypeSymbol InterfaceType, IMethodSymbol[] TargetMethods, ITypeSymbol TargetType)
+    readonly struct InterfaceMapping(MethodSymbol[] InterfaceMethods, TypeSymbol InterfaceType, MethodSymbol[] TargetMethods, TypeSymbol TargetType)
     {
 
-        public readonly IMethodSymbol[] InterfaceMethods = InterfaceMethods;
-        public readonly ITypeSymbol InterfaceType = InterfaceType;
-        public readonly IMethodSymbol[] TargetMethods = TargetMethods;
-        public readonly ITypeSymbol TargetType = TargetType;
+        public readonly MethodSymbol[] InterfaceMethods = InterfaceMethods;
+        public readonly TypeSymbol InterfaceType = InterfaceType;
+        public readonly MethodSymbol[] TargetMethods = TargetMethods;
+        public readonly TypeSymbol TargetType = TargetType;
 
     }
 
