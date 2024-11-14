@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -13,10 +12,9 @@ namespace IKVM.CoreLib.Symbols
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
         /// <param name="declaringMethod"></param>
-        protected GenericMethodParameterTypeSymbol(ISymbolContext context, IModuleSymbol module, MethodBaseSymbol declaringMethod) :
-            base(context, module, null)
+        protected GenericMethodParameterTypeSymbol(SymbolContext context, MethodSymbol declaringMethod) :
+            base(context, declaringMethod.Module)
         {
             _declaringMethod = declaringMethod ?? throw new ArgumentNullException(nameof(declaringMethod));
         }
@@ -25,12 +23,15 @@ namespace IKVM.CoreLib.Symbols
         public override MethodBaseSymbol? DeclaringMethod => _declaringMethod;
 
         /// <inheritdoc />
-        internal override TypeSymbol Specialize(IImmutableList<TypeSymbol>? genericTypeArguments, IImmutableList<TypeSymbol>? genericMethodArguments)
-        {
-            if (genericMethodArguments == null)
-                throw new InvalidOperationException();
+        public override bool IsGenericTypeParameter => false;
 
-            return genericMethodArguments[GenericParameterPosition];
+        /// <inheritdoc />
+        public override bool IsGenericMethodParameter => true;
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext genericContext)
+        {
+            return genericContext.GenericMethodArguments?[GenericParameterPosition] ?? this;
         }
 
     }

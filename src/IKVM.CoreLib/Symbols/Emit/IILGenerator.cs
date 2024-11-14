@@ -1,4 +1,7 @@
-﻿namespace IKVM.CoreLib.Symbols.Emit
+﻿using System.Collections.Immutable;
+using System.Reflection.Emit;
+
+namespace IKVM.CoreLib.Symbols.Emit
 {
 
     interface IILGenerator
@@ -41,14 +44,14 @@
         /// <param name="localType"></param>
         /// <param name="pinned"></param>
         /// <returns></returns>
-        ILocalBuilder DeclareLocal(ITypeSymbol localType, bool pinned);
+        ILocalBuilder DeclareLocal(TypeSymbol localType, bool pinned);
 
         /// <summary>
         /// Declares a local variable of the specified type.
         /// </summary>
         /// <param name="localType"></param>
         /// <returns></returns>
-        ILocalBuilder DeclareLocal(ITypeSymbol localType);
+        ILocalBuilder DeclareLocal(TypeSymbol localType);
 
         /// <summary>
         /// Declares a new label.
@@ -77,7 +80,7 @@
         /// Begins a catch block.
         /// </summary>
         /// <param name="exceptionType"></param>
-        void BeginCatchBlock(ITypeSymbol? exceptionType);
+        void BeginCatchBlock(TypeSymbol? exceptionType);
 
         /// <summary>
         /// Begins an exception fault block in the Microsoft intermediate language (MSIL) stream.
@@ -98,7 +101,7 @@
         /// Emits an instruction to throw an exception.
         /// </summary>
         /// <param name="excType"></param>
-        void ThrowException(ITypeSymbol excType);
+        void ThrowException(TypeSymbol excType);
 
         /// <summary>
         /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the index of the given local variable.
@@ -112,7 +115,7 @@
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="cls"></param>
-        void Emit(System.Reflection.Emit.OpCode opcode, ITypeSymbol cls);
+        void Emit(System.Reflection.Emit.OpCode opcode, TypeSymbol cls);
 
         /// <summary>
         /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream followed by the metadata token for the given string.
@@ -140,14 +143,14 @@
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="meth"></param>
-        void Emit(System.Reflection.Emit.OpCode opcode, IMethodSymbol meth);
+        void Emit(System.Reflection.Emit.OpCode opcode, MethodSymbol meth);
 
         /// <summary>
         /// Puts the specified instruction and a signature token onto the Microsoft intermediate language (MSIL) stream of instructions.
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="signature"></param>
-        void Emit(System.Reflection.Emit.OpCode opcode, ISignatureHelper signature);
+        void Emit(System.Reflection.Emit.OpCode opcode, SignatureHelper signature);
 
         /// <summary>
         /// Puts the specified instruction onto the Microsoft intermediate language (MSIL) stream and leaves space to include a label when fixes are done.
@@ -161,14 +164,14 @@
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="field"></param>
-        void Emit(System.Reflection.Emit.OpCode opcode, IFieldSymbol field);
+        void Emit(System.Reflection.Emit.OpCode opcode, FieldSymbol field);
 
         /// <summary>
         /// Puts the specified instruction and metadata token for the specified constructor onto the Microsoft intermediate language (MSIL) stream of instructions.
         /// </summary>
         /// <param name="opcode"></param>
         /// <param name="con"></param>
-        void Emit(System.Reflection.Emit.OpCode opcode, IConstructorSymbol con);
+        void Emit(System.Reflection.Emit.OpCode opcode, ConstructorSymbol con);
 
         /// <summary>
         /// Puts the specified instruction and numerical argument onto the Microsoft intermediate language (MSIL) stream of instructions.
@@ -224,7 +227,7 @@
         /// <param name="opcode"></param>
         /// <param name="methodInfo"></param>
         /// <param name="optionalParameterTypes"></param>
-        void EmitCall(System.Reflection.Emit.OpCode opcode, IMethodSymbol methodInfo, ITypeSymbol[]? optionalParameterTypes);
+        void EmitCall(System.Reflection.Emit.OpCode opcode, MethodSymbol methodInfo, ImmutableList<TypeSymbol>? optionalParameterTypes);
 
         /// <summary>
         /// Puts a Calli instruction onto the Microsoft intermediate language (MSIL) stream, specifying an unmanaged calling convention for the indirect call.
@@ -233,7 +236,7 @@
         /// <param name="unmanagedCallConv"></param>
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
-        void EmitCalli(System.Reflection.Emit.OpCode opcode, System.Runtime.InteropServices.CallingConvention unmanagedCallConv, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes);
+        void EmitCalli(System.Reflection.Emit.OpCode opcode, System.Runtime.InteropServices.CallingConvention unmanagedCallConv, TypeSymbol? returnType, ImmutableList<TypeSymbol>? parameterTypes);
 
         /// <summary>
         /// Puts a Calli instruction onto the Microsoft intermediate language (MSIL) stream, specifying a managed calling convention for the indirect call.
@@ -243,7 +246,7 @@
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <param name="optionalParameterTypes"></param>
-        void EmitCalli(System.Reflection.Emit.OpCode opcode, System.Reflection.CallingConventions callingConvention, ITypeSymbol? returnType, ITypeSymbol[]? parameterTypes, ITypeSymbol[]? optionalParameterTypes);
+        void EmitCalli(System.Reflection.Emit.OpCode opcode, System.Reflection.CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol>? parameterTypes, ImmutableList<TypeSymbol>? optionalParameterTypes);
 
         /// <summary>
         /// Emits the Microsoft intermediate language (MSIL) to call <see cref="System.Console.WriteLine"/> with a string.
@@ -255,7 +258,7 @@
         /// Emits the Microsoft intermediate language (MSIL) necessary to call <see cref="System.Console.WriteLine"/> with the given field.
         /// </summary>
         /// <param name="fld"></param>
-        void EmitWriteLine(IFieldSymbol fld);
+        void EmitWriteLine(FieldSymbol fld);
 
         /// <summary>
         /// Emits the Microsoft intermediate language (MSIL) necessary to call <see cref="System.Console.WriteLine"/> with the given local variable.

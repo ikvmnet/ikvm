@@ -8,10 +8,9 @@
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        protected DefinitionPropertySymbol(ISymbolContext context, IModuleSymbol module, DefinitionTypeSymbol declaringType) :
-            base(context, module, declaringType)
+        protected DefinitionPropertySymbol(SymbolContext context, DefinitionTypeSymbol declaringType) :
+            base(context, declaringType)
         {
 
         }

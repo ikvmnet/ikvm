@@ -1,39 +1,43 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class MemberSymbol : ICustomAttributeProvider
+    abstract class MemberSymbol : Symbol, ICustomAttributeProviderInternal
     {
 
-        readonly ISymbolContext _context;
-        readonly IModuleSymbol _module;
+        readonly ModuleSymbol _module;
         readonly TypeSymbol? _declaringType;
+
+        CustomAttributeImpl _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        public MemberSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType)
+        public MemberSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
+            base(context)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _declaringType = declaringType;
+            _customAttributes = new CustomAttributeImpl(context, this);
         }
 
-        public ISymbolContext Context => _context;
+        /// <summary>
+        /// Gets the module in which the type that declares the member represented by the current <see cref="MemberSymbol"> is defined.
+        /// </summary>
+        public ModuleSymbol Module => _module;
 
         /// <summary>
-        /// Gets the module in which the type that declares the member represented by the current <see cref="IMemberSymbol"> is defined.
+        /// Gets the appropriate <see cref="AssemblySymbol"/> for this instance.
         /// </summary>
-        public IModuleSymbol Module => _module;
-
-        /// <summary>
-        /// Gets the appropriate <see cref="IAssemblySymbol"/> for this instance.
-        /// </summary>
-        public IAssemblySymbol Assembly => _module.Assembly;
+        public AssemblySymbol Assembly => _module.Assembly;
 
         /// <summary>
         /// Gets the class that declares this member.
@@ -66,16 +70,34 @@ namespace IKVM.CoreLib.Symbols
         public abstract bool IsComplete { get; }
 
         /// <inheritdoc />
-        public abstract CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false);
+        ImmutableArray<CustomAttribute> ICustomAttributeProviderInternal.GetDeclaredCustomAttributes() => GetDeclaredCustomAttributes();
 
         /// <inheritdoc />
-        public abstract CustomAttribute[] GetCustomAttributes(bool inherit = false);
+        internal abstract ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes();
 
         /// <inheritdoc />
-        public abstract CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false);
+        ICustomAttributeProviderInternal? ICustomAttributeProviderInternal.GetInheritedCustomAttributeProvider() => GetInheritedCustomAttributeProvider();
+
+        /// <summary>
+        /// Override to return a inherited custom attribute provider.
+        /// </summary>
+        /// <returns></returns>
+        internal virtual ICustomAttributeProviderInternal? GetInheritedCustomAttributeProvider() => null;
 
         /// <inheritdoc />
-        public abstract bool IsDefined(TypeSymbol attributeType, bool inherit = false);
+        public IEnumerable<CustomAttribute> GetCustomAttributes(bool inherit = false) => _customAttributes.GetCustomAttributes(inherit);
+
+        /// <inheritdoc />
+        public IEnumerable<CustomAttribute> GetCustomAttributes(TypeSymbol attributeType, bool inherit = false) => _customAttributes.GetCustomAttributes(attributeType, inherit);
+
+        /// <inheritdoc />
+        public CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false) => _customAttributes.GetCustomAttribute(attributeType, inherit);
+
+        /// <inheritdoc />
+        public bool IsDefined(TypeSymbol attributeType, bool inherit = false) => _customAttributes.IsDefined(attributeType, inherit);
+
+        /// <inheritdoc />
+        public override string ToString() => Name;
 
     }
 

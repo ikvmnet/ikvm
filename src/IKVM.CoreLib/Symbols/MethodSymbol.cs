@@ -15,32 +15,48 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        protected MethodSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType) :
+        protected MethodSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
             base(context, module, declaringType)
         {
-            _specTable = new MethodSpecTable(context, module, declaringType, this);
+            _specTable = new MethodSpecTable(context, module, declaringType, this, []);
         }
 
         /// <inheritdoc />
         public override MemberTypes MemberType => MemberTypes.Method;
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets a <see cref="ParameterSymbol"/> object that contains information about the return type of the method, such as whether the return type has custom modifiers.
+        /// </summary>
         public abstract ParameterSymbol ReturnParameter { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the return type of this method.
+        /// </summary>
         public abstract TypeSymbol ReturnType { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the custom attributes for the return type.
+        /// </summary>
         public abstract ICustomAttributeProvider ReturnTypeCustomAttributes { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// When overridden in a derived class, returns the <see cref="MethodSymbol"/> object for the method on the direct or indirect base class in which the method represented by this instance was first declared.
+        /// </summary>
+        /// <returns></returns>
         public abstract MethodSymbol GetBaseDefinition();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Returns a <see cref="MethodSymbol"/> object that represents a generic method definition from which the current method can be constructed.
+        /// </summary>
+        /// <returns></returns>
         public abstract MethodSymbol GetGenericMethodDefinition();
 
-        /// <inheritdoc />
-        public MethodSymbol MakeGenericMethod(IImmutableList<TypeSymbol> typeArguments) => _specTable.GetOrCreateGenericMethodSymbol(typeArguments);
+        /// <summary>
+        /// Substitutes the elements of an array of types for the type parameters of the current generic method definition, and returns a MethodInfo object representing the resulting constructed method.
+        /// </summary>
+        /// <param name="typeArguments"></param>
+        /// <returns></returns>
+        public MethodSymbol MakeGenericMethod(ImmutableArray<TypeSymbol> typeArguments) => _specTable.GetOrCreateGenericMethodSymbol(typeArguments);
 
     }
 

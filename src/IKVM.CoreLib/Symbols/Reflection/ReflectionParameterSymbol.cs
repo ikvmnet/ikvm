@@ -1,136 +1,84 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionParameterSymbol : ReflectionSymbol, IReflectionParameterSymbol
+    class ReflectionParameterSymbol : DefinitionParameterSymbol
     {
 
-        readonly IReflectionModuleSymbol _resolvingModule;
-        readonly IReflectionMemberSymbol _resolvingMember;
-        readonly ParameterInfo _parameter;
+        readonly ParameterInfo _underlyingParameter;
+
+        TypeSymbol? _parameterType;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resolvingModule"></param>
-        /// <param name="resolvingMember"></param>
-        /// <param name="parameter"></param>
-        public ReflectionParameterSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionMemberSymbol? resolvingMember, ParameterInfo parameter) :
-            base(context)
+        /// <param name="declaringMember"></param>
+        /// <param name="underlyingParameter"></param>
+        public ReflectionParameterSymbol(ReflectionSymbolContext context, MemberSymbol declaringMember, ParameterInfo underlyingParameter) :
+            base(context, declaringMember, underlyingParameter.Position)
         {
-            _resolvingModule = resolvingModule ?? throw new ArgumentNullException(nameof(resolvingModule));
-            _resolvingMember = resolvingMember ?? throw new ArgumentNullException(nameof(resolvingMember));
-            _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
+            _underlyingParameter = underlyingParameter ?? throw new ArgumentNullException(nameof(underlyingParameter));
+        }
+
+        /// <summary>
+        /// Gets the context that owns this parameter.
+        /// </summary>
+        new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+
+        /// <inheritdoc />
+        public override ParameterAttributes Attributes => _underlyingParameter.Attributes;
+
+        /// <inheritdoc />
+        public override TypeSymbol ParameterType => _parameterType ??= Context.ResolveTypeSymbol(_underlyingParameter.ParameterType);
+
+        /// <inheritdoc />
+        public override string? Name => _underlyingParameter.Name;
+
+        /// <inheritdoc />
+        public override object? DefaultValue => _underlyingParameter.DefaultValue;
+
+        /// <inheritdoc />
+        public override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public override bool ContainsMissing => false;
+
+        /// <inheritdoc />
+        public override bool IsComplete => true;
+
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        {
+            if (_optionalCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingParameter.GetOptionalCustomModifiers()));
+
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public IReflectionModuleSymbol ResolvingModule => _resolvingModule;
-
-        /// <inheritdoc />
-        public IReflectionMemberSymbol ResolvingMember => _resolvingMember;
-
-        /// <inheritdoc />
-        public ParameterInfo UnderlyingParameter => _parameter;
-
-        /// <inheritdoc />
-        public ParameterInfo UnderlyingRuntimeParameter => UnderlyingParameter;
-
-        #region IParameterSymbol
-
-        /// <inheritdoc />
-        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)UnderlyingParameter.Attributes;
-
-        /// <inheritdoc />
-        public object? DefaultValue => UnderlyingParameter.RawDefaultValue;
-
-        /// <inheritdoc />
-        public bool HasDefaultValue => UnderlyingParameter.HasDefaultValue;
-
-        /// <inheritdoc />
-        public bool IsIn => UnderlyingParameter.IsIn;
-
-        /// <inheritdoc />
-        public bool IsLcid => UnderlyingParameter.IsLcid;
-
-        /// <inheritdoc />
-        public bool IsOptional => UnderlyingParameter.IsOptional;
-
-        /// <inheritdoc />
-        public bool IsOut => UnderlyingParameter.IsOut;
-
-        /// <inheritdoc />
-        public bool IsRetval => UnderlyingParameter.IsRetval;
-
-        /// <inheritdoc />
-        public IMemberSymbol Member => ResolveMemberSymbol(UnderlyingParameter.Member);
-
-        /// <inheritdoc />
-        public int MetadataToken => UnderlyingParameter.MetadataToken;
-
-        /// <inheritdoc />
-        public string? Name => UnderlyingParameter.Name;
-
-        /// <inheritdoc />
-        public ITypeSymbol ParameterType => ResolveTypeSymbol(UnderlyingParameter.ParameterType);
-
-        /// <inheritdoc />
-        public int Position => UnderlyingParameter.Position;
-
-        /// <inheritdoc />
-        public virtual CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            if (inherit == true)
-                throw new NotSupportedException();
+            if (_requiredCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingParameter.GetRequiredCustomModifiers()));
 
-            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData());
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        public virtual CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            if (inherit == true)
-                throw new NotSupportedException();
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingParameter.GetCustomAttributesData()));
 
-            var _attribyteType = attributeType.Unpack();
-            return ResolveCustomAttributes(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attribyteType).ToArray());
+            return _customAttributes;
         }
-
-        /// <inheritdoc />
-        public virtual CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
-        {
-            if (inherit == true)
-                throw new NotSupportedException();
-
-            var _attributeType = attributeType.Unpack();
-            return ResolveCustomAttribute(UnderlyingParameter.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).FirstOrDefault());
-        }
-
-        /// <inheritdoc />
-        public virtual bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
-        {
-            return UnderlyingParameter.IsDefined(attributeType.Unpack(), inherit);
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetOptionalCustomModifiers()
-        {
-            return ResolveTypeSymbols(UnderlyingParameter.GetOptionalCustomModifiers());
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetRequiredCustomModifiers()
-        {
-            return ResolveTypeSymbols(UnderlyingParameter.GetRequiredCustomModifiers());
-        }
-
-        #endregion
-
-        /// <inheritdoc />
-        public override string? ToString() => UnderlyingParameter.ToString();
 
     }
 

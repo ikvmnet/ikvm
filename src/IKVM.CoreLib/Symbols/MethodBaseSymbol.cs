@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        public MethodBaseSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType) :
+        public MethodBaseSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
             base(context, module, declaringType)
         {
 
@@ -115,22 +115,25 @@ namespace IKVM.CoreLib.Symbols
         public abstract MethodImplAttributes MethodImplementationFlags { get; }
 
         /// <summary>
-        /// Returns an array of <see cref="ITypeSymbol" /> objects that represent the type arguments of a generic method or the type parameters of a generic method definition.
+        /// Returns an array of <see cref="TypeSymbol" /> objects that represent the type arguments of a generic method or the type parameters of a generic method definition.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<TypeSymbol> GetGenericArguments();
+        public abstract ImmutableArray<TypeSymbol> GetGenericArguments();
 
         /// <summary>
         /// When overridden in a derived class, gets the parameters of the specified method or constructor.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<ParameterSymbol> GetParameters();
+        public abstract ImmutableArray<ParameterSymbol> GetParameters();
 
         /// <summary>
         /// When overridden in a derived class, returns the MethodImplAttributes flags.
         /// </summary>
         /// <returns></returns>
         public abstract MethodImplAttributes GetMethodImplementationFlags();
+
+        /// <inheritdoc />
+        public override string ToString() => base.ToString();
 
     }
 

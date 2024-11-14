@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        public FieldSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType) :
+        public FieldSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
             base(context, module, declaringType)
         {
 
@@ -102,13 +102,13 @@ namespace IKVM.CoreLib.Symbols
         /// Gets an array of types that identify the optional custom modifiers of the field.
         /// </summary>
         /// <returns></returns>
-        public abstract IImmutableList<TypeSymbol> GetOptionalCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetOptionalCustomModifiers();
 
         /// <summary>
         /// Gets an array of types that identify the required custom modifiers of the property.
         /// </summary>
         /// <returns></returns>
-        public abstract IImmutableList<TypeSymbol> GetRequiredCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetRequiredCustomModifiers();
 
     }
 

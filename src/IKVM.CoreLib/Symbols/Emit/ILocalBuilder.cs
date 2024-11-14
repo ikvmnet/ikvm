@@ -20,7 +20,7 @@
         /// <summary>
         /// Gets the type of the local variable.
         /// </summary>
-        ITypeSymbol LocalType { get; }
+        TypeSymbol LocalType { get; }
 
         /// <summary>
         /// Sets the name of this local variable.

@@ -2,7 +2,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
+
+using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -14,26 +15,27 @@ namespace IKVM.CoreLib.Symbols
     {
 
         readonly TypeSymbol _definition;
-        readonly ImmutableList<TypeSymbol> _typeArguments;
+        readonly GenericContext _genericContext;
 
-        ImmutableList<FieldSymbol>? _fields;
-        ImmutableList<ConstructorSymbol>? _constructors;
-        ImmutableList<MethodSymbol>? _methods;
-        ImmutableList<PropertySymbol>? _properties;
-        ImmutableList<EventSymbol>? _events;
+        ImmutableArray<TypeSymbol> _interfaces;
+        ImmutableArray<FieldSymbol> _fields;
+        ImmutableArray<ConstructorSymbol> _constructors;
+        ImmutableArray<MethodSymbol> _methods;
+        ImmutableArray<PropertySymbol> _properties;
+        ImmutableArray<EventSymbol> _events;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="definition"></param>
-        /// <param name="typeArguments"></param>
+        /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericTypeSymbol(ISymbolContext context, TypeSymbol definition, ImmutableList<TypeSymbol> typeArguments) :
-            base(context, definition.Module, definition)
+        public ConstructedGenericTypeSymbol(SymbolContext context, TypeSymbol definition, GenericContext genericContext) :
+            base(context, definition.Module)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-            _typeArguments = typeArguments ?? throw new ArgumentNullException(nameof(typeArguments));
+            _genericContext = genericContext;
         }
 
         /// <inheritdoc />
@@ -43,90 +45,115 @@ namespace IKVM.CoreLib.Symbols
         public sealed override TypeCode TypeCode => _definition.TypeCode;
 
         /// <inheritdoc />
-        public override TypeSymbol? BaseType => _definition.BaseType?.Specialize(new GenericContext(_typeArguments, null));
+        public sealed override TypeSymbol? BaseType => _definition.BaseType?.Specialize(_genericContext);
 
         /// <inheritdoc />
         public sealed override bool IsTypeDefinition => false;
 
         /// <inheritdoc />
-        public override bool IsGenericTypeDefinition => false;
+        public sealed override bool IsGenericTypeDefinition => false;
 
         /// <inheritdoc />
-        public override bool IsConstructedGenericType => true;
+        public sealed override bool IsConstructedGenericType => true;
 
         /// <inheritdoc />
-        public override bool IsGenericParameter => false;
+        public sealed override bool IsGenericTypeParameter => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsGenericParameters => _typeArguments.Any(i => i.ContainsGenericParameters);
+        public sealed override bool IsGenericMethodParameter => false;
 
         /// <inheritdoc />
-        public override int GenericParameterPosition => throw new NotSupportedException();
+        public sealed override bool ContainsGenericParameters => false;
 
         /// <inheritdoc />
-        public override bool HasElementType => false;
+        public sealed override int GenericParameterPosition => throw new NotSupportedException();
 
         /// <inheritdoc />
-        public override bool IsArray => false;
+        public sealed override bool HasElementType => false;
 
         /// <inheritdoc />
-        public override bool IsSZArray => false;
+        public sealed override bool IsArray => false;
 
         /// <inheritdoc />
-        public override bool IsByRef => false;
+        public sealed override bool IsSZArray => false;
 
         /// <inheritdoc />
-        public override bool IsPointer => false;
+        public sealed override bool IsByRef => false;
 
         /// <inheritdoc />
-        public override bool IsFunctionPointer => false;
+        public sealed override bool IsPointer => false;
 
         /// <inheritdoc />
-        public override bool IsUnmanagedFunctionPointer => false;
+        public sealed override bool IsFunctionPointer => false;
 
         /// <inheritdoc />
-        public override MethodBaseSymbol? DeclaringMethod => _definition.DeclaringMethod;
+        public sealed override bool IsUnmanagedFunctionPointer => false;
 
         /// <inheritdoc />
-        public override string? FullName => _definition.FullName;
+        public sealed override MethodBaseSymbol? DeclaringMethod => _definition.DeclaringMethod;
 
         /// <inheritdoc />
-        public override string? Namespace => _definition.Namespace;
+        public sealed override string? FullName => ComputeFullName();
 
-        /// <inheritdoc />
-        public override GenericParameterAttributes GenericParameterAttributes => _definition.GenericParameterAttributes;
-
-        /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GenericTypeArguments => _definition.GenericTypeArguments;
-
-        /// <inheritdoc />
-        public override bool IsPrimitive => _definition.IsPrimitive;
-
-        /// <inheritdoc />
-        public override bool IsEnum => _definition.IsEnum;
-
-        /// <inheritdoc />
-        public override bool IsSignatureType => _definition.IsSignatureType;
-
-        /// <inheritdoc />
-        public override ConstructorSymbol? TypeInitializer => _definition.TypeInitializer;
-
-        /// <inheritdoc />
-        public override string Name => _definition.Name;
-
-        /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
-
-        /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
-
-        /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
-
-        /// <inheritdoc />
-        public override TypeSymbol GetEnumUnderlyingType()
+        /// <summary>
+        /// Computes the value for <see cref="FullName"/>.
+        /// </summary>
+        /// <returns></returns>
+        string? ComputeFullName()
         {
-            return _definition.GetEnumUnderlyingType().Specialize(new GenericContext(_typeArguments, null));
+            if (ContainsGenericParameters)
+                return null;
+
+            using var fullName = new ValueStringBuilder(stackalloc char[256]);
+            fullName.Append(_definition.FullName);
+            fullName.Append('[');
+
+            if (_genericContext.GenericTypeArguments != null)
+            {
+                for (int i = 0; i < _genericContext.GenericTypeArguments.Value.Length; i++)
+                {
+                    if (i != 0)
+                        fullName.Append(',');
+
+                    fullName.Append('[');
+                    fullName.Append(_genericContext.GenericTypeArguments.Value[i].AssemblyQualifiedName);
+                    fullName.Append(']');
+                }
+            }
+
+
+            fullName.Append(']');
+            return fullName.ToString();
+        }
+
+        /// <inheritdoc />
+        public sealed override string? Namespace => _definition.Namespace;
+
+        /// <inheritdoc />
+        public sealed override GenericParameterAttributes GenericParameterAttributes => _definition.GenericParameterAttributes;
+
+        /// <inheritdoc />
+        public sealed override bool IsPrimitive => _definition.IsPrimitive;
+
+        /// <inheritdoc />
+        public sealed override bool IsEnum => _definition.IsEnum;
+
+        /// <inheritdoc />
+        public sealed override string Name => _definition.Name;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool ContainsMissing => _genericContext.GenericTypeArguments != null && _genericContext.GenericTypeArguments.Value.Any(i => i.IsMissing || i.ContainsMissing);
+
+        /// <inheritdoc />
+        public sealed override bool IsComplete => true;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol GetEnumUnderlyingType()
+        {
+            return _definition.GetEnumUnderlyingType().Specialize(_genericContext);
         }
 
         /// <inheritdoc />
@@ -136,7 +163,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override int GetArrayRank()
+        public sealed override int GetArrayRank()
         {
             throw new InvalidOperationException();
         }
@@ -148,245 +175,170 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<TypeSymbol> GetGenericArguments()
+        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
         {
-            return _typeArguments;
+            return _genericContext.GenericTypeArguments!.Value;
         }
 
         /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GetGenericParameterConstraints()
+        public sealed override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
         {
             throw new InvalidOperationException();
         }
 
         /// <inheritdoc />
-        public override ImmutableList<FieldSymbol> GetDeclaredFields()
+        internal override ImmutableArray<FieldSymbol> GetDeclaredFields()
         {
-            if (_fields == null)
-                Interlocked.CompareExchange(ref _fields, ComputeDeclaredFields(), null);
+            if (_fields == default)
+            {
+                var b = ImmutableArray.CreateBuilder<FieldSymbol>();
+                foreach (var i in _definition.GetFields(DeclaredOnlyLookup))
+                    b.Add(new ConstructedGenericFieldSymbol(Context, this, i, _genericContext));
 
-            return _fields ?? throw new InvalidOperationException();
-        }
+                ImmutableInterlocked.InterlockedInitialize(ref _fields, b.ToImmutable());
+            }
 
-        /// <summary>
-        /// Computes the declared fields of this type.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<FieldSymbol> ComputeDeclaredFields()
-        {
-            var b = ImmutableList.CreateBuilder<FieldSymbol>();
-            foreach (var i in _definition.GetDeclaredFields())
-                b.Add(new ConstructedGenericFieldSymbol(Context, this, i, new GenericContext(_typeArguments, null)));
-
-            return b.ToImmutable();
+            return _fields;
         }
 
         /// <inheritdoc />
-        public override ImmutableList<ConstructorSymbol> GetDeclaredConstructors()
+        internal override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
         {
-            if (_constructors == null)
-                Interlocked.CompareExchange(ref _constructors, ComputeDeclaredConstructors(), null);
+            if (_constructors == default)
+            {
+                var b = ImmutableArray.CreateBuilder<ConstructorSymbol>();
 
-            return _constructors ?? throw new InvalidOperationException();
-        }
+                // add static initializer as a declared constructor, though it is filtered out from GetConstructors
+                if (_definition.TypeInitializer != null)
+                    b.Add(new ConstructedGenericConstructorSymbol(Context, this, _definition.TypeInitializer, _genericContext));
 
-        /// <summary>
-        /// Computes the declared constructors of this type.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<ConstructorSymbol> ComputeDeclaredConstructors()
-        {
-            var b = ImmutableList.CreateBuilder<ConstructorSymbol>();
-            foreach (var i in _definition.GetDeclaredConstructors())
-                b.Add(new ConstructedGenericConstructorSymbol(Context, this, i, new GenericContext(_typeArguments, null)));
+                foreach (var i in _definition.GetConstructors(DeclaredOnlyLookup))
+                    b.Add(new ConstructedGenericConstructorSymbol(Context, this, i, _genericContext));
 
-            return b.ToImmutable();
-        }
+                ImmutableInterlocked.InterlockedInitialize(ref _constructors, b.ToImmutable());
+            }
 
-        /// <inheritdoc />
-        public override ImmutableList<MethodSymbol> GetDeclaredMethods()
-        {
-            if (_methods == null)
-                Interlocked.CompareExchange(ref _methods, ComputeDeclaredMethods(), null);
-
-            return _methods ?? throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Computes the declared methods of this type.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<MethodSymbol> ComputeDeclaredMethods()
-        {
-            var b = ImmutableList.CreateBuilder<MethodSymbol>();
-            foreach (var i in _definition.GetDeclaredMethods())
-                b.Add(new ConstructedGenericMethodSymbol(Context, this, i, new GenericContext(_typeArguments, null)));
-
-            return b.ToImmutable();
+            return _constructors;
         }
 
         /// <inheritdoc />
-        public override ImmutableList<PropertySymbol> GetDeclaredProperties()
+        internal override ImmutableArray<MethodSymbol> GetDeclaredMethods()
         {
-            if (_properties == null)
-                Interlocked.CompareExchange(ref _properties, ComputeDeclaredProperties(), null);
+            if (_methods == default)
+            {
+                var b = ImmutableArray.CreateBuilder<MethodSymbol>();
+                foreach (var i in _definition.GetMethods(DeclaredOnlyLookup))
+                    b.Add(new ConstructedGenericMethodSymbol(Context, Module, this, i, _genericContext));
 
-            return _properties ?? throw new InvalidOperationException();
-        }
+                ImmutableInterlocked.InterlockedInitialize(ref _methods, b.ToImmutable());
+            }
 
-        /// <summary>
-        /// Computes the declared properties of this type.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<PropertySymbol> ComputeDeclaredProperties()
-        {
-            var b = ImmutableList.CreateBuilder<PropertySymbol>();
-            foreach (var i in _definition.GetDeclaredProperties())
-                b.Add(new ConstructedGenericPropertySymbol(Context, this, i, new GenericContext(_typeArguments, null)));
-
-            return b.ToImmutable();
+            return _methods;
         }
 
         /// <inheritdoc />
-        public override ImmutableList<EventSymbol> GetDeclaredEvents()
+        internal override ImmutableArray<PropertySymbol> GetDeclaredProperties()
         {
-            if (_events == null)
-                Interlocked.CompareExchange(ref _events, ComputeDeclaredEvents(), null);
+            if (_properties == default)
+            {
+                var b = ImmutableArray.CreateBuilder<PropertySymbol>();
+                foreach (var i in _definition.GetProperties(DeclaredOnlyLookup))
+                    b.Add(new ConstructedGenericPropertySymbol(Context, this, i, _genericContext));
 
-            return _events ?? throw new InvalidOperationException();
+                ImmutableInterlocked.InterlockedInitialize(ref _properties, b.ToImmutable());
+            }
+
+            return _properties;
         }
 
-        /// <summary>
-        /// Computes the declared events of this type.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<EventSymbol> ComputeDeclaredEvents()
+        /// <inheritdoc />
+        internal override ImmutableArray<EventSymbol> GetDeclaredEvents()
         {
-            var b = ImmutableList.CreateBuilder<EventSymbol>();
-            foreach (var i in _definition.GetDeclaredEvents())
-                b.Add(new ConstructedGenericEventSymbol(Context, this, i, new GenericContext(_typeArguments, null)));
+            if (_events == default)
+            {
+                var b = ImmutableArray.CreateBuilder<EventSymbol>();
+                foreach (var i in _definition.GetEvents(DeclaredOnlyLookup))
+                    b.Add(new ConstructedGenericEventSymbol(Context, this, i, _genericContext));
 
-            return b.ToImmutable();
+                ImmutableInterlocked.InterlockedInitialize(ref _events, b.ToImmutable());
+            }
+
+            return _events;
         }
 
-        public override ConstructorSymbol? GetConstructor(BindingFlags bindingFlags, ImmutableList<TypeSymbol>? types)
+        /// <inheritdoc />
+        internal override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
         {
-            return _definition.GetConstructor(bindingFlags, types);
+            return ImmutableArray<TypeSymbol>.Empty;
         }
 
-        public override ImmutableList<ConstructorSymbol> GetConstructors(BindingFlags bindingFlags)
-        {
-            return _definition.GetConstructors(bindingFlags);
-        }
-
-        public override ImmutableList<MemberSymbol> GetDefaultMembers()
-        {
-            return _definition.GetDefaultMembers();
-        }
-
-        public override string? GetEnumName(object value)
+        /// <inheritdoc />
+        public sealed override string? GetEnumName(object value)
         {
             return _definition.GetEnumName(value);
         }
 
-        public override ImmutableList<string> GetEnumNames()
+        /// <inheritdoc />
+        public sealed override ImmutableArray<string> GetEnumNames()
         {
             return _definition.GetEnumNames();
         }
 
-        public override EventSymbol? GetEvent(string name, BindingFlags bindingFlags)
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetInterfaces()
         {
-            return _definition.GetEvent(name, bindingFlags);
+            if (_interfaces == default)
+            {
+                var l = _definition.GetInterfaces();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                foreach (var i in l)
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _interfaces, b.ToImmutable());
+            }
+
+            return _interfaces;
         }
 
-        public override ImmutableList<EventSymbol> GetEvents(BindingFlags bindingFlags)
+        /// <inheritdoc />
+        public sealed override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
         {
-            return _definition.GetEvents(bindingFlags);
+            throw new NotImplementedException();
         }
 
-        public override FieldSymbol? GetField(string name, BindingFlags bindingFlags)
-        {
-            return _definition.GetField(name, bindingFlags);
-        }
-
-        public override ImmutableList<FieldSymbol> GetFields(BindingFlags bindingFlags)
-        {
-            return _definition.GetFields(bindingFlags);
-        }
-
-        public override TypeSymbol? GetInterface(string name, bool ignoreCase)
-        {
-            return _definition.GetInterface(name, ignoreCase);
-        }
-
-        public override ImmutableList<TypeSymbol> GetInterfaces(bool inherit = true)
-        {
-            return _definition.GetInterfaces(inherit);
-        }
-
-        public override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
-        {
-            return _definition.GetInterfaceMap(interfaceType);
-        }
-
-        public override MethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, CallingConventions callConvention, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers)
-        {
-            return _definition.GetMethod(name, genericParameterCount, bindingFlags, callConvention, types, modifiers);
-        }
-
-        public override ImmutableList<MethodSymbol> GetMethods(BindingFlags bindingFlags)
-        {
-            return _definition.GetMethods(bindingFlags);
-        }
-
-        public override TypeSymbol? GetNestedType(string name, BindingFlags bindingFlags)
-        {
-            return _definition.GetNestedType(name, bindingFlags);
-        }
-
-        public override ImmutableList<TypeSymbol> GetNestedTypes(BindingFlags bindingFlags)
-        {
-            return _definition.GetNestedTypes(bindingFlags);
-        }
-
-        public override PropertySymbol? GetProperty(string name, BindingFlags bindingFlags)
-        {
-            return _definition.GetProperty(name, bindingFlags);
-        }
-
-        public override PropertySymbol? GetProperty(string name, TypeSymbol? returnType, ImmutableList<TypeSymbol>? types)
-        {
-            return _definition.GetProperty(name, returnType, types);
-        }
-
-        public override ImmutableList<PropertySymbol> GetProperties(BindingFlags bindingFlags)
-        {
-            return _definition.GetProperties(bindingFlags);
-        }
-
-        public override bool IsEnumDefined(object value)
+        /// <inheritdoc />
+        public sealed override bool IsEnumDefined(object value)
         {
             return _definition.IsEnumDefined(value);
         }
 
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        /// <inheritdoc />
+        public override string ToString()
         {
-            return _definition.GetCustomAttributes(inherit);
-        }
+            using var sb = new ValueStringBuilder(stackalloc char[256]);
+            sb.Append(_definition.ToString());
+            sb.Append('[');
 
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
+            if (_genericContext.GenericTypeArguments != null)
+            {
+                for (int i = 0; i < _genericContext.GenericTypeArguments.Value.Length; i++)
+                {
+                    if (i != 0)
+                        sb.Append(',');
 
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+                    sb.Append(_genericContext.GenericTypeArguments.Value[i].ToString());
+                }
+            }
+
+            sb.Append(']');
+
+            return sb.ToString();
         }
 
     }

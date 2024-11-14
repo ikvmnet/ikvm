@@ -1,189 +1,134 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionAssemblySymbol : ReflectionSymbol, IReflectionAssemblySymbol
+    class ReflectionAssemblySymbol : AssemblySymbol
     {
 
-        readonly Assembly _assembly;
+        readonly Assembly _underlyingAssembly;
 
-        ReflectionModuleTable _moduleTable;
+        ImmutableArray<AssemblyIdentity> _references;
+        ImmutableArray<ModuleSymbol> _modules;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
-        public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly assembly) :
+        /// <param name="underlyingAssembly"></param>
+        public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly underlyingAssembly) :
             base(context)
         {
-            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-            _moduleTable = new ReflectionModuleTable(context, this);
+            _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="Assembly"/> instance.
-        /// </summary>
-        public virtual Assembly UnderlyingAssembly => _assembly;
-
-        /// <summary>
-        /// Gets the underlying <see cref="Assembly"/> instance.
-        /// </summary>
-        public virtual Assembly UnderlyingRuntimeAssembly => _assembly;
-
-        #region IReflectionAssemblySymbol
+        /// <inheritdoc />
+        new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
         /// <inheritdoc />
-        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        public sealed override IEnumerable<TypeSymbol> DefinedTypes => Context.ResolveTypeSymbols(_underlyingAssembly.DefinedTypes);
+
+        /// <inheritdoc />
+        public sealed override IEnumerable<TypeSymbol> ExportedTypes => Context.ResolveTypeSymbols(_underlyingAssembly.ExportedTypes);
+
+        /// <inheritdoc />
+        public sealed override MethodSymbol? EntryPoint => Context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
+
+        /// <inheritdoc />
+        public sealed override string? FullName => _underlyingAssembly.FullName;
+
+        /// <inheritdoc />
+        public sealed override string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
+
+        /// <inheritdoc />
+        public sealed override string Location => _underlyingAssembly.Location;
+
+        /// <inheritdoc />
+        public sealed override ModuleSymbol ManifestModule => Context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool ContainsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsComplete => true;
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<ModuleSymbol> GetModules()
         {
-            return _moduleTable.GetOrCreateModuleSymbol(module);
+            if (_modules == default)
+            {
+                var b = ImmutableArray.CreateBuilder<ModuleSymbol>();
+                var l = _underlyingAssembly.GetModules();
+                foreach (var module in l)
+                    b.Add(new ReflectionModuleSymbol(Context, this, module));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _modules, b.ToImmutable());
+            }
+
+            return _modules;
         }
 
-        #endregion
-
-        #region IAssemblySymbol
-
         /// <inheritdoc />
-        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(UnderlyingAssembly.DefinedTypes);
-
-        /// <inheritdoc />
-        public IMethodSymbol? EntryPoint => ResolveMethodSymbol(UnderlyingAssembly.EntryPoint);
-
-        /// <inheritdoc />
-        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(UnderlyingAssembly.ExportedTypes);
-
-        /// <inheritdoc />
-        public string? FullName => UnderlyingAssembly.FullName;
-
-        /// <inheritdoc />
-        public string ImageRuntimeVersion => UnderlyingAssembly.ImageRuntimeVersion;
-
-        /// <inheritdoc />
-        public string Location => UnderlyingAssembly.Location;
-
-        /// <inheritdoc />
-        public IModuleSymbol ManifestModule => ResolveModuleSymbol(UnderlyingAssembly.ManifestModule);
-
-        /// <inheritdoc />
-        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(UnderlyingAssembly.Modules);
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetExportedTypes()
+        public sealed override AssemblyIdentity GetIdentity()
         {
-            return ResolveTypeSymbols(UnderlyingAssembly.GetExportedTypes());
+            return _underlyingAssembly.GetName().Pack();
         }
 
         /// <inheritdoc />
-        public IModuleSymbol? GetModule(string name)
+        public sealed override ImmutableArray<AssemblyIdentity> GetReferencedAssemblies()
         {
-            return ResolveModuleSymbol(UnderlyingAssembly.GetModule(name));
+            if (_references == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _references, _underlyingAssembly.GetReferencedAssemblies().Pack());
+
+            return _references;
         }
 
         /// <inheritdoc />
-        public IModuleSymbol[] GetModules()
+        public sealed override TypeSymbol? GetType(string name, bool throwOnError)
         {
-            return ResolveModuleSymbols(UnderlyingAssembly.GetModules());
+            return Context.ResolveTypeSymbol(_underlyingAssembly.GetType(name, throwOnError, false));
         }
 
         /// <inheritdoc />
-        public IModuleSymbol[] GetModules(bool getResourceModules)
+        public sealed override ImmutableArray<TypeSymbol> GetTypes()
         {
-            return ResolveModuleSymbols(UnderlyingAssembly.GetModules(getResourceModules));
+            return Context.ResolveTypeSymbols(_underlyingAssembly.GetTypes());
         }
 
         /// <inheritdoc />
-        public AssemblyIdentity GetIdentity()
+        public sealed override ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
         {
-            return UnderlyingAssembly.GetName().Pack();
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public AssemblyIdentity[] GetReferencedAssemblies()
+        public sealed override Stream? GetManifestResourceStream(string name)
         {
-            return UnderlyingAssembly.GetReferencedAssemblies().Pack();
+            return _underlyingAssembly.GetManifestResourceStream(name);
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetType(string name, bool throwOnError)
+        public sealed override Stream? GetManifestResourceStream(TypeSymbol type, string name)
         {
-            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name, throwOnError));
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name, throwOnError, ignoreCase));
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()));
+
+            return _customAttributes;
         }
-
-        /// <inheritdoc />
-        public ITypeSymbol? GetType(string name)
-        {
-            return ResolveTypeSymbol(UnderlyingAssembly.GetType(name));
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetTypes()
-        {
-            return ResolveTypeSymbols(UnderlyingAssembly.GetTypes());
-        }
-
-        /// <inheritdoc />
-        public CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return ResolveCustomAttributes(UnderlyingAssembly.GetCustomAttributesData());
-        }
-
-        /// <inheritdoc />
-        public CustomAttribute[] GetCustomAttributes(ITypeSymbol attributeType, bool inherit = false)
-        {
-            var _attributeType = attributeType.Unpack();
-            return ResolveCustomAttributes(UnderlyingAssembly.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToArray());
-        }
-
-        /// <inheritdoc />
-        public CustomAttribute? GetCustomAttribute(ITypeSymbol attributeType, bool inherit = false)
-        {
-            var _attributeType = attributeType.Unpack();
-            var a = UnderlyingAssembly.GetCustomAttributesData().Where(i => i.AttributeType == _attributeType).ToList();
-            if (a.Count > 0)
-                return ResolveCustomAttribute(a[0]);
-
-            return null;
-        }
-
-        /// <inheritdoc />
-        public bool IsDefined(ITypeSymbol attributeType, bool inherit = false)
-        {
-            return UnderlyingAssembly.IsDefined(attributeType.Unpack(), inherit);
-        }
-
-        /// <inheritdoc />
-        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
-        {
-            return ResolveManifestResourceInfo(UnderlyingAssembly.GetManifestResourceInfo(resourceName));
-        }
-
-        /// <inheritdoc />
-        public Stream? GetManifestResourceStream(string name)
-        {
-            return UnderlyingAssembly.GetManifestResourceStream(name);
-        }
-
-        /// <inheritdoc />
-        public Stream? GetManifestResourceStream(ITypeSymbol type, string name)
-        {
-            return UnderlyingAssembly.GetManifestResourceStream(type.Unpack(), name);
-        }
-
-        #endregion
-
-        /// <inheritdoc />
-        public override string? ToString() => UnderlyingAssembly.ToString();
 
     }
 

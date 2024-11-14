@@ -18,11 +18,14 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="elementType"></param>
-        public HasElementSymbol(ISymbolContext context, TypeSymbol elementType) :
-            base(context, elementType.Module, null)
+        public HasElementSymbol(SymbolContext context, TypeSymbol elementType) :
+            base(context, elementType.Module)
         {
             _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
         }
+
+        /// <inheritdoc />
+        public override MethodBaseSymbol? DeclaringMethod => null;
 
         /// <inheritdoc />
         public sealed override string? Namespace => _elementType.Namespace;
@@ -61,10 +64,10 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsConstructedGenericType => false;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericParameter => false;
+        public sealed override bool IsGenericTypeParameter => false;
 
         /// <inheritdoc />
-        public sealed override ImmutableList<TypeSymbol> GenericTypeArguments => throw new NotSupportedException();
+        public sealed override bool IsGenericMethodParameter => false;
 
         /// <inheritdoc />
         public sealed override bool ContainsGenericParameters => _elementType.ContainsGenericParameters;
@@ -85,10 +88,10 @@ namespace IKVM.CoreLib.Symbols
         public override bool IsArray => false;
 
         /// <inheritdoc />
-        public override bool IsSZArray => true;
+        public override bool IsSZArray => false;
 
         /// <inheritdoc />
-        public override bool IsByRef => true;
+        public override bool IsByRef => false;
 
         /// <inheritdoc />
         public override bool IsPointer => false;
@@ -101,6 +104,12 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public sealed override TypeCode TypeCode => TypeCode.Object;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool ContainsMissing => _elementType.IsMissing;
 
         /// <inheritdoc />
         public sealed override bool IsComplete => _elementType.IsComplete;
@@ -118,33 +127,39 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<TypeSymbol> GetGenericArguments()
+        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
         {
             throw new NotSupportedException();
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<TypeSymbol> GetGenericParameterConstraints()
+        public sealed override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
         {
             throw new NotSupportedException();
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<FieldSymbol> GetDeclaredFields()
+        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
         {
-            return ImmutableList<FieldSymbol>.Empty;
+            return ImmutableArray<FieldSymbol>.Empty;
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<PropertySymbol> GetDeclaredProperties()
+        internal sealed override ImmutableArray<PropertySymbol> GetDeclaredProperties()
         {
-            return ImmutableList<PropertySymbol>.Empty;
+            return ImmutableArray<PropertySymbol>.Empty;
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<EventSymbol> GetDeclaredEvents()
+        internal sealed override ImmutableArray<EventSymbol> GetDeclaredEvents()
         {
-            return ImmutableList<EventSymbol>.Empty;
+            return ImmutableArray<EventSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
         }
 
         /// <inheritdoc />
@@ -160,7 +175,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<string> GetEnumNames()
+        public sealed override ImmutableArray<string> GetEnumNames()
         {
             throw new NotSupportedException();
         }

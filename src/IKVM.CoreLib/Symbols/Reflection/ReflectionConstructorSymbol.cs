@@ -1,38 +1,92 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionConstructorSymbol : ReflectionMethodBaseSymbol, IReflectionConstructorSymbol
+    class ReflectionConstructorSymbol : ConstructorSymbol
     {
 
-        readonly ConstructorInfo _ctor;
+        readonly ConstructorInfo _underlyingConstructor;
+
+        ImmutableArray<ParameterSymbol> _parameters;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resolvingModule"></param>
-        /// <param name="resolvingType"></param>
-        /// <param name="ctor"></param>
-        public ReflectionConstructorSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol resolvingModule, IReflectionTypeSymbol resolvingType, ConstructorInfo ctor) :
-            base(context, resolvingModule, resolvingType)
+        /// <param name="declaringType"></param>
+        /// <param name="underlyingConstructor"></param>
+        public ReflectionConstructorSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol declaringType, ConstructorInfo underlyingConstructor) :
+            base(context, declaringType)
         {
-            _ctor = ctor ?? throw new ArgumentNullException(nameof(ctor));
+            _underlyingConstructor = underlyingConstructor ?? throw new ArgumentNullException(nameof(underlyingConstructor));
+        }
+
+        /// <summary>
+        /// Gets the associated symbol context.
+        /// </summary>
+        protected new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+
+        /// <inheritdoc />
+        public override MethodAttributes Attributes => _underlyingConstructor.Attributes;
+
+        /// <inheritdoc />
+        public override CallingConventions CallingConvention => _underlyingConstructor.CallingConvention;
+
+        /// <inheritdoc />
+        public override MethodImplAttributes MethodImplementationFlags => _underlyingConstructor.MethodImplementationFlags;
+
+        /// <inheritdoc />
+        public override string Name => _underlyingConstructor.Name;
+
+        /// <inheritdoc />
+        public override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public override bool ContainsMissing => false;
+
+        /// <inheritdoc />
+        public override bool IsComplete => false;
+
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetGenericArguments()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
         }
 
         /// <inheritdoc />
-        public virtual ConstructorInfo UnderlyingConstructor => _ctor;
+        public override MethodImplAttributes GetMethodImplementationFlags()
+        {
+            return _underlyingConstructor.GetMethodImplementationFlags();
+        }
 
         /// <inheritdoc />
-        public virtual ConstructorInfo UnderlyingRuntimeConstructor => UnderlyingConstructor;
+        public override ImmutableArray<ParameterSymbol> GetParameters()
+        {
+            if (_parameters == default)
+            {
+                var l = _underlyingConstructor.GetParameters();
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                for (int i = 0; i < l.Length; i++)
+                    b.Add(new ReflectionParameterSymbol(Context, this, l[i]));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.ToImmutable());
+            }
+
+            return _parameters;
+        }
 
         /// <inheritdoc />
-        public override MethodBase UnderlyingMethodBase => UnderlyingConstructor;
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingConstructor.GetCustomAttributesData()));
 
-        /// <inheritdoc />
-        public override MethodBase UnderlyingRuntimeMethodBase => UnderlyingRuntimeConstructor;
+            return _customAttributes;
+        }
 
     }
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
-
-namespace IKVM.CoreLib.Symbols
+﻿namespace IKVM.CoreLib.Symbols
 {
 
     abstract class GenericTypeParameterTypeSymbol : GenericParameterTypeSymbol
@@ -11,21 +8,23 @@ namespace IKVM.CoreLib.Symbols
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        protected GenericTypeParameterTypeSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol declaringType) :
-            base(context, module, declaringType)
+        protected GenericTypeParameterTypeSymbol(SymbolContext context, TypeSymbol declaringType) :
+            base(context, declaringType.Module)
         {
 
         }
 
         /// <inheritdoc />
-        internal override TypeSymbol Specialize(IImmutableList<TypeSymbol>? genericTypeArguments, IImmutableList<TypeSymbol>? genericMethodArguments)
-        {
-            if (genericTypeArguments == null)
-                throw new InvalidOperationException();
+        public override bool IsGenericTypeParameter => true;
 
-            return genericTypeArguments[GenericParameterPosition];
+        /// <inheritdoc />
+        public override bool IsGenericMethodParameter => false;
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext genericContext)
+        {
+            return genericContext.GenericTypeArguments?[GenericParameterPosition] ?? this;
         }
 
     }

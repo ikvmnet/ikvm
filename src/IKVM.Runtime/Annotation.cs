@@ -25,8 +25,6 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using IKVM.CoreLib.Symbols;
-using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {

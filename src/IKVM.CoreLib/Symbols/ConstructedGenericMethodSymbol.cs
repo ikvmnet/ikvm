@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -12,12 +13,13 @@ namespace IKVM.CoreLib.Symbols
     class ConstructedGenericMethodSymbol : MethodSymbol
     {
 
-        readonly MethodSymbol _definition;
-        readonly GenericContext _genericContext;
+        internal readonly MethodSymbol _definition;
+        internal readonly GenericContext _genericContext;
 
+        ImmutableArray<TypeSymbol> _typeParameters;
         TypeSymbol? _returnType;
         ConstructedGenericParameterSymbol? _returnParameter;
-        ImmutableList<ParameterSymbol>? _parameters;
+        ImmutableArray<ParameterSymbol> _parameters;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,7 +30,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="definition"></param>
         /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericMethodSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType, MethodSymbol definition, GenericContext genericContext) :
+        public ConstructedGenericMethodSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType, MethodSymbol definition, GenericContext genericContext) :
             base(context, module, declaringType)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -36,19 +38,19 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override MethodAttributes Attributes => _definition.Attributes;
+        public sealed override MethodAttributes Attributes => _definition.Attributes;
 
         /// <inheritdoc />
-        public override bool IsGenericMethod => true;
+        public sealed override bool IsGenericMethod => true;
 
         /// <inheritdoc />
-        public override bool IsGenericMethodDefinition => false;
+        public sealed override bool IsGenericMethodDefinition => false;
 
         /// <inheritdoc />
-        public override bool ContainsGenericParameters => false;
+        public sealed override bool ContainsGenericParameters => false;
 
         /// <inheritdoc />
-        public override ParameterSymbol ReturnParameter => GetReturnParameter();
+        public sealed override ParameterSymbol ReturnParameter => GetReturnParameter();
 
         /// <summary>
         /// Computes the value for <see cref="ReturnParameter"/>.
@@ -63,97 +65,79 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override TypeSymbol ReturnType => _returnType ??= _definition.ReturnType.Specialize(_genericContext);
+        public sealed override TypeSymbol ReturnType => _returnType ??= _definition.ReturnType.Specialize(_genericContext);
 
         /// <inheritdoc />
-        public override ICustomAttributeProvider ReturnTypeCustomAttributes => _definition.ReturnTypeCustomAttributes;
+        public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => _definition.ReturnTypeCustomAttributes;
 
         /// <inheritdoc />
-        public override CallingConventions CallingConvention => _definition.CallingConvention;
+        public sealed override CallingConventions CallingConvention => _definition.CallingConvention;
 
         /// <inheritdoc />
-        public override MethodImplAttributes MethodImplementationFlags => _definition.MethodImplementationFlags;
+        public sealed override MethodImplAttributes MethodImplementationFlags => _definition.MethodImplementationFlags;
 
         /// <inheritdoc />
-        public override string Name => _definition.Name;
+        public sealed override string Name => _definition.Name;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
+        public sealed override bool ContainsMissing => _genericContext.GenericMethodArguments != null && _genericContext.GenericMethodArguments.Value.Any(i => i.IsMissing || i.ContainsMissing);
 
         /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override MethodSymbol GetBaseDefinition()
+        public sealed override MethodSymbol GetBaseDefinition()
         {
-            return _definition.GetBaseDefinition();
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GetGenericArguments()
+        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
         {
-            return _definition.GetGenericArguments();
+            if (_typeParameters == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _typeParameters, _definition.GetGenericArguments().Select(i => i.Specialize(_genericContext)).ToImmutableArray());
+
+            return _typeParameters;
         }
 
         /// <inheritdoc />
-        public override MethodSymbol GetGenericMethodDefinition()
+        public sealed override MethodSymbol GetGenericMethodDefinition()
         {
-            throw new InvalidOperationException();
+            // value only supported for generic method not method on generic type
+            if (_genericContext.GenericMethodArguments == null)
+                throw new InvalidOperationException();
+
+            return _definition;
         }
 
         /// <inheritdoc />
-        public override MethodImplAttributes GetMethodImplementationFlags()
+        public sealed override MethodImplAttributes GetMethodImplementationFlags()
         {
             return _definition.GetMethodImplementationFlags();
         }
 
         /// <inheritdoc />
-        public override ImmutableList<ParameterSymbol> GetParameters()
+        public sealed override ImmutableArray<ParameterSymbol> GetParameters()
         {
-            if (_parameters == null)
-                Interlocked.CompareExchange(ref _parameters, ComputeGetParameters(), null);
+            if (_parameters == default)
+            {
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                foreach (var i in _definition.GetParameters())
+                    b.Add(new ConstructedGenericParameterSymbol(Context, this, i, _genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.ToImmutable());
+            }
 
             return _parameters;
         }
 
-        /// <summary>
-        /// Computs the value for <see cref="GetParameters"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<ParameterSymbol> ComputeGetParameters()
-        {
-            var b = ImmutableList.CreateBuilder<ParameterSymbol>();
-            foreach (var i in _definition.GetParameters())
-                b.Add(new ConstructedGenericParameterSymbol(Context, this, i, _genericContext));
-
-            return b.ToImmutable();
-        }
-
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

@@ -1,10 +1,13 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+
+namespace IKVM.CoreLib.Symbols
 {
 
     /// <summary>
     /// Provides custom attributes for reflection objects that support them.
     /// </summary>
-    interface ICustomAttributeProvider : ISymbol
+    interface ICustomAttributeProvider
     {
 
         /// <summary>
@@ -12,7 +15,7 @@
         /// </summary>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttribute[] GetCustomAttributes(bool inherit = false);
+        IEnumerable<CustomAttribute> GetCustomAttributes(bool inherit = false);
 
         /// <summary>
         /// Returns an array of custom attributes defined on this member, identified by type, or an empty array if there are no custom attributes of that type.
@@ -20,7 +23,7 @@
         /// <param name="attributeType"></param>
         /// <param name="inherit"></param>
         /// <returns></returns>
-        CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false);
+        IEnumerable<CustomAttribute> GetCustomAttributes(TypeSymbol attributeType, bool inherit = false);
 
         /// <summary>
         /// Retrieves a custom attribute of a specified type that is applied to a specified member.

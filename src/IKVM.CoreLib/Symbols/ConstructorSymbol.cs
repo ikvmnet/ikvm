@@ -11,7 +11,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
-        public ConstructorSymbol(ISymbolContext context, TypeSymbol declaringType) :
+        public ConstructorSymbol(SymbolContext context, TypeSymbol declaringType) :
             base(context, declaringType.Module, declaringType)
         {
 

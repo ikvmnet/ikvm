@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 
 using IKVM.CoreLib.Collections;
@@ -12,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
     struct TypeSpecTable
     {
 
-        readonly ISymbolContext _context;
+        readonly SymbolContext _context;
         readonly TypeSymbol _elementType;
 
         IndexRangeDictionary<ArrayTypeSymbol> _asArray;
@@ -20,7 +21,7 @@ namespace IKVM.CoreLib.Symbols
         SZArrayTypeSymbol? _asSZArray;
         PointerTypeSymbol? _asPointer;
         ByRefTypeSymbol? _asByRef;
-        ConcurrentDictionary<IImmutableList<TypeSymbol>, ConstructedGenericTypeSymbol>? _genericTypeSymbols;
+        ConcurrentDictionary<ImmutableArray<TypeSymbol>, ConstructedGenericTypeSymbol>? _genericTypeSymbols;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,7 +29,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="elementType"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public TypeSpecTable(ISymbolContext context, TypeSymbol elementType)
+        public TypeSpecTable(SymbolContext context, TypeSymbol elementType)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
@@ -50,7 +51,7 @@ namespace IKVM.CoreLib.Symbols
             {
                 if (_asArray[rank] == null)
                     using (_asArrayLock.CreateWriteLock())
-                        _asArray[rank] = new ArrayTypeSymbol(_context, _elementType, rank);
+                        _asArray[rank] = new ArrayTypeSymbol(_context, _elementType, rank, ImmutableArray<int>.Empty, Enumerable.Repeat(0, rank).ToImmutableArray());
 
                 return _asArray[rank] ?? throw new InvalidOperationException();
             }
@@ -97,9 +98,9 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        public ConstructedGenericTypeSymbol GetOrCreateGenericTypeSymbol(IImmutableList<TypeSymbol> genericTypeArguments)
+        public ConstructedGenericTypeSymbol GetOrCreateGenericTypeSymbol(ImmutableArray<TypeSymbol> genericTypeArguments)
         {
-            if (genericTypeArguments is null)
+            if (genericTypeArguments == default)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
 
             if (_elementType.IsGenericTypeDefinition == false)
@@ -116,9 +117,9 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="genericTypeArguments"></param>
         /// <returns></returns>
-        readonly ConstructedGenericTypeSymbol CreateGenericTypeSymbol(IImmutableList<TypeSymbol> genericTypeArguments)
+        readonly ConstructedGenericTypeSymbol CreateGenericTypeSymbol(ImmutableArray<TypeSymbol> genericTypeArguments)
         {
-            return new ConstructedGenericTypeSymbol(_context, _elementType, genericTypeArguments);
+            return new ConstructedGenericTypeSymbol(_context, _elementType, new GenericContext(genericTypeArguments, null));
         }
 
     }

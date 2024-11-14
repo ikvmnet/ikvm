@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="elementType"></param>
-        public PointerTypeSymbol(ISymbolContext context, TypeSymbol elementType) :
+        public PointerTypeSymbol(SymbolContext context, TypeSymbol elementType) :
             base(context, elementType)
         {
 
@@ -38,15 +38,33 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<ConstructorSymbol> GetDeclaredConstructors()
+        public override ImmutableArray<TypeSymbol> GetInterfaces()
         {
-            return ImmutableList<ConstructorSymbol>.Empty;
+            return ImmutableArray<TypeSymbol>.Empty;
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableList<MethodSymbol> GetDeclaredMethods()
+        public override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
         {
-            return ImmutableList<MethodSymbol>.Empty;
+            return new InterfaceMapping(ImmutableList<MethodSymbol>.Empty, interfaceType, ImmutableList<MethodSymbol>.Empty, this);
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
+        {
+            return ImmutableArray<ConstructorSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            return ImmutableArray<MethodSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            throw new NotImplementedException();
         }
 
     }

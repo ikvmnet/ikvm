@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="symbol"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public static Type GetSystemType(this ITypeSymbol symbol)
+        public static Type GetSystemType(this TypeSymbol symbol)
         {
             return symbol.TypeCode switch
             {

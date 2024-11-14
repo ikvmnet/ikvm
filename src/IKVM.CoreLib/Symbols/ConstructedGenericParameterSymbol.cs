@@ -11,6 +11,9 @@ namespace IKVM.CoreLib.Symbols
         readonly ParameterSymbol _definition;
         readonly GenericContext _genericContext;
 
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -19,7 +22,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="definition"></param>
         /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericParameterSymbol(ISymbolContext context, MemberSymbol declaringMember, ParameterSymbol definition, GenericContext genericContext) :
+        public ConstructedGenericParameterSymbol(SymbolContext context, MemberSymbol declaringMember, ParameterSymbol definition, GenericContext genericContext) :
             base(context, declaringMember, definition.Position)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -39,48 +42,48 @@ namespace IKVM.CoreLib.Symbols
         public override object? DefaultValue => _definition.DefaultValue;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GetOptionalCustomModifiers()
+        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            return _definition.GetOptionalCustomModifiers();
+            if (_optionalCustomModifiers == default)
+            {
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                foreach (var i in _definition.GetOptionalCustomModifiers())
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.ToImmutable());
+            }
+
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GetRequiredCustomModifiers()
+        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            return _definition.GetRequiredCustomModifiers();
+            if (_requiredCustomModifiers == default)
+            {
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                foreach (var i in _definition.GetRequiredCustomModifiers())
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.ToImmutable());
+            }
+
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

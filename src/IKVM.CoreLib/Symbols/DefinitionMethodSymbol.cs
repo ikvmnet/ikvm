@@ -10,7 +10,7 @@
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        protected DefinitionMethodSymbol(ISymbolContext context, IModuleSymbol module, DefinitionTypeSymbol declaringType) : 
+        protected DefinitionMethodSymbol(SymbolContext context, ModuleSymbol module, DefinitionTypeSymbol? declaringType) : 
             base(context, module, declaringType)
         {
 

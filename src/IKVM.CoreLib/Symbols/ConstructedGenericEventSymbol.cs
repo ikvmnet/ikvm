@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -10,7 +12,7 @@ namespace IKVM.CoreLib.Symbols
     class ConstructedGenericEventSymbol : EventSymbol
     {
 
-        readonly EventSymbol _definition;
+        internal readonly EventSymbol _definition;
         readonly GenericContext _genericContext;
 
         /// <summary>
@@ -19,8 +21,9 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="definition"></param>
+        /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericEventSymbol(ISymbolContext context, TypeSymbol declaringType, EventSymbol definition, GenericContext genericContext) :
+        public ConstructedGenericEventSymbol(SymbolContext context, TypeSymbol declaringType, EventSymbol definition, GenericContext genericContext) :
             base(context, declaringType)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -28,102 +31,89 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override EventAttributes Attributes => _definition.Attributes;
+        public sealed override EventAttributes Attributes => _definition.Attributes;
 
         /// <inheritdoc />
-        public override string Name => _definition.Name;
+        public sealed override string Name => _definition.Name;
 
         /// <inheritdoc />
-        public override TypeSymbol? EventHandlerType => _definition.EventHandlerType?.Specialize(_genericContext);
+        public sealed override TypeSymbol? EventHandlerType => _definition.EventHandlerType?.Specialize(_genericContext);
 
         /// <inheritdoc />
-        public override MethodSymbol? AddMethod => _definition.AddMethod;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override MethodSymbol? RemoveMethod => _definition.RemoveMethod;
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override MethodSymbol? RaiseMethod => _definition.RaiseMethod;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
-
-        /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
-
-        /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
-
-        /// <inheritdoc />
-        public override MethodSymbol? GetAddMethod()
+        public sealed override MethodSymbol? GetAddMethod(bool nonPublic)
         {
-            return _definition.GetAddMethod();
+            var baseMethod = _definition.GetAddMethod(nonPublic);
+            if (baseMethod is null)
+                return null;
+
+            foreach (var i in DeclaringType!.GetMethods())
+                if (i is ConstructedGenericMethodSymbol m)
+                    if (m._definition == baseMethod)
+                        return m;
+
+            return null;
         }
 
         /// <inheritdoc />
-        public override MethodSymbol? GetAddMethod(bool nonPublic)
+        public sealed override MethodSymbol? GetRemoveMethod(bool nonPublic)
         {
-            return _definition.GetAddMethod(nonPublic);
+            var baseMethod = _definition.GetRemoveMethod(nonPublic);
+            if (baseMethod is null)
+                return null;
+
+            foreach (var i in DeclaringType!.GetMethods())
+                if (i is ConstructedGenericMethodSymbol m)
+                    if (m._definition == baseMethod)
+                        return m;
+
+            return null;
         }
 
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        public sealed override MethodSymbol? GetRaiseMethod(bool nonPublic)
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
+            var baseMethod = _definition.GetRaiseMethod(nonPublic);
+            if (baseMethod is null)
+                return null;
+
+            foreach (var i in DeclaringType!.GetMethods())
+                if (i is ConstructedGenericMethodSymbol m)
+                    if (m._definition == baseMethod)
+                        return m;
+
+            return null;
         }
 
         /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
+        public sealed override ImmutableArray<MethodSymbol> GetOtherMethods(bool nonPublic)
         {
-            return _definition.GetCustomAttributes(inherit);
+            var b = ImmutableArray.CreateBuilder<MethodSymbol>();
+
+            foreach (var baseMethod in _definition.GetOtherMethods(nonPublic))
+            {
+                if (baseMethod is not null)
+                    foreach (var i in DeclaringType!.GetMethods())
+                        if (i is ConstructedGenericMethodSymbol m)
+                            if (m._definition == baseMethod)
+                                b.Add(m);
+            }
+
+            return b.ToImmutable();
         }
 
         /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override MethodSymbol[] GetOtherMethods()
-        {
-            return _definition.GetOtherMethods();
-        }
-
-        /// <inheritdoc />
-        public override MethodSymbol[] GetOtherMethods(bool nonPublic)
-        {
-            return _definition.GetOtherMethods(nonPublic);
-        }
-
-        /// <inheritdoc />
-        public override MethodSymbol? GetRaiseMethod()
-        {
-            return _definition.GetRaiseMethod();
-        }
-        /// <inheritdoc />
-
-        public override MethodSymbol? GetRaiseMethod(bool nonPublic)
-        {
-            return _definition.GetRaiseMethod(nonPublic);
-        }
-
-        /// <inheritdoc />
-        public override MethodSymbol? GetRemoveMethod()
-        {
-            return _definition.GetRemoveMethod();
-        }
-
-        /// <inheritdoc />
-        public override MethodSymbol? GetRemoveMethod(bool nonPublic)
-        {
-            return _definition.GetRemoveMethod(nonPublic);
-        }
-
-        /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

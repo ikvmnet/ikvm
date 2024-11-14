@@ -12,7 +12,7 @@
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        IAssemblySymbol? ResolveAssembly(string assemblyName);
+        AssemblySymbol? ResolveAssembly(string assemblyName);
 
         /// <summary>
         /// Resolves the named type from the core assembly.

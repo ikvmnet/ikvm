@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -8,21 +11,20 @@ namespace IKVM.CoreLib.Symbols
     abstract class TypeSymbol : MemberSymbol
     {
 
-        const BindingFlags DefaultLookup = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public;
-        const BindingFlags DeclaredOnlyLookup = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
         TypeSpecTable _typeSpecTable;
 
         string? _assemblyQualifiedName;
+        ImmutableList<TypeSymbol>? _genericTypeArguments;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public TypeSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType) :
-            base(context, module, declaringType)
+        /// <param name="module"></param>
+        public TypeSymbol(SymbolContext context, ModuleSymbol module) :
+            base(context, module, null)
         {
-            _typeSpecTable = new TypeSpecTable(Context, this);
+            _typeSpecTable = new TypeSpecTable(context, this);
         }
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace IKVM.CoreLib.Symbols
         public abstract TypeAttributes Attributes { get; }
 
         /// <summary>
-        /// Gets a <see cref="IMethodBaseSymbol"/> that represents the declaring method, if the current <see cref="TypeSymbol"/> represents a type parameter of a generic method.
+        /// Gets a <see cref="MethodBaseSymbol"/> that represents the declaring method, if the current <see cref="TypeSymbol"/> represents a type parameter of a generic method.
         /// </summary>
         public abstract MethodBaseSymbol? DeclaringMethod { get; }
 
@@ -95,7 +97,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets an array of the generic type arguments for this type.
         /// </summary>
-        public abstract ImmutableList<TypeSymbol> GenericTypeArguments { get; }
+        public ImmutableArray<TypeSymbol> GenericTypeArguments => IsGenericTypeDefinition ? ImmutableArray<TypeSymbol>.Empty : GetGenericArguments();
 
         /// <summary>
         /// Gets a value that indicates whether the type is a type definition.
@@ -118,9 +120,19 @@ namespace IKVM.CoreLib.Symbols
         public bool IsGenericType => IsConstructedGenericType || IsGenericTypeDefinition;
 
         /// <summary>
-        /// Gets a value indicating whether the current <see cref="TypeSymbol"/> represents a type parameter in the definition of a generic type or method.
+        /// Gets a value indicating whether the current  represents a type parameter in the definition of a generic type or method.
         /// </summary>
-        public abstract bool IsGenericParameter { get; }
+        public bool IsGenericParameter => IsGenericTypeParameter || IsGenericMethodParameter;
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="TypeSymbol"/> represents a type parameter in the definition of a generic type.
+        /// </summary>
+        public abstract bool IsGenericTypeParameter { get; }
+
+        /// <summary>
+        /// Gets a value that indicates whether the current <see cref="TypeSymbol"/> represents a type parameter in the definition of a generic method.
+        /// </summary>
+        public abstract bool IsGenericMethodParameter { get; }
 
         /// <summary>
         /// Gets a value indicating whether the fields of the current type are laid out automatically by the common language runtime.
@@ -301,11 +313,6 @@ namespace IKVM.CoreLib.Symbols
         public bool IsSerializable => (Attributes & TypeAttributes.Serializable) != 0;
 
         /// <summary>
-        /// Gets a value that indicates whether the type is a signature type.
-        /// </summary>
-        public abstract bool IsSignatureType { get; }
-
-        /// <summary>
         /// Gets a value indicating whether the type has a name that requires special handling.
         /// </summary>
         public bool IsSpecialName => (Attributes & TypeAttributes.SpecialName) == TypeAttributes.SpecialName;
@@ -313,7 +320,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets the initializer for the type.
         /// </summary>
-        public abstract ConstructorSymbol? TypeInitializer { get; }
+        public ConstructorSymbol? TypeInitializer => GetConstructor(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, CallingConventions.Any, [], null);
 
         /// <summary>
         /// Gets the number of dimensions in an array.
@@ -325,14 +332,14 @@ namespace IKVM.CoreLib.Symbols
         /// Returns all the declared constructors of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<ConstructorSymbol> GetDeclaredConstructors();
+        internal abstract ImmutableArray<ConstructorSymbol> GetDeclaredConstructors();
 
         /// <summary>
         /// Searches for a public instance constructor whose parameters match the types in the specified array.
         /// </summary>
         /// <param name="types"></param>
         /// <returns></returns>
-        public ConstructorSymbol? GetConstructor(ImmutableList<TypeSymbol>? types) => GetConstructor(BindingFlags.Public | BindingFlags.Instance, types);
+        public ConstructorSymbol? GetConstructor(ImmutableArray<TypeSymbol> types) => GetConstructor(BindingFlags.Public | BindingFlags.Instance, types, null);
 
         /// <summary>
         /// Searches for a constructor whose parameters match the specified argument types, using the specified binding constraints.
@@ -340,26 +347,65 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="bindingFlags"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        public abstract ConstructorSymbol? GetConstructor(BindingFlags bindingFlags, ImmutableList<TypeSymbol>? types);
+        public ConstructorSymbol? GetConstructor(BindingFlags bindingFlags, ImmutableArray<TypeSymbol> types) => GetConstructor(bindingFlags, types, null);
 
         /// <summary>
-        /// Returns all the public constructors defined for the current <see cref="TypeSymbol"/>.
+        /// Searches for a constructor whose parameters match the specified argument types and modifiers, using the specified binding constraints.
         /// </summary>
+        /// <param name="bindingFlags"></param>
+        /// <param name="types"></param>
+        /// <param name="modifiers"></param>
         /// <returns></returns>
-        public ImmutableList<ConstructorSymbol> GetConstructors() => GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        public ConstructorSymbol? GetConstructor(BindingFlags bindingFlags, ImmutableArray<TypeSymbol> types, ImmutableArray<ParameterModifier>? modifiers) => GetConstructor(bindingFlags, CallingConventions.Any, types, modifiers);
 
         /// <summary>
-        /// When overridden in a derived class, searches for the constructors defined for the current <see cref="TypeSymbol"/>, using the specified BindingFlags.
+        /// Searches for a constructor whose parameters match the specified argument types, using the specified binding constraints.
+        /// </summary>
+        /// <param name="bindingFlags"></param>
+        /// <param name="types"></param>
+        /// <returns></returns>
+        public ConstructorSymbol? GetConstructor(BindingFlags bindingFlags, CallingConventions callConvention, ImmutableArray<TypeSymbol> types, ImmutableArray<ParameterModifier>? modifiers)
+        {
+            var query = new MemberQuery<TypeSymbol, ConstructorSymbol>(this, null, bindingFlags);
+            var candidates = new List<ConstructorSymbol>();
+            foreach (var candidate in query)
+                if (QualifiesBasedOnParameterCount(candidate, bindingFlags, callConvention, types))
+                    candidates.Add(candidate);
+
+            // For perf and .NET Framework compat, fast-path these specific checks before calling on the binder to break ties.
+            if (candidates.Count == 0)
+                return null;
+
+            if (types.Length == 0 && candidates.Count == 1)
+            {
+                var firstCandidate = candidates[0];
+                var parameters = firstCandidate.GetParameters();
+                if (parameters.Length == 0)
+                    return firstCandidate;
+            }
+
+            if ((bindingFlags & BindingFlags.ExactBinding) != 0)
+                return Context.DefaultBinder.ExactBinding(candidates, types) as ConstructorSymbol;
+
+            return Context.DefaultBinder.SelectMethod(candidates, bindingFlags, types, modifiers) as ConstructorSymbol;
+        }
+
+        /// <summary>
+        /// When overridden in a derived class, searches for the constructors defined for the current <see cref="TypeSymbol"/>, using the specified <see cref="BindingFlags"/>.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<ConstructorSymbol> GetConstructors(BindingFlags bindingFlags);
+        public IEnumerable<ConstructorSymbol> GetConstructors() => GetConstructors(DefaultLookup);
 
         /// <summary>
-        /// Searches for the members defined for the current <see cref="TypeSymbol"/> whose DefaultMemberAttribute is set.
+        /// When overridden in a derived class, searches for the constructors defined for the current <see cref="TypeSymbol"/>, using the specified <see cref="BindingFlags"/>.
         /// </summary>
+        /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<MemberSymbol> GetDefaultMembers();
+        public IEnumerable<ConstructorSymbol> GetConstructors(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, ConstructorSymbol>(this, null, bindingFlags);
+        }
 
         /// <summary>
         /// When overridden in a derived class, returns the <see cref="TypeSymbol"/> of the object encompassed or referred to by the current array, pointer or reference type.
@@ -378,7 +424,7 @@ namespace IKVM.CoreLib.Symbols
         /// Returns the names of the members of the current enumeration type.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<string> GetEnumNames();
+        public abstract ImmutableArray<string> GetEnumNames();
 
         /// <summary>
         /// Returns the underlying type of the current enumeration type.
@@ -390,7 +436,7 @@ namespace IKVM.CoreLib.Symbols
         /// Returns all the declared events of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<EventSymbol> GetDeclaredEvents();
+        internal abstract ImmutableArray<EventSymbol> GetDeclaredEvents();
 
         /// <summary>
         /// Returns the <see cref="IEventSymbol"/> object representing the specified public event.
@@ -405,26 +451,32 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract EventSymbol? GetEvent(string name, BindingFlags bindingFlags);
+        public EventSymbol? GetEvent(string name, BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, EventSymbol>(this, name, bindingFlags).Disambiguate();
+        }
 
         /// <summary>
         /// Returns all the public events that are declared or inherited by the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public ImmutableList<EventSymbol> GetEvents() => GetEvents(DefaultLookup);
+        public IEnumerable<EventSymbol> GetEvents() => GetEvents(DefaultLookup);
 
         /// <summary>
         /// When overridden in a derived class, searches for events that are declared or inherited by the current <see cref="TypeSymbol"/>, using the specified binding constraints.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<EventSymbol> GetEvents(BindingFlags bindingFlags);
+        public IEnumerable<EventSymbol> GetEvents(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, EventSymbol>(this, null, bindingFlags);
+        }
 
         /// <summary>
         /// Returns all the declared fields of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<FieldSymbol> GetDeclaredFields();
+        internal abstract ImmutableArray<FieldSymbol> GetDeclaredFields();
 
         /// <summary>
         /// Searches for the public field with the specified name.
@@ -439,32 +491,38 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract FieldSymbol? GetField(string name, BindingFlags bindingFlags);
+        public FieldSymbol? GetField(string name, BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, FieldSymbol>(this, name, bindingFlags).Disambiguate();
+        }
 
         /// <summary>
         /// Returns all the public fields of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public ImmutableList<FieldSymbol> GetFields() => GetFields(DefaultLookup);
+        public IEnumerable<FieldSymbol> GetFields() => GetFields(DefaultLookup);
 
         /// <summary>
         /// When overridden in a derived class, searches for the fields defined for the current <see cref="TypeSymbol"/>, using the specified binding constraints.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<FieldSymbol> GetFields(BindingFlags bindingFlags);
+        public IEnumerable<FieldSymbol> GetFields(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, FieldSymbol>(this, null, bindingFlags);
+        }
 
         /// <summary>
         /// Returns an array of <see cref="TypeSymbol"/> objects that represent the type arguments of a closed generic type or the type parameters of a generic type definition.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<TypeSymbol> GetGenericArguments();
+        public abstract ImmutableArray<TypeSymbol> GetGenericArguments();
 
         /// <summary>
         /// Returns an array of <see cref="TypeSymbol"/> objects that represent the constraints on the current generic type parameter.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<TypeSymbol> GetGenericParameterConstraints();
+        public abstract ImmutableArray<TypeSymbol> GetGenericParameterConstraints();
 
         /// <summary>
         /// Returns a <see cref="TypeSymbol"/> object that represents a generic type definition from which the current generic type can be constructed.
@@ -477,21 +535,20 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public TypeSymbol? GetInterface(string name) => GetInterface(name, false);
+        public TypeSymbol? GetInterface(string name)
+        {
+            foreach (var i in GetInterfaces())
+                if (i.Name == name)
+                    return i;
+
+            return null;
+        }
 
         /// <summary>
-        /// When overridden in a derived class, searches for the specified interface, specifying whether to do a case-insensitive search for the interface name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="ignoreCase"></param>
-        /// <returns></returns>
-        public abstract TypeSymbol? GetInterface(string name, bool ignoreCase);
-
-        /// <summary>
-        /// When overridden in a derived class, gets all the interfaces implemented or if specified,inherited by the current <see cref="TypeSymbol"/>.
+        /// When overridden in a derived class, gets all the interfaces implemented by the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<TypeSymbol> GetInterfaces(bool inherit = true);
+        public abstract ImmutableArray<TypeSymbol> GetInterfaces();
 
         /// <summary>
         /// Returns an interface mapping for the specified interface type.
@@ -504,7 +561,7 @@ namespace IKVM.CoreLib.Symbols
         /// Returns all the declared methods of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<MethodSymbol> GetDeclaredMethods();
+        internal abstract ImmutableArray<MethodSymbol> GetDeclaredMethods();
 
         /// <summary>
         /// Searches for the public method with the specified name.
@@ -519,7 +576,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, ImmutableList<TypeSymbol>? types) => GetMethod(name, DefaultLookup, types);
+        public MethodSymbol? GetMethod(string name, ImmutableArray<TypeSymbol>? types) => GetMethod(name, DefaultLookup, types);
 
         /// <summary>
         /// Searches for the specified method, using the specified binding constraints.
@@ -537,7 +594,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers) => GetMethod(name, bindingAttr, CallingConventions.Any, types, modifiers);
+        public MethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers) => GetMethod(name, bindingAttr, CallingConventions.Any, types, modifiers);
 
         /// <summary>
         /// Searches for the specified method whose parameters match the specified argument types, using the specified binding constraints.
@@ -546,7 +603,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="bindingFlags"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, BindingFlags bindingFlags, ImmutableList<TypeSymbol>? types) => GetMethod(name, bindingFlags, CallingConventions.Any, types, null);
+        public MethodSymbol? GetMethod(string name, BindingFlags bindingFlags, ImmutableArray<TypeSymbol>? types) => GetMethod(name, bindingFlags, CallingConventions.Any, types, null);
 
         /// <summary>
         /// Searches for the specified method whose parameters match the specified argument types and modifiers, using the specified binding constraints and the specified calling convention.
@@ -557,7 +614,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, BindingFlags bindingFlags, CallingConventions callConvention, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers) => GetMethod(name, 0, bindingFlags, callConvention, types, modifiers);
+        public MethodSymbol? GetMethod(string name, BindingFlags bindingFlags, CallingConventions callConvention, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers) => GetMethod(name, -1, bindingFlags, callConvention, types, modifiers);
 
         /// <summary>
         /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints.
@@ -568,7 +625,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers) => GetMethod(name, genericParameterCount, bindingFlags, CallingConventions.Any, types, modifiers);
+        public MethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers) => GetMethod(name, genericParameterCount, bindingFlags, CallingConventions.Any, types, modifiers);
 
         /// <summary>
         /// Searches for the specified public method whose parameters match the specified generic parameter count, argument types and modifiers.
@@ -578,7 +635,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, int genericParameterCount, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers) => GetMethod(name, genericParameterCount, DefaultLookup, CallingConventions.Any, types, modifiers);
+        public MethodSymbol? GetMethod(string name, int genericParameterCount, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers) => GetMethod(name, genericParameterCount, DefaultLookup, CallingConventions.Any, types, modifiers);
 
         /// <summary>
         /// Searches for the specified method whose parameters match the specified generic parameter count, argument types and modifiers, using the specified binding constraints and the specified calling convention.
@@ -590,20 +647,126 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public abstract MethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, CallingConventions callConvention, ImmutableList<TypeSymbol>? types, ImmutableList<ParameterModifier>? modifiers);
+        public MethodSymbol? GetMethod(string name, int genericParameterCount, BindingFlags bindingFlags, CallingConventions callConvention, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers)
+        {
+            Debug.Assert(name != null);
+
+            // GetMethodImpl() is a funnel for two groups of api. We can distinguish by comparing "types" to null.
+            if (types == null)
+            {
+                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints.
+                Debug.Assert(genericParameterCount == -1);
+                Debug.Assert(callConvention == CallingConventions.Any);
+                Debug.Assert(modifiers == null);
+                return new MemberQuery<TypeSymbol, MethodSymbol>(this, name, bindingFlags).Disambiguate();
+            }
+            else
+            {
+                // Group #2: This group of api takes a set of parameter types and an optional binder.
+                var queryResult = new MemberQuery<TypeSymbol, MethodSymbol>(this, name, bindingFlags);
+                var candidates = new List<MethodBaseSymbol>();
+                foreach (var candidate in queryResult)
+                {
+                    if (genericParameterCount != -1 && genericParameterCount != candidate.GetGenericArguments().Length)
+                        continue;
+                    if (QualifiesBasedOnParameterCount(candidate, bindingFlags, callConvention, types))
+                        candidates.Add(candidate);
+                }
+
+                if (candidates.Count == 0)
+                    return null;
+
+                // For perf and .NET Framework compat, fast-path these specific checks before calling on the binder to break ties.
+                if (types.Value.Length == 0 && candidates.Count == 1)
+                    return (MethodSymbol)candidates[0];
+
+                return Context.DefaultBinder.SelectMethod(candidates, bindingFlags, types.Value, modifiers) as MethodSymbol;
+            }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given method symbol would qualify as a candidate in a query for the specified binding flags and argument type count.
+        /// </summary>
+        /// <param name="methodBase"></param>
+        /// <param name="bindingFlags"></param>
+        /// <param name="callConvention"></param>
+        /// <param name="types"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static bool QualifiesBasedOnParameterCount(MethodBaseSymbol methodBase, BindingFlags bindingFlags, CallingConventions callConvention, IReadOnlyList<TypeSymbol> types)
+        {
+            #region Check CallingConvention
+
+            if ((callConvention & CallingConventions.Any) == 0)
+            {
+                if ((callConvention & CallingConventions.VarArgs) != 0 && (methodBase.CallingConvention & CallingConventions.VarArgs) == 0)
+                    return false;
+
+                if ((callConvention & CallingConventions.Standard) != 0 && (methodBase.CallingConvention & CallingConventions.Standard) == 0)
+                    return false;
+            }
+
+            #endregion
+
+            #region ArgumentTypes
+
+            var parameterInfos = methodBase.GetParameters();
+
+            if (types.Count != parameterInfos.Length)
+            {
+                return false;
+            }
+            else
+            {
+                #region Exact Binding
+
+                if ((bindingFlags & BindingFlags.ExactBinding) != 0)
+                {
+                    // Legacy behavior is to ignore ExactBinding when InvokeMember is specified.
+                    // Why filter by InvokeMember? If the answer is we leave this to the binder then why not leave
+                    // all the rest of this  to the binder too? Further, what other semanitc would the binder
+                    // use for BindingFlags.ExactBinding besides this one? Further, why not include CreateInstance
+                    // in this if statement? That's just InvokeMethod with a constructor, right?
+                    if ((bindingFlags & (BindingFlags.InvokeMethod)) == 0)
+                    {
+                        for (int i = 0; i < parameterInfos.Length; i++)
+                        {
+                            // a null argument type implies a null arg which is always a perfect match
+                            if (types[i] is not null && types[i] != parameterInfos[i].ParameterType)
+                                return false;
+                        }
+                    }
+                }
+
+                #endregion
+            }
+
+            #endregion
+
+            return true;
+        }
 
         /// <summary>
         /// Returns all the public methods of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public ImmutableList<MethodSymbol> GetMethods() => GetMethods(DefaultLookup);
+        public IEnumerable<MethodSymbol> GetMethods() => GetMethods(DefaultLookup);
 
         /// <summary>
         /// When overridden in a derived class, searches for the methods defined for the current <see cref="TypeSymbol"/>, using the specified binding constraints.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<MethodSymbol> GetMethods(BindingFlags bindingFlags);
+        public IEnumerable<MethodSymbol> GetMethods(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, MethodSymbol>(this, null, bindingFlags);
+        }
+
+        /// <summary>
+        /// Returns all the declared nested types of the current <see cref="TypeSymbol"/>.
+        /// </summary>
+        /// <returns></returns>
+        internal abstract ImmutableArray<TypeSymbol> GetDeclaredNestedTypes();
 
         /// <summary>
         /// Searches for the public nested type with the specified name.
@@ -618,33 +781,39 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract TypeSymbol? GetNestedType(string name, BindingFlags bindingFlags);
+        public TypeSymbol? GetNestedType(string name, BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, TypeSymbol>(this, name, bindingFlags).Disambiguate();
+        }
 
         /// <summary>
         /// Returns the public types nested in the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public ImmutableList<TypeSymbol> GetNestedTypes() => GetNestedTypes(DefaultLookup);
+        public IEnumerable<TypeSymbol> GetNestedTypes() => GetNestedTypes(DefaultLookup);
 
         /// <summary>
         /// When overridden in a derived class, searches for the types nested in the current <see cref="TypeSymbol"/>, using the specified binding constraints.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<TypeSymbol> GetNestedTypes(BindingFlags bindingFlags);
+        public IEnumerable<TypeSymbol> GetNestedTypes(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, TypeSymbol>(this, null, bindingFlags);
+        }
 
         /// <summary>
         /// Returns all the declared properties of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableList<PropertySymbol> GetDeclaredProperties();
+        internal abstract ImmutableArray<PropertySymbol> GetDeclaredProperties();
 
         /// <summary>
         /// Searches for the public property with the specified name.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public PropertySymbol? GetProperty(string name) => GetProperty(name, DefaultLookup);
+        public PropertySymbol? GetProperty(string name) => GetProperty(name, DefaultLookup, null, null, null);
 
         /// <summary>
         /// Searches for the specified property, using the specified binding constraints.
@@ -652,7 +821,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract PropertySymbol? GetProperty(string name, BindingFlags bindingFlags);
+        public PropertySymbol? GetProperty(string name, BindingFlags bindingFlags) => GetProperty(name, bindingFlags, null, null, null);
 
         /// <summary>
         /// Searches for the specified public property whose parameters match the specified argument types.
@@ -660,37 +829,99 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        public PropertySymbol? GetProperty(string name, ImmutableList<TypeSymbol>? types) => GetProperty(name, null, types);
+        public PropertySymbol? GetProperty(string name, ImmutableArray<TypeSymbol>? types) => GetProperty(name, DefaultLookup, null, types, null);
 
         /// <summary>
         /// Searches for the public property with the specified name and return type.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="returnType"></param>
+        /// <param name="propertyType"></param>
         /// <returns></returns>
-        public PropertySymbol? GetProperty(string name, TypeSymbol? returnType) => GetProperty(name, returnType, null);
+        public PropertySymbol? GetProperty(string name, TypeSymbol? propertyType) => GetProperty(name, DefaultLookup, propertyType, null, null);
 
         /// <summary>
         /// Searches for the specified public property whose parameters match the specified argument types.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="returnType"></param>
+        /// <param name="propertyType"></param>
         /// <param name="types"></param>
         /// <returns></returns>
-        public abstract PropertySymbol? GetProperty(string name, TypeSymbol? returnType, ImmutableList<TypeSymbol>? types);
+        public PropertySymbol? GetProperty(string name, TypeSymbol? propertyType, ImmutableArray<TypeSymbol>? types) => GetProperty(name, DefaultLookup, propertyType, types, null);
+
+        /// <summary>
+        /// Searches for the specified public property whose parameters match the specified argument types.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="propertyType"></param>
+        /// <param name="types"></param>
+        /// <returns></returns>
+        public PropertySymbol? GetProperty(string name, BindingFlags bindingFlags, TypeSymbol? propertyType, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers)
+        {
+            if (types == null && propertyType == null)
+            {
+                // Group #1: This group of api accept only a name and BindingFlags. The other parameters are hard-wired by the non-virtual api entrypoints.
+                return new MemberQuery<TypeSymbol, PropertySymbol>(this, name, bindingFlags).Disambiguate();
+            }
+            else
+            {
+                // Group #2: This group of api takes a set of parameter types, a return type (both cannot be null) and an optional binder.
+                var query = new MemberQuery<TypeSymbol, PropertySymbol>(this, name, bindingFlags).ToArray();
+
+                // compose candidates, removing mismatched parameters
+                var candidates = new List<PropertySymbol>(query.Length);
+                foreach (var candidate in query)
+                    if (types == null || (candidate.GetIndexParameters().Length == types.Value.Length))
+                        candidates.Add(candidate);
+
+                // no candidates were found
+                if (candidates.Count == 0)
+                    return null;
+
+                // For perf and desktop compat, fast-path these specific checks before calling on the binder to break ties.
+                if (types == null || types.Value.Length == 0)
+                {
+                    // no arguments
+                    var firstCandidate = candidates[0];
+
+                    if (candidates.Count == 1)
+                    {
+                        if (propertyType is not null && propertyType != firstCandidate.PropertyType)
+                            return null;
+
+                        return firstCandidate;
+                    }
+                    else
+                    {
+                        if (propertyType is null)
+                        {
+                            // if we are here we have no args or property type to select over and we have more than one property with that name
+                            throw new AmbiguousMatchException($"Ambiguous match found for '{firstCandidate.DeclaringType} {firstCandidate}'.");
+                        }
+                    }
+                }
+
+                if ((bindingFlags & BindingFlags.ExactBinding) != 0)
+                    return Context.DefaultBinder.ExactPropertyBinding(candidates, propertyType, types.Value);
+
+                return Context.DefaultBinder.SelectProperty(bindingFlags, candidates.ToImmutableList(), propertyType, types, modifiers);
+            }
+        }
 
         /// <summary>
         /// Returns all the public properties of the current <see cref="TypeSymbol"/>.
         /// </summary>
         /// <returns></returns>
-        public ImmutableList<PropertySymbol> GetProperties() => GetProperties(DefaultLookup);
+        public IEnumerable<PropertySymbol> GetProperties() => GetProperties(DefaultLookup);
 
         /// <summary>
         /// When overridden in a derived class, searches for the properties of the current <see cref="TypeSymbol"/>, using the specified binding constraints.
         /// </summary>
         /// <param name="bindingFlags"></param>
         /// <returns></returns>
-        public abstract ImmutableList<PropertySymbol> GetProperties(BindingFlags bindingFlags);
+        public IEnumerable<PropertySymbol> GetProperties(BindingFlags bindingFlags)
+        {
+            return new MemberQuery<TypeSymbol, PropertySymbol>(this, null, bindingFlags);
+        }
 
         /// <summary>
         /// Determines whether an instance of a specified type c can be assigned to a variable of the current type.
@@ -716,7 +947,7 @@ namespace IKVM.CoreLib.Symbols
             else if (IsGenericParameter)
             {
                 var constraints = GetGenericParameterConstraints();
-                for (int i = 0; i < constraints.Count; i++)
+                for (int i = 0; i < constraints.Length; i++)
                     if (!constraints[i].IsAssignableFrom(c))
                         return false;
 
@@ -740,7 +971,7 @@ namespace IKVM.CoreLib.Symbols
                 var interfaces = t.GetInterfaces();
                 if (interfaces != null)
                 {
-                    for (int i = 0; i < interfaces.Count; i++)
+                    for (int i = 0; i < interfaces.Length; i++)
                     {
                         // Interfaces don't derive from other interfaces, they implement them.
                         // So instead of IsSubclassOf, we should use ImplementInterface instead.
@@ -808,13 +1039,16 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="typeArguments"></param>
         /// <returns></returns>
-        public TypeSymbol MakeGenericType(ImmutableList<TypeSymbol> typeArguments) => _typeSpecTable.GetOrCreateGenericTypeSymbol(typeArguments);
+        public TypeSymbol MakeGenericType(ImmutableArray<TypeSymbol> typeArguments) => _typeSpecTable.GetOrCreateGenericTypeSymbol(typeArguments);
 
         /// <summary>
         /// Returns a <see cref="TypeSymbol"/> object that represents a pointer to the current type.
         /// </summary>
         /// <returns></returns>
         public TypeSymbol MakePointerType() => _typeSpecTable.GetOrCreatePointerTypeSymbol();
+
+        /// <inheritdoc />
+        internal override ICustomAttributeProviderInternal? GetInheritedCustomAttributeProvider() => BaseType;
 
         /// <summary>
         /// Specializes the current <see cref="TypeSymbol"/> given the specified generic arguments.
@@ -827,17 +1061,15 @@ namespace IKVM.CoreLib.Symbols
                 return this;
 
             var args = GetGenericArguments();
-            for (int i = 0; i < args.Count; i++)
+            for (int i = 0; i < args.Length; i++)
                 if (args[i].ContainsGenericParameters)
                     args = args.SetItem(i, args[i].Specialize(context));
 
             return MakeGenericType(args);
         }
 
-        ImmutableList<T> Query<T>() where T : MemberSymbol
-        {
-
-        }
+        /// <inheritdoc />
+        public override string ToString() => FullName ?? "";
 
     }
 

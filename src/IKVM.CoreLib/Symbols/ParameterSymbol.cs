@@ -1,29 +1,36 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class ParameterSymbol : ICustomAttributeProvider
+    abstract class ParameterSymbol : ICustomAttributeProviderInternal
     {
 
-        readonly ISymbolContext _context;
-        readonly MemberSymbol _member;
+        readonly SymbolContext _context;
+        readonly MemberSymbol _declaringMember;
         readonly int _position;
+
+        CustomAttributeImpl _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public ParameterSymbol(ISymbolContext context, MemberSymbol member, int position)
+        public ParameterSymbol(SymbolContext context, MemberSymbol declaringMember, int position)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _member = member ?? throw new ArgumentNullException(nameof(member));
+            _declaringMember = declaringMember ?? throw new ArgumentNullException(nameof(declaringMember));
             _position = position;
+            _customAttributes = new CustomAttributeImpl(context, this);
         }
 
-        public ISymbolContext Context => _context;
+        /// <summary>
+        /// Gets the context which owns this parameter.
+        /// </summary>
+        public SymbolContext Context => _context;
 
         /// <summary>
         /// Gets the attributes for this parameter.
@@ -33,7 +40,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets a value indicating the member in which the parameter is implemented.
         /// </summary>
-        public MemberSymbol Member => _member;
+        public MemberSymbol Member => _declaringMember;
 
         /// <summary>
         /// Gets the Type of this parameter.
@@ -101,22 +108,37 @@ namespace IKVM.CoreLib.Symbols
         public abstract bool IsComplete { get; }
 
         /// <inheritdoc />
-        public abstract ImmutableList<TypeSymbol> GetOptionalCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetOptionalCustomModifiers();
 
         /// <inheritdoc />
-        public abstract ImmutableList<TypeSymbol> GetRequiredCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetRequiredCustomModifiers();
 
         /// <inheritdoc />
-        public abstract CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false);
+        ImmutableArray<CustomAttribute> ICustomAttributeProviderInternal.GetDeclaredCustomAttributes() => GetDeclaredCustomAttributes();
 
         /// <inheritdoc />
-        public abstract CustomAttribute[] GetCustomAttributes(bool inherit = false);
+        internal abstract ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes();
 
         /// <inheritdoc />
-        public abstract CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false);
+        ICustomAttributeProviderInternal? ICustomAttributeProviderInternal.GetInheritedCustomAttributeProvider() => GetInheritedCustomAttributeProvider();
+
+        /// <summary>
+        /// Override to return a inherited custom attribute provider.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual ICustomAttributeProviderInternal? GetInheritedCustomAttributeProvider() => null;
 
         /// <inheritdoc />
-        public abstract bool IsDefined(TypeSymbol attributeType, bool inherit = false);
+        public IEnumerable<CustomAttribute> GetCustomAttributes(bool inherit = false) => _customAttributes.GetCustomAttributes(inherit);
+
+        /// <inheritdoc />
+        public IEnumerable<CustomAttribute> GetCustomAttributes(TypeSymbol attributeType, bool inherit = false) => _customAttributes.GetCustomAttributes(attributeType, inherit);
+
+        /// <inheritdoc />
+        public CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false) => _customAttributes.GetCustomAttribute(attributeType, inherit);
+
+        /// <inheritdoc />
+        public bool IsDefined(TypeSymbol attributeType, bool inherit = false) => _customAttributes.IsDefined(attributeType, inherit);
 
     }
 

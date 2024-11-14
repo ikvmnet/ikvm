@@ -6,7 +6,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Provides access to manifest resources, which are XML files that describe application dependencies.
     /// </summary>
-    readonly struct ManifestResourceInfo(ResourceLocation ResourceLocation, string? FileName, IAssemblySymbol? ReferencedAssembly)
+    readonly struct ManifestResourceInfo(ResourceLocation ResourceLocation, string? FileName, AssemblySymbol? ReferencedAssembly)
     {
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets the containing assembly for the manifest resource.
         /// </summary>
-        public readonly IAssemblySymbol? ReferencedAssembly = ReferencedAssembly;
+        public readonly AssemblySymbol? ReferencedAssembly = ReferencedAssembly;
 
     }
 

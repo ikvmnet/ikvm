@@ -15,8 +15,8 @@ namespace IKVM.CoreLib.Symbols
         readonly GenericContext _genericContext;
 
         TypeSymbol? _fieldType;
-        ImmutableList<TypeSymbol>? _optionalCustomModifiers;
-        ImmutableList<TypeSymbol>? _requiredCustomModifiers;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -25,7 +25,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="declaringType"></param>
         /// <param name="definition"></param>
         /// <param name="genericContext"></param>
-        public ConstructedGenericFieldSymbol(ISymbolContext context, TypeSymbol declaringType, FieldSymbol definition, GenericContext genericContext) :
+        public ConstructedGenericFieldSymbol(SymbolContext context, TypeSymbol declaringType, FieldSymbol definition, GenericContext genericContext) :
             base(context, declaringType.Module, declaringType)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -33,89 +33,63 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override FieldAttributes Attributes => _definition.Attributes;
+        public sealed override FieldAttributes Attributes => _definition.Attributes;
 
         /// <inheritdoc />
-        public override TypeSymbol FieldType => _fieldType ??= _definition.FieldType.Specialize(_genericContext);
+        public sealed override TypeSymbol FieldType => _fieldType ??= _definition.FieldType.Specialize(_genericContext);
 
         /// <inheritdoc />
-        public override string Name => _definition.Name;
+        public sealed override string Name => _definition.Name;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override object? GetRawConstantValue()
+        public sealed override object? GetRawConstantValue()
         {
             return _definition.GetRawConstantValue();
         }
 
         /// <inheritdoc />
-        public override IImmutableList<TypeSymbol> GetOptionalCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            return _optionalCustomModifiers ??= ComputeOptionalCustomModifiers();
-        }
+            if (_optionalCustomModifiers == default)
+            {
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                foreach (var i in _definition.GetOptionalCustomModifiers())
+                    b.Add(i.Specialize(_genericContext));
 
-        /// <summary>
-        /// Computes the value for <see cref="GetOptionalCustomModifiers"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<TypeSymbol> ComputeOptionalCustomModifiers()
-        {
-            var b = ImmutableList.CreateBuilder<TypeSymbol>();
-            foreach (var i in _definition.GetOptionalCustomModifiers())
-                b.Add(i.Specialize(_genericContext));
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.ToImmutable());
+            }
 
-            return b.ToImmutable();
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override IImmutableList<TypeSymbol> GetRequiredCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            return _optionalCustomModifiers ??= ComputeRequiredCustomModifiers();
-        }
+            if (_requiredCustomModifiers == default)
+            {
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                foreach (var i in _definition.GetRequiredCustomModifiers())
+                    b.Add(i.Specialize(_genericContext));
 
-        /// <summary>
-        /// Computes the value for <see cref="ComputeRequiredCustomModifiers"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableList<TypeSymbol> ComputeRequiredCustomModifiers()
-        {
-            var b = ImmutableList.CreateBuilder<TypeSymbol>();
-            foreach (var i in _definition.GetRequiredCustomModifiers())
-                b.Add(i.Specialize(_genericContext));
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.ToImmutable());
+            }
 
-            return b.ToImmutable();
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

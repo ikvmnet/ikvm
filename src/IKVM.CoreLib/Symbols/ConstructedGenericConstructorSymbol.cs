@@ -20,8 +20,9 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="definition"></param>
+        /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericConstructorSymbol(ISymbolContext context, TypeSymbol declaringType, ConstructorSymbol definition, GenericContext genericContext) :
+        public ConstructedGenericConstructorSymbol(SymbolContext context, TypeSymbol declaringType, ConstructorSymbol definition, GenericContext genericContext) :
             base(context, declaringType)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -41,34 +42,16 @@ namespace IKVM.CoreLib.Symbols
         public override string Name => _definition.Name;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttribute(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override ImmutableList<TypeSymbol> GetGenericArguments()
+        public override ImmutableArray<TypeSymbol> GetGenericArguments()
         {
             return _definition.GetGenericArguments();
         }
@@ -80,15 +63,15 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override ImmutableList<ParameterSymbol> GetParameters()
+        public override ImmutableArray<ParameterSymbol> GetParameters()
         {
             return _definition.GetParameters();
         }
 
         /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

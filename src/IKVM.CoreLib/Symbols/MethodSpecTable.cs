@@ -9,13 +9,13 @@ namespace IKVM.CoreLib.Symbols
     struct MethodSpecTable
     {
 
-        readonly ISymbolContext _context;
-        readonly IModuleSymbol _module;
+        readonly SymbolContext _context;
+        readonly ModuleSymbol _module;
         readonly TypeSymbol? _type;
         readonly MethodSymbol _method;
-        readonly ImmutableList<TypeSymbol> _typeArguments;
+        readonly ImmutableArray<TypeSymbol> _typeArguments;
 
-        ConcurrentDictionary<ImmutableList<TypeSymbol>, ConstructedGenericMethodSymbol>? _cache;
+        ConcurrentDictionary<ImmutableArray<TypeSymbol>, ConstructedGenericMethodSymbol>? _cache;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,13 +26,13 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="method"></param>
         /// <param name="typeArguments"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public MethodSpecTable(ISymbolContext context, IModuleSymbol module, TypeSymbol? type, MethodSymbol method, ImmutableList<TypeSymbol> typeArguments)
+        public MethodSpecTable(SymbolContext context, ModuleSymbol module, TypeSymbol? type, MethodSymbol method, ImmutableArray<TypeSymbol> typeArguments)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _type = type;
             _method = method ?? throw new ArgumentNullException(nameof(method));
-            _typeArguments = typeArguments ?? throw new ArgumentNullException(nameof(typeArguments));
+            _typeArguments = typeArguments;
         }
 
         /// <summary>
@@ -40,9 +40,9 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="typeArguments"></param>
         /// <returns></returns>
-        public MethodSymbol GetOrCreateGenericMethodSymbol(ImmutableList<TypeSymbol> typeArguments)
+        public MethodSymbol GetOrCreateGenericMethodSymbol(ImmutableArray<TypeSymbol> typeArguments)
         {
-            if (typeArguments is null)
+            if (typeArguments == default)
                 throw new ArgumentNullException(nameof(typeArguments));
 
             if (_method.IsGenericMethodDefinition == false)
@@ -59,7 +59,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="typeArguments"></param>
         /// <returns></returns>
-        readonly ConstructedGenericMethodSymbol CreateGenericMethodSymbol(ImmutableList<TypeSymbol> typeArguments)
+        readonly ConstructedGenericMethodSymbol CreateGenericMethodSymbol(ImmutableArray<TypeSymbol> typeArguments)
         {
             return new ConstructedGenericMethodSymbol(_context, _module, _type, _method, new GenericContext(_typeArguments, typeArguments));
         }

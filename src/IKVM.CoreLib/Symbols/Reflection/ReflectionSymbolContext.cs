@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 using IKVM.CoreLib.Reflection;
 using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -15,365 +16,401 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Holds references to symbols derived from System.Reflection.
     /// </summary>
-    class ReflectionSymbolContext : ISymbolContext
+    class ReflectionSymbolContext : SymbolContext
     {
 
-        readonly ConcurrentDictionary<string, WeakReference<IReflectionAssemblySymbol?>> _symbolByName = new();
-        readonly ConditionalWeakTable<Assembly, IReflectionAssemblySymbol> _symbolByAssembly = new();
+        readonly AssemblySymbol _coreLib;
+        readonly ConcurrentDictionary<string, WeakReference<AssemblySymbol?>> _symbolByName = new();
+        readonly ConditionalWeakTable<Assembly, AssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public ReflectionSymbolContext()
+        public ReflectionSymbolContext(Assembly coreLib)
         {
+            _coreLib = ResolveAssemblySymbol(coreLib);
 
+            // check that we can successfully resolve the object type
+            if (coreLib.GetType("System.Object") == null)
+                throw new InvalidOperationException("Cannot resolve System.Object from corelib.");
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, bool collectable, bool saveable)
+        public override TypeSymbol ResolveCoreType(string typeName)
         {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name));
-            if (collectable && saveable)
-                throw new NotSupportedException("Assembly cannot be both colletable and saveable.");
-
-#if NET
-            if (saveable)
-                throw new NotSupportedException("Assembly cannot be saveable.");
-            else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
-            else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run));
-#else
-            if (saveable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave));
-            else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect));
-            else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run));
-#endif
+            return _coreLib.GetType(typeName) ?? throw new InvalidOperationException($"Failed to resolve core type {typeName}");
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes, bool collectable, bool saveable)
+        public override AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes)
         {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name));
-            if (collectable && saveable)
-                throw new NotSupportedException("Assembly cannot be both colletable and saveable.");
+            if (identity is null)
+                throw new ArgumentNullException(nameof(identity));
 
-#if NET
-            if (saveable)
-                throw new NotSupportedException("Assembly cannot be saveable.");
-            else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, attributes.Unpack()));
-            else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, attributes.Unpack()));
-#else
-            if (saveable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndSave, attributes.Unpack()));
-            else if (collectable)
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.RunAndCollect, attributes.Unpack()));
-            else
-                return GetOrCreateAssemblySymbol(AssemblyBuilder.DefineDynamicAssembly(name.Unpack(), AssemblyBuilderAccess.Run, attributes.Unpack()));
-#endif
-        }
+            // find or create weak-reference to name
+            var r = _symbolByName.GetOrAdd(identity.FullName, _ => new(null));
 
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> indexed based on the assembly's name.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        IReflectionAssemblySymbol GetOrCreateAssemblySymbolByName(Assembly assembly)
-        {
-            var r = _symbolByName.GetOrAdd(assembly.FullName ?? throw new InvalidOperationException(), _ => new(null));
-
+            // look the reference to set it up
             lock (r)
             {
                 // reference has no target, reset
                 if (r.TryGetTarget(out var s) == false)
                 {
-                    if (assembly is AssemblyBuilder builder)
-                    {
-                        // we were passed in a builder, so generate a symbol builder and set it as the builder and symbol.
-                        r.SetTarget(s = new ReflectionAssemblySymbolBuilder(this, builder));
-                    }
-                    else
-                    {
-                        // we were passed a non builder, so generate a symbol and set it to the symbol
-                        // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
-                        r.SetTarget(s = new ReflectionAssemblySymbol(this, assembly));
-                    }
+                    // we were passed a non builder, so generate a symbol and set it to the symbol
+                    // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
+                    r.SetTarget(s = new AssemblySymbolBuilder(this, identity));
                 }
 
-                return s ?? throw new InvalidOperationException();
+                return (AssemblySymbolBuilder?)s ?? throw new InvalidOperationException();
             }
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionAssemblySymbolBuilder"/> indexed based on the assembly's name.
+        /// Gets or creates a <see cref="AssemblySymbol"/> indexed based on the assembly's name.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbolByName(AssemblyBuilder assembly)
+        public AssemblySymbol ResolveAssemblySymbol(Assembly assembly)
         {
-            return (IReflectionAssemblySymbolBuilder)GetOrCreateAssemblySymbolByName((Assembly)assembly);
+            if (assembly is null)
+                throw new ArgumentNullException(nameof(assembly));
+            if (assembly is AssemblyBuilder)
+                throw new NotSupportedException();
+
+            // find or create weak-reference to name
+            var r = _symbolByName.GetOrAdd(assembly.GetName().FullName, _ => new(null));
+
+            // look the reference to set it up
+            lock (r)
+            {
+                // reference has no target, reset
+                if (r.TryGetTarget(out var s) == false)
+                {
+                    // we were passed a non builder, so generate a symbol and set it to the symbol
+                    // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
+                    r.SetTarget(s = new ReflectionAssemblySymbol(this, assembly));
+                }
+
+                return (ReflectionAssemblySymbol?)s ?? throw new InvalidOperationException();
+            }
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        public IReflectionAssemblySymbol GetOrCreateAssemblySymbol(Assembly assembly)
-        {
-            return _symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionAssemblySymbol"/> for the specified <see cref="Assembly"/>.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        public IReflectionAssemblySymbolBuilder GetOrCreateAssemblySymbol(AssemblyBuilder assembly)
-        {
-            return (IReflectionAssemblySymbolBuilder)_symbolByAssembly.GetValue(assembly, GetOrCreateAssemblySymbolByName);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionModuleSymbol"/> for the specified <see cref="Module"/>.
+        /// Gets or creates a <see cref="ModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        public IReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        [return: NotNullIfNotNull(nameof(module))]
+        public ModuleSymbol? ResolveModuleSymbol(Module? module)
         {
-            if (module is ModuleBuilder builder)
-                return GetOrCreateModuleSymbol(builder);
+            if (module is ModuleBuilder)
+                throw new NotSupportedException();
+            else if (module is null)
+                return null;
             else
-                return GetOrCreateAssemblySymbol(module.Assembly).GetOrCreateModuleSymbol(module);
+                return ResolveAssemblySymbol(module.Assembly).GetModule(module.Name) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionModuleSymbolBuilder"/> for the specified <see cref="ModuleBuilder"/>.
+        /// Gets or creates a list of <see cref="ModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="modules"></param>
         /// <returns></returns>
-        public IReflectionModuleSymbolBuilder GetOrCreateModuleSymbol(ModuleBuilder module)
+        public ImmutableList<ModuleSymbol> ResolveModuleSymbols(Module[] modules)
         {
-            return GetOrCreateAssemblySymbol((AssemblyBuilder)module.Assembly).GetOrCreateModuleSymbol(module);
+            var b = ImmutableList.CreateBuilder<ModuleSymbol>();
+            foreach (var i in modules)
+                b.Add(ResolveModuleSymbol(i));
+
+            return b.ToImmutable();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionTypeSymbol"/> for the specified <see cref="Type"/>.
+        /// Gets or creates a list of <see cref="ModuleSymbol"/> for the specified <see cref="Module"/>.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="modules"></param>
         /// <returns></returns>
-        public IReflectionTypeSymbol GetOrCreateTypeSymbol(Type type)
+        public ImmutableList<ModuleSymbol> ResolveModuleSymbols(IEnumerable<Module> modules)
         {
-            if (type is TypeBuilder builder)
-                return GetOrCreateTypeSymbol(builder);
-            else
-                return GetOrCreateModuleSymbol(type.Module).GetOrCreateTypeSymbol(type);
+            var b = ImmutableList.CreateBuilder<ModuleSymbol>();
+            foreach (var i in modules)
+                b.Add(ResolveModuleSymbol(i));
+
+            return b.ToImmutable();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionTypeSymbolBuilder"/> for the specified <see cref="TypeBuilder"/>.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public IReflectionTypeSymbolBuilder GetOrCreateTypeSymbol(TypeBuilder type)
-        {
-            return GetOrCreateModuleSymbol((ModuleBuilder)type.Module).GetOrCreateTypeSymbol(type);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionMemberSymbol"/> for the specified <see cref="MemberInfo"/>.
+        /// Gets or creates a <see cref="MemberSymbol"/> for the specified <see cref="MemberInfo"/>.
         /// </summary>
         /// <param name="member"></param>
         /// <returns></returns>
-        public IReflectionMemberSymbol GetOrCreateMemberSymbol(MemberInfo member)
+        /// <exception cref="InvalidOperationException"></exception>
+        [return: NotNullIfNotNull(nameof(member))]
+        public MemberSymbol? ResolveMemberSymbol(MemberInfo? member)
         {
-            return member switch
-            {
-                MethodBase method => GetOrCreateMethodBaseSymbol(method),
-                FieldInfo field => GetOrCreateFieldSymbol(field),
-                PropertyInfo property => GetOrCreatePropertySymbol(property),
-                EventInfo @event => GetOrCreateEventSymbol(@event),
-                _ => throw new InvalidOperationException(),
-            };
+            if (member is null)
+                return null;
+            else if (member is Type type)
+                return ResolveTypeSymbol(type);
+            else if (member is ConstructorInfo ctor)
+                return ResolveConstructorSymbol(ctor);
+            else if (member is MethodInfo method)
+                return ResolveMethodSymbol(method);
+            else if (member is FieldInfo field)
+                return ResolveFieldSymbol(field);
+            else if (member is PropertyInfo property)
+                return ResolvePropertySymbol(property);
+            else if (member is EventInfo @event)
+                return ResolveEventSymbol(@event);
+            else
+                throw new InvalidOperationException();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// Gets or creates a <see cref="TypeSymbol"/> for the specified <see cref="Type"/>.
         /// </summary>
-        /// <param name="method"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        public IReflectionMethodBaseSymbol GetOrCreateMethodBaseSymbol(MethodBase method)
+        [return: NotNullIfNotNull(nameof(type))]
+        public TypeSymbol? ResolveTypeSymbol(Type? type)
         {
-            return method switch
-            {
-                ConstructorInfo ctor => GetOrCreateConstructorSymbol(ctor),
-                _ => GetOrCreateMethodSymbol((MethodInfo)method)
-            };
+            if (type is null)
+                return null;
+            else if (type is TypeBuilder)
+                throw new NotSupportedException();
+            else if (type.IsTypeDefinition())
+                return ResolveModuleSymbol(type.Module).GetType(type.FullName ?? throw new InvalidOperationException()) ?? throw new InvalidOperationException();
+            else if (type.IsSZArray())
+                return ResolveTypeSymbol(type.GetElementType()!).MakeArrayType();
+            else if (type.IsArray)
+                return ResolveTypeSymbol(type.GetElementType()!).MakeArrayType(type.GetArrayRank());
+            else if (type.IsPointer)
+                return ResolveTypeSymbol(type.GetElementType()!).MakePointerType();
+            else if (type.IsByRef)
+                return ResolveTypeSymbol(type.GetElementType()!).MakeByRefType();
+            else if (type.IsGenericParameter && type.DeclaringMethod is MethodInfo m)
+                return ResolveMethodSymbol(m).GetGenericArguments()[type.GenericParameterPosition];
+            else if (type.IsGenericParameter && type.DeclaringType is Type t)
+                return ResolveTypeSymbol(t).GetGenericArguments()[type.GenericParameterPosition];
+
+            throw new InvalidOperationException();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// Gets or creates a list of <see cref="TypeSymbol"/> for the specified <see cref="Type"/>.
         /// </summary>
-        /// <param name="ctor"></param>
+        /// <param name="types"></param>
         /// <returns></returns>
-        public IReflectionConstructorSymbol GetOrCreateConstructorSymbol(ConstructorInfo ctor)
+        public ImmutableArray<TypeSymbol> ResolveTypeSymbols(Type[] types)
         {
-            return ctor switch
-            {
-                ConstructorBuilder builder => GetOrCreateConstructorSymbol(builder),
-                _ => GetOrCreateModuleSymbol(ctor.Module).GetOrCreateConstructorSymbol(ctor)
-            };
+            var b = ImmutableArray.CreateBuilder<TypeSymbol>(types.Length);
+            for (var i = 0; i < types.Length; i++)
+                b.Add(ResolveTypeSymbol(types[i]));
+
+            return b.ToImmutable();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
+        /// Gets or creates a list of <see cref="TypeSymbol"/> for the specified <see cref="Type"/>.
         /// </summary>
-        /// <param name="ctor"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
-        public IReflectionConstructorSymbolBuilder GetOrCreateConstructorSymbol(ConstructorBuilder ctor)
+        public IEnumerable<TypeSymbol> ResolveTypeSymbols(IEnumerable<Type> type)
         {
-            return GetOrCreateModuleSymbol((ModuleBuilder)ctor.Module).GetOrCreateConstructorSymbol(ctor);
+            foreach (var i in type)
+                yield return ResolveTypeSymbol(i);
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionMethodSymbol"/> for the specified <see cref="MethodInfo"/>.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public IReflectionMethodSymbol GetOrCreateMethodSymbol(MethodInfo method)
-        {
-            return method switch
-            {
-                MethodBuilder builder => GetOrCreateMethodSymbol(builder),
-                _ => GetOrCreateModuleSymbol(method.Module).GetOrCreateMethodSymbol(method)
-            };
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionMethodSymbolBuilder"/> for the specified <see cref="MethodBuilder"/>.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public IReflectionMethodSymbolBuilder GetOrCreateMethodSymbol(MethodBuilder method)
-        {
-            return GetOrCreateModuleSymbol((ModuleBuilder)method.Module).GetOrCreateMethodSymbol(method);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionParameterSymbol"/> for the specified <see cref="ParameterInfo"/>.
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        public IReflectionParameterSymbol GetOrCreateParameterSymbol(ParameterInfo parameter)
-        {
-            return GetOrCreateModuleSymbol(parameter.Member.Module).GetOrCreateParameterSymbol(parameter);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionFieldSymbol"/> for the specified <see cref="FieldInfo"/>.
+        /// Gets or creates a <see cref="FieldSymbol"/> for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        public IReflectionFieldSymbol GetOrCreateFieldSymbol(FieldInfo field)
+        [return: NotNullIfNotNull(nameof(field))]
+        public FieldSymbol? ResolveFieldSymbol(FieldInfo? field)
         {
-            return GetOrCreateModuleSymbol(field.Module).GetOrCreateFieldSymbol(field);
+            if (field is null)
+                return null;
+            else if (field is FieldBuilder)
+                throw new NotSupportedException();
+            else if (field.DeclaringType is { } dt)
+                return ResolveTypeSymbol(field.DeclaringType)!.GetField(field.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly) ?? throw new InvalidOperationException();
+            else
+                return ResolveModuleSymbol(field.Module)!.GetField(field.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
+        /// Gets or creates a <see cref="ConstructorSymbol"/> for the specified <see cref="ConstructorInfo"/>.
         /// </summary>
-        /// <param name="field"></param>
+        /// <param name="ctor"></param>
         /// <returns></returns>
-        public IReflectionFieldSymbolBuilder GetOrCreateFieldSymbol(FieldBuilder field, ITypeSymbol[]? optionalCustomModifiers, ITypeSymbol[]? requiredCustomModifiers)
+        [return: NotNullIfNotNull(nameof(ctor))]
+        public ConstructorSymbol? ResolveConstructorSymbol(ConstructorInfo? ctor)
         {
-            return GetOrCreateModuleSymbol((ModuleBuilder)field.Module).GetOrCreateFieldSymbol(field, optionalCustomModifiers, requiredCustomModifiers);
+            if (ctor is null)
+                return null;
+            else if (ctor is ConstructorBuilder)
+                throw new NotSupportedException();
+            else if (ctor.IsStatic)
+                return ResolveTypeSymbol(ctor.DeclaringType)!.TypeInitializer ?? throw new InvalidOperationException();
+            else
+                return ResolveTypeSymbol(ctor.DeclaringType)!.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly, ResolveTypeSymbols(ctor.GetParameterTypes())) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="IReflectionPropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
+        /// Gets or creates a <see cref="MethodSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(method))]
+        public MethodSymbol? ResolveMethodSymbol(MethodInfo? method)
+        {
+            if (method is null)
+                return null;
+            else if (method is MethodBuilder)
+                throw new NotSupportedException();
+            else if (method.DeclaringType is { } dt)
+                return ResolveTypeSymbol(method.DeclaringType)!.GetMethod(method.Name, method.GetGenericArguments().Length, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly, CallingConventions.Any, ResolveTypeSymbols(method.GetParameterTypes()), null) ?? throw new InvalidOperationException();
+            else
+                return ResolveModuleSymbol(method.Module)!.GetMethod(method.Name, BindingFlags.Public | BindingFlags.NonPublic, CallingConventions.Any, ResolveTypeSymbols(method.GetParameterTypes()), null) ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Gets or creates a list of <see cref="MethodSymbol"/> for the specified <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public ImmutableArray<MethodSymbol> ResolveMethodSymbols(MethodInfo[] type)
+        {
+            var b = ImmutableArray.CreateBuilder<MethodSymbol>();
+            foreach (var i in type)
+                b.Add(ResolveMethodSymbol(i));
+
+            return b.ToImmutable();
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="PropertySymbol"/> for the specified <see cref="PropertyInfo"/>.
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
-        public IReflectionPropertySymbol GetOrCreatePropertySymbol(PropertyInfo property)
+        [return: NotNullIfNotNull(nameof(property))]
+        public PropertySymbol? ResolvePropertySymbol(PropertyInfo? property)
         {
-            return property switch
+            if (property is null)
+                return null;
+            else if (property is PropertyBuilder)
+                throw new NotSupportedException();
+            else
+                return ResolveTypeSymbol(property.DeclaringType)!.GetProperty(property.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly) ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Gets or creates a <see cref="EventSymbol"/> for the specified <see cref="EventInfo"/>.
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(@event))]
+        public EventSymbol? ResolveEventSymbol(EventInfo? @event)
+        {
+            if (@event is null)
+                return null;
+            else
+                return ResolveTypeSymbol(@event.DeclaringType)!.GetEvent(@event.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly) ?? throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public ImmutableArray<CustomAttribute> ResolveCustomAttributes(IList<CustomAttributeData>? attributes)
+        {
+            if (attributes == null || attributes.Count == 0)
+                return [];
+
+            var a = ImmutableArray.CreateBuilder<CustomAttribute>();
+            for (int i = 0; i < attributes.Count; i++)
+                if (ResolveCustomAttribute(attributes[i]) is { } v)
+                    a.Add(v);
+
+            return a.ToImmutable();
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<CustomAttribute> ResolveCustomAttributes(IEnumerable<CustomAttributeData> attributes)
+        {
+            if (attributes is null)
+                throw new ArgumentNullException(nameof(attributes));
+
+            foreach (var i in attributes)
+                if (ResolveCustomAttribute(i) is { } v)
+                    yield return v;
+        }
+
+        /// <inheritdoc />
+        [return: NotNullIfNotNull(nameof(customAttributeData))]
+        public CustomAttribute? ResolveCustomAttribute(CustomAttributeData? customAttributeData)
+        {
+            if (customAttributeData == null)
+                return null;
+
+            return new CustomAttribute(
+                ResolveTypeSymbol(customAttributeData.AttributeType)!,
+                ResolveConstructorSymbol(customAttributeData.Constructor)!,
+                ResolveCustomAttributeTypedArguments(customAttributeData.ConstructorArguments),
+                ResolveCustomAttributeNamedArguments(customAttributeData.NamedArguments));
+        }
+
+        /// <inheritdoc />
+        public ImmutableArray<CustomAttributeTypedArgument> ResolveCustomAttributeTypedArguments(IList<System.Reflection.CustomAttributeTypedArgument> args)
+        {
+            if (args is null || args.Count == 0)
+                return [];
+
+            var a = ImmutableArray.CreateBuilder<CustomAttributeTypedArgument>(args.Count);
+            for (int i = 0; i < args.Count; i++)
+                a.Add(ResolveCustomAttributeTypedArgument(args[i]));
+
+            return a.ToImmutable();
+        }
+
+        /// <inheritdoc />
+        public CustomAttributeTypedArgument ResolveCustomAttributeTypedArgument(System.Reflection.CustomAttributeTypedArgument arg)
+        {
+            return new CustomAttributeTypedArgument(
+                ResolveTypeSymbol(arg.ArgumentType)!,
+                ResolveCustomAttributeTypedValue(arg.Value));
+        }
+
+        /// <inheritdoc />
+        public object? ResolveCustomAttributeTypedValue(object? value)
+        {
+            return value switch
             {
-                PropertyBuilder builder => GetOrCreatePropertySymbol(builder),
-                _ => GetOrCreateModuleSymbol(property.Module).GetOrCreatePropertySymbol(property)
+                IList<System.Reflection.CustomAttributeTypedArgument> aa => ResolveCustomAttributeTypedArguments(aa),
+                Type v => ResolveTypeSymbol(v),
+                _ => value
             };
         }
 
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionPropertySymbolBuilder"/> for the specified <see cref="PropertyBuilder"/>.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        public IReflectionPropertySymbolBuilder GetOrCreatePropertySymbol(PropertyBuilder property)
+        /// <inheritdoc />
+        public ImmutableArray<CustomAttributeNamedArgument> ResolveCustomAttributeNamedArguments(IList<System.Reflection.CustomAttributeNamedArgument> args)
         {
-            return GetOrCreateModuleSymbol((ModuleBuilder)property.Module).GetOrCreatePropertySymbol(property);
+            if (args is null || args.Count == 0)
+                return [];
+
+            var a = ImmutableArray.CreateBuilder<CustomAttributeNamedArgument>(args.Count);
+            for (int i = 0; i < args.Count; i++)
+                a.Add(ResolveCustomAttributeNamedArgument(args[i]));
+
+            return a.ToImmutable();
         }
 
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionEventSymbol"/> for the specified <see cref="EventInfo"/>.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        public IReflectionEventSymbol GetOrCreateEventSymbol(EventInfo @event)
+        /// <inheritdoc />
+        public CustomAttributeNamedArgument ResolveCustomAttributeNamedArgument(System.Reflection.CustomAttributeNamedArgument arg)
         {
-            return GetOrCreateModuleSymbol(@event.Module).GetOrCreateEventSymbol(@event);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionEventSymbolBuilder"/> for the specified <see cref="EventBuilder"/>.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        public IReflectionEventSymbolBuilder GetOrCreateEventSymbol(EventBuilder @event)
-        {
-            return GetOrCreateModuleSymbol(@event.GetModuleBuilder()).GetOrCreateEventSymbol(@event);
-        }
-
-        /// <summary>
-        /// Gets or creates a <see cref="IReflectionGenericTypeParameterSymbolBuilder"/> for the specified <see cref="GenericTypeParameterBuilder"/>.
-        /// </summary>
-        /// <param name="genericTypeParameter"></param>
-        /// <returns></returns>
-        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
-        {
-            return GetOrCreateModuleSymbol((ModuleBuilder)genericTypeParameter.Module).GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <summary>
-        /// Unpacks a single constructor argument.
-        /// </summary>
-        /// <param name="constructorArg"></param>
-        /// <returns></returns>
-        object? UnpackArgument(object? constructorArg)
-        {
-            if (constructorArg is ITypeSymbol type)
-                return type.Unpack();
-
-            return constructorArg;
-        }
-
-        /// <summary>
-        /// Unpacks a set of constructor arguments.
-        /// </summary>
-        /// <param name="constructorArgs"></param>
-        /// <returns></returns>
-        object?[] UnpackArguments(object?[] constructorArgs)
-        {
-            var l = new object?[constructorArgs.Length];
-            for (int i = 0; i < constructorArgs.Length; i++)
-                l[i] = UnpackArgument(constructorArgs[i]);
-
-            return l;
+            return new CustomAttributeNamedArgument(
+                arg.IsField,
+                ResolveMemberSymbol(arg.MemberInfo)!,
+                arg.MemberName,
+                ResolveCustomAttributeTypedArgument(arg.TypedValue));
         }
 
     }

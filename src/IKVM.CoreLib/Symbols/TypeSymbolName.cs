@@ -1,15 +1,12 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using System.Text;
+
 using IKVM.CoreLib.Text;
+
 using System;
-
-
 
 #if !SYSTEM_PRIVATE_CORELIB
 using System.Collections.Immutable;
@@ -343,7 +340,6 @@ namespace IKVM.CoreLib.Symbols
         /// Parses a span of characters into a type name.
         /// </summary>
         /// <param name="typeName">A span containing the characters representing the type name to parse.</param>
-        /// <param name="options">An object that describes optional <seealso cref="TypeNameParseOptions"/> parameters to use.</param>
         /// <returns>Parsed type name.</returns>
         /// <exception cref="ArgumentException">Provided type name was invalid.</exception>
         /// <exception cref="InvalidOperationException">Parsing has exceeded the limit set by <seealso cref="TypeNameParseOptions.MaxNodes"/>.</exception>
@@ -354,12 +350,11 @@ namespace IKVM.CoreLib.Symbols
         /// Tries to parse a span of characters into a type name.
         /// </summary>
         /// <param name="typeName">A span containing the characters representing the type name to parse.</param>
-        /// <param name="options">An object that describes optional <seealso cref="TypeNameParseOptions"/> parameters to use.</param>
         /// <param name="result">Contains the result when parsing succeeds.</param>
         /// <returns>true if type name was converted successfully, otherwise, false.</returns>
-        public static bool TryParse(ReadOnlySpan<char> typeName, [NotNullWhen(true)] out TypeSymbolName? result, TypeNameParseOptions? options = default)
+        public static bool TryParse(ReadOnlySpan<char> typeName, [NotNullWhen(true)] out TypeSymbolName? result)
         {
-            result = TypeNameParser.Parse(typeName, throwOnError: false, options);
+            result = TypeNameParser.Parse(typeName, throwOnError: false);
             return result is not null;
         }
 
@@ -370,12 +365,14 @@ namespace IKVM.CoreLib.Symbols
         /// <exception cref="InvalidOperationException">The current type is not an array.</exception>
         public int GetArrayRank()
         {
-            if (!(_rankOrModifier == TypeNameParserHelpers.SZArray || _rankOrModifier > 0))
-            {
-                TypeNameParserHelpers.ThrowInvalidOperation_HasToBeArrayClass();
-            }
+            throw new NotImplementedException();
 
-            return _rankOrModifier == TypeNameParserHelpers.SZArray ? 1 : _rankOrModifier;
+            //if (!(_rankOrModifier == TypeNameParserHelpers.SZArray || _rankOrModifier > 0))
+            //{
+            //    TypeNameParserHelpers.ThrowInvalidOperation_HasToBeArrayClass();
+            //}
+
+            //return _rankOrModifier == TypeNameParserHelpers.SZArray ? 1 : _rankOrModifier;
         }
 
         /// <summary>

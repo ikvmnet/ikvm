@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -12,9 +13,8 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        protected GenericParameterTypeSymbol(ISymbolContext context, IModuleSymbol module, TypeSymbol? declaringType) : 
-            base(context, module, declaringType)
+        protected GenericParameterTypeSymbol(SymbolContext context, ModuleSymbol module) :
+            base(context, module)
         {
 
         }
@@ -53,13 +53,28 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsConstructedGenericType => false;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericParameter => true;
-
-        /// <inheritdoc />
         public sealed override bool ContainsGenericParameters => true;
 
         /// <inheritdoc />
         public sealed override TypeCode TypeCode => TypeCode.Object;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? BaseType => null;
+
+        /// <inheritdoc />
+        public sealed override bool IsTypeDefinition => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsPrimitive => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsEnum => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
         public sealed override TypeSymbol? GetElementType()
@@ -70,7 +85,97 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         public sealed override int GetArrayRank()
         {
-            throw new NotSupportedException();
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public sealed override string? GetEnumName(object value)
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<string> GetEnumNames()
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol GetEnumUnderlyingType()
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
+        {
+            return ImmutableArray<ConstructorSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
+        {
+            return ImmutableArray<FieldSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            return ImmutableArray<MethodSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<PropertySymbol> GetDeclaredProperties()
+        {
+            return ImmutableArray<PropertySymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<EventSymbol> GetDeclaredEvents()
+        {
+            return ImmutableArray<EventSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol GetGenericTypeDefinition()
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        public sealed override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        public sealed override bool IsEnumDefined(object value)
+        {
+            throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            return ImmutableArray<CustomAttribute>.Empty;
         }
 
     }

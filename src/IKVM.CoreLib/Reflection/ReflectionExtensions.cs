@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -707,6 +708,21 @@ namespace IKVM.CoreLib.Reflection
 #else
             return type.IsArray && type.Name.EndsWith("[]");
 #endif
+        }
+
+        /// <summary>
+        /// Gets the parameters types of the specified method or constructor.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static Type[] GetParameterTypes(this MethodBase method)
+        {
+            var p = method.GetParameters();
+            var a = new Type[p.Length];
+            for (int i = 0; i < p.Length; i++)
+                a[i] = p[i].ParameterType;
+
+            return a;
         }
 
         /// <summary>

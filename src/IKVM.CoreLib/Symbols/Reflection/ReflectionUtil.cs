@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Reflection.Emit;
-
-using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -41,16 +36,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="assemblyNames"></param>
         /// <returns></returns>
-        public static AssemblyIdentity[] Pack(this AssemblyName[] assemblyNames)
+        public static ImmutableArray<AssemblyIdentity> Pack(this AssemblyName[] assemblyNames)
         {
             if (assemblyNames.Length == 0)
                 return [];
 
-            var a = new AssemblyIdentity[assemblyNames.Length];
+            var a = ImmutableArray.CreateBuilder<AssemblyIdentity>(assemblyNames.Length);
             for (int i = 0; i < assemblyNames.Length; i++)
                 a[i] = assemblyNames[i].Pack();
 
-            return a;
+            return a.ToImmutable();
         }
 
         /// <summary>
@@ -80,419 +75,116 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return a;
         }
 
-        /// <summary>
-        /// Unpacks the symbol into their original assembly.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static Assembly Unpack(this IAssemblySymbol type)
-        {
-            if (type is IReflectionAssemblySymbol symbol)
-                return symbol.UnderlyingAssembly;
+        ///// <summary>
+        ///// Unpacks the <see cref="CustomAttribute"/>.
+        ///// </summary>
+        ///// <param name="customAttributes"></param>
+        ///// <returns></returns>
+        //public static CustomAttributeBuilder Unpack(this CustomAttribute attributes)
+        //{
+        //    // unpack constructor arg values
+        //    var constructorValues = new object?[attributes.ConstructorArguments.Length];
+        //    for (int i = 0; i < attributes.ConstructorArguments.Length; i++)
+        //        constructorValues[i] = UnpackCustomAttributeValue(attributes.ConstructorArguments[i]);
 
-            throw new InvalidOperationException();
-        }
+        //    // unpack named arguments into sets of properties and fields
+        //    List<PropertyInfo>? namedProperties = null;
+        //    List<object?>? propertyValues = null;
+        //    List<FieldInfo>? namedFields = null;
+        //    List<object?>? fieldValues = null;
 
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        public static Module Unpack(this IModuleSymbol module)
-        {
-            if (module is IReflectionModuleSymbol symbol)
-                return symbol.UnderlyingModule;
+        //    // split named arguments into two sets
+        //    foreach (var i in attributes.NamedArguments)
+        //    {
+        //        var v = UnpackCustomAttributeValue(i.TypedValue.Value);
+        //        if (i.IsField == false)
+        //        {
+        //            namedProperties ??= new();
+        //            namedProperties.Add(((ReflectionPropertySymbol)i.MemberInfo).Unpack());
+        //            propertyValues ??= new();
+        //            propertyValues.Add(v);
+        //        }
+        //        else
+        //        {
+        //            namedFields ??= new();
+        //            namedFields.Add(((FieldSymbol)i.MemberInfo).Unpack());
+        //            fieldValues ??= new();
+        //            fieldValues.Add(v);
+        //        }
+        //    }
 
-            throw new InvalidOperationException();
-        }
+        //    return new CustomAttributeBuilder(
+        //        attributes.Constructor.Unpack(),
+        //        constructorValues,
+        //        namedProperties?.ToArray() ?? [],
+        //        propertyValues?.ToArray() ?? [],
+        //        namedFields?.ToArray() ?? [],
+        //        fieldValues?.ToArray() ?? []);
+        //}
 
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="modules"></param>
-        /// <returns></returns>
-        public static Module[] Unpack(this IModuleSymbol[] modules)
-        {
-            if (modules.Length == 0)
-                return [];
+        ///// <summary>
+        ///// Unpacks the <see cref="CustomAttribute"/>s.
+        ///// </summary>
+        ///// <param name="customAttributes"></param>
+        ///// <returns></returns>
+        //public static CustomAttributeBuilder[] Unpack(this CustomAttribute[] customAttributes)
+        //{
+        //    if (customAttributes.Length == 0)
+        //        return [];
 
-            var a = new Module[modules.Length];
-            for (int i = 0; i < modules.Length; i++)
-                a[i] = modules[i].Unpack();
+        //    var a = new CustomAttributeBuilder[customAttributes.Length];
+        //    for (int i = 0; i < customAttributes.Length; i++)
+        //        a[i] = customAttributes[i].Unpack();
 
-            return a;
-        }
+        //    return a;
+        //}
 
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static Type Unpack(this ITypeSymbol type)
-        {
-            if (type is IReflectionTypeSymbol symbol)
-                return symbol.UnderlyingType;
+        ///// <summary>
+        ///// Unpacks the <see cref="CustomAttribute"/>s.
+        ///// </summary>
+        ///// <param name="attributes"></param>
+        ///// <returns></returns>
+        //public static CustomAttributeBuilder[] Unpack(this ImmutableArray<CustomAttribute> attributes)
+        //{
+        //    if (attributes.Length == 0)
+        //        return [];
 
-            throw new InvalidOperationException();
-        }
+        //    var a = new CustomAttributeBuilder[attributes.Length];
+        //    for (int i = 0; i < attributes.Length; i++)
+        //        a[i] = attributes[i].Unpack();
 
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        public static Type[] Unpack(this ITypeSymbol[] types)
-        {
-            if (types.Length == 0)
-                return [];
+        //    return a;
+        //}
 
-            var a = new Type[types.Length];
-            for (int i = 0; i < types.Length; i++)
-                a[i] = types[i].Unpack();
+        ///// <summary>
+        ///// Unpacks the attribute value object.
+        ///// </summary>
+        ///// <param name="value"></param>
+        ///// <returns></returns>
+        //static object? UnpackCustomAttributeValue(object? value)
+        //{
+        //    return value switch
+        //    {
+        //        IReadOnlyList<object> l => UnpackCustomAttributeArrayValue(l),
+        //        TypeSymbol t => t.Unpack(),
+        //        System.Reflection.CustomAttributeTypedArgument a => UnpackCustomAttributeValue(a.Value),
+        //        _ => value,
+        //    };
+        //}
 
-            return a;
-        }
+        ///// <summary>
+        ///// Unpacks the attribute value array.
+        ///// </summary>
+        ///// <param name="items"></param>
+        ///// <returns></returns>
+        //static object?[] UnpackCustomAttributeArrayValue(IReadOnlyList<object> items)
+        //{
+        //    var a = new object?[items.Count];
+        //    for (int i = 0; i < items.Count; i++)
+        //        a[i] = UnpackCustomAttributeValue(items[i]);
 
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        public static Type[][] Unpack(this ITypeSymbol[][] types)
-        {
-            if (types.Length == 0)
-                return [];
-
-            var a = new Type[types.Length][];
-            for (int i = 0; i < types.Length; i++)
-                a[i] = types[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="member"></param>
-        /// <returns></returns>
-        public static MemberInfo Unpack(this IMemberSymbol member)
-        {
-            if (member is IReflectionMemberSymbol symbol)
-                return symbol.UnderlyingMember;
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="members"></param>
-        /// <returns></returns>
-        public static MemberInfo[] Unpack(this IMemberSymbol[] members)
-        {
-            if (members.Length == 0)
-                return [];
-
-            var a = new MemberInfo[members.Length];
-            for (int i = 0; i < members.Length; i++)
-                a[i] = members[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        public static ConstructorInfo Unpack(this IConstructorSymbol ctor)
-        {
-            if (ctor is IReflectionConstructorSymbol symbol)
-                return symbol.UnderlyingConstructor;
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        public static ConstructorInfo[] Unpack(this IConstructorSymbol[] ctor)
-        {
-            if (ctor.Length == 0)
-                return [];
-
-            var a = new ConstructorInfo[ctor.Length];
-            for (int i = 0; i < ctor.Length; i++)
-                a[i] = ctor[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        public static MethodInfo Unpack(this IMethodSymbol ctor)
-        {
-            if (ctor is IReflectionMethodSymbol symbol)
-                return symbol.UnderlyingMethod;
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        public static MethodInfo[] Unpack(this IMethodSymbol[] ctor)
-        {
-            if (ctor.Length == 0)
-                return [];
-
-            var a = new MethodInfo[ctor.Length];
-            for (int i = 0; i < ctor.Length; i++)
-                a[i] = ctor[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="field"></param>
-        /// <returns></returns>
-        public static FieldInfo Unpack(this IFieldSymbol field)
-        {
-            if (field is IReflectionFieldSymbol symbol)
-                return symbol.UnderlyingField;
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="fields"></param>
-        /// <returns></returns>
-        public static FieldInfo[] Unpack(this IFieldSymbol[] fields)
-        {
-            if (fields.Length == 0)
-                return [];
-
-            var a = new FieldInfo[fields.Length];
-            for (int i = 0; i < fields.Length; i++)
-                a[i] = fields[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the symbol into their original type.
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        public static PropertyInfo Unpack(this IPropertySymbol property)
-        {
-            if (property is IReflectionPropertySymbol symbol)
-                return symbol.UnderlyingProperty;
-
-            throw new InvalidOperationException();
-        }
-
-        /// <summary>
-        /// Unpacks the symbols into their original type.
-        /// </summary>
-        /// <param name="properties"></param>
-        /// <returns></returns>
-        public static PropertyInfo[] Unpack(this IPropertySymbol[] properties)
-        {
-            if (properties.Length == 0)
-                return [];
-
-            var a = new PropertyInfo[properties.Length];
-            for (int i = 0; i < properties.Length; i++)
-                a[i] = properties[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the parameter modifier.
-        /// </summary>
-        /// <param name="modifier"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
-        public static ParameterModifier Unpack(this System.Reflection.ParameterModifier modifier)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Unpacks the parameter modifier.
-        /// </summary>
-        /// <param name="modifier"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
-        public static ParameterModifier[] Unpack(this System.Reflection.ParameterModifier[] modifiers)
-        {
-            if (modifiers.Length == 0)
-                return [];
-
-            var a = new ParameterModifier[modifiers.Length];
-            for (int i = 0; i < modifiers.Length; i++)
-                a[i] = modifiers[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="ILocalBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        public static LocalBuilder Unpack(this ILocalBuilder builder)
-        {
-            return ((ReflectionLocalBuilder)builder).UnderlyingLocalBuilder;
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="ILabel"/>.
-        /// </summary>
-        /// <param name="label"></param>
-        /// <returns></returns>
-        public static Label Unpack(this ILabel label)
-        {
-            return ((ReflectionLabel)label).UnderlyingLabel;
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="ILabel"/>s.
-        /// </summary>
-        /// <param name="labels"></param>
-        /// <returns></returns>
-        public static Label[] Unpack(this ILabel[] labels)
-        {
-            var a = new Label[labels.Length];
-            for (int i = 0; i < labels.Length; i++)
-                a[i] = labels[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="CustomAttribute"/>.
-        /// </summary>
-        /// <param name="customAttributes"></param>
-        /// <returns></returns>
-        public static CustomAttributeBuilder Unpack(this CustomAttribute attributes)
-        {
-            // unpack constructor arg values
-            var constructorValues = new object?[attributes.ConstructorArguments.Length];
-            for (int i = 0; i < attributes.ConstructorArguments.Length; i++)
-                constructorValues[i] = UnpackCustomAttributeValue(attributes.ConstructorArguments[i]);
-
-            // unpack named arguments into sets of properties and fields
-            List<PropertyInfo>? namedProperties = null;
-            List<object?>? propertyValues = null;
-            List<FieldInfo>? namedFields = null;
-            List<object?>? fieldValues = null;
-
-            // split named arguments into two sets
-            foreach (var i in attributes.NamedArguments)
-            {
-                var v = UnpackCustomAttributeValue(i.TypedValue.Value);
-                if (i.IsField == false)
-                {
-                    namedProperties ??= new();
-                    namedProperties.Add(((IPropertySymbol)i.MemberInfo).Unpack());
-                    propertyValues ??= new();
-                    propertyValues.Add(v);
-                }
-                else
-                {
-                    namedFields ??= new();
-                    namedFields.Add(((IFieldSymbol)i.MemberInfo).Unpack());
-                    fieldValues ??= new();
-                    fieldValues.Add(v);
-                }
-            }
-
-            return new CustomAttributeBuilder(
-                attributes.Constructor.Unpack(),
-                constructorValues,
-                namedProperties?.ToArray() ?? [],
-                propertyValues?.ToArray() ?? [],
-                namedFields?.ToArray() ?? [],
-                fieldValues?.ToArray() ?? []);
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="CustomAttribute"/>s.
-        /// </summary>
-        /// <param name="customAttributes"></param>
-        /// <returns></returns>
-        public static CustomAttributeBuilder[] Unpack(this CustomAttribute[] customAttributes)
-        {
-            if (customAttributes.Length == 0)
-                return [];
-
-            var a = new CustomAttributeBuilder[customAttributes.Length];
-            for (int i = 0; i < customAttributes.Length; i++)
-                a[i] = customAttributes[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the <see cref="CustomAttribute"/>s.
-        /// </summary>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
-        public static CustomAttributeBuilder[] Unpack(this ImmutableArray<CustomAttribute> attributes)
-        {
-            if (attributes.Length == 0)
-                return [];
-
-            var a = new CustomAttributeBuilder[attributes.Length];
-            for (int i = 0; i < attributes.Length; i++)
-                a[i] = attributes[i].Unpack();
-
-            return a;
-        }
-
-        /// <summary>
-        /// Unpacks the attribute value object.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        static object? UnpackCustomAttributeValue(object? value)
-        {
-            return value switch
-            {
-                IReadOnlyList<object> l => UnpackCustomAttributeArrayValue(l),
-                ITypeSymbol t => t.Unpack(),
-                CustomAttributeTypedArgument a => UnpackCustomAttributeValue(a.Value),
-                _ => value,
-            };
-        }
-
-        /// <summary>
-        /// Unpacks the attribute value array.
-        /// </summary>
-        /// <param name="items"></param>
-        /// <returns></returns>
-        static object?[] UnpackCustomAttributeArrayValue(IReadOnlyList<object> items)
-        {
-            var a = new object?[items.Count];
-            for (int i = 0; i < items.Count; i++)
-                a[i] = UnpackCustomAttributeValue(items[i]);
-
-            return a;
-        }
+        //    return a;
+        //}
 
         /// <summary>
         /// Returns <c>true</c> if the given type represents a type definition.
@@ -509,19 +201,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
 #else
             return type.HasElementType == false && type.IsConstructedGenericType == false && type.IsGenericParameter == false;
 #endif
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if the given method represents a method definition.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        public static bool IsMethodDefinition(this MethodBase method)
-        {
-            if (method is null)
-                throw new ArgumentNullException(nameof(method));
-
-            return method.IsGenericMethod == false || method.IsGenericMethodDefinition;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -13,6 +14,10 @@ namespace IKVM.CoreLib.Symbols
         readonly PropertySymbol _definition;
         readonly GenericContext _genericContext;
 
+        ImmutableArray<ParameterSymbol> _indexParameters;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -21,7 +26,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="definition"></param>
         /// <param name="genericContext"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConstructedGenericPropertySymbol(ISymbolContext context, TypeSymbol declaringType, PropertySymbol definition, GenericContext genericContext) :
+        public ConstructedGenericPropertySymbol(SymbolContext context, TypeSymbol declaringType, PropertySymbol definition, GenericContext genericContext) :
             base(context, declaringType)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -41,72 +46,85 @@ namespace IKVM.CoreLib.Symbols
         public override bool CanWrite => _definition.CanWrite;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetMethod => _definition.GetMethod;
-
-        /// <inheritdoc />
-        public override MethodSymbol? SetMethod => _definition.SetMethod;
-
-        /// <inheritdoc />
-        public override MemberTypes MemberType => _definition.MemberType;
-
-        /// <inheritdoc />
         public override string Name => _definition.Name;
 
         /// <inheritdoc />
-        public override bool IsMissing => _definition.IsMissing;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => _definition.ContainsMissing;
+        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => _definition.IsComplete;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override MethodSymbol[] GetAccessors()
+        public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
         {
-            return _definition.GetAccessors();
-        }
+            var b = ImmutableArray.CreateBuilder<MethodSymbol>();
 
-        /// <inheritdoc />
-        public override MethodSymbol[] GetAccessors(bool nonPublic)
-        {
-            return _definition.GetAccessors(nonPublic);
-        }
+            foreach (var baseMethod in _definition.GetAccessors(nonPublic))
+            {
+                if (baseMethod is not null)
+                    foreach (var i in DeclaringType!.GetMethods())
+                        if (i is ConstructedGenericMethodSymbol m)
+                            if (m._definition == baseMethod)
+                                b.Add(m);
+            }
 
-        /// <inheritdoc />
-        public override MethodSymbol? GetGetMethod()
-        {
-            return _definition.GetGetMethod();
+            return b.ToImmutable();
         }
 
         /// <inheritdoc />
         public override MethodSymbol? GetGetMethod(bool nonPublic)
         {
-            return _definition.GetGetMethod(nonPublic);
-        }
+            var baseMethod = _definition.GetGetMethod(nonPublic);
+            if (baseMethod is null)
+                return null;
 
-        /// <inheritdoc />
-        public override MethodSymbol? GetSetMethod()
-        {
-            return _definition.GetSetMethod();
+            foreach (var i in DeclaringType!.GetMethods())
+                if (i is ConstructedGenericMethodSymbol m)
+                    if (m._definition == baseMethod)
+                        return m;
+
+            return null;
         }
 
         /// <inheritdoc />
         public override MethodSymbol? GetSetMethod(bool nonPublic)
         {
-            return _definition.GetSetMethod(nonPublic);
+            var baseMethod = _definition.GetSetMethod(nonPublic);
+            if (baseMethod is null)
+                return null;
+
+            foreach (var i in DeclaringType!.GetMethods())
+                if (i is ConstructedGenericMethodSymbol m)
+                    if (m._definition == baseMethod)
+                        return m;
+
+            return null;
         }
 
         /// <inheritdoc />
-        public override ParameterSymbol[] GetIndexParameters()
+        public override ImmutableArray<ParameterSymbol> GetIndexParameters()
         {
-            return _definition.GetIndexParameters();
+            if (_indexParameters == default)
+            {
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                var l = _definition.GetIndexParameters();
+
+                foreach (var i in l)
+                    b.Add(new ConstructedGenericParameterSymbol(Context, this, i, _genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.ToImmutable());
+            }
+
+            return _indexParameters;
         }
 
         /// <inheritdoc />
         public override TypeSymbol GetModifiedPropertyType()
         {
-            return _definition.GetModifiedPropertyType();
+            return _definition.GetModifiedPropertyType().Specialize(_genericContext);
         }
 
         /// <inheritdoc />
@@ -116,39 +134,53 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override TypeSymbol[] GetOptionalCustomModifiers()
+        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            return _definition.GetOptionalCustomModifiers();
+            if (_optionalCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, ComputeOptionalCustomModifiers());
+
+            return _optionalCustomModifiers;
+        }
+
+        /// <summary>
+        /// Computes the value for <see cref="GetOptionalCustomModifiers"/>.
+        /// </summary>
+        /// <returns></returns>
+        ImmutableArray<TypeSymbol> ComputeOptionalCustomModifiers()
+        {
+            var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+            foreach (var i in _definition.GetOptionalCustomModifiers())
+                b.Add(i.Specialize(_genericContext));
+
+            return b.ToImmutable();
         }
 
         /// <inheritdoc />
-        public override TypeSymbol[] GetRequiredCustomModifiers()
+        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            return _definition.GetRequiredCustomModifiers();
+            if (_requiredCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, ComputeRequiredCustomModifiers());
+
+            return _requiredCustomModifiers;
+        }
+
+        /// <summary>
+        /// Computes the value for <see cref="ComputeRequiredCustomModifiers"/>.
+        /// </summary>
+        /// <returns></returns>
+        ImmutableArray<TypeSymbol> ComputeRequiredCustomModifiers()
+        {
+            var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+            foreach (var i in _definition.GetRequiredCustomModifiers())
+                b.Add(i.Specialize(_genericContext));
+
+            return b.ToImmutable();
         }
 
         /// <inheritdoc />
-        public override CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit = false)
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _definition.GetCustomAttribute(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(inherit);
-        }
-
-        /// <inheritdoc />
-        public override CustomAttribute[] GetCustomAttributes(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.GetCustomAttributes(attributeType, inherit);
-        }
-
-        /// <inheritdoc />
-        public override bool IsDefined(TypeSymbol attributeType, bool inherit = false)
-        {
-            return _definition.IsDefined(attributeType, inherit);
+            throw new NotImplementedException();
         }
 
     }

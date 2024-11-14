@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -11,7 +12,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
-        public PropertySymbol(ISymbolContext context, TypeSymbol declaringType) :
+        public PropertySymbol(SymbolContext context, TypeSymbol declaringType) :
             base(context, declaringType.Module, declaringType)
         {
 
@@ -21,6 +22,9 @@ namespace IKVM.CoreLib.Symbols
         /// Gets the attributes for this property.
         /// </summary>
         public abstract PropertyAttributes Attributes { get; }
+
+        /// <inheritdoc />
+        public sealed override MemberTypes MemberType => MemberTypes.Property;
 
         /// <summary>
         /// Gets the type of this property.
@@ -45,31 +49,31 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets the get accessor for this property.
         /// </summary>
-        public abstract MethodSymbol? GetMethod { get; }
+        public MethodSymbol? GetMethod => GetGetMethod(true);
 
         /// <summary>
         /// Gets the set accessor for this property.
         /// </summary>
-        public abstract MethodSymbol? SetMethod { get; }
+        public MethodSymbol? SetMethod => GetSetMethod(true);
 
         /// <summary>
         /// Returns an array whose elements reflect the public get and set accessors of the property reflected by the current instance.
         /// </summary>
         /// <returns></returns>
-        public abstract MethodSymbol[] GetAccessors();
+        public ImmutableArray<MethodSymbol> GetAccessors() => GetAccessors(false);
 
         /// <summary>
         /// Returns an array whose elements reflect the public and, if specified, non-public get and set accessors of the property reflected by the current instance.
         /// </summary>
         /// <param name="nonPublic"></param>
         /// <returns></returns>
-        public abstract MethodSymbol[] GetAccessors(bool nonPublic);
+        public abstract ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic);
 
         /// <summary>
         /// Returns the public get accessor for this property.
         /// </summary>
         /// <returns></returns>
-        public abstract MethodSymbol? GetGetMethod();
+        public MethodSymbol? GetGetMethod() => GetGetMethod(false);
 
         /// <summary>
         /// When overridden in a derived class, returns the public or non-public get accessor for this property.
@@ -82,7 +86,7 @@ namespace IKVM.CoreLib.Symbols
         /// Returns the public set accessor for this property.
         /// </summary>
         /// <returns></returns>
-        public abstract MethodSymbol? GetSetMethod();
+        public MethodSymbol? GetSetMethod() => GetSetMethod(false);
 
         /// <summary>
         /// When overridden in a derived class, returns the set accessor for this property.
@@ -95,7 +99,7 @@ namespace IKVM.CoreLib.Symbols
         /// When overridden in a derived class, returns an array of all the index parameters for the property.
         /// </summary>
         /// <returns></returns>
-        public abstract ParameterSymbol[] GetIndexParameters();
+        public abstract ImmutableArray<ParameterSymbol> GetIndexParameters();
 
         /// <summary>
         /// Gets the modified type of this property object.
@@ -113,13 +117,13 @@ namespace IKVM.CoreLib.Symbols
         /// Returns an array of types representing the optional custom modifiers of the property.
         /// </summary>
         /// <returns></returns>
-        public abstract TypeSymbol[] GetOptionalCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetOptionalCustomModifiers();
 
         /// <summary>
         /// Returns an array of types representing the required custom modifiers of the property.
         /// </summary>
         /// <returns></returns>
-        public abstract TypeSymbol[] GetRequiredCustomModifiers();
+        public abstract ImmutableArray<TypeSymbol> GetRequiredCustomModifiers();
 
     }
 

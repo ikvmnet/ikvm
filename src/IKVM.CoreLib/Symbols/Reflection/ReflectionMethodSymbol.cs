@@ -1,209 +1,151 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Threading;
-
-using IKVM.CoreLib.Reflection;
-using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionMethodSymbol : ReflectionMethodBaseSymbol, IReflectionMethodSymbol
+    class ReflectionMethodSymbol : DefinitionMethodSymbol
     {
 
-        readonly MethodInfo _method;
+        readonly MethodInfo _underlyingMethod;
 
-        ReflectionGenericTypeParameterTable _genericTypeParameterTable;
-        ReflectionMethodSpecTable _specTable;
-
-        ReflectionParameterSpecInfo[]? _specParameters;
-        ReflectionParameterSpecInfo? _specReturnParameter;
+        ImmutableArray<TypeSymbol> _genericArguments;
+        ReflectionParameterSymbol? _returnParameter;
+        TypeSymbol? _returnType;
+        MethodSymbol? _baseDefinition;
+        MethodSymbol? _genericMethodDefinition;
+        ImmutableArray<ParameterSymbol> _parameters;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        /// <param name="type"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, IReflectionModuleSymbol module, IReflectionTypeSymbol? type, MethodInfo method) :
-            base(context, module, type)
+        /// <param name="declaringType"></param>
+        /// <param name="underlyingMethod"></param>
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? declaringType, MethodInfo underlyingMethod) :
+            base(context, module, declaringType)
         {
-            _method = method ?? throw new ArgumentNullException(nameof(method));
-            _genericTypeParameterTable = new ReflectionGenericTypeParameterTable(context, module, this);
-            _specTable = new ReflectionMethodSpecTable(context, module, type, this);
-        }
-
-        /// <inheritdoc />
-        public virtual MethodInfo UnderlyingMethod => _method;
-
-        /// <inheritdoc />
-        public virtual MethodInfo UnderlyingRuntimeMethod => GetUnderlyingRuntimeMethod();
-
-        /// <summary>
-        /// Gets the underlying runtime method.
-        /// </summary>
-        /// <returns></returns>
-        MethodInfo GetUnderlyingRuntimeMethod()
-        {
-            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
-                return GetUnderlyingRuntimeMethodForMethodOnTypeBuilderInstantiation();
-            else if (ReflectionExtensions.MethodBuilderInstantiationType.IsInstanceOfType(_method))
-                return GetUnderlyingRuntimeMethodForMethodBuilderInstantiationType();
-            else
-                return _method;
-        }
-
-        MethodInfo GetUnderlyingRuntimeMethodForMethodOnTypeBuilderInstantiation()
-        {
-            return _method;
-        }
-
-        MethodInfo GetUnderlyingRuntimeMethodForMethodBuilderInstantiationType()
-        {
-            return _method;
-        }
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingMethodBase => UnderlyingMethod;
-
-        /// <inheritdoc />
-        public override MethodBase UnderlyingRuntimeMethodBase => UnderlyingRuntimeMethod;
-
-        #region IReflectionMethodSymbol
-
-        /// <inheritdoc />
-        public IReflectionTypeSymbol GetOrCreateGenericTypeParameterSymbol(Type genericTypeParameter)
-        {
-            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <inheritdoc />
-        public IReflectionGenericTypeParameterSymbolBuilder GetOrCreateGenericTypeParameterSymbol(GenericTypeParameterBuilder genericTypeParameter)
-        {
-            return _genericTypeParameterTable.GetOrCreateGenericTypeParameterSymbol(genericTypeParameter);
-        }
-
-        /// <inheritdoc />
-        public IReflectionMethodSymbol GetOrCreateGenericMethodSymbol(MethodInfo method)
-        {
-            return _specTable.GetOrCreateGenericMethodSymbol(ResolveTypeSymbols(method.GetGenericArguments()));
-        }
-
-        #endregion
-
-        #region IMethodSymbol
-
-        /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => GetReturnParameter();
-
-        /// <summary>
-        /// Gets the return type of the method.
-        /// </summary>
-        /// <returns></returns>
-        IParameterSymbol GetReturnParameter()
-        {
-            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
-                return GetReturnParameterForMethodOnTypeBuilderInstantiation();
-            else if (IsComplete)
-                return ResolveParameterSymbol(UnderlyingRuntimeMethod.ReturnParameter);
-            else
-                return ResolveParameterSymbol(UnderlyingMethod.ReturnParameter);
+            _underlyingMethod = underlyingMethod ?? throw new ArgumentNullException(nameof(underlyingMethod));
         }
 
         /// <summary>
-        /// Gets the return parameter in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
+        /// Gets the context that owns this symbol.
         /// </summary>
-        /// <returns></returns>
-        IParameterSymbol GetReturnParameterForMethodOnTypeBuilderInstantiation()
-        {
-            if (_specReturnParameter == null)
-                Interlocked.CompareExchange(ref _specReturnParameter, new ReflectionParameterSpecInfo(_method, _method.ReturnParameter, _method.DeclaringType!.GetGenericArguments()), null);
-
-            return ResolveParameterSymbol(_specReturnParameter);
-        }
+        new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
         /// <inheritdoc />
-        public ITypeSymbol ReturnType => GetReturnType();
+        public override string Name => _underlyingMethod.Name;
+
+        /// <inheritdoc />
+        public override ParameterSymbol ReturnParameter => GetReturnParameter();
 
         /// <summary>
-        /// Gets the return type of the method.
+        /// Gets the value for <see cref="ReturnParameter"/>;
         /// </summary>
         /// <returns></returns>
-        ITypeSymbol GetReturnType()
+        ParameterSymbol GetReturnParameter()
         {
-            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
-                return GetReturnTypeForMethodOnTypeBuilderInstantiation();
-            else
-                return ResolveTypeSymbol(UnderlyingMethod.ReturnType);
-        }
+            if (_returnParameter == null)
+                Interlocked.CompareExchange(ref _returnParameter, new ReflectionParameterSymbol(Context, this, _underlyingMethod.ReturnParameter), null);
 
-        /// <summary>
-        /// Gets the return type in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
-        /// </summary>
-        /// <returns></returns>
-        ITypeSymbol GetReturnTypeForMethodOnTypeBuilderInstantiation()
-        {
-            return ResolveTypeSymbol(_method.ReturnType.SubstituteGenericTypes(_method.DeclaringType!.GetGenericArguments()));
+            return _returnParameter;
         }
 
         /// <inheritdoc />
-        public ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+        public override MethodAttributes Attributes => _underlyingMethod.Attributes;
 
         /// <inheritdoc />
-        public IMethodSymbol GetBaseDefinition()
+        public override CallingConventions CallingConvention => _underlyingMethod.CallingConvention;
+
+        /// <inheritdoc />
+        public override bool ContainsGenericParameters => _underlyingMethod.ContainsGenericParameters;
+
+        /// <inheritdoc />
+        public override bool IsGenericMethod => _underlyingMethod.IsGenericMethod;
+
+        /// <inheritdoc />
+        public override bool IsGenericMethodDefinition => _underlyingMethod.IsGenericMethodDefinition;
+
+        /// <inheritdoc />
+        public override MethodImplAttributes MethodImplementationFlags => _underlyingMethod.MethodImplementationFlags;
+
+        /// <inheritdoc />
+        public override TypeSymbol ReturnType => _returnType ??= Context.ResolveTypeSymbol(_underlyingMethod.ReturnType);
+
+        /// <inheritdoc />
+        public override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public override bool ContainsMissing => false;
+
+        /// <inheritdoc />
+        public override bool IsComplete => true;
+
+        /// <inheritdoc />
+        public override MethodImplAttributes GetMethodImplementationFlags()
         {
-            return ResolveMethodSymbol(UnderlyingMethod.GetBaseDefinition());
+            return _underlyingMethod.GetMethodImplementationFlags();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol GetGenericMethodDefinition()
+        public override MethodSymbol GetBaseDefinition()
         {
-            return ResolveMethodSymbol(UnderlyingMethod.GetGenericMethodDefinition());
+            return _baseDefinition ??= Context.ResolveMethodSymbol(_underlyingMethod.GetBaseDefinition());
         }
 
         /// <inheritdoc />
-        public override IParameterSymbol[] GetParameters()
+        public override MethodSymbol GetGenericMethodDefinition()
         {
-            if (ReflectionExtensions.MethodOnTypeBuilderInstantiationType.IsInstanceOfType(_method))
-                return GetParametersForMethodOnTypeBuilderInstantiation();
-            else
-                return base.GetParameters();
+            return _genericMethodDefinition ??= Context.ResolveMethodSymbol(_underlyingMethod.GetGenericMethodDefinition());
         }
 
-        /// <summary>
-        /// Gets the parameters in the case that this method is a <see cref="MethodOnTypeBuilderInstantiation"/>.
-        /// </summary>
-        /// <returns></returns>
-        IParameterSymbol[] GetParametersForMethodOnTypeBuilderInstantiation()
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetGenericArguments()
         {
-            // we cache the spec parameters to avoid creating them repeatidly
-            if (_specParameters == null)
+            if (_genericArguments == default)
             {
-                var l = _method.GetParameters();
-                var a = new ReflectionParameterSpecInfo[l.Length];
+                var l = _underlyingMethod.GetGenericArguments();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
                 for (int i = 0; i < l.Length; i++)
-                    a[i] = new ReflectionParameterSpecInfo(_method, l[i], _method.DeclaringType!.GetGenericArguments());
+                    b.Add(new ReflectionGenericMethodParameterTypeSymbol(Context, this, l[i]));
 
-                Interlocked.CompareExchange(ref _specParameters, a, null);
+                ImmutableInterlocked.InterlockedInitialize(ref _genericArguments, b.ToImmutable());
             }
 
-            // resolve into symbols
-            var symbols = new IParameterSymbol[_specParameters.Length];
-            for (int i = 0; i < _specParameters.Length; i++)
-                symbols[i] = ResolveParameterSymbol(_specParameters[i]);
-
-            return symbols;
+            return _genericArguments;
         }
 
         /// <inheritdoc />
-        public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
+        public override ImmutableArray<ParameterSymbol> GetParameters()
         {
-            return ResolveMethodSymbol(UnderlyingMethod.MakeGenericMethod(typeArguments.Unpack()));
+            if (_parameters == default)
+            {
+                var l = _underlyingMethod.GetParameters();
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                for (int i = 0; i < l.Length; i++)
+                    b.Add(new ReflectionParameterSymbol(Context, this, l[i]));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.ToImmutable());
+            }
+
+            return _parameters;
         }
 
-        #endregion
+        /// <inheritdoc />
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingMethod.GetCustomAttributesData()));
+
+            return _customAttributes;
+        }
 
     }
 
