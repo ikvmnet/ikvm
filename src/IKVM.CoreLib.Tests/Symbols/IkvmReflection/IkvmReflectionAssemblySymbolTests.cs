@@ -2,21 +2,21 @@
 
 using FluentAssertions;
 
-using IKVM.CoreLib.Symbols.Reflection;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.CoreLib.Tests.Symbols.Reflection
+namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
 {
 
     [TestClass]
-    public class ReflectionAssemblySymbolTests : AssemblySymbolTests<ReflectionSymbolTestInit, ReflectionSymbolContext>
+    public class IkvmReflectionAssemblySymbolTests : AssemblySymbolTests<IkvmReflectionSymbolTestInit, IkvmReflectionSymbolContext>
     {
 
         [TestMethod]
         public void ResolvedAssemblyShouldBeSame()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             var s1 = Init.Symbols.ResolveAssemblySymbol(a);
             s.Should().BeSameAs(s1);
@@ -25,7 +25,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         [TestMethod]
         public void AssemblyPropertiesShouldMatch()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             s.FullName.Should().Be(a.FullName);
             s.Location.Should().Be(a.Location);
@@ -35,7 +35,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         [TestMethod]
         public void AssemblyIdentityShouldMatch()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             s.Identity.Name.Should().Be(a.GetName().Name);
             s.Identity.Version.Should().Be(a.GetName().Version);
@@ -46,7 +46,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         [TestMethod]
         public void CanGetAssemblyModules()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             var l = s.GetModules();
             l.Length.Should().Be(1);
@@ -57,7 +57,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         [TestMethod]
         public void CanGetTypes()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             var l = s.GetTypes();
         }
@@ -65,7 +65,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
         [TestMethod]
         public void CanGetCustomAttributes()
         {
-            var a = typeof(TestClassAttribute).Assembly;
+            var a = Init.Universe.Load(typeof(TestClassAttribute).Assembly.GetName().Name);
             var s = Init.Symbols.ResolveAssemblySymbol(a);
             var l = s.GetCustomAttributes(true);
             l.Should().HaveCountGreaterThan(5);
