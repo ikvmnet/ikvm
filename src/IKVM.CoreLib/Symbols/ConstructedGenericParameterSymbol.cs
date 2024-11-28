@@ -55,11 +55,12 @@ namespace IKVM.CoreLib.Symbols
         {
             if (_optionalCustomModifiers == default)
             {
-                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-                foreach (var i in _definition.GetOptionalCustomModifiers())
+                var l = _definition.GetOptionalCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
                     b.Add(i.Specialize(_genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.DrainToImmutable());
             }
 
             return _optionalCustomModifiers;
@@ -70,11 +71,12 @@ namespace IKVM.CoreLib.Symbols
         {
             if (_requiredCustomModifiers == default)
             {
-                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-                foreach (var i in _definition.GetRequiredCustomModifiers())
+                var l = _definition.GetRequiredCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
                     b.Add(i.Specialize(_genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.DrainToImmutable());
             }
 
             return _requiredCustomModifiers;
@@ -83,7 +85,7 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return _definition.GetDeclaredCustomAttributes();
         }
 
     }

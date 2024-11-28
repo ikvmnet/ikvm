@@ -39,32 +39,34 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
-        /// <inheritdoc />
-        public override PropertyAttributes Attributes => _underlyingProperty.Attributes;
+        /// <summary>
+        /// Gets the underlying object.
+        /// </summary>
+        internal PropertyInfo UnderlyingProperty => _underlyingProperty;
 
         /// <inheritdoc />
-        public override TypeSymbol PropertyType => _propertyType ??= Context.ResolveTypeSymbol(_underlyingProperty.PropertyType);
+        public sealed override PropertyAttributes Attributes => _underlyingProperty.Attributes;
 
         /// <inheritdoc />
-        public override bool CanRead => _underlyingProperty.CanRead;
+        public sealed override TypeSymbol PropertyType => _propertyType ??= Context.ResolveTypeSymbol(_underlyingProperty.PropertyType);
 
         /// <inheritdoc />
-        public override bool CanWrite => _underlyingProperty.CanWrite;
+        public sealed override bool CanRead => _underlyingProperty.CanRead;
 
         /// <inheritdoc />
-        public override string Name => _underlyingProperty.Name;
+        public sealed override bool CanWrite => _underlyingProperty.CanWrite;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override string Name => _underlyingProperty.Name;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => false;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => false;
+        public sealed override bool IsComplete => false;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetGetMethod(bool nonPublic)
+        public sealed override MethodSymbol? GetGetMethod(bool nonPublic)
         {
             if (nonPublic)
                 return _nonPublicGetMethod ??= Context.ResolveMethodSymbol(_underlyingProperty.GetGetMethod(true));
@@ -73,7 +75,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override MethodSymbol? GetSetMethod(bool nonPublic)
+        public sealed override MethodSymbol? GetSetMethod(bool nonPublic)
         {
             if (nonPublic)
                 return _nonPublicSetMethod ??= Context.ResolveMethodSymbol(_underlyingProperty.GetSetMethod(true));
@@ -82,7 +84,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
+        public sealed override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
         {
             if (nonPublic)
             {
@@ -101,35 +103,35 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<ParameterSymbol> GetIndexParameters()
+        public sealed override ImmutableArray<ParameterSymbol> GetIndexParameters()
         {
             if (_indexParameters == default)
             {
                 var l = _underlyingProperty.GetIndexParameters();
-                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
                     b.Add(new ReflectionParameterSymbol(Context, this, l[i]));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.DrainToImmutable());
             }
 
             return _indexParameters;
         }
 
         /// <inheritdoc />
-        public override object? GetRawConstantValue()
+        public sealed override object? GetRawConstantValue()
         {
             return _underlyingProperty.GetRawConstantValue();
         }
 
         /// <inheritdoc />
-        public override TypeSymbol GetModifiedPropertyType()
+        public sealed override TypeSymbol GetModifiedPropertyType()
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             if (_optionalCustomModifiers == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingProperty.GetOptionalCustomModifiers()));
@@ -138,7 +140,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
             if (_requiredCustomModifiers == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingProperty.GetRequiredCustomModifiers()));
@@ -147,7 +149,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
             if (_customAttributes == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingProperty.GetCustomAttributesData()));

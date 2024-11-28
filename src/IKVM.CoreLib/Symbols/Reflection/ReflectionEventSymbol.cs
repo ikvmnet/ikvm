@@ -8,7 +8,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionEventSymbol : EventSymbol
     {
 
-        readonly EventInfo _underlyingEvent;
+        internal readonly EventInfo _underlyingEvent;
 
         TypeSymbol? _eventHandlerType;
         MethodSymbol? _addMethod;
@@ -36,7 +36,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the associated symbol context.
         /// </summary>
-        protected new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+        new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+
+        /// <summary>
+        /// Gets the underlying object.
+        /// </summary>
+        internal EventInfo UnderlyingEvent => _underlyingEvent;
 
         /// <inheritdoc />
         public sealed override EventAttributes Attributes => _underlyingEvent.Attributes;
@@ -49,9 +54,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
         public sealed override bool IsComplete => true;

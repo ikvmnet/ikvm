@@ -1,11 +1,7 @@
-﻿using System.Collections.Immutable;
-
-using IKVM.CoreLib.Symbols.Emit;
-
-namespace IKVM.CoreLib.Symbols
+﻿namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class SymbolContext
+    public abstract class SymbolContext
     {
 
         /// <summary>
@@ -27,14 +23,6 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="typeName"></param>
         /// <returns></returns>
         public abstract TypeSymbol ResolveCoreType(string typeName);
-
-        /// <summary>
-        /// Defines a dynamic assembly that has the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
-        public abstract AssemblySymbolBuilder DefineAssembly(AssemblyIdentity name, ImmutableArray<CustomAttribute> attributes);
 
     }
 

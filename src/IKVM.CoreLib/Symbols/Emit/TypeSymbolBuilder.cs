@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -7,136 +8,431 @@ using System.Runtime.InteropServices;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    class TypeSymbolBuilder : TypeSymbol
+    public sealed class TypeSymbolBuilder : TypeSymbol, ICustomAttributeBuilder
     {
+
+        readonly string _name;
+        readonly string _namespace;
+        readonly TypeSymbolBuilder? _declaringType;
+        readonly TypeAttributes _attributes;
+        readonly PackingSize _packingSize;
+        readonly int _typeSize;
+        TypeSymbol? _parent;
+
+        readonly ImmutableArray<GenericTypeParameterTypeSymbolBuilder>.Builder _typeParameters = ImmutableArray.CreateBuilder<GenericTypeParameterTypeSymbolBuilder>();
+        ImmutableArray<TypeSymbol> _typeParametersCache;
+        readonly ImmutableArray<TypeSymbol>.Builder _interfaces = ImmutableArray.CreateBuilder<TypeSymbol>();
+        ImmutableArray<TypeSymbol> _interfacesCache;
+        readonly ImmutableArray<FieldSymbolBuilder>.Builder _fields = ImmutableArray.CreateBuilder<FieldSymbolBuilder>();
+        ImmutableArray<FieldSymbol> _fieldsCache;
+        readonly ImmutableArray<MethodSymbolBuilder>.Builder _methods = ImmutableArray.CreateBuilder<MethodSymbolBuilder>();
+        ImmutableArray<MethodSymbol> _methodsCache;
+        readonly ImmutableArray<PropertySymbolBuilder>.Builder _properties = ImmutableArray.CreateBuilder<PropertySymbolBuilder>();
+        ImmutableArray<PropertySymbol> _propertiesCache;
+        readonly ImmutableArray<EventSymbolBuilder>.Builder _events = ImmutableArray.CreateBuilder<EventSymbolBuilder>();
+        ImmutableArray<EventSymbol> _eventsCache;
+        readonly ImmutableArray<TypeSymbolBuilder>.Builder _nestedTypes = ImmutableArray.CreateBuilder<TypeSymbolBuilder>();
+        ImmutableArray<TypeSymbol> _nestedTypesCache;
+        readonly ConcurrentDictionary<MethodSymbol, ImmutableHashSet<MethodSymbol>.Builder> _methodImpl = new ConcurrentDictionary<MethodSymbol, ImmutableHashSet<MethodSymbol>.Builder>();
+        MethodImplementationMapping _methodImplCache;
+        readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
+        ImmutableArray<CustomAttribute> _customAttributesCache;
+
+        bool _frozen;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringModule"></param>
-        public TypeSymbolBuilder(SymbolContext context, ModuleSymbol declaringModule) :
+        /// <param name="fullName"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <param name="interfaces"></param>
+        /// <param name="packingSize"></param>
+        /// <param name="typeSize"></param>
+        /// <param name="declaringType"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal TypeSymbolBuilder(SymbolContext context, ModuleSymbolBuilder declaringModule, string fullName, TypeAttributes attributes, TypeSymbol? parent, ImmutableArray<TypeSymbol> interfaces, PackingSize packingSize, int typeSize, TypeSymbolBuilder? declaringType) :
             base(context, declaringModule)
         {
+            if (fullName == null)
+                throw new ArgumentNullException(nameof(fullName));
 
+            int iLast = fullName.LastIndexOf('.');
+            if (iLast <= 0)
+            {
+                // no name space
+                _namespace = "";
+                _name = fullName;
+            }
+            else
+            {
+                // split the name space
+                _namespace = fullName[..iLast];
+                _name = fullName[(iLast + 1)..];
+            }
+
+            _attributes = attributes;
+            _parent = parent;
+            _interfaces = interfaces.ToBuilder();
+            _packingSize = packingSize;
+            _typeSize = typeSize;
+            _declaringType = declaringType;
+        }
+
+        /// <summary>
+        /// Gets the module builder of the type.
+        /// </summary>
+        new ModuleSymbolBuilder Module => (ModuleSymbolBuilder)base.Module;
+
+        /// <inheritdoc />
+        public sealed override TypeAttributes Attributes => _attributes;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
+
+        /// <inheritdoc />
+        public sealed override MethodSymbol? DeclaringMethod => null;
+
+        /// <inheritdoc />
+        public sealed override string Name => _name;
+
+        /// <inheritdoc />
+        public sealed override string? Namespace => _namespace;
+
+        /// <inheritdoc />
+        public sealed override TypeCode TypeCode => TypeCode.Object;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? BaseType => _parent;
+
+        /// <inheritdoc />
+        public sealed override bool ContainsGenericParameters => _typeParameters.Count > 0;
+
+        /// <inheritdoc />
+        public sealed override GenericParameterAttributes GenericParameterAttributes => throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public sealed override int GenericParameterPosition => throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public sealed override bool IsTypeDefinition => true;
+
+        /// <inheritdoc />
+        public sealed override bool IsGenericTypeDefinition => ContainsGenericParameters;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol GenericTypeDefinition => throw new InvalidOperationException();
+
+        /// <inheritdoc />
+        public sealed override bool IsConstructedGenericType => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsGenericTypeParameter => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsGenericMethodParameter => false;
+
+        /// <inheritdoc />
+        public sealed override bool HasElementType => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsPrimitive => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsSZArray => false;
+
+        /// <inheritdoc />
+        public override bool IsArray => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsEnum => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsPointer => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsFunctionPointer => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsUnmanagedFunctionPointer => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsByRef => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsComplete => false;
+
+        /// <summary>
+        /// Gets the packing size.
+        /// </summary>
+        public PackingSize PackingSize => _packingSize;
+
+        /// <summary>
+        /// Gets the type size.
+        /// </summary>
+        public int TypeSize => _typeSize;
+
+        /// <inheritdoc />
+        public sealed override int GetArrayRank()
+        {
+            throw new NotSupportedException();
         }
 
         /// <inheritdoc />
-        public override TypeAttributes Attributes => throw new NotImplementedException();
+        public sealed override TypeSymbol? GetElementType()
+        {
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
-        public override MethodBaseSymbol? DeclaringMethod => throw new NotImplementedException();
+        public sealed override bool IsEnumDefined(object value)
+        {
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
-        public override string? FullName => throw new NotImplementedException();
+        public sealed override string? GetEnumName(object value)
+        {
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
-        public override string? Namespace => throw new NotImplementedException();
+        public sealed override ImmutableArray<string> GetEnumNames()
+        {
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
-        public override TypeCode TypeCode => throw new NotImplementedException();
+        public sealed override TypeSymbol GetEnumUnderlyingType()
+        {
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
-        public override TypeSymbol? BaseType => throw new NotImplementedException();
+        public override ImmutableArray<TypeSymbol> GenericArguments => ComputeGenericArguments();
+
+        /// <summary>
+        /// Computes the value for <see cref="GenericArguments"/>.
+        /// </summary>
+        /// <returns></returns>
+        ImmutableArray<TypeSymbol> ComputeGenericArguments()
+        {
+            if (_typeParametersCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _typeParametersCache, _typeParameters.ToImmutable().CastArray<TypeSymbol>());
+
+            return _typeParametersCache;
+        }
 
         /// <inheritdoc />
-        public override bool ContainsGenericParameters => throw new NotImplementedException();
+        public override ImmutableArray<TypeSymbol> GenericParameterConstraints => throw new InvalidOperationException();
 
         /// <inheritdoc />
-        public override GenericParameterAttributes GenericParameterAttributes => throw new NotImplementedException();
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
+        {
+            if (_interfacesCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _interfacesCache, _interfaces.ToImmutable());
+
+            return _interfacesCache;
+        }
 
         /// <inheritdoc />
-        public override int GenericParameterPosition => throw new NotImplementedException();
+        internal sealed override ImmutableArray<EventSymbol> GetDeclaredEvents()
+        {
+            if (_eventsCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _eventsCache, _events.ToImmutable().CastArray<EventSymbol>());
+
+            return _eventsCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsTypeDefinition => true;
+        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
+        {
+            if (_fieldsCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _fieldsCache, _fields.ToImmutable().CastArray<FieldSymbol>());
+
+            return _fieldsCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsGenericTypeDefinition => throw new NotImplementedException();
+        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            if (_methodsCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _methodsCache, _methods.ToImmutable().CastArray<MethodSymbol>());
+
+            return _methodsCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsConstructedGenericType => false;
+        internal override MethodImplementationMapping GetMethodImplementations()
+        {
+            if (_methodImplCache.Type == null)
+            {
+                var k = _methodImpl.Keys;
+                var v = _methodImpl.Values;
+
+                var impl = ImmutableArray.CreateBuilder<MethodSymbol>(k.Count);
+                foreach (var i in k)
+                    impl.Add(i);
+
+                var decl = ImmutableArray.CreateBuilder<ImmutableArray<MethodSymbol>>(v.Count);
+                foreach (var i in v)
+                    decl.Add(i.ToImmutableArray());
+
+                lock (this)
+                    if (_methodImplCache.Type == null)
+                        _methodImplCache = new MethodImplementationMapping(this, impl.DrainToImmutable(), decl.DrainToImmutable());
+            }
+
+            return _methodImplCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsGenericTypeParameter => false;
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
+        {
+            if (_nestedTypesCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _nestedTypesCache, _nestedTypes.ToImmutable().CastArray<TypeSymbol>());
+
+            return _nestedTypesCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsGenericMethodParameter => false;
+        internal sealed override ImmutableArray<PropertySymbol> GetDeclaredProperties()
+        {
+            if (_propertiesCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _propertiesCache, _properties.ToImmutable().CastArray<PropertySymbol>());
+
+            return _propertiesCache;
+        }
 
         /// <inheritdoc />
-        public override bool HasElementType => throw new NotImplementedException();
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            if (_customAttributesCache.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributesCache, _customAttributes.ToImmutable());
+
+            return _customAttributesCache;
+        }
 
         /// <inheritdoc />
-        public override bool IsPrimitive => throw new NotImplementedException();
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
+        }
 
         /// <inheritdoc />
-        public override bool IsSZArray => throw new NotImplementedException();
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        {
+            return ImmutableArray<TypeSymbol>.Empty;
+        }
 
-        /// <inheritdoc />
-        public override bool IsArray => throw new NotImplementedException();
+        /// <summary>
+        /// Freezes the type builder.
+        /// </summary>
+        internal void SetFrozen()
+        {
+            _frozen = true;
+        }
 
-        /// <inheritdoc />
-        public override bool IsEnum => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsPointer => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsFunctionPointer => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsUnmanagedFunctionPointer => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsByRef => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override string Name => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool ContainsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsComplete => throw new NotImplementedException();
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("TypeSymbolBuilder is frozen.");
+        }
 
         /// <summary>
         /// Sets the base type of the type currently under construction.
         /// </summary>
         /// <param name="parent"></param>
-        void SetParent(TypeSymbol? parent)
+        public void SetParent(TypeSymbol? parent)
         {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+            _parent = parent;
         }
 
         /// <summary>
-        /// Defines the generic type parameters for the current type, specifying their number and their names, and returns an array of GenericTypeParameterBuilder objects that can be used to set their constraints.
+        /// Defines the generic type parameters for the current type, specifying their number and their names, and returns an array of <see cref="GenericTypeParameterTypeSymbolBuilder"/> objects that can be used to set their constraints.
         /// </summary>
         /// <param name="names"></param>
         /// <returns></returns>
-        ImmutableList<GenericTypeParameterTypeSymbolBuilder> DefineGenericParameters(ImmutableList<string> names)
+        public ImmutableArray<GenericTypeParameterTypeSymbolBuilder> DefineGenericParameters(ImmutableArray<string> names)
         {
-            throw new NotImplementedException();
-        }
+            if (_typeParameters.Count > 0)
+                throw new InvalidOperationException();
 
-        /// <summary>
-        /// Defines the initializer for this type.
-        /// </summary>
-        /// <returns></returns>
-        ConstructorSymbolBuilder DefineTypeInitializer()
-        {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+
+            for (int i = 0; i < names.Length; i++)
+                _typeParameters.Add(new GenericTypeParameterTypeSymbolBuilder(Context, this, names[i], GenericParameterAttributes.None, i));
+
+            return _typeParameters.ToImmutable();
         }
 
         /// <summary>
         /// Adds an interface that this type implements.
         /// </summary>
         /// <param name="interfaceType"></param>
-        void AddInterfaceImplementation(TypeSymbol interfaceType)
+        public void AddInterfaceImplementation(TypeSymbol interfaceType)
         {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+            _interfaces.Add(interfaceType);
+        }
+
+        /// <summary>
+        /// Adds a new field to the type, with the given name, attributes, and field type.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public FieldSymbolBuilder DefineField(string name, TypeSymbol type, FieldAttributes attributes)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            return DefineField(name, type, [], [], FieldAttributes.Public);
+        }
+
+        /// <summary>
+        /// Adds a new field to the type, with the given name, attributes, field type, and custom modifiers.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public FieldSymbolBuilder DefineField(string name, TypeSymbol type, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers, FieldAttributes attributes)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (requiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(requiredCustomModifiers));
+            if (optionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(optionalCustomModifiers));
+
+            ThrowIfFrozen();
+            var b = new FieldSymbolBuilder(Context, Module, this, name, attributes, type, requiredCustomModifiers, optionalCustomModifiers);
+            _fields.Add(b);
+            _fieldsCache = default;
+            return b;
+        }
+
+        /// <summary>
+        /// Defines the initializer for this type.
+        /// </summary>
+        /// <returns></returns>
+        public MethodSymbolBuilder DefineTypeInitializer()
+        {
+            return DefineMethod(ConstructorInfo.TypeConstructorName, MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, null, default, default, [], [], []);
         }
 
         /// <summary>
@@ -145,9 +441,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        ConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, ImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineConstructor(MethodAttributes attributes, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            return DefineConstructor(attributes, CallingConventions.HasThis, parameterTypes);
         }
 
         /// <summary>
@@ -157,9 +453,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="callingConvention"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        ConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, ImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            return DefineConstructor(attributes, CallingConventions.HasThis, parameterTypes, [], []);
         }
 
         /// <summary>
@@ -168,12 +464,12 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <param name="parameterTypes"></param>
-        /// <param name="requiredCustomModifiers"></param>
-        /// <param name="optionalCustomModifiers"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
         /// <returns></returns>
-        ConstructorSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, ImmutableList<TypeSymbol> parameterTypes, ImmutableList<ImmutableList<TypeSymbol>> requiredCustomModifiers, ImmutableList<ImmutableList<TypeSymbol>> optionalCustomModifiers)
+        public MethodSymbolBuilder DefineConstructor(MethodAttributes attributes, CallingConventions callingConvention, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
-            throw new NotImplementedException();
+            return DefineMethod(ConstructorInfo.ConstructorName, attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, callingConvention, null, [], [], parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
         }
 
         /// <summary>
@@ -181,47 +477,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        ConstructorSymbolBuilder DefineDefaultConstructor(MethodAttributes attributes)
+        public MethodSymbolBuilder DefineDefaultConstructor(MethodAttributes attributes)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Adds a new event to the type, with the given name, attributes and event type.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="eventtype"></param>
-        /// <returns></returns>
-        EventSymbolBuilder DefineEvent(string name, EventAttributes attributes, TypeSymbol eventtype)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Adds a new field to the type, with the given name, attributes, and field type.
-        /// </summary>
-        /// <param name="fieldName"></param>
-        /// <param name="type"></param>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
-        FieldSymbolBuilder DefineField(string fieldName, TypeSymbol type, FieldAttributes attributes)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Adds a new field to the type, with the given name, attributes, field type, and custom modifiers.
-        /// </summary>
-        /// <param name="fieldName"></param>
-        /// <param name="type"></param>
-        /// <param name="requiredCustomModifiers"></param>
-        /// <param name="optionalCustomModifiers"></param>
-        /// <param name="attributes"></param>
-        /// <returns></returns>
-        FieldSymbolBuilder DefineField(string fieldName, TypeSymbol type, ImmutableList<TypeSymbol> requiredCustomModifiers, ImmutableList<TypeSymbol> optionalCustomModifiers, FieldAttributes attributes)
-        {
-            throw new NotImplementedException();
+            return DefineConstructor(attributes, CallingConventions.HasThis, [], [], []);
         }
 
         /// <summary>
@@ -231,15 +489,32 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <param name="returnType"></param>
-        /// <param name="returnTypeRequiredCustomModifiers"></param>
-        /// <param name="returnTypeOptionalCustomModifiers"></param>
+        /// <param name="returnRequiredCustomModifiers"></param>
+        /// <param name="returnOptionalCustomModifiers"></param>
         /// <param name="parameterTypes"></param>
-        /// <param name="parameterTypeRequiredCustomModifiers"></param>
-        /// <param name="parameterTypeOptionalCustomModifiers"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol> returnTypeRequiredCustomModifiers, ImmutableList<TypeSymbol> returnTypeOptionalCustomModifiers, ImmutableList<TypeSymbol> parameterTypes, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeRequiredCustomModifiers, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeOptionalCustomModifiers)
+        public MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+            if (returnRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnRequiredCustomModifiers));
+            if (returnOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnOptionalCustomModifiers));
+            if (parameterRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterRequiredCustomModifiers));
+            if (parameterOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterOptionalCustomModifiers));
+
+            ThrowIfFrozen();
+            var b = new MethodSymbolBuilder(Context, Module, this, name, attributes, callingConvention, returnType ?? Context.ResolveCoreType("System.Void"), returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
+            _methods.Add(b);
+            _methodsCache = default;
+            return b;
         }
 
         /// <summary>
@@ -251,9 +526,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+
+            return DefineMethod(name, attributes, callingConvention, returnType, [], [], parameterTypes, [], []);
         }
 
         /// <summary>
@@ -263,9 +543,12 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention)
+        public MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return DefineMethod(name, attributes, callingConvention, null, []);
         }
 
         /// <summary>
@@ -274,9 +557,12 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes)
+        public MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return DefineMethod(name, attributes, CallingConventions.HasThis);
         }
 
         /// <summary>
@@ -287,9 +573,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, TypeSymbol? returnType, ImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineMethod(string name, MethodAttributes attributes, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+
+            return DefineMethod(name, attributes, CallingConventions.HasThis, returnType, parameterTypes);
         }
 
         /// <summary>
@@ -297,95 +588,17 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="methodInfoBody"></param>
         /// <param name="methodInfoDeclaration"></param>
-        void DefineMethodOverride(MethodSymbol methodInfoBody, MethodSymbol methodInfoDeclaration)
+        public void DefineMethodOverride(MethodSymbol methodInfoBody, MethodSymbol methodInfoDeclaration)
         {
-            throw new NotImplementedException();
-        }
+            if (methodInfoBody is null)
+                throw new ArgumentNullException(nameof(methodInfoBody));
+            if (methodInfoDeclaration is null)
+                throw new ArgumentNullException(nameof(methodInfoDeclaration));
 
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="interfaces"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, TypeSymbol? parent, ImmutableList<TypeSymbol> interfaces)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="packSize"></param>
-        /// <param name="typeSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packSize, int typeSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, the type that it extends, and the packing size.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="packSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, and the type that it extends.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, TypeSymbol? parent)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name and attributes.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, the total size of the type, and the type that it extends.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="typeSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attr, TypeSymbol? parent, int typeSize)
-        {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+            var decl = _methodImpl.GetOrAdd(methodInfoBody, _ => ImmutableHashSet.CreateBuilder<MethodSymbol>());
+            decl.Add(methodInfoDeclaration);
+            _methodImplCache = default;
         }
 
         /// <summary>
@@ -400,9 +613,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol> parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet)
+        public MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
         {
-            throw new NotImplementedException();
+            return DefinePInvokeMethod(name, dllName, name, attributes, callingConvention, returnType, [], [], parameterTypes, [], [], nativeCallConv, nativeCharSet);
         }
 
         /// <summary>
@@ -418,9 +631,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol> parameterTypes, System.Runtime.InteropServices.CallingConvention nativeCallConv, System.Runtime.InteropServices.CharSet nativeCharSet)
+        public MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
         {
-            throw new NotImplementedException();
+            return DefinePInvokeMethod(name, dllName, entryName, attributes, callingConvention, returnType, [], [], parameterTypes, [], [], nativeCallConv, nativeCharSet);
         }
 
         /// <summary>
@@ -432,17 +645,37 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <param name="returnType"></param>
-        /// <param name="returnTypeRequiredCustomModifiers"></param>
-        /// <param name="returnTypeOptionalCustomModifiers"></param>
+        /// <param name="returnRequiredCustomModifiers"></param>
+        /// <param name="returnOptionalCustomModifiers"></param>
         /// <param name="parameterTypes"></param>
-        /// <param name="parameterTypeRequiredCustomModifiers"></param>
-        /// <param name="parameterTypeOptionalCustomModifiers"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
         /// <param name="nativeCallConv"></param>
         /// <param name="nativeCharSet"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableList<TypeSymbol> returnTypeRequiredCustomModifiers, ImmutableList<TypeSymbol> returnTypeOptionalCustomModifiers, ImmutableList<TypeSymbol> parameterTypes, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeRequiredCustomModifiers, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeOptionalCustomModifiers, CallingConvention nativeCallConv, CharSet nativeCharSet)
+        public MethodSymbolBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers, CallingConvention nativeCallConv, CharSet nativeCharSet)
         {
-            throw new NotImplementedException();
+            if ((attributes & MethodAttributes.Abstract) != 0)
+                throw new ArgumentException(nameof(attributes));
+            if ((_attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
+                throw new ArgumentException(nameof(attributes));
+            if (returnRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnRequiredCustomModifiers));
+            if (returnOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnOptionalCustomModifiers));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+            if (parameterRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterRequiredCustomModifiers));
+            if (parameterOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterOptionalCustomModifiers));
+
+            ThrowIfFrozen();
+            var b = new MethodSymbolBuilder(Context, Module, this, name, attributes | MethodAttributes.PinvokeImpl, callingConvention, returnType ?? Context.ResolveCoreType("System.Void"), returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
+            b.SetDllImportData(dllName, entryName, nativeCallConv, nativeCharSet);
+            _methods.Add(b);
+            _methodsCache = default;
+            return b;
         }
 
         /// <summary>
@@ -453,9 +686,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, TypeSymbol returnType, ImmutableList<TypeSymbol> parameterTypes)
+        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+
+            return DefineProperty(name, attributes, default, returnType, [], [], parameterTypes, [], []);
         }
 
         /// <summary>
@@ -467,9 +705,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableList<TypeSymbol> parameterTypes)
+        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            return DefineProperty(name, attributes, callingConvention, returnType, [], [], parameterTypes, [], []);
         }
 
         /// <summary>
@@ -478,15 +716,15 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="attributes"></param>
         /// <param name="returnType"></param>
-        /// <param name="returnTypeRequiredCustomModifiers"></param>
-        /// <param name="returnTypeOptionalCustomModifiers"></param>
+        /// <param name="returnRequiredCustomModifiers"></param>
+        /// <param name="returnOptionalCustomModifiers"></param>
         /// <param name="parameterTypes"></param>
-        /// <param name="parameterTypeRequiredCustomModifiers"></param>
-        /// <param name="parameterTypeOptionalCustomModifiers"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
         /// <returns></returns>
-        PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, TypeSymbol returnType, ImmutableList<TypeSymbol> returnTypeRequiredCustomModifiers, ImmutableList<TypeSymbol> returnTypeOptionalCustomModifiers, ImmutableList<TypeSymbol> parameterTypes, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeRequiredCustomModifiers, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeOptionalCustomModifiers)
+        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, TypeSymbol returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
-            throw new NotImplementedException();
+            return DefineProperty(name, attributes, default, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
         }
 
         /// <summary>
@@ -496,105 +734,208 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="callingConvention"></param>
         /// <param name="returnType"></param>
-        /// <param name="returnTypeRequiredCustomModifiers"></param>
-        /// <param name="returnTypeOptionalCustomModifiers"></param>
+        /// <param name="returnRequiredCustomModifiers"></param>
+        /// <param name="returnOptionalCustomModifiers"></param>
         /// <param name="parameterTypes"></param>
-        /// <param name="parameterTypeRequiredCustomModifiers"></param>
-        /// <param name="parameterTypeOptionalCustomModifiers"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
         /// <returns></returns>
-        PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableList<TypeSymbol> returnTypeRequiredCustomModifiers, ImmutableList<TypeSymbol> returnTypeOptionalCustomModifiers, ImmutableList<TypeSymbol> parameterTypes, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeRequiredCustomModifiers, ImmutableList<ImmutableList<TypeSymbol>> parameterTypeOptionalCustomModifiers)
+        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (returnRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnRequiredCustomModifiers));
+            if (returnOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(returnOptionalCustomModifiers));
+            if (parameterTypes.IsDefault)
+                throw new ArgumentNullException(nameof(parameterTypes));
+            if (parameterRequiredCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterRequiredCustomModifiers));
+            if (parameterOptionalCustomModifiers.IsDefault)
+                throw new ArgumentNullException(nameof(parameterOptionalCustomModifiers));
+
+            ThrowIfFrozen();
+            var b = new PropertySymbolBuilder(Context, this, name, attributes, callingConvention, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
+            _properties.Add(b);
+            _propertiesCache = default;
+            return b;
         }
 
-        public override int GetArrayRank()
+        /// <summary>
+        /// Adds a new event to the type, with the given name, attributes and event type.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="eventType"></param>
+        /// <returns></returns>
+        public EventSymbolBuilder DefineEvent(string name, EventAttributes attributes, TypeSymbol eventType)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new EventSymbolBuilder(Context, this, name, attributes, eventType);
+            _events.Add(b);
+            _eventsCache = default;
+            return b;
         }
 
-        internal override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <param name="interfaces"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes, TypeSymbol? parent, ImmutableArray<TypeSymbol> interfaces)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (interfaces.IsDefault)
+                throw new ArgumentNullException(nameof(interfaces));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, interfaces, PackingSize.Unspecified, -1, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        public override TypeSymbol? GetElementType()
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <param name="packSize"></param>
+        /// <param name="typeSize"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes, TypeSymbol? parent, PackingSize packSize, int typeSize)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], packSize, typeSize, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        public override bool IsEnumDefined(object value)
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, the type that it extends, and the packing size.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <param name="packSize"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes, TypeSymbol? parent, PackingSize packSize)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], packSize, -1, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        public override string? GetEnumName(object value)
+        /// <summary>
+        /// Defines a nested type, given its name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, TypeAttributes.NestedPrivate, null, [], PackingSize.Unspecified, -1, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        public override ImmutableArray<string> GetEnumNames()
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, and the type that it extends.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes, TypeSymbol? parent)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], PackingSize.Unspecified, -1, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        public override TypeSymbol GetEnumUnderlyingType()
+        /// <summary>
+        /// Defines a nested type, given its name and attributes.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, null, [], PackingSize.Unspecified, -1, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        internal override ImmutableArray<EventSymbol> GetDeclaredEvents()
+        /// <summary>
+        /// Defines a nested type, given its name, attributes, the total size of the type, and the type that it extends.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="parent"></param>
+        /// <param name="typeSize"></param>
+        /// <returns></returns>
+        public TypeSymbolBuilder DefineNestedType(string name, TypeAttributes attributes, TypeSymbol? parent, int typeSize)
         {
-            throw new NotImplementedException();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            ThrowIfFrozen();
+            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], PackingSize.Unspecified, typeSize, this);
+            _nestedTypes.Add(b);
+            _nestedTypesCache = default;
+            return b;
         }
 
-        internal override ImmutableArray<FieldSymbol> GetDeclaredFields()
+        /// <inheritdoc />
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            throw new NotImplementedException();
+            _customAttributes.Add(attribute);
         }
 
-        public override ImmutableArray<TypeSymbol> GetGenericArguments()
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext context)
         {
-            throw new NotImplementedException();
-        }
+            if (ContainsGenericParameters == false)
+                return this;
 
-        public override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
-        {
-            throw new NotImplementedException();
-        }
+            var args = GenericArguments;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i].ContainsGenericParameters)
+                    args = args.SetItem(i, args[i].Specialize(context));
 
-        public override TypeSymbol GetGenericTypeDefinition()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ImmutableArray<TypeSymbol> GetInterfaces()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override ImmutableArray<MethodSymbol> GetDeclaredMethods()
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override ImmutableArray<PropertySymbol> GetDeclaredProperties()
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            throw new NotImplementedException();
+            return MakeGenericType(args);
         }
 
     }

@@ -1,58 +1,119 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    class PropertySymbolBuilder : PropertySymbol
+    public sealed class PropertySymbolBuilder : PropertySymbol, ICustomAttributeBuilder
     {
+
+        static ImmutableArray<TypeSymbol> GetIndexOrNull(ImmutableArray<ImmutableArray<TypeSymbol>> a, int i) => a.Length >= i ? a[i] : [];
+
+        readonly string _name;
+        readonly PropertyAttributes _attributes;
+        readonly CallingConventions _callingConventions;
+        readonly TypeSymbol _propertyType;
+        readonly ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        readonly ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        readonly ImmutableArray<ParameterSymbolBuilder>.Builder _parameters = ImmutableArray.CreateBuilder<ParameterSymbolBuilder>();
+
+        MethodSymbolBuilder? _getMethod;
+        MethodSymbolBuilder? _setMethod;
+        readonly ImmutableArray<MethodSymbolBuilder>.Builder _accessorMethods = ImmutableArray.CreateBuilder<MethodSymbolBuilder>();
+
+        readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
+        object? _constantValue;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
-        public PropertySymbolBuilder(SymbolContext context, TypeSymbol declaringType) :
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="propertyType"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="parameterRequiredCustomModifiers"></param>
+        /// <param name="parameterOptionalCustomModifiers"></param>
+        internal PropertySymbolBuilder(SymbolContext context, TypeSymbol declaringType, string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol propertyType, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers) :
             base(context, declaringType)
         {
-
+            _name = name ?? throw new ArgumentNullException(nameof(name));
+            _attributes = attributes;
+            _propertyType = propertyType ?? throw new ArgumentNullException(nameof(propertyType));
+            _callingConventions = callingConvention;
+            _requiredCustomModifiers = requiredCustomModifiers;
+            _optionalCustomModifiers = optionalCustomModifiers;
+            _parameters.AddRange(parameterTypes.Select((i, j) => new ParameterSymbolBuilder(Context, this, i, j, GetIndexOrNull(parameterRequiredCustomModifiers, j), GetIndexOrNull(parameterOptionalCustomModifiers, j))));
         }
 
         /// <inheritdoc />
-        public override PropertyAttributes Attributes => throw new NotImplementedException();
+        public override string Name => _name;
 
         /// <inheritdoc />
-        public override TypeSymbol PropertyType => throw new NotImplementedException();
+        public override PropertyAttributes Attributes => _attributes;
+
+        /// <summary>
+        /// Gets the calling conventions to apply to the property.
+        /// </summary>
+        public CallingConventions CallingConventions => _callingConventions;
 
         /// <inheritdoc />
-        public override bool CanRead => throw new NotImplementedException();
+        public override TypeSymbol PropertyType => _propertyType;
 
         /// <inheritdoc />
-        public override bool CanWrite => throw new NotImplementedException();
+        public override bool CanRead => GetGetMethod(true) != null;
 
         /// <inheritdoc />
-        public override string Name => throw new NotImplementedException();
+        public override bool CanWrite => GetSetMethod(true) != null;
 
         /// <inheritdoc />
-        public override bool IsMissing => throw new NotImplementedException();
+        public override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsComplete => throw new NotImplementedException();
+        public override bool IsComplete => false;
 
         /// <inheritdoc />
         public override MethodSymbol? GetGetMethod(bool nonPublic)
         {
-            throw new NotImplementedException();
+            if (nonPublic && _getMethod != null && _getMethod.IsPublic == false)
+                return _getMethod;
+            else if (nonPublic == false && _getMethod != null && _getMethod.IsPublic)
+                return _getMethod;
+            else
+                return null;
         }
 
         /// <inheritdoc />
         public override MethodSymbol? GetSetMethod(bool nonPublic)
         {
-            throw new NotImplementedException();
+            if (nonPublic && _setMethod != null && _setMethod.IsPublic == false)
+                return _setMethod;
+            else if (nonPublic == false && _setMethod != null && _setMethod.IsPublic)
+                return _setMethod;
+            else
+                return null;
+        }
+
+        /// <inheritdoc />
+        public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
+        {
+            var b = ImmutableArray.CreateBuilder<MethodSymbol>();
+
+            foreach (var i in _accessorMethods)
+            {
+                if (nonPublic && i != null && i.IsPublic == false)
+                    b.Add(i);
+                else if (nonPublic == false && i != null && i.IsPublic)
+                    b.Add(i);
+            }
+
+            return b.ToImmutable();
         }
 
         /// <inheritdoc />
@@ -64,7 +125,31 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public override object? GetRawConstantValue()
         {
-            throw new NotImplementedException();
+            return _constantValue;
+        }
+
+        /// <inheritdoc />
+        public override ImmutableArray<ParameterSymbol> GetIndexParameters()
+        {
+            return _parameters.ToImmutable().CastArray<ParameterSymbol>();
+        }
+
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        {
+            return _optionalCustomModifiers;
+        }
+
+        /// <inheritdoc />
+        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        {
+            return _requiredCustomModifiers;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            return _customAttributes.ToImmutable();
         }
 
         /// <summary>
@@ -73,64 +158,40 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="defaultValue"></param>
         public void SetConstant(object? defaultValue)
         {
-            throw new NotImplementedException();
+            _constantValue = defaultValue;
         }
 
         /// <summary>
         /// Sets the method that gets the property value.
         /// </summary>
-        /// <param name="mdBuilder"></param>
-        public void SetGetMethod(MethodSymbolBuilder mdBuilder)
+        /// <param name="method"></param>
+        public void SetGetMethod(MethodSymbolBuilder method)
         {
-            throw new NotImplementedException();
+            _getMethod = method;
         }
 
         /// <summary>
         /// Sets the method that sets the property value.
         /// </summary>
-        /// <param name="mdBuilder"></param>
-        public void SetSetMethod(MethodSymbolBuilder mdBuilder)
+        /// <param name="method"></param>
+        public void SetSetMethod(MethodSymbolBuilder method)
         {
-            throw new NotImplementedException();
+            _setMethod = method;
         }
 
         /// <summary>
         /// Adds one of the other methods associated with this property.
         /// </summary>
-        /// <param name="mdBuilder"></param>
-        public void AddOtherMethod(MethodSymbolBuilder mdBuilder)
+        /// <param name="method"></param>
+        public void AddOtherMethod(MethodSymbolBuilder method)
         {
-            throw new NotImplementedException();
+            _accessorMethods.Add(method);
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<ParameterSymbol> GetIndexParameters()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            throw new NotImplementedException();
+            _customAttributes.Add(attribute);
         }
 
     }

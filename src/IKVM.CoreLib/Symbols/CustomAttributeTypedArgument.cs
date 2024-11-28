@@ -1,16 +1,12 @@
-﻿using IKVM.CoreLib.Text;
+﻿using System.Collections.Generic;
 
-using System;
-using System.Collections.Generic;
+using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    readonly record struct CustomAttributeTypedArgument(
-        TypeSymbol ArgumentType,
-        object? Value)
+    public readonly record struct CustomAttributeTypedArgument(TypeSymbol ArgumentType, object? Value)
     {
-
 
         public override string ToString() => ToString(false);
 

@@ -799,6 +799,41 @@ namespace IKVM.CoreLib.Reflection
             return member.GetCustomAttributesData();
         }
 
+        /// <summary>
+        /// Gets the interfaces that are directly declared on the specified type. The method is imperfect, as
+        /// GetInterfaceMap provides no way to discover interfaces on a type that have no implementation methods.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IReadOnlyList<Type> GetDeclaredInterfaces(this Type type)
+        {
+            var b = new List<Type>();
+
+            foreach (var iface in type.GetInterfaces())
+                if (IsInterfaceDirectlyImplementedOnType(type, iface))
+                    b.Add(iface);
+
+            return b;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the <paramref name="interfaceType"/> is directly implemented by <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="interfaceType"></param>
+        /// <returns></returns>
+        static bool IsInterfaceDirectlyImplementedOnType(Type type, Type interfaceType)
+        {
+            var map = type.GetInterfaceMap(interfaceType);
+            
+            // if any of the target methods are declared on this type, the interface is implemented by this type
+            foreach (var method in map.TargetMethods)
+                if (method.DeclaringType == type)
+                    return true;
+
+            return false;
+        }
+
     }
 
 }

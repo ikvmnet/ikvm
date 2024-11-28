@@ -1,22 +1,28 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class EventSymbol : MemberSymbol
+    public abstract class EventSymbol : MemberSymbol
     {
+
+        readonly TypeSymbol _declaringType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
-        public EventSymbol(SymbolContext context, TypeSymbol declaringType) : 
-            base(context, declaringType.Module, declaringType)
+        protected EventSymbol(SymbolContext context, TypeSymbol declaringType) :
+            base(context, declaringType.Module)
         {
-
+            _declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
         }
+
+        /// <inheritdoc />
+        public override TypeSymbol? DeclaringType => _declaringType;
 
         /// <summary>
         /// Gets the attributes for this event.

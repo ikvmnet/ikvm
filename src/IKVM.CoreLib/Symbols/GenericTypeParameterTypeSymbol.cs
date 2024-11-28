@@ -1,7 +1,9 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using System;
+
+namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class GenericTypeParameterTypeSymbol : GenericParameterTypeSymbol
+    public abstract class GenericTypeParameterTypeSymbol : GenericParameterTypeSymbol
     {
 
         /// <summary>
@@ -10,7 +12,7 @@
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         protected GenericTypeParameterTypeSymbol(SymbolContext context, TypeSymbol declaringType) :
-            base(context, declaringType.Module)
+            base(context, declaringType.Module, declaringType)
         {
 
         }
@@ -24,7 +26,10 @@
         /// <inheritdoc />
         internal override TypeSymbol Specialize(GenericContext genericContext)
         {
-            return genericContext.GenericTypeArguments?[GenericParameterPosition] ?? this;
+            if (genericContext.GenericTypeArguments.IsDefaultOrEmpty)
+                throw new InvalidOperationException();
+
+            return genericContext.GenericTypeArguments[GenericParameterPosition];
         }
 
     }

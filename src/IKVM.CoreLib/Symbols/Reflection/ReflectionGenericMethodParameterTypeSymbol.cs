@@ -2,6 +2,8 @@
 using System.Collections.Immutable;
 using System.Reflection;
 
+using IKVM.CoreLib.Reflection;
+
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
@@ -11,6 +13,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly Type _underlyingType;
 
         ImmutableArray<TypeSymbol> _interfaces;
+        ImmutableArray<CustomAttribute> _customAttributes;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -31,30 +36,65 @@ namespace IKVM.CoreLib.Symbols.Reflection
         new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
         /// <inheritdoc />
-        public override string? FullName => _underlyingType.FullName;
+        public sealed override string Name => _underlyingType.Name;
 
         /// <inheritdoc />
-        public override string? Namespace => _underlyingType.Namespace;
+        public sealed override string? Namespace => _underlyingType.Namespace;
 
         /// <inheritdoc />
-        public override GenericParameterAttributes GenericParameterAttributes => _underlyingType.GenericParameterAttributes;
+        public sealed override GenericParameterAttributes GenericParameterAttributes => _underlyingType.GenericParameterAttributes;
 
         /// <inheritdoc />
-        public override int GenericParameterPosition => _underlyingType.GenericParameterPosition;
+        public sealed override int GenericParameterPosition => _underlyingType.GenericParameterPosition;
 
         /// <inheritdoc />
-        public override string Name => _underlyingType.Name;
+        public override TypeSymbol? BaseType => Context.ResolveTypeSymbol(_underlyingType.BaseType);
 
         /// <inheritdoc />
-        public override bool IsComplete => true;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetInterfaces()
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
-            if (_interfaces == null)
-                ImmutableInterlocked.InterlockedInitialize(ref _interfaces, Context.ResolveTypeSymbols(_underlyingType.GetInterfaces()));
+            if (_interfaces.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _interfaces, Context.ResolveTypeSymbols(_underlyingType.GetDeclaredInterfaces()));
 
             return _interfaces;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            if (_customAttributes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingType.GetCustomAttributesData()));
+
+            return _customAttributes;
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        {
+#if NET8_0
+            if (_optionalCustomModifiers.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.GetOptionalCustomModifiers()));
+
+            return _optionalCustomModifiers;
+#else
+            return [];
+#endif
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        {
+#if NET8_0
+            if (_requiredCustomModifiers.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.GetRequiredCustomModifiers()));
+
+            return _requiredCustomModifiers;
+#else
+            return [];
+#endif
         }
 
     }

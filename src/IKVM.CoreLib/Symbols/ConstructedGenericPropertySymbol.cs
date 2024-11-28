@@ -24,7 +24,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="definition"></param>
-        /// <param name="genericContext"></param>
+        /// <param name="typeArguments"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ConstructedGenericPropertySymbol(SymbolContext context, TypeSymbol declaringType, PropertySymbol definition, GenericContext genericContext) :
             base(context, declaringType)
@@ -52,9 +52,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
-
-        /// <inheritdoc />
         public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
@@ -71,7 +68,7 @@ namespace IKVM.CoreLib.Symbols
                                 b.Add(m);
             }
 
-            return b.ToImmutable();
+            return b.DrainToImmutable();
         }
 
         /// <inheritdoc />
@@ -109,13 +106,12 @@ namespace IKVM.CoreLib.Symbols
         {
             if (_indexParameters == default)
             {
-                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
                 var l = _definition.GetIndexParameters();
-
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
                 foreach (var i in l)
                     b.Add(new ConstructedGenericParameterSymbol(Context, this, i, _genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.DrainToImmutable());
             }
 
             return _indexParameters;
@@ -136,45 +132,33 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            if (_optionalCustomModifiers == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, ComputeOptionalCustomModifiers());
+            if (_optionalCustomModifiers.IsDefault)
+            {
+                var l = _definition.GetOptionalCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.DrainToImmutable());
+            }
 
             return _optionalCustomModifiers;
-        }
-
-        /// <summary>
-        /// Computes the value for <see cref="GetOptionalCustomModifiers"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableArray<TypeSymbol> ComputeOptionalCustomModifiers()
-        {
-            var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-            foreach (var i in _definition.GetOptionalCustomModifiers())
-                b.Add(i.Specialize(_genericContext));
-
-            return b.ToImmutable();
         }
 
         /// <inheritdoc />
         public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            if (_requiredCustomModifiers == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, ComputeRequiredCustomModifiers());
+            if (_requiredCustomModifiers.IsDefault)
+            {
+                var l = _definition.GetRequiredCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.DrainToImmutable());
+            }
 
             return _requiredCustomModifiers;
-        }
-
-        /// <summary>
-        /// Computes the value for <see cref="ComputeRequiredCustomModifiers"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableArray<TypeSymbol> ComputeRequiredCustomModifiers()
-        {
-            var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-            foreach (var i in _definition.GetRequiredCustomModifiers())
-                b.Add(i.Specialize(_genericContext));
-
-            return b.ToImmutable();
         }
 
         /// <inheritdoc />

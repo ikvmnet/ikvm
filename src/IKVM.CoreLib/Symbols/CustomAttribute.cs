@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 
 using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    readonly record struct CustomAttribute(
-        TypeSymbol AttributeType,
-        ConstructorSymbol Constructor,
-        ImmutableArray<CustomAttributeTypedArgument> ConstructorArguments,
-        ImmutableArray<CustomAttributeNamedArgument> NamedArguments)
+    public readonly record struct CustomAttribute(TypeSymbol AttributeType, MethodSymbol Constructor, ImmutableArray<CustomAttributeTypedArgument> ConstructorArguments, ImmutableArray<CustomAttributeNamedArgument> NamedArguments)
     {
 
         /// <summary>
@@ -21,12 +15,12 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="ctor"></param>
         /// <param name="constructorArgs"></param>
         /// <returns></returns>
-        public static CustomAttribute Create(ConstructorSymbol ctor, object?[] constructorArgs)
+        public static CustomAttribute Create(MethodSymbol ctor, ImmutableArray<object?> constructorArgs)
         {
             return new CustomAttribute(
                 ctor.DeclaringType ?? throw new InvalidOperationException(),
                 ctor,
-                PackTypedArgs(ctor.GetParameters().Select(i => i.ParameterType).ToArray(), constructorArgs),
+                PackTypedArgs(ctor.ParameterTypes, constructorArgs),
                 ImmutableArray<CustomAttributeNamedArgument>.Empty);
         }
 
@@ -37,12 +31,12 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="constructorArgs"></param>
         /// <param name="namedFields"></param>
         /// <param name="fieldValues"></param>
-        public static CustomAttribute Create(ConstructorSymbol ctor, object?[] constructorArgs, FieldSymbol[] namedFields, object?[] fieldValues)
+        public static CustomAttribute Create(MethodSymbol ctor, ImmutableArray<object?> constructorArgs, ImmutableArray<FieldSymbol> namedFields, ImmutableArray<object?> fieldValues)
         {
             return new CustomAttribute(
                 ctor.DeclaringType ?? throw new InvalidOperationException(),
                 ctor,
-                PackTypedArgs(ctor.GetParameters().Select(i => i.ParameterType).ToArray(), constructorArgs),
+                PackTypedArgs(ctor.ParameterTypes, constructorArgs),
                 PackNamedArgs([], [], namedFields, fieldValues));
         }
 
@@ -53,12 +47,12 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="constructorArgs"></param>
         /// <param name="namedProperties"></param>
         /// <param name="propertyValues"></param>
-        public static CustomAttribute Create(ConstructorSymbol ctor, object?[] constructorArgs, PropertySymbol[] namedProperties, object?[] propertyValues)
+        public static CustomAttribute Create(MethodSymbol ctor, ImmutableArray<object?> constructorArgs, ImmutableArray<PropertySymbol> namedProperties, ImmutableArray<object?> propertyValues)
         {
             return new CustomAttribute(
                 ctor.DeclaringType ?? throw new InvalidOperationException(),
                 ctor,
-                PackTypedArgs(ctor.GetParameters().Select(i => i.ParameterType).ToArray(), constructorArgs),
+                PackTypedArgs(ctor.ParameterTypes, constructorArgs),
                 PackNamedArgs(namedProperties, propertyValues, [], []));
         }
 
@@ -71,12 +65,12 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="propertyValues"></param>
         /// <param name="namedFields"></param>
         /// <param name="fieldValues"></param>
-        public static CustomAttribute Create(ConstructorSymbol ctor, object?[] constructorArgs, PropertySymbol[] namedProperties, object?[] propertyValues, FieldSymbol[] namedFields, object?[] fieldValues)
+        public static CustomAttribute Create(MethodSymbol ctor, ImmutableArray<object?> constructorArgs, ImmutableArray<PropertySymbol> namedProperties, ImmutableArray<object?> propertyValues, ImmutableArray<FieldSymbol> namedFields, ImmutableArray<object?> fieldValues)
         {
             return new CustomAttribute(
                 ctor.DeclaringType ?? throw new InvalidOperationException(),
                 ctor,
-                PackTypedArgs(ctor.GetParameters().Select(i => i.ParameterType).ToArray(), constructorArgs),
+                PackTypedArgs(ctor.ParameterTypes, constructorArgs),
                 PackNamedArgs(namedProperties, propertyValues, namedFields, fieldValues));
         }
 
@@ -88,11 +82,11 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        static ImmutableArray<CustomAttributeTypedArgument> PackTypedArgs(TypeSymbol[] types, object?[] values)
+        static ImmutableArray<CustomAttributeTypedArgument> PackTypedArgs(ImmutableArray<TypeSymbol> types, ImmutableArray<object?> values)
         {
-            if (types is null)
+            if (types.IsDefault)
                 throw new ArgumentNullException(nameof(types));
-            if (values is null)
+            if (values.IsDefault)
                 throw new ArgumentNullException(nameof(values));
             if (types.Length != values.Length)
                 throw new ArgumentException();
@@ -101,7 +95,7 @@ namespace IKVM.CoreLib.Symbols
             for (int i = 0; i < types.Length; i++)
                 a.Add(PackTypedArg(types[i], values[i]));
 
-            return a.ToImmutable();
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -121,7 +115,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="namedProperties"></param>
         /// <param name="propertyValues"></param>
         /// <returns></returns>
-        static ImmutableArray<CustomAttributeNamedArgument> PackNamedArgs(PropertySymbol[] namedProperties, object?[] propertyValues, FieldSymbol[] namedFields, object?[] fieldValues)
+        static ImmutableArray<CustomAttributeNamedArgument> PackNamedArgs(ImmutableArray<PropertySymbol> namedProperties, ImmutableArray<object?> propertyValues, ImmutableArray<FieldSymbol> namedFields, ImmutableArray<object?> fieldValues)
         {
             var a = ImmutableArray.CreateBuilder<CustomAttributeNamedArgument>(namedProperties.Length + namedFields.Length);
             for (int i = 0; i < namedProperties.Length; i++)
@@ -129,7 +123,7 @@ namespace IKVM.CoreLib.Symbols
             for (int i = 0; i < namedFields.Length; i++)
                 a.Add(PackNamedArg(namedFields[i], fieldValues[i]));
 
-            return a.ToImmutable();
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -140,7 +134,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         static CustomAttributeNamedArgument PackNamedArg(PropertySymbol property, object? v)
         {
-            return new CustomAttributeNamedArgument(false, property, property.Name, PackTypedArg(property.PropertyType, v));
+            return new CustomAttributeNamedArgument(property, PackTypedArg(property.PropertyType, v));
         }
 
         /// <summary>
@@ -151,7 +145,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         static CustomAttributeNamedArgument PackNamedArg(FieldSymbol field, object? v)
         {
-            return new CustomAttributeNamedArgument(false, field, field.Name, PackTypedArg(field.FieldType, v));
+            return new CustomAttributeNamedArgument(field, PackTypedArg(field.FieldType, v));
         }
 
         /// <inheritdoc />
@@ -180,7 +174,7 @@ namespace IKVM.CoreLib.Symbols
             var namedArgumentsCount = namedArguments.Length;
             for (int i = 0; i < namedArgumentsCount; i++)
             {
-                if (!first) 
+                if (!first)
                     vsb.Append(", ");
 
                 vsb.Append(namedArguments[i].ToString());

@@ -54,11 +54,6 @@ namespace IKVM.CoreLib.Symbols
                     Default = (MemberSymbolPolicy<TParentSymbol, TMemberSymbol>)(object)new TypeFieldSymbolPolicy();
                     return;
                 }
-                else if (member.Equals(typeof(ConstructorSymbol)))
-                {
-                    Default = (MemberSymbolPolicy<TParentSymbol, TMemberSymbol>)(object)new TypeConstructorSymbolPolicy();
-                    return;
-                }
                 else if (member.Equals(typeof(MethodSymbol)))
                 {
                     Default = (MemberSymbolPolicy<TParentSymbol, TMemberSymbol>)(object)new TypeMethodSymbolPolicy();
@@ -158,8 +153,8 @@ namespace IKVM.CoreLib.Symbols
             if (method1.Name != method2.Name)
                 return false;
 
-            var p1 = method1.GetParameters();
-            var p2 = method2.GetParameters();
+            var p1 = method1.Parameters;
+            var p2 = method2.Parameters;
             if (p1.Length != p2.Length)
                 return false;
 
@@ -182,7 +177,7 @@ namespace IKVM.CoreLib.Symbols
             }
             else
             {
-                if (method1.GetGenericArguments().Length != method2.GetGenericArguments().Length)
+                if (method1.GenericArguments.Length != method2.GenericArguments.Length)
                     return false;
 
                 for (int i = 0; i < p1.Length; i++)
@@ -232,19 +227,18 @@ namespace IKVM.CoreLib.Symbols
             {
                 // We can use regular old Equals() rather than recursing into GenericMethodAwareAreParameterTypesEqual() since the
                 // generic type definition will always be a plain old named type and won't embed any generic method parameters.
-                if (!(t1.GetGenericTypeDefinition().Equals(t2.GetGenericTypeDefinition())))
+                if (t1.GenericTypeDefinition.Equals(t2.GenericTypeDefinition) == false)
                     return false;
 
-                var ga1 = t1.GenericTypeArguments;
-                var ga2 = t2.GenericTypeArguments;
+                var ga1 = t1.GenericArguments;
+                var ga2 = t2.GenericArguments;
                 if (ga1.Length != ga2.Length)
                     return false;
 
                 for (int i = 0; i < ga1.Length; i++)
-                {
-                    if (!GenericMethodAwareAreParameterTypesEqual(ga1[i], ga2[i]))
+                    if (GenericMethodAwareAreParameterTypesEqual(ga1[i], ga2[i]) == false)
                         return false;
-                }
+
                 return true;
             }
 

@@ -4,19 +4,24 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class PropertySymbol : MemberSymbol
+    public abstract class PropertySymbol : MemberSymbol
     {
+
+        readonly TypeSymbol _declaringType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
-        public PropertySymbol(SymbolContext context, TypeSymbol declaringType) :
-            base(context, declaringType.Module, declaringType)
+        protected PropertySymbol(SymbolContext context, TypeSymbol declaringType) :
+            base(context, declaringType.Module)
         {
-
+            _declaringType = declaringType ?? throw new System.ArgumentNullException(nameof(declaringType));
         }
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <summary>
         /// Gets the attributes for this property.

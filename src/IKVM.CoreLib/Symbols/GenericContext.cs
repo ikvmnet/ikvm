@@ -3,12 +3,12 @@
 namespace IKVM.CoreLib.Symbols
 {
 
-    readonly struct GenericContext(ImmutableArray<TypeSymbol>? GenericTypeArguments, ImmutableArray<TypeSymbol>? GenericMethodArguments)
+    readonly struct GenericContext(ImmutableArray<TypeSymbol> GenericTypeArguments, ImmutableArray<TypeSymbol> GenericMethodArguments)
     {
 
-        public readonly ImmutableArray<TypeSymbol>? GenericTypeArguments = GenericTypeArguments;
+        public readonly ImmutableArray<TypeSymbol> GenericTypeArguments = GenericTypeArguments;
 
-        public readonly ImmutableArray<TypeSymbol>? GenericMethodArguments = GenericMethodArguments;
+        public readonly ImmutableArray<TypeSymbol> GenericMethodArguments = GenericMethodArguments;
 
     }
 

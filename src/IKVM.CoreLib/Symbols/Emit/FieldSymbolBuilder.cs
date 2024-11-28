@@ -5,71 +5,100 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    class FieldSymbolBuilder : FieldSymbol
+    public sealed class FieldSymbolBuilder : FieldSymbol, ICustomAttributeBuilder
     {
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="declaringType"></param>
-        public FieldSymbolBuilder(SymbolContext context, TypeSymbolBuilder declaringType) :
-            base(context, declaringType.Module, declaringType)
-        {
-
-        }
+        readonly string _name;
+        readonly FieldAttributes _attributes;
+        readonly TypeSymbol _fieldType;
+        readonly ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        readonly ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        object? _constantValue;
+        int? _offset;
+        readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringModule"></param>
-        public FieldSymbolBuilder(SymbolContext context, ModuleSymbolBuilder declaringModule) :
-            base(context, declaringModule, null)
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="fieldType"></param>
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
+        internal FieldSymbolBuilder(SymbolContext context, ModuleSymbol declaringModule, TypeSymbolBuilder? declaringType, string name, FieldAttributes attributes, TypeSymbol fieldType, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers) :
+            base(context, declaringModule, declaringType)
         {
-
+            _name = name ?? throw new ArgumentNullException(nameof(name));
+            _attributes = attributes;
+            _fieldType = fieldType ?? throw new ArgumentNullException(nameof(fieldType));
+            _requiredCustomModifiers = requiredCustomModifiers;
+            _optionalCustomModifiers = optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override FieldAttributes Attributes => throw new NotImplementedException();
+        public override FieldAttributes Attributes => _attributes;
 
         /// <inheritdoc />
-        public override TypeSymbol FieldType => throw new NotImplementedException();
+        public override TypeSymbol FieldType => _fieldType;
 
         /// <inheritdoc />
-        public override string Name => throw new NotImplementedException();
+        public override string Name => _name;
 
         /// <inheritdoc />
-        public override bool IsMissing => throw new NotImplementedException();
+        public override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsComplete => throw new NotImplementedException();
+        public override bool IsComplete => false;
 
         /// <inheritdoc />
         public override object? GetRawConstantValue()
         {
-            throw new NotImplementedException();
+            return _constantValue;
         }
 
         /// <inheritdoc />
         public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            throw new NotImplementedException();
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
         public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            throw new NotImplementedException();
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
         internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return _customAttributes.ToImmutable();
+        }
+
+        /// <summary>
+        /// Sets the default value of this field.
+        /// </summary>
+        /// <param name="defaultValue"></param>
+        public void SetConstant(object? defaultValue)
+        {
+            _constantValue = default;
+        }
+
+        /// <summary>
+        /// Specifies the field layout.
+        /// </summary>
+        /// <param name="iOffset"></param>
+        public void SetOffset(int iOffset)
+        {
+            _offset = iOffset;
+        }
+
+        /// <inheritdoc />
+        public void SetCustomAttribute(CustomAttribute attribute)
+        {
+            _customAttributes.Add(attribute);
         }
 
     }

@@ -5,25 +5,33 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class GenericParameterTypeSymbol : TypeSymbol
+    public abstract class GenericParameterTypeSymbol : TypeSymbol
     {
+
+        readonly TypeSymbol _declaringType;
+
+        ImmutableArray<TypeSymbol> _constraints;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        protected GenericParameterTypeSymbol(SymbolContext context, ModuleSymbol module) :
+        /// <param name="declaringType"></param>
+        protected GenericParameterTypeSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol declaringType) :
             base(context, module)
         {
-
+            _declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
         }
 
         /// <inheritdoc />
         public sealed override TypeAttributes Attributes => TypeAttributes.Public;
 
         /// <inheritdoc />
-        public override MethodBaseSymbol? DeclaringMethod => null;
+        public override TypeSymbol? DeclaringType => _declaringType;
+
+        /// <inheritdoc />
+        public override MethodSymbol? DeclaringMethod => null;
 
         /// <inheritdoc />
         public sealed override bool IsGenericTypeDefinition => false;
@@ -59,9 +67,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override TypeCode TypeCode => TypeCode.Object;
 
         /// <inheritdoc />
-        public sealed override TypeSymbol? BaseType => null;
-
-        /// <inheritdoc />
         public sealed override bool IsTypeDefinition => false;
 
         /// <inheritdoc />
@@ -72,9 +77,6 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
         public sealed override TypeSymbol? GetElementType()
@@ -107,12 +109,6 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
-        {
-            return ImmutableArray<ConstructorSymbol>.Empty;
-        }
-
-        /// <inheritdoc />
         internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
         {
             return ImmutableArray<FieldSymbol>.Empty;
@@ -122,6 +118,12 @@ namespace IKVM.CoreLib.Symbols
         internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
         {
             return ImmutableArray<MethodSymbol>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override MethodImplementationMapping GetMethodImplementations()
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -137,28 +139,45 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
-        {
-            return ImmutableArray<TypeSymbol>.Empty;
-        }
+        public sealed override ImmutableArray<TypeSymbol> GenericArguments => [];
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
-        {
-            return ImmutableArray<TypeSymbol>.Empty;
-        }
+        public sealed override ImmutableArray<TypeSymbol> GenericParameterConstraints => ComputeGenericParameterConstraints();
 
         /// <inheritdoc />
-        public sealed override TypeSymbol GetGenericTypeDefinition()
+        ImmutableArray<TypeSymbol> ComputeGenericParameterConstraints()
         {
-            throw new InvalidOperationException();
+            if (_constraints.IsDefault)
+            {
+                var interfaces = GetDeclaredInterfaces();
+
+                if (BaseType != null)
+                {
+                    var b = ImmutableArray.CreateBuilder<TypeSymbol>(interfaces.Length + 1);
+                    b[0] = BaseType;
+                    for (int i = 0; i < interfaces.Length; i++)
+                        b[i + 1] = interfaces[i];
+
+                    ImmutableInterlocked.InterlockedInitialize(ref _constraints, b.DrainToImmutable());
+                }
+                else
+                {
+                    ImmutableInterlocked.InterlockedInitialize(ref _constraints, interfaces);
+                }
+            }
+
+            return _constraints;
         }
 
-        /// <inheritdoc />
-        public sealed override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
+        /// <summary>
+        /// Invoke this method upon altering the base type or interfaces to clear any cached generic parameter constraints.
+        /// </summary>
+        protected void ClearGenericParameterConstraints()
         {
-            throw new InvalidOperationException();
+            _constraints = default;
         }
+
+        public override TypeSymbol GenericTypeDefinition => throw new InvalidOperationException();
 
         /// <inheritdoc />
         internal override ImmutableArray<TypeSymbol> GetDeclaredNestedTypes()
@@ -170,12 +189,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsEnumDefined(object value)
         {
             throw new InvalidOperationException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return ImmutableArray<CustomAttribute>.Empty;
         }
 
     }

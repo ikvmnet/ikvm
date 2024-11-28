@@ -9,7 +9,6 @@ namespace IKVM.CoreLib.Symbols
     {
 
         ImmutableArray<TypeSymbol> _interfaces;
-        ImmutableArray<ConstructorSymbol> _constructors;
         ImmutableArray<MethodSymbol> _methods;
 
         /// <summary>
@@ -45,7 +44,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetInterfaces()
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             if (_interfaces == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _interfaces, [
@@ -55,30 +54,6 @@ namespace IKVM.CoreLib.Symbols
                 ]);
 
             return _interfaces;
-        }
-
-        /// <inheritdoc />
-        public override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
-        {
-            if (_constructors == default)
-            {
-                var int32 = Context.ResolveCoreType("System.Int32");
-                var param = ImmutableArray<TypeSymbol>.Empty;
-
-                var b = ImmutableArray.CreateBuilder<ConstructorSymbol>();
-                for (TypeSymbol? type = this; type != null && type.IsSZArray; type = type.GetElementType())
-                    b.Add(new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, param = param.Add(int32)));
-
-                ImmutableInterlocked.InterlockedInitialize(ref _constructors, b.ToImmutable());
-            }
-
-            return _constructors;
         }
 
         /// <inheritdoc />
@@ -101,9 +76,25 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
+        internal override MethodImplementationMapping GetMethodImplementations()
+        {
+            throw new NotImplementedException(); // TODO, need to map methods
+        }
+
+        /// <inheritdoc />
         internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return ImmutableArray<CustomAttribute>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext context)
+        {
+            if (ContainsGenericParameters == false)
+                return this;
+
+            var elementType = GetElementType() ?? throw new InvalidOperationException();
+            return elementType.Specialize(context).MakeArrayType();
         }
 
     }

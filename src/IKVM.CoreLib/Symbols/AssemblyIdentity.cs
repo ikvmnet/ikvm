@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Represents an identity of an assembly as defined by CLI metadata specification.
     /// </summary>
-    class AssemblyIdentity
+    public class AssemblyIdentity
     {
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace IKVM.CoreLib.Symbols
             for (int i = 0; i < 8; i++)
                 result.Add(hash[l - i]);
 
-            return result.ToImmutable();
+            return result.DrainToImmutable();
         }
 
         /// <summary>
@@ -170,6 +170,7 @@ namespace IKVM.CoreLib.Symbols
         string? _fullName;
         ImmutableArray<byte> _publicKey;
         ImmutableArray<byte> _publicKeyToken;
+
         int _hashCode = 0;
 
         /// <summary>

@@ -61,76 +61,52 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override ParameterSymbol ReturnParameter => _returnParameter;
+        public sealed override ParameterSymbol ReturnParameter => _returnParameter;
 
         /// <inheritdoc />
-        public override TypeSymbol ReturnType => ReturnParameter.ParameterType;
+        public sealed override TypeSymbol ReturnType => ReturnParameter.ParameterType;
 
         /// <inheritdoc />
-        public override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+        public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public override MethodAttributes Attributes => _attributes;
+        public sealed override MethodAttributes Attributes => _attributes;
 
         /// <inheritdoc />
-        public override CallingConventions CallingConvention => _callingConventions;
+        public sealed override CallingConventions CallingConvention => _callingConventions;
 
         /// <inheritdoc />
-        public override bool ContainsGenericParameters => false;
+        public sealed override bool IsGenericMethodDefinition => false;
 
         /// <inheritdoc />
-        public override bool IsGenericMethod => false;
+        public sealed override bool IsConstructedGenericMethod => false;
 
         /// <inheritdoc />
-        public override bool IsGenericMethodDefinition => false;
+        public sealed override MethodImplAttributes MethodImplementationFlags => MethodImplAttributes.Managed;
 
         /// <inheritdoc />
-        public override MethodImplAttributes MethodImplementationFlags => MethodImplAttributes.Managed;
+        public sealed override string Name => _name;
 
         /// <inheritdoc />
-        public override string Name => _name;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => false;
+        public sealed override MethodSymbol? BaseDefinition => null;
 
         /// <inheritdoc />
-        public override bool IsComplete => true;
+        public sealed override ImmutableArray<TypeSymbol> GenericArguments => [];
 
         /// <inheritdoc />
-        public override MethodSymbol GetBaseDefinition()
-        {
-            throw new NotImplementedException();
-        }
+        public sealed override MethodSymbol? GenericMethodDefinition => null;
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetGenericArguments()
-        {
-            throw new NotImplementedException();
-        }
+        public sealed override ImmutableArray<ParameterSymbol> Parameters => _parameters;
 
         /// <inheritdoc />
-        public override MethodSymbol GetGenericMethodDefinition()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<ParameterSymbol> GetParameters()
-        {
-            return _parameters;
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
             throw new NotImplementedException();
         }

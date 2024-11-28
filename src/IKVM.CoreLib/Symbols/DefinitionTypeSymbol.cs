@@ -21,7 +21,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override MethodBaseSymbol? DeclaringMethod => null;
+        public sealed override MethodSymbol? DeclaringMethod => null;
 
         /// <inheritdoc />
         public sealed override bool IsTypeDefinition => true;
@@ -37,9 +37,6 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public sealed override bool IsFunctionPointer => false;
-
-        /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
         public sealed override int GenericParameterPosition => throw new InvalidOperationException();
@@ -75,15 +72,26 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override TypeSymbol GetGenericTypeDefinition()
-        {
-            throw new InvalidOperationException();
-        }
+        public sealed override TypeSymbol GenericTypeDefinition => throw new InvalidOperationException();
 
         /// <inheritdoc />
         public sealed override int GetArrayRank()
         {
             throw new InvalidOperationException();
+        }
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext context)
+        {
+            if (ContainsGenericParameters == false)
+                return this;
+
+            var args = GenericArguments;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i].ContainsGenericParameters)
+                    args = args.SetItem(i, args[i].Specialize(context));
+
+            return MakeGenericType(args);
         }
 
     }

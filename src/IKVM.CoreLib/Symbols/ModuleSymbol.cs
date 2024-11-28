@@ -9,7 +9,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Performs reflection on a module.
     /// </summary>
-    abstract class ModuleSymbol : Symbol, ICustomAttributeProviderInternal
+    public abstract class ModuleSymbol : Symbol, ICustomAttributeProviderInternal
     {
 
         readonly SymbolContext _context;
@@ -32,7 +32,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <summary>
-        /// Gets the appropriate <see cref="IAssemblySymbol"> for this instance of Module.
+        /// Gets the appropriate <see cref="AssemblySymbol"> for this instance of Module.
         /// </summary>
         public AssemblySymbol Assembly => _assembly;
 
@@ -47,14 +47,14 @@ namespace IKVM.CoreLib.Symbols
         public abstract string Name { get; }
 
         /// <summary>
+        /// Gets a universally unique identifier (UUID) that can be used to distinguish between two versions of a module.
+        /// </summary>
+        public abstract Guid ModuleVersionId { get; }
+
+        /// <summary>
         /// Returns <c>true</c> if the symbol is missing.
         /// </summary>
         public abstract bool IsMissing { get; }
-
-        /// <summary>
-        /// Returns <c>true</c> if the symbol contains a missing symbol.
-        /// </summary>
-        public abstract bool ContainsMissing { get; }
 
         /// <summary>
         /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
@@ -123,7 +123,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         public MethodSymbol? GetMethod(string name)
         {
-            throw new NotImplementedException();
+            return GetMethod(name, default);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         public MethodSymbol? GetMethod(string name, ImmutableArray<TypeSymbol> types)
         {
-            throw new NotImplementedException();
+            return GetMethod(name, DefaultLookup, CallingConventions.Any, types, default);
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <param name="modifiers"></param>
         /// <returns></returns>
-        public MethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ImmutableArray<TypeSymbol>? types, ImmutableArray<ParameterModifier>? modifiers)
+        public MethodSymbol? GetMethod(string name, BindingFlags bindingAttr, CallingConventions callConvention, ImmutableArray<TypeSymbol> types, ImmutableArray<ParameterModifier> modifiers)
         {
             throw new NotImplementedException();
         }
@@ -180,7 +180,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         public TypeSymbol? GetType(string className)
         {
-            return GetType(className, true);
+            return GetType(className, false);
         }
 
         /// <summary>

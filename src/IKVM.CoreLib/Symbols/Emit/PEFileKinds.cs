@@ -4,7 +4,7 @@
     /// <summary>
     /// Specifies the type of the portable executable (PE) file.
     /// </summary>
-    enum PEFileKinds
+    public enum PEFileKinds
     {
 
         /// <summary>

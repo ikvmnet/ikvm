@@ -1,6 +1,6 @@
 ﻿namespace IKVM.CoreLib.Symbols
 {
-    enum ImageFileMachine
+    public enum ImageFileMachine
     {
 
         Unknown = 0,

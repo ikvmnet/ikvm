@@ -43,9 +43,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
-
-        /// <inheritdoc />
         public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
@@ -55,7 +52,7 @@ namespace IKVM.CoreLib.Symbols
             if (baseMethod is null)
                 return null;
 
-            foreach (var i in DeclaringType!.GetMethods())
+            foreach (var i in DeclaringType!.GetDeclaredMethods())
                 if (i is ConstructedGenericMethodSymbol m)
                     if (m._definition == baseMethod)
                         return m;
@@ -70,7 +67,7 @@ namespace IKVM.CoreLib.Symbols
             if (baseMethod is null)
                 return null;
 
-            foreach (var i in DeclaringType!.GetMethods())
+            foreach (var i in DeclaringType!.GetDeclaredMethods())
                 if (i is ConstructedGenericMethodSymbol m)
                     if (m._definition == baseMethod)
                         return m;
@@ -85,7 +82,7 @@ namespace IKVM.CoreLib.Symbols
             if (baseMethod is null)
                 return null;
 
-            foreach (var i in DeclaringType!.GetMethods())
+            foreach (var i in DeclaringType!.GetDeclaredMethods())
                 if (i is ConstructedGenericMethodSymbol m)
                     if (m._definition == baseMethod)
                         return m;
@@ -101,13 +98,13 @@ namespace IKVM.CoreLib.Symbols
             foreach (var baseMethod in _definition.GetOtherMethods(nonPublic))
             {
                 if (baseMethod is not null)
-                    foreach (var i in DeclaringType!.GetMethods())
+                    foreach (var i in DeclaringType!.GetDeclaredMethods())
                         if (i is ConstructedGenericMethodSymbol m)
                             if (m._definition == baseMethod)
                                 b.Add(m);
             }
 
-            return b.ToImmutable();
+            return b.DrainToImmutable();
         }
 
         /// <inheritdoc />

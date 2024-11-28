@@ -25,26 +25,16 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override MethodBaseSymbol? DeclaringMethod => null;
+        public sealed override TypeSymbol? DeclaringType => _elementType.DeclaringType;
 
         /// <inheritdoc />
-        public sealed override string? Namespace => _elementType.Namespace;
+        public sealed override MethodSymbol? DeclaringMethod => null;
 
         /// <inheritdoc />
         public sealed override string Name => _name ??= _elementType.Name + NameSuffix;
 
         /// <inheritdoc />
-        public sealed override string? FullName => _fullName ??= ComputeFullName();
-
-        /// <summary>
-        /// Computes the value of <see cref="FullName"/>.
-        /// </summary>
-        /// <returns></returns>
-        string? ComputeFullName()
-        {
-            var fullName = _elementType.FullName;
-            return fullName == null ? null : fullName + NameSuffix;
-        }
+        public sealed override string? Namespace => _elementType.Namespace;
 
         /// <summary>
         /// Gets the suffix of the type name.
@@ -109,9 +99,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => _elementType.IsMissing;
-
-        /// <inheritdoc />
         public sealed override bool IsComplete => _elementType.IsComplete;
 
         /// <inheritdoc />
@@ -121,22 +108,13 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override TypeSymbol GetGenericTypeDefinition()
-        {
-            throw new NotSupportedException();
-        }
+        public sealed override TypeSymbol GenericTypeDefinition => throw new InvalidOperationException();
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
-        {
-            throw new NotSupportedException();
-        }
+        public sealed override ImmutableArray<TypeSymbol> GenericArguments => [];
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
-        {
-            throw new NotSupportedException();
-        }
+        public sealed override ImmutableArray<TypeSymbol> GenericParameterConstraints => [];
 
         /// <inheritdoc />
         internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
@@ -184,6 +162,18 @@ namespace IKVM.CoreLib.Symbols
         public sealed override TypeSymbol GetEnumUnderlyingType()
         {
             throw new NotSupportedException();
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        {
+            return [];
+        }
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        {
+            return [];
         }
 
     }

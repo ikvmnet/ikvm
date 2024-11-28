@@ -48,47 +48,29 @@ namespace IKVM.CoreLib.Symbols
         /// Given a set of methods that match the base criteria, select a method based upon an array of parameter types. This
         /// method should return null if no method matches the criteria.
         /// </summary>
-        public MethodBaseSymbol? SelectMethod(IReadOnlyList<MethodBaseSymbol> match, BindingFlags bindingFlags, ImmutableArray<TypeSymbol> types, ImmutableArray<ParameterModifier>? modifiers)
+        public MethodSymbol? SelectMethod(IReadOnlyList<MethodSymbol> match, BindingFlags bindingFlags, TypeSymbolSelectorList types, ImmutableArray<ParameterModifier> modifiers)
         {
             // we don't automatically jump out on exact match
             if (match == null || match.Count == 0)
                 throw new ArgumentException("Unexpected empty array.", nameof(match));
 
-            var candidates = new List<MethodBaseSymbol>(match);
+            var candidates = new List<MethodSymbol>(match);
 
             // find all the methods that can be described by the types parameter
             // remove all of them that cannot
             int curIdx = 0;
             for (var i = 0; i < candidates.Count; i++)
             {
-                var par = candidates[i].GetParameters();
-                if (par.Length != types.Length)
+                var par = candidates[i].Parameters;
+                if (par.Length != types.Indexes.Length)
                     continue;
 
                 int j;
-                for (j = 0; j < types.Length; j++)
-                {
-                    var type = types[j];
-                    var parameterType = par[j].ParameterType;
-
-                    // exact parameter type match
-                    if (type == parameterType)
-                        continue;
-
-                    // everything is convertable to object
-                    if (parameterType == ObjectType)
-                        continue;
-
-                    // primitive paramter that can't be converted to parameter type
-                    if (parameterType.IsPrimitive && CanChangePrimitive(type, parameterType) == false)
+                for (j = 0; j < types.Indexes.Length; j++)
+                    if (types.Indexes[j].Match(_context, par[j].ParameterType) == false)
                         break;
 
-                    // can't otherwise assign type to parameter type
-                    if (parameterType.IsAssignableFrom(type) == false)
-                        break;
-                }
-
-                if (j == types.Length)
+                if (j == types.Indexes.Length)
                     candidates[curIdx++] = candidates[i];
             }
 
@@ -101,8 +83,8 @@ namespace IKVM.CoreLib.Symbols
             int currentMin = 0;
             var ambig = false;
 
-            var paramOrder = types.Length > 0 ? stackalloc int[types.Length] : Array.Empty<int>();
-            for (var i = 0; i < types.Length; i++)
+            var paramOrder = types.Indexes.Length > 0 ? stackalloc int[types.Indexes.Length] : Array.Empty<int>();
+            for (var i = 0; i < types.Indexes.Length; i++)
                 paramOrder[i] = i;
 
             for (var i = 1; i < curIdx; i++)
@@ -139,11 +121,11 @@ namespace IKVM.CoreLib.Symbols
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="AmbiguousMatchException"></exception>
-        public PropertySymbol? SelectProperty(BindingFlags bindingAttr, IReadOnlyList<PropertySymbol> match, TypeSymbol? returnType, ImmutableArray<TypeSymbol>? indexes, ImmutableArray<ParameterModifier>? modifiers)
+        public PropertySymbol? SelectProperty(BindingFlags bindingAttr, IReadOnlyList<PropertySymbol> match, TypeSymbol? returnType, TypeSymbolSelectorList indexes, ImmutableArray<ParameterModifier> modifiers)
         {
             // if indexes is present every element must be non-null
-            if (indexes != null)
-                foreach (var index in indexes)
+            if (indexes.Indexes.IsDefault == false)
+                foreach (var index in indexes.Indexes)
                     throw new ArgumentNullException(nameof(index));
 
             if (match == null || match.Count == 0)
@@ -157,37 +139,18 @@ namespace IKVM.CoreLib.Symbols
             int curIdx = 0;
             for (i = 0; i < candidates.Count; i++)
             {
-                if (indexes != null)
+                if (indexes.Indexes.IsDefault == false)
                 {
                     var par = candidates[i].GetIndexParameters();
-                    if (par.Length != indexes.Value.Length)
+                    if (par.Length != indexes.Indexes.Length)
                         continue;
 
-                    for (j = 0; j < indexes.Value.Length; j++)
-                    {
-                        var pCls = par[j].ParameterType;
-
-                        // If the classes exactly match continue
-                        if (pCls == indexes.Value[j])
-                            continue;
-
-                        if (pCls == ObjectType)
-                            continue;
-
-                        if (pCls.IsPrimitive)
-                        {
-                            if (CanChangePrimitive(indexes.Value[j], pCls) == false)
-                                break;
-                        }
-                        else
-                        {
-                            if (pCls.IsAssignableFrom(indexes.Value[j]) == false)
-                                break;
-                        }
-                    }
+                    for (j = 0; j < indexes.Indexes.Length; j++)
+                        if (indexes.Indexes[j].Match(_context, par[j].ParameterType) == false)
+                            break;
                 }
 
-                if (indexes == null || j == indexes.Value.Length)
+                if (indexes.Indexes.IsDefault || j == indexes.Indexes.Length)
                 {
                     if (returnType != null)
                     {
@@ -216,14 +179,14 @@ namespace IKVM.CoreLib.Symbols
             int currentMin = 0;
             var ambig = false;
 
-            var paramOrder = indexes != null && indexes.Value.Length > 0 ? stackalloc int[indexes.Value.Length] : Array.Empty<int>();
+            var paramOrder = indexes.Indexes.IsDefault == false && indexes.Indexes.Length > 0 ? stackalloc int[indexes.Indexes.Length] : Array.Empty<int>();
             for (i = 0; i < paramOrder.Length; i++)
                 paramOrder[i] = i;
 
             for (i = 1; i < curIdx; i++)
             {
                 int newMin = FindMostSpecificType(candidates[currentMin].PropertyType, candidates[i].PropertyType, returnType);
-                if (newMin == 0 && indexes != null)
+                if (newMin == 0 && indexes.Indexes.IsDefault == false)
                     newMin = FindMostSpecific(candidates[currentMin].GetIndexParameters(), paramOrder, null, candidates[i].GetIndexParameters(), paramOrder, null, indexes);
 
                 if (newMin == 0)
@@ -254,17 +217,17 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="types"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public MethodBaseSymbol? ExactBinding(IReadOnlyList<MethodBaseSymbol> match, ImmutableArray<TypeSymbol> types)
+        public MethodSymbol? ExactBinding(IReadOnlyList<MethodSymbol> match, ImmutableArray<TypeSymbol> types)
         {
             if (match is null)
                 throw new ArgumentNullException(nameof(match));
 
-            var aExactMatches = new MethodBaseSymbol[match.Count];
+            var aExactMatches = new MethodSymbol[match.Count];
             int cExactMatches = 0;
 
             for (int i = 0; i < match.Count; i++)
             {
-                var par = match[i].GetParameters();
+                var par = match[i].Parameters;
                 if (par.Length == 0)
                     continue;
 
@@ -342,17 +305,19 @@ namespace IKVM.CoreLib.Symbols
 
         int FindMostSpecific(ImmutableArray<ParameterSymbol> p1, ReadOnlySpan<int> paramOrder1, TypeSymbol? paramArrayType1,
                              ImmutableArray<ParameterSymbol> p2, ReadOnlySpan<int> paramOrder2, TypeSymbol? paramArrayType2,
-                             IReadOnlyList<TypeSymbol> types)
+                             TypeSymbolSelectorList types)
         {
             // a method using params is always less specific than one not using params
-            if (paramArrayType1 != null && paramArrayType2 == null) return 2;
-            if (paramArrayType2 != null && paramArrayType1 == null) return 1;
+            if (paramArrayType1 != null && paramArrayType2 == null)
+                return 2;
+            if (paramArrayType2 != null && paramArrayType1 == null)
+                return 1;
 
             // now either p1 and p2 both use params or neither does.
             var p1Less = false;
             var p2Less = false;
 
-            for (int i = 0; i < types.Count; i++)
+            for (int i = 0; i < types.Indexes.Length; i++)
             {
                 TypeSymbol c1, c2;
 
@@ -376,9 +341,10 @@ namespace IKVM.CoreLib.Symbols
                 else
                     c2 = p2[paramOrder2[i]].ParameterType;
 
-                if (c1 == c2) continue;
+                if (c1 == c2)
+                    continue;
 
-                switch (FindMostSpecificType(c1, c2, types[i]))
+                switch (FindMostSpecificType(c1, c2, types.Indexes[i]))
                 {
                     case 0: return 0;
                     case 1: p1Less = true; break;
@@ -406,75 +372,18 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="c2"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        int FindMostSpecificType(TypeSymbol c1, TypeSymbol c2, TypeSymbol? t)
+        int FindMostSpecificType(TypeSymbol c1, TypeSymbol c2, TypeSymbolSelector t)
         {
-            // if the two types are exact, move on
-            if (c1 == c2)
-                return 0;
-
-            if (c1 == t)
-                return 1;
-
-            if (c2 == t)
-                return 2;
-
-            bool c1FromC2;
-            bool c2FromC1;
-
-            if (c1.IsByRef || c2.IsByRef)
-            {
-                if (c1.IsByRef && c2.IsByRef)
-                {
-                    c1 = c1.GetElementType()!;
-                    c2 = c2.GetElementType()!;
-                }
-                else if (c1.IsByRef)
-                {
-                    if (c1.GetElementType() == c2)
-                        return 2;
-
-                    c1 = c1.GetElementType()!;
-                }
-                else // if (c2.IsByRef)
-                {
-                    if (c2.GetElementType() == c1)
-                        return 1;
-
-                    c2 = c2.GetElementType()!;
-                }
-            }
-
-            if (c1.IsPrimitive && c2.IsPrimitive)
-            {
-                c1FromC2 = CanChangePrimitive(c2, c1);
-                c2FromC1 = CanChangePrimitive(c1, c2);
-            }
-            else
-            {
-                c1FromC2 = c1.IsAssignableFrom(c2);
-                c2FromC1 = c2.IsAssignableFrom(c1);
-            }
-
-            if (c1FromC2 == c2FromC1)
-                return 0;
-
-            if (c1FromC2)
-            {
-                return 2;
-            }
-            else
-            {
-                return 1;
-            }
+            return t.FindMostSpecific(_context, c1, c2);
         }
 
-        int FindMostSpecificMethod(MethodBaseSymbol m1, ReadOnlySpan<int> paramOrder1, TypeSymbol? paramArrayType1,
-                                   MethodBaseSymbol m2, ReadOnlySpan<int> paramOrder2, TypeSymbol? paramArrayType2,
-                                   ImmutableArray<TypeSymbol> types)
+        int FindMostSpecificMethod(MethodSymbol m1, ReadOnlySpan<int> paramOrder1, TypeSymbol? paramArrayType1,
+                                   MethodSymbol m2, ReadOnlySpan<int> paramOrder2, TypeSymbol? paramArrayType2,
+                                   TypeSymbolSelectorList types)
         {
             // Find the most specific method based on the parameters.
-            int res = FindMostSpecific(m1.GetParameters(), paramOrder1, paramArrayType1,
-                                       m2.GetParameters(), paramOrder2, paramArrayType2, types);
+            int res = FindMostSpecific(m1.Parameters, paramOrder1, paramArrayType1,
+                                       m2.Parameters, paramOrder2, paramArrayType2, types);
 
             // If the match was not ambiguous then return the result.
             if (res != 0)
@@ -552,10 +461,10 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="m1"></param>
         /// <param name="m2"></param>
         /// <returns></returns>
-        public static bool CompareMethodSig(MethodBaseSymbol m1, MethodBaseSymbol m2)
+        public static bool CompareMethodSig(MethodSymbol m1, MethodSymbol m2)
         {
-            var params1 = m1.GetParameters();
-            var params2 = m2.GetParameters();
+            var params1 = m1.Parameters;
+            var params2 = m2.Parameters;
 
             if (params1.Length != params2.Length)
                 return false;
@@ -582,10 +491,10 @@ namespace IKVM.CoreLib.Symbols
             return depth;
         }
 
-        internal MethodBaseSymbol? FindMostDerivedNewSlotMeth(ReadOnlySpan<MethodBaseSymbol> match, int cMatches)
+        internal MethodSymbol? FindMostDerivedNewSlotMeth(ReadOnlySpan<MethodSymbol> match, int cMatches)
         {
             int deepestHierarchy = 0;
-            MethodBaseSymbol? methWithDeepestHierarchy = null;
+            MethodSymbol? methWithDeepestHierarchy = null;
 
             for (int i = 0; i < cMatches; i++)
             {

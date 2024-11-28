@@ -6,7 +6,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Internal implementation support for <see cref="ICustomAttributeProvider"/>.
     /// </summary>
-    interface ICustomAttributeProviderInternal : ICustomAttributeProvider
+    public interface ICustomAttributeProviderInternal : ICustomAttributeProvider
     {
 
         /// <summary>

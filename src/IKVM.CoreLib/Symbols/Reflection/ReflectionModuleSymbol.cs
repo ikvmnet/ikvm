@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -9,7 +8,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionModuleSymbol : ModuleSymbol
     {
 
-        readonly Module _underlyingModule;
+        internal readonly Module _underlyingModule;
 
         ImmutableArray<FieldSymbol> _fields;
         ImmutableArray<MethodSymbol> _methods;
@@ -33,6 +32,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
+        /// <summary>
+        /// Gets the underlying <see cref="Module"/>.
+        /// </summary>
+        internal Module UnderlyingModule => _underlyingModule;
+
         /// <inheritdoc />
         public sealed override string FullyQualifiedName => _underlyingModule.FullyQualifiedName;
 
@@ -40,10 +44,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override string Name => _underlyingModule.Name;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => false;
+        public override Guid ModuleVersionId => _underlyingModule.ModuleVersionId;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
         public sealed override bool IsComplete => true;
@@ -51,14 +55,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
         {
-            if (_fields == default)
+            if (_fields.IsDefault)
             {
                 var l = _underlyingModule.GetFields(DeclaredOnlyLookup);
-                var b = ImmutableArray.CreateBuilder<FieldSymbol>();
+                var b = ImmutableArray.CreateBuilder<FieldSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
                     b.Add(new ReflectionFieldSymbol(Context, this, null, l[i]));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _fields, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _fields, b.DrainToImmutable());
             }
 
             return _fields;
@@ -67,14 +71,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
         {
-            if (_methods == default)
+            if (_methods.IsDefault)
             {
                 var l = _underlyingModule.GetMethods(DeclaredOnlyLookup);
-                var b = ImmutableArray.CreateBuilder<MethodSymbol>();
+                var b = ImmutableArray.CreateBuilder<MethodSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
                     b.Add(new ReflectionMethodSymbol(Context, this, null, l[i]));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _methods, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _methods, b.DrainToImmutable());
             }
 
             return _methods;
@@ -83,14 +87,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         internal sealed override ImmutableArray<TypeSymbol> GetDeclaredTypes()
         {
-            if (_types == default)
+            if (_types.IsDefault)
             {
                 var l = _underlyingModule.GetTypes();
-                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    b.Add(new ReflectionTypeSymbol(Context, this, l[i]));
+                    if (l[i].IsNested == false)
+                        b.Add(new ReflectionTypeSymbol(Context, this, l[i]));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _types, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _types, b.DrainToImmutable());
             }
 
             return _types;
@@ -105,7 +110,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            if (_customAttributes == default)
+            if (_customAttributes.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingModule.GetCustomAttributesData()));
 
             return _customAttributes;

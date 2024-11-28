@@ -3,10 +3,10 @@
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class GenericMethodParameterTypeSymbol : GenericParameterTypeSymbol
+    public abstract class GenericMethodParameterTypeSymbol : GenericParameterTypeSymbol
     {
 
-        readonly MethodBaseSymbol _declaringMethod;
+        readonly MethodSymbol _declaringMethod;
 
         /// <summary>
         /// Initializes a new instance.
@@ -14,13 +14,13 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="declaringMethod"></param>
         protected GenericMethodParameterTypeSymbol(SymbolContext context, MethodSymbol declaringMethod) :
-            base(context, declaringMethod.Module)
+            base(context, declaringMethod.Module, declaringMethod.DeclaringType)
         {
             _declaringMethod = declaringMethod ?? throw new ArgumentNullException(nameof(declaringMethod));
         }
 
         /// <inheritdoc />
-        public override MethodBaseSymbol? DeclaringMethod => _declaringMethod;
+        public override MethodSymbol? DeclaringMethod => _declaringMethod;
 
         /// <inheritdoc />
         public override bool IsGenericTypeParameter => false;
@@ -31,7 +31,7 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         internal override TypeSymbol Specialize(GenericContext genericContext)
         {
-            return genericContext.GenericMethodArguments?[GenericParameterPosition] ?? this;
+            return genericContext.GenericMethodArguments.IsDefault == false ? genericContext.GenericMethodArguments[GenericParameterPosition] : this;
         }
 
     }

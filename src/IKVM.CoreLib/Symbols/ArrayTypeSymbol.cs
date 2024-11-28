@@ -14,7 +14,6 @@ namespace IKVM.CoreLib.Symbols
 
         string? _nameSuffix;
         ImmutableArray<TypeSymbol> _interfaces;
-        ImmutableArray<ConstructorSymbol> _constructors;
         ImmutableArray<MethodSymbol> _methods;
 
         /// <summary>
@@ -64,40 +63,9 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetInterfaces()
+        internal override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             return ImmutableArray<TypeSymbol>.Empty;
-        }
-
-        /// <inheritdoc />
-        public sealed override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
-        {
-            return new InterfaceMapping(ImmutableList<MethodSymbol>.Empty, interfaceType, ImmutableList<MethodSymbol>.Empty, this);
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
-        {
-            if (_constructors == default)
-            {
-                var int32 = Context.ResolveCoreType("System.Int32");
-                var ctor1Args = ImmutableArray.CreateBuilder<TypeSymbol>();
-                var ctor2Args = ImmutableArray.CreateBuilder<TypeSymbol>();
-                for (int i = 0; i < _rank; i++)
-                {
-                    ctor1Args.Add(int32);
-                    ctor2Args.Add(int32);
-                    ctor2Args.Add(int32);
-                }
-
-                ImmutableInterlocked.InterlockedInitialize(ref _constructors,
-                [
-                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor1Args.ToImmutable()),
-                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor2Args.ToImmutable()),
-                ]);
-            }
-
-            return _constructors;
         }
 
         /// <inheritdoc />
@@ -107,17 +75,28 @@ namespace IKVM.CoreLib.Symbols
             {
                 var int32 = Context.ResolveCoreType("System.Int32");
 
+                var ctor1Args = ImmutableArray.CreateBuilder<TypeSymbol>(_rank);
+                var ctor2Args = ImmutableArray.CreateBuilder<TypeSymbol>(_rank * 2);
+                for (int i = 0; i < _rank; i++)
+                {
+                    ctor1Args.Add(int32);
+                    ctor2Args.Add(int32);
+                    ctor2Args.Add(int32);
+                }
+
                 // get and set args start at the same length
-                var argBuilder = ImmutableArray.CreateBuilder<TypeSymbol>();
+                var argBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(_rank);
                 for (int i = 0; i < _rank; i++)
                     argBuilder.Add(int32);
 
-                var args = argBuilder.ToImmutable();
+                var args = argBuilder.DrainToImmutable();
                 var getArgs = args;
                 var setArgs = args.Add(GetElementType()!); // set args takes a value
 
                 ImmutableInterlocked.InterlockedInitialize(ref _methods,
                 [
+                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor1Args.DrainToImmutable()),
+                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor2Args.DrainToImmutable()),
                     new SyntheticMethodSymbol(Context, Module, this, "Set", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, null, setArgs),
                     new SyntheticMethodSymbol(Context, Module, this, "Address", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, GetElementType()!.MakeByRefType(), getArgs),
                     new SyntheticMethodSymbol(Context, Module, this, "Get", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, GetElementType(), getArgs),
@@ -128,9 +107,25 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
+        internal override MethodImplementationMapping GetMethodImplementations()
+        {
+            return MethodImplementationMapping.CreateEmpty(this);
+        }
+
+        /// <inheritdoc />
         internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return ImmutableArray<CustomAttribute>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext context)
+        {
+            if (ContainsGenericParameters == false)
+                return this;
+
+            var elementType = GetElementType() ?? throw new InvalidOperationException();
+            return elementType.Specialize(context).MakeArrayType(GetArrayRank());
         }
 
     }

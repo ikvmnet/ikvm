@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -39,15 +40,15 @@ namespace IKVM.CoreLib.Symbols
         {
             if (inherit == false)
             {
-                if (_declaredCustomAttributes == default)
+                if (_declaredCustomAttributes.IsDefault)
                     ImmutableInterlocked.InterlockedInitialize(ref _declaredCustomAttributes, _provider.GetDeclaredCustomAttributes());
 
                 return _declaredCustomAttributes;
             }
             else
             {
-                if (_declaredAndInheritedCustomAttributes == default)
-                    ImmutableInterlocked.InterlockedInitialize(ref _declaredAndInheritedCustomAttributes, ComputeInheritedCustomAttributes());
+                if (_declaredAndInheritedCustomAttributes.IsDefault)
+                    ImmutableInterlocked.InterlockedInitialize(ref _declaredAndInheritedCustomAttributes, ComputeDeclaredAndInheritedCustomAttributes());
 
                 return _declaredAndInheritedCustomAttributes;
             }
@@ -57,7 +58,7 @@ namespace IKVM.CoreLib.Symbols
         /// Computes the custom attributes that are applied to this member, including those which are inherited.
         /// </summary>
         /// <returns></returns>
-        ImmutableArray<CustomAttribute> ComputeInheritedCustomAttributes()
+        ImmutableArray<CustomAttribute> ComputeDeclaredAndInheritedCustomAttributes()
         {
             var list = _provider.GetDeclaredCustomAttributes();
 
@@ -82,13 +83,37 @@ namespace IKVM.CoreLib.Symbols
             if (_attributeUsageAttributeType == null)
                 throw new InvalidOperationException("Could not find core type System.AttributeUsageAttribute.");
 
-            // find first AttributeUsageAttribute
-            var attributeUsageAttribute = customAttribute.AttributeType.GetCustomAttribute(_attributeUsageAttributeType, true);
-            if (attributeUsageAttribute.HasValue == false)
-                return false;
+            // AttributeUsageAttribute is inheritable; this prevents recursion
+            if (customAttribute.AttributeType == _attributeUsageAttributeType)
+                return true;
+
+            // attribute usage should decorate the attribute type, either here or directly
+            var attributeUsageAttribute = GetNearestInheritedCustomAttribute(customAttribute.AttributeType, _attributeUsageAttributeType);
+            if (attributeUsageAttribute == null)
+                throw new InvalidOperationException();
 
             // return whether the Inherited property is set
             return GetInheritedValue(attributeUsageAttribute.Value);
+        }
+
+        /// <summary>
+        /// Gets the nearest custom attribute of the specified type.
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="attributeType"></param>
+        /// <returns></returns>
+        CustomAttribute? GetNearestInheritedCustomAttribute(ICustomAttributeProviderInternal provider, TypeSymbol attributeType)
+        {
+            foreach (var customAttribute in provider.GetDeclaredCustomAttributes())
+                if (customAttribute.AttributeType == attributeType)
+                    return customAttribute;
+
+            for (ICustomAttributeProviderInternal? baseProvider = provider.GetInheritedCustomAttributeProvider(); baseProvider != null; baseProvider = baseProvider.GetInheritedCustomAttributeProvider())
+                foreach (var customAttribute in provider.GetDeclaredCustomAttributes())
+                    if (customAttribute.AttributeType == attributeType)
+                        return customAttribute;
+
+            return null;
         }
 
         /// <summary>
@@ -99,7 +124,7 @@ namespace IKVM.CoreLib.Symbols
         bool GetInheritedValue(CustomAttribute attributeUsageAttribute)
         {
             foreach (var i in attributeUsageAttribute.NamedArguments)
-                if (i.IsField && i.MemberName == nameof(AttributeUsageAttribute.Inherited) && (bool?)i.TypedValue.Value == true)
+                if (i.MemberInfo is PropertySymbol property && property.Name == nameof(AttributeUsageAttribute.Inherited) && (bool?)i.TypedValue.Value == true)
                     return true;
 
             return false;
@@ -124,7 +149,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         public CustomAttribute? GetCustomAttribute(TypeSymbol attributeType, bool inherit)
         {
-            return GetCustomAttributes(attributeType, inherit).SingleOrDefaultOrThrow(() => new AmbiguousMatchException());
+            return GetCustomAttributes(attributeType, inherit).Select(static i => new CustomAttribute?(i)).SingleOrDefaultOrThrow(static () => new AmbiguousMatchException());
         }
 
         /// <summary>

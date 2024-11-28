@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
 
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class MemberSymbol : Symbol, ICustomAttributeProviderInternal
+    public abstract class MemberSymbol : Symbol, ICustomAttributeProviderInternal
     {
 
         readonly ModuleSymbol _module;
-        readonly TypeSymbol? _declaringType;
 
         CustomAttributeImpl _customAttributes;
 
@@ -21,11 +18,10 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        public MemberSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
+        protected MemberSymbol(SymbolContext context, ModuleSymbol module) :
             base(context)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
-            _declaringType = declaringType;
             _customAttributes = new CustomAttributeImpl(context, this);
         }
 
@@ -42,7 +38,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets the class that declares this member.
         /// </summary>
-        public TypeSymbol? DeclaringType => _declaringType;
+        public abstract TypeSymbol? DeclaringType { get; }
 
         /// <summary>
         /// When overridden in a derived class, gets a <see cref="MemberTypes"> value indicating the type of the member - method, constructor, event, and so on.
@@ -60,11 +56,6 @@ namespace IKVM.CoreLib.Symbols
         public abstract bool IsMissing { get; }
 
         /// <summary>
-        /// Returns <c>true</c> if the symbol contains a missing symbol.
-        /// </summary>
-        public abstract bool ContainsMissing { get; }
-
-        /// <summary>
         /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
         /// </summary>
         public abstract bool IsComplete { get; }
@@ -72,7 +63,10 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         ImmutableArray<CustomAttribute> ICustomAttributeProviderInternal.GetDeclaredCustomAttributes() => GetDeclaredCustomAttributes();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the custom attributes on this provider.
+        /// </summary>
+        /// <returns></returns>
         internal abstract ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes();
 
         /// <inheritdoc />
@@ -97,7 +91,7 @@ namespace IKVM.CoreLib.Symbols
         public bool IsDefined(TypeSymbol attributeType, bool inherit = false) => _customAttributes.IsDefined(attributeType, inherit);
 
         /// <inheritdoc />
-        public override string ToString() => Name;
+        public override string? ToString() => Name;
 
     }
 

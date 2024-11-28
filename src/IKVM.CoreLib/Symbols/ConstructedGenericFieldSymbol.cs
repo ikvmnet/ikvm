@@ -24,7 +24,7 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="definition"></param>
-        /// <param name="genericContext"></param>
+        /// <param name="typeArguments"></param>
         public ConstructedGenericFieldSymbol(SymbolContext context, TypeSymbol declaringType, FieldSymbol definition, GenericContext genericContext) :
             base(context, declaringType.Module, declaringType)
         {
@@ -45,9 +45,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
-
-        /// <inheritdoc />
         public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
@@ -59,13 +56,14 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            if (_optionalCustomModifiers == default)
+            if (_optionalCustomModifiers.IsDefault)
             {
-                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-                foreach (var i in _definition.GetOptionalCustomModifiers())
+                var l = _definition.GetOptionalCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
                     b.Add(i.Specialize(_genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, b.DrainToImmutable());
             }
 
             return _optionalCustomModifiers;
@@ -74,13 +72,14 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            if (_requiredCustomModifiers == default)
+            if (_requiredCustomModifiers.IsDefault)
             {
-                var b = ImmutableArray.CreateBuilder<TypeSymbol>();
-                foreach (var i in _definition.GetRequiredCustomModifiers())
+                var l = _definition.GetRequiredCustomModifiers();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
                     b.Add(i.Specialize(_genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, b.DrainToImmutable());
             }
 
             return _requiredCustomModifiers;
@@ -89,7 +88,7 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return _definition.GetDeclaredCustomAttributes();
         }
 
     }

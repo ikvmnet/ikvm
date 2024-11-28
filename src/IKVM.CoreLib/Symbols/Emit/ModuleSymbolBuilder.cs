@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -10,61 +9,162 @@ using System.Resources;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    class ModuleSymbolBuilder : ModuleSymbol
+    public class ModuleSymbolBuilder : ModuleSymbol, ICustomAttributeBuilder
     {
+
+        readonly string _name;
+        readonly string? _fileName;
+
+        ulong _imageBase;
+        uint _fileAlignment;
+        DllCharacteristics _dllCharacteristics;
+
+        readonly ImmutableArray<FieldSymbolBuilder>.Builder _fields = ImmutableArray.CreateBuilder<FieldSymbolBuilder>();
+        readonly ImmutableArray<MethodSymbolBuilder>.Builder _methods = ImmutableArray.CreateBuilder<MethodSymbolBuilder>();
+        readonly ImmutableArray<TypeSymbolBuilder>.Builder _types = ImmutableArray.CreateBuilder<TypeSymbolBuilder>();
+        readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
+
+        ImmutableArray<FieldSymbol> _fieldsCache;
+        ImmutableArray<MethodSymbol> _methodsCache;
+        ImmutableArray<TypeSymbol> _typesCache;
+
+        readonly ImmutableArray<SourceDocument>.Builder _sourceDocuments = ImmutableArray.CreateBuilder<SourceDocument>();
+
+        bool _frozen;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="assembly"></param>
-        public ModuleSymbolBuilder(SymbolContext context, AssemblySymbolBuilder assembly) :
+        /// <param name="name"></param>
+        /// <param name="fileName"></param>
+        internal ModuleSymbolBuilder(SymbolContext context, AssemblySymbolBuilder assembly, string name, string? fileName) :
             base(context, assembly)
         {
+            _name = name ?? throw new ArgumentNullException(nameof(name));
+            _fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
+        }
 
+        /// <inheritdoc />
+        public sealed override string FullyQualifiedName => throw new NotImplementedException();
+
+        /// <inheritdoc />
+        public sealed override string Name => _name;
+
+        /// <summary>
+        /// Name of the file to produce for the module.
+        /// </summary>
+        public string? FileName => _fileName;
+
+        /// <inheritdoc />
+        public sealed override Guid ModuleVersionId => Guid.Empty;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override bool IsComplete => false;
+
+        /// <inheritdoc />
+        public override bool IsResource()
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<FieldSymbol> GetDeclaredFields()
+        {
+            if (_fieldsCache == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _fieldsCache, _fields.ToImmutable().CastArray<FieldSymbol>());
+
+            return _fieldsCache;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            if (_methodsCache == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _methodsCache, _methods.ToImmutable().CastArray<MethodSymbol>());
+
+            return _methodsCache;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<TypeSymbol> GetDeclaredTypes()
+        {
+            if (_typesCache == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _typesCache, _types.ToImmutable().CastArray<TypeSymbol>());
+
+            return _typesCache;
+        }
+
+        /// <inheritdoc />
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        {
+            return _customAttributes.ToImmutable();
+        }
+
+        /// <summary>
+        /// Throws an exception if this module is frozen.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Freezes the module.
+        /// </summary>
+        internal void SetFrozen()
+        {
+            _frozen = true;
         }
 
         /// <summary>
         /// Gets or sets the preferred address of the first byte of the image when it is loaded into memory.
         /// </summary>
-        ulong ImageBase { get; set; }
+        public ulong ImageBase
+        {
+            get => _imageBase;
+            set { ThrowIfFrozen(); _imageBase = value; }
+        }
 
         /// <summary>
         /// Gets or sets the alignment factor (in bytes) that is used to align the raw data of sections in the image file.
         /// </summary>
-        uint FileAlignment { get; set; }
+        public uint FileAlignment
+        {
+            get => _fileAlignment;
+            set { ThrowIfFrozen(); _fileAlignment = value; }
+        }
 
         /// <summary>
         /// Gets or sets the characteristics of a dynamic link library.
         /// </summary>
-        DllCharacteristics DllCharacteristics { get; set; }
-
-        /// <inheritdoc />
-        public override string FullyQualifiedName => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override string Name => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool ContainsMissing => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public override bool IsComplete => throw new NotImplementedException();
+        public DllCharacteristics DllCharacteristics
+        {
+            get => _dllCharacteristics;
+            set { ThrowIfFrozen(); _dllCharacteristics = value; }
+        }
 
         /// <summary>
-        /// Defines a document for source.
+        /// Defines a document for source symbols.
         /// </summary>
         /// <param name="url"></param>
         /// <param name="language"></param>
         /// <param name="languageVendor"></param>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        ISymbolDocumentWriter? DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
+        public SourceDocument DefineSymbolDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+
+            var d = new SourceDocument(Context, this, url, language, languageVendor, documentType);
+            _sourceDocuments.Add(d);
+            return d;
         }
 
         /// <summary>
@@ -73,8 +173,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="stream"></param>
         /// <param name="attribute"></param>
-        void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
+        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
         {
+            ThrowIfFrozen();
+
             throw new NotImplementedException();
         }
 
@@ -84,8 +186,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        IResourceWriter DefineResource(string name, string description)
+        public IResourceWriter DefineResource(string name, string description)
         {
+            ThrowIfFrozen();
+
             throw new NotImplementedException();
         }
 
@@ -96,8 +200,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="description"></param>
         /// <param name="attribute"></param>
         /// <returns></returns>
-        IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
+        public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
         {
+            ThrowIfFrozen();
+
             throw new NotImplementedException();
         }
 
@@ -110,27 +216,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, IImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a global method with the specified name, attributes, calling convention, return type, custom modifiers for the return type, parameter types, and custom modifiers for the parameter types.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="returnType"></param>
-        /// <param name="requiredReturnTypeCustomModifiers"></param>
-        /// <param name="optionalReturnTypeCustomModifiers"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="requiredParameterTypeCustomModifiers"></param>
-        /// <param name="optionalParameterTypeCustomModifiers"></param>
-        /// <returns></returns>
-        MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, IImmutableList<TypeSymbol> requiredReturnTypeCustomModifiers, IImmutableList<TypeSymbol> optionalReturnTypeCustomModifiers, IImmutableList<TypeSymbol> parameterTypes, IImmutableList<IImmutableList<TypeSymbol>> requiredParameterTypeCustomModifiers, IImmutableList<IImmutableList<TypeSymbol>> optionalParameterTypeCustomModifiers)
-        {
-            throw new NotImplementedException();
+            return DefineGlobalMethod(name, attributes, callingConvention, returnType, parameterTypes, [], [], [], []);
         }
 
         /// <summary>
@@ -141,9 +229,32 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, TypeSymbol? returnType, IImmutableList<TypeSymbol> parameterTypes)
+        public MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
-            throw new NotImplementedException();
+            return DefineGlobalMethod(name, attributes, CallingConventions.Standard, returnType, parameterTypes);
+        }
+
+        /// <summary>
+        /// Defines a global method with the specified name, attributes, calling convention, return type, custom modifiers for the return type, parameter types, and custom modifiers for the parameter types.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="attributes"></param>
+        /// <param name="callingConvention"></param>
+        /// <param name="returnType"></param>
+        /// <param name="requiredReturnCustomModifiers"></param>
+        /// <param name="optionalReturnCustomModifiers"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="requiredParameterCustomModifiers"></param>
+        /// <param name="optionalParameterCustomModifiers"></param>
+        /// <returns></returns>
+        public MethodSymbolBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> requiredReturnCustomModifiers, ImmutableArray<TypeSymbol> optionalReturnCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> requiredParameterCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> optionalParameterCustomModifiers)
+        {
+            ThrowIfFrozen();
+
+            var b = new MethodSymbolBuilder(Context, this, null, name, attributes, callingConvention, returnType ?? Context.ResolveCoreType("System.Void"), requiredReturnCustomModifiers, optionalReturnCustomModifiers, parameterTypes, requiredParameterCustomModifiers, optionalParameterCustomModifiers);
+            _methods.Add(b);
+            _methodsCache = default;
+            return b;
         }
 
         /// <summary>
@@ -151,235 +262,112 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name)
+        public TypeSymbolBuilder DefineType(string name)
         {
-            throw new NotImplementedException();
+            return DefineType(name, TypeAttributes.Class);
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given the type name, the attributes, the type that the defined type extends, and the total size of the type.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <param name="parent"></param>
         /// <param name="typesize"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr, TypeSymbol? parent, int typesize)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent, int typesize)
         {
-            throw new NotImplementedException();
+            return DefineType(name, attributes, parent, PackingSize.Unspecified, typesize);
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given type name, its attributes, and the type that the defined type extends.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <param name="parent"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr, TypeSymbol? parent)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent)
         {
-            throw new NotImplementedException();
+            return DefineType(name, attributes, parent, PackingSize.Unspecified, -1);
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given the type name and the type attributes.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes)
         {
-            throw new NotImplementedException();
+            return DefineType(name, attributes, null);
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given the type name, the attributes, the type that the defined type extends, and the packing size of the type.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <param name="parent"></param>
-        /// <param name="packsize"></param>
+        /// <param name="packingSize"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packsize)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent, PackingSize packingSize)
         {
-            throw new NotImplementedException();
+            return DefineType(name, attributes, parent, packingSize, -1);
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given the type name, attributes, the type that the defined type extends, the packing size of the defined type, and the total size of the defined type.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <param name="parent"></param>
         /// <param name="packingSize"></param>
         /// <param name="typesize"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packingSize, int typesize)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent, PackingSize packingSize, int typesize)
         {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+
+            var b = new TypeSymbolBuilder(Context, this, name, attributes, parent, [], packingSize, typesize, null);
+            _types.Add(b);
+            _typesCache = default;
+            return b;
         }
 
         /// <summary>
         /// Constructs a TypeBuilder given the type name, attributes, the type that the defined type extends, and the interfaces that the defined type implements.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="attr"></param>
+        /// <param name="attributes"></param>
         /// <param name="parent"></param>
         /// <param name="interfaces"></param>
         /// <returns></returns>
-        TypeSymbolBuilder DefineType(string name, TypeAttributes attr, TypeSymbol? parent, ImmutableList<TypeSymbol> interfaces)
+        public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent, ImmutableArray<TypeSymbol> interfaces)
         {
-            throw new NotImplementedException();
-        }
+            ThrowIfFrozen();
 
-        /// <summary>
-        /// Defines a nested type, given its name.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name and attributes.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, and the type that it extends.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr, TypeSymbol? parent)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, the type that it extends, and the interfaces that it implements.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="interfaces"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr, TypeSymbol? parent, IImmutableList<TypeSymbol> interfaces)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="typeSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr, TypeSymbol? parent, int typeSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, the type that it extends, and the packing size.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="packSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines a nested type, given its name, attributes, size, and the type that it extends.
-        /// </summary>
-        /// <param name="enclosingType"></param>
-        /// <param name="name"></param>
-        /// <param name="attr"></param>
-        /// <param name="parent"></param>
-        /// <param name="packSize"></param>
-        /// <param name="typeSize"></param>
-        /// <returns></returns>
-        TypeSymbolBuilder DefineNestedType(TypeSymbolBuilder enclosingType, string name, TypeAttributes attr, TypeSymbol? parent, PackingSize packSize, int typeSize)
-        {
-            throw new NotImplementedException();
+            var b = new TypeSymbolBuilder(Context, this, name, attributes, parent, interfaces, PackingSize.Unspecified, -1, null);
+            _types.Add(b);
+            _typesCache = default;
+            return b;
         }
 
         /// <summary>
         /// Explicitely adds a reference to the specified assembly.
         /// </summary>
         /// <param name="assembly"></param>
-        void AddReference(AssemblySymbol assembly)
+        public void AddReference(AssemblySymbol assembly)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Finishes the module and all types. Required before save.
-        /// </summary>
-        void Complete()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Saves this module assembly to disk. Module must first be completed.
-        /// </summary>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        void Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
+            ThrowIfFrozen();
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public override bool IsResource()
+        public void SetCustomAttribute(CustomAttribute attribute)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<FieldSymbol> GetDeclaredFields()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<MethodSymbol> GetDeclaredMethods()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<TypeSymbol> GetDeclaredTypes()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            throw new NotImplementedException();
+            ThrowIfFrozen();
+            _customAttributes.Add(attribute);
         }
 
     }

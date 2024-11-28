@@ -41,13 +41,10 @@ namespace IKVM.CoreLib.Symbols
         public sealed override MethodAttributes Attributes => _definition.Attributes;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericMethod => true;
+        public sealed override bool IsGenericMethodDefinition => IsConstructedGenericMethod == false && GenericArguments.Length > 0;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericMethodDefinition => false;
-
-        /// <inheritdoc />
-        public sealed override bool ContainsGenericParameters => false;
+        public sealed override bool IsConstructedGenericMethod => _genericContext.GenericMethodArguments.IsDefault == false;
 
         /// <inheritdoc />
         public sealed override ParameterSymbol ReturnParameter => GetReturnParameter();
@@ -83,52 +80,45 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => _genericContext.GenericMethodArguments != null && _genericContext.GenericMethodArguments.Value.Any(i => i.IsMissing || i.ContainsMissing);
-
-        /// <inheritdoc />
         public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
-        public sealed override MethodSymbol GetBaseDefinition()
-        {
-            throw new NotImplementedException();
-        }
+        public sealed override MethodSymbol? BaseDefinition => _definition.BaseDefinition;
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetGenericArguments()
+        public override ImmutableArray<TypeSymbol> GenericArguments => ComputeGenericArguments();
+
+        ImmutableArray<TypeSymbol> ComputeGenericArguments()
         {
-            if (_typeParameters == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _typeParameters, _definition.GetGenericArguments().Select(i => i.Specialize(_genericContext)).ToImmutableArray());
+            if (_typeParameters.IsDefault)
+            {
+                var l = _definition.GenericArguments;
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
+                    b.Add(i.Specialize(_genericContext));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _typeParameters, b.DrainToImmutable());
+            }
 
             return _typeParameters;
         }
 
         /// <inheritdoc />
-        public sealed override MethodSymbol GetGenericMethodDefinition()
-        {
-            // value only supported for generic method not method on generic type
-            if (_genericContext.GenericMethodArguments == null)
-                throw new InvalidOperationException();
-
-            return _definition;
-        }
+        public sealed override MethodSymbol GenericMethodDefinition => _definition;
 
         /// <inheritdoc />
-        public sealed override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            return _definition.GetMethodImplementationFlags();
-        }
+        public override ImmutableArray<ParameterSymbol> Parameters => ComputeParameters();
 
-        /// <inheritdoc />
-        public sealed override ImmutableArray<ParameterSymbol> GetParameters()
+        ImmutableArray<ParameterSymbol> ComputeParameters()
         {
-            if (_parameters == default)
+            if (_parameters.IsDefault)
             {
-                var b = ImmutableArray.CreateBuilder<ParameterSymbol>();
-                foreach (var i in _definition.GetParameters())
+                var l = _definition.Parameters;
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
+                foreach (var i in l)
                     b.Add(new ConstructedGenericParameterSymbol(Context, this, i, _genericContext));
 
-                ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.ToImmutable());
+                ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.DrainToImmutable());
             }
 
             return _parameters;
@@ -137,7 +127,12 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return _definition.GetDeclaredCustomAttributes();
+        }
+
+        public override string? ToString()
+        {
+            return base.ToString();
         }
 
     }

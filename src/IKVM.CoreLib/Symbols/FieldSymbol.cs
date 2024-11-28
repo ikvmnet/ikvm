@@ -4,8 +4,10 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class FieldSymbol : MemberSymbol
+    public abstract class FieldSymbol : MemberSymbol
     {
+
+        readonly TypeSymbol? _declaringType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -13,11 +15,14 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        public FieldSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
-            base(context, module, declaringType)
+        internal FieldSymbol(SymbolContext context, ModuleSymbol module, TypeSymbol? declaringType) :
+            base(context, module)
         {
-
+            _declaringType = declaringType;
         }
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <summary>
         /// Gets the attributes associated with this field.

@@ -37,7 +37,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <summary>
-        /// Gets or creates a <see cref="ITypeSymbol"/> representing an Array of this type.
+        /// Gets or creates a <see cref="TypeSymbol"/> representing an Array of this type.
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
@@ -119,7 +119,7 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         readonly ConstructedGenericTypeSymbol CreateGenericTypeSymbol(ImmutableArray<TypeSymbol> genericTypeArguments)
         {
-            return new ConstructedGenericTypeSymbol(_context, _elementType, new GenericContext(genericTypeArguments, null));
+            return new ConstructedGenericTypeSymbol(_context, _elementType, new GenericContext(genericTypeArguments, default));
         }
 
     }

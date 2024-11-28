@@ -38,21 +38,9 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetInterfaces()
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             return ImmutableArray<TypeSymbol>.Empty;
-        }
-
-        /// <inheritdoc />
-        public override InterfaceMapping GetInterfaceMap(TypeSymbol interfaceType)
-        {
-            return new InterfaceMapping(ImmutableList<MethodSymbol>.Empty, interfaceType, ImmutableList<MethodSymbol>.Empty, this);
-        }
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<ConstructorSymbol> GetDeclaredConstructors()
-        {
-            return ImmutableArray<ConstructorSymbol>.Empty;
         }
 
         /// <inheritdoc />
@@ -61,10 +49,25 @@ namespace IKVM.CoreLib.Symbols
             return ImmutableArray<MethodSymbol>.Empty;
         }
 
+        internal override MethodImplementationMapping GetMethodImplementations()
+        {
+            return MethodImplementationMapping.CreateEmpty(this);
+        }
+
         /// <inheritdoc />
         internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            throw new NotImplementedException();
+            return ImmutableArray<CustomAttribute>.Empty;
+        }
+
+        /// <inheritdoc />
+        internal override TypeSymbol Specialize(GenericContext context)
+        {
+            if (ContainsGenericParameters == false)
+                return this;
+
+            var elementType = GetElementType() ?? throw new InvalidOperationException();
+            return elementType.Specialize(context).MakeByRefType();
         }
 
     }

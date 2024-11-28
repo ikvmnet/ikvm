@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace IKVM.CoreLib.Symbols
 {
@@ -7,7 +6,7 @@ namespace IKVM.CoreLib.Symbols
     /// <summary>
     /// Provides custom attributes for reflection objects that support them.
     /// </summary>
-    interface ICustomAttributeProvider
+    public interface ICustomAttributeProvider
     {
 
         /// <summary>

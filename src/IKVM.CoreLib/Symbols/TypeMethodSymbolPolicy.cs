@@ -39,7 +39,7 @@ namespace IKVM.CoreLib.Symbols
         /// <inheritdoc />
         public sealed override bool IsSuppressedByMoreDerivedMember(MethodSymbol member, List<MethodSymbol> priorMembers)
         {
-            if (!member.IsVirtual)
+            if (member.IsVirtual == false)
                 return false;
 
             foreach (var prior in priorMembers)

@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+using IKVM.CoreLib.Text;
+
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class AssemblySymbol : Symbol, ICustomAttributeProviderInternal
+    public abstract class AssemblySymbol : Symbol, ICustomAttributeProviderInternal
     {
 
         CustomAttributeImpl _customAttributes;
@@ -24,9 +26,15 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <summary>
+        /// Gets an <see cref="AssemblyIdentity"/> for this assembly.
+        /// </summary>
+        /// <returns></returns>
+        public abstract AssemblyIdentity Identity { get; }
+
+        /// <summary>
         /// Gets the display name of the assembly.
         /// </summary>
-        public abstract string? FullName { get; }
+        public string FullName => Identity.FullName;
 
         /// <summary>
         /// Gets a string representing the version of the common language runtime (CLR) saved in the file containing the manifest.
@@ -51,12 +59,12 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets a collection of the types defined in this assembly.
         /// </summary>
-        public abstract IEnumerable<TypeSymbol> DefinedTypes { get; }
+        public IEnumerable<TypeSymbol> DefinedTypes => GetTypes();
 
         /// <summary>
         /// Gets a collection of the public types defined in this assembly that are visible outside the assembly.
         /// </summary>
-        public abstract IEnumerable<TypeSymbol> ExportedTypes { get; }
+        public IEnumerable<TypeSymbol> ExportedTypes => GetExportedTypes();
 
         /// <summary>
         /// Gets a collection that contains the modules in this assembly.
@@ -67,16 +75,6 @@ namespace IKVM.CoreLib.Symbols
         /// Returns <c>true</c> if the symbol is missing.
         /// </summary>
         public abstract bool IsMissing { get; }
-
-        /// <summary>
-        /// Returns <c>true</c> if the symbol contains a missing symbol.
-        /// </summary>
-        public abstract bool ContainsMissing { get; }
-
-        /// <summary>
-        /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
-        /// </summary>
-        public abstract bool IsComplete { get; }
 
         /// <summary>
         /// Gets the public types defined in this assembly that are visible outside the assembly.
@@ -120,16 +118,10 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <summary>
-        /// Gets all the modules that are part of this assembly, specifying whether to include resource modules.
+        /// Gets all the modules that are part of this assembly.
         /// </summary>
         /// <returns></returns>
         public abstract ImmutableArray<ModuleSymbol> GetModules();
-
-        /// <summary>
-        /// Gets an <see cref="AssemblyIdentity"/> for this assembly.
-        /// </summary>
-        /// <returns></returns>
-        public abstract AssemblyIdentity GetIdentity();
 
         /// <summary>
         /// Gets the <see cref="AssemblyIdentity"/> objects for all the assemblies referenced by this assembly.
@@ -150,13 +142,28 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="name"></param>
         /// <param name="throwOnError"></param>
         /// <returns></returns>
-        public abstract TypeSymbol? GetType(string name, bool throwOnError);
+        public TypeSymbol? GetType(string name, bool throwOnError)
+        {
+            foreach (var module in GetModules())
+                if (module.GetType(name, false) is TypeSymbol type)
+                    return type;
+
+            if (throwOnError)
+                throw new TypeLoadException();
+
+            return null;
+        }
 
         /// <summary>
         /// Gets all types defined in this assembly.
         /// </summary>
         /// <returns></returns>
-        public abstract ImmutableArray<TypeSymbol> GetTypes();
+        public IEnumerable<TypeSymbol> GetTypes()
+        {
+            foreach (var module in GetModules())
+                foreach (var type in module.GetTypes())
+                    yield return type;
+        }
 
         /// <summary>
         /// Loads the specified manifest resource from this assembly.
@@ -178,7 +185,32 @@ namespace IKVM.CoreLib.Symbols
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public abstract Stream? GetManifestResourceStream(TypeSymbol type, string name);
+        public Stream? GetManifestResourceStream(TypeSymbol type, string name)
+        {
+            var sb = new ValueStringBuilder(stackalloc char[256]);
+
+            if (type == null)
+            {
+                if (name == null)
+                    throw new ArgumentNullException(nameof(type));
+            }
+            else
+            {
+                var ns = type.Namespace;
+                if (ns != null)
+                {
+                    sb.Append(ns);
+
+                    if (name != null)
+                        sb.Append(Type.Delimiter);
+                }
+            }
+
+            if (name != null)
+                sb.Append(name);
+
+            return GetManifestResourceStream(sb.ToString());
+        }
 
         /// <inheritdoc />
         internal abstract ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes();

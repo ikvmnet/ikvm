@@ -11,22 +11,29 @@
       <None Remove="Symbols\IkvmReflection\**" />
     </ItemGroup>
     <ItemGroup>
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionAssemblySymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionConstructorSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionEventBuilderInfo.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionEventSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionFieldSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionGenericTypeParameterSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionILGenerator.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionLabel.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionLocalBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionMethodSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionModuleSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionParameterBuilderInfo.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionParameterSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionPropertySymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionSymbolBuilder.cs" />
-      <Compile Remove="Symbols\Reflection\Emit\ReflectionTypeSymbolBuilder.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\OpCodeValueExtensions.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionAssemblySymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionEventSymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionFieldSymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionMethodSymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionModuleSymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionPropertySymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionTypeSymbolBuilderPhase.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionTypeSymbolBuilderState.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\Writers\IkvmReflectionILGenerationWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionAssemblySymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionEventSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionFieldSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionGenericMethodParameterTypeSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionGenericTypeParameterTypeSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionMethodSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionModuleSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionParameterSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionPropertySymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionSymbolContext.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionTypeSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionUtil.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionSymbolOptions.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -128,10 +135,6 @@
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Symbols\Reflection\Emit\" />
     </ItemGroup>
 
 </Project>

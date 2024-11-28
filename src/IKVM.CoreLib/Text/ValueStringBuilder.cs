@@ -1,11 +1,9 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-using System;
+﻿using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace IKVM.CoreLib.Text
 {
@@ -16,10 +14,14 @@ namespace IKVM.CoreLib.Text
     internal ref partial struct ValueStringBuilder
     {
 
-        private char[]? _arrayToReturnToPool;
-        private Span<char> _chars;
-        private int _pos;
+        char[]? _arrayToReturnToPool;
+        Span<char> _chars;
+        int _pos;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="initialBuffer"></param>
         public ValueStringBuilder(Span<char> initialBuffer)
         {
             _arrayToReturnToPool = null;
@@ -27,6 +29,10 @@ namespace IKVM.CoreLib.Text
             _pos = 0;
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="initialCapacity"></param>
         public ValueStringBuilder(int initialCapacity)
         {
             _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
@@ -34,6 +40,9 @@ namespace IKVM.CoreLib.Text
             _pos = 0;
         }
 
+        /// <summary>
+        /// Gets or sets the current length of the string.
+        /// </summary>
         public int Length
         {
             get => _pos;
@@ -45,8 +54,15 @@ namespace IKVM.CoreLib.Text
             }
         }
 
+        /// <summary>
+        /// Gets the capacity.
+        /// </summary>
         public int Capacity => _chars.Length;
 
+        /// <summary>
+        /// Ensures the underlying buffer is capable of meeting the specified capacity.
+        /// </summary>
+        /// <param name="capacity"></param>
         public void EnsureCapacity(int capacity)
         {
             // This is not expected to be called this with negative capacity
@@ -79,9 +95,15 @@ namespace IKVM.CoreLib.Text
                 EnsureCapacity(Length + 1);
                 _chars[Length] = '\0';
             }
+
             return ref MemoryMarshal.GetReference(_chars);
         }
 
+        /// <summary>
+        /// Gets a reference to the character at the specified index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public ref char this[int index]
         {
             get
@@ -91,9 +113,13 @@ namespace IKVM.CoreLib.Text
             }
         }
 
+        /// <summary>
+        /// Returns the string representation of the builder.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
-            string s = _chars.Slice(0, _pos).ToString();
+            var s = _chars.Slice(0, _pos).ToString();
             Dispose();
             return s;
         }
@@ -112,13 +138,37 @@ namespace IKVM.CoreLib.Text
                 EnsureCapacity(Length + 1);
                 _chars[Length] = '\0';
             }
+
             return _chars.Slice(0, _pos);
         }
 
+        /// <summary>
+        /// Returns a span around the contents of the builder.
+        /// </summary>
+        /// <returns></returns>
         public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+
+        /// <summary>
+        /// Returns a span around the contents of the builder.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <returns></returns>
         public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+
+        /// <summary>
+        /// Returns a span around the contents of the builder.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
+        /// <summary>
+        /// Attempts to copy the characters to the output destination.
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="charsWritten"></param>
+        /// <returns></returns>
         public bool TryCopyTo(Span<char> destination, out int charsWritten)
         {
             if (_chars.Slice(0, _pos).TryCopyTo(destination))
@@ -135,6 +185,12 @@ namespace IKVM.CoreLib.Text
             }
         }
 
+        /// <summary>
+        /// Inesrts a repeating sequence of characters at the specified index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        /// <param name="count"></param>
         public void Insert(int index, char value, int count)
         {
             if (_pos > _chars.Length - count)
@@ -148,19 +204,20 @@ namespace IKVM.CoreLib.Text
             _pos += count;
         }
 
+        /// <summary>
+        /// Inserts the specified string at the specified index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="s"></param>
         public void Insert(int index, string? s)
         {
             if (s == null)
-            {
                 return;
-            }
 
             int count = s.Length;
 
             if (_pos > (_chars.Length - count))
-            {
                 Grow(count);
-            }
 
             int remaining = _pos - index;
             _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
@@ -172,11 +229,15 @@ namespace IKVM.CoreLib.Text
             _pos += count;
         }
 
+        /// <summary>
+        /// Appends the specified character.
+        /// </summary>
+        /// <param name="c"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(char c)
         {
-            int pos = _pos;
-            Span<char> chars = _chars;
+            var pos = _pos;
+            var chars = _chars;
             if ((uint)pos < (uint)chars.Length)
             {
                 chars[pos] = c;
@@ -188,6 +249,10 @@ namespace IKVM.CoreLib.Text
             }
         }
 
+        /// <summary>
+        /// Appends the specified string.
+        /// </summary>
+        /// <param name="s"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string? s)
         {
@@ -208,7 +273,11 @@ namespace IKVM.CoreLib.Text
             }
         }
 
-        private void AppendSlow(string s)
+        /// <summary>
+        /// Appends the specified string, using the slow mechanism.
+        /// </summary>
+        /// <param name="s"></param>
+        void AppendSlow(string s)
         {
             int pos = _pos;
             if (pos > _chars.Length - s.Length)
@@ -224,67 +293,110 @@ namespace IKVM.CoreLib.Text
             _pos += s.Length;
         }
 
+        /// <summary>
+        /// Appends a repeating sequence of the specified character.
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="count"></param>
         public void Append(char c, int count)
         {
             if (_pos > _chars.Length - count)
-            {
                 Grow(count);
-            }
 
-            Span<char> dst = _chars.Slice(_pos, count);
+            var dst = _chars.Slice(_pos, count);
             for (int i = 0; i < dst.Length; i++)
-            {
                 dst[i] = c;
-            }
+
             _pos += count;
         }
 
+        /// <summary>
+        /// Appends the string of characters pointed to by the specified pointer and length.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="length"></param>
         public unsafe void Append(char* value, int length)
         {
-            int pos = _pos;
+            var pos = _pos;
             if (pos > _chars.Length - length)
-            {
                 Grow(length);
-            }
 
-            Span<char> dst = _chars.Slice(_pos, length);
+            var dst = _chars.Slice(_pos, length);
             for (int i = 0; i < dst.Length; i++)
-            {
                 dst[i] = *value++;
-            }
+
             _pos += length;
         }
 
+        /// <summary>
+        /// Appends the specified sequence of characters.
+        /// </summary>
+        /// <param name="value"></param>
         public void Append(scoped ReadOnlySpan<char> value)
         {
-            int pos = _pos;
+            var pos = _pos;
             if (pos > _chars.Length - value.Length)
-            {
                 Grow(value.Length);
-            }
 
             value.CopyTo(_chars.Slice(_pos));
             _pos += value.Length;
         }
 
+        /// <summary>
+        /// Allocates the memory required to append the specified count of characters and returns a reference to that memory for writing.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<char> AppendSpan(int length)
         {
             int origPos = _pos;
             if (origPos > _chars.Length - length)
-            {
                 Grow(length);
-            }
 
             _pos = origPos + length;
             return _chars.Slice(origPos, length);
         }
 
+        /// <summary>
+        /// Grows the array and appends the single specified character.
+        /// </summary>
+        /// <param name="c"></param>
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private void GrowAndAppend(char c)
+        void GrowAndAppend(char c)
         {
             Grow(1);
             Append(c);
+        }
+
+        /// <summary>
+        /// Removes a range of characters from this builder.
+        /// </summary>
+        /// <remarks>
+        /// This method does not reduce the capacity of this builder.
+        /// </remarks>
+        public void Remove(int startIndex, int length)
+        {
+            if (startIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+            if (length > Length - startIndex)
+                throw new ArgumentOutOfRangeException(nameof(length));
+
+            if (Length == length && startIndex == 0)
+            {
+                Length = 0;
+                return;
+            }
+
+            if (length > 0)
+            {
+                var src = _chars.Slice(startIndex + length);
+                var dst = _chars.Slice(startIndex);
+                src.CopyTo(dst);
+                Length -= length;
+            }
         }
 
         /// <summary>
@@ -311,27 +423,26 @@ namespace IKVM.CoreLib.Text
 
             // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
             // This could also go negative if the actual required length wraps around.
-            char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
+            var poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
             _chars.Slice(0, _pos).CopyTo(poolArray);
 
-            char[]? toReturn = _arrayToReturnToPool;
+            var toReturn = _arrayToReturnToPool;
             _chars = _arrayToReturnToPool = poolArray;
             if (toReturn != null)
-            {
                 ArrayPool<char>.Shared.Return(toReturn);
-            }
         }
 
+        /// <summary>
+        /// Disposes of the instance.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            char[]? toReturn = _arrayToReturnToPool;
+            var toReturn = _arrayToReturnToPool;
             this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
             if (toReturn != null)
-            {
                 ArrayPool<char>.Shared.Return(toReturn);
-            }
         }
 
     }

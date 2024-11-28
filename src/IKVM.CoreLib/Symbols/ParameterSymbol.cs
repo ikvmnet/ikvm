@@ -6,7 +6,7 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class ParameterSymbol : ICustomAttributeProviderInternal
+    public abstract class ParameterSymbol : ICustomAttributeProviderInternal
     {
 
         readonly SymbolContext _context;
@@ -19,7 +19,7 @@ namespace IKVM.CoreLib.Symbols
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public ParameterSymbol(SymbolContext context, MemberSymbol declaringMember, int position)
+        protected ParameterSymbol(SymbolContext context, MemberSymbol declaringMember, int position)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _declaringMember = declaringMember ?? throw new ArgumentNullException(nameof(declaringMember));
@@ -139,6 +139,14 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public bool IsDefined(TypeSymbol attributeType, bool inherit = false) => _customAttributes.IsDefined(attributeType, inherit);
+
+        /// <inheritdoc />
+        public override string? ToString()
+        {
+            var typeName = ParameterType.FormatTypeName();
+            var name = Name;
+            return name is null ? typeName : typeName + " " + name;
+        }
 
     }
 

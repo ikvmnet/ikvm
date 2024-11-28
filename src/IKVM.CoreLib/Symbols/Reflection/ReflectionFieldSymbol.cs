@@ -30,34 +30,36 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the associated symbol context.
         /// </summary>
-        protected new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+        new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
+
+        /// <summary>
+        /// Gets the underlying object.
+        /// </summary>
+        internal FieldInfo UnderlyingField => _underlyingField;
 
         /// <inheritdoc />
-        public override FieldAttributes Attributes => _underlyingField.Attributes;
+        public sealed override FieldAttributes Attributes => _underlyingField.Attributes;
 
         /// <inheritdoc />
-        public override TypeSymbol FieldType => _fieldType ??= Context.ResolveTypeSymbol(_underlyingField.FieldType);
+        public sealed override TypeSymbol FieldType => _fieldType ??= Context.ResolveTypeSymbol(_underlyingField.FieldType);
 
         /// <inheritdoc />
-        public override string Name => _underlyingField.Name;
+        public sealed override string Name => _underlyingField.Name;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override bool ContainsMissing => false;
+        public sealed override bool IsComplete => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => false;
-
-        /// <inheritdoc />
-        public override object? GetRawConstantValue()
+        public sealed override object? GetRawConstantValue()
         {
             return _underlyingField.GetRawConstantValue();
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             if (_optionalCustomModifiers == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingField.GetOptionalCustomModifiers()));
@@ -66,7 +68,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
             if (_requiredCustomModifiers == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingField.GetRequiredCustomModifiers()));
@@ -75,7 +77,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
             if (_customAttributes == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingField.GetCustomAttributesData()));
