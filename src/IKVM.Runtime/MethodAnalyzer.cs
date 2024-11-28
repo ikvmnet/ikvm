@@ -2485,7 +2485,7 @@ namespace IKVM.Runtime
         private void SetHardError(RuntimeClassLoader classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
         {
             string text = string.Format(message, args);
-#if IMPORTER
+
             switch (hardError)
             {
                 case HardError.NoClassDefFoundError:
@@ -2518,7 +2518,7 @@ namespace IKVM.Runtime
                 default:
                     throw new InvalidOperationException();
             }
-#endif
+            
             instruction.SetHardError(hardError, AllocErrorMessage(text));
         }
 
