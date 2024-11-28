@@ -43,7 +43,7 @@ namespace IKVM.Runtime
 
         readonly RuntimeJavaMethod getter;
         readonly RuntimeJavaMethod setter;
-        IPropertySymbolBuilder pb;
+        PropertySymbolBuilder pb;
 
         RuntimeJavaMethod GetMethod(string name, string sig, bool isstatic)
         {
@@ -84,13 +84,13 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal IPropertySymbolBuilder GetPropertyBuilder()
+        internal PropertySymbolBuilder GetPropertyBuilder()
         {
             AssertLinked();
             return pb;
         }
 
-        internal void DoLink(ITypeSymbolBuilder tb)
+        internal void DoLink(TypeSymbolBuilder tb)
         {
             if (getter != null)
                 getter.Link();
@@ -99,9 +99,9 @@ namespace IKVM.Runtime
 
             pb = tb.DefineProperty(Name, PropertyAttributes.None, FieldTypeWrapper.TypeAsSignatureType, []);
             if (getter != null)
-                pb.SetGetMethod((IMethodSymbolBuilder)getter.GetMethod());
+                pb.SetGetMethod((MethodSymbolBuilder)getter.GetMethod());
             if (setter != null)
-                pb.SetSetMethod((IMethodSymbolBuilder)setter.GetMethod());
+                pb.SetSetMethod((MethodSymbolBuilder)setter.GetMethod());
 
 #if IMPORTER
             DeclaringType.Context.AttributeHelper.SetModifiers(pb, this.Modifiers, this.IsInternal);

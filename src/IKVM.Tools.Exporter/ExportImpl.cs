@@ -351,7 +351,7 @@ namespace IKVM.Tools.Exporter
             javaType.Context.StubGenerator.Write(stream, javaType, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
-        bool ExportNamespace(IList<string> namespaces, ITypeSymbol type)
+        bool ExportNamespace(IList<string> namespaces, TypeSymbol type)
         {
             if (namespaces.Count == 0)
                 return true;

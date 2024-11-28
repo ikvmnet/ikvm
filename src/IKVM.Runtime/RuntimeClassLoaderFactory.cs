@@ -55,8 +55,8 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
         readonly object wrapperLock = new object();
-        internal readonly Dictionary<ITypeSymbol, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<ITypeSymbol, RuntimeJavaType>();
-        internal readonly Dictionary<ITypeSymbol, string> remappedTypes = new Dictionary<ITypeSymbol, string>();
+        internal readonly Dictionary<TypeSymbol, RuntimeJavaType> globalTypeToTypeWrapper = new Dictionary<TypeSymbol, RuntimeJavaType>();
+        internal readonly Dictionary<TypeSymbol, string> remappedTypes = new Dictionary<TypeSymbol, string>();
         readonly List<RuntimeGenericClassLoader> genericClassLoaders = new List<RuntimeGenericClassLoader>();
 
 #if IMPORTER || EXPORTER
@@ -120,7 +120,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal bool IsRemappedType(ITypeSymbol type)
+        internal bool IsRemappedType(TypeSymbol type)
         {
             return remappedTypes.ContainsKey(type);
         }
@@ -172,7 +172,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal RuntimeJavaType GetJavaTypeFromType(ITypeSymbol type)
+        internal RuntimeJavaType GetJavaTypeFromType(TypeSymbol type)
         {
 #if !IMPORTER
             RuntimeJavaType.AssertFinished(type);
@@ -188,7 +188,7 @@ namespace IKVM.Runtime
             if (wrapper != null)
                 return wrapper;
 
-            if (type.IsMissing || type.ContainsMissing)
+            if (type.IsMissing || type.ContainsMissingType)
             {
                 wrapper = new RuntimeUnloadableJavaType(context, type);
                 globalTypeToTypeWrapper.Add(type, wrapper);
@@ -263,7 +263,7 @@ namespace IKVM.Runtime
 
             var list = new List<RuntimeClassLoader>();
             list.Add(context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly));
-            foreach (var arg in type.GetGenericArguments())
+            foreach (var arg in type.GenericArguments)
             {
                 var loader = GetJavaTypeFromType(arg).ClassLoader;
                 if (!list.Contains(loader) && loader != bootstrapClassLoader)
@@ -404,7 +404,7 @@ namespace IKVM.Runtime
                 return genericClassLoaders[id];
         }
 
-        internal void SetWrapperForType(ITypeSymbol type, RuntimeJavaType wrapper)
+        internal void SetWrapperForType(TypeSymbol type, RuntimeJavaType wrapper)
         {
 #if !IMPORTER
             RuntimeJavaType.AssertFinished(type);

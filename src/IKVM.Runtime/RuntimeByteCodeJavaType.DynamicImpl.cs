@@ -41,13 +41,13 @@ namespace IKVM.Runtime
         private abstract class DynamicImpl
         {
 
-            internal abstract ITypeSymbol Type { get; }
+            internal abstract TypeSymbol Type { get; }
             internal abstract RuntimeJavaType[] InnerClasses { get; }
             internal abstract RuntimeJavaType DeclaringTypeWrapper { get; }
             internal abstract Modifiers ReflectiveModifiers { get; }
             internal abstract DynamicImpl Finish();
-            internal abstract IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw);
-            internal abstract IFieldSymbol LinkField(RuntimeJavaField fw);
+            internal abstract MethodSymbol LinkMethod(RuntimeJavaMethod mw);
+            internal abstract FieldSymbol LinkField(RuntimeJavaField fw);
             internal abstract void EmitRunClassConstructor(CodeEmitter ilgen);
             internal abstract string GetGenericSignature();
             internal abstract string[] GetEnclosingMethod();
@@ -59,7 +59,7 @@ namespace IKVM.Runtime
             internal abstract object[][] GetParameterAnnotations(int index);
             internal abstract MethodParametersEntry[] GetMethodParameters(int index);
             internal abstract object[] GetFieldAnnotations(int index);
-            internal abstract IMethodSymbol GetFinalizeMethod();
+            internal abstract MethodSymbol GetFinalizeMethod();
             internal abstract object[] GetConstantPool();
             internal abstract byte[] GetRawTypeAnnotations();
             internal abstract byte[] GetMethodRawTypeAnnotations(int index);

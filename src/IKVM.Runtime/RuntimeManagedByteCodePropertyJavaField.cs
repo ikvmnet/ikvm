@@ -34,7 +34,7 @@ namespace IKVM.Runtime
     sealed class RuntimeManagedByteCodePropertyJavaField : RuntimeJavaField
     {
 
-        readonly IPropertySymbol property;
+        readonly PropertySymbol property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -42,13 +42,13 @@ namespace IKVM.Runtime
         /// <param name="declaringType"></param>
         /// <param name="property"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, IPropertySymbol property, ExModifiers modifiers) :
+        internal RuntimeManagedByteCodePropertyJavaField(RuntimeJavaType declaringType, PropertySymbol property, ExModifiers modifiers) :
             base(declaringType, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType), property.Name, declaringType.Context.ClassLoaderFactory.GetJavaTypeFromType(property.PropertyType).SigName, modifiers, null)
         {
             this.property = property;
         }
 
-        internal IPropertySymbol GetProperty()
+        internal PropertySymbol GetProperty()
         {
             return property;
         }

@@ -62,7 +62,7 @@ namespace IKVM.Tools.Importer.MapXml
         }
 
         RuntimeJavaType typeWrapper;
-        ITypeSymbol typeType;
+        TypeSymbol typeType;
 
         public string Name { get; set; }
 

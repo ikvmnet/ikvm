@@ -47,16 +47,16 @@ namespace IKVM.Runtime
         sealed class FinishedTypeImpl : DynamicImpl
         {
 
-            readonly ITypeSymbol type;
+            readonly TypeSymbol type;
             readonly RuntimeJavaType[] innerclasses;
             readonly RuntimeJavaType declaringTypeWrapper;
             readonly Modifiers reflectiveModifiers;
-            readonly IMethodSymbol clinitMethod;
-            readonly IMethodSymbol finalizeMethod;
+            readonly MethodSymbol clinitMethod;
+            readonly MethodSymbol finalizeMethod;
             readonly Metadata metadata;
             readonly RuntimeJavaType host;
 
-            internal FinishedTypeImpl(ITypeSymbol type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, IMethodSymbol clinitMethod, IMethodSymbol finalizeMethod, RuntimeJavaType host)
+            internal FinishedTypeImpl(TypeSymbol type, RuntimeJavaType[] innerclasses, RuntimeJavaType declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodSymbol clinitMethod, MethodSymbol finalizeMethod, RuntimeJavaType host)
             {
                 this.type = type;
                 this.innerclasses = innerclasses;
@@ -94,7 +94,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal override ITypeSymbol Type
+            internal override TypeSymbol Type
             {
                 get
                 {
@@ -115,14 +115,14 @@ namespace IKVM.Runtime
                 return this;
             }
 
-            internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
+            internal override MethodSymbol LinkMethod(RuntimeJavaMethod mw)
             {
                 // we should never be called, because all methods on a finished type are already linked
                 Debug.Assert(false);
                 return mw.GetMethod();
             }
 
-            internal override IFieldSymbol LinkField(RuntimeJavaField fw)
+            internal override FieldSymbol LinkField(RuntimeJavaField fw)
             {
                 // we should never be called, because all fields on a finished type are already linked
                 Debug.Assert(false);
@@ -179,7 +179,7 @@ namespace IKVM.Runtime
                 return Metadata.GetFieldAnnotations(metadata, index);
             }
 
-            internal override IMethodSymbol GetFinalizeMethod()
+            internal override MethodSymbol GetFinalizeMethod()
             {
                 return finalizeMethod;
             }

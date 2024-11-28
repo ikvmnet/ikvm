@@ -32,8 +32,8 @@ namespace IKVM.Runtime
         public sealed class GhostJavaType : RuntimeManagedByteCodeJavaType
         {
 
-            volatile IFieldSymbol ghostRefField;
-            volatile ITypeSymbol typeAsBaseType;
+            volatile FieldSymbol ghostRefField;
+            volatile TypeSymbol typeAsBaseType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -41,15 +41,15 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="type"></param>
-            internal GhostJavaType(RuntimeContext context, string name, ITypeSymbol type) :
+            internal GhostJavaType(RuntimeContext context, string name, TypeSymbol type) :
                 base(context, name, type)
             {
 
             }
 
-            internal override ITypeSymbol TypeAsBaseType => typeAsBaseType ??= type.GetNestedType("__Interface");
+            internal override TypeSymbol TypeAsBaseType => typeAsBaseType ??= type.GetNestedType("__Interface");
 
-            internal override IFieldSymbol GhostRefField => ghostRefField ??= type.GetField("__<ref>");
+            internal override FieldSymbol GhostRefField => ghostRefField ??= type.GetField("__<ref>");
 
             internal override bool IsGhost => true;
 

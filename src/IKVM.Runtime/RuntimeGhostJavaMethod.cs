@@ -33,8 +33,8 @@ namespace IKVM.Runtime
     sealed class RuntimeGhostJavaMethod : RuntimeSmartJavaMethod
     {
 
-        IMethodSymbol ghostMethod;
-        IMethodSymbol defaultImpl;
+        MethodSymbol ghostMethod;
+        MethodSymbol defaultImpl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,7 +48,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, IMethodSymbol ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeGhostJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodSymbol method, MethodSymbol ghostMethod, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
             // make sure we weren't handed the ghostMethod in the wrapper value type
@@ -80,26 +80,26 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal void SetDefaultImpl(IMethodSymbol impl)
+        internal void SetDefaultImpl(MethodSymbol impl)
         {
             this.defaultImpl = impl;
         }
 
-        internal IMethodSymbol GetDefaultImpl()
+        internal MethodSymbol GetDefaultImpl()
         {
             return defaultImpl;
         }
 
 #if IMPORTER
 
-        internal void SetGhostMethod(IMethodSymbolBuilder mb)
+        internal void SetGhostMethod(MethodSymbolBuilder mb)
         {
             this.ghostMethod = mb;
         }
 
-        internal IMethodSymbolBuilder GetGhostMethod()
+        internal MethodSymbolBuilder GetGhostMethod()
         {
-            return (IMethodSymbolBuilder)ghostMethod;
+            return (MethodSymbolBuilder)ghostMethod;
         }
 
 #endif

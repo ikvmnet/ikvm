@@ -36,9 +36,9 @@ namespace IKVM.Runtime
         sealed class RemappedJavaMethod : RuntimeSmartJavaMethod
         {
 
-            readonly IMethodSymbol mbHelper;
+            readonly MethodSymbol mbHelper;
 #if !IMPORTER
-            readonly IMethodSymbol mbNonvirtualHelper;
+            readonly MethodSymbol mbNonvirtualHelper;
 #endif
 
             /// <summary>
@@ -54,7 +54,7 @@ namespace IKVM.Runtime
             /// <param name="hideFromReflection"></param>
             /// <param name="mbHelper"></param>
             /// <param name="mbNonvirtualHelper"></param>
-            internal RemappedJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, IMethodSymbol mbHelper, IMethodSymbol mbNonvirtualHelper) :
+            internal RemappedJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, ExModifiers modifiers, bool hideFromReflection, MethodSymbol mbHelper, MethodSymbol mbNonvirtualHelper) :
                 base(declaringType, name, sig, method, returnType, parameterTypes, modifiers.Modifiers, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None) | (hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None))
             {
                 this.mbHelper = mbHelper;
@@ -68,7 +68,7 @@ namespace IKVM.Runtime
             protected override void CallImpl(CodeEmitter ilgen)
             {
                 var mb = GetMethod();
-                var mi = mb as IMethodSymbol;
+                var mi = mb as MethodSymbol;
                 if (mi != null)
                 {
                     if (!IsStatic && IsFinal)
@@ -106,7 +106,7 @@ namespace IKVM.Runtime
             protected override void NewobjImpl(CodeEmitter ilgen)
             {
                 var mb = GetMethod();
-                var mi = mb as IMethodSymbol;
+                var mi = mb as MethodSymbol;
                 if (mi != null)
                 {
                     Debug.Assert(mi.Name == "newhelper");

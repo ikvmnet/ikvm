@@ -39,7 +39,7 @@ namespace IKVM.Runtime
         sealed class DelegateInnerClassJavaType : FakeJavaType
         {
 
-            readonly ITypeSymbol fakeType;
+            readonly TypeSymbol fakeType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -47,7 +47,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="delegateType"></param>
-            internal DelegateInnerClassJavaType(RuntimeContext context, string name, ITypeSymbol delegateType) :
+            internal DelegateInnerClassJavaType(RuntimeContext context, string name, TypeSymbol delegateType) :
                 base(context, Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
             {
 #if IMPORTER || EXPORTER
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
                 this.fakeType = context.Resolver.GetSymbol(typeof(ikvm.@internal.DelegateInterface<>)).MakeGenericType(delegateType);
 #endif
                 var invoke = delegateType.GetMethod("Invoke");
-                var parameters = invoke.GetParameters();
+                var parameters = invoke.Parameters;
                 var argTypeWrappers = new RuntimeJavaType[parameters.Length];
                 var sb = new System.Text.StringBuilder("(");
                 var flags = MemberFlags.None;
@@ -82,11 +82,11 @@ namespace IKVM.Runtime
                 SetFields([]);
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GenericArguments[0]);
 
             internal override RuntimeClassLoader ClassLoader => DeclaringTypeWrapper.ClassLoader;
 
-            internal override ITypeSymbol TypeAsTBD => fakeType;
+            internal override TypeSymbol TypeAsTBD => fakeType;
 
             internal override bool IsFastClassLiteralSafe => true;
 

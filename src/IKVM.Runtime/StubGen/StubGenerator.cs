@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
@@ -302,7 +303,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="method"></param>
         /// <param name="attributes"></param>
         /// <param name="methodBase"></param>
-        void AddExceptionsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, IMethodBaseSymbol methodBase)
+        void AddExceptionsAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodSymbol methodBase)
         {
             var throws = context.AttributeHelper.GetThrows(methodBase);
             if (throws == null)
@@ -372,7 +373,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="method"></param>
         /// <param name="attributes"></param>
         /// <param name="methodBase"></param>
-        void AddAnnotationDefaultAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, IMethodBaseSymbol methodBase)
+        void AddAnnotationDefaultAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodSymbol methodBase)
         {
             var attr = GetAnnotationDefault(methodBase);
             if (attr is CustomAttribute ca)
@@ -401,7 +402,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="method"></param>
         /// <param name="attributes"></param>
         /// <param name="methodBase"></param>
-        void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, IMethodBaseSymbol methodBase)
+        void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaMethod method, AttributeTableBuilder attributes, MethodSymbol methodBase)
         {
             // HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
             // but in the Java world most of them are not deprecated (and to keep the Japi results clean we need to reflect this)
@@ -573,7 +574,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="builder"></param>
         /// <param name="encoder"></param>
         /// <param name="source"></param>
-        bool EncodeAnnotations(ClassFileBuilder builder, ref AnnotationTableEncoder encoder, IMemberSymbol source)
+        bool EncodeAnnotations(ClassFileBuilder builder, ref AnnotationTableEncoder encoder, MemberSymbol source)
         {
             var any = false;
 
@@ -601,7 +602,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="builder"></param>
         /// <param name="encoder"></param>
         /// <param name="source"></param>
-        bool EncodeParameterAnnotations(ClassFileBuilder builder, ref ParameterAnnotationTableEncoder encoder, IMethodBaseSymbol source)
+        bool EncodeParameterAnnotations(ClassFileBuilder builder, ref ParameterAnnotationTableEncoder encoder, MethodSymbol source)
         {
             var any = false;
 
@@ -978,7 +979,7 @@ namespace IKVM.Runtime.StubGen
             }
 
             // argument is directly a type, so we encode it as a TAG_CLASS
-            if (arg.Value is ITypeSymbol type)
+            if (arg.Value is TypeSymbol type)
             {
                 return new object[] { IKVM.Attributes.AnnotationDefaultAttribute.TAG_CLASS, EncodeTypeName(context.ClassLoaderFactory.GetJavaTypeFromType(type)) };
             }
@@ -1156,12 +1157,12 @@ namespace IKVM.Runtime.StubGen
             return arr;
         }
 
-        int GetObsoleteCount(IMethodBaseSymbol mb)
+        int GetObsoleteCount(MethodSymbol mb)
         {
-            return mb.GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false).Length;
+            return mb.GetCustomAttributes(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName), false).Count();
         }
 
-        CustomAttribute? GetAnnotationDefault(IMethodBaseSymbol mb)
+        CustomAttribute? GetAnnotationDefault(MethodSymbol mb)
         {
             return mb.GetCustomAttribute(context.Resolver.ResolveRuntimeType(typeof(Attributes.AnnotationDefaultAttribute).FullName), false);
         }

@@ -46,12 +46,12 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal override RuntimeJavaType GetJavaTypeFromAssemblyType(ITypeSymbol type)
+        internal override RuntimeJavaType GetJavaTypeFromAssemblyType(TypeSymbol type)
         {
             // we have to special case the fake types here
             if (type.IsGenericType && !type.IsGenericTypeDefinition)
             {
-                var outer = Context.ClassLoaderFactory.GetJavaTypeFromType(type.GetGenericArguments()[0]);
+                var outer = Context.ClassLoaderFactory.GetJavaTypeFromType(type.GenericArguments[0]);
 
                 foreach (var inner in outer.InnerClasses)
                 {

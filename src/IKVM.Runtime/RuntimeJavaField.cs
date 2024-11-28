@@ -46,7 +46,7 @@ namespace IKVM.Runtime
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
         volatile java.lang.reflect.Field reflectionField;
 #endif
-        IFieldSymbol field;
+        FieldSymbol field;
         RuntimeJavaType fieldType;
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace IKVM.Runtime
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
         /// <param name="flags"></param>
-        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, IFieldSymbol field, MemberFlags flags) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, Modifiers modifiers, FieldSymbol field, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             if (name == null)
@@ -96,7 +96,7 @@ namespace IKVM.Runtime
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
         /// <param name="field"></param>
-        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, IFieldSymbol field) :
+        internal RuntimeJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, string name, string sig, ExModifiers modifiers, FieldSymbol field) :
             this(declaringType, fieldType, name, sig, modifiers.Modifiers, field, (modifiers.IsInternal ? MemberFlags.InternalAccess : MemberFlags.None))
         {
 
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
         /// Gets the CLR <see cref="FieldInfo"/> that forms the implementation of the field.
         /// </summary>
         /// <returns></returns>
-        internal IFieldSymbol GetField()
+        internal FieldSymbol GetField()
         {
             AssertLinked();
             return field;
@@ -430,7 +430,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static RuntimeJavaField Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers)
+        internal static RuntimeJavaField Create(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldSymbol fi, string name, string sig, ExModifiers modifiers)
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))

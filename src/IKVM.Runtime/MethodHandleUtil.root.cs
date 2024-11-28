@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Immutable;
 
 using IKVM.CoreLib.Symbols;
 
@@ -35,9 +36,9 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        readonly ITypeSymbol typeofMHA;
-        readonly ITypeSymbol[] typeofMHV;
-        readonly ITypeSymbol[] typeofMH;
+        readonly TypeSymbol typeofMHA;
+        readonly ImmutableArray<TypeSymbol> typeofMHV;
+        readonly ImmutableArray<TypeSymbol> typeofMH;
 
         /// <summary>
         /// Initializes a new instance.
@@ -72,30 +73,30 @@ namespace IKVM.Runtime
             ];
         }
 
-        internal bool IsPackedArgsContainer(ITypeSymbol type)
+        internal bool IsPackedArgsContainer(TypeSymbol type)
         {
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeofMHA;
+            return type.IsGenericType && type.GenericTypeDefinition == typeofMHA;
         }
 
-        internal ITypeSymbol CreateMethodHandleDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal TypeSymbol CreateMethodHandleDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
-            var typeArgs = new ITypeSymbol[args.Length];
+            var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
                 typeArgs[i] = args[i].TypeAsSignatureType;
 
-            return CreateDelegateType(typeArgs, ret.TypeAsSignatureType);
+            return CreateDelegateType(typeArgs.DrainToImmutable(), ret.TypeAsSignatureType);
         }
 
-        internal ITypeSymbol CreateMemberWrapperDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal TypeSymbol CreateMemberWrapperDelegateType(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
-            var typeArgs = new ITypeSymbol[args.Length];
+            var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
                 typeArgs[i] = AsBasicType(args[i]);
 
-            return CreateDelegateType(typeArgs, AsBasicType(ret));
+            return CreateDelegateType(typeArgs.DrainToImmutable(), AsBasicType(ret));
         }
 
-        ITypeSymbol CreateDelegateType(ITypeSymbol[] types, ITypeSymbol retType)
+        TypeSymbol CreateDelegateType(ImmutableArray<TypeSymbol> types, TypeSymbol retType)
         {
             if (types.Length == 0 && retType == context.Types.Void)
             {
@@ -116,12 +117,12 @@ namespace IKVM.Runtime
                 for (int i = 0; i < count; i++)
                 {
                     var temp = SubArray(types, types.Length - 8 - 7 * (i + 1), 8);
-                    temp[7] = last;
+                    temp = temp.SetItem(7, last);
                     last = typeofMHA.MakeGenericType(temp);
                 }
 
                 types = SubArray(types, 0, remainder + 1);
-                types[remainder] = last;
+                types.SetItem(remainder, last);
             }
 
             if (retType == context.Types.Void)
@@ -130,19 +131,17 @@ namespace IKVM.Runtime
             }
             else
             {
-                types = ArrayUtil.Concat(types, retType);
+                types = types.Add(retType);
                 return typeofMH[types.Length].MakeGenericType(types);
             }
         }
 
-        ITypeSymbol[] SubArray(ITypeSymbol[] inArray, int start, int length)
+        ImmutableArray<TypeSymbol> SubArray(ImmutableArray<TypeSymbol> inArray, int start, int length)
         {
-            var outArray = new ITypeSymbol[length];
-            Array.Copy(inArray, start, outArray, 0, length);
-            return outArray;
+            return inArray.Slice(start, length);
         }
 
-        internal ITypeSymbol AsBasicType(RuntimeJavaType tw)
+        internal TypeSymbol AsBasicType(RuntimeJavaType tw)
         {
             if (tw == context.PrimitiveJavaTypeFactory.BOOLEAN || tw == context.PrimitiveJavaTypeFactory.BYTE || tw == context.PrimitiveJavaTypeFactory.CHAR || tw == context.PrimitiveJavaTypeFactory.SHORT || tw == context.PrimitiveJavaTypeFactory.INT)
                 return context.Types.Int32;

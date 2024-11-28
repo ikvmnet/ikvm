@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -230,16 +231,17 @@ namespace IKVM.Tools.Importer
         void CreateNoFail(ImportClassLoader loader, RuntimeJavaType[] interfaces, List<ProxyMethod> methods)
         {
             var ispublic = true;
-            var interfaceTypes = new ITypeSymbol[interfaces.Length];
-            for (int i = 0; i < interfaceTypes.Length; i++)
+            var interfaceTypes = ImmutableArray.CreateBuilder<TypeSymbol>(interfaces.Length);
+            for (int i = 0; i < interfaceTypes.Count; i++)
             {
                 ispublic &= interfaces[i].IsPublic;
                 interfaceTypes[i] = interfaces[i].TypeAsBaseType;
             }
+
             var attr = TypeAttributes.Class | TypeAttributes.Sealed;
             attr |= ispublic ? TypeAttributes.NestedPublic : TypeAttributes.NestedAssembly;
             var factory = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-            var tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes);
+            var tb = factory.DefineProxy(TypeNameUtil.GetProxyNestedName(interfaces), attr, proxyClass.TypeAsBaseType, interfaceTypes.DrainToImmutable());
             loader.Context.AttributeHelper.SetImplementsAttribute(tb, interfaces);
             // we apply an InnerClass attribute to avoid the CompiledTypeWrapper heuristics for figuring out the modifiers
             loader.Context.AttributeHelper.SetInnerClass(tb, null, ispublic ? Modifiers.Public | Modifiers.Final : Modifiers.Final);
@@ -253,7 +255,7 @@ namespace IKVM.Tools.Importer
             CreateStaticInitializer(tb, methods, loader);
         }
 
-        void CreateConstructor(ITypeSymbolBuilder tb)
+        void CreateConstructor(TypeSymbolBuilder tb)
         {
             var ilgen = context.CodeEmitterFactory.Create(ReflectUtil.DefineConstructor(tb, MethodAttributes.Public, [invocationHandlerClass.TypeAsSignatureType]));
             ilgen.Emit(OpCodes.Ldarg_0);
@@ -263,7 +265,7 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateMethod(ImportClassLoader loader, ITypeSymbolBuilder tb, ProxyMethod pm)
+        void CreateMethod(ImportClassLoader loader, TypeSymbolBuilder tb, ProxyMethod pm)
         {
             var mb = pm.mw.GetDefineMethodHelper().DefineMethod(loader.GetTypeWrapperFactory(), tb, pm.mw.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final);
             var exceptions = new List<string>();
@@ -327,7 +329,7 @@ namespace IKVM.Tools.Importer
             // TODO consider using a filter here (but we would need to add filter support to CodeEmitter)
             ilgen.BeginCatchBlock(loader.Context.Types.Exception);
             ilgen.EmitLdc_I4(0);
-            ilgen.Emit(OpCodes.Call, loader.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(loader.Context.Types.Exception));
+            ilgen.Emit(OpCodes.Call, loader.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod([loader.Context.Types.Exception]));
             CodeEmitterLocal exception = ilgen.DeclareLocal(context.Types.Exception);
             ilgen.Emit(OpCodes.Stloc, exception);
             CodeEmitterLabel rethrow = ilgen.DefineLabel();
@@ -358,14 +360,15 @@ namespace IKVM.Tools.Importer
             ilgen.DoEmit();
         }
 
-        void CreateStaticInitializer(ITypeSymbolBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
+        void CreateStaticInitializer(TypeSymbolBuilder tb, List<ProxyMethod> methods, ImportClassLoader loader)
         {
             var ilgen = loader.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
             var callerID = ilgen.DeclareLocal(loader.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType);
             var tbCallerID = RuntimeByteCodeJavaType.FinishContext.EmitCreateCallerID(loader.Context, tb, ilgen);
             ilgen.Emit(OpCodes.Stloc, callerID);
+
             // HACK we shouldn't create the nested type here (the outer type must be created first)
-            tbCallerID.Complete();
+            //tbCallerID.Complete();
 
             ilgen.BeginExceptionBlock();
             foreach (ProxyMethod method in methods)
@@ -389,7 +392,8 @@ namespace IKVM.Tools.Importer
                 javaLangClass_getMethod.EmitCallvirt(ilgen);
                 ilgen.Emit(OpCodes.Stsfld, method.fb);
             }
-            CodeEmitterLabel label = ilgen.DefineLabel();
+
+            var label = ilgen.DefineLabel();
             ilgen.EmitLeave(label);
             ilgen.BeginCatchBlock(javaLangNoSuchMethodException.TypeAsExceptionType);
             javaLangThrowable_getMessage.EmitCallvirt(ilgen);
@@ -406,7 +410,7 @@ namespace IKVM.Tools.Importer
 
             internal readonly RuntimeJavaMethod mw;
             internal readonly RuntimeJavaType[] exceptions;
-            internal IFieldSymbolBuilder fb;
+            internal FieldSymbolBuilder fb;
 
             internal ProxyMethod(RuntimeJavaMethod mw, RuntimeJavaType[] exceptions)
             {

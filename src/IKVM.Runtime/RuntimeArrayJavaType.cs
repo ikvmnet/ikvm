@@ -44,7 +44,7 @@ namespace IKVM.Runtime
 
         volatile RuntimeJavaType[] interfaces;
         readonly RuntimeJavaType ultimateElementTypeWrapper;
-        ITypeSymbol arrayType;
+        TypeSymbol arrayType;
         bool finished;
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => ultimateElementTypeWrapper.ClassLoader;
 
-        internal static IMethodSymbol GetCloneMethod(RuntimeContext context)
+        internal static MethodSymbol GetCloneMethod(RuntimeContext context)
         {
             return context.Types.Array.GetMethod("Clone", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, []);
         }
@@ -112,7 +112,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override ITypeSymbol TypeAsTBD
+        internal override TypeSymbol TypeAsTBD
         {
             get
             {
@@ -180,7 +180,7 @@ namespace IKVM.Runtime
             return ultimateElementTypeWrapper;
         }
 
-        internal static ITypeSymbol MakeArrayType(ITypeSymbol type, int dims)
+        internal static TypeSymbol MakeArrayType(TypeSymbol type, int dims)
         {
             // NOTE this is not just an optimization, but it is also required to
             // make sure that ReflectionOnly types stay ReflectionOnly types

@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Immutable;
+
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 
@@ -36,64 +38,64 @@ namespace IKVM.Runtime
     class ByteCodeHelperMethods
     {
 
-        internal readonly IMethodSymbol multianewarray;
-        internal readonly IMethodSymbol multianewarray_ghost;
-        internal readonly IMethodSymbol anewarray_ghost;
-        internal readonly IMethodSymbol f2i;
-        internal readonly IMethodSymbol d2i;
-        internal readonly IMethodSymbol f2l;
-        internal readonly IMethodSymbol d2l;
-        internal readonly IMethodSymbol arraycopy_fast;
-        internal readonly IMethodSymbol arraycopy_primitive_8;
-        internal readonly IMethodSymbol arraycopy_primitive_4;
-        internal readonly IMethodSymbol arraycopy_primitive_2;
-        internal readonly IMethodSymbol arraycopy_primitive_1;
-        internal readonly IMethodSymbol arraycopy;
-        internal readonly IMethodSymbol DynamicCast;
-        internal readonly IMethodSymbol DynamicAaload;
-        internal readonly IMethodSymbol DynamicAastore;
-        internal readonly IMethodSymbol DynamicClassLiteral;
-        internal readonly IMethodSymbol DynamicMultianewarray;
-        internal readonly IMethodSymbol DynamicNewarray;
-        internal readonly IMethodSymbol DynamicNewCheckOnly;
-        internal readonly IMethodSymbol DynamicCreateDelegate;
-        internal readonly IMethodSymbol DynamicLoadMethodType;
-        internal readonly IMethodSymbol DynamicLoadMethodHandle;
-        internal readonly IMethodSymbol DynamicBinderMemberLookup;
-        internal readonly IMethodSymbol DynamicMapException;
-        internal readonly IMethodSymbol DynamicCallerID;
-        internal readonly IMethodSymbol DynamicLinkIndyCallSite;
-        internal readonly IMethodSymbol DynamicEraseInvokeExact;
-        internal readonly IMethodSymbol VerboseCastFailure;
-        internal readonly IMethodSymbol SkipFinalizer;
-        internal readonly IMethodSymbol SkipFinalizerOf;
-        internal readonly IMethodSymbol DynamicInstanceOf;
-        internal readonly IMethodSymbol VolatileReadBoolean;
-        internal readonly IMethodSymbol VolatileReadByte;
-        internal readonly IMethodSymbol VolatileReadChar;
-        internal readonly IMethodSymbol VolatileReadShort;
-        internal readonly IMethodSymbol VolatileReadInt;
-        internal readonly IMethodSymbol VolatileReadLong;
-        internal readonly IMethodSymbol VolatileReadFloat;
-        internal readonly IMethodSymbol VolatileReadDouble;
-        internal readonly IMethodSymbol VolatileWriteBoolean;
-        internal readonly IMethodSymbol VolatileWriteByte;
-        internal readonly IMethodSymbol VolatileWriteChar;
-        internal readonly IMethodSymbol VolatileWriteShort;
-        internal readonly IMethodSymbol VolatileWriteInt;
-        internal readonly IMethodSymbol VolatileWriteLong;
-        internal readonly IMethodSymbol VolatileWriteFloat;
-        internal readonly IMethodSymbol VolatileWriteDouble;
-        internal readonly IMethodSymbol CompareAndSwapObject;
-        internal readonly IMethodSymbol CompareAndSwapInt;
-        internal readonly IMethodSymbol CompareAndSwapLong;
-        internal readonly IMethodSymbol CompareAndSwapDouble;
-        internal readonly IMethodSymbol MapException;
-        internal readonly IMethodSymbol GetDelegateForInvokeExact;
-        internal readonly IMethodSymbol GetDelegateForInvoke;
-        internal readonly IMethodSymbol GetDelegateForInvokeBasic;
-        internal readonly IMethodSymbol LoadMethodType;
-        internal readonly IMethodSymbol LinkIndyCallSite;
+        internal readonly MethodSymbol multianewarray;
+        internal readonly MethodSymbol multianewarray_ghost;
+        internal readonly MethodSymbol anewarray_ghost;
+        internal readonly MethodSymbol f2i;
+        internal readonly MethodSymbol d2i;
+        internal readonly MethodSymbol f2l;
+        internal readonly MethodSymbol d2l;
+        internal readonly MethodSymbol arraycopy_fast;
+        internal readonly MethodSymbol arraycopy_primitive_8;
+        internal readonly MethodSymbol arraycopy_primitive_4;
+        internal readonly MethodSymbol arraycopy_primitive_2;
+        internal readonly MethodSymbol arraycopy_primitive_1;
+        internal readonly MethodSymbol arraycopy;
+        internal readonly MethodSymbol DynamicCast;
+        internal readonly MethodSymbol DynamicAaload;
+        internal readonly MethodSymbol DynamicAastore;
+        internal readonly MethodSymbol DynamicClassLiteral;
+        internal readonly MethodSymbol DynamicMultianewarray;
+        internal readonly MethodSymbol DynamicNewarray;
+        internal readonly MethodSymbol DynamicNewCheckOnly;
+        internal readonly MethodSymbol DynamicCreateDelegate;
+        internal readonly MethodSymbol DynamicLoadMethodType;
+        internal readonly MethodSymbol DynamicLoadMethodHandle;
+        internal readonly MethodSymbol DynamicBinderMemberLookup;
+        internal readonly MethodSymbol DynamicMapException;
+        internal readonly MethodSymbol DynamicCallerID;
+        internal readonly MethodSymbol DynamicLinkIndyCallSite;
+        internal readonly MethodSymbol DynamicEraseInvokeExact;
+        internal readonly MethodSymbol VerboseCastFailure;
+        internal readonly MethodSymbol SkipFinalizer;
+        internal readonly MethodSymbol SkipFinalizerOf;
+        internal readonly MethodSymbol DynamicInstanceOf;
+        internal readonly MethodSymbol VolatileReadBoolean;
+        internal readonly MethodSymbol VolatileReadByte;
+        internal readonly MethodSymbol VolatileReadChar;
+        internal readonly MethodSymbol VolatileReadShort;
+        internal readonly MethodSymbol VolatileReadInt;
+        internal readonly MethodSymbol VolatileReadLong;
+        internal readonly MethodSymbol VolatileReadFloat;
+        internal readonly MethodSymbol VolatileReadDouble;
+        internal readonly MethodSymbol VolatileWriteBoolean;
+        internal readonly MethodSymbol VolatileWriteByte;
+        internal readonly MethodSymbol VolatileWriteChar;
+        internal readonly MethodSymbol VolatileWriteShort;
+        internal readonly MethodSymbol VolatileWriteInt;
+        internal readonly MethodSymbol VolatileWriteLong;
+        internal readonly MethodSymbol VolatileWriteFloat;
+        internal readonly MethodSymbol VolatileWriteDouble;
+        internal readonly MethodSymbol CompareAndSwapObject;
+        internal readonly MethodSymbol CompareAndSwapInt;
+        internal readonly MethodSymbol CompareAndSwapLong;
+        internal readonly MethodSymbol CompareAndSwapDouble;
+        internal readonly MethodSymbol MapException;
+        internal readonly MethodSymbol GetDelegateForInvokeExact;
+        internal readonly MethodSymbol GetDelegateForInvoke;
+        internal readonly MethodSymbol GetDelegateForInvokeBasic;
+        internal readonly MethodSymbol LoadMethodType;
+        internal readonly MethodSymbol LinkIndyCallSite;
 
         /// <summary>
         /// Initializes a new instance.
@@ -162,14 +164,14 @@ namespace IKVM.Runtime
             LinkIndyCallSite = GetHelper(typeofByteCodeHelper, "LinkIndyCallSite");
         }
 
-        static IMethodSymbol GetHelper(ITypeSymbol type, string method)
+        static MethodSymbol GetHelper(TypeSymbol type, string method)
         {
-            return GetHelper(type, method, null);
+            return GetHelper(type, method, default);
         }
 
-        static IMethodSymbol GetHelper(ITypeSymbol type, string method, ITypeSymbol[] parameters)
+        static MethodSymbol GetHelper(TypeSymbol type, string method, ImmutableArray<TypeSymbol> parameters)
         {
-            var mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
+            var mi = parameters.IsDefault ? type.GetMethod(method) : type.GetMethod(method, parameters);
             if (mi == null)
 #if IMPORTER
 			    throw new DiagnosticEventException(DiagnosticEvent.RuntimeMethodMissing(method));

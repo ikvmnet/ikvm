@@ -32,7 +32,7 @@ namespace IKVM.Runtime
     sealed class RuntimeDefaultInterfaceJavaMethod : RuntimeSmartJavaMethod
     {
 
-        IMethodSymbol impl;
+        MethodSymbol impl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,13 +46,13 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeDefaultInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodSymbol ifmethod, IMethodSymbol impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeDefaultInterfaceJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodSymbol ifmethod, MethodSymbol impl, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, ifmethod, returnType, parameterTypes, modifiers, flags)
         {
             this.impl = impl;
         }
 
-        internal static IMethodSymbol GetImpl(RuntimeJavaMethod mw)
+        internal static MethodSymbol GetImpl(RuntimeJavaMethod mw)
         {
             var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
             if (dimw != null)
@@ -61,7 +61,7 @@ namespace IKVM.Runtime
                 return ((RuntimeGhostJavaMethod)mw).GetDefaultImpl();
         }
 
-        internal static void SetImpl(RuntimeJavaMethod mw, IMethodSymbol impl)
+        internal static void SetImpl(RuntimeJavaMethod mw, MethodSymbol impl)
         {
             var dimw = mw as RuntimeDefaultInterfaceJavaMethod;
             if (dimw != null)

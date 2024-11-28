@@ -32,16 +32,16 @@ namespace IKVM.Runtime
     sealed class CodeEmitterLocal
 	{
 
-		private ITypeSymbol type;
+		private TypeSymbol type;
 		private string name;
-		private ILocalBuilder local;
+		private IKVM.CoreLib.Symbols.Emit.LocalBuilder local;
 
-		internal CodeEmitterLocal(ITypeSymbol type)
+		internal CodeEmitterLocal(TypeSymbol type)
 		{
 			this.type = type;
 		}
 
-		internal ITypeSymbol LocalType
+		internal TypeSymbol LocalType
 		{
 			get { return type; }
 		}
@@ -56,14 +56,14 @@ namespace IKVM.Runtime
 			get { return local == null ? 0xFFFF : local.LocalIndex; }
 		}
 
-		internal void Emit(IILGenerator ilgen, OpCode opcode)
+		internal void Emit(IKVM.CoreLib.Symbols.Emit.ILGenerator ilgen, OpCode opcode)
         {
             // it's a temporary local that is only allocated on-demand
             local ??= ilgen.DeclareLocal(type);
 			ilgen.Emit(opcode, local);
 		}
 
-		internal void Declare(IILGenerator ilgen)
+		internal void Declare(IKVM.CoreLib.Symbols.Emit.ILGenerator ilgen)
 		{
 			local = ilgen.DeclareLocal(type);
 

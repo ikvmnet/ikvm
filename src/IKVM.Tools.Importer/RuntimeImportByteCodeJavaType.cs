@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -43,14 +44,14 @@ namespace IKVM.Tools.Importer
     sealed class RuntimeImportByteCodeJavaType : RuntimeByteCodeJavaType
     {
 
-        IFieldSymbol ghostRefField;
-        IMethodSymbolBuilder ghostIsInstanceMethod;
-        IMethodSymbolBuilder ghostIsInstanceArrayMethod;
-        IMethodSymbolBuilder ghostCastMethod;
-        IMethodSymbolBuilder ghostCastArrayMethod;
-        ITypeSymbolBuilder typeBuilderGhostInterface;
+        FieldSymbol ghostRefField;
+        MethodSymbolBuilder ghostIsInstanceMethod;
+        MethodSymbolBuilder ghostIsInstanceArrayMethod;
+        MethodSymbolBuilder ghostCastMethod;
+        MethodSymbolBuilder ghostCastArrayMethod;
+        TypeSymbolBuilder typeBuilderGhostInterface;
         Annotation annotation;
-        ITypeSymbol enumType;
+        TypeSymbol enumType;
         RuntimeJavaMethod[] replacedMethods;
 
         /// <summary>
@@ -73,9 +74,9 @@ namespace IKVM.Tools.Importer
         {
 
             readonly RuntimeJavaTypeFactory context;
-            readonly ITypeSymbolBuilder typeBuilder;
+            readonly TypeSymbolBuilder typeBuilder;
             readonly RuntimeJavaMethod ctor;
-            IConstructorSymbolBuilder constructorBuilder;
+            MethodSymbolBuilder constructorBuilder;
 
             /// <summary>
             /// Initializes a new instance.
@@ -83,7 +84,7 @@ namespace IKVM.Tools.Importer
             /// <param name="context"></param>
             /// <param name="typeBuilder"></param>
             /// <param name="ctor"></param>
-            internal ConstructorForwarder(RuntimeJavaTypeFactory context, ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod ctor) :
+            internal ConstructorForwarder(RuntimeJavaTypeFactory context, TypeSymbolBuilder typeBuilder, RuntimeJavaMethod ctor) :
                 base(ctor.DeclaringType, ctor.Name, ctor.Signature, null, null, null, ctor.Modifiers, MemberFlags.None)
             {
                 this.context = context;
@@ -118,7 +119,7 @@ namespace IKVM.Tools.Importer
 
         internal override bool IsMapUnsafeException => classLoader.IsMapUnsafeException(this);
 
-        internal override ITypeSymbol TypeAsBaseType => typeBuilderGhostInterface != null ? typeBuilderGhostInterface : base.TypeAsBaseType;
+        internal override TypeSymbol TypeAsBaseType => typeBuilderGhostInterface != null ? typeBuilderGhostInterface : base.TypeAsBaseType;
 
         internal void GetParameterNamesFromXml(string methodName, string methodSig, string[] parameterNames)
         {
@@ -129,7 +130,7 @@ namespace IKVM.Tools.Importer
                         parameterNames[i] = parameters[i].Name;
         }
 
-        internal void AddXmlMapParameterAttributes(IMethodBaseSymbolBuilder method, string className, string methodName, string methodSig, ref IParameterSymbolBuilder[] parameterBuilders)
+        internal void AddXmlMapParameterAttributes(MethodSymbolBuilder method, string className, string methodName, string methodSig, ref ParameterSymbolBuilder[] parameterBuilders)
         {
             var parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
             if (parameters != null)
@@ -145,9 +146,9 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void AddParameterMetadata(IMethodSymbolBuilder method, RuntimeJavaMethod mw)
+        private void AddParameterMetadata(MethodSymbolBuilder method, RuntimeJavaMethod mw)
         {
-            IParameterSymbolBuilder[] pbs;
+            ParameterSymbolBuilder[] pbs;
             if ((mw.DeclaringType.IsPublic && (mw.IsPublic || mw.IsProtected)) || classLoader.EmitSymbols)
             {
                 string[] parameterNames = new string[mw.GetParameters().Length];
@@ -210,7 +211,7 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        void PublishAttributes(ITypeSymbolBuilder typeBuilder, Class clazz)
+        void PublishAttributes(TypeSymbolBuilder typeBuilder, Class clazz)
         {
             foreach (var attr in clazz.Attributes)
                 Context.AttributeHelper.SetCustomAttribute(classLoader, typeBuilder, attr);
@@ -222,7 +223,7 @@ namespace IKVM.Tools.Importer
         /// <param name="args1"></param>
         /// <param name="args2"></param>
         /// <returns></returns>
-        static bool CheckPropertyArgs(ITypeSymbol[] args1, ITypeSymbol[] args2)
+        static bool CheckPropertyArgs(ImmutableArray<TypeSymbol> args1, ImmutableArray<TypeSymbol> args2)
         {
             if (args1.Length == args2.Length)
             {
@@ -267,17 +268,18 @@ namespace IKVM.Tools.Importer
             return attribs;
         }
 
-        private void PublishProperties(ITypeSymbolBuilder typeBuilder, Class clazz)
+        private void PublishProperties(TypeSymbolBuilder typeBuilder, Class clazz)
         {
             foreach (var prop in clazz.Properties)
             {
                 var typeWrapper = ClassLoader.RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
                 var propargs = ClassLoader.ArgJavaTypeListFromSig(prop.Sig, LoadMode.Link);
-                var indexer = new ITypeSymbol[propargs.Length];
+                var indexerBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(propargs.Length);
                 for (int i = 0; i < propargs.Length; i++)
-                {
-                    indexer[i] = propargs[i].TypeAsSignatureType;
-                }
+                    indexerBuilder[i] = propargs[i].TypeAsSignatureType;
+
+                var indexer = indexerBuilder.DrainToImmutable();
+
                 var propbuilder = typeBuilder.DefineProperty(prop.Name, System.Reflection.PropertyAttributes.None, typeWrapper.TypeAsSignatureType, indexer);
                 Context.AttributeHelper.HideFromJava(propbuilder);
                 if (prop.Attributes != null)
@@ -317,7 +319,7 @@ namespace IKVM.Tools.Importer
                     }
                     else
                     {
-                        var m = mw.GetMethod() as IMethodSymbol;
+                        var m = mw.GetMethod() as MethodSymbol;
                         if (m == null || m.DeclaringType != typeBuilder || (!m.IsFinal && final))
                         {
                             var mb = typeBuilder.DefineMethod("get_" + prop.Name, GetPropertyMethodAttributes(mw, final), typeWrapper.TypeAsSignatureType, indexer);
@@ -348,14 +350,14 @@ namespace IKVM.Tools.Importer
                 if (setter != null)
                 {
                     var mw = setter;
-                    var args = ArrayUtil.Concat(indexer, typeWrapper.TypeAsSignatureType);
+                    var args = indexer.Add(typeWrapper.TypeAsSignatureType);
                     if (!CheckPropertyArgs(args, mw.GetParametersForDefineMethod()))
                     {
                         Console.Error.WriteLine("Warning: ignoring invalid property setter for {0}::{1}", clazz.Name, prop.Name);
                     }
                     else
                     {
-                        var m = mw.GetMethod() as IMethodSymbol;
+                        var m = mw.GetMethod() as MethodSymbol;
                         if (m == null || m.DeclaringType != typeBuilder || (!m.IsFinal && final))
                         {
                             var mb = typeBuilder.DefineMethod("set_" + prop.Name, GetPropertyMethodAttributes(mw, final), mw.ReturnTypeForDefineMethod, args);
@@ -452,18 +454,18 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private void MapSignature(string sig, out ITypeSymbol returnType, out ITypeSymbol[] parameterTypes)
+        private void MapSignature(string sig, out TypeSymbol returnType, out ImmutableArray<TypeSymbol> parameterTypes)
         {
             returnType = ClassLoader.RetTypeWrapperFromSig(sig, LoadMode.Link).TypeAsSignatureType;
+
             var parameterTypeWrappers = ClassLoader.ArgJavaTypeListFromSig(sig, LoadMode.Link);
-            parameterTypes = new ITypeSymbol[parameterTypeWrappers.Length];
+            var parameterTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(parameterTypeWrappers.Length);
             for (int i = 0; i < parameterTypeWrappers.Length; i++)
-            {
-                parameterTypes[i] = parameterTypeWrappers[i].TypeAsSignatureType;
-            }
+                parameterTypesBuilder[i] = parameterTypeWrappers[i].TypeAsSignatureType;
+            parameterTypes = parameterTypesBuilder.DrainToImmutable();
         }
 
-        protected override void EmitMapXmlMetadata(ITypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods)
+        protected override void EmitMapXmlMetadata(TypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods)
         {
             var mapxml = classLoader.GetMapXmlClasses();
             if (mapxml != null)
@@ -486,7 +488,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (fw.Name == field.Name && fw.Signature == field.Sig)
                                     {
-                                        var fb = fw.GetField() as IFieldSymbolBuilder;
+                                        var fb = fw.GetField() as FieldSymbolBuilder;
                                         if (fb != null)
                                             foreach (var attr in field.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, fb, attr);
@@ -534,7 +536,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (mw.Name == "<init>" && mw.Signature == constructor.Sig)
                                     {
-                                        var mb = mw.GetMethod() as IMethodSymbolBuilder;
+                                        var mb = mw.GetMethod() as MethodSymbolBuilder;
                                         if (mb != null)
                                             foreach (var attr in constructor.Attributes)
                                                 Context.AttributeHelper.SetCustomAttribute(classLoader, mb, attr);
@@ -570,7 +572,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     var mw = ClassLoader.LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
-                                    typeBuilder.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
+                                    typeBuilder.DefineMethodOverride(mb, (MethodSymbol)mw.GetMethod());
                                 }
 
                                 ImportClassLoader.AddDeclaredExceptions(Context, mb, method.Throws);
@@ -595,7 +597,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     if (mw.Name == method.Name && mw.Signature == method.Sig)
                                     {
-                                        var mb = mw.GetMethod() as IMethodSymbolBuilder;
+                                        var mb = mw.GetMethod() as MethodSymbolBuilder;
                                         if (mb != null)
                                         {
                                             foreach (IKVM.Tools.Importer.MapXml.Attribute attr in method.Attributes)
@@ -628,7 +630,7 @@ namespace IKVM.Tools.Importer
                                     mw.Link();
                                     var mb = mw.GetDefineMethodHelper().DefineMethod(this, typeBuilder, tw.Name + "/" + m.Name, System.Reflection.MethodAttributes.Private | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.Virtual | System.Reflection.MethodAttributes.Final | System.Reflection.MethodAttributes.CheckAccessOnOverride);
                                     Context.AttributeHelper.HideFromJava(mb);
-                                    typeBuilder.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
+                                    typeBuilder.DefineMethodOverride(mb, (MethodSymbol)mw.GetMethod());
                                     var ilgen = Context.CodeEmitterFactory.Create(mb);
                                     m.Emit(classLoader, ilgen);
                                     ilgen.DoEmit();
@@ -640,7 +642,7 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        protected override IMethodSymbolBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw)
+        protected override MethodSymbolBuilder DefineGhostMethod(TypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw)
         {
             if (typeBuilderGhostInterface != null && mw.IsVirtual)
             {
@@ -653,7 +655,7 @@ namespace IKVM.Tools.Importer
             return null;
         }
 
-        protected override void FinishGhost(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods)
+        protected override void FinishGhost(TypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods)
         {
             if (typeBuilderGhostInterface != null)
             {
@@ -681,7 +683,7 @@ namespace IKVM.Tools.Importer
                         {
                             ilgen.EmitLdarg(k + 1);
                         }
-                        ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, (IMethodSymbol)methods[i].GetMethod());
+                        ilgen.Emit(System.Reflection.Emit.OpCodes.Callvirt, (MethodSymbol)methods[i].GetMethod());
                         ilgen.EmitBr(end);
                         ilgen.MarkLabel(label);
                         for (int j = 0; j < implementers.Length; j++)
@@ -731,14 +733,14 @@ namespace IKVM.Tools.Importer
                 // HACK create a scope to enable reuse of "implementers" name
                 if (true)
                 {
-                    IMethodSymbolBuilder mb;
+                    MethodSymbolBuilder mb;
                     CodeEmitter ilgen;
                     CodeEmitterLocal local;
                     // add implicit conversions for all the ghost implementers
                     var implementers = classLoader.GetGhostImplementers(this);
                     for (int i = 0; i < implementers.Length; i++)
                     {
-                        mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, new[] { implementers[i].TypeAsSignatureType });
+                        mb = typeBuilder.DefineMethod("op_Implicit", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeAsSignatureType, [implementers[i].TypeAsSignatureType]);
                         Context.AttributeHelper.HideFromJava(mb);
                         ilgen = Context.CodeEmitterFactory.Create(mb);
                         local = ilgen.DeclareLocal(TypeAsSignatureType);
@@ -947,10 +949,10 @@ namespace IKVM.Tools.Importer
 
         protected override void FinishGhostStep2()
         {
-            typeBuilderGhostInterface?.Complete();
+            //typeBuilderGhostInterface?.Complete();
         }
 
-        protected override ITypeSymbolBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs)
+        protected override TypeSymbolBuilder DefineGhostType(string mangledTypeName, TypeAttributes typeAttribs)
         {
             typeAttribs &= ~(TypeAttributes.Interface | TypeAttributes.Abstract);
             typeAttribs |= TypeAttributes.Class | TypeAttributes.Sealed;
@@ -973,7 +975,7 @@ namespace IKVM.Tools.Importer
             return typeBuilder;
         }
 
-        internal override IFieldSymbol GhostRefField => ghostRefField;
+        internal override FieldSymbol GhostRefField => ghostRefField;
 
         internal override void EmitCheckcast(CodeEmitter ilgen)
         {
@@ -1026,12 +1028,12 @@ namespace IKVM.Tools.Importer
 
         internal override Annotation Annotation => annotation;
 
-        internal void SetEnumType(ITypeSymbol enumType)
+        internal void SetEnumType(TypeSymbol enumType)
         {
             this.enumType = enumType;
         }
 
-        internal override ITypeSymbol EnumType => enumType;
+        internal override TypeSymbol EnumType => enumType;
 
         sealed class ReplacedMethodWrapper : RuntimeJavaMethod
         {

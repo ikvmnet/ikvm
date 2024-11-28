@@ -63,11 +63,11 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
         readonly RuntimeContext context;
         readonly java.lang.invoke.LambdaForm lambdaForm;
         readonly java.lang.invoke.MethodType invokerType;
-        readonly ITypeSymbol delegateType;
+        readonly TypeSymbol delegateType;
         readonly DynamicMethod dm;
         readonly CodeEmitter ilgen;
         readonly int packedArgPos;
-        readonly ITypeSymbol packedArgType;
+        readonly TypeSymbol packedArgType;
         readonly CodeEmitterLocal[] locals;
         readonly List<object> constants = new List<object>();
 
@@ -334,7 +334,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
             internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
-            internal override ITypeSymbol TypeAsTBD
+            internal override TypeSymbol TypeAsTBD
             {
                 get { throw new InvalidOperationException(); }
             }

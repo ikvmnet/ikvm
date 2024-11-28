@@ -53,7 +53,7 @@ namespace IKVM.Runtime
             sealed class ReturnValueAnnotationJavaType : AttributeAnnotationJavaTypeBase
             {
 
-                readonly ITypeSymbol fakeType;
+                readonly TypeSymbol fakeType;
                 readonly AttributeAnnotationJavaType declaringType;
 
                 /// <summary>
@@ -83,7 +83,7 @@ namespace IKVM.Runtime
 
                 internal override RuntimeJavaType DeclaringTypeWrapper => declaringType;
 
-                internal override ITypeSymbol TypeAsTBD => fakeType;
+                internal override TypeSymbol TypeAsTBD => fakeType;
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
 
@@ -115,7 +115,7 @@ namespace IKVM.Runtime
                         this.type = type;
                     }
 
-                    internal override void ApplyReturnValue(RuntimeClassLoader loader, IMethodSymbolBuilder mb, ref IParameterSymbolBuilder pb, object annotation)
+                    internal override void ApplyReturnValue(RuntimeClassLoader loader, MethodSymbolBuilder mb, ref ParameterSymbolBuilder pb, object annotation)
                     {
                         // TODO make sure the descriptor is correct
                         var ann = type.Annotation;
@@ -138,32 +138,32 @@ namespace IKVM.Runtime
                         }
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, AssemblySymbolBuilder ab, object annotation)
                     {
 
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, TypeSymbolBuilder tb, object annotation)
                     {
 
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, FieldSymbolBuilder fb, object annotation)
                     {
 
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, MethodSymbolBuilder mb, object annotation)
                     {
 
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, PropertySymbolBuilder pb, object annotation)
                     {
 
                     }
 
-                    internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
+                    internal override void Apply(RuntimeClassLoader loader, ParameterSymbolBuilder pb, object annotation)
                     {
 
                     }

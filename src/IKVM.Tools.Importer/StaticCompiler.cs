@@ -73,12 +73,12 @@ namespace IKVM.Tools.Importer
             return asm;
         }
 
-        internal IAssemblySymbol LoadFile(string path)
+        internal AssemblySymbol LoadFile(string path)
         {
-            return symbols.GetOrCreateAssemblySymbol( universe.LoadFile(path));
+            return symbols.ResolveAssemblySymbol(universe.LoadFile(path));
         }
 
-        internal ITypeSymbol GetTypeForMapXml(RuntimeClassLoader loader, string name)
+        internal TypeSymbol GetTypeForMapXml(RuntimeClassLoader loader, string name)
         {
             return GetType(loader, name) ?? throw new DiagnosticEventException(DiagnosticEvent.MapFileTypeNotFound(name));
         }
@@ -98,7 +98,7 @@ namespace IKVM.Tools.Importer
             return fw;
         }
 
-        internal ITypeSymbol GetType(RuntimeClassLoader loader, string name)
+        internal TypeSymbol GetType(RuntimeClassLoader loader, string name)
         {
             var ccl = (ImportClassLoader)loader;
             return ccl.GetTypeFromReferencedAssembly(name);
@@ -133,7 +133,7 @@ namespace IKVM.Tools.Importer
             return javaType.Name + " (unknown assembly)";
         }
 
-        internal void IssueMissingTypeMessage(ITypeSymbol type)
+        internal void IssueMissingTypeMessage(TypeSymbol type)
         {
             type = ReflectUtil.GetMissingType(type);
             if (type.Assembly.IsMissing)

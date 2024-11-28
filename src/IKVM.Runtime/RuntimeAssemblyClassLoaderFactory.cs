@@ -50,7 +50,7 @@ namespace IKVM.Runtime
         /// Maps existing <see cref="RuntimeAssemblyClassLoader"/> instances to <see cref="Assembly"/> instances. Allows
         /// assemblies to be unloaded.
         /// </summary>
-        readonly ConditionalWeakTable<IAssemblySymbol, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
+        readonly ConditionalWeakTable<AssemblySymbol, RuntimeAssemblyClassLoader> assemblyClassLoaders = new();
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
         internal Dictionary<string, string> customClassLoaderRedirects;
@@ -72,7 +72,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public RuntimeAssemblyClassLoader FromAssembly(IAssemblySymbol assembly)
+        public RuntimeAssemblyClassLoader FromAssembly(AssemblySymbol assembly)
         {
             if (assemblyClassLoaders.TryGetValue(assembly, out RuntimeAssemblyClassLoader loader))
                 return loader;
@@ -95,7 +95,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        RuntimeAssemblyClassLoader Create(IAssemblySymbol assembly)
+        RuntimeAssemblyClassLoader Create(AssemblySymbol assembly)
         {
             // If the assembly is a part of a multi-assembly shared class loader,
             // it will export the __<MainAssembly> type from the main assembly in the group.

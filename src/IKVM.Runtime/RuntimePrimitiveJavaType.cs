@@ -68,7 +68,7 @@ namespace IKVM.Runtime
     sealed class RuntimePrimitiveJavaType : RuntimeJavaType
     {
 
-        readonly ITypeSymbol type;
+        readonly TypeSymbol type;
         readonly string sigName;
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="type"></param>
         /// <param name="sigName"></param>
-        public RuntimePrimitiveJavaType(RuntimeContext context, ITypeSymbol type, string sigName) :
+        public RuntimePrimitiveJavaType(RuntimeContext context, TypeSymbol type, string sigName) :
             base(context, TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
             this.type = type;
@@ -85,7 +85,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeJavaType BaseTypeWrapper => null;
 
-        internal static bool IsPrimitiveType(RuntimeContext context, ITypeSymbol type)
+        internal static bool IsPrimitiveType(RuntimeContext context, TypeSymbol type)
         {
             return type == context.PrimitiveJavaTypeFactory.BYTE.type
                 || type == context.PrimitiveJavaTypeFactory.CHAR.type
@@ -102,7 +102,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
-        internal override ITypeSymbol TypeAsTBD => type;
+        internal override TypeSymbol TypeAsTBD => type;
 
         public override string ToString() => "RuntimePrimitiveJavaType[" + sigName + "]";
 

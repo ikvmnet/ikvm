@@ -67,14 +67,14 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal static void EmitImpl(RuntimeContext context, ITypeSymbolBuilder tb, IFieldSymbol field)
+        internal static void EmitImpl(RuntimeContext context, TypeSymbolBuilder tb, FieldSymbol field)
         {
             EmitCompareAndSet(context, "compareAndSet", tb, field);
             EmitGet(context, tb, field);
             EmitSet(context, "set", tb, field);
         }
 
-        private static void EmitCompareAndSet(RuntimeContext context, string name, ITypeSymbolBuilder tb, IFieldSymbol field)
+        private static void EmitCompareAndSet(RuntimeContext context, string name, TypeSymbolBuilder tb, FieldSymbol field)
         {
             var compareAndSet = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Boolean, [context.Types.Object, context.Types.Object, context.Types.Object]);
             var ilgen = compareAndSet.GetILGenerator();
@@ -91,12 +91,12 @@ namespace IKVM.Runtime
             ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
         }
 
-        internal static IMethodSymbol MakeCompareExchange(RuntimeContext context, ITypeSymbol type)
+        internal static MethodSymbol MakeCompareExchange(RuntimeContext context, TypeSymbol type)
         {
-            return context.InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(type);
+            return context.InterlockedMethods.CompareExchangeOfT.MakeGenericMethod([type]);
         }
 
-        static void EmitGet(RuntimeContext context, ITypeSymbolBuilder tb, IFieldSymbol field)
+        static void EmitGet(RuntimeContext context, TypeSymbolBuilder tb, FieldSymbol field)
         {
             var get = tb.DefineMethod("get", MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Object, [context.Types.Object]);
             var ilgen = get.GetILGenerator();
@@ -107,7 +107,7 @@ namespace IKVM.Runtime
             ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
         }
 
-        static void EmitSet(RuntimeContext context, string name, ITypeSymbolBuilder tb, IFieldSymbol field)
+        static void EmitSet(RuntimeContext context, string name, TypeSymbolBuilder tb, FieldSymbol field)
         {
             var set = tb.DefineMethod(name, MethodAttributes.Public | MethodAttributes.Virtual, context.Types.Void, [context.Types.Object, context.Types.Object]);
             var ilgen = context.CodeEmitterFactory.Create(set);
@@ -129,11 +129,11 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        internal readonly IMethodSymbol AddInt32;
-        internal readonly IMethodSymbol CompareExchangeInt32;
-        internal readonly IMethodSymbol CompareExchangeInt64;
-        internal readonly IMethodSymbol CompareExchangeOfT;
-        internal readonly IMethodSymbol ExchangeOfT;
+        internal readonly MethodSymbol AddInt32;
+        internal readonly MethodSymbol CompareExchangeInt32;
+        internal readonly MethodSymbol CompareExchangeInt64;
+        internal readonly MethodSymbol CompareExchangeOfT;
+        internal readonly MethodSymbol ExchangeOfT;
 
         /// <summary>
         /// Initializes a new instance.

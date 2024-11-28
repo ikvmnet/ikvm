@@ -39,32 +39,32 @@ namespace IKVM.Runtime
     sealed class RuntimeAnonymousJavaType : RuntimeJavaType
     {
 
-        readonly ITypeSymbol type;
+        readonly TypeSymbol type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="type"></param>
-        internal RuntimeAnonymousJavaType(RuntimeContext context, ITypeSymbol type) :
+        internal RuntimeAnonymousJavaType(RuntimeContext context, TypeSymbol type) :
             base(context, TypeFlags.Anonymous, Modifiers.Final | Modifiers.Synthetic, GetName(context, type))
         {
             this.type = type;
         }
 
-        internal static bool IsAnonymous(RuntimeContext context, ITypeSymbol type)
+        internal static bool IsAnonymous(RuntimeContext context, TypeSymbol type)
         {
             return type.IsSpecialName && type.Name.StartsWith(NestedTypeName.IntrinsifiedAnonymousClass, StringComparison.Ordinal) && context.AttributeHelper.IsJavaModule(type.Module);
         }
 
-        private static string GetName(RuntimeContext context, ITypeSymbol type)
+        private static string GetName(RuntimeContext context, TypeSymbol type)
         {
             return context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).Name + type.Name.Replace(NestedTypeName.IntrinsifiedAnonymousClass, "$$Lambda$");
         }
 
         internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetJavaTypeFromType(type.DeclaringType).ClassLoader;
 
-        internal override ITypeSymbol TypeAsTBD
+        internal override TypeSymbol TypeAsTBD
         {
             get { return type; }
         }
@@ -123,10 +123,10 @@ namespace IKVM.Runtime
             SetFields(fields.ToArray());
         }
 
-        void GetSig(IMethodSymbol mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
+        void GetSig(MethodSymbol mi, out RuntimeJavaType returnType, out RuntimeJavaType[] parameterTypes, out string signature)
         {
             returnType = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, mi.ReturnParameter);
-            var parameters = mi.GetParameters();
+            var parameters = mi.Parameters;
             parameterTypes = new RuntimeJavaType[parameters.Length];
             var sb = new System.Text.StringBuilder("(");
             for (int i = 0; i < parameters.Length; i++)

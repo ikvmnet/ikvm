@@ -45,7 +45,7 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="sig"></param>
         /// <param name="modifiers"></param>
-        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, IFieldSymbol fi, string name, string sig, ExModifiers modifiers) :
+        internal RuntimeSimpleJavaField(RuntimeJavaType declaringType, RuntimeJavaType fieldType, FieldSymbol fi, string name, string sig, ExModifiers modifiers) :
             base(declaringType, fieldType, name, sig, modifiers, fi)
         {
             Debug.Assert(!(fieldType == declaringType.Context.PrimitiveJavaTypeFactory.DOUBLE || fieldType == declaringType.Context.PrimitiveJavaTypeFactory.LONG) || !IsVolatile);
@@ -124,7 +124,7 @@ namespace IKVM.Runtime
                 if (IsFinal)
                 {
                     il.Emit(OpCodes.Ldsflda, fi);
-                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(fi.FieldType));
+                    il.Emit(OpCodes.Call, DeclaringType.Context.Resolver.ResolveRuntimeType(typeof(RuntimeSimpleJavaField).FullName).GetMethod(nameof(UnsafeGetImplByRefNoInline), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod([fi.FieldType]));
                 }
                 else
                 {

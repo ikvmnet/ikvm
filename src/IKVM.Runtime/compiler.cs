@@ -40,6 +40,7 @@ using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Runtime.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
+using System.Collections.Immutable;
 
 namespace IKVM.Runtime
 {
@@ -79,12 +80,12 @@ namespace IKVM.Runtime
         readonly RuntimeContext context;
         readonly bool bootstrap;
 
-        IMethodSymbol unmapExceptionMethod;
-        IMethodSymbol fixateExceptionMethod;
-        IMethodSymbol suppressFillInStackTraceMethod;
-        IMethodSymbol getTypeFromHandleMethod;
-        IMethodSymbol getTypeMethod;
-        IMethodSymbol keepAliveMethod;
+        MethodSymbol unmapExceptionMethod;
+        MethodSymbol fixateExceptionMethod;
+        MethodSymbol suppressFillInStackTraceMethod;
+        MethodSymbol getTypeFromHandleMethod;
+        MethodSymbol getTypeMethod;
+        MethodSymbol keepAliveMethod;
         RuntimeJavaMethod getClassFromTypeHandle;
         RuntimeJavaMethod getClassFromTypeHandle2;
 
@@ -98,7 +99,7 @@ namespace IKVM.Runtime
             this.context = context;
             this.bootstrap = bootstrap;
 
-            if (bootstrap && Throwable.TypeAsBaseType is ITypeSymbolBuilder)
+            if (bootstrap && Throwable.TypeAsBaseType is TypeSymbolBuilder)
                 foreach (var m in Throwable.GetMethods())
                     m.Link();
 
@@ -108,17 +109,17 @@ namespace IKVM.Runtime
 
         public RuntimeJavaType Throwable => context.JavaBase.TypeOfjavaLangThrowable;
 
-        public IMethodSymbol UnmapExceptionMethod => unmapExceptionMethod ??= bootstrap ? (IMethodSymbol)Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<unmap>", [context.Types.Exception]);
+        public MethodSymbol UnmapExceptionMethod => unmapExceptionMethod ??= bootstrap ? (MethodSymbol)Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<unmap>", [context.Types.Exception]);
 
-        public IMethodSymbol FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (IMethodSymbol)Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", [context.Types.Exception]);
+        public MethodSymbol FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (MethodSymbol)Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", [context.Types.Exception]);
 
-        public IMethodSymbol SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (IMethodSymbol)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", []);
+        public MethodSymbol SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodSymbol)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", []);
 
-        public IMethodSymbol GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, [context.Types.RuntimeTypeHandle]);
+        public MethodSymbol GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, [context.Types.RuntimeTypeHandle]);
 
-        public IMethodSymbol GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, []);
+        public MethodSymbol GetTypeMethod => getTypeMethod ??= context.Types.Object.GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance, []);
 
-        public IMethodSymbol KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, [context.Types.Object]);
+        public MethodSymbol KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, [context.Types.Object]);
 
         public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 
@@ -982,12 +983,12 @@ namespace IKVM.Runtime
                         else if (mapSafe)
                         {
                             ilGenerator.EmitLdc_I4(mapFlags | 1);
-                            ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(excType));
+                            ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod([excType]));
                         }
                         else if (exceptionTypeWrapper == finish.Context.JavaBase.TypeOfjavaLangThrowable)
                         {
                             ilGenerator.EmitLdc_I4(mapFlags);
-                            ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(finish.Context.Types.Exception));
+                            ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod([finish.Context.Types.Exception]));
                         }
                         else
                         {
@@ -1000,7 +1001,7 @@ namespace IKVM.Runtime
                             }
                             else
                             {
-                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod(excType));
+                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.MapException.MakeGenericMethod([excType]));
                             }
 
                             if (!unusedException)
@@ -1812,7 +1813,7 @@ namespace IKVM.Runtime
 
                                 var rank = wrapper.ArrayRank + 1;
                                 ilGenerator.Emit(System.Reflection.Emit.OpCodes.Ldtoken, RuntimeArrayJavaType.MakeArrayType(tw.TypeAsTBD, wrapper.ArrayRank + 1));
-                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.anewarray_ghost.MakeGenericMethod(wrapper.TypeAsArrayType));
+                                ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, finish.Context.ByteCodeHelperMethods.anewarray_ghost.MakeGenericMethod([wrapper.TypeAsArrayType]));
                             }
                             else
                             {
@@ -2722,13 +2723,13 @@ namespace IKVM.Runtime
         static class InvokeDynamicBuilder
         {
 
-            internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, ITypeSymbol delegateType)
+            internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeSymbol delegateType)
             {
                 var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1");
                 var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
 
-                var typeofIndyCallSite = typeofOpenIndyCallSite.MakeGenericType(delegateType);
+                var typeofIndyCallSite = typeofOpenIndyCallSite.MakeGenericType([delegateType]);
                 var methodCreateBootStrap = typeofIndyCallSite.GetMethod("CreateBootstrap");
                 var methodGetTarget = typeofIndyCallSite.GetMethod("GetTarget");
                 var tb = compiler.finish.DefineIndyCallSiteType();
@@ -2746,17 +2747,16 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, methodGetTarget);
             }
 
-            static IMethodSymbolBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, ITypeSymbol delegateType, ITypeSymbolBuilder tb, IFieldSymbolBuilder fb, IMethodSymbol methodGetTarget)
+            static MethodSymbolBuilder CreateBootstrapStub(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeSymbol delegateType, TypeSymbolBuilder tb, FieldSymbolBuilder fb, MethodSymbol methodGetTarget)
             {
                 var typeofCallSite = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
-                var args = Array.Empty<ITypeSymbol>();
+                var args = ImmutableArray<TypeSymbol>.Empty;
 
                 if (delegateType.IsGenericType)
                 {
-                    // MONOBUG we don't look at the invoke method directly here, because Mono doesn't support GetParameters() on a builder instantiation
-                    args = delegateType.GetGenericArguments();
+                    args = delegateType.GenericArguments;
                     if (cpi.GetRetType() != compiler.finish.Context.PrimitiveJavaTypeFactory.VOID)
-                        Array.Resize(ref args, args.Length - 1);
+                        args = args.Slice(0, args.Length - 1);
                 }
 
                 var mb = tb.DefineMethod("BootstrapStub", MethodAttributes.Static | MethodAttributes.PrivateScope, cpi.GetRetType().TypeAsSignatureType, args);
@@ -2792,11 +2792,11 @@ namespace IKVM.Runtime
                 {
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, cpi.Signature);
                     compiler.finish.EmitCallerID(ilgen, compiler.m.IsLambdaFormHidden);
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicLinkIndyCallSite.MakeGenericMethod(delegateType));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicLinkIndyCallSite.MakeGenericMethod([delegateType]));
                 }
                 else
                 {
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LinkIndyCallSite.MakeGenericMethod(delegateType));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LinkIndyCallSite.MakeGenericMethod([delegateType]));
                 }
 
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldsfld, fb);
@@ -2899,7 +2899,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(compiler.finish.Context.MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod([compiler.finish.Context.MethodHandleUtil.CreateDelegateTypeForLoadConstant(cpi.GetArgTypes(), cpi.GetRetType())]));
                 }
 
                 parameters[2].EmitConvStackTypeToSignatureType(ilgen, compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType);
@@ -3033,7 +3033,7 @@ namespace IKVM.Runtime
         sealed class MethodHandleConstant
         {
 
-            IFieldSymbolBuilder field;
+            FieldSymbolBuilder field;
 
             internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodHandleConstantHandle handle)
             {
@@ -3055,7 +3055,7 @@ namespace IKVM.Runtime
         sealed class MethodTypeConstant
         {
 
-            IFieldSymbolBuilder field;
+            FieldSymbolBuilder field;
             bool dynamic;
 
             internal void Emit(Compiler compiler, CodeEmitter ilgen, MethodTypeConstantHandle handle)
@@ -3076,7 +3076,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            static IFieldSymbolBuilder CreateField(Compiler compiler, MethodTypeConstantHandle handle, ref bool dynamic)
+            static FieldSymbolBuilder CreateField(Compiler compiler, MethodTypeConstantHandle handle, ref bool dynamic)
             {
                 var cpi = compiler.classFile.GetConstantPoolConstantMethodType(handle);
                 var args = cpi.GetArgTypes();
@@ -3093,7 +3093,7 @@ namespace IKVM.Runtime
                     var field = tb.DefineField("value", compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodType.TypeAsSignatureType, FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly);
                     var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(tb.DefineTypeInitializer());
                     var delegateType = compiler.finish.Context.MethodHandleUtil.CreateDelegateTypeForLoadConstant(args, ret);
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod([delegateType]));
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Stsfld, field);
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ret);
                     ilgen.DoEmit();
@@ -3472,11 +3472,11 @@ namespace IKVM.Runtime
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, cpi.Signature);
                     compiler.finish.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.DynamicLoadMethodType);
-                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+                    ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod([delegateType]));
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Call, ilgen.Context.ByteCodeHelperMethods.DynamicEraseInvokeExact);
                 }
 
-                var mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+                var mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod([delegateType]);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
@@ -3495,9 +3495,9 @@ namespace IKVM.Runtime
                 }
 
                 var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod([delegateType]));
                 compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.GetMethodWrapper("asType", "(Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MethodHandle;", false).EmitCallvirt(ilgen);
-                var mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
+                var mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod([delegateType]);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
                     ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[i]);
@@ -3522,10 +3522,10 @@ namespace IKVM.Runtime
                 }
 
                 var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
-                var mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
+                var mi = ilgen.Context.ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod([delegateType]);
 
                 var typeofInvokeCache = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.InvokeCache`1");
-                var fb = compiler.finish.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType(delegateType));
+                var fb = compiler.finish.DefineMethodHandleInvokeCacheField(typeofInvokeCache.MakeGenericType([delegateType]));
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[0]);
                 if (HasUnloadable(cpi.GetArgTypes(), cpi.GetRetType()))
                 {
@@ -3570,7 +3570,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Stloc, temps[0]);
 
                 var delegateType = context.MethodHandleUtil.CreateMemberWrapperDelegateType(args, retType);
-                var mi = context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod(delegateType);
+                var mi = context.ByteCodeHelperMethods.GetDelegateForInvokeBasic.MakeGenericMethod([delegateType]);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldloc, temps[0]);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)
@@ -3607,7 +3607,7 @@ namespace IKVM.Runtime
         sealed class DynamicFieldBinder
         {
 
-            IMethodSymbol method;
+            MethodSymbol method;
 
             internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
             {
@@ -3617,7 +3617,7 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(System.Reflection.Emit.OpCodes.Call, method);
             }
 
-            private static IMethodSymbol CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
+            private static MethodSymbol CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, MethodHandleKind kind)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3657,7 +3657,7 @@ namespace IKVM.Runtime
                 return mw ??= new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind);
             }
 
-            private static IMethodSymbol Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            private static MethodSymbol Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 RuntimeJavaType ret;
                 RuntimeJavaType[] args;
@@ -3679,20 +3679,20 @@ namespace IKVM.Runtime
                 return Emit(compiler, kind, cpi, ret, args, privileged);
             }
 
-            internal static IMethodSymbol Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
+            internal static MethodSymbol Emit(Compiler compiler, MethodHandleKind kind, ClassFile.ConstantPoolItemFMI cpi, RuntimeJavaType ret, RuntimeJavaType[] args, bool privileged)
             {
                 var ghostTarget = (kind == MethodHandleKind.InvokeSpecial || kind == MethodHandleKind.InvokeVirtual || kind == MethodHandleKind.InvokeInterface) && args[0].IsGhost;
                 var delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
                 var fb = compiler.finish.DefineMethodHandleInvokeCacheField(delegateType);
 
-                var types = new ITypeSymbol[args.Length];
-                for (int i = 0; i < types.Length; i++)
+                var types = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
+                for (int i = 0; i < types.Count; i++)
                     types[i] = args[i].TypeAsSignatureType;
 
                 if (ghostTarget)
                     types[0] = types[0].MakeByRefType();
 
-                var mb = compiler.finish.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types);
+                var mb = compiler.finish.DefineMethodHandleDispatchStub(ret.TypeAsSignatureType, types.DrainToImmutable());
                 var ilgen = compiler.finish.Context.CodeEmitterFactory.Create(mb);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldsfld, fb);
                 var label = ilgen.DefineLabel();
@@ -3709,7 +3709,7 @@ namespace IKVM.Runtime
                 {
                     compiler.finish.EmitCallerID(ilgen, compiler.m.IsLambdaFormCompiled);
                 }
-                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicBinderMemberLookup.MakeGenericMethod(delegateType));
+                ilgen.Emit(System.Reflection.Emit.OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.DynamicBinderMemberLookup.MakeGenericMethod([delegateType]));
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Volatile);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Stsfld, fb);
                 ilgen.MarkLabel(label);
@@ -3731,9 +3731,9 @@ namespace IKVM.Runtime
             sealed class DynamicBinderMethodWrapper : RuntimeJavaMethod
             {
 
-                readonly IMethodSymbol method;
+                readonly MethodSymbol method;
 
-                internal DynamicBinderMethodWrapper(ClassFile.ConstantPoolItemMI cpi, IMethodSymbol method, MethodHandleKind kind) :
+                internal DynamicBinderMethodWrapper(ClassFile.ConstantPoolItemMI cpi, MethodSymbol method, MethodHandleKind kind) :
                     base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), kind == MethodHandleKind.InvokeStatic ? Modifiers.Public | Modifiers.Static : Modifiers.Public, MemberFlags.None)
                 {
                     this.method = method;
@@ -3946,7 +3946,7 @@ namespace IKVM.Runtime
             return v;
         }
 
-        ITypeSymbol GetLocalBuilderType(RuntimeJavaType tw)
+        TypeSymbol GetLocalBuilderType(RuntimeJavaType tw)
         {
             if (tw.IsUnloadable)
                 return finish.Context.Types.Object;

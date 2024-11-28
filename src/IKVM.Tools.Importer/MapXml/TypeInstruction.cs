@@ -41,7 +41,7 @@ namespace IKVM.Tools.Importer.MapXml
         }
 
         readonly OpCode opcode;
-        ITypeSymbol typeType;
+        TypeSymbol typeType;
 
         public string Type { get; set; }
 

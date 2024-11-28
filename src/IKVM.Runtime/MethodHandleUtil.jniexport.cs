@@ -37,7 +37,7 @@ namespace IKVM.Runtime
     partial class MethodHandleUtil
     {
 
-        internal ITypeSymbol GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
+        internal TypeSymbol GetMemberWrapperDelegateType(global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
 		    throw new NotImplementedException();
@@ -62,20 +62,20 @@ namespace IKVM.Runtime
             return CreateMethodHandleDelegateType(args, ret).GetUnderlyingType();
         }
 
-        static ITypeSymbol[] GetParameterTypes(IMethodBaseSymbol mb)
+        static TypeSymbol[] GetParameterTypes(MethodSymbol mb)
         {
             var pi = mb.GetParameters();
-            var args = new ITypeSymbol[pi.Length];
+            var args = new TypeSymbol[pi.Length];
             for (int i = 0; i < args.Length; i++)
                 args[i] = pi[i].ParameterType;
 
             return args;
         }
 
-        internal static ITypeSymbol[] GetParameterTypes(ITypeSymbol thisType, IMethodBaseSymbol mb)
+        internal static TypeSymbol[] GetParameterTypes(TypeSymbol thisType, MethodSymbol mb)
         {
             var pi = mb.GetParameters();
-            var args = new ITypeSymbol[pi.Length + 1];
+            var args = new TypeSymbol[pi.Length + 1];
             args[0] = thisType;
             for (int i = 1; i < args.Length; i++)
                 args[i] = pi[i - 1].ParameterType;
@@ -128,13 +128,13 @@ namespace IKVM.Runtime
             readonly RuntimeContext context;
             readonly java.lang.invoke.MethodType type;
             readonly int firstArg;
-            readonly ITypeSymbol delegateType;
+            readonly TypeSymbol delegateType;
             readonly object firstBoundValue;
             readonly object secondBoundValue;
-            readonly ITypeSymbol container;
+            readonly TypeSymbol container;
             readonly DynamicMethod dm;
             readonly CodeEmitter ilgen;
-            readonly ITypeSymbol packedArgType;
+            readonly TypeSymbol packedArgType;
             readonly int packedArgPos;
 
             sealed class Container<T1, T2>
@@ -163,7 +163,7 @@ namespace IKVM.Runtime
             /// <param name="owner"></param>
             /// <param name="useBasicTypes"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, ITypeSymbol container, object target, object value, Type owner, bool useBasicTypes)
+            DynamicMethodBuilder(RuntimeContext context, string name, java.lang.invoke.MethodType type, TypeSymbol container, object target, object value, Type owner, bool useBasicTypes)
             {
                 this.context = context ?? throw new ArgumentNullException(nameof(context));
                 this.type = type;
@@ -175,7 +175,7 @@ namespace IKVM.Runtime
 
                 var mi = context.MethodHandleUtil.GetDelegateInvokeMethod(delegateType);
 
-                ITypeSymbol[] paramTypes;
+                TypeSymbol[] paramTypes;
                 if (container != null)
                 {
                     firstArg = 1;
@@ -443,12 +443,12 @@ namespace IKVM.Runtime
                 return dm.CreateDelegate();
             }
 
-            internal void Call(IMethodSymbol method)
+            internal void Call(MethodSymbol method)
             {
                 ilgen.Emit(OpCodes.Call, method);
             }
 
-            internal void Callvirt(IMethodSymbol method)
+            internal void Callvirt(MethodSymbol method)
             {
                 ilgen.Emit(OpCodes.Callvirt, method);
             }
@@ -463,7 +463,7 @@ namespace IKVM.Runtime
                 mw.EmitCallvirt(ilgen);
             }
 
-            internal void CallDelegate(ITypeSymbol delegateType)
+            internal void CallDelegate(TypeSymbol delegateType)
             {
                 context.MethodHandleUtil.EmitCallDelegateInvokeMethod(ilgen, delegateType);
             }
@@ -582,7 +582,7 @@ namespace IKVM.Runtime
                 tw.EmitCheckcast(ilgen);
             }
 
-            internal void EmitCastclass(ITypeSymbol type)
+            internal void EmitCastclass(TypeSymbol type)
             {
                 ilgen.EmitCastclass(type);
             }
@@ -631,7 +631,7 @@ namespace IKVM.Runtime
             return d;
         }
 
-        internal ITypeSymbol GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
+        internal TypeSymbol GetDelegateTypeForInvokeExact(global::java.lang.invoke.MethodType type)
         {
             type._invokeExactDelegateType ??= CreateMethodHandleDelegateType(type);
             return context.Resolver.GetSymbol(type._invokeExactDelegateType);
@@ -672,7 +672,7 @@ namespace IKVM.Runtime
             return type.voidAdapter;
         }
 
-        internal void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, ITypeSymbol packedArgType)
+        internal void LoadPackedArg(CodeEmitter ilgen, int index, int firstArg, int packedArgPos, TypeSymbol packedArgType)
         {
             index += firstArg;
             if (index >= packedArgPos)

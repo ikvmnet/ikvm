@@ -23,6 +23,8 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
@@ -56,8 +58,8 @@ namespace IKVM.Runtime
         sealed partial class AttributeAnnotationJavaType : AttributeAnnotationJavaTypeBase
         {
 
-            readonly ITypeSymbol fakeType;
-            readonly ITypeSymbol attributeType;
+            readonly TypeSymbol fakeType;
+            readonly TypeSymbol attributeType;
             volatile RuntimeJavaType[] innerClasses;
 
             /// <summary>
@@ -65,7 +67,7 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="name"></param>
             /// <param name="attributeType"></param>
-            internal AttributeAnnotationJavaType(RuntimeContext context, string name, ITypeSymbol attributeType) :
+            internal AttributeAnnotationJavaType(RuntimeContext context, string name, TypeSymbol attributeType) :
                 base(context, name)
             {
 #if IMPORTER || EXPORTER
@@ -76,7 +78,7 @@ namespace IKVM.Runtime
                 this.attributeType = attributeType;
             }
 
-            static bool IsSupportedType(RuntimeContext context, ITypeSymbol type)
+            static bool IsSupportedType(RuntimeContext context, TypeSymbol type)
             {
                 // Java annotations only support one-dimensional arrays
                 if (type.IsSZArray)
@@ -95,19 +97,19 @@ namespace IKVM.Runtime
                     || type.IsEnum;
             }
 
-            internal static void GetConstructors(RuntimeContext context, ITypeSymbol type, out IConstructorSymbol defCtor, out IConstructorSymbol singleOneArgCtor)
+            internal static void GetConstructors(RuntimeContext context, TypeSymbol type, out MethodSymbol defCtor, out MethodSymbol singleOneArgCtor)
             {
                 defCtor = null;
                 int oneArgCtorCount = 0;
-                IConstructorSymbol oneArgCtor = null;
-                var constructors = type.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                MethodSymbol oneArgCtor = null;
+                var constructors = type.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).ToImmutableArray();
                 // HACK we have a special rule to make some additional custom attributes from mscorlib usable:
                 // Attributes that have two constructors, one an enum and another one taking a byte, short or int,
                 // we only expose the enum constructor.
                 if (constructors.Length == 2 && type.Assembly == context.Types.Object.Assembly)
                 {
-                    var p0 = constructors[0].GetParameters();
-                    var p1 = constructors[1].GetParameters();
+                    var p0 = constructors[0].Parameters;
+                    var p1 = constructors[1].Parameters;
                     if (p0.Length == 1 && p1.Length == 1)
                     {
                         var t0 = p0[0].ParameterType;
@@ -141,7 +143,7 @@ namespace IKVM.Runtime
                     {
                         foreach (var ci in constructors)
                         {
-                            var p = ci.GetParameters();
+                            var p = ci.Parameters;
                             if (p.Length == 1 && p[0].ParameterType.IsEnum)
                             {
                                 singleOneArgCtor = ci;
@@ -153,7 +155,7 @@ namespace IKVM.Runtime
 
                 foreach (var ci in constructors)
                 {
-                    var args = ci.GetParameters();
+                    var args = ci.Parameters;
                     if (args.Length == 0)
                     {
                         defCtor = ci;
@@ -187,13 +189,13 @@ namespace IKVM.Runtime
                 /// <param name="name"></param>
                 /// <param name="type"></param>
                 /// <param name="optional"></param>
-                internal AttributeAnnotationJavaMethod(AttributeAnnotationJavaType tw, string name, ITypeSymbol type, bool optional) :
+                internal AttributeAnnotationJavaMethod(AttributeAnnotationJavaType tw, string name, TypeSymbol type, bool optional) :
                     this(tw, name, MapType(tw.Context, type, false), optional)
                 {
 
                 }
 
-                static RuntimeJavaType MapType(RuntimeContext context, ITypeSymbol type, bool isArray)
+                static RuntimeJavaType MapType(RuntimeContext context, TypeSymbol type, bool isArray)
                 {
                     if (type == context.Types.String)
                     {
@@ -285,7 +287,7 @@ namespace IKVM.Runtime
                 GetConstructors(Context, attributeType, out var defCtor, out var singleOneArgCtor);
 
                 if (singleOneArgCtor != null)
-                    methods.Add(new AttributeAnnotationJavaMethod(this, "value", singleOneArgCtor.GetParameters()[0].ParameterType, defCtor != null));
+                    methods.Add(new AttributeAnnotationJavaMethod(this, "value", singleOneArgCtor.Parameters[0].ParameterType, defCtor != null));
 
                 foreach (var pi in attributeType.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
                 {
@@ -295,8 +297,8 @@ namespace IKVM.Runtime
                     // the property type needs to be a supported type
                     var getter = pi.GetGetMethod();
                     var setter = pi.GetSetMethod();
-                    IParameterSymbol[] parameters;
-                    if (getter != null && getter.GetParameters().Length == 0 && getter.ReturnType == pi.PropertyType && setter != null && (parameters = setter.GetParameters()).Length == 1 && parameters[0].ParameterType == pi.PropertyType && setter.ReturnType == Context.Types.Void && IsSupportedType(Context, pi.PropertyType))
+                    ImmutableArray<ParameterSymbol> parameters;
+                    if (getter != null && getter.Parameters.Length == 0 && getter.ReturnType == pi.PropertyType && setter != null && (parameters = setter.Parameters).Length == 1 && parameters[0].ParameterType == pi.PropertyType && setter.ReturnType == Context.Types.Void && IsSupportedType(Context, pi.PropertyType))
                         AddMethodIfUnique(methods, new AttributeAnnotationJavaMethod(this, pi.Name, pi.PropertyType, true));
                 }
 
@@ -387,7 +389,7 @@ namespace IKVM.Runtime
 
             internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(attributeType);
 
-            internal override ITypeSymbol TypeAsTBD => fakeType;
+            internal override TypeSymbol TypeAsTBD => fakeType;
 
             internal override RuntimeJavaType[] InnerClasses => innerClasses ??= GetInnerClasses();
 
@@ -480,13 +482,13 @@ namespace IKVM.Runtime
             sealed class AttributeAnnotation : Annotation
             {
 
-                readonly ITypeSymbol type;
+                readonly TypeSymbol type;
 
                 /// <summary>
                 /// Initializes a new instance.
                 /// </summary>
                 /// <param name="type"></param>
-                internal AttributeAnnotation(ITypeSymbol type)
+                internal AttributeAnnotation(TypeSymbol type)
                 {
                     this.type = type;
                 }
@@ -497,9 +499,9 @@ namespace IKVM.Runtime
                     object ctorArg = null;
 
                     GetConstructors(loader.Context, type, out var defCtor, out var singleOneArgCtor);
-                    var properties = new List<IPropertySymbol>();
+                    var properties = new List<PropertySymbol>();
                     var propertyValues = new List<object>();
-                    var fields = new List<IFieldSymbol>();
+                    var fields = new List<FieldSymbol>();
                     var fieldValues = new List<object>();
 
                     for (int i = 2; i < arr.Length; i += 2)
@@ -507,7 +509,7 @@ namespace IKVM.Runtime
                         string name = (string)arr[i];
                         if (name == "value" && singleOneArgCtor != null)
                         {
-                            ctorArg = ConvertValue(loader, singleOneArgCtor.GetParameters()[0].ParameterType, arr[i + 1]);
+                            ctorArg = ConvertValue(loader, singleOneArgCtor.Parameters[0].ParameterType, arr[i + 1]);
                         }
                         else
                         {
@@ -536,14 +538,14 @@ namespace IKVM.Runtime
 
                     return CustomAttribute.Create(
                         ctorArg == null ? defCtor : singleOneArgCtor,
-                        ctorArg == null ? [] : new object[] { ctorArg },
-                        properties.ToArray(),
-                        propertyValues.ToArray(),
-                        fields.ToArray(),
-                        fieldValues.ToArray());
+                        ctorArg == null ? [] : [ctorArg],
+                        properties.ToImmutableArray(),
+                        propertyValues.ToImmutableArray(),
+                        fields.ToImmutableArray(),
+                        fieldValues.ToImmutableArray());
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, TypeSymbolBuilder tb, object annotation)
                 {
                     if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.InteropServices.StructLayoutAttribute).FullName) && tb.BaseType != loader.Context.Types.Object)
                     {
@@ -560,17 +562,17 @@ namespace IKVM.Runtime
                     tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, MethodSymbolBuilder mb, object annotation)
                 {
                     mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, FieldSymbolBuilder fb, object annotation)
                 {
                     fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, ParameterSymbolBuilder pb, object annotation)
                 {
                     // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
                     // but if we make it possible, we should also implement it here
@@ -580,22 +582,21 @@ namespace IKVM.Runtime
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder assemblyBuilder, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, AssemblySymbolBuilder assemblyBuilder, object annotation)
                 {
 #if IMPORTER
-                    var ab = assemblyBuilder.GetUnderlyingAssemblyBuilder();
+                    var ab = assemblyBuilder;
 
                     if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute).FullName))
                     {
-                        assemblyBuilder.AddTypeForwarder((ITypeSymbol)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
+                        assemblyBuilder.AddTypeForwarder((TypeSymbol)ConvertValue(loader, loader.Context.Types.Type, ((object[])annotation)[3]));
                     }
                     else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyVersionAttribute).FullName))
                     {
-                        string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
-                        Version version;
-                        if (ImportContextFactory.TryParseVersion(str, out version))
+                        var str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
+                        if (ImportContextFactory.TryParseVersion(str, out var version))
                         {
-                            ab.__SetAssemblyVersion(version);
+                            ab.SetAssemblyVersion(version);
                         }
                         else
                         {
@@ -604,11 +605,9 @@ namespace IKVM.Runtime
                     }
                     else if (type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyCultureAttribute).FullName))
                     {
-                        string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
+                        var str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         if (str != "")
-                        {
-                            ab.__SetAssemblyCulture(str);
-                        }
+                            ab.SetAssemblyCulture(str);
                     }
                     else if (
                         type == loader.Context.Resolver.ResolveCoreType(typeof(System.Reflection.AssemblyDelaySignAttribute).FullName) ||
@@ -636,7 +635,7 @@ namespace IKVM.Runtime
 #endif
                 }
 
-                internal override void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation)
+                internal override void Apply(RuntimeClassLoader loader, PropertySymbolBuilder pb, object annotation)
                 {
                     pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }

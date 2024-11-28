@@ -34,8 +34,8 @@ namespace IKVM.Runtime
         sealed class DelegateConstructorJavaMethod : RuntimeJavaMethod
         {
 
-            readonly IConstructorSymbol constructor;
-            IMethodSymbol invoke;
+            readonly MethodSymbol constructor;
+            MethodSymbol invoke;
 
             /// <summary>
             /// Initializes a new instance.
@@ -54,17 +54,17 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="tw"></param>
             /// <param name="method"></param>
-            internal DelegateConstructorJavaMethod(RuntimeJavaType tw, IMethodBaseSymbol method) :
+            internal DelegateConstructorJavaMethod(RuntimeJavaType tw, MethodSymbol method) :
                 this(tw, tw.ClassLoader.LoadClassByName(tw.Name + RuntimeManagedJavaType.DelegateInterfaceSuffix), tw.Context.AttributeHelper.GetModifiers(method, false))
             {
-                constructor = (IConstructorSymbol)method;
+                constructor = method;
             }
 
             protected override void DoLinkMethod()
             {
                 var mw = GetParameters()[0].GetMethods()[0];
                 mw.Link();
-                invoke = (IMethodSymbol)mw.GetMethod();
+                invoke = mw.GetMethod();
             }
 
 #if EMITTERS

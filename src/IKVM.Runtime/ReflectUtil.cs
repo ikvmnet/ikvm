@@ -33,7 +33,6 @@ using IKVM.CoreLib.Reflection;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
@@ -47,22 +46,22 @@ namespace IKVM.Runtime
     static class ReflectUtil
     {
 
-        internal static bool IsSameAssembly(ITypeSymbol type1, ITypeSymbol type2)
+        internal static bool IsSameAssembly(TypeSymbol type1, TypeSymbol type2)
         {
             return type1.Assembly.Equals(type2.Assembly);
         }
 
-        internal static bool IsFromAssembly(ITypeSymbol type, IAssemblySymbol assembly)
+        internal static bool IsFromAssembly(TypeSymbol type, AssemblySymbol assembly)
         {
             return type.Assembly.Equals(assembly);
         }
 
-        internal static IAssemblySymbol GetAssembly(ITypeSymbol type)
+        internal static AssemblySymbol GetAssembly(TypeSymbol type)
         {
             return type.Assembly;
         }
 
-        internal static bool IsDynamicAssembly(IAssemblySymbol asm)
+        internal static bool IsDynamicAssembly(AssemblySymbol asm)
         {
 #if IMPORTER || EXPORTER
             return false;
@@ -71,7 +70,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal static bool IsReflectionOnly(ITypeSymbol type)
+        internal static bool IsReflectionOnly(TypeSymbol type)
         {
             while (type.HasElementType)
                 type = type.GetElementType();
@@ -84,29 +83,14 @@ namespace IKVM.Runtime
                 return false;
 
             // we have a generic type instantiation, it might have ReflectionOnly type arguments
-            foreach (var arg in type.GetGenericArguments())
+            foreach (var arg in type.GenericArguments)
                 if (IsReflectionOnly(arg))
                     return true;
 
             return false;
         }
 
-        internal static bool IsDynamicMethod(IMethodSymbol method)
-        {
-            // there's no way to distinguish a baked DynamicMethod from a RuntimeMethodInfo and
-            // on top of that Mono behaves completely different from .NET
-            try
-            {
-                // on Mono 2.10 the MetadataToken property returns zero instead of throwing InvalidOperationException
-                return method.MetadataToken == 0;
-            }
-            catch (InvalidOperationException)
-            {
-                return true;
-            }
-        }
-
-        internal static bool IsConstructor(IMethodBaseSymbol method)
+        internal static bool IsConstructor(MethodSymbol method)
         {
             return method.IsSpecialName && method.Name == ConstructorInfo.ConstructorName;
         }
@@ -118,7 +102,7 @@ namespace IKVM.Runtime
         /// <param name="attribs"></param>
         /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        internal static IConstructorSymbolBuilder DefineConstructor(ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ITypeSymbol[] parameterTypes)
+        internal static MethodSymbolBuilder DefineConstructor(TypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, ImmutableArray<TypeSymbol> parameterTypes)
         {
             return tb.DefineConstructor(attribs | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, parameterTypes);
         }
@@ -133,7 +117,7 @@ namespace IKVM.Runtime
             return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
 
-        internal static bool MatchParameterInfos(IParameterSymbol p1, IParameterSymbol p2)
+        internal static bool MatchParameterInfos(ParameterSymbol p1, ParameterSymbol p2)
         {
             if (p1.ParameterType != p2.ParameterType)
             {
@@ -150,7 +134,7 @@ namespace IKVM.Runtime
             return true;
         }
 
-        private static bool MatchTypes(ITypeSymbol[] t1, ITypeSymbol[] t2)
+        private static bool MatchTypes(ImmutableArray<TypeSymbol> t1, ImmutableArray<TypeSymbol> t2)
         {
             if (t1.Length == t2.Length)
             {
@@ -166,7 +150,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal static ITypeSymbol GetMissingType(ITypeSymbol type)
+        internal static TypeSymbol GetMissingType(TypeSymbol type)
         {
             while (type.HasElementType)
                 type = type.GetElementType();
@@ -175,11 +159,11 @@ namespace IKVM.Runtime
             {
                 return type;
             }
-            else if (type.ContainsMissing)
+            else if (type.ContainsMissingType)
             {
                 if (type.IsGenericType)
                 {
-                    foreach (var arg in type.GetGenericArguments())
+                    foreach (var arg in type.GenericArguments)
                     {
                         var t1 = GetMissingType(arg);
                         if (t1.IsMissing)

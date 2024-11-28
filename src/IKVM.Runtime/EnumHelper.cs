@@ -32,7 +32,7 @@ namespace IKVM.Runtime
     static class EnumHelper
     {
 
-        internal static object Parse(RuntimeContext context, ITypeSymbol type, string value)
+        internal static object Parse(RuntimeContext context, TypeSymbol type, string value)
         {
             object retval = null;
 
@@ -93,7 +93,7 @@ namespace IKVM.Runtime
         }
 
         // this method can be used to convert an enum value or its underlying value to a Java primitive
-        internal static object GetPrimitiveValue(RuntimeContext context, ITypeSymbol underlyingType, object obj)
+        internal static object GetPrimitiveValue(RuntimeContext context, TypeSymbol underlyingType, object obj)
         {
             // Note that this method doesn't trust that obj is of the correct type,
             // because it turns out there exist assemblies (e.g. gtk-sharp.dll) that

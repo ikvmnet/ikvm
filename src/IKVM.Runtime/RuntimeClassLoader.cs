@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -100,7 +101,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER || EXPORTER
 
-        internal void SetRemappedType(ITypeSymbol type, RuntimeJavaType tw)
+        internal void SetRemappedType(TypeSymbol type, RuntimeJavaType tw)
         {
             lock (types)
                 types.Add(tw.Name, tw);
@@ -542,8 +543,8 @@ namespace IKVM.Runtime
                 }
             }
 
-            var typeArguments = new ITypeSymbol[typeParamNames.Count];
-            for (int i = 0; i < typeArguments.Length; i++)
+            var typeArguments = ImmutableArray.CreateBuilder<TypeSymbol>(typeParamNames.Count);
+            for (int i = 0; i < typeArguments.Count; i++)
             {
                 var s = typeParamNames[i];
                 // only do the unmangling for non-generic types (because we don't want to convert
@@ -608,7 +609,7 @@ namespace IKVM.Runtime
 
             try
             {
-                type = type.MakeGenericType(typeArguments);
+                type = type.MakeGenericType(typeArguments.DrainToImmutable());
             }
             catch (ArgumentException)
             {
@@ -742,17 +743,17 @@ namespace IKVM.Runtime
         /// </remarks>.
         /// <param name="signature"></param>
         /// <returns></returns>
-        internal ITypeSymbol[] ArgTypeListFromSig(string signature)
+        internal ImmutableArray<TypeSymbol> ArgTypeListFromSig(string signature)
         {
             if (signature[1] == ')')
                 return [];
 
             var javaTypes = ArgJavaTypeListFromSig(signature, LoadMode.LoadOrThrow);
-            var types = new ITypeSymbol[javaTypes.Length];
+            var types = ImmutableArray.CreateBuilder<TypeSymbol>(javaTypes.Length);
             for (int i = 0; i < javaTypes.Length; i++)
-                types[i] = javaTypes[i].TypeAsSignatureType;
+                types.Add(javaTypes[i].TypeAsSignatureType);
 
-            return types;
+            return types.DrainToImmutable();
         }
 
         /// <summary>

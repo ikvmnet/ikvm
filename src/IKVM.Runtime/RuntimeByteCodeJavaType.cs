@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -62,7 +63,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
         byte[][] lineNumberTables;
 #endif
-        IMethodBaseSymbol automagicSerializationCtor;
+        MethodSymbol automagicSerializationCtor;
 
         RuntimeJavaType LoadTypeWrapper(RuntimeClassLoader classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
         {
@@ -339,7 +340,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override ITypeSymbol TypeAsTBD
+        internal override TypeSymbol TypeAsTBD
         {
             get
             {
@@ -396,12 +397,12 @@ namespace IKVM.Runtime
                 return false;
         }
 
-        void GenerateOverrideStub(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod baseMethod, IMethodSymbol target, RuntimeJavaMethod targetMethod)
+        void GenerateOverrideStub(TypeSymbolBuilder typeBuilder, RuntimeJavaMethod baseMethod, MethodSymbol target, RuntimeJavaMethod targetMethod)
         {
             Debug.Assert(!baseMethod.HasCallerID);
 
             var overrideStub = baseMethod.GetDefineMethodHelper().DefineMethod(this, typeBuilder, "__<overridestub>" + baseMethod.DeclaringType.Name + "::" + baseMethod.Name, MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
-            typeBuilder.DefineMethodOverride(overrideStub, (IMethodSymbol)baseMethod.GetMethod());
+            typeBuilder.DefineMethodOverride(overrideStub, (MethodSymbol)baseMethod.GetMethod());
 
             var stubargs = baseMethod.GetParameters();
             var targetArgs = targetMethod.GetParameters();
@@ -575,9 +576,9 @@ namespace IKVM.Runtime
                     parameterNames[i] = names[i];
         }
 
-        protected static IParameterSymbolBuilder[] GetParameterBuilders(IMethodBaseSymbolBuilder mb, int parameterCount, string[] parameterNames)
+        protected static ParameterSymbolBuilder[] GetParameterBuilders(MethodSymbolBuilder mb, int parameterCount, string[] parameterNames)
         {
-            var parameterBuilders = new IParameterSymbolBuilder[parameterCount];
+            var parameterBuilders = new ParameterSymbolBuilder[parameterCount];
             Dictionary<string, int> clashes = null;
             for (int i = 0; i < parameterBuilders.Length; i++)
             {
@@ -631,15 +632,15 @@ namespace IKVM.Runtime
 
         protected abstract bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m);
 
-        protected abstract void EmitMapXmlMetadata(ITypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
+        protected abstract void EmitMapXmlMetadata(TypeSymbolBuilder typeBuilder, ClassFile classFile, RuntimeJavaField[] fields, RuntimeJavaMethod[] methods);
 
-        protected abstract IMethodSymbolBuilder DefineGhostMethod(ITypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw);
+        protected abstract MethodSymbolBuilder DefineGhostMethod(TypeSymbolBuilder typeBuilder, string name, System.Reflection.MethodAttributes attribs, RuntimeJavaMethod mw);
 
-        protected abstract void FinishGhost(ITypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods);
+        protected abstract void FinishGhost(TypeSymbolBuilder typeBuilder, RuntimeJavaMethod[] methods);
 
         protected abstract void FinishGhostStep2();
 
-        protected abstract ITypeSymbolBuilder DefineGhostType(string mangledTypeName, System.Reflection.TypeAttributes typeAttribs);
+        protected abstract TypeSymbolBuilder DefineGhostType(string mangledTypeName, System.Reflection.TypeAttributes typeAttribs);
 
 #endif // IMPORTER
 
@@ -675,13 +676,13 @@ namespace IKVM.Runtime
             return false;
         }
 
-        internal override IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
+        internal override MethodSymbol LinkMethod(RuntimeJavaMethod mw)
         {
             mw.AssertLinked();
             return impl.LinkMethod(mw);
         }
 
-        internal override IFieldSymbol LinkField(RuntimeJavaField fw)
+        internal override FieldSymbol LinkField(RuntimeJavaField fw)
         {
             fw.AssertLinked();
             return impl.LinkField(fw);
@@ -747,30 +748,19 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Gets the metadata token of the specified method.
-        /// </summary>
-        /// <param name="mb"></param>
-        /// <returns></returns>
-        int GetMethodBaseToken(IMethodBaseSymbol mb)
-        {
-            return mb.MetadataToken;
-        }
-
-        /// <summary>
         /// Gets the line number within the original source of the specified method that maps to the specified offset in the IL.
         /// </summary>
         /// <param name="mb"></param>
         /// <param name="ilOffset"></param>
         /// <returns></returns>
-        internal override int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
+        internal override int GetSourceLineNumber(MethodSymbol mb, int ilOffset)
         {
             if (lineNumberTables != null)
             {
-                var token = GetMethodBaseToken(mb);
                 var methods = GetMethods();
                 for (int i = 0; i < methods.Length; i++)
                 {
-                    if (GetMethodBaseToken(methods[i].GetMethod()) == token)
+                    if (methods[i].GetMethod() == mb)
                     {
                         if (lineNumberTables[i] != null)
                             return new LineNumberTableAttribute(lineNumberTables[i]).GetLineNumber(ilOffset);
@@ -872,7 +862,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private ITypeSymbol GetBaseTypeForDefineType()
+        private TypeSymbol GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
@@ -881,7 +871,7 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        protected virtual ITypeSymbol GetBaseTypeForDefineType()
+        protected virtual TypeSymbol GetBaseTypeForDefineType()
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
@@ -893,23 +883,22 @@ namespace IKVM.Runtime
 
 #endif // IMPORTER
 
-        internal override IMethodBaseSymbol GetSerializationConstructor()
+        internal override MethodSymbol GetSerializationConstructor()
         {
             return automagicSerializationCtor;
         }
 
-        private ITypeSymbol[] GetModOpt(RuntimeJavaType tw, bool mustBePublic)
+        ImmutableArray<TypeSymbol> GetModOpt(RuntimeJavaType tw, bool mustBePublic)
         {
             return GetModOpt(ClassLoader.GetTypeWrapperFactory(), tw, mustBePublic);
         }
 
-        internal static ITypeSymbol[] GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
+        internal static ImmutableArray<TypeSymbol> GetModOpt(RuntimeJavaTypeFactory context, RuntimeJavaType tw, bool mustBePublic)
         {
-            ITypeSymbol[] modopt = [];
             if (tw.IsUnloadable)
             {
                 if (((RuntimeUnloadableJavaType)tw).MissingType == null)
-                    modopt = [((RuntimeUnloadableJavaType)tw).GetCustomModifier(context)];
+                    return [((RuntimeUnloadableJavaType)tw).GetCustomModifier(context)];
             }
             else
             {
@@ -917,17 +906,19 @@ namespace IKVM.Runtime
                 if (tw1.IsErasedOrBoxedPrimitiveOrRemapped || tw.IsGhostArray || (mustBePublic && !tw1.IsPublic))
                 {
                     // FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
-                    modopt = new ITypeSymbol[tw.ArrayRank + 1];
+                    var modopt = ImmutableArray.CreateBuilder<TypeSymbol>(tw.ArrayRank + 1);
                     modopt[0] = GetModOptHelper(tw1);
-                    for (int i = 1; i < modopt.Length; i++)
+                    for (int i = 1; i < modopt.Count; i++)
                         modopt[i] = tw.Context.Types.Array;
+
+                    return modopt.DrainToImmutable();
                 }
             }
 
-            return modopt;
+            return [];
         }
 
-        static ITypeSymbol GetModOptHelper(RuntimeJavaType tw)
+        static TypeSymbol GetModOptHelper(RuntimeJavaType tw)
         {
             Debug.Assert(!tw.IsUnloadable);
 

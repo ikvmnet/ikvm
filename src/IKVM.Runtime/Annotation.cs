@@ -25,6 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.Emit;
 
 namespace IKVM.Runtime
 {
@@ -95,7 +97,7 @@ namespace IKVM.Runtime
 
 #endif
 
-        static object LookupEnumValue(RuntimeContext context, ITypeSymbol enumType, string value)
+        static object LookupEnumValue(RuntimeContext context, TypeSymbol enumType, string value)
         {
             var field = enumType.GetField(value, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
             if (field != null)
@@ -105,7 +107,7 @@ namespace IKVM.Runtime
             return EnumHelper.GetPrimitiveValue(context, enumType.GetEnumUnderlyingType(), 0);
         }
 
-        protected static object ConvertValue(RuntimeClassLoader loader, ITypeSymbol targetType, object obj)
+        protected static object ConvertValue(RuntimeClassLoader loader, TypeSymbol targetType, object obj)
         {
             if (targetType.IsEnum)
             {
@@ -296,14 +298,19 @@ namespace IKVM.Runtime
             }
         }
 
-        internal abstract void Apply(RuntimeClassLoader loader, ITypeSymbolBuilder tb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IMethodBaseSymbolBuilder mb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IFieldSymbolBuilder fb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IParameterSymbolBuilder pb, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IAssemblySymbolBuilder ab, object annotation);
-        internal abstract void Apply(RuntimeClassLoader loader, IPropertySymbolBuilder pb, object annotation);
+        internal abstract void Apply(RuntimeClassLoader loader, AssemblySymbolBuilder ab, object annotation);
 
-        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, IMethodSymbolBuilder mb, ref IParameterSymbolBuilder pb, object annotation)
+        internal abstract void Apply(RuntimeClassLoader loader, TypeSymbolBuilder mb, object annotation);
+
+        internal abstract void Apply(RuntimeClassLoader loader, FieldSymbolBuilder fb, object annotation);
+
+        internal abstract void Apply(RuntimeClassLoader loader, MethodSymbolBuilder mb, object annotation);
+
+        internal abstract void Apply(RuntimeClassLoader loader, PropertySymbolBuilder pb, object annotation);
+
+        internal abstract void Apply(RuntimeClassLoader loader, ParameterSymbolBuilder pb, object annotation);
+
+        internal virtual void ApplyReturnValue(RuntimeClassLoader loader, MethodSymbolBuilder mb, ref ParameterSymbolBuilder pb, object annotation)
         {
 
         }

@@ -74,7 +74,7 @@ namespace IKVM.Tools.Importer.MapXml
 
             if (Catch != null)
             {
-                ITypeSymbol type;
+                TypeSymbol type;
                 if (Catch.Type != null)
                 {
                     type = context.ClassLoader.Context.StaticCompiler.GetTypeForMapXml(context.ClassLoader, Catch.Type);

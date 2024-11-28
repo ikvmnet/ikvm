@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -47,7 +48,7 @@ namespace IKVM.Runtime
             private sealed class DelegateInvokeStubMethodWrapper : RuntimeJavaMethod
             {
 
-                readonly ITypeSymbol delegateType;
+                readonly TypeSymbol delegateType;
 
                 /// <summary>
                 /// Initializes a new instance.
@@ -55,23 +56,23 @@ namespace IKVM.Runtime
                 /// <param name="declaringType"></param>
                 /// <param name="delegateType"></param>
                 /// <param name="sig"></param>
-                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, ITypeSymbol delegateType, string sig) :
+                internal DelegateInvokeStubMethodWrapper(RuntimeJavaType declaringType, TypeSymbol delegateType, string sig) :
                     base(declaringType, RuntimeManagedJavaType.GetDelegateInvokeStubName(delegateType), sig, null, null, null, Modifiers.Public | Modifiers.Final, MemberFlags.HideFromReflection)
                 {
                     this.delegateType = delegateType;
                 }
 
-                internal IMethodSymbol DoLink(ITypeSymbolBuilder tb)
+                internal MethodSymbol DoLink(TypeSymbolBuilder tb)
                 {
                     var mw = DeclaringType.GetMethodWrapper("Invoke", Signature, true);
 
                     var invoke = delegateType.GetMethod("Invoke");
-                    var parameters = invoke.GetParameters();
-                    var parameterTypes = new ITypeSymbol[parameters.Length];
-                    for (int i = 0; i < parameterTypes.Length; i++)
+                    var parameters = invoke.Parameters;
+                    var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length);
+                    for (int i = 0; i < parameterTypes.Count; i++)
                         parameterTypes[i] = parameters[i].ParameterType;
 
-                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
+                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes.DrainToImmutable());
                     DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
                     var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)

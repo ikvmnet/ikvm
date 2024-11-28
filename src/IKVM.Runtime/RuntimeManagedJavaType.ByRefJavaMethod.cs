@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
             readonly bool[] byrefs;
 #endif
-            readonly ITypeSymbol[] args;
+            readonly TypeSymbol[] args;
 
             /// <summary>
             /// Initializes a new instance.
@@ -53,7 +53,7 @@ namespace IKVM.Runtime
             /// <param name="parameterTypes"></param>
             /// <param name="modifiers"></param>
             /// <param name="hideFromReflection"></param>
-            internal ByRefJavaMethod(ITypeSymbol[] args, bool[] byrefs, RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, bool hideFromReflection) :
+            internal ByRefJavaMethod(TypeSymbol[] args, bool[] byrefs, RuntimeJavaType declaringType, string name, string sig, MethodSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, bool hideFromReflection) :
                 base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
             {
                 this.args = args;

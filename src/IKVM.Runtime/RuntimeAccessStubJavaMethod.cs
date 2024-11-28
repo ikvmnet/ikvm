@@ -32,8 +32,8 @@ namespace IKVM.Runtime
     sealed class RuntimeAccessStubJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly IMethodSymbol stubVirtual;
-        readonly IMethodSymbol stubNonVirtual;
+        readonly MethodSymbol stubVirtual;
+        readonly MethodSymbol stubNonVirtual;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,7 +48,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeAccessStubJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodSymbol core, IMethodSymbol stubVirtual, IMethodSymbol stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeAccessStubJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodSymbol core, MethodSymbol stubVirtual, MethodSymbol stubNonVirtual, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, core, returnType, parameterTypes, modifiers, flags)
         {
             this.stubVirtual = stubVirtual;

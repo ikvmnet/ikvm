@@ -26,16 +26,14 @@ using System;
 using IKVM.CoreLib.Symbols;
 using IKVM.Runtime;
 
-using Type = IKVM.Reflection.Type;
-
 namespace IKVM.Tools.Exporter
 {
 
     class FakeTypes
     {
 
-        readonly RuntimeContext context;
-        readonly ITypeSymbol genericType;
+        readonly RuntimeContext _context;
+        readonly TypeSymbol _genericType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,33 +42,33 @@ namespace IKVM.Tools.Exporter
         /// <exception cref="ArgumentNullException"></exception>
         public FakeTypes(RuntimeContext context)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1");
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _genericType = context.Resolver.ResolveRuntimeType("IKVM.Runtime.ValueObject`1");
         }
 
-        internal ITypeSymbol GetAttributeType(ITypeSymbol type)
+        internal TypeSymbol GetAttributeType(TypeSymbol type)
         {
-            return genericType.MakeGenericType(type);
+            return _genericType.MakeGenericType([type]);
         }
 
-        internal ITypeSymbol GetAttributeReturnValueType(ITypeSymbol type)
+        internal TypeSymbol GetAttributeReturnValueType(TypeSymbol type)
         {
-            return genericType.MakeGenericType(type);
+            return _genericType.MakeGenericType([type]);
         }
 
-        internal ITypeSymbol GetAttributeMultipleType(ITypeSymbol type)
+        internal TypeSymbol GetAttributeMultipleType(TypeSymbol type)
         {
-            return genericType.MakeGenericType(type);
+            return _genericType.MakeGenericType([type]);
         }
 
-        internal ITypeSymbol GetDelegateType(ITypeSymbol type)
+        internal TypeSymbol GetDelegateType(TypeSymbol type)
         {
-            return genericType.MakeGenericType(type);
+            return _genericType.MakeGenericType([type]);
         }
 
-        internal ITypeSymbol GetEnumType(ITypeSymbol type)
+        internal TypeSymbol GetEnumType(TypeSymbol type)
         {
-            return genericType.MakeGenericType(type);
+            return _genericType.MakeGenericType([type]);
         }
 
     }

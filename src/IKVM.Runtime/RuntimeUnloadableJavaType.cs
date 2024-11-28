@@ -37,8 +37,8 @@ namespace IKVM.Runtime
 
         internal const string ContainerTypeName = "__<Unloadable>";
 
-        readonly ITypeSymbol missingType;
-        ITypeSymbol customModifier;
+        readonly TypeSymbol missingType;
+        TypeSymbol customModifier;
 
         /// <summary>
         /// Initializes a new instance.
@@ -56,7 +56,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="context"></param>
         /// <param name="missingType"></param>
-        internal RuntimeUnloadableJavaType(RuntimeContext context, ITypeSymbol missingType) :
+        internal RuntimeUnloadableJavaType(RuntimeContext context, TypeSymbol missingType) :
             this(context, missingType.FullName) // TODO demangle and re-mangle appropriately
         {
             this.missingType = missingType;
@@ -68,7 +68,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="name"></param>
         /// <param name="customModifier"></param>
-        internal RuntimeUnloadableJavaType(RuntimeContext context, string name, ITypeSymbol customModifier) :
+        internal RuntimeUnloadableJavaType(RuntimeContext context, string name, TypeSymbol customModifier) :
             this(context, name)
         {
             this.customModifier = customModifier;
@@ -104,7 +104,7 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("LazyPublishMembers called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal override ITypeSymbol TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
+        internal override TypeSymbol TypeAsTBD => throw new InvalidOperationException("get_Type called on UnloadableTypeWrapper: " + Name);
 
         internal override RuntimeJavaType[] Interfaces
         {
@@ -131,18 +131,18 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("Finish called on UnloadableTypeWrapper: " + Name);
         }
 
-        internal ITypeSymbol MissingType => missingType;
+        internal TypeSymbol MissingType => missingType;
 
-        internal ITypeSymbol CustomModifier => customModifier;
+        internal TypeSymbol CustomModifier => customModifier;
 
-        internal void SetCustomModifier(ITypeSymbol type)
+        internal void SetCustomModifier(TypeSymbol type)
         {
             this.customModifier = type;
         }
 
 #if EMITTERS
 
-        internal ITypeSymbol GetCustomModifier(RuntimeJavaTypeFactory context)
+        internal TypeSymbol GetCustomModifier(RuntimeJavaTypeFactory context)
         {
             // we don't need to lock, because we're only supposed to be called while holding the finish lock
             return customModifier ??= context.DefineUnloadable(Name);

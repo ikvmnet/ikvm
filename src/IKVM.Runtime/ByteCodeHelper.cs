@@ -396,35 +396,19 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
-            RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
+            var tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
+            var mw = tw.GetMethodWrapper(name, sig, true);
             if (mw == null || mw.IsStatic || !mw.IsPublic)
             {
-#if NO_REF_EMIT
-				global::java.lang.invoke.MethodType methodType = MethodHandleUtil.GetDelegateMethodType(delegateType);
-				if (methodType.parameterCount() > MethodHandleUtil.MaxArity)
-				{
-					throw new NotImplementedException();
-				}
-				global::java.lang.invoke.MethodHandle exception = global::java.lang.invoke.MethodHandles.publicLookup()
-					.findConstructor(mw == null || mw.IsStatic ? typeof(global::java.lang.AbstractMethodError) : typeof(global::java.lang.IllegalAccessError),
-						global::java.lang.invoke.MethodType.methodType(typeof(void), typeof(string)))
-					.bindTo(tw.Name + ".Invoke" + sig);
-				return Delegate.CreateDelegate(delegateType,
-						global::java.lang.invoke.MethodHandles.dropArguments(
-							global::java.lang.invoke.MethodHandles.foldArguments(global::java.lang.invoke.MethodHandles.throwException(methodType.returnType(), exception.type().returnType()), exception),
-							0, methodType.parameterArray()).vmtarget, "Invoke");
-#else
-                MethodInfo invoke = delegateType.GetMethod("Invoke");
-                ParameterInfo[] parameters = invoke.GetParameters();
-                Type[] parameterTypes = new Type[parameters.Length + 1];
+                var invoke = delegateType.GetMethod("Invoke");
+                var parameters = invoke.GetParameters();
+                var parameterTypes = new Type[parameters.Length + 1];
                 parameterTypes[0] = typeof(object);
                 for (int i = 0; i < parameters.Length; i++)
-                {
                     parameterTypes[i + 1] = parameters[i].ParameterType;
-                }
-                System.Reflection.Emit.DynamicMethod dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
-                CodeEmitter ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
+
+                var dm = new System.Reflection.Emit.DynamicMethod("Invoke", invoke.ReturnType, parameterTypes);
+                var ilgen = JVM.Context.CodeEmitterFactory.Create(dm);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
                 JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader()
                     .LoadClassByName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
@@ -433,7 +417,6 @@ namespace IKVM.Runtime
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Throw);
                 ilgen.DoEmit();
                 return dm.CreateDelegate(delegateType, obj);
-#endif
             }
             else
             {
@@ -616,7 +599,7 @@ namespace IKVM.Runtime
 #endif // !FIRST_PASS
         }
 
-        private static bool IsPrimitiveArrayType(ITypeSymbol type)
+        private static bool IsPrimitiveArrayType(TypeSymbol type)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

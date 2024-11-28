@@ -26,6 +26,10 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using System.Collections.Immutable;
+using System.Linq;
+
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -46,7 +50,7 @@ namespace IKVM.Runtime
         sealed class DelegateJavaMethod : RuntimeJavaMethod
         {
 
-            readonly IConstructorSymbol delegateConstructor;
+            readonly MethodSymbol delegateConstructor;
             readonly DelegateInnerClassJavaType iface;
 
             /// <summary>
@@ -88,17 +92,17 @@ namespace IKVM.Runtime
                 return true;
             }
 
-            IMethodSymbol CreateErrorStub(EmitIntrinsicContext context, RuntimeJavaType targetType, bool isAbstract)
+            MethodSymbol CreateErrorStub(EmitIntrinsicContext context, RuntimeJavaType targetType, bool isAbstract)
             {
                 var invoke = delegateConstructor.DeclaringType.GetMethod("Invoke");
 
-                var parameters = invoke.GetParameters();
-                var parameterTypes = new ITypeSymbol[parameters.Length + 1];
+                var parameters = invoke.Parameters;
+                var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + 1);
                 parameterTypes[0] = DeclaringType.Context.Types.Object;
                 for (int i = 0; i < parameters.Length; i++)
                     parameterTypes[i + 1] = parameters[i].ParameterType;
 
-                var mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes);
+                var mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes.DrainToImmutable());
                 var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                 ilgen.EmitThrow(isAbstract ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", targetType.Name + ".Invoke" + iface.GetMethods()[0].Signature);
                 ilgen.DoEmit();

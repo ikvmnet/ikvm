@@ -32,7 +32,6 @@ using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER
 using IKVM.Tools.Importer;
-#else
 #endif
 
 namespace IKVM.Runtime
@@ -89,9 +88,9 @@ namespace IKVM.Runtime
                 return true;
         }
 
-        internal IConstructorSymbolBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, ITypeSymbolBuilder typeBuilder)
+        internal MethodSymbolBuilder AddAutomagicSerialization(RuntimeByteCodeJavaType wrapper, TypeSymbolBuilder typeBuilder)
         {
-            IConstructorSymbolBuilder serializationCtor = null;
+            MethodSymbolBuilder serializationCtor = null;
             if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
             {
                 MarkSerializable(typeBuilder);
@@ -148,7 +147,7 @@ namespace IKVM.Runtime
             return serializationCtor;
         }
 
-        internal IConstructorSymbolBuilder AddAutomagicSerializationToWorkaroundBaseClass(ITypeSymbolBuilder typeBuilderWorkaroundBaseClass, IMethodBaseSymbol baseCtor)
+        internal MethodSymbolBuilder AddAutomagicSerializationToWorkaroundBaseClass(TypeSymbolBuilder typeBuilderWorkaroundBaseClass, MethodSymbol baseCtor)
         {
             if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
             {
@@ -160,12 +159,12 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal void MarkSerializable(ITypeSymbolBuilder tb)
+        internal void MarkSerializable(TypeSymbolBuilder tb)
         {
             tb.SetCustomAttribute(SerializableAttribute);
         }
 
-        internal void AddGetObjectData(ITypeSymbolBuilder tb)
+        internal void AddGetObjectData(TypeSymbolBuilder tb)
         {
             var name = tb.IsSealed ? "System.Runtime.Serialization.ISerializable.GetObjectData" : "GetObjectData";
             var attr = tb.IsSealed
@@ -187,7 +186,7 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
         }
 
-        IConstructorSymbolBuilder AddConstructor(ITypeSymbolBuilder tb, RuntimeJavaMethod defaultConstructor, IMethodBaseSymbol serializationConstructor, bool callReadObject)
+        MethodSymbolBuilder AddConstructor(TypeSymbolBuilder tb, RuntimeJavaMethod defaultConstructor, MethodSymbol serializationConstructor, bool callReadObject)
         {
             var ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, [context.Resolver.ResolveCoreType(typeof(SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName)]);
             context.AttributeHelper.HideFromJava(ctor);
@@ -217,7 +216,7 @@ namespace IKVM.Runtime
             return ctor;
         }
 
-        void AddReadResolve(RuntimeByteCodeJavaType wrapper, ITypeSymbolBuilder tb)
+        void AddReadResolve(RuntimeByteCodeJavaType wrapper, TypeSymbolBuilder tb)
         {
             var mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
             if (mw != null && !wrapper.IsSubTypeOf(TypeOfIObjectReference))
@@ -249,7 +248,7 @@ namespace IKVM.Runtime
             }
         }
 
-        void RemoveReadResolve(ITypeSymbolBuilder tb)
+        void RemoveReadResolve(TypeSymbolBuilder tb)
         {
             tb.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName));
             var getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, context.Types.Object, [context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName)]);

@@ -49,9 +49,9 @@ namespace IKVM.Runtime
         sealed class OpenGenericJavaType : RuntimeJavaType
         {
 
-            readonly ITypeSymbol type;
+            readonly TypeSymbol type;
 
-            static Modifiers GetModifiers(ITypeSymbol type)
+            static Modifiers GetModifiers(TypeSymbol type)
             {
                 var modifiers = Modifiers.Abstract | Modifiers.Final;
                 if (type.IsInterface)
@@ -66,7 +66,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="type"></param>
             /// <param name="name"></param>
-            internal OpenGenericJavaType(RuntimeContext context, ITypeSymbol type, string name) :
+            internal OpenGenericJavaType(RuntimeContext context, TypeSymbol type, string name) :
                 base(context, TypeFlags.None, GetModifiers(type), name)
             {
                 this.type = type;
@@ -74,7 +74,7 @@ namespace IKVM.Runtime
 
             internal override RuntimeJavaType BaseTypeWrapper => type.IsInterface ? null : Context.JavaBase.TypeOfJavaLangObject;
 
-            internal override ITypeSymbol TypeAsTBD => type;
+            internal override TypeSymbol TypeAsTBD => type;
 
             internal override RuntimeClassLoader ClassLoader => Context.AssemblyClassLoaderFactory.FromAssembly(type.Assembly);
 

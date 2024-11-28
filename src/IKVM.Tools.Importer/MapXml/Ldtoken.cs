@@ -75,34 +75,23 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            if (!Validate(context))
+            if (Validate(context) == false)
                 return;
 
-            var member = Resolve(context);
-            var type = member as ITypeSymbol;
-            var method = member as IMethodSymbol;
-            var constructor = member as IConstructorSymbol;
-            var field = member as IFieldSymbol;
-
-            if (type != null)
+            switch (Resolve(context))
             {
-                ilgen.Emit(OpCodes.Ldtoken, type);
-            }
-            else if (method != null)
-            {
-                ilgen.Emit(OpCodes.Ldtoken, method);
-            }
-            else if (constructor != null)
-            {
-                ilgen.Emit(OpCodes.Ldtoken, constructor);
-            }
-            else if (field != null)
-            {
-                ilgen.Emit(OpCodes.Ldtoken, field);
-            }
-            else
-            {
-                context.ClassLoader.Diagnostics.MapXmlUnableToResolveOpCode(ToString());
+                case TypeSymbol type:
+                    ilgen.Emit(OpCodes.Ldtoken, type);
+                    break;
+                case MethodSymbol method:
+                    ilgen.Emit(OpCodes.Ldtoken, method);
+                    break;
+                case FieldSymbol field:
+                    ilgen.Emit(OpCodes.Ldtoken, field);
+                    break;
+                default:
+                    context.ClassLoader.Diagnostics.MapXmlUnableToResolveOpCode(ToString());
+                    break;
             }
         }
 
@@ -141,7 +130,7 @@ namespace IKVM.Tools.Importer.MapXml
             }
         }
 
-        private IMemberSymbol Resolve(CodeGenContext context)
+        private MemberSymbol Resolve(CodeGenContext context)
         {
             if (Type != null)
             {

@@ -246,7 +246,7 @@ namespace IKVM.Runtime
             return true;
         }
 
-        static void EmitConversion(CodeEmitter ilgen, ITypeSymbol converterType, string method)
+        static void EmitConversion(CodeEmitter ilgen, TypeSymbol converterType, string method)
         {
             var converter = ilgen.UnsafeAllocTempLocal(converterType);
             ilgen.Emit(OpCodes.Ldloca, converter);
@@ -999,9 +999,9 @@ namespace IKVM.Runtime
             }
         }
 
-        internal static IMethodSymbol MakeExchange(RuntimeContext context, ITypeSymbol type)
+        internal static MethodSymbol MakeExchange(RuntimeContext context, TypeSymbol type)
         {
-            return context.InterlockedMethods.ExchangeOfT.MakeGenericMethod(type);
+            return context.InterlockedMethods.ExchangeOfT.MakeGenericMethod([type]);
         }
 
         static void EmitConsumeUnsafe(EmitIntrinsicContext eic)

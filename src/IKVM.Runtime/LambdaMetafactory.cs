@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -41,7 +42,7 @@ namespace IKVM.Runtime
     sealed class LambdaMetafactory
     {
 
-        IMethodSymbolBuilder getInstance;
+        MethodSymbolBuilder getInstance;
 
         internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
         {
@@ -398,24 +399,27 @@ namespace IKVM.Runtime
             return Rt.IsAssignableTo(Ru);
         }
 
-        private static IMethodSymbolBuilder CreateConstructorAndDispatch(RuntimeByteCodeJavaType.FinishContext context, ClassFile.ConstantPoolItemInvokeDynamic cpi, ITypeSymbolBuilder tb,
+        private static MethodSymbolBuilder CreateConstructorAndDispatch(RuntimeByteCodeJavaType.FinishContext context, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeSymbolBuilder tb,
             List<RuntimeJavaMethod> methods, RuntimeJavaType[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
             ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
         {
             var args = cpi.GetArgTypes();
 
             // captured values
-            var capturedTypes = new ITypeSymbol[args.Length];
-            var capturedFields = new IFieldSymbolBuilder[capturedTypes.Length];
-            for (int i = 0; i < capturedTypes.Length; i++)
+            var capturedTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
+            var capturedFieldsBuilder = ImmutableArray.CreateBuilder<FieldSymbolBuilder>(args.Length);
+            for (int i = 0; i < args.Length; i++)
             {
-                capturedTypes[i] = args[i].TypeAsSignatureType;
+                capturedTypesBuilder[i] = args[i].TypeAsSignatureType;
                 var attr = FieldAttributes.Private;
                 if (i > 0 || !args[0].IsGhost)
                     attr |= FieldAttributes.InitOnly;
 
-                capturedFields[i] = tb.DefineField("arg$" + (i + 1), capturedTypes[i], attr);
+                capturedFieldsBuilder[i] = tb.DefineField("arg$" + (i + 1), capturedTypesBuilder[i], attr);
             }
+
+            var capturedTypes = capturedTypesBuilder.DrainToImmutable();
+            var capturedFields = capturedFieldsBuilder.DrainToImmutable();
 
             // constructor
             var ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, capturedTypes);
@@ -519,14 +523,11 @@ namespace IKVM.Runtime
             return getInstance;
         }
 
-        private static void EmitDispatch(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType[] args, ITypeSymbolBuilder tb, RuntimeJavaMethod interfaceMethod, RuntimeJavaType[] implParameters,
-            ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, IFieldSymbolBuilder[] capturedFields)
+        private static void EmitDispatch(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType[] args, TypeSymbolBuilder tb, RuntimeJavaMethod interfaceMethod, RuntimeJavaType[] implParameters, ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ImmutableArray<FieldSymbolBuilder> capturedFields)
         {
             var mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
             if (interfaceMethod.Name != interfaceMethod.RealName)
-            {
-                tb.DefineMethodOverride(mb, (IMethodSymbol)interfaceMethod.GetMethod());
-            }
+                tb.DefineMethodOverride(mb, interfaceMethod.GetMethod());
 
             context.Context.AttributeHelper.HideFromJava(mb);
 
@@ -733,7 +734,7 @@ namespace IKVM.Runtime
             mw.EmitCallvirt(ilgen);
         }
 
-        private static void AddDefaultInterfaceMethods(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaMethod[] methodList, ITypeSymbolBuilder tb)
+        private static void AddDefaultInterfaceMethods(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaMethod[] methodList, TypeSymbolBuilder tb)
         {
             // we use special name to hide these from Java reflection
             const MethodAttributes attr = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName;
@@ -745,7 +746,7 @@ namespace IKVM.Runtime
                 {
                     var mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
                     if (mw.Name != mw.RealName)
-                        tb.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
+                        tb.DefineMethodOverride(mb, mw.GetMethod());
 
                     context.EmitCallDefaultInterfaceMethod(mb, mw);
                 }
@@ -753,7 +754,7 @@ namespace IKVM.Runtime
                 {
                     var mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
                     if (mw.Name != mw.RealName)
-                        tb.DefineMethodOverride(mb, (IMethodSymbol)mw.GetMethod());
+                        tb.DefineMethodOverride(mb, mw.GetMethod());
 
                     var ilgen = context.Context.CodeEmitterFactory.Create(mb);
                     for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)

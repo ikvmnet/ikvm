@@ -21,6 +21,8 @@
   jeroen@frijters.net
   
 */
+using System.Collections.Immutable;
+
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 
@@ -42,23 +44,25 @@ namespace IKVM.Runtime
             get { return mw.GetParameters().Length + (mw.HasCallerID ? 1 : 0); }
         }
 
-        internal IMethodSymbolBuilder DefineMethod(RuntimeByteCodeJavaType context, ITypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs)
+        internal MethodSymbolBuilder DefineMethod(RuntimeByteCodeJavaType context, TypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs)
         {
             return DefineMethod(context.ClassLoader.GetTypeWrapperFactory(), tb, name, attribs, null, false);
         }
 
-        internal IMethodSymbolBuilder DefineMethod(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs)
+        internal MethodSymbolBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs)
         {
             return DefineMethod(context, tb, name, attribs, null, false);
         }
 
-        internal IMethodSymbolBuilder DefineMethod(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs, ITypeSymbol firstParameter, bool mustBePublic)
+        internal MethodSymbolBuilder DefineMethod(RuntimeJavaTypeFactory context, TypeSymbolBuilder tb, string name, System.Reflection.MethodAttributes attribs, TypeSymbol firstParameter, bool mustBePublic)
         {
             // we add optional modifiers to make the signature unique
             int firstParam = firstParameter == null ? 0 : 1;
             var parameters = mw.GetParameters();
-            var parameterTypes = new ITypeSymbol[parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam];
-            var modopt = new ITypeSymbol[parameterTypes.Length][];
+            var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam);
+            parameterTypes.Count = parameters.Length + (mw.HasCallerID ? 1 : 0) + firstParam;
+            var modopt = ImmutableArray.CreateBuilder<ImmutableArray<TypeSymbol>>(parameterTypes.Count);
+            modopt.Count = parameterTypes.Count;
 
             if (firstParameter != null)
             {
@@ -74,31 +78,42 @@ namespace IKVM.Runtime
 
             if (mw.HasCallerID)
             {
-                parameterTypes[parameterTypes.Length - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-                modopt[parameterTypes.Length - 1] = [];
+                parameterTypes[parameterTypes.Count - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
+                modopt[parameterTypes.Count - 1] = [];
             }
 
             var returnType = mustBePublic ? mw.ReturnType.TypeAsPublicSignatureType : mw.ReturnType.TypeAsSignatureType;
             var modoptReturnType = RuntimeByteCodeJavaType.GetModOpt(context, mw.ReturnType, mustBePublic);
-            return tb.DefineMethod(name, attribs, System.Reflection.CallingConventions.Standard, returnType, null, modoptReturnType, parameterTypes, null, modopt);
+            return tb.DefineMethod(name, attribs, System.Reflection.CallingConventions.Standard, returnType, [], modoptReturnType, parameterTypes.DrainToImmutable(), [], modopt.DrainToImmutable());
         }
 
-        internal IConstructorSymbolBuilder DefineConstructor(RuntimeByteCodeJavaType context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
+        internal MethodSymbolBuilder DefineConstructor(RuntimeByteCodeJavaType context, TypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
         {
             return DefineConstructor(context.ClassLoader.GetTypeWrapperFactory(), tb, attribs, false);
         }
 
-        internal IConstructorSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
+        internal MethodSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, TypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs)
         {
             return DefineConstructor(context, tb, attribs, false);
         }
 
-        internal IConstructorSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, ITypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, bool mustBePublic)
+        /// <summary>
+        /// Helper method to define a constructor on a type
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="tb"></param>
+        /// <param name="attribs"></param>
+        /// <param name="mustBePublic"></param>
+        /// <returns></returns>
+        internal MethodSymbolBuilder DefineConstructor(RuntimeJavaTypeFactory context, TypeSymbolBuilder tb, System.Reflection.MethodAttributes attribs, bool mustBePublic)
         {
             // we add optional modifiers to make the signature unique
             var parameters = mw.GetParameters();
-            var parameterTypes = new ITypeSymbol[parameters.Length + (mw.HasCallerID ? 1 : 0)];
-            var modopt = new ITypeSymbol[parameterTypes.Length][];
+            var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + (mw.HasCallerID ? 1 : 0));
+            parameterTypes.Count = parameters.Length + (mw.HasCallerID ? 1 : 0);
+            var modopt = ImmutableArray.CreateBuilder<ImmutableArray<TypeSymbol>>(parameterTypes.Count);
+            modopt.Count = parameterTypes.Count;
+
             for (int i = 0; i < parameters.Length; i++)
             {
                 parameterTypes[i] = mustBePublic ? parameters[i].TypeAsPublicSignatureType : parameters[i].TypeAsSignatureType;
@@ -107,11 +122,11 @@ namespace IKVM.Runtime
 
             if (mw.HasCallerID)
             {
-                parameterTypes[parameterTypes.Length - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-                modopt[parameterTypes.Length - 1] = [];
+                parameterTypes[parameterTypes.Count - 1] = mw.DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
+                modopt[parameterTypes.Count - 1] = [];
             }
 
-            return tb.DefineConstructor(attribs, System.Reflection.CallingConventions.Standard, parameterTypes, null, modopt);
+            return tb.DefineConstructor(attribs, System.Reflection.CallingConventions.Standard, parameterTypes.DrainToImmutable(), [], modopt.DrainToImmutable());
         }
 
     }

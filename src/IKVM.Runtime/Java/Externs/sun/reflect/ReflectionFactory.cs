@@ -262,7 +262,7 @@ namespace IKVM.Java.Externs.sun.reflect
         {
 
             readonly RuntimeJavaMethod mw;
-            readonly ITypeSymbol type;
+            readonly TypeSymbol type;
 
             /// <summary>
             /// Initializes a new instance.
@@ -303,22 +303,22 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class BoxUtil
         {
 
-            static readonly IMethodSymbol valueOfByte = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("valueOf", [JVM.Context.Types.Byte]);
-            static readonly IMethodSymbol valueOfBoolean = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("valueOf", [JVM.Context.Types.Boolean]);
-            static readonly IMethodSymbol valueOfChar = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("valueOf", [JVM.Context.Types.Char]);
-            static readonly IMethodSymbol valueOfShort = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("valueOf", [JVM.Context.Types.Int16]);
-            static readonly IMethodSymbol valueOfInt = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("valueOf", [JVM.Context.Types.Int32]);
-            static readonly IMethodSymbol valueOfFloat = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("valueOf", [JVM.Context.Types.Single]);
-            static readonly IMethodSymbol valueOfLong = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("valueOf", [JVM.Context.Types.Int64]);
-            static readonly IMethodSymbol valueOfDouble = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("valueOf", [JVM.Context.Types.Double]);
-            static readonly IMethodSymbol byteValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("byteValue", []);
-            static readonly IMethodSymbol booleanValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("booleanValue", []);
-            static readonly IMethodSymbol charValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("charValue", []);
-            static readonly IMethodSymbol shortValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("shortValue", []);
-            static readonly IMethodSymbol intValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("intValue", []);
-            static readonly IMethodSymbol floatValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("floatValue", []);
-            static readonly IMethodSymbol longValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("longValue", []);
-            static readonly IMethodSymbol doubleValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("doubleValue", []);
+            static readonly MethodSymbol valueOfByte = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("valueOf", [JVM.Context.Types.Byte]);
+            static readonly MethodSymbol valueOfBoolean = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("valueOf", [JVM.Context.Types.Boolean]);
+            static readonly MethodSymbol valueOfChar = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("valueOf", [JVM.Context.Types.Char]);
+            static readonly MethodSymbol valueOfShort = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("valueOf", [JVM.Context.Types.Int16]);
+            static readonly MethodSymbol valueOfInt = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("valueOf", [JVM.Context.Types.Int32]);
+            static readonly MethodSymbol valueOfFloat = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("valueOf", [JVM.Context.Types.Single]);
+            static readonly MethodSymbol valueOfLong = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("valueOf", [JVM.Context.Types.Int64]);
+            static readonly MethodSymbol valueOfDouble = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("valueOf", [JVM.Context.Types.Double]);
+            static readonly MethodSymbol byteValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Byte)).GetMethod("byteValue", []);
+            static readonly MethodSymbol booleanValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Boolean)).GetMethod("booleanValue", []);
+            static readonly MethodSymbol charValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Character)).GetMethod("charValue", []);
+            static readonly MethodSymbol shortValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Short)).GetMethod("shortValue", []);
+            static readonly MethodSymbol intValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Integer)).GetMethod("intValue", []);
+            static readonly MethodSymbol floatValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Float)).GetMethod("floatValue", []);
+            static readonly MethodSymbol longValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Long)).GetMethod("longValue", []);
+            static readonly MethodSymbol doubleValue = JVM.Context.Resolver.GetSymbol(typeof(global::java.lang.Double)).GetMethod("doubleValue", []);
 
             internal static void EmitUnboxArg(CodeEmitter ilgen, RuntimeJavaType type)
             {
@@ -507,13 +507,13 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class FastMethodAccessorImpl : global::sun.reflect.MethodAccessor
         {
 
-            internal static readonly IConstructorSymbol nullPointerExceptionCtor;
-            internal static readonly IConstructorSymbol nullPointerExceptionWithMessageCtor;
-            internal static readonly IConstructorSymbol illegalArgumentExceptionCtor;
-            internal static readonly IConstructorSymbol illegalArgumentExceptionWithMessageCtor;
-            internal static readonly IConstructorSymbol illegalArgumentExceptionWithMessageAndCauseCtor;
-            internal static readonly IConstructorSymbol illegalArgumentExceptionWithCauseCtor;
-            internal static readonly IConstructorSymbol invocationTargetExceptionWithCauseCtor;
+            internal static readonly ConstructorSymbol nullPointerExceptionCtor;
+            internal static readonly ConstructorSymbol nullPointerExceptionWithMessageCtor;
+            internal static readonly ConstructorSymbol illegalArgumentExceptionCtor;
+            internal static readonly ConstructorSymbol illegalArgumentExceptionWithMessageCtor;
+            internal static readonly ConstructorSymbol illegalArgumentExceptionWithMessageAndCauseCtor;
+            internal static readonly ConstructorSymbol illegalArgumentExceptionWithCauseCtor;
+            internal static readonly ConstructorSymbol invocationTargetExceptionWithCauseCtor;
 
             delegate object Invoker(object obj, object[] args, global::ikvm.@internal.CallerID callerID);
             Invoker invoker;
@@ -976,11 +976,11 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class FastSerializationConstructorAccessorImpl : global::sun.reflect.ConstructorAccessor
         {
 
-            static readonly IMethodSymbol GetTypeFromHandleMethod = JVM.Context.Types.Type.GetMethod(nameof(Type.GetTypeFromHandle), [JVM.Context.Types.RuntimeTypeHandle]);
+            static readonly MethodSymbol GetTypeFromHandleMethod = JVM.Context.Types.Type.GetMethod(nameof(Type.GetTypeFromHandle), [JVM.Context.Types.RuntimeTypeHandle]);
 #if NETFRAMEWORK
-            static readonly IMethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(FormatterServices)).GetMethod(nameof(FormatterServices.GetUninitializedObject), [JVM.Context.Types.Type]);
+            static readonly MethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(FormatterServices)).GetMethod(nameof(FormatterServices.GetUninitializedObject), [JVM.Context.Types.Type]);
 #else
-            static readonly IMethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(RuntimeHelpers)).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), [JVM.Context.Types.Type]);
+            static readonly MethodSymbol GetUninitializedObjectMethod = JVM.Context.Resolver.GetSymbol(typeof(RuntimeHelpers)).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), [JVM.Context.Types.Type]);
 #endif
 
             delegate object InvokeCtor();
@@ -995,7 +995,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 constructor.Link();
                 constructor.ResolveMethod();
 
-                ITypeSymbol type;
+                TypeSymbol type;
                 try
                 {
                     var wrapper = RuntimeJavaType.FromClass(classToInstantiate);
@@ -1038,7 +1038,7 @@ namespace IKVM.Java.Externs.sun.reflect
         sealed class ActivatorConstructorAccessor : global::sun.reflect.ConstructorAccessor
         {
 
-            readonly ITypeSymbol type;
+            readonly TypeSymbol type;
 
             internal ActivatorConstructorAccessor(RuntimeJavaMethod mw)
             {

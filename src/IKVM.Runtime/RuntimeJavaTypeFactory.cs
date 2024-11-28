@@ -44,7 +44,7 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaTypeFactory
     {
 
-        internal abstract IModuleSymbolBuilder ModuleBuilder { get; }
+        internal abstract ModuleSymbolBuilder ModuleBuilder { get; }
 
         internal abstract RuntimeJavaType DefineClassImpl(Dictionary<string, RuntimeJavaType> types, RuntimeJavaType host, ClassFile f, RuntimeClassLoader classLoader, ProtectionDomain protectionDomain);
 
@@ -52,9 +52,9 @@ namespace IKVM.Runtime
 
         internal abstract string AllocMangledName(RuntimeByteCodeJavaType tw);
 
-        internal abstract ITypeSymbol DefineUnloadable(string name);
+        internal abstract TypeSymbol DefineUnloadable(string name);
 
-        internal abstract ITypeSymbol DefineDelegate(int parameterCount, bool returnVoid);
+        internal abstract TypeSymbol DefineDelegate(int parameterCount, bool returnVoid);
 
         internal abstract bool HasInternalAccess { get; }
 

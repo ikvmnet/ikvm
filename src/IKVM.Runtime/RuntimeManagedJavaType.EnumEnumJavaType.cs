@@ -42,7 +42,7 @@ namespace IKVM.Runtime
         sealed partial class EnumEnumJavaType : FakeJavaType
         {
 
-            readonly ITypeSymbol fakeType;
+            readonly TypeSymbol fakeType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -50,7 +50,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="name"></param>
             /// <param name="enumType"></param>
-            internal EnumEnumJavaType(RuntimeContext context, string name, ITypeSymbol enumType) :
+            internal EnumEnumJavaType(RuntimeContext context, string name, TypeSymbol enumType) :
                 base(context, Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, context.ClassLoaderFactory.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
@@ -115,7 +115,7 @@ namespace IKVM.Runtime
                 {
                     var typeofByteCodeHelper = DeclaringType.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper");
                     ilgen.Emit(OpCodes.Ldstr, Name);
-                    ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(DeclaringType.TypeAsBaseType));
+                    ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod([DeclaringType.TypeAsBaseType]));
                 }
 
                 protected override void EmitSetImpl(CodeEmitter ilgen)
@@ -173,11 +173,11 @@ namespace IKVM.Runtime
                 base.LazyPublishMembers();
             }
 
-            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
+            internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GenericArguments[0]);
 
             internal override RuntimeClassLoader ClassLoader => DeclaringTypeWrapper.ClassLoader;
 
-            internal override ITypeSymbol TypeAsTBD => fakeType;
+            internal override TypeSymbol TypeAsTBD => fakeType;
 
             internal override bool IsFastClassLiteralSafe => true;
 

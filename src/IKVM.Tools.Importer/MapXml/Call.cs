@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -173,12 +174,12 @@ namespace IKVM.Tools.Importer.MapXml
                     else
                     {
                         // ldftn or ldvirtftn
-                        ilgen.Emit(opcode, (IMethodSymbol)method.GetMethod());
+                        ilgen.Emit(opcode, (MethodSymbol)method.GetMethod());
                     }
                 }
                 else
                 {
-                    ITypeSymbol[] argTypes;
+                    ImmutableArray<TypeSymbol> argTypes;
                     if (Sig.StartsWith("("))
                     {
                         argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
@@ -190,11 +191,11 @@ namespace IKVM.Tools.Importer.MapXml
                     else
                     {
                         var types = Sig.Split(';');
-                        argTypes = new ITypeSymbol[types.Length];
+                        var argTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(types.Length);
                         for (int i = 0; i < types.Length; i++)
-                        {
-                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]);
-                        }
+                            argTypesBuilder[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]);
+
+                        argTypes = argTypesBuilder.DrainToImmutable();
                     }
 
                     var ti = context.ClassLoader.Context.Resolver.ResolveType(Type);
@@ -206,7 +207,7 @@ namespace IKVM.Tools.Importer.MapXml
                     {
                         var ta = argTypes.Select(i => i.AssemblyQualifiedName).ToArray();
                         var m = ti.GetMethods().FirstOrDefault(i => i.Name == Name);
-                        throw new InvalidOperationException("Missing method: " + ti.FullName + "." + Name + Sig + $" -> ({string.Join("; ", ta)}). {(m != null ? string.Join(";", m.GetParameters().Select(i => i.ParameterType.AssemblyQualifiedName)) : null)}");
+                        throw new InvalidOperationException("Missing method: " + ti.FullName + "." + Name + Sig + $" -> ({string.Join("; ", ta)}). {(m != null ? string.Join(";", m.Parameters.Select(i => i.ParameterType.AssemblyQualifiedName)) : null)}");
                     }
 
                     ilgen.Emit(opcode, mi);

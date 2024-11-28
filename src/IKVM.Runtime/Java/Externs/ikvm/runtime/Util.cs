@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Emit;
 using IKVM.Runtime;
 
@@ -97,7 +98,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (ts.IsPrimitive || JVM.Context.ClassLoaderFactory.IsRemappedType(ts) || ts == JVM.Context.Types.Void)
                 return JVM.Context.ManagedJavaTypeFactory.GetJavaTypeFromManagedType(ts).MakeArrayType(rank).ClassObject;
 
-            if (!IsVisibleAsClass(t))
+            if (!IsVisibleAsClass(ts))
                 return null;
 
             var tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
@@ -125,7 +126,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (ts.DeclaringType != null && JVM.Context.AttributeHelper.IsGhostInterface(ts.DeclaringType))
                 ts = ts.DeclaringType;
 
-            if (!IsVisibleAsClass(type))
+            if (!IsVisibleAsClass(ts))
                 return null;
 
             var wrapper = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(ts);
@@ -139,7 +140,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #endif
         }
 
-        private static bool IsVisibleAsClass(Type type)
+        private static bool IsVisibleAsClass(TypeSymbol type)
         {
             while (type.HasElementType)
             {
@@ -152,7 +153,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (type.ContainsGenericParameters && !type.IsGenericTypeDefinition)
                 return false;
 
-            if (type is ITypeSymbolBuilder tb && !tb.IsComplete)
+            if (type is TypeSymbolBuilder tb && !tb.IsComplete)
                 return false;
 
             return true;

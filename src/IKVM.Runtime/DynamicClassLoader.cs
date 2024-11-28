@@ -141,7 +141,7 @@ namespace IKVM.Runtime
                 // search for the InternalsVisibleToAttribute on the assembly that specifies the dynamic assembly name
                 // the name may have a public key suffix for Framework
                 var internalsVisibleToAttribute = context.Resolver.ResolveCoreType(typeof(InternalsVisibleToAttribute).FullName);
-                var internalsVisibleToName = acl.MainAssembly.GetIdentity().Name + context.Options.DynamicAssemblySuffixAndPublicKey;
+                var internalsVisibleToName = acl.MainAssembly.Identity.Name + context.Options.DynamicAssemblySuffixAndPublicKey;
 
                 foreach (var attr in acl.MainAssembly.GetCustomAttributes(internalsVisibleToAttribute))
                 {
@@ -212,21 +212,21 @@ namespace IKVM.Runtime
     internal sealed class DynamicClassLoader : RuntimeJavaTypeFactory
     {
 
-        static IAssemblySymbolBuilder jniProxyAssemblyBuilder;
+        static AssemblySymbolBuilder jniProxyAssemblyBuilder;
 
         readonly RuntimeContext context;
         readonly IDiagnosticHandler diagnostics;
-        readonly IModuleSymbolBuilder moduleBuilder;
+        readonly ModuleSymbolBuilder moduleBuilder;
         readonly bool hasInternalAccess;
 
 #if IMPORTER
-        ITypeSymbolBuilder proxiesContainer;
-        List<ITypeSymbolBuilder> proxies;
+        TypeSymbolBuilder proxiesContainer;
+        List<TypeSymbolBuilder> proxies;
 #endif
 
-        Dictionary<string, ITypeSymbolBuilder> unloadables;
-        ITypeSymbolBuilder unloadableContainer;
-        ITypeSymbol[] delegates;
+        Dictionary<string, TypeSymbolBuilder> unloadables;
+        TypeSymbolBuilder unloadableContainer;
+        TypeSymbol[] delegates;
 
         /// <summary>
         /// Initializes a new instance.
@@ -235,7 +235,7 @@ namespace IKVM.Runtime
         /// <param name="diagnostics"></param>
         /// <param name="moduleBuilder"></param>
         /// <param name="hasInternalAccess"></param>
-        internal DynamicClassLoader(RuntimeContext context, IDiagnosticHandler diagnostics, IModuleSymbolBuilder moduleBuilder, bool hasInternalAccess)
+        internal DynamicClassLoader(RuntimeContext context, IDiagnosticHandler diagnostics, ModuleSymbolBuilder moduleBuilder, bool hasInternalAccess)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
@@ -324,14 +324,14 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        internal ITypeSymbolBuilder DefineProxy(string name, System.Reflection.TypeAttributes typeAttributes, ITypeSymbol parent, ITypeSymbol[] interfaces)
+        internal TypeSymbolBuilder DefineProxy(string name, System.Reflection.TypeAttributes typeAttributes, TypeSymbol parent, ImmutableArray<TypeSymbol> interfaces)
         {
             if (proxiesContainer == null)
             {
                 proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, System.Reflection.TypeAttributes.Public | System.Reflection.TypeAttributes.Class | System.Reflection.TypeAttributes.Sealed | System.Reflection.TypeAttributes.Abstract);
                 context.AttributeHelper.HideFromJava(proxiesContainer);
                 context.AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
-                proxies = new List<ITypeSymbolBuilder>();
+                proxies = new List<TypeSymbolBuilder>();
             }
 
             var tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
@@ -341,12 +341,12 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal override ITypeSymbol DefineUnloadable(string name)
+        internal override TypeSymbol DefineUnloadable(string name)
         {
             lock (this)
             {
                 if (unloadables == null)
-                    unloadables = new Dictionary<string, ITypeSymbolBuilder>();
+                    unloadables = new Dictionary<string, TypeSymbolBuilder>();
 
                 if (unloadables.TryGetValue(name, out var type))
                     return type;
@@ -363,12 +363,12 @@ namespace IKVM.Runtime
             }
         }
 
-        internal override ITypeSymbol DefineDelegate(int parameterCount, bool returnVoid)
+        internal override TypeSymbol DefineDelegate(int parameterCount, bool returnVoid)
         {
             lock (this)
             {
                 if (delegates == null)
-                    delegates = new ITypeSymbol[512];
+                    delegates = new TypeSymbol[512];
 
                 int index = parameterCount + (returnVoid ? 256 : 0);
                 var type = delegates[index];
@@ -376,19 +376,23 @@ namespace IKVM.Runtime
                     return type;
 
                 var tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Sealed, context.Types.MulticastDelegate);
-                var names = new string[parameterCount + (returnVoid ? 0 : 1)];
-                for (int i = 0; i < names.Length; i++)
+                var names = ImmutableArray.CreateBuilder<string>(parameterCount + (returnVoid ? 0 : 1));
+                for (int i = 0; i < names.Count; i++)
                     names[i] = "P" + i;
 
-                if (!returnVoid)
-                    names[names.Length - 1] = "R";
+                if (returnVoid == false)
+                    names[names.Count - 1] = "R";
 
-                var genericParameters = tb.DefineGenericParameters(names);
-                var parameterTypes = (ITypeSymbol[])genericParameters;
-                if (!returnVoid)
+                var genericParameters = tb.DefineGenericParameters(names.DrainToImmutable());
+                var parameterTypes = genericParameters.CastArray<TypeSymbol>();
+
+                if (returnVoid == false)
                 {
-                    parameterTypes = new ITypeSymbol[genericParameters.Length - 1];
-                    Array.Copy(genericParameters, parameterTypes, parameterTypes.Length);
+                    var b = ImmutableArray.CreateBuilder<TypeSymbol>(genericParameters.Length - 1);
+                    for (int i = 0; i < parameterTypes.Length; i++)
+                        b[i] = genericParameters[i];
+
+                    parameterTypes = b.DrainToImmutable();
                 }
 
                 var ctor = tb.DefineMethod(ConstructorInfo.ConstructorName, System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.RTSpecialName, context.Types.Void, [context.Types.Object, context.Types.IntPtr]);
@@ -397,7 +401,7 @@ namespace IKVM.Runtime
                 var mb = tb.DefineMethod("Invoke", System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.NewSlot | System.Reflection.MethodAttributes.Virtual, returnVoid ? context.Types.Void : genericParameters[genericParameters.Length - 1], parameterTypes);
                 mb.SetImplementationFlags(System.Reflection.MethodImplAttributes.Runtime);
 
-                tb.Complete();
+                //tb.Complete();
                 delegates[index] = tb;
                 return tb;
             }
@@ -432,31 +436,31 @@ namespace IKVM.Runtime
 
             if (unloadableContainer != null)
             {
-                unloadableContainer.Complete();
-                foreach (var tb in unloadables.Values)
-                    tb.Complete();
+                //unloadableContainer.Complete();
+                //foreach (var tb in unloadables.Values)
+                //    tb.Complete();
             }
 
 #if IMPORTER
 
             if (proxiesContainer != null)
             {
-                proxiesContainer.Complete();
-                foreach (var tb in proxies)
-                    tb.Complete();
+                //proxiesContainer.Complete();
+                //foreach (var tb in proxies)
+                //    tb.Complete();
             }
 
 #endif
 
         }
 
-        internal static IModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
+        internal static ModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
             jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), []);
             return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
         }
 
-        internal sealed override IModuleSymbolBuilder ModuleBuilder => moduleBuilder;
+        internal sealed override ModuleSymbolBuilder ModuleBuilder => moduleBuilder;
 
 #if NETFRAMEWORK && !IMPORTER
 
@@ -523,7 +527,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context)
+        public static ModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context)
         {
             return CreateModuleBuilder(context, new AssemblyIdentity("ikvm_dynamic_assembly__" + (uint)Environment.TickCount));
         }
@@ -534,7 +538,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static IModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyIdentity name)
+        public static ModuleSymbolBuilder CreateModuleBuilder(RuntimeContext context, AssemblyIdentity name)
         {
             // set version on assembly
             var now = DateTime.Now;
@@ -563,7 +567,7 @@ namespace IKVM.Runtime
             context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugMode);
 
             // create new module
-            var moduleBuilder = assemblyBuilder.DefineModule(name.Name, null, context.Options.EmitSymbols);
+            var moduleBuilder = assemblyBuilder.DefineModule(name.Name, null);
             moduleBuilder.SetCustomAttribute(CustomAttribute.Create(context.Resolver.ResolveRuntimeType(typeof(IKVM.Attributes.JavaModuleAttribute).FullName).GetConstructor([]), []));
             return moduleBuilder;
         }
@@ -575,9 +579,9 @@ namespace IKVM.Runtime
         /// <param name="name"></param>
         /// <param name="assemblyAttributes"></param>
         /// <returns></returns>
-        static IAssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ImmutableArray<CustomAttribute> assemblyAttributes)
+        static AssemblySymbolBuilder DefineDynamicAssembly(RuntimeContext context, AssemblyIdentity name, ImmutableArray<CustomAttribute> assemblyAttributes)
         {
-            return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes, false, false);
+            return context.Resolver.Symbols.DefineAssembly(name, assemblyAttributes);
         }
 
     }

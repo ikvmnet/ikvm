@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -36,7 +37,7 @@ namespace IKVM.Runtime
     abstract class RuntimeJavaMethod : RuntimeJavaMember
     {
 
-        IMethodBaseSymbol method;
+        MethodSymbol method;
         string[] declaredExceptions;
         RuntimeJavaType returnTypeWrapper;
         RuntimeJavaType[] parameterTypeWrappers;
@@ -87,7 +88,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeJavaMethod(RuntimeJavaType declaringType, string name, string sig, IMethodBaseSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeJavaMethod(RuntimeJavaType declaringType, string name, string sig, MethodSymbol method, RuntimeJavaType returnType, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
             Profiler.Count("MethodWrapper");
@@ -226,7 +227,7 @@ namespace IKVM.Runtime
                 // NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
                 // the method had any declared exceptions, the declaredExceptions field would have
                 // been set)
-                if (method != null && method is not IMethodSymbolBuilder)
+                if (method != null && method is not MethodSymbolBuilder)
                 {
                     var attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
                     if (attr != null)
@@ -373,7 +374,7 @@ namespace IKVM.Runtime
         }
 #endif
 
-        internal ITypeSymbol ReturnTypeForDefineMethod
+        internal TypeSymbol ReturnTypeForDefineMethod
         {
             get
             {
@@ -381,28 +382,28 @@ namespace IKVM.Runtime
             }
         }
 
-        internal ITypeSymbol[] GetParametersForDefineMethod()
+        internal ImmutableArray<TypeSymbol> GetParametersForDefineMethod()
         {
             var wrappers = GetParameters();
             var len = wrappers.Length;
             if (HasCallerID)
                 len++;
 
-            var temp = new ITypeSymbol[len];
+            var temp = ImmutableArray.CreateBuilder<TypeSymbol>(len);
             for (int i = 0; i < wrappers.Length; i++)
                 temp[i] = wrappers[i].TypeAsSignatureType;
 
             if (HasCallerID)
                 temp[len - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
 
-            return temp;
+            return temp.DrainToImmutable();
         }
 
         // we expose the underlying MethodBase object,
         // for Java types, this is the method that contains the compiled Java bytecode
         // for remapped types, this is the mbCore method (not the helper)
         // Note that for some artificial methods (notably wrap() in enums), method is null
-        internal IMethodBaseSymbol GetMethod()
+        internal MethodSymbol GetMethod()
         {
             AssertLinked();
             return method;
@@ -440,7 +441,7 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER
 
-        internal ITypeSymbol GetDelegateType()
+        internal TypeSymbol GetDelegateType()
         {
             var paramTypes = GetParameters();
             if (paramTypes.Length > MethodHandleUtil.MaxArity)
@@ -449,14 +450,14 @@ namespace IKVM.Runtime
                 if (type == null)
                     type = DeclaringType.ClassLoader.GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
 
-                var types = new ITypeSymbol[paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1)];
+                var types = ImmutableArray.CreateBuilder<TypeSymbol>(paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1));
                 for (int i = 0; i < paramTypes.Length; i++)
                     types[i] = paramTypes[i].TypeAsSignatureType;
 
                 if (ReturnType != DeclaringType.Context.PrimitiveJavaTypeFactory.VOID)
-                    types[types.Length - 1] = ReturnType.TypeAsSignatureType;
+                    types[types.Count - 1] = ReturnType.TypeAsSignatureType;
 
-                return type.MakeGenericType(types);
+                return type.MakeGenericType(types.DrainToImmutable());
             }
 
             return DeclaringType.Context.MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
@@ -484,7 +485,7 @@ namespace IKVM.Runtime
         /// <param name="args"></param>
         /// <returns></returns>
         [HideFromJava]
-        protected static object InvokeAndUnwrapException(IMethodBaseSymbol mb, object obj, object[] args)
+        protected static object InvokeAndUnwrapException(MethodSymbol mb, object obj, object[] args)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

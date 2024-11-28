@@ -25,29 +25,29 @@ namespace IKVM.Runtime
     {
 
         /// <summary>
-        /// Gets the <see cref="ISymbolContext"/> that manages access to symbols.
+        /// Gets the <see cref="SymbolContext"/> that manages access to symbols.
         /// </summary>
-        ISymbolContext Symbols { get; }
+        SymbolContext Symbols { get; }
 
         /// <summary>
         /// Resolves the named type from any of the known System assemblies.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveSystemType(string typeName);
+        TypeSymbol ResolveSystemType(string typeName);
 
         /// <summary>
         /// Gets the known runtime assembly.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol GetRuntimeAssembly();
+        AssemblySymbol GetRuntimeAssembly();
 
         /// <summary>
         /// Resolves the named type from the IKVM runtime assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveRuntimeType(string typeName);
+        TypeSymbol ResolveRuntimeType(string typeName);
 
         /// <summary>
         /// Attempts to resolve the named type from the IKVM runtime assembly.
@@ -55,104 +55,76 @@ namespace IKVM.Runtime
         /// <param name="typeName"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type);
+        bool TryResolveRuntimeType(string typeName, out TypeSymbol? type);
 
         /// <summary>
         /// Resolves the known Java base assembly.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol? GetBaseAssembly();
+        AssemblySymbol? GetBaseAssembly();
 
         /// <summary>
         /// Resolves the named type from the IKVM Java assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol ResolveBaseType(string typeName);
+        TypeSymbol ResolveBaseType(string typeName);
 
         /// <summary>
-        /// Gets the <see cref="IAssemblySymbol"/> associated with the specified assembly.
+        /// Gets the <see cref="AssemblySymbol"/> associated with the specified assembly.
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        IAssemblySymbol GetSymbol(Assembly assembly);
+        AssemblySymbol GetSymbol(Assembly assembly);
 
         /// <summary>
-        /// Gets the <see cref="IAssemblySymbolBuilder"/> associated with the specified assembly.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
-        IAssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly);
-
-        /// <summary>
-        /// Gets the <see cref="IModuleSymbol"/> associated with the specified module.
+        /// Gets the <see cref="ModuleSymbol"/> associated with the specified module.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        IModuleSymbol GetSymbol(Module module);
+        ModuleSymbol GetSymbol(Module module);
 
         /// <summary>
-        /// Gets the <see cref="IModuleSymbolBuilder"/> associated with the specified module.
+        /// Gets the <see cref="MemberSymbol"/> associated with the specified member.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="member"></param>
         /// <returns></returns>
-        IModuleSymbolBuilder GetSymbol(ModuleBuilder module);
+        MemberSymbol GetSymbol(MemberInfo member);
 
         /// <summary>
-        /// Gets the <see cref="IMemberSymbol"/> associated with the specified member.
-        /// </summary>
-        /// <param name="memberInfo"></param>
-        /// <returns></returns>
-        IMemberSymbol GetSymbol(MemberInfo memberInfo);
-
-        /// <summary>
-        /// Gets the <see cref="ITypeSymbol"/> associated with the specified type.
+        /// Gets the <see cref="TypeSymbol"/> associated with the specified type.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        ITypeSymbol GetSymbol(Type type);
+        TypeSymbol GetSymbol(Type type);
 
         /// <summary>
-        /// Gets the <see cref="IMethodBaseSymbol"/> associated with the specified method.
+        /// Gets the <see cref="MethodBaseSymbol"/> associated with the specified method.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        IMethodBaseSymbol GetSymbol(MethodBase type);
+        MethodSymbol GetSymbol(MethodBase type);
 
         /// <summary>
-        /// Gets the <see cref="IConstructorSymbol"/> associated with the specified constructor.
-        /// </summary>
-        /// <param name="ctor"></param>
-        /// <returns></returns>
-        IConstructorSymbol GetSymbol(ConstructorInfo ctor);
-
-        /// <summary>
-        /// Gets the <see cref="IMethodSymbol"/> associated with the specified method.
-        /// </summary>
-        /// <param name="method"></param>
-        /// <returns></returns>
-        IMethodSymbol GetSymbol(MethodInfo method);
-
-        /// <summary>
-        /// Gets the <see cref="IFieldSymbol"/> associated with the specified field.
+        /// Gets the <see cref="FieldSymbol"/> associated with the specified field.
         /// </summary>
         /// <param name="field"></param>
         /// <returns></returns>
-        IFieldSymbol GetSymbol(FieldInfo field);
+        FieldSymbol GetSymbol(FieldInfo field);
 
         /// <summary>
-        /// Gets the <see cref="IPropertySymbol"/> associated with the specified property.
+        /// Gets the <see cref="PropertySymbol"/> associated with the specified property.
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
-        IPropertySymbol GetSymbol(PropertyInfo property);
+        PropertySymbol GetSymbol(PropertyInfo property);
 
         /// <summary>
-        /// Gets the <see cref="IEventSymbol"/> associated with the specified event.
+        /// Gets the <see cref="EventSymbol"/> associated with the specified event.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        IEventSymbol GetSymbol(EventInfo @event);
+        EventSymbol GetSymbol(EventInfo @event);
 
     }
 

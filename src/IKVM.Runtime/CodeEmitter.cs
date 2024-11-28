@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.Reflection;
@@ -42,11 +43,11 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        IMethodSymbol objectToString;
-        IMethodSymbol verboseCastFailure;
-        IMethodSymbol monitorEnter;
-        IMethodSymbol monitorExit;
-        IMethodSymbol memoryBarrier;
+        MethodSymbol objectToString;
+        MethodSymbol verboseCastFailure;
+        MethodSymbol monitorEnter;
+        MethodSymbol monitorExit;
+        MethodSymbol memoryBarrier;
 
         /// <summary>
         /// Initializes a new instance.
@@ -57,15 +58,15 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public IMethodSymbol ObjectToStringMethod => objectToString ??= context.Types.Object.GetMethod("ToString", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, []);
+        public MethodSymbol ObjectToStringMethod => objectToString ??= context.Types.Object.GetMethod("ToString", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, []);
 
-        public IMethodSymbol VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
+        public MethodSymbol VerboseCastFailureMethod => verboseCastFailure ??= JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : context.ByteCodeHelperMethods.VerboseCastFailure;
 
-        public IMethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public MethodSymbol MonitorEnterMethod => monitorEnter ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Enter", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
+        public MethodSymbol MonitorExitMethod => monitorExit ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Monitor).FullName).GetMethod("Exit", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, [context.Types.Object]);
 
-        public IMethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
+        public MethodSymbol MemoryBarrierMethod => memoryBarrier ??= context.Resolver.ResolveSystemType(typeof(System.Threading.Thread).FullName).GetMethod("MemoryBarrier", []);
 
         public bool ExperimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 
@@ -74,7 +75,7 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="method"></param>
         /// <returns></returns>
-        public CodeEmitter Create(IMethodBaseSymbolBuilder method)
+        public CodeEmitter Create(MethodSymbolBuilder method)
         {
             return new CodeEmitter(context, method.GetILGenerator(), method.DeclaringType);
         }
@@ -84,9 +85,9 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="dm"></param>
         /// <returns></returns>
-        public CodeEmitter Create(DynamicMethod dm)
+        public CodeEmitter Create(ReflectionDynamicMethod dm)
         {
-            return new CodeEmitter(context, new ReflectionILGenerator((ReflectionSymbolContext)context.Resolver.Symbols, dm.GetILGenerator(), true), null);
+            return new CodeEmitter(context, dm.GetILGenerator(), null);
         }
 
     }
@@ -96,14 +97,14 @@ namespace IKVM.Runtime
 
         readonly RuntimeContext context;
 
-        IILGenerator ilgen_real;
+        IKVM.CoreLib.Symbols.Emit.ILGenerator ilgen_real;
         bool inFinally;
         Stack<bool> exceptionStack = new Stack<bool>();
         IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
         CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
-        ISymbolDocumentWriter symbols;
+        SourceDocument symbols;
         List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
-        readonly ITypeSymbol declaringType;
+        readonly TypeSymbol declaringType;
 
         enum CodeType : short
         {
@@ -209,11 +210,11 @@ namespace IKVM.Runtime
 
             internal long ValueInt64 => (long)data;
 
-            internal ITypeSymbol Type => (ITypeSymbol)data;
+            internal TypeSymbol Type => (TypeSymbol)data;
 
-            internal IFieldSymbol FieldInfo => (IFieldSymbol)data;
+            internal FieldSymbol FieldInfo => (FieldSymbol)data;
 
-            internal IMethodBaseSymbol MethodBase => (IMethodBaseSymbol)data;
+            internal MethodSymbol MethodBase => (MethodSymbol)data;
 
             internal void RealEmit(int ilOffset, CodeEmitter codeEmitter, ref int lineNumber)
             {
@@ -247,14 +248,14 @@ namespace IKVM.Runtime
         {
 
             internal readonly CallingConvention unmanagedCallConv;
-            internal readonly ITypeSymbol returnType;
-            internal readonly ITypeSymbol[] parameterTypes;
+            internal readonly TypeSymbol returnType;
+            internal readonly ImmutableArray<TypeSymbol> parameterTypes;
 
-            internal CalliWrapper(CallingConvention unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+            internal CalliWrapper(CallingConvention unmanagedCallConv, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes)
             {
                 this.unmanagedCallConv = unmanagedCallConv;
                 this.returnType = returnType;
-                this.parameterTypes = parameterTypes == null ? null : (ITypeSymbol[])parameterTypes.Clone();
+                this.parameterTypes = parameterTypes;
             }
 
         }
@@ -263,16 +264,16 @@ namespace IKVM.Runtime
         {
 
             internal readonly CallingConventions callConv;
-            internal readonly ITypeSymbol returnType;
-            internal readonly ITypeSymbol[] parameterTypes;
-            internal readonly ITypeSymbol[] optionalParameterTypes;
+            internal readonly TypeSymbol returnType;
+            internal readonly ImmutableArray<TypeSymbol> parameterTypes;
+            internal readonly ImmutableArray<TypeSymbol> optionalParameterTypes;
 
-            internal ManagedCalliWrapper(CallingConventions callConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes, ITypeSymbol[] optionalParameterTypes)
+            internal ManagedCalliWrapper(CallingConventions callConv, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes)
             {
                 this.callConv = callConv;
                 this.returnType = returnType;
-                this.parameterTypes = parameterTypes == null ? null : (ITypeSymbol[])parameterTypes.Clone();
-                this.optionalParameterTypes = optionalParameterTypes == null ? null : (ITypeSymbol[])optionalParameterTypes.Clone();
+                this.parameterTypes = parameterTypes;
+                this.optionalParameterTypes = optionalParameterTypes;
             }
 
         }
@@ -283,7 +284,7 @@ namespace IKVM.Runtime
         /// <param name="context"></param>
         /// <param name="ilgen"></param>
         /// <param name="declaringType"></param>
-        public CodeEmitter(RuntimeContext context, IILGenerator ilgen, ITypeSymbol declaringType)
+        public CodeEmitter(RuntimeContext context, IKVM.CoreLib.Symbols.Emit.ILGenerator ilgen, TypeSymbol? declaringType)
         {
             this.context = context;
             this.ilgen_real = ilgen;
@@ -337,7 +338,7 @@ namespace IKVM.Runtime
                     ilgen_real.BeginExceptionBlock();
                     break;
                 case CodeType.BeginCatchBlock:
-                    ilgen_real.BeginCatchBlock(((ITypeSymbol)data));
+                    ilgen_real.BeginCatchBlock(((TypeSymbol)data));
                     break;
                 case CodeType.BeginFaultBlock:
                     ilgen_real.BeginFaultBlock();
@@ -390,15 +391,11 @@ namespace IKVM.Runtime
             {
                 ilgen_real.Emit(opcode, l);
             }
-            else if (arg is IMethodSymbol mi)
+            else if (arg is MethodSymbol mi)
             {
                 ilgen_real.Emit(opcode, mi);
             }
-            else if (arg is IConstructorSymbol ci)
-            {
-                ilgen_real.Emit(opcode, ci);
-            }
-            else if (arg is IFieldSymbol fi)
+            else if (arg is FieldSymbol fi)
             {
                 ilgen_real.Emit(opcode, fi);
             }
@@ -426,7 +423,7 @@ namespace IKVM.Runtime
             {
                 ilgen_real.Emit(opcode, s);
             }
-            else if (arg is ITypeSymbol type)
+            else if (arg is TypeSymbol type)
             {
                 ilgen_real.Emit(opcode, type);
             }
@@ -440,19 +437,19 @@ namespace IKVM.Runtime
             }
             else if (arg is CodeEmitterLabel[] labels)
             {
-                var real = new ILabel[labels.Length];
+                var real = ImmutableArray.CreateBuilder<IKVM.CoreLib.Symbols.Emit.Label>(labels.Length);
                 for (int i = 0; i < labels.Length; i++)
                     real[i] = labels[i].Label;
 
-                ilgen_real.Emit(opcode, real);
+                ilgen_real.Emit(opcode, real.ToImmutable());
             }
             else if (arg is ManagedCalliWrapper margs)
             {
-                ilgen_real.EmitCalli(opcode, margs.callConv, margs.returnType, margs.parameterTypes, margs.optionalParameterTypes);
+                ilgen_real.EmitCalli(margs.callConv, margs.returnType, margs.parameterTypes, margs.optionalParameterTypes);
             }
             else if (arg is CalliWrapper args)
             {
-                ilgen_real.EmitCalli(opcode, args.unmanagedCallConv, args.returnType, args.parameterTypes);
+                ilgen_real.EmitCalli(args.unmanagedCallConv, args.returnType, args.parameterTypes);
             }
             else
             {
@@ -466,8 +463,8 @@ namespace IKVM.Runtime
             {
                 if (code[i].pseudo == CodeType.Label)
                 {
-                    if (code[i - 1].opcode == System.Reflection.Emit.OpCodes.Br
-                        && code[i - 1].MatchLabel(code[i]))
+                    if (code[i - 1].opcode == System.Reflection.Emit.OpCodes.Br &&
+                        code[i - 1].MatchLabel(code[i]))
                     {
                         code.RemoveAt(i - 1);
                         i--;
@@ -825,7 +822,7 @@ namespace IKVM.Runtime
             }
         }
 
-        bool MatchCompare(int index, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2, ITypeSymbol type)
+        bool MatchCompare(int index, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2, TypeSymbol type)
         {
             return code[index].opcode == System.Reflection.Emit.OpCodes.Stloc && code[index].Local.LocalType == type
                 && code[index + 1].opcode == System.Reflection.Emit.OpCodes.Stloc && code[index + 1].Local.LocalType == type
@@ -2100,12 +2097,15 @@ namespace IKVM.Runtime
             }
         }
 
-        internal void DefineSymbolDocument(IModuleSymbolBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
+        internal void DefineSymbolDocument(ModuleSymbolBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            symbols = module.DefineDocument(url, language, languageVendor, documentType);
+            if (symbols != null)
+                throw new InvalidOperationException();
+
+            symbols = module.DefineSymbolDocument(url, language, languageVendor, documentType);
         }
 
-        internal CodeEmitterLocal UnsafeAllocTempLocal(ITypeSymbol type)
+        internal CodeEmitterLocal UnsafeAllocTempLocal(TypeSymbol type)
         {
             int free = -1;
             for (int i = 0; i < tempLocals.Length; i++)
@@ -2129,7 +2129,7 @@ namespace IKVM.Runtime
             return lb1;
         }
 
-        internal CodeEmitterLocal AllocTempLocal(ITypeSymbol type)
+        internal CodeEmitterLocal AllocTempLocal(TypeSymbol type)
         {
             for (int i = 0; i < tempLocals.Length; i++)
             {
@@ -2158,7 +2158,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal void BeginCatchBlock(ITypeSymbol exceptionType)
+        internal void BeginCatchBlock(TypeSymbol exceptionType)
         {
             EmitPseudoOpCode(CodeType.BeginCatchBlock, exceptionType);
         }
@@ -2187,7 +2187,7 @@ namespace IKVM.Runtime
             EmitPseudoOpCode(CodeType.BeginScope, null);
         }
 
-        internal CodeEmitterLocal DeclareLocal(ITypeSymbol localType)
+        internal CodeEmitterLocal DeclareLocal(TypeSymbol localType)
         {
             var local = new CodeEmitterLocal(localType);
             EmitPseudoOpCode(CodeType.DeclareLocal, local);
@@ -2209,7 +2209,7 @@ namespace IKVM.Runtime
             EmitOpCode(System.Reflection.Emit.OpCodes.Unaligned, alignment);
         }
 
-        internal void Emit(System.Reflection.Emit.OpCode opcode, IMethodBaseSymbol mb)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, MethodSymbol mb)
         {
             EmitOpCode(opcode, mb);
         }
@@ -2219,7 +2219,7 @@ namespace IKVM.Runtime
             EmitOpCode(System.Reflection.Emit.OpCodes.Ldc_R8, arg);
         }
 
-        internal void Emit(System.Reflection.Emit.OpCode opcode, IFieldSymbol field)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, FieldSymbol field)
         {
             EmitOpCode(opcode, field);
         }
@@ -2362,17 +2362,17 @@ namespace IKVM.Runtime
             EmitOpCode(opcode, arg);
         }
 
-        internal void Emit(System.Reflection.Emit.OpCode opcode, ITypeSymbol cls)
+        internal void Emit(System.Reflection.Emit.OpCode opcode, TypeSymbol cls)
         {
             EmitOpCode(opcode, cls);
         }
 
-        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConvention unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes)
+        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConvention unmanagedCallConv, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes)
         {
             EmitOpCode(opcode, new CalliWrapper(unmanagedCallConv, returnType, parameterTypes));
         }
 
-        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConventions unmanagedCallConv, ITypeSymbol returnType, ITypeSymbol[] parameterTypes, ITypeSymbol[] optionalParameterTypes)
+        internal void EmitCalli(System.Reflection.Emit.OpCode opcode, CallingConventions unmanagedCallConv, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes)
         {
             EmitOpCode(opcode, new ManagedCalliWrapper(unmanagedCallConv, returnType, parameterTypes, optionalParameterTypes));
         }
@@ -2393,7 +2393,7 @@ namespace IKVM.Runtime
             EmitPseudoOpCode(CodeType.Label, loc);
         }
 
-        internal void ThrowException(ITypeSymbol excType)
+        internal void ThrowException(TypeSymbol excType)
         {
             Emit(System.Reflection.Emit.OpCodes.Newobj, excType.GetConstructor([]));
             Emit(System.Reflection.Emit.OpCodes.Throw);
@@ -2412,7 +2412,7 @@ namespace IKVM.Runtime
             return linenums == null ? null : linenums.ToArray();
         }
 
-        internal void EmitLineNumberTable(IMethodBaseSymbolBuilder mb)
+        internal void EmitLineNumberTable(MethodSymbolBuilder mb)
         {
             if (linenums != null)
                 context.AttributeHelper.SetLineNumberTable(mb, linenums);
@@ -2444,7 +2444,7 @@ namespace IKVM.Runtime
             Emit(System.Reflection.Emit.OpCodes.Pop);
         }
 
-        internal void EmitCastclass(ITypeSymbol type)
+        internal void EmitCastclass(TypeSymbol type)
         {
             if (context.CodeEmitterFactory.VerboseCastFailureMethod != null)
             {
@@ -2470,7 +2470,7 @@ namespace IKVM.Runtime
 
         // This is basically the same as Castclass, except that it
         // throws an IncompatibleClassChangeError on failure.
-        internal void EmitAssertType(ITypeSymbol type)
+        internal void EmitAssertType(TypeSymbol type)
         {
             var isnull = DefineLabel();
             Emit(System.Reflection.Emit.OpCodes.Dup);
@@ -2486,7 +2486,7 @@ namespace IKVM.Runtime
             MarkLabel(ok);
         }
 
-        internal void EmitUnboxSpecial(ITypeSymbol type)
+        internal void EmitUnboxSpecial(TypeSymbol type)
         {
             // NOTE if the reference is null, we treat it as a default instance of the value type.
             var label1 = DefineLabel();
@@ -2551,7 +2551,7 @@ namespace IKVM.Runtime
             MarkLabel(label2);
         }
 
-        internal void Emit_instanceof(ITypeSymbol type)
+        internal void Emit_instanceof(TypeSymbol type)
         {
             Emit(System.Reflection.Emit.OpCodes.Isinst, type);
             Emit(System.Reflection.Emit.OpCodes.Ldnull);
@@ -2587,7 +2587,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private void EmitCmp(ITypeSymbol type, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2)
+        private void EmitCmp(TypeSymbol type, System.Reflection.Emit.OpCode cmp1, System.Reflection.Emit.OpCode cmp2)
         {
             var value1 = AllocTempLocal(type);
             var value2 = AllocTempLocal(type);

@@ -59,7 +59,7 @@ namespace IKVM.Runtime
 
         internal override RuntimeClassLoader ClassLoader => Context.ClassLoaderFactory.GetBootstrapClassLoader();
 
-        internal override ITypeSymbol TypeAsTBD
+        internal override TypeSymbol TypeAsTBD
         {
             get { throw new NotSupportedException(); }
         }

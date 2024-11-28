@@ -26,6 +26,8 @@ using System.Collections.Generic;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Symbols;
+using System.Collections.Immutable;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -45,7 +47,7 @@ namespace IKVM.Runtime
         internal sealed class RemappedJavaType : RuntimeManagedByteCodeJavaType
         {
 
-            readonly ITypeSymbol remappedType;
+            readonly TypeSymbol remappedType;
 
             /// <summary>
             /// initializes a new instance.
@@ -54,14 +56,14 @@ namespace IKVM.Runtime
             /// <param name="name"></param>
             /// <param name="type"></param>
             /// <exception cref="InvalidOperationException"></exception>
-            internal RemappedJavaType(RuntimeContext context, string name, ITypeSymbol type) :
+            internal RemappedJavaType(RuntimeContext context, string name, TypeSymbol type) :
                 base(context, name, type)
             {
                 var attr = Context.AttributeHelper.GetRemappedType(type) ?? throw new InvalidOperationException();
                 remappedType = Context.Resolver.GetSymbol(attr.Type);
             }
 
-            internal override ITypeSymbol TypeAsTBD => remappedType;
+            internal override TypeSymbol TypeAsTBD => remappedType;
 
             internal override bool IsRemapped => true;
 
@@ -110,7 +112,7 @@ namespace IKVM.Runtime
                 SetMethods(list.ToArray());
             }
 
-            private void AddMethod(List<RuntimeJavaMethod> list, IMethodBaseSymbol method)
+            private void AddMethod(List<RuntimeJavaMethod> list, MethodSymbol method)
             {
                 var flags = Context.AttributeHelper.GetHideFromJavaFlags(method);
                 if ((flags & HideFromJavaFlags.Code) == 0 && (remappedType.IsSealed || !method.Name.StartsWith("instancehelper_")) && (!remappedType.IsSealed || method.IsStatic))
@@ -131,22 +133,24 @@ namespace IKVM.Runtime
                 SetFields(list.ToArray());
             }
 
-            RuntimeJavaMethod CreateRemappedMethodWrapper(IMethodBaseSymbol mb, HideFromJavaFlags hideFromJavaflags)
+            RuntimeJavaMethod CreateRemappedMethodWrapper(MethodSymbol mb, HideFromJavaFlags hideFromJavaflags)
             {
                 var modifiers = Context.AttributeHelper.GetModifiers(mb, false);
                 var flags = MemberFlags.None;
                 GetNameSigFromMethodBase(mb, out var name, out var sig, out var retType, out var paramTypes, ref flags);
 
-                var mbHelper = mb as IMethodSymbol;
+                var mbHelper = mb;
                 var hideFromReflection = mbHelper != null && (hideFromJavaflags & HideFromJavaFlags.Reflection) != 0;
-                IMethodSymbol mbNonvirtualHelper = null;
+                MethodSymbol mbNonvirtualHelper = null;
                 if (!mb.IsStatic && !mb.IsConstructor)
                 {
-                    var parameters = mb.GetParameters();
-                    var argTypes = new ITypeSymbol[parameters.Length + 1];
-                    argTypes[0] = remappedType;
+                    var parameters = mb.Parameters;
+                    var b = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + 1);
+                    b[0] = remappedType;
                     for (int i = 0; i < parameters.Length; i++)
-                        argTypes[i + 1] = parameters[i].ParameterType;
+                        b[i + 1] = parameters[i].ParameterType;
+
+                    var argTypes = b.DrainToImmutable();
 
                     var helper = type.GetMethod("instancehelper_" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, argTypes);
                     if (helper != null)

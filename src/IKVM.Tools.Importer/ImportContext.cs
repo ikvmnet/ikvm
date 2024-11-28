@@ -65,7 +65,7 @@ namespace IKVM.Tools.Importer
         internal bool guessFileKind;
         internal List<string> unresolvedReferences = new();
         internal Dictionary<string, string> legacyStubReferences = new();    // only used during command line parsing
-        internal List<IAssemblySymbol> references = new();
+        internal List<AssemblySymbol> references = new();
         internal string[] peerReferences;
         internal bool crossReferenceAllPeers = true;
         internal string[] classesToExclude;     // only used during command line parsing

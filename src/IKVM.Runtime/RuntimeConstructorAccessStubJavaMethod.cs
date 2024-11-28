@@ -32,7 +32,7 @@ namespace IKVM.Runtime
     sealed class RuntimeConstructorAccessStubJavaMethod : RuntimeSmartJavaMethod
     {
 
-        readonly IConstructorSymbol stub;
+        readonly MethodSymbol stub;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,7 +44,7 @@ namespace IKVM.Runtime
         /// <param name="parameterTypes"></param>
         /// <param name="modifiers"></param>
         /// <param name="flags"></param>
-        internal RuntimeConstructorAccessStubJavaMethod(RuntimeJavaType declaringType, string sig, IConstructorSymbol core, IConstructorSymbol stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+        internal RuntimeConstructorAccessStubJavaMethod(RuntimeJavaType declaringType, string sig, MethodSymbol core, MethodSymbol stub, RuntimeJavaType[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
             base(declaringType, StringConstants.INIT, sig, core, declaringType.Context.PrimitiveJavaTypeFactory.VOID, parameterTypes, modifiers, flags)
         {
             this.stub = stub;

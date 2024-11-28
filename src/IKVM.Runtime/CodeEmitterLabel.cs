@@ -30,14 +30,14 @@ namespace IKVM.Runtime
     sealed class CodeEmitterLabel
 	{
 
-		internal readonly ILabel Label;
+		internal readonly Label Label;
 		internal int Temp;
 
 		/// <summary>
 		/// Initializes a new instance.
 		/// </summary>
 		/// <param name="label"></param>
-		internal CodeEmitterLabel(ILabel label)
+		internal CodeEmitterLabel(Label label)
 		{
 			this.Label = label;
 		}

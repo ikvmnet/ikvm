@@ -139,7 +139,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
 #if !FIRST_PASS
 
-        static global::java.net.URL GetCodeBase(IAssemblySymbol assembly)
+        static global::java.net.URL GetCodeBase(AssemblySymbol assembly)
         {
             try
             {
@@ -182,7 +182,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        static global::java.util.jar.Manifest GetManifestForAssemblyJar(IAssemblySymbol assembly, string resourceName)
+        static global::java.util.jar.Manifest GetManifestForAssemblyJar(AssemblySymbol assembly, string resourceName)
         {
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));

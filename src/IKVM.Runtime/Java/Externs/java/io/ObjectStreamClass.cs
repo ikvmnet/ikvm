@@ -183,22 +183,22 @@ namespace IKVM.Java.Externs.java.io
             delegate void ObjFieldGetterSetter(object obj, object[] objarr);
             delegate void PrimFieldGetterSetter(object obj, byte[] objarr);
 
-            static readonly IMethodSymbol ReadByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadByte"));
-            static readonly IMethodSymbol ReadBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadBoolean"));
-            static readonly IMethodSymbol ReadCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadChar"));
-            static readonly IMethodSymbol ReadShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadShort"));
-            static readonly IMethodSymbol ReadIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadInt"));
-            static readonly IMethodSymbol ReadFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadFloat"));
-            static readonly IMethodSymbol ReadLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadLong"));
-            static readonly IMethodSymbol ReadDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadDouble"));
-            static readonly IMethodSymbol WriteByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteByte"));
-            static readonly IMethodSymbol WriteBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteBoolean"));
-            static readonly IMethodSymbol WriteCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteChar"));
-            static readonly IMethodSymbol WriteShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteShort"));
-            static readonly IMethodSymbol WriteIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteInt"));
-            static readonly IMethodSymbol WriteFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteFloat"));
-            static readonly IMethodSymbol WriteLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteLong"));
-            static readonly IMethodSymbol WriteDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteDouble"));
+            static readonly MethodSymbol ReadByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadByte"));
+            static readonly MethodSymbol ReadBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadBoolean"));
+            static readonly MethodSymbol ReadCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadChar"));
+            static readonly MethodSymbol ReadShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadShort"));
+            static readonly MethodSymbol ReadIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadInt"));
+            static readonly MethodSymbol ReadFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadFloat"));
+            static readonly MethodSymbol ReadLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadLong"));
+            static readonly MethodSymbol ReadDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("ReadDouble"));
+            static readonly MethodSymbol WriteByteMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteByte"));
+            static readonly MethodSymbol WriteBooleanMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteBoolean"));
+            static readonly MethodSymbol WriteCharMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteChar"));
+            static readonly MethodSymbol WriteShortMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteShort"));
+            static readonly MethodSymbol WriteIntMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteInt"));
+            static readonly MethodSymbol WriteFloatMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteFloat"));
+            static readonly MethodSymbol WriteLongMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteLong"));
+            static readonly MethodSymbol WriteDoubleMethod = JVM.Context.Resolver.GetSymbol(typeof(IOHelpers).GetMethod("WriteDouble"));
 
             static readonly ObjFieldGetterSetter objDummy = new ObjFieldGetterSetter(Dummy);
             static readonly PrimFieldGetterSetter primDummy = new PrimFieldGetterSetter(Dummy);

@@ -204,7 +204,7 @@ namespace IKVM.Runtime
             throw new InvalidOperationException("LazyPublishMembers called on " + this);
         }
 
-        internal override ITypeSymbol TypeAsTBD
+        internal override TypeSymbol TypeAsTBD
         {
             get
             {

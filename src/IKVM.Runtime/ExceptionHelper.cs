@@ -341,7 +341,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        string GetClassNameFromType(ITypeSymbol type)
+        string GetClassNameFromType(TypeSymbol type)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

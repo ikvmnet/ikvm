@@ -1,20 +1,20 @@
 ﻿using System;
 
 using IKVM.CoreLib.Symbols;
-using IKVM.CoreLib.Symbols.Reflection;
-using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.Reflection.Emit;
-using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-using IKVM.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
-using System.Reflection.Emit;
+
+using IKVM.CoreLib.Symbols.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
@@ -23,43 +23,43 @@ namespace IKVM.Runtime
     static class SymbolExtensions
     {
 
-        public static Assembly GetUnderlyingAssembly(this IAssemblySymbol symbol)
+        public static Assembly GetUnderlyingAssembly(this AssemblySymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionAssemblySymbol)symbol).UnderlyingAssembly;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveAssembly(symbol);
 #else
-            return ((IReflectionAssemblySymbol)symbol).UnderlyingAssembly;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveAssembly(symbol);
 #endif
         }
 
-        public static Module GetUnderlyingModule(this IModuleSymbol symbol)
+        public static Module GetUnderlyingModule(this ModuleSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionModuleSymbol)symbol).UnderlyingModule;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveModule(symbol);
 #else
-            return ((IReflectionModuleSymbol)symbol).UnderlyingModule;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveModule(symbol);
 #endif
         }
 
-        public static Type GetUnderlyingType(this ITypeSymbol symbol)
+        public static Type GetUnderlyingType(this TypeSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionTypeSymbol)symbol).UnderlyingType;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveType(symbol);
 #else
-            return ((IReflectionTypeSymbol)symbol).UnderlyingType;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveType(symbol);
 #endif
         }
 
-        public static Type[] GetUnderlyingTypes(this ITypeSymbol[] symbols)
+        public static Type[] GetUnderlyingTypes(this TypeSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
@@ -71,7 +71,7 @@ namespace IKVM.Runtime
             return a;
         }
 
-        public static Type GetUnderlyingRuntimeType(this ITypeSymbol symbol)
+        public static Type GetUnderlyingRuntimeType(this TypeSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -79,11 +79,11 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
             throw new NotSupportedException();
 #else
-            return ((IReflectionTypeSymbol)symbol).UnderlyingRuntimeType;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveCompleteType(symbol);
 #endif
         }
 
-        public static Type[] GetUnderlyingRuntimeTypes(this ITypeSymbol[] symbols)
+        public static Type[] GetUnderlyingRuntimeTypes(this TypeSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
@@ -95,67 +95,54 @@ namespace IKVM.Runtime
             return a;
         }
 
-        public static MethodBase GetUnderlyingMethodBase(this IMethodBaseSymbol symbol)
+        public static MethodBase GetUnderlyingMethod(this MethodSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionMethodBaseSymbol)symbol).UnderlyingMethodBase;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveMethod(symbol);
 #else
-            return ((IReflectionMethodBaseSymbol)symbol).UnderlyingMethodBase;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveMethod(symbol);
 #endif
         }
 
-        public static ConstructorInfo GetUnderlyingConstructor(this IConstructorSymbol symbol)
+        public static ParameterInfo GetUnderlyingParameter(this ParameterSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionConstructorSymbol)symbol).UnderlyingConstructor;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveParameter(symbol);
 #else
-            return ((IReflectionConstructorSymbol)symbol).UnderlyingConstructor;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveParameter(symbol);
 #endif
         }
 
-        public static MethodInfo GetUnderlyingMethod(this IMethodSymbol symbol)
+        /// <summary>
+        /// Gets the underlying <see cref="FieldInfo"/> of the specified symbol.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        public static FieldInfo GetUnderlyingField(this FieldSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionMethodSymbol)symbol).UnderlyingMethod;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveField(symbol);
 #else
-            return ((IReflectionMethodSymbol)symbol).UnderlyingMethod;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveField(symbol);
 #endif
         }
 
-        public static ParameterInfo GetUnderlyingParameter(this IParameterSymbol symbol)
-        {
-            if (symbol == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-			return ((IIkvmReflectionParameterSymbol)symbol).UnderlyingParameter;
-#else
-            return ((IReflectionParameterSymbol)symbol).UnderlyingParameter;
-#endif
-        }
-
-        public static FieldInfo GetUnderlyingField(this IFieldSymbol symbol)
-        {
-            if (symbol == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-			return ((IIkvmReflectionFieldSymbol)symbol).UnderlyingField;
-#else
-            return ((IReflectionFieldSymbol)symbol).UnderlyingField;
-#endif
-        }
-
-        public static FieldInfo GetUnderlyingRuntimeField(this IFieldSymbol symbol)
+        /// <summary>
+        /// Gets the underlying runtime <see cref="FieldInfo"/> of the specified symbol. May result in a reification of type symbols.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static FieldInfo GetUnderlyingRuntimeField(this FieldSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -163,11 +150,11 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
             throw new NotSupportedException();
 #else
-            return ((IReflectionFieldSymbol)symbol).UnderlyingRuntimeField;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveCompleteField(symbol);
 #endif
         }
 
-        public static FieldInfo[] GetUnderlyingFields(this IFieldSymbol[] symbols)
+        public static FieldInfo[] GetUnderlyingFields(this FieldSymbol[] symbols)
         {
             if (symbols == null)
                 return null;
@@ -179,19 +166,19 @@ namespace IKVM.Runtime
             return a;
         }
 
-        public static PropertyInfo GetUnderlyingProperty(this IPropertySymbol symbol)
+        public static PropertyInfo GetUnderlyingProperty(this PropertySymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IIkvmReflectionPropertySymbol)symbol).UnderlyingProperty;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveProperty(symbol);
 #else
-            return ((IReflectionPropertySymbol)symbol).UnderlyingProperty;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveProperty(symbol);
 #endif
         }
 
-        public static PropertyInfo[] GetUnderlyingProperties(this IPropertySymbol[] symbols)
+        public static PropertyInfo[] GetUnderlyingProperties(this PropertySymbol[] symbols)
         {
             if (symbols == null)
                 return null;
@@ -201,78 +188,6 @@ namespace IKVM.Runtime
                 a[i] = GetUnderlyingProperty(symbols[i]);
 
             return a;
-        }
-
-        public static AssemblyBuilder GetUnderlyingAssemblyBuilder(this IAssemblySymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionAssemblySymbolBuilder)builder).UnderlyingAssemblyBuilder;
-#else
-            return ((IReflectionAssemblySymbolBuilder)builder).UnderlyingAssemblyBuilder;
-#endif
-        }
-
-        public static ModuleBuilder GetUnderlyingModuleBuilder(this IModuleSymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionModuleSymbolBuilder)builder).UnderlyingModuleBuilder;
-#else
-            return ((IReflectionModuleSymbolBuilder)builder).UnderlyingModuleBuilder;
-#endif
-        }
-
-        public static TypeBuilder GetUnderlyingTypeBuilder(this ITypeSymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionTypeSymbolBuilder)builder).UnderlyingTypeBuilder;
-#else
-            return ((IReflectionTypeSymbolBuilder)builder).UnderlyingTypeBuilder;
-#endif
-        }
-
-        public static ConstructorBuilder GetUnderlyingConstructorBuilder(this IConstructorSymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionConstructorSymbolBuilder)builder).UnderlyingConstructorBuilder;
-#else
-            return ((IReflectionConstructorSymbolBuilder)builder).UnderlyingConstructorBuilder;
-#endif
-        }
-
-        public static MethodBuilder GetUnderlyingMethodBuilder(this IMethodSymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionMethodSymbolBuilder)builder).UnderlyingMethodBuilder;
-#else
-            return ((IReflectionMethodSymbolBuilder)builder).UnderlyingMethodBuilder;
-#endif
-        }
-
-        public static FieldBuilder GetUnderlyingFieldBuilder(this IFieldSymbolBuilder builder)
-        {
-            if (builder == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-            return ((IIkvmReflectionFieldSymbolBuilder)builder).UnderlyingFieldBuilder;
-#else
-            return ((IReflectionFieldSymbolBuilder)builder).UnderlyingFieldBuilder;
-#endif
         }
 
     }

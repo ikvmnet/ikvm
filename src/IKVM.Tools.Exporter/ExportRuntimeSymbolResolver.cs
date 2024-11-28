@@ -42,17 +42,17 @@ namespace IKVM.Tools.Exporter
         readonly IkvmReflectionSymbolContext _symbols;
         readonly bool _bootstrap;
 
-        IAssemblySymbol? _coreAssembly;
-        readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
+        AssemblySymbol? _coreAssembly;
+        readonly ConcurrentDictionary<string, TypeSymbol?> _coreTypeCache = new();
 
-        IAssemblySymbol[]? _systemAssemblies;
-        readonly ConcurrentDictionary<string, ITypeSymbol?> _systemTypeCache = new();
+        AssemblySymbol[]? _systemAssemblies;
+        readonly ConcurrentDictionary<string, TypeSymbol?> _systemTypeCache = new();
 
-        IAssemblySymbol? _runtimeAssembly;
-        readonly ConcurrentDictionary<string, ITypeSymbol?> _runtimeTypeCache = new();
+        AssemblySymbol? _runtimeAssembly;
+        readonly ConcurrentDictionary<string, TypeSymbol?> _runtimeTypeCache = new();
 
-        IAssemblySymbol? _baseAssembly;
-        readonly ConcurrentDictionary<string, ITypeSymbol?> _baseTypeCache = new();
+        AssemblySymbol? _baseAssembly;
+        readonly ConcurrentDictionary<string, TypeSymbol?> _baseTypeCache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -71,10 +71,10 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public ISymbolContext Symbols => _symbols;
+        public SymbolContext Symbols => _symbols;
 
         /// <inheritdoc />
-        public IAssemblySymbol GetCoreAssembly()
+        public AssemblySymbol GetCoreAssembly()
         {
             return (_coreAssembly ??= GetSymbol(_universe.CoreLib)) ?? throw new DiagnosticEventException(DiagnosticEvent.CoreClassesMissing());
         }
@@ -83,7 +83,7 @@ namespace IKVM.Tools.Exporter
         /// Resolves the set of system assemblies.
         /// </summary>
         /// <returns></returns>
-        IAssemblySymbol[] FindSystemAssemblies()
+        AssemblySymbol[] FindSystemAssemblies()
         {
             return _systemAssemblies ??= ResolveSystemAssembliesIter().Distinct().ToArray();
         }
@@ -92,7 +92,7 @@ namespace IKVM.Tools.Exporter
         /// Resolves the set of system assemblies that contain the system types.
         /// </summary>
         /// <returns></returns>
-        IEnumerable<IAssemblySymbol> ResolveSystemAssembliesIter()
+        IEnumerable<AssemblySymbol> ResolveSystemAssembliesIter()
         {
             foreach (var assembly in _universe.GetAssemblies())
                 foreach (var typeName in GetSystemTypeNames())
@@ -101,7 +101,7 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol GetRuntimeAssembly()
+        public AssemblySymbol GetRuntimeAssembly()
         {
             return (_runtimeAssembly ??= FindRuntimeAssembly()) ?? throw new DiagnosticEventException(DiagnosticEvent.RuntimeNotFound());
         }
@@ -109,7 +109,7 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Attempts to load the runtime assembly.
         /// </summary>
-        IAssemblySymbol? FindRuntimeAssembly()
+        AssemblySymbol? FindRuntimeAssembly()
         {
             foreach (var assembly in _universe.GetAssemblies())
                 if (assembly.GetType("IKVM.Runtime.JVM") is Type)
@@ -119,7 +119,7 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol? GetBaseAssembly()
+        public AssemblySymbol? GetBaseAssembly()
         {
             // bootstrap mode is used for builing the main assembly, and thus should not return the existing base assembly
             if (_bootstrap)
@@ -131,7 +131,7 @@ namespace IKVM.Tools.Exporter
         /// <summary>
         /// Attempts to load the base assembly.
         /// </summary>
-        IAssemblySymbol? FindBaseAssembly()
+        AssemblySymbol? FindBaseAssembly()
         {
             foreach (var assembly in _universe.GetAssemblies())
                 if (assembly.GetType("java.lang.Object") is Type)
@@ -141,13 +141,13 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveCoreType(string typeName)
+        public TypeSymbol ResolveCoreType(string typeName)
         {
             return _coreTypeCache.GetOrAdd(typeName, _ => GetCoreAssembly().GetType(_)) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveSystemType(string typeName)
+        public TypeSymbol ResolveSystemType(string typeName)
         {
             return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
@@ -157,7 +157,7 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? FindSystemType(string typeName)
+        TypeSymbol? FindSystemType(string typeName)
         {
             foreach (var assembly in FindSystemAssemblies())
                 if (assembly.GetType(typeName) is { } t)
@@ -167,13 +167,13 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveRuntimeType(string typeName)
+        public TypeSymbol ResolveRuntimeType(string typeName)
         {
             return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
 
         /// <inheritdoc />
-        public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
+        public bool TryResolveRuntimeType(string typeName, out TypeSymbol? type)
         {
             var t = _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType);
             if (t != null)
@@ -191,13 +191,13 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? FindRuntimeType(string typeName)
+        TypeSymbol? FindRuntimeType(string typeName)
         {
             return GetRuntimeAssembly()?.GetType(typeName);
         }
 
         /// <inheritdoc />
-        public ITypeSymbol ResolveBaseType(string typeName)
+        public TypeSymbol ResolveBaseType(string typeName)
         {
             return _baseTypeCache.GetOrAdd(typeName, FindBaseType) ?? throw new DiagnosticEventException(DiagnosticEvent.CriticalClassNotFound(typeName));
         }
@@ -207,19 +207,19 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        ITypeSymbol? FindBaseType(string typeName)
+        TypeSymbol? FindBaseType(string typeName)
         {
             return GetBaseAssembly()?.GetType(typeName);
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol? ResolveAssembly(string assemblyName)
+        public AssemblySymbol? ResolveAssembly(string assemblyName)
         {
             return _universe.Load(assemblyName) is { } a ? GetSymbol(a) : null;
         }
 
         /// <inheritdoc />
-        public ITypeSymbol? ResolveType(string typeName)
+        public TypeSymbol? ResolveType(string typeName)
         {
             foreach (var assembly in _universe.GetAssemblies())
                 if (assembly.GetType(typeName) is Type t)
@@ -229,75 +229,51 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <inheritdoc />
-        public IAssemblySymbol GetSymbol(Assembly assembly)
+        public AssemblySymbol GetSymbol(Assembly assembly)
         {
-            return _symbols.GetOrCreateAssemblySymbol(assembly);
+            return _symbols.ResolveAssemblySymbol(assembly);
         }
 
         /// <inheritdoc />
-        public IAssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly)
+        public ModuleSymbol GetSymbol(Module module)
         {
-            return _symbols.GetOrCreateAssemblySymbol(assembly);
+            return _symbols.ResolveModuleSymbol(module);
         }
 
         /// <inheritdoc />
-        public IModuleSymbol GetSymbol(Module module)
+        public MemberSymbol GetSymbol(MemberInfo method)
         {
-            return _symbols.GetOrCreateModuleSymbol(module);
+            return _symbols.ResolveMemberSymbol(method);
         }
 
         /// <inheritdoc />
-        public IModuleSymbolBuilder GetSymbol(ModuleBuilder module)
+        public TypeSymbol GetSymbol(Type type)
         {
-            return _symbols.GetOrCreateModuleSymbol(module);
+            return _symbols.ResolveTypeSymbol(type);
         }
 
         /// <inheritdoc />
-        public ITypeSymbol GetSymbol(Type type)
+        public MethodSymbol GetSymbol(MethodBase method)
         {
-            return _symbols.GetOrCreateTypeSymbol(type);
+            return _symbols.ResolveMethodSymbol(method);
         }
 
         /// <inheritdoc />
-        public IMemberSymbol GetSymbol(MemberInfo memberInfo)
+        public FieldSymbol GetSymbol(FieldInfo field)
         {
-            return _symbols.GetOrCreateMemberSymbol(memberInfo);
+            return _symbols.ResolveFieldSymbol(field);
         }
 
         /// <inheritdoc />
-        public IMethodBaseSymbol GetSymbol(MethodBase type)
+        public PropertySymbol GetSymbol(PropertyInfo property)
         {
-            return _symbols.GetOrCreateMethodBaseSymbol(type);
+            return _symbols.ResolvePropertySymbol(property);
         }
 
         /// <inheritdoc />
-        public IConstructorSymbol GetSymbol(ConstructorInfo ctor)
+        public EventSymbol GetSymbol(EventInfo @event)
         {
-            return _symbols.GetOrCreateConstructorSymbol(ctor);
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol GetSymbol(MethodInfo method)
-        {
-            return _symbols.GetOrCreateMethodSymbol(method);
-        }
-
-        /// <inheritdoc />
-        public IFieldSymbol GetSymbol(FieldInfo field)
-        {
-            return _symbols.GetOrCreateFieldSymbol(field);
-        }
-
-        /// <inheritdoc />
-        public IPropertySymbol GetSymbol(PropertyInfo property)
-        {
-            return _symbols.GetOrCreatePropertySymbol(property);
-        }
-
-        /// <inheritdoc />
-        public IEventSymbol GetSymbol(EventInfo @event)
-        {
-            return _symbols.GetOrCreateEventSymbol(@event);
+            return _symbols.ResolveEventSymbol(@event);
         }
 
     }

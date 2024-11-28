@@ -45,17 +45,17 @@ namespace IKVM.Runtime
 
             readonly ReflectionSymbolContext _symbols = new();
 
-            IAssemblySymbol _coreAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol?> _coreTypeCache = new();
+            AssemblySymbol _coreAssembly;
+            readonly ConcurrentDictionary<string, TypeSymbol?> _coreTypeCache = new();
 
-            IAssemblySymbol[] _systemAssemblies;
-            readonly ConcurrentDictionary<string, ITypeSymbol?> _systemTypeCache = new();
+            AssemblySymbol[] _systemAssemblies;
+            readonly ConcurrentDictionary<string, TypeSymbol?> _systemTypeCache = new();
 
-            IAssemblySymbol _runtimeAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol?> _runtimeTypeCache = new();
+            AssemblySymbol _runtimeAssembly;
+            readonly ConcurrentDictionary<string, TypeSymbol?> _runtimeTypeCache = new();
 
-            IAssemblySymbol _baseAssembly;
-            readonly ConcurrentDictionary<string, ITypeSymbol?> _baseTypeCache = new();
+            AssemblySymbol _baseAssembly;
+            readonly ConcurrentDictionary<string, TypeSymbol?> _baseTypeCache = new();
 
             /// <summary>
             /// Initializes a new instance.
@@ -69,22 +69,22 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public ISymbolContext Symbols => _symbols;
+            public SymbolContext Symbols => _symbols;
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveAssembly(string assemblyName)
+            public AssemblySymbol ResolveAssembly(string assemblyName)
             {
                 return GetSymbol(Assembly.Load(assemblyName));
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol GetCoreAssembly()
+            public AssemblySymbol GetCoreAssembly()
             {
                 return _coreAssembly;
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveCoreType(string typeName)
+            public TypeSymbol ResolveCoreType(string typeName)
             {
                 return _coreTypeCache.GetOrAdd(typeName, ResolveCoreTypeImpl) ?? throw new InvalidOperationException();
             }
@@ -94,13 +94,13 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol? ResolveCoreTypeImpl(string typeName)
+            TypeSymbol? ResolveCoreTypeImpl(string typeName)
             {
                 return _coreAssembly.GetType(typeName);
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveSystemType(string typeName)
+            public TypeSymbol ResolveSystemType(string typeName)
             {
                 return _systemTypeCache.GetOrAdd(typeName, FindSystemType) ?? throw new InvalidOperationException();
             }
@@ -110,29 +110,29 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol? FindSystemType(string typeName)
+            TypeSymbol? FindSystemType(string typeName)
             {
                 foreach (var assembly in _systemAssemblies)
-                    if (assembly.GetType(typeName) is ITypeSymbol t)
+                    if (assembly.GetType(typeName) is TypeSymbol t)
                         return t;
 
                 return null;
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol GetRuntimeAssembly()
+            public AssemblySymbol GetRuntimeAssembly()
             {
                 return _runtimeAssembly;
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveRuntimeType(string typeName)
+            public TypeSymbol ResolveRuntimeType(string typeName)
             {
                 return _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType) ?? throw new InvalidOperationException();
             }
 
             /// <inheritdoc />
-            public bool TryResolveRuntimeType(string typeName, out ITypeSymbol? type)
+            public bool TryResolveRuntimeType(string typeName, out TypeSymbol? type)
             {
                 var t = _runtimeTypeCache.GetOrAdd(typeName, FindRuntimeType);
                 if (t != null)
@@ -150,25 +150,25 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="typeName"></param>
             /// <returns></returns>
-            ITypeSymbol? FindRuntimeType(string typeName)
+            TypeSymbol? FindRuntimeType(string typeName)
             {
                 return _runtimeAssembly.GetType(typeName);
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol GetBaseAssembly()
+            public AssemblySymbol GetBaseAssembly()
             {
                 return _baseAssembly;
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveBaseType(string typeName)
+            public TypeSymbol ResolveBaseType(string typeName)
             {
                 return _baseAssembly.GetType(typeName) ?? throw new InvalidOperationException();
             }
 
             /// <inheritdoc />
-            public ITypeSymbol? ResolveType(string typeName)
+            public TypeSymbol? ResolveType(string typeName)
             {
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                     if (assembly.GetType(typeName) is Type t)
@@ -178,37 +178,37 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol GetSymbol(Assembly assembly)
+            public AssemblySymbol GetSymbol(Assembly assembly)
             {
                 return _symbols.GetOrCreateAssemblySymbol(assembly);
             }
 
             /// <inheritdoc />
-            public IAssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly)
+            public AssemblySymbolBuilder GetSymbol(AssemblyBuilder assembly)
             {
                 return _symbols.GetOrCreateAssemblySymbol(assembly);
             }
 
             /// <inheritdoc />
-            public IModuleSymbol GetSymbol(Module module)
+            public ModuleSymbol GetSymbol(Module module)
             {
                 return _symbols.GetOrCreateModuleSymbol(module);
             }
 
             /// <inheritdoc />
-            public IModuleSymbolBuilder GetSymbol(ModuleBuilder module)
+            public ModuleSymbolBuilder GetSymbol(ModuleBuilder module)
             {
                 return _symbols.GetOrCreateModuleSymbol(module);
             }
 
             /// <inheritdoc />
-            public ITypeSymbol GetSymbol(Type type)
+            public TypeSymbol GetSymbol(Type type)
             {
                 return _symbols.GetOrCreateTypeSymbol(type);
             }
 
             /// <inheritdoc />
-            public IMemberSymbol GetSymbol(MemberInfo member)
+            public MemberSymbol GetSymbol(MemberInfo member)
             {
                 return member switch
                 {
@@ -221,7 +221,7 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public IMethodBaseSymbol GetSymbol(MethodBase method)
+            public MethodSymbol GetSymbol(MethodBase method)
             {
                 return method switch
                 {
@@ -232,25 +232,25 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public IConstructorSymbol GetSymbol(ConstructorInfo ctor)
+            public MethodSymbol GetSymbol(ConstructorInfo ctor)
             {
                 return _symbols.GetOrCreateConstructorSymbol(ctor);
             }
 
             /// <inheritdoc />
-            public IMethodSymbol GetSymbol(MethodInfo method)
+            public MethodSymbol GetSymbol(MethodInfo method)
             {
                 return _symbols.GetOrCreateMethodSymbol(method);
             }
 
             /// <inheritdoc />
-            public IFieldSymbol GetSymbol(FieldInfo field)
+            public FieldSymbol GetSymbol(FieldInfo field)
             {
                 return _symbols.GetOrCreateFieldSymbol(field);
             }
 
             /// <inheritdoc />
-            public IPropertySymbol GetSymbol(PropertyInfo property)
+            public PropertySymbol GetSymbol(PropertyInfo property)
             {
                 return _symbols.GetOrCreatePropertySymbol(property);
             }

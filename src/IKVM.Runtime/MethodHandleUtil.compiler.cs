@@ -1,4 +1,6 @@
-﻿using System.Reflection.Emit;
+﻿using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols;
 
@@ -8,12 +10,12 @@ namespace IKVM.Runtime
     partial class MethodHandleUtil
     {
 
-        internal void EmitCallDelegateInvokeMethod(CodeEmitter ilgen, ITypeSymbol delegateType)
+        internal void EmitCallDelegateInvokeMethod(CodeEmitter ilgen, TypeSymbol delegateType)
         {
             if (delegateType.IsGenericType)
             {
                 // MONOBUG we don't look at the invoke method directly here, because Mono doesn't support GetParameters() on a builder instantiation
-                var typeArgs = delegateType.GetGenericArguments();
+                var typeArgs = delegateType.GenericArguments;
                 if (IsPackedArgsContainer(typeArgs[typeArgs.Length - 1]))
                 {
                     WrapArgs(ilgen, typeArgs[typeArgs.Length - 1]);
@@ -27,41 +29,41 @@ namespace IKVM.Runtime
             ilgen.Emit(OpCodes.Callvirt, GetDelegateInvokeMethod(delegateType));
         }
 
-        private void WrapArgs(CodeEmitter ilgen, ITypeSymbol type)
+        private void WrapArgs(CodeEmitter ilgen, TypeSymbol type)
         {
-            var last = type.GetGenericArguments()[MaxArity - 1];
+            var last = type.GenericArguments[MaxArity - 1];
             if (IsPackedArgsContainer(last))
                 WrapArgs(ilgen, last);
 
             ilgen.Emit(OpCodes.Newobj, GetDelegateOrPackedArgsConstructor(type));
         }
 
-        internal IMethodSymbol GetDelegateInvokeMethod(ITypeSymbol delegateType)
+        internal MethodSymbol GetDelegateInvokeMethod(TypeSymbol delegateType)
         {
             return delegateType.GetMethod("Invoke");
         }
 
-        internal IConstructorSymbol GetDelegateConstructor(ITypeSymbol delegateType)
+        internal MethodSymbol GetDelegateConstructor(TypeSymbol delegateType)
         {
             return GetDelegateOrPackedArgsConstructor(delegateType);
         }
 
-        private IConstructorSymbol GetDelegateOrPackedArgsConstructor(ITypeSymbol type)
+        private MethodSymbol GetDelegateOrPackedArgsConstructor(TypeSymbol type)
         {
-            return type.GetConstructors()[0];
+            return type.GetConstructors().First();
         }
 
         // for delegate types used for "ldc <MethodType>" we don't want ghost arrays to be erased
-        internal ITypeSymbol CreateDelegateTypeForLoadConstant(RuntimeJavaType[] args, RuntimeJavaType ret)
+        internal TypeSymbol CreateDelegateTypeForLoadConstant(RuntimeJavaType[] args, RuntimeJavaType ret)
         {
-            var typeArgs = new ITypeSymbol[args.Length];
+            var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
                 typeArgs[i] = TypeWrapperToTypeForLoadConstant(args[i]);
 
-            return CreateDelegateType(typeArgs, TypeWrapperToTypeForLoadConstant(ret));
+            return CreateDelegateType(typeArgs.DrainToImmutable(), TypeWrapperToTypeForLoadConstant(ret));
         }
 
-        ITypeSymbol TypeWrapperToTypeForLoadConstant(RuntimeJavaType tw)
+        TypeSymbol TypeWrapperToTypeForLoadConstant(RuntimeJavaType tw)
         {
             if (tw.IsGhostArray)
             {

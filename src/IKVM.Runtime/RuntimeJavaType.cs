@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -119,14 +120,14 @@ namespace IKVM.Runtime
             }
             else
             {
-                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
+                var classLiteralType = Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType([type]);
                 ilgen.Emit(OpCodes.Call, classLiteralType.GetProperty("Value").GetMethod);
             }
         }
 
 #endif
 
-        ITypeSymbol GetClassLiteralType()
+        TypeSymbol GetClassLiteralType()
         {
             Debug.Assert(IsPrimitive == false);
 
@@ -145,7 +146,7 @@ namespace IKVM.Runtime
             }
         }
 
-        bool IsForbiddenTypeParameterType(ITypeSymbol type)
+        bool IsForbiddenTypeParameterType(TypeSymbol type)
         {
             // these are the types that may not be used as a type argument when instantiating a generic type
             return type == context.Types.Void
@@ -446,7 +447,7 @@ namespace IKVM.Runtime
         // is this an array type of which the ultimate element type is a ghost?
         internal bool IsGhostArray => !IsUnloadable && IsArray && (ElementTypeWrapper.IsGhost || ElementTypeWrapper.IsGhostArray);
 
-        internal virtual IFieldSymbol GhostRefField => throw new InvalidOperationException();
+        internal virtual FieldSymbol GhostRefField => throw new InvalidOperationException();
 
         internal virtual bool IsRemapped => false;
 
@@ -517,7 +518,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool IsJavaPrimitive(RuntimeContext context, ITypeSymbol type)
+        private static bool IsJavaPrimitive(RuntimeContext context, TypeSymbol type)
         {
             return type == context.PrimitiveJavaTypeFactory.BOOLEAN.TypeAsTBD
                 || type == context.PrimitiveJavaTypeFactory.BYTE.TypeAsTBD
@@ -748,18 +749,18 @@ namespace IKVM.Runtime
 
 #if IMPORTER
 
-        static bool CheckMissingBaseTypes(RuntimeContext context, ITypeSymbol type)
+        static bool CheckMissingBaseTypes(RuntimeContext context, TypeSymbol type)
         {
             while (type != null)
             {
-                if (type.ContainsMissing)
+                if (type.ContainsMissingType)
                 {
                     context.StaticCompiler.IssueMissingTypeMessage(type);
                     return false;
                 }
 
                 var ok = true;
-                foreach (var iface in type.GetInterfaces(false))
+                foreach (var iface in type.GetInterfaces())
                     ok &= CheckMissingBaseTypes(context, iface);
 
                 if (!ok)
@@ -907,12 +908,12 @@ namespace IKVM.Runtime
             return string.CompareOrdinal(name1, skip1, name2, skip2, index1 - skip1) == 0;
         }
 
-        internal abstract ITypeSymbol TypeAsTBD
+        internal abstract TypeSymbol TypeAsTBD
         {
             get;
         }
 
-        internal ITypeSymbol TypeAsSignatureType
+        internal TypeSymbol TypeAsSignatureType
         {
             get
             {
@@ -926,11 +927,11 @@ namespace IKVM.Runtime
             }
         }
 
-        internal ITypeSymbol TypeAsPublicSignatureType => (IsPublic ? this : GetPublicBaseTypeWrapper()).TypeAsSignatureType;
+        internal TypeSymbol TypeAsPublicSignatureType => (IsPublic ? this : GetPublicBaseTypeWrapper()).TypeAsSignatureType;
 
-        internal virtual ITypeSymbol TypeAsBaseType => TypeAsTBD;
+        internal virtual TypeSymbol TypeAsBaseType => TypeAsTBD;
 
-        internal ITypeSymbol TypeAsLocalOrStackType
+        internal TypeSymbol TypeAsLocalOrStackType
         {
             get
             {
@@ -951,7 +952,7 @@ namespace IKVM.Runtime
         }
 
         /** <summary>Use this if the type is used as an array or array element</summary> */
-        internal ITypeSymbol TypeAsArrayType
+        internal TypeSymbol TypeAsArrayType
         {
             get
             {
@@ -965,7 +966,7 @@ namespace IKVM.Runtime
             }
         }
 
-        internal ITypeSymbol TypeAsExceptionType
+        internal TypeSymbol TypeAsExceptionType
         {
             get
             {
@@ -1186,7 +1187,7 @@ namespace IKVM.Runtime
 #if !IMPORTER
 
         [Conditional("DEBUG")]
-        internal static void AssertFinished(ITypeSymbol type)
+        internal static void AssertFinished(TypeSymbol type)
         {
             if (type != null)
             {
@@ -1405,13 +1406,13 @@ namespace IKVM.Runtime
 #endif
 
         // NOTE don't call this method, call MethodWrapper.Link instead
-        internal virtual IMethodBaseSymbol LinkMethod(RuntimeJavaMethod mw)
+        internal virtual MethodSymbol LinkMethod(RuntimeJavaMethod mw)
         {
             return mw.GetMethod();
         }
 
         // NOTE don't call this method, call FieldWrapper.Link instead
-        internal virtual IFieldSymbol LinkField(RuntimeJavaField fw)
+        internal virtual FieldSymbol LinkField(RuntimeJavaField fw)
         {
             return fw.GetField();
         }
@@ -1493,7 +1494,7 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal virtual int GetSourceLineNumber(IMethodBaseSymbol mb, int ilOffset)
+        internal virtual int GetSourceLineNumber(MethodSymbol mb, int ilOffset)
         {
             return -1;
         }
@@ -1503,7 +1504,7 @@ namespace IKVM.Runtime
             var mb = mw.GetMethod();
             if (mb != null)
             {
-                var attr = mb.GetUnderlyingMethodBase().GetCustomAttribute<AnnotationDefaultAttribute>();
+                var attr = mb.GetUnderlyingMethod().GetCustomAttribute<AnnotationDefaultAttribute>();
                 if (attr != null)
                     return JVM.NewAnnotationElementValue(mw.DeclaringType.ClassLoader.GetJavaClassLoader(), mw.ReturnType.ClassObject, attr.Value);
             }
@@ -1515,18 +1516,19 @@ namespace IKVM.Runtime
 
         internal virtual Annotation Annotation => null;
 
-        internal virtual ITypeSymbol EnumType => null;
+        internal virtual TypeSymbol EnumType => null;
 
-        static ITypeSymbol[] GetInterfaces(ITypeSymbol type)
+        static ImmutableArray<TypeSymbol> GetInterfaces(TypeSymbol type)
         {
             var ifaces = type.GetInterfaces();
-            if (ifaces.Any(i => i.IsMissing))
-                ifaces = ifaces.Where(i => i.IsMissing == false).ToArray();
+            foreach (var iface in ifaces)
+                if (iface.IsMissing)
+                    ifaces = ifaces.Remove(iface);
 
             return ifaces;
         }
 
-        protected static RuntimeJavaType[] GetImplementedInterfacesAsTypeWrappers(RuntimeContext context, ITypeSymbol type)
+        protected static RuntimeJavaType[] GetImplementedInterfacesAsTypeWrappers(RuntimeContext context, TypeSymbol type)
         {
             var interfaceTypes = GetInterfaces(type);
             var interfaces = new RuntimeJavaType[interfaceTypes.Length];
@@ -1576,14 +1578,14 @@ namespace IKVM.Runtime
 #if !EXPORTER
 
         // return the constructor used for automagic .NET serialization
-        internal virtual IMethodBaseSymbol GetSerializationConstructor()
+        internal virtual MethodSymbol GetSerializationConstructor()
         {
             return TypeAsBaseType.GetConstructor(
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
                 [context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName)]);
         }
 
-        internal virtual IMethodBaseSymbol GetBaseSerializationConstructor()
+        internal virtual MethodSymbol GetBaseSerializationConstructor()
         {
             return BaseTypeWrapper.GetSerializationConstructor();
         }

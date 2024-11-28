@@ -36,7 +36,7 @@ namespace IKVM.Runtime
         internal sealed class EnumValueJavaField : RuntimeJavaField
         {
 
-            readonly ITypeSymbol underlyingType;
+            readonly TypeSymbol underlyingType;
 
             /// <summary>
             /// Initializes a new instance.
