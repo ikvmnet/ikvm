@@ -569,7 +569,7 @@ namespace IKVM.Tools.Importer
 
             if (options.NoWarn != null)
                 foreach (var diagnostic in options.NoWarn)
-                    compilerOptions.suppressWarnings.Add($"IKVM{diagnostic.Id:D4}");
+                    compilerOptions.suppressWarnings.Add(diagnostic.Id.ToString());
 
             // TODO handle specific diagnostic IDs
             if (options.WarnAsError != null)
@@ -578,7 +578,7 @@ namespace IKVM.Tools.Importer
                     compilerOptions.warnaserror = true;
                 else
                     foreach (var i in options.WarnAsError)
-                        compilerOptions.errorWarnings.Add($"IKVM{i.Id:D4}");
+                        compilerOptions.errorWarnings.Add(i.Id.ToString());
             }
 
             if (options.Runtime != null)
