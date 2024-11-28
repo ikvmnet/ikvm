@@ -9,7 +9,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Diagnostics.SymbolStore;
 using System.Runtime.CompilerServices;
