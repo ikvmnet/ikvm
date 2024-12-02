@@ -63,9 +63,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => false;
-
-        /// <inheritdoc />
         public sealed override MethodSymbol? GetGetMethod(bool nonPublic)
         {
             if (nonPublic)

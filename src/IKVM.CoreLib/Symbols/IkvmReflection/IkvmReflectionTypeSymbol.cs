@@ -11,7 +11,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionTypeSymbol : DefinitionTypeSymbol
     {
 
-        readonly Type _underlyingType;
+        internal readonly Type _underlyingType;
         readonly ConcurrentDictionary<Type, IkvmReflectionGenericMethodParameterTypeSymbol> _genericMethodParamters = new();
 
         ImmutableArray<TypeSymbol> _typeArguments;
@@ -105,6 +105,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         /// <inheritdoc />
         public sealed override bool IsEnum => _underlyingType.IsEnum;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => _underlyingType.__IsMissing;
 
         /// <inheritdoc />
         public sealed override string? GetEnumName(object value)

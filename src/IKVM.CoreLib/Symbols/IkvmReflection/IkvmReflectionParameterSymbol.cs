@@ -52,9 +52,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             if (_optionalCustomModifiers == default)

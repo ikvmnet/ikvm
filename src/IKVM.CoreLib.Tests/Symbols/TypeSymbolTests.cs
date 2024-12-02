@@ -35,7 +35,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             s.IsAutoLayout.Should().BeTrue();
             s.IsByRef.Should().BeFalse();
             s.IsClass.Should().BeTrue();
-            s.IsComplete.Should().BeTrue();
             s.IsConstructedGenericType.Should().BeFalse();
             s.IsEnum.Should().BeFalse();
             s.IsExplicitLayout.Should().BeFalse();
@@ -85,7 +84,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             s.IsAutoLayout.Should().BeFalse();
             s.IsByRef.Should().BeFalse();
             s.IsClass.Should().BeFalse();
-            s.IsComplete.Should().BeTrue();
             s.IsConstructedGenericType.Should().BeFalse();
             s.IsEnum.Should().BeFalse();
             s.IsExplicitLayout.Should().BeFalse();
@@ -152,7 +150,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             p.IsAutoLayout.Should().BeTrue();
             p.IsByRef.Should().BeFalse();
             p.IsClass.Should().BeTrue();
-            p.IsComplete.Should().BeTrue();
             p.IsConstructedGenericType.Should().BeFalse();
             p.IsEnum.Should().BeFalse();
             p.IsExplicitLayout.Should().BeFalse();
@@ -211,7 +208,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             p.IsAutoLayout.Should().BeTrue();
             p.IsByRef.Should().BeFalse();
             p.IsClass.Should().BeTrue();
-            p.IsComplete.Should().BeTrue();
             p.IsConstructedGenericType.Should().BeFalse();
             p.IsEnum.Should().BeFalse();
             p.IsExplicitLayout.Should().BeFalse();
@@ -270,7 +266,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             t.IsAutoLayout.Should().BeTrue();
             t.IsByRef.Should().BeFalse();
             t.IsClass.Should().BeTrue();
-            t.IsComplete.Should().BeTrue();
             t.IsConstructedGenericType.Should().BeTrue();
             t.IsEnum.Should().BeFalse();
             t.IsExplicitLayout.Should().BeFalse();
@@ -315,7 +310,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             f.DeclaringType.Should().BeSameAs(t);
             f.Name.Should().Be("value");
             f.IsAssembly.Should().BeTrue();
-            f.IsComplete.Should().BeTrue();
             f.IsFamily.Should().BeFalse();
             f.IsFamilyAndAssembly.Should().BeFalse();
             f.IsFamilyOrAssembly.Should().BeFalse();
@@ -345,7 +339,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             m.ContainsGenericParameters.Should().BeFalse();
             m.IsAbstract.Should().BeFalse();
             m.IsAssembly.Should().BeFalse();
-            m.IsComplete.Should().BeTrue();
             m.IsConstructor.Should().BeFalse();
             m.IsFamily.Should().BeFalse();
             m.IsFamilyAndAssembly.Should().BeFalse();

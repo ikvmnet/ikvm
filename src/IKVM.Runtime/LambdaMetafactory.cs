@@ -407,7 +407,9 @@ namespace IKVM.Runtime
 
             // captured values
             var capturedTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
+            capturedTypesBuilder.Count = args.Length;
             var capturedFieldsBuilder = ImmutableArray.CreateBuilder<FieldSymbolBuilder>(args.Length);
+            capturedFieldsBuilder.Count = args.Length;
             for (int i = 0; i < args.Length; i++)
             {
                 capturedTypesBuilder[i] = args[i].TypeAsSignatureType;

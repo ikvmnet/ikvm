@@ -726,7 +726,7 @@ namespace IKVM.Runtime
                     {
                         var b = ImmutableArray.CreateBuilder<TypeSymbol>(paramTypes.Length);
                         for (int i = 0; i < paramTypes.Length; i++)
-                            b[i] = paramTypes[i].TypeAsSignatureType;
+                            b.Add(paramTypes[i].TypeAsSignatureType);
 
                         var types = b.DrainToImmutable();
                         var ifmethod = TypeAsBaseType.GetMethod(method.Name, types);

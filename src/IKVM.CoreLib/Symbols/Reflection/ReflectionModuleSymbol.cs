@@ -44,13 +44,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override string Name => _underlyingModule.Name;
 
         /// <inheritdoc />
+        public override string ScopeName => _underlyingModule.ScopeName;
+
+        /// <inheritdoc />
         public override Guid ModuleVersionId => _underlyingModule.ModuleVersionId;
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
         internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()

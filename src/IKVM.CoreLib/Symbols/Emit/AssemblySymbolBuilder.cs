@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -10,14 +13,15 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         AssemblyIdentity _identity;
 
+        ModuleSymbolBuilder? _manifestModule;
         ImmutableArray<ModuleSymbolBuilder>.Builder _modules = ImmutableArray.CreateBuilder<ModuleSymbolBuilder>();
         ImmutableArray<ModuleSymbol> _modulesCache;
         ImmutableArray<byte[]>.Builder _win32Icons = ImmutableArray.CreateBuilder<byte[]>();
         ImmutableArray<byte[]>.Builder _manifestResources = ImmutableArray.CreateBuilder<byte[]>();
         ImmutableArray<byte[]>.Builder _resources = ImmutableArray.CreateBuilder<byte[]>();
 
-        ImmutableArray<TypeSymbol>.Builder _typeForwarder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        MethodSymbol? _entryPoint;
+        ImmutableArray<TypeSymbol>.Builder _typeForwarders = ImmutableArray.CreateBuilder<TypeSymbol>();
+        MethodSymbolBuilder? _entryPoint;
         PEFileKinds _fileKind;
         ImmutableArray<(string Name, string FileName)>.Builder _resourceFiles = ImmutableArray.CreateBuilder<(string, string)>();
         (string? product, string? productVersion, string? company, string? copyright, string? trademark)? _versionResource;
@@ -25,8 +29,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
 
         bool _frozen;
-        internal object? _state1;
-        internal object? _state2;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,7 +51,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         public override string Location => throw new NotSupportedException();
 
         /// <inheritdoc />
-        public override ModuleSymbol ManifestModule => throw new NotSupportedException();
+        public override ModuleSymbol ManifestModule => _manifestModule ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override MethodSymbol? EntryPoint => _entryPoint;
@@ -59,13 +62,23 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public override ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
         {
-            throw new NotImplementedException();
+            var manifestModule = (ModuleSymbolBuilder)ManifestModule;
+            foreach (var i in manifestModule.GetManifestResources())
+                if (i.Name == resourceName)
+                    return new ManifestResourceInfo(System.Reflection.ResourceLocation.Embedded, null, null);
+
+            return null;
         }
 
         /// <inheritdoc />
-        public override Stream? GetManifestResourceStream(string name)
+        public override Stream GetManifestResourceStream(string name)
         {
-            throw new NotImplementedException();
+            var manifestModule = (ModuleSymbolBuilder)ManifestModule;
+            foreach (var i in manifestModule.GetManifestResources())
+                if (i.Name == name)
+                    return new MemoryStream(i.Data.ToArray());
+
+            throw new FileNotFoundException();
         }
 
         /// <inheritdoc />
@@ -90,13 +103,20 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <summary>
-        /// Defines a named module in this assembly.
+        /// Freezes the type builder.
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public ModuleSymbolBuilder DefineModule(string name)
+        internal void Freeze()
         {
-            return DefineModule(name, null);
+            _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("AssemblySymbolBuilder is frozen.");
         }
 
         /// <summary>
@@ -105,11 +125,13 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public ModuleSymbolBuilder DefineModule(string name, string? fileName)
+        public ModuleSymbolBuilder DefineModule(string name, string fileName)
         {
+            ThrowIfFrozen();
             var b = new ModuleSymbolBuilder(Context, this, name, fileName);
             _modules.Add(b);
             _modulesCache = default;
+            _manifestModule ??= b;
             return b;
         }
 
@@ -119,6 +141,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="bytes"></param>
         public void DefineIconResource(byte[] bytes)
         {
+            ThrowIfFrozen();
             _win32Icons.Add(bytes);
         }
 
@@ -128,6 +151,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="bytes"></param>
         public void DefineManifestResource(byte[] bytes)
         {
+            ThrowIfFrozen();
             _manifestResources.Add(bytes);
         }
 
@@ -136,6 +160,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         public void DefineVersionInfoResource()
         {
+            ThrowIfFrozen();
             _versionResource = (null, null, null, null, null);
         }
 
@@ -144,6 +169,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         public void DefineVersionInfoResource(string product, string productVersion, string company, string copyright, string trademark)
         {
+            ThrowIfFrozen();
             _versionResource = (product, productVersion, company, copyright, trademark);
         }
 
@@ -151,7 +177,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// Sets the entry point for this assembly, assuming that a console application is being built.
         /// </summary>
         /// <param name="entryMethod"></param>
-        public void SetEntryPoint(MethodSymbol entryMethod)
+        public void SetEntryPoint(MethodSymbolBuilder entryMethod)
         {
             SetEntryPoint(entryMethod, PEFileKinds.Dll);
         }
@@ -161,8 +187,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="entryMethod"></param>
         /// <param name="fileKind"></param>
-        public void SetEntryPoint(MethodSymbol entryMethod, PEFileKinds fileKind)
+        public void SetEntryPoint(MethodSymbolBuilder entryMethod, PEFileKinds fileKind)
         {
+            ThrowIfFrozen();
             _entryPoint = entryMethod;
             _fileKind = fileKind;
         }
@@ -173,7 +200,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="type"></param>
         public void AddTypeForwarder(TypeSymbol type)
         {
-            _typeForwarder.Add(type);
+            ThrowIfFrozen();
+            _typeForwarders.Add(type);
         }
 
         /// <summary>
@@ -183,12 +211,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="fileName"></param>
         public void AddResourceFile(string name, string fileName)
         {
+            ThrowIfFrozen();
             _resourceFiles.Add((name, fileName));
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(CustomAttribute attribute)
         {
+            ThrowIfFrozen();
             _customAttributes.Add(attribute);
         }
 
@@ -199,6 +229,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <exception cref="NotImplementedException"></exception>
         public void SetAssemblyVersion(Version version)
         {
+            ThrowIfFrozen();
+
             _identity = new AssemblyIdentity(
                 _identity.Name,
                 version,
@@ -216,6 +248,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <exception cref="NotImplementedException"></exception>
         public void SetAssemblyCulture(string cultureName)
         {
+            ThrowIfFrozen();
+
             _identity = new AssemblyIdentity(
                 _identity.Name,
                 _identity.Version,
@@ -224,6 +258,20 @@ namespace IKVM.CoreLib.Symbols.Emit
                 _identity.HasPublicKey,
                 _identity.ContentType,
                 _identity.ProcessorArchitecture);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<AssemblySymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

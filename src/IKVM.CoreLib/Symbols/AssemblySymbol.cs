@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+using IKVM.CoreLib.Collections;
 using IKVM.CoreLib.Text;
 
 namespace IKVM.CoreLib.Symbols
@@ -114,7 +115,7 @@ namespace IKVM.CoreLib.Symbols
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return GetModules().Where(i => i.Name == name).Single();
+            return GetModules().Where(i => i.Name == name).SingleOrDefaultOrThrow(() => new AmbiguousMatchException());
         }
 
         /// <summary>

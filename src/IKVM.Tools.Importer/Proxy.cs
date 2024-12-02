@@ -235,7 +235,7 @@ namespace IKVM.Tools.Importer
             for (int i = 0; i < interfaceTypes.Count; i++)
             {
                 ispublic &= interfaces[i].IsPublic;
-                interfaceTypes[i] = interfaces[i].TypeAsBaseType;
+                interfaceTypes.Add(interfaces[i].TypeAsBaseType);
             }
 
             var attr = TypeAttributes.Class | TypeAttributes.Sealed;

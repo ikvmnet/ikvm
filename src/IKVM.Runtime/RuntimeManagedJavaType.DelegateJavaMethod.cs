@@ -95,14 +95,8 @@ namespace IKVM.Runtime
             MethodSymbol CreateErrorStub(EmitIntrinsicContext context, RuntimeJavaType targetType, bool isAbstract)
             {
                 var invoke = delegateConstructor.DeclaringType.GetMethod("Invoke");
-
-                var parameters = invoke.Parameters;
-                var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + 1);
-                parameterTypes[0] = DeclaringType.Context.Types.Object;
-                for (int i = 0; i < parameters.Length; i++)
-                    parameterTypes[i + 1] = parameters[i].ParameterType;
-
-                var mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes.DrainToImmutable());
+                var parameterTypes = invoke.ParameterTypes.Insert(0, DeclaringType.Context.Types.Object);
+                var mb = context.Context.DefineDelegateInvokeErrorStub(invoke.ReturnType, parameterTypes);
                 var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                 ilgen.EmitThrow(isAbstract ? "java.lang.AbstractMethodError" : "java.lang.IllegalAccessError", targetType.Name + ".Invoke" + iface.GetMethods()[0].Signature);
                 ilgen.DoEmit();

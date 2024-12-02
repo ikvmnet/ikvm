@@ -153,8 +153,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
             if (type.ContainsGenericParameters && !type.IsGenericTypeDefinition)
                 return false;
 
-            if (type is TypeSymbolBuilder tb && !tb.IsComplete)
-                return false;
+            // TODO figure out why this matters
+            //if (type is TypeSymbolBuilder tb && !tb.IsComplete)
+            //    return false;
 
             return true;
         }

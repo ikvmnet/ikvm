@@ -74,7 +74,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)_underlyingMethod.MethodImplementationFlags;
 
         /// <inheritdoc />
-        public sealed override TypeSymbol ReturnType => _returnType ??= Context.ResolveTypeSymbol(((MethodInfo)_underlyingMethod).ReturnType);
+        public sealed override TypeSymbol ReturnType => _returnType ??= _underlyingMethod is MethodInfo m ? Context.ResolveTypeSymbol(m.ReturnType) : Context.ResolveCoreType("System.Void");
 
         /// <inheritdoc />
         public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
@@ -83,10 +83,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override bool IsMissing => _underlyingMethod.__IsMissing;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
-        public override MethodSymbol? BaseDefinition => _underlyingMethod.IsConstructor ? this : (_baseDefinition ??= Context.ResolveMethodSymbol(((MethodInfo)_underlyingMethod).GetBaseDefinition()) ?? this);
+        public override MethodSymbol? BaseDefinition => _underlyingMethod is MethodInfo m ? (_baseDefinition ??= Context.ResolveMethodSymbol(m.GetBaseDefinition())) : this;
 
         /// <inheritdoc />
         public override MethodSymbol? GenericMethodDefinition => _underlyingMethod.IsGenericMethod ? (_genericMethodDefinition ??= Context.ResolveMethodSymbol(((MethodInfo)_underlyingMethod).GetGenericMethodDefinition())) : null;

@@ -390,6 +390,7 @@ namespace IKVM.Runtime
                 len++;
 
             var temp = ImmutableArray.CreateBuilder<TypeSymbol>(len);
+            temp.Count = len;
             for (int i = 0; i < wrappers.Length; i++)
                 temp[i] = wrappers[i].TypeAsSignatureType;
 
@@ -451,6 +452,7 @@ namespace IKVM.Runtime
                     type = DeclaringType.ClassLoader.GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
 
                 var types = ImmutableArray.CreateBuilder<TypeSymbol>(paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1));
+                types.Count = paramTypes.Length + (ReturnType == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID ? 0 : 1);
                 for (int i = 0; i < paramTypes.Length; i++)
                     types[i] = paramTypes[i].TypeAsSignatureType;
 

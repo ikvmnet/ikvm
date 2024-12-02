@@ -68,11 +68,9 @@ namespace IKVM.Runtime
 
                     var invoke = delegateType.GetMethod("Invoke");
                     var parameters = invoke.Parameters;
-                    var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length);
-                    for (int i = 0; i < parameterTypes.Count; i++)
-                        parameterTypes[i] = parameters[i].ParameterType;
+                    var parameterTypes = invoke.ParameterTypes;
 
-                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes.DrainToImmutable());
+                    var mb = tb.DefineMethod(Name, MethodAttributes.Public, invoke.ReturnType, parameterTypes);
                     DeclaringType.Context.AttributeHelper.HideFromReflection(mb);
                     var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(mb);
                     if (mw == null || mw.IsStatic || !mw.IsPublic)

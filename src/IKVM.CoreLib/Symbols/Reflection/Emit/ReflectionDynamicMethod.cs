@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.Reflection.Emit.Writers;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
@@ -108,9 +108,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => false;
-
-        /// <inheritdoc />
         public sealed override MethodSymbol? BaseDefinition => null;
 
         /// <inheritdoc />
@@ -180,10 +177,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             var parameterTypes_ = new Type[_parameters.Length];
             for (int i = 0; i < _parameters.Length; i++)
-                parameterTypes_[i] = Context.ResolveCompleteType(_parameters[i].ParameterType);
+                parameterTypes_[i] = Context.ResolveType(_parameters[i].ParameterType, ReflectionSymbolState.Completed);
 
             if (_owner != null)
-                return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveCompleteType(_owner), _skipVisibility);
+                return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveType(_owner, ReflectionSymbolState.Completed), _skipVisibility);
             else if (_module != null)
                 return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveModule(_module), _skipVisibility);
             else

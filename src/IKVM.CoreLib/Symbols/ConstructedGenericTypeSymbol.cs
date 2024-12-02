@@ -73,7 +73,7 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsGenericMethodParameter => false;
 
         /// <inheritdoc />
-        public sealed override bool ContainsGenericParameters => GetGenericArguments().Any(i => i.ContainsGenericParameters);
+        public sealed override bool ContainsGenericParameters => GenericArguments.Any(i => i.ContainsGenericParameters);
 
         /// <inheritdoc />
         public sealed override int GenericParameterPosition => throw new NotSupportedException();
@@ -118,7 +118,7 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
+        public sealed override bool ContainsMissingType => _typeDefinition.ContainsMissingType || GenericArguments.Any(i => i.ContainsMissingType);
 
         /// <inheritdoc />
         public sealed override TypeSymbol GetEnumUnderlyingType()

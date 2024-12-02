@@ -103,14 +103,15 @@ namespace IKVM.CoreLib.Symbols
         public abstract bool ContainsMissing { get; }
 
         /// <summary>
-        /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
+        /// Gets the optional custom modifiers of the parameter.
         /// </summary>
-        public abstract bool IsComplete { get; }
-
-        /// <inheritdoc />
+        /// <returns></returns>
         public abstract ImmutableArray<TypeSymbol> GetOptionalCustomModifiers();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Gets the required custom modifiers of the parameter.
+        /// </summary>
+        /// <returns></returns>
         public abstract ImmutableArray<TypeSymbol> GetRequiredCustomModifiers();
 
         /// <inheritdoc />

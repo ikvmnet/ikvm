@@ -276,7 +276,7 @@ namespace IKVM.Tools.Importer
                 var propargs = ClassLoader.ArgJavaTypeListFromSig(prop.Sig, LoadMode.Link);
                 var indexerBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(propargs.Length);
                 for (int i = 0; i < propargs.Length; i++)
-                    indexerBuilder[i] = propargs[i].TypeAsSignatureType;
+                    indexerBuilder.Add(propargs[i].TypeAsSignatureType);
 
                 var indexer = indexerBuilder.DrainToImmutable();
 
@@ -461,7 +461,8 @@ namespace IKVM.Tools.Importer
             var parameterTypeWrappers = ClassLoader.ArgJavaTypeListFromSig(sig, LoadMode.Link);
             var parameterTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(parameterTypeWrappers.Length);
             for (int i = 0; i < parameterTypeWrappers.Length; i++)
-                parameterTypesBuilder[i] = parameterTypeWrappers[i].TypeAsSignatureType;
+                parameterTypesBuilder.Add(parameterTypeWrappers[i].TypeAsSignatureType);
+
             parameterTypes = parameterTypesBuilder.DrainToImmutable();
         }
 

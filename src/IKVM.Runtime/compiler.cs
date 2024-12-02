@@ -3686,6 +3686,7 @@ namespace IKVM.Runtime
                 var fb = compiler.finish.DefineMethodHandleInvokeCacheField(delegateType);
 
                 var types = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
+                types.Count = args.Length;
                 for (int i = 0; i < types.Count; i++)
                     types[i] = args[i].TypeAsSignatureType;
 

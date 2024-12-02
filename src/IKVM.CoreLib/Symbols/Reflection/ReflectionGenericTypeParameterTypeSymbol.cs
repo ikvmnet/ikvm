@@ -14,8 +14,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         ImmutableArray<TypeSymbol> _interfaces;
         ImmutableArray<CustomAttribute> _customAttributes;
+#if NET8_0_OR_GREATER
         ImmutableArray<TypeSymbol> _optionalCustomModifiers;
         ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+#endif
 
         /// <summary>
         /// Initializes a new instance.
@@ -50,9 +52,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override TypeSymbol? BaseType => Context.ResolveTypeSymbol(_underlyingType.BaseType);
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
         internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             if (_interfaces.IsDefault)
@@ -73,7 +72,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-#if NET8_0
+#if NET8_0_OR_GREATER
             if (_optionalCustomModifiers.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.GetOptionalCustomModifiers()));
 
@@ -86,7 +85,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-#if NET8_0
+#if NET8_0_OR_GREATER
             if (_requiredCustomModifiers.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.GetRequiredCustomModifiers()));
 

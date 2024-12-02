@@ -9,7 +9,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionModuleSymbol : ModuleSymbol
     {
 
-        readonly Module _underlyingModule;
+        internal readonly Module _underlyingModule;
 
         ImmutableArray<FieldSymbol> _fields;
         ImmutableArray<MethodSymbol> _methods;
@@ -40,13 +40,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override string Name => _underlyingModule.Name;
 
         /// <inheritdoc />
+        public sealed override string ScopeName => _underlyingModule.ScopeName;
+
+        /// <inheritdoc />
         public override Guid ModuleVersionId => _underlyingModule.ModuleVersionId;
 
         /// <inheritdoc />
         public sealed override bool IsMissing => _underlyingModule.__IsMissing;
-
-        /// <inheritdoc />
-        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
         internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()

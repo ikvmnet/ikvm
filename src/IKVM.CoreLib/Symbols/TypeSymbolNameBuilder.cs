@@ -34,9 +34,10 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         internal static string? ToString(TypeSymbol type, Format format)
         {
-            if (format == Format.FullName || format == Format.AssemblyQualifiedName)
-                if (!type.IsGenericTypeDefinition && type.ContainsGenericParameters)
-                    return null;
+            if (type.IsMissing == false)
+                if (format == Format.FullName || format == Format.AssemblyQualifiedName)
+                    if (!type.IsGenericTypeDefinition && type.ContainsGenericParameters)
+                        return null;
 
             var tnb = new TypeSymbolNameBuilder(stackalloc char[128]);
             tnb.AddAssemblyQualifiedName(type, format);
@@ -321,7 +322,7 @@ namespace IKVM.CoreLib.Symbols
             while (rootType.HasElementType)
                 rootType = rootType.GetElementType()!;
 
-            // Append namespace + nesting + name
+            // append namespace + nesting + name
             var nestings = new List<TypeSymbol>();
             for (TypeSymbol? t = rootType; t != null; t = t.IsGenericParameter ? null : t.DeclaringType)
                 nestings.Add(t);
@@ -337,8 +338,8 @@ namespace IKVM.CoreLib.Symbols
                 AddName(name);
             }
 
-            // Append generic arguments
-            if (rootType.IsGenericType && (!rootType.IsGenericTypeDefinition || format == Format.ToString))
+            // append generic arguments
+            if (rootType.IsMissing == false && rootType.IsGenericType && (!rootType.IsGenericTypeDefinition || format == Format.ToString))
             {
                 var genericArguments = rootType.GenericArguments;
 

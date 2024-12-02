@@ -28,6 +28,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Threading;
@@ -171,7 +172,7 @@ namespace IKVM.Tools.Importer
 
             // define a dynamic assembly and module
             assemblyBuilder = Context.Resolver.Symbols.DefineAssembly(name, []);
-            var moduleBuilder = assemblyBuilder.DefineModule(assemblyName, assemblyFile, EmitSymbols);
+            var moduleBuilder = assemblyBuilder.DefineModule(assemblyName, assemblyFile);
 
             // if configured to emit stack trace info set source file
             if (EmitStackTraceInfo)
@@ -630,7 +631,7 @@ namespace IKVM.Tools.Importer
 
                 try
                 {
-                    ((IkvmReflectionSymbolContext)Context.Resolver.Symbols).SaveModuleSymbol(GetTypeWrapperFactory().ModuleBuilder, assemblyFile, state.pekind, state.imageFileMachine);
+                    ((IkvmReflectionSymbolContext)Context.Resolver.Symbols).SaveModule(GetTypeWrapperFactory().ModuleBuilder, state.pekind, state.imageFileMachine);
                 }
                 catch (IOException x)
                 {
@@ -647,7 +648,7 @@ namespace IKVM.Tools.Importer
 
                 try
                 {
-                    ((IkvmReflectionSymbolContext)Context.Resolver.Symbols).SaveAssemblySymbol(assemblyBuilder, assemblyFile, state.pekind, state.imageFileMachine);
+                    ((IkvmReflectionSymbolContext)Context.Resolver.Symbols).SaveAssembly(assemblyBuilder, assemblyFile, state.pekind, state.imageFileMachine);
                 }
                 catch (IOException x)
                 {
@@ -755,8 +756,9 @@ namespace IKVM.Tools.Importer
                         bw.Write(JVM.PersistableHash(name));
                 }
             }
-            ms.Position = 0;
-            GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, System.Reflection.ResourceAttributes.Public);
+
+            var ma = ImmutableCollectionsMarshal.AsImmutableArray<byte>(ms.ToArray());
+            GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ma, System.Reflection.ResourceAttributes.Public);
         }
 
         void WriteResources()
@@ -812,13 +814,12 @@ namespace IKVM.Tools.Importer
                 // don't include empty classes.jar
                 if (i != state.classesJar || hasEntries)
                 {
-                    mem = new MemoryStream(mem.ToArray());
                     var name = state.jars[i].Name;
                     if (state.targetIsModule)
                         name = Path.GetFileNameWithoutExtension(name) + "-" + moduleBuilder.ModuleVersionId.ToString("N") + Path.GetExtension(name);
 
                     jarList.Add(name);
-                    moduleBuilder.DefineManifestResource(name, mem, System.Reflection.ResourceAttributes.Public);
+                    moduleBuilder.DefineManifestResource(name, ImmutableCollectionsMarshal.AsImmutableArray(mem.ToArray()), System.Reflection.ResourceAttributes.Public);
                 }
             }
         }
@@ -1131,7 +1132,7 @@ namespace IKVM.Tools.Importer
                     var paramTypes = this.GetParametersForDefineMethod();
 
                     var cbCore = GetMethod() as MethodSymbolBuilder;
-                    if (cbCore.IsConstructor)
+                    if (cbCore != null)
                     {
                         var ilgen = DeclaringType.Context.CodeEmitterFactory.Create(cbCore);
 
@@ -1919,13 +1920,7 @@ namespace IKVM.Tools.Importer
                         var key = MakeMethodKey(mi);
                         if (methods.ContainsKey(key) == false)
                         {
-                            var paramInfo = mi.Parameters;
-                            var paramTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(paramInfo.Length);
-                            for (int i = 0; i < paramInfo.Length; i++)
-                                paramTypesBuilder[i] = paramInfo[i].ParameterType;
-
-                            var paramTypes = paramTypesBuilder.DrainToImmutable();
-
+                            var paramTypes = mi.ParameterTypes;
                             var mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (System.Reflection.MethodAttributes.MemberAccessMask | System.Reflection.MethodAttributes.SpecialName | System.Reflection.MethodAttributes.Static), mi.ReturnType, paramTypes);
                             Context.AttributeHelper.HideFromJava(mb);
                             Context.AttributeHelper.SetEditorBrowsableNever(mb);
@@ -1955,7 +1950,7 @@ namespace IKVM.Tools.Importer
                         var paramInfo = pi.GetIndexParameters();
                         var paramTypes = ImmutableArray.CreateBuilder<TypeSymbol>(paramInfo.Length);
                         for (int i = 0; i < paramInfo.Length; i++)
-                            paramTypes[i] = paramInfo[i].ParameterType;
+                            paramTypes.Add(paramInfo[i].ParameterType);
 
                         var pb = typeBuilder.DefineProperty(pi.Name, System.Reflection.PropertyAttributes.None, pi.PropertyType, paramTypes.DrainToImmutable());
 

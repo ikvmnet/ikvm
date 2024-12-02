@@ -1,4 +1,8 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using System.Collections.Immutable;
+
+using IKVM.CoreLib.Symbols.Emit;
+
+namespace IKVM.CoreLib.Symbols
 {
 
     public abstract class SymbolContext
@@ -23,6 +27,15 @@
         /// <param name="typeName"></param>
         /// <returns></returns>
         public abstract TypeSymbol ResolveCoreType(string typeName);
+
+        /// <summary>
+        /// Defines a new assembly that has the specified identity and attributes.
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public abstract AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes);
+
 
     }
 

@@ -604,7 +604,7 @@ namespace IKVM.Runtime
                 if (dims > 0)
                     tw = tw.MakeArrayType(dims);
 
-                typeArguments[i] = tw.TypeAsSignatureType;
+                typeArguments.Add(tw.TypeAsSignatureType);
             }
 
             try

@@ -46,9 +46,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override bool IsMissing => _underlyingField.__IsMissing;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => false;
-
-        /// <inheritdoc />
         public sealed override object? GetRawConstantValue()
         {
             return _underlyingField.GetRawConstantValue();

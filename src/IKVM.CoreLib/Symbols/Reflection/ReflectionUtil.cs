@@ -43,7 +43,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             var a = ImmutableArray.CreateBuilder<AssemblyIdentity>(assemblyNames.Length);
             for (int i = 0; i < assemblyNames.Length; i++)
-                a[i] = assemblyNames[i].Pack();
+                a.Add(assemblyNames[i].Pack());
 
             return a.ToImmutable();
         }

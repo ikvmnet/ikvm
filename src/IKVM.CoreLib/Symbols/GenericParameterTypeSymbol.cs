@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -79,6 +80,9 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
+        public sealed override bool ContainsMissingType => GenericParameterConstraints.Any(i => i.ContainsMissingType);
+
+        /// <inheritdoc />
         public sealed override TypeSymbol? GetElementType()
         {
             return null;
@@ -154,9 +158,9 @@ namespace IKVM.CoreLib.Symbols
                 if (BaseType != null)
                 {
                     var b = ImmutableArray.CreateBuilder<TypeSymbol>(interfaces.Length + 1);
-                    b[0] = BaseType;
+                    b.Add(BaseType);
                     for (int i = 0; i < interfaces.Length; i++)
-                        b[i + 1] = interfaces[i];
+                        b.Add(interfaces[i]);
 
                     ImmutableInterlocked.InterlockedInitialize(ref _constraints, b.DrainToImmutable());
                 }

@@ -78,7 +78,7 @@ namespace IKVM.Tools.Exporter
 
             // build universe and resolver against universe and references
             var universe = new Universe(coreLibName);
-            var symbols = new IkvmReflectionSymbolContext(universe);
+            var symbols = new IkvmReflectionSymbolContext(universe, new IkvmReflectionSymbolOptions(false));
             var assemblyResolver = new AssemblyResolver();
             assemblyResolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
             assemblyResolver.Init(universe, options.NoStdLib, references, libpaths);

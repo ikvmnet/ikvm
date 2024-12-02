@@ -377,6 +377,7 @@ namespace IKVM.Runtime
 
                 var tb = moduleBuilder.DefineType(returnVoid ? "__<>NVIV`" + parameterCount : "__<>NVI`" + (parameterCount + 1), System.Reflection.TypeAttributes.NotPublic | System.Reflection.TypeAttributes.Sealed, context.Types.MulticastDelegate);
                 var names = ImmutableArray.CreateBuilder<string>(parameterCount + (returnVoid ? 0 : 1));
+                names.Count = parameterCount + (returnVoid ? 0 : 1);
                 for (int i = 0; i < names.Count; i++)
                     names[i] = "P" + i;
 
@@ -390,7 +391,7 @@ namespace IKVM.Runtime
                 {
                     var b = ImmutableArray.CreateBuilder<TypeSymbol>(genericParameters.Length - 1);
                     for (int i = 0; i < parameterTypes.Length; i++)
-                        b[i] = genericParameters[i];
+                        b.Add(genericParameters[i]);
 
                     parameterTypes = b.DrainToImmutable();
                 }
@@ -457,7 +458,7 @@ namespace IKVM.Runtime
         internal static ModuleSymbolBuilder CreateJniProxyModuleBuilder(RuntimeContext context)
         {
             jniProxyAssemblyBuilder = DefineDynamicAssembly(context, new AssemblyIdentity("jniproxy"), []);
-            return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll");
+            return jniProxyAssemblyBuilder.DefineModule("jniproxy.dll", "jniproxy.dll");
         }
 
         internal sealed override ModuleSymbolBuilder ModuleBuilder => moduleBuilder;

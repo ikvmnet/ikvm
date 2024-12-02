@@ -39,6 +39,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
                 throw new InvalidOperationException("Cannot resolve System.Object from corelib.");
         }
 
+        /// <summary>
+        /// Gets the options used to configure the context.
+        /// </summary>
+        public ReflectionSymbolOptions Options => _options;
+
         /// <inheritdoc />
         public override TypeSymbol ResolveCoreType(string typeName)
         {
@@ -46,7 +51,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes)
+        public override AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes)
         {
             if (identity is null)
                 throw new ArgumentNullException(nameof(identity));
@@ -77,12 +82,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public AssemblySymbol ResolveAssemblySymbol(Assembly assembly)
         {
             if (assembly is null)
-                throw new ArgumentNullException(nameof(assembly));
+                return null;
             if (assembly is AssemblyBuilder)
-                throw new NotSupportedException();
+                throw new ArgumentException(nameof(assembly));
 
             // find or create weak-reference to name
-            var r = _symbolByName.GetOrAdd(assembly.GetName().FullName, _ => new(null));
+            var r = _symbolByName.GetOrAdd(assembly.FullName ?? throw new InvalidOperationException(), _ => new(null));
 
             // look the reference to set it up
             lock (r)
@@ -433,7 +438,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="attribute"></param>
         /// <returns></returns>
-        CustomAttributeBuilder CreateCustomAttributeBuilder(CustomAttribute attribute)
+        internal CustomAttributeBuilder CreateCustomAttributeBuilder(CustomAttribute attribute)
         {
             return new CustomAttributeBuilder(
                 (ConstructorInfo)ResolveMethod(attribute.Constructor),
@@ -449,7 +454,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        CustomAttributeBuilder[] CreateCustomAttributeBuilders(ImmutableArray<CustomAttribute> attributes)
+        internal CustomAttributeBuilder[] CreateCustomAttributeBuilders(ImmutableArray<CustomAttribute> attributes)
         {
             if (attributes.IsDefaultOrEmpty)
                 return [];
@@ -462,15 +467,47 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Obtains the <see cref="Assembly"/> object for the given <see cref="AssemblySymbol"/>.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(symbol))]
+        public Assembly? ResolveAssembly(AssemblySymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
+        {
+            if (symbol is null)
+                return null;
+            else if (symbol is AssemblySymbolBuilder builder)
+                return ResolveAssembly(builder, state);
+            else if (symbol is ReflectionAssemblySymbol assembly)
+                return assembly._underlyingAssembly;
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Obtains the completed <see cref="Assembly"/> object for the given <see cref="AssemblySymbol"/>. Ensures the phase of the builder is up to the specified phase.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        internal Assembly ResolveAssembly(AssemblySymbolBuilder builder, ReflectionSymbolState state)
+        {
+            var writer = builder.Writer(b => new ReflectionAssemblySymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Assembly ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
         /// Obtains the <see cref="Module"/> object for the given <see cref="ModuleSymbol"/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Module ResolveModule(ModuleSymbol symbol)
+        [return: NotNullIfNotNull(nameof(symbol))]
+        public Module ResolveModule(ModuleSymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is ModuleSymbolBuilder builder)
-                return GetOrCreateModuleBuilder(builder);
+                return ResolveModule(symbol, state);
             else if (symbol is ReflectionModuleSymbol module)
                 return module._underlyingModule;
             else
@@ -478,17 +515,30 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
+        /// Resolves the specified <see cref="ModuleSymbolBuilder"/> to at least the specified state.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        internal Module ResolveModule(ModuleSymbolBuilder builder, ReflectionSymbolState state)
+        {
+            var writer = builder.Writer(b => new ReflectionModuleSymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Module ?? throw new InvalidOperationException();
+        }
+
+        /// <summary>
         /// Obtains the <see cref="Type"/> object for the given <see cref="TypeSymbol"/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(symbol))]
-        public Type? ResolveType(TypeSymbol? symbol)
+        public Type? ResolveType(TypeSymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is null)
                 return null;
             else if (symbol is TypeSymbolBuilder builder)
-                return GetOrCreateTypeBuilder(builder);
+                return ResolveType(builder, state);
             else if (symbol is ReflectionTypeSymbol type)
                 return type._underlyingType;
             else if (symbol.IsTypeDefinition && symbol.IsNested)
@@ -517,10 +567,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// Obtains the <see cref="Type"/> object for the given <see cref="TypeSymbol"/>.
         /// </summary>
         /// <param name="types"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        public Type[] ResolveTypes(ImmutableArray<TypeSymbol> types)
+        public Type[] ResolveTypes(ImmutableArray<TypeSymbol> types, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
-            if (types.IsDefaultOrEmpty || types.Length == 0)
+            if (types.IsDefaultOrEmpty)
                 return [];
 
             var t = new Type[types.Length];
@@ -531,48 +582,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Obtains the completed <see cref="Type"/> object for the given <see cref="TypeSymbol"/>.
+        /// Obtains the completed <see cref="TypeBuilder"/> object for the given <see cref="TypeSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="builder"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Type ResolveCompleteType(TypeSymbol symbol)
+        internal Type ResolveType(TypeSymbolBuilder builder, ReflectionSymbolState state)
         {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Obtains the <see cref="Type"/> object for the given <see cref="TypeSymbol"/>.
-        /// </summary>
-        /// <param name="types"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Type[]? ResolveCompleteTypes(ImmutableArray<TypeSymbol> types)
-        {
-            if (types.IsDefault)
-                return null;
-            if (types.IsEmpty)
-                return [];
-
-            var t = new Type[types.Length];
-            for (int i = 0; i < types.Length; i++)
-                t[i] = ResolveCompleteType(types[i]);
-
-            return t;
+            var writer = builder.Writer(b => new ReflectionTypeSymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Type ?? throw new InvalidOperationException();
         }
 
         /// <summary>
         /// Obtains the <see cref="FieldInfo"/> object for the given <see cref="FieldSymbol"/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(symbol))]
-        public FieldInfo? ResolveField(FieldSymbol? symbol)
+        public FieldInfo? ResolveField(FieldSymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is null)
                 return null;
             else if (symbol is FieldSymbolBuilder builder)
-                return GetOrCreateFieldBuilder(builder);
+                return ResolveField(builder, state);
             else if (symbol is ReflectionFieldSymbol field)
                 return field.UnderlyingField;
             else
@@ -580,28 +614,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Obtains the complted <see cref="FieldInfo"/> object for the given <see cref="FieldSymbol"/>.
+        /// Obtains the completed <see cref="FieldBuilder"/> object for the given <see cref="FieldSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="builder"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public FieldInfo ResolveCompleteField(FieldSymbol symbol)
+        internal FieldInfo ResolveField(FieldSymbolBuilder builder, ReflectionSymbolState state)
         {
-            throw new NotImplementedException();
+            var writer = builder.Writer(b => new ReflectionFieldSymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Field ?? throw new InvalidOperationException();
         }
 
         /// <summary>
         /// Obtains the <see cref="MethodBase"/> object for the given <see cref="MethodSymbol "/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(symbol))]
-        public MethodBase? ResolveMethod(MethodSymbol? symbol)
+        public MethodBase? ResolveMethod(MethodSymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is null)
                 return null;
             else if (symbol is MethodSymbolBuilder builder)
-                return GetOrCreateMethodBuilder(builder);
+                return ResolveMethod(builder, state);
             else if (symbol is ReflectionMethodSymbol method)
                 return method.UnderlyingMethod;
             else if (symbol.DeclaringType is { } dt)
@@ -611,28 +648,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Obtains the completed <see cref="MethodBase"/> object for the given <see cref="MethodSymbol "/>.
+        /// Obtains the completed <see cref="MethodBuilder"/> object for the given <see cref="MethodSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="builder"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public MethodBase ResolveCompleteMethod(MethodSymbol symbol)
+        internal MethodInfo ResolveMethod(MethodSymbolBuilder builder, ReflectionSymbolState state)
         {
-            throw new NotImplementedException();
+            var writer = builder.Writer(b => new ReflectionMethodSymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Method ?? throw new InvalidOperationException();
         }
 
         /// <summary>
         /// Obtains the <see cref="PropertyInfo"/> object for the given <see cref="PropertySymbol "/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(symbol))]
-        public PropertyInfo? ResolveProperty(PropertySymbol? symbol)
+        public PropertyInfo? ResolveProperty(PropertySymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is null)
                 return null;
             else if (symbol is PropertySymbolBuilder builder)
-                return GetOrCreatePropertyBuilder(builder);
+                return ResolveProperty(symbol, state);
             else if (symbol is ReflectionPropertySymbol property)
                 return property.UnderlyingProperty;
             else
@@ -640,28 +680,31 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Obtains the completed <see cref="PropertyInfo"/> object for the given <see cref="PropertySymbol "/>.
+        /// Obtains the completed <see cref="PropertyBuilder"/> object for the given <see cref="PropertySymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="builder"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public PropertyInfo ResolveCompleteProperty(PropertySymbol symbol)
+        internal PropertyInfo ResolveProperty(PropertySymbolBuilder builder, ReflectionSymbolState state)
         {
-            throw new NotImplementedException();
+            var writer = builder.Writer(b => new ReflectionPropertySymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Property ?? throw new InvalidOperationException();
         }
 
         /// <summary>
         /// Obtains the <see cref="EventInfo"/> object for the given <see cref="EventSymbol "/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
         [return: NotNullIfNotNull(nameof(symbol))]
-        public EventInfo? ResolveEvent(EventSymbol? symbol)
+        public EventInfo? ResolveEvent(EventSymbol? symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             if (symbol is null)
                 return null;
             else if (symbol is EventSymbolBuilder builder)
-                throw new InvalidOperationException();
+                return ResolveEvent(builder, state);
             else if (symbol is ReflectionEventSymbol evt)
                 return evt.UnderlyingEvent;
             else
@@ -669,266 +712,28 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <summary>
-        /// Obtains the completed <see cref="EventInfo"/> object for the given <see cref="EventSymbol "/>.
+        /// Obtains the completed <see cref="EventBuilder"/> object for the given <see cref="EventSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
         /// </summary>
-        /// <param name="symbol"></param>
+        /// <param name="builder"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public EventInfo ResolveCompleteEvent(EventSymbol symbol)
+        internal EventInfo ResolveEvent(EventSymbolBuilder builder, ReflectionSymbolState state)
         {
-            throw new NotImplementedException();
+            var writer = builder.Writer(b => new ReflectionEventSymbolBuilderWriter(this, b));
+            writer.AdvanceTo(state);
+            return writer.Event ?? throw new InvalidOperationException();
         }
 
         /// <summary>
         /// Obtains the <see cref="EventInfo"/> object for the given <see cref="ParameterSymbol "/>.
         /// </summary>
         /// <param name="symbol"></param>
+        /// <param name="state"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public ParameterInfo ResolveParameter(ParameterSymbol symbol)
+        [return: NotNullIfNotNull(nameof(symbol))]
+        public ParameterInfo ResolveParameter(ParameterSymbol symbol, ReflectionSymbolState state = ReflectionSymbolState.Declared)
         {
             throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Obtains the completed <see cref="EventInfo"/> object for the given <see cref="ParameterSymbol "/>.
-        /// </summary>
-        /// <param name="symbol"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public ParameterInfo ResolveCompleteParameter(ParameterSymbol symbol)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="AssemblyBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        AssemblyBuilder GetOrCreateAssemblyBuilder(AssemblySymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionAssemblySymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        var a = AssemblyBuilder.DefineDynamicAssembly(builder.Identity.ToAssemblyName(), AssemblyBuilderAccess.Run, CreateCustomAttributeBuilders(builder.GetDeclaredCustomAttributes()));
-                        state.Builder = a;
-                    }
-                }
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="ModuleBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        ModuleBuilder GetOrCreateModuleBuilder(ModuleSymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionModuleSymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                var a = GetOrCreateAssemblyBuilder((AssemblySymbolBuilder)builder.Assembly);
-
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-#if NETFRAMEWORK
-                        var m = a.DefineDynamicModule(builder.Name, _options.EmitDebugInfo);
-#else
-                        var m = a.DefineDynamicModule(builder.Name);
-#endif
-                        state.Builder = m;
-                    }
-                }
-
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="TypeBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        TypeBuilder GetOrCreateTypeBuilder(TypeSymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionTypeSymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        if (builder.DeclaringType == null)
-                        {
-                            var m = GetOrCreateModuleBuilder((ModuleSymbolBuilder)builder.Module);
-                            var b = m.DefineType(builder.Name, builder.Attributes, ResolveType(builder.BaseType), builder.PackingSize, builder.TypeSize);
-                            state.Builder = b;
-                        }
-                        else
-                        {
-                            var m = GetOrCreateTypeBuilder((TypeSymbolBuilder)builder.DeclaringType);
-                            var b = m.DefineNestedType(builder.Name, builder.Attributes, ResolveType(builder.BaseType), builder.PackingSize, builder.TypeSize);
-                            state.Builder = b;
-                        }
-                    }
-                }
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="FieldBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        FieldBuilder GetOrCreateFieldBuilder(FieldSymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionFieldSymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        var m = GetOrCreateTypeBuilder((TypeSymbolBuilder)(builder.DeclaringType ?? throw new InvalidOperationException()));
-                        var b = m.DefineField(builder.Name, ResolveType(builder.FieldType), ResolveTypes(builder.GetRequiredCustomModifiers()), ResolveTypes(builder.GetOptionalCustomModifiers()), builder.Attributes);
-                        state.Builder = b;
-                    }
-                }
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="MethodBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        MethodBuilder GetOrCreateMethodBuilder(MethodSymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionMethodSymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        var returnType = ResolveType(builder.ReturnType);
-                        var returnRequiredCustomModifiers = ResolveTypes(builder.ReturnParameter.GetRequiredCustomModifiers());
-                        var returnOptionalCustomModifiers = ResolveTypes(builder.ReturnParameter.GetOptionalCustomModifiers());
-
-                        var parameterTypes = Array.Empty<Type>();
-                        var parameterRequiredCustomModifiers = Array.Empty<Type[]>();
-                        var parameterOptionalCustomModifiers = Array.Empty<Type[]>();
-                        if (builder.Parameters.Length > 0)
-                        {
-                            parameterTypes = ResolveTypes(builder.ParameterTypes);
-                            parameterRequiredCustomModifiers = new Type[builder.Parameters.Length][];
-                            parameterOptionalCustomModifiers = new Type[builder.Parameters.Length][];
-                            for (int i = 0; i < builder.Parameters.Length; i++)
-                            {
-                                parameterRequiredCustomModifiers[i] = ResolveTypes(builder.Parameters[i].GetRequiredCustomModifiers());
-                                parameterOptionalCustomModifiers[i] = ResolveTypes(builder.Parameters[i].GetOptionalCustomModifiers());
-                            }
-                        }
-
-                        if (builder.DeclaringType == null)
-                        {
-                            var m = GetOrCreateModuleBuilder((ModuleSymbolBuilder)builder.Module);
-                            var b = m.DefineGlobalMethod(builder.Name, builder.Attributes, builder.CallingConvention, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
-                            state.Builder = b;
-                        }
-                        else
-                        {
-                            var m = GetOrCreateTypeBuilder((TypeSymbolBuilder)builder.DeclaringType);
-                            var b = m.DefineMethod(builder.Name, builder.Attributes, builder.CallingConvention, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
-                            state.Builder = b;
-                        }
-                    }
-                }
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="PropertyBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        PropertyBuilder GetOrCreatePropertyBuilder(PropertySymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionPropertySymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        var returnType = ResolveType(builder.PropertyType);
-                        var returnRequiredCustomModifiers = ResolveTypes(builder.PropertyType.GetRequiredCustomModifiers());
-                        var returnOptionalCustomModifiers = ResolveTypes(builder.PropertyType.GetOptionalCustomModifiers());
-
-                        var parameterTypes = Array.Empty<Type>();
-                        var parameterRequiredCustomModifiers = Array.Empty<Type[]>();
-                        var parameterOptionalCustomModifiers = Array.Empty<Type[]>();
-                        if (builder.GetIndexParameters().Length > 0)
-                        {
-                            parameterTypes = ResolveTypes(builder.GetIndexParameters().Select(i => i.ParameterType).ToImmutableArray());
-                            parameterRequiredCustomModifiers = new Type[builder.GetIndexParameters().Length][];
-                            parameterOptionalCustomModifiers = new Type[builder.GetIndexParameters().Length][];
-                            for (int i = 0; i < builder.GetIndexParameters().Length; i++)
-                            {
-                                parameterRequiredCustomModifiers[i] = ResolveTypes(builder.GetIndexParameters()[i].GetRequiredCustomModifiers());
-                                parameterOptionalCustomModifiers[i] = ResolveTypes(builder.GetIndexParameters()[i].GetOptionalCustomModifiers());
-                            }
-                        }
-
-                        var m = GetOrCreateTypeBuilder((TypeSymbolBuilder)(builder.DeclaringType ?? throw new InvalidOperationException()));
-                        var b = m.DefineProperty(builder.Name, builder.Attributes, builder.CallingConventions, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
-                        state.Builder = b;
-                    }
-                }
-            }
-
-            return state.Builder;
-        }
-
-        /// <summary>
-        /// Gets or creates the associated <see cref="EventBuilder"/>.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        EventBuilder GetOrCreateEventBuilder(EventSymbolBuilder builder)
-        {
-            var state = builder.State<ReflectionEventSymbolBuilderState>();
-            if (state.Builder is null)
-            {
-                lock (state)
-                {
-                    if (state.Builder is null)
-                    {
-                        var m = GetOrCreateTypeBuilder((TypeSymbolBuilder)(builder.DeclaringType ?? throw new InvalidOperationException()));
-                        var b = m.DefineEvent(builder.Name, builder.Attributes, ResolveType(builder.EventHandlerType ?? throw new InvalidOperationException()));
-                        state.Builder = b;
-                    }
-                }
-            }
-
-            return state.Builder;
         }
 
     }

@@ -1184,22 +1184,6 @@ namespace IKVM.Runtime
             }
         }
 
-#if !IMPORTER
-
-        [Conditional("DEBUG")]
-        internal static void AssertFinished(TypeSymbol type)
-        {
-            if (type != null)
-            {
-                while (type.HasElementType)
-                    type = type.GetElementType();
-
-                Debug.Assert(type.IsComplete);
-            }
-        }
-
-#endif
-
 #if !IMPORTER && !EXPORTER
 
         internal void RunClassInit()

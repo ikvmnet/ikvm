@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.PortableExecutable;
 using System.Resources;
+using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols.Emit
     {
 
         readonly string _name;
-        readonly string? _fileName;
+        readonly string _fileName;
 
         ulong _imageBase;
         uint _fileAlignment;
@@ -28,9 +28,11 @@ namespace IKVM.CoreLib.Symbols.Emit
         ImmutableArray<MethodSymbol> _methodsCache;
         ImmutableArray<TypeSymbol> _typesCache;
 
+        readonly ImmutableArray<ManifestResourceData>.Builder _manifestResources = ImmutableArray.CreateBuilder<ManifestResourceData>();
         readonly ImmutableArray<SourceDocument>.Builder _sourceDocuments = ImmutableArray.CreateBuilder<SourceDocument>();
 
         bool _frozen;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,7 +41,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="assembly"></param>
         /// <param name="name"></param>
         /// <param name="fileName"></param>
-        internal ModuleSymbolBuilder(SymbolContext context, AssemblySymbolBuilder assembly, string name, string? fileName) :
+        internal ModuleSymbolBuilder(SymbolContext context, AssemblySymbolBuilder assembly, string name, string fileName) :
             base(context, assembly)
         {
             _name = name ?? throw new ArgumentNullException(nameof(name));
@@ -50,12 +52,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override string FullyQualifiedName => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public sealed override string Name => _name;
+        public sealed override string Name => _fileName;
 
-        /// <summary>
-        /// Name of the file to produce for the module.
-        /// </summary>
-        public string? FileName => _fileName;
+        /// <inheritdoc />
+        public sealed override string ScopeName => _name;
 
         /// <inheritdoc />
         public sealed override Guid ModuleVersionId => Guid.Empty;
@@ -63,8 +63,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
 
-        /// <inheritdoc />
-        public sealed override bool IsComplete => false;
+        /// <summary>
+        /// Gets the emitted source documents.
+        /// </summary>
+        public ImmutableArray<SourceDocument> SourceDocuments => _sourceDocuments.ToImmutable();
 
         /// <inheritdoc />
         public override bool IsResource()
@@ -106,21 +108,29 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <summary>
-        /// Throws an exception if this module is frozen.
+        /// Gets the manifest resources declared on the module.
         /// </summary>
-        /// <exception cref="InvalidOperationException"></exception>
-        void ThrowIfFrozen()
+        /// <returns></returns>
+        internal ImmutableArray<ManifestResourceData> GetManifestResources()
         {
-            if (_frozen)
-                throw new InvalidOperationException();
+            return _manifestResources.ToImmutable();
         }
 
         /// <summary>
-        /// Freezes the module.
+        /// Freezes the type builder.
         /// </summary>
-        internal void SetFrozen()
+        internal void Freeze()
         {
             _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("ModuleSymbolBuilder is frozen.");
         }
 
         /// <summary>
@@ -158,7 +168,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="languageVendor"></param>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        public SourceDocument DefineSymbolDocument(string url, Guid language, Guid languageVendor, Guid documentType)
+        public SourceDocument DefineSourceDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
             ThrowIfFrozen();
 
@@ -171,13 +181,13 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// Defines a binary large object (BLOB) that represents a manifest resource to be embedded in the dynamic assembly.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="stream"></param>
+        /// <param name="data"></param>
         /// <param name="attribute"></param>
-        public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
+        public void DefineManifestResource(string name, ImmutableArray<byte> data, ResourceAttributes attribute)
         {
             ThrowIfFrozen();
 
-            throw new NotImplementedException();
+            _manifestResources.Add(new ManifestResourceData(name, data, attribute));
         }
 
         /// <summary>
@@ -289,7 +299,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent)
         {
-            return DefineType(name, attributes, parent, PackingSize.Unspecified, -1);
+            return DefineType(name, attributes, parent, PackingSize.Unspecified, 0);
         }
 
         /// <summary>
@@ -313,7 +323,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public TypeSymbolBuilder DefineType(string name, TypeAttributes attributes, TypeSymbol? parent, PackingSize packingSize)
         {
-            return DefineType(name, attributes, parent, packingSize, -1);
+            return DefineType(name, attributes, parent, packingSize, 0);
         }
 
         /// <summary>
@@ -347,7 +357,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         {
             ThrowIfFrozen();
 
-            var b = new TypeSymbolBuilder(Context, this, name, attributes, parent, interfaces, PackingSize.Unspecified, -1, null);
+            var b = new TypeSymbolBuilder(Context, this, name, attributes, parent, interfaces, PackingSize.Unspecified, 0, null);
             _types.Add(b);
             _typesCache = default;
             return b;
@@ -368,6 +378,20 @@ namespace IKVM.CoreLib.Symbols.Emit
         {
             ThrowIfFrozen();
             _customAttributes.Add(attribute);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<ModuleSymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

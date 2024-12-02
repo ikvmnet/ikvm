@@ -21,7 +21,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public sealed override TypeSymbol? DeclaringType => _declaringType;
+        public sealed override TypeSymbol DeclaringType => _declaringType;
 
         /// <summary>
         /// Gets the attributes for this property.

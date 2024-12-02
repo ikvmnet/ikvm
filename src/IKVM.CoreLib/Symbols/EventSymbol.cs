@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <inheritdoc />
-        public override TypeSymbol? DeclaringType => _declaringType;
+        public override TypeSymbol DeclaringType => _declaringType;
 
         /// <summary>
         /// Gets the attributes for this event.

@@ -36,6 +36,9 @@ namespace IKVM.Tools.Importer
             yield return "System.Collections.IEnumerable";
             yield return "System.Collections.Generic.IEnumerable`1";
             yield return "System.Environment";
+            yield return "System.Diagnostics.StackFrame";
+            yield return "System.Threading.Thread";
+            yield return "System.Runtime.InteropServices.DllImportAttribute";
         }
 
         readonly IDiagnosticHandler _diagnostics;

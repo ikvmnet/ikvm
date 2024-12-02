@@ -79,7 +79,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
             throw new NotSupportedException();
 #else
-            return ((ReflectionSymbolContext)symbol.Context).ResolveCompleteType(symbol);
+            return ((ReflectionSymbolContext)symbol.Context).ResolveType(symbol, ReflectionSymbolState.Completed);
 #endif
         }
 
@@ -150,7 +150,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
             throw new NotSupportedException();
 #else
-            return ((ReflectionSymbolContext)symbol.Context).ResolveCompleteField(symbol);
+            return ((ReflectionSymbolContext)symbol.Context).ResolveField(symbol, ReflectionSymbolState.Completed);
 #endif
         }
 

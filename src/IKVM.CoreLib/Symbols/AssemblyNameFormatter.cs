@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
-using System.Security.Cryptography;
 
 using IKVM.CoreLib.Text;
 

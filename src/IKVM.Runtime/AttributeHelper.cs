@@ -279,35 +279,41 @@ namespace IKVM.Runtime
                 if (ci == null)
                     throw new InvalidOperationException($"Constructor missing: {attr.Type}::<init>{attr.Sig}");
 
-                var namedProperties = ImmutableArray.CreateBuilder<PropertySymbol>();
-                var propertyValues = ImmutableArray.CreateBuilder<object?>();
+                var namedProperties = ImmutableArray<PropertySymbol>.Empty;
+                var propertyValues = ImmutableArray<object?>.Empty;
 
                 if (attr.Properties != null)
                 {
-                    namedProperties = ImmutableArray.CreateBuilder<PropertySymbol>(attr.Properties.Length);
-                    propertyValues = ImmutableArray.CreateBuilder<object>(attr.Properties.Length);
-                    for (int i = 0; i < namedProperties.Count; i++)
+                    var namedPropertiesBuilder = ImmutableArray.CreateBuilder<PropertySymbol>(attr.Properties.Length);
+                    var propertyValuesBuilder = ImmutableArray.CreateBuilder<object>(attr.Properties.Length);
+                    for (int i = 0; i < attr.Properties.Length; i++)
                     {
-                        namedProperties[i] = t.GetProperty(attr.Properties[i].Name);
-                        propertyValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Properties[i].Sig, LoadMode.Link), attr.Properties[i].Value);
+                        namedPropertiesBuilder.Add(t.GetProperty(attr.Properties[i].Name));
+                        propertyValuesBuilder.Add(ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Properties[i].Sig, LoadMode.Link), attr.Properties[i].Value));
                     }
+
+                    namedProperties = namedPropertiesBuilder.DrainToImmutable();
+                    propertyValues = propertyValuesBuilder.DrainToImmutable();
                 }
 
-                var namedFields = ImmutableArray.CreateBuilder<FieldSymbol>();
-                var fieldValues = ImmutableArray.CreateBuilder<object?>();
+                var namedFields = ImmutableArray<FieldSymbol>.Empty;
+                var fieldValues = ImmutableArray<object?>.Empty;
 
                 if (attr.Fields != null)
                 {
-                    namedFields = ImmutableArray.CreateBuilder<FieldSymbol>(attr.Fields.Length);
-                    fieldValues = ImmutableArray.CreateBuilder<object?>(attr.Fields.Length);
-                    for (int i = 0; i < namedFields.Count; i++)
+                    var namedFieldsBuilder = ImmutableArray.CreateBuilder<FieldSymbol>(attr.Fields.Length);
+                    var fieldValuesBuilder = ImmutableArray.CreateBuilder<object?>(attr.Fields.Length);
+                    for (int i = 0; i < attr.Fields.Length; i++)
                     {
-                        namedFields[i] = t.GetField(attr.Fields[i].Name);
-                        fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);
+                        namedFieldsBuilder.Add(t.GetField(attr.Fields[i].Name));
+                        fieldValuesBuilder.Add(ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value));
                     }
+
+                    namedFields = namedFieldsBuilder.DrainToImmutable();
+                    fieldValues = fieldValuesBuilder.DrainToImmutable();
                 }
 
-                return CustomAttribute.Create(ci, args, namedProperties.DrainToImmutable(), propertyValues.DrainToImmutable(), namedFields.DrainToImmutable(), fieldValues.DrainToImmutable());
+                return CustomAttribute.Create(ci, args, namedProperties, propertyValues, namedFields, fieldValues);
             }
             else
             {
@@ -316,20 +322,23 @@ namespace IKVM.Runtime
 
                 var t = loader.LoadClassByName(attr.Class);
 
-                var namedFields = ImmutableArray.CreateBuilder<FieldSymbol>();
-                var fieldValues = ImmutableArray.CreateBuilder<object?>();
+                var namedFields = ImmutableArray<FieldSymbol>.Empty;
+                var fieldValues = ImmutableArray<object?>.Empty;
 
                 if (attr.Fields != null)
                 {
-                    namedFields = ImmutableArray.CreateBuilder<FieldSymbol>(attr.Fields.Length);
-                    fieldValues = ImmutableArray.CreateBuilder<object?>(attr.Fields.Length);
-                    for (int i = 0; i < namedFields.Count; i++)
+                    var namedFieldsBuilder = ImmutableArray.CreateBuilder<FieldSymbol>(attr.Fields.Length);
+                    var fieldValuesBuilder = ImmutableArray.CreateBuilder<object?>(attr.Fields.Length);
+                    for (int i = 0; i < attr.Fields.Length; i++)
                     {
                         var fw = t.GetFieldWrapper(attr.Fields[i].Name, attr.Fields[i].Sig);
                         fw.Link();
-                        namedFields[i] = fw.GetField();
-                        fieldValues[i] = ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value);
+                        namedFieldsBuilder.Add(fw.GetField());
+                        fieldValuesBuilder.Add(ParseValue(loader, loader.FieldTypeWrapperFromSig(attr.Fields[i].Sig, LoadMode.Link), attr.Fields[i].Value));
                     }
+
+                    namedFields = namedFieldsBuilder.DrainToImmutable();
+                    fieldValues = fieldValuesBuilder.DrainToImmutable();
                 }
 
                 var mw = t.GetMethodWrapper("<init>", attr.Sig, false);
@@ -338,7 +347,7 @@ namespace IKVM.Runtime
 
                 mw.Link();
 
-                return CustomAttribute.Create(mw.GetMethod(), args, namedFields.DrainToImmutable(), fieldValues.DrainToImmutable());
+                return CustomAttribute.Create(mw.GetMethod(), args, namedFields, fieldValues);
             }
         }
 
@@ -898,7 +907,7 @@ namespace IKVM.Runtime
 
                 foreach (var arg in l[i].NamedArguments)
                 {
-                    switch (arg.MemberName)
+                    switch (arg.MemberInfo.Name)
                     {
                         case nameof(JavaModuleAttribute.Jars):
                             attr.Jars = DecodeArray<string>(arg.TypedValue);

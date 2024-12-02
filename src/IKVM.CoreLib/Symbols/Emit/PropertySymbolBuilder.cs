@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -25,6 +26,9 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
         object? _constantValue;
+
+        bool _frozen;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -74,9 +78,6 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         /// <inheritdoc />
         public override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public override bool IsComplete => false;
 
         /// <inheritdoc />
         public override MethodSymbol? GetGetMethod(bool nonPublic)
@@ -153,11 +154,29 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <summary>
+        /// Freezes the type builder.
+        /// </summary>
+        internal void Freeze()
+        {
+            _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
+        }
+
+        /// <summary>
         /// Sets the default value of this property.
         /// </summary>
         /// <param name="defaultValue"></param>
         public void SetConstant(object? defaultValue)
         {
+            ThrowIfFrozen();
             _constantValue = defaultValue;
         }
 
@@ -167,6 +186,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="method"></param>
         public void SetGetMethod(MethodSymbolBuilder method)
         {
+            ThrowIfFrozen();
             _getMethod = method;
         }
 
@@ -176,6 +196,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="method"></param>
         public void SetSetMethod(MethodSymbolBuilder method)
         {
+            ThrowIfFrozen();
             _setMethod = method;
         }
 
@@ -185,13 +206,29 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="method"></param>
         public void AddOtherMethod(MethodSymbolBuilder method)
         {
+            ThrowIfFrozen();
             _accessorMethods.Add(method);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(CustomAttribute attribute)
         {
+            ThrowIfFrozen();
             _customAttributes.Add(attribute);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<PropertySymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

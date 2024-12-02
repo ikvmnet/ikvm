@@ -11,7 +11,6 @@ namespace IKVM.CoreLib.Symbols
         readonly TypeSymbol _elementType;
 
         string? _name;
-        string? _fullName;
 
         /// <summary>
         /// Initializes a new instance.
@@ -99,7 +98,7 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => _elementType.IsComplete;
+        public sealed override bool ContainsMissingType => GetElementType()!.ContainsMissingType;
 
         /// <inheritdoc />
         public sealed override TypeSymbol? GetElementType()

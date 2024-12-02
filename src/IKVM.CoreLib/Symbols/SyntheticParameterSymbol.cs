@@ -48,9 +48,6 @@ namespace IKVM.CoreLib.Symbols
         public override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public override bool IsComplete => true;
-
-        /// <inheritdoc />
         public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             return ImmutableArray<TypeSymbol>.Empty;

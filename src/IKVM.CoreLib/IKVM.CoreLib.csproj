@@ -12,21 +12,22 @@
     </ItemGroup>
     <ItemGroup>
       <Compile Include="Symbols\IkvmReflection\Emit\OpCodeValueExtensions.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionAssemblySymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionEventSymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionFieldSymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionMethodSymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionModuleSymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionPropertySymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionTypeSymbolBuilderPhase.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionTypeSymbolBuilderState.cs" />
-      <Compile Include="Symbols\IkvmReflection\Emit\Writers\IkvmReflectionILGenerationWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionAssemblySymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionEventSymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionFieldSymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionMethodSymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionModuleSymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionPropertySymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionTypeSymbolBuilderWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\Emit\IkvmReflectionILGenerationWriter.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionMissingAssemblySymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionAssemblySymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionEventSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionFieldSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionGenericMethodParameterTypeSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionGenericTypeParameterTypeSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionMethodSymbol.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionMissingModuleSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionModuleSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionParameterSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionPropertySymbol.cs" />
@@ -34,6 +35,7 @@
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionTypeSymbol.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionUtil.cs" />
       <Compile Include="Symbols\IkvmReflection\IkvmReflectionSymbolOptions.cs" />
+      <Compile Include="Symbols\IkvmReflection\IkvmReflectionSymbolState.cs" />
     </ItemGroup>
 
     <ItemGroup>

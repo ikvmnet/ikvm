@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionAssemblySymbol : AssemblySymbol
     {
 
-        readonly Assembly _underlyingAssembly;
+        internal readonly Assembly _underlyingAssembly;
 
         ImmutableArray<AssemblyIdentity> _references;
         ImmutableArray<ModuleSymbol> _modules;

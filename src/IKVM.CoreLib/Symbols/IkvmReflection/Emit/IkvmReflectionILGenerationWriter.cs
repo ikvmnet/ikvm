@@ -10,13 +10,13 @@ using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 
-namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
+namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 {
 
     /// <summary>
     /// Wraps a <see cref="ILGenerator"/>.
     /// </summary>
-    struct IkvmReflectionILGenerationWriter : IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter
+    struct IkvmReflectionILGenerationWriter : IILGeneratorWriter
     {
 
         readonly IkvmReflectionSymbolContext _context;
@@ -111,11 +111,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
         }
 
         /// <inheritdoc />
-        public IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef BeginExceptionBlock()
+        public IILGeneratorWriter.LabelRef BeginExceptionBlock()
         {
             var id = _labelsCount++;
             _labels[id] = _il.BeginExceptionBlock();
-            return new IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef(id);
+            return new IILGeneratorWriter.LabelRef(id);
         }
 
         /// <inheritdoc />
@@ -137,31 +137,31 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
         }
 
         /// <inheritdoc />
-        public IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LocalBuilderRef DeclareLocal(TypeSymbol localType, bool pinned)
+        public IILGeneratorWriter.LocalBuilderRef DeclareLocal(TypeSymbol localType, bool pinned)
         {
             var id = _localsCount++;
             _locals[id] = _il.DeclareLocal(ResolveType(localType), pinned);
-            return new IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LocalBuilderRef(id);
+            return new IILGeneratorWriter.LocalBuilderRef(id);
         }
 
         /// <inheritdoc />
-        public IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LocalBuilderRef DeclareLocal(TypeSymbol localType)
+        public IILGeneratorWriter.LocalBuilderRef DeclareLocal(TypeSymbol localType)
         {
             var id = _localsCount++;
             _locals[id] = _il.DeclareLocal(ResolveType(localType));
-            return new IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LocalBuilderRef(id);
+            return new IILGeneratorWriter.LocalBuilderRef(id);
         }
 
         /// <inheritdoc />
-        public IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef DefineLabel()
+        public IILGeneratorWriter.LabelRef DefineLabel()
         {
             var id = _labelsCount++;
             _labels[id] = _il.DefineLabel();
-            return new IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef(id);
+            return new IILGeneratorWriter.LabelRef(id);
         }
 
         /// <inheritdoc />
-        public void Emit(OpCodeValue opcode, IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LocalBuilderRef arg)
+        public void Emit(OpCodeValue opcode, IILGeneratorWriter.LocalBuilderRef arg)
         {
             _il.Emit(opcode.ToOpCode(), _locals[arg.Index] ?? throw new InvalidOperationException());
         }
@@ -245,7 +245,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
         }
 
         /// <inheritdoc />
-        public void Emit(OpCodeValue opcode, ImmutableArray<IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef> labels)
+        public void Emit(OpCodeValue opcode, ImmutableArray<IILGeneratorWriter.LabelRef> labels)
         {
             var labels_ = new IKVM.Reflection.Emit.Label[labels.Length];
             for (int i = 0; i < labels.Length; i++)
@@ -255,7 +255,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
         }
 
         /// <inheritdoc />
-        public void Emit(OpCodeValue opcode, IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef label)
+        public void Emit(OpCodeValue opcode, IILGeneratorWriter.LabelRef label)
         {
             _il.Emit(opcode.ToOpCode(), _labels[label.Index]);
         }
@@ -291,7 +291,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit.Writers
         }
 
         /// <inheritdoc />
-        public void MarkLabel(IKVM.CoreLib.Symbols.Emit.IILGeneratorWriter.LabelRef label)
+        public void MarkLabel(IILGeneratorWriter.LabelRef label)
         {
             _il.MarkLabel(_labels[label.Index]);
         }

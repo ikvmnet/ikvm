@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -18,6 +19,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         readonly ImmutableArray<TypeSymbol> _optionalCustomModifiers;
         readonly ImmutableArray<TypeSymbol> _requiredCustomModifiers;
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
+
+        bool _frozen;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,9 +57,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override bool ContainsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => false;
-
-        /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             return _optionalCustomModifiers;
@@ -73,10 +74,42 @@ namespace IKVM.CoreLib.Symbols.Emit
             return _customAttributes.ToImmutable();
         }
 
+        /// <summary>
+        /// Freezes the type builder.
+        /// </summary>
+        internal void Freeze()
+        {
+            _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
+        }
+
         /// <inheritdoc />
         public void SetCustomAttribute(CustomAttribute attribute)
         {
+            ThrowIfFrozen();
             _customAttributes.Add(attribute);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<ParameterSymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

@@ -14,7 +14,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
         TypeSymbol? _baseTypeConstraint;
         ImmutableArray<TypeSymbol> _interfaceConstraints = ImmutableArray<TypeSymbol>.Empty;
-        ImmutableArray<TypeSymbol> _constraints;
+
+        bool _frozen;
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,9 +47,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         public override TypeSymbol? BaseType => _baseTypeConstraint;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => throw new NotImplementedException();
-
-        /// <inheritdoc />
         internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             return _interfaceConstraints;
@@ -73,11 +71,29 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <summary>
+        /// Freezes the type builder.
+        /// </summary>
+        internal void Freeze()
+        {
+            _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("GenericMethodParameterTypeSymbolBuilder is frozen.");
+        }
+
+        /// <summary>
         /// Sets the variance characteristics and special constraints of the generic parameter, such as the parameterless constructor constraint.
         /// </summary>
         /// <param name="genericParameterAttributes"></param>
         public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
         {
+            ThrowIfFrozen();
             _attributes = genericParameterAttributes;
         }
 
@@ -87,6 +103,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="baseTypeConstraint"></param>
         public void SetBaseTypeConstraint(TypeSymbol? baseTypeConstraint)
         {
+            ThrowIfFrozen();
             _baseTypeConstraint = baseTypeConstraint;
             ClearGenericParameterConstraints();
         }
@@ -97,6 +114,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="interfaceConstraints"></param>
         public void SetInterfaceConstraints(ImmutableArray<TypeSymbol> interfaceConstraints)
         {
+            ThrowIfFrozen();
             _interfaceConstraints = interfaceConstraints;
             ClearGenericParameterConstraints();
         }
@@ -104,6 +122,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public void SetCustomAttribute(CustomAttribute attribute)
         {
+            ThrowIfFrozen();
             _customAttributes.Add(attribute);
         }
 

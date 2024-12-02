@@ -82,7 +82,7 @@ namespace IKVM.Runtime
         {
             var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
-                typeArgs[i] = args[i].TypeAsSignatureType;
+                typeArgs.Add(args[i].TypeAsSignatureType);
 
             return CreateDelegateType(typeArgs.DrainToImmutable(), ret.TypeAsSignatureType);
         }
@@ -91,7 +91,7 @@ namespace IKVM.Runtime
         {
             var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
-                typeArgs[i] = AsBasicType(args[i]);
+                typeArgs.Add(AsBasicType(args[i]));
 
             return CreateDelegateType(typeArgs.DrainToImmutable(), AsBasicType(ret));
         }

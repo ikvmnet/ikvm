@@ -12,10 +12,8 @@ namespace IKVM.CoreLib.Symbols
     public abstract class ModuleSymbol : Symbol, ICustomAttributeProviderInternal
     {
 
-        readonly SymbolContext _context;
         readonly AssemblySymbol _assembly;
 
-        ImmutableList<TypeSymbol>? _types;
         CustomAttributeImpl _customAttributes;
 
         /// <summary>
@@ -26,7 +24,6 @@ namespace IKVM.CoreLib.Symbols
         protected ModuleSymbol(SymbolContext context, AssemblySymbol assembly) :
             base(context)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
             _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             _customAttributes = new CustomAttributeImpl(context, this);
         }
@@ -47,6 +44,11 @@ namespace IKVM.CoreLib.Symbols
         public abstract string Name { get; }
 
         /// <summary>
+        /// Gets a string representing the name of the module.
+        /// </summary>
+        public abstract string ScopeName { get; }
+
+        /// <summary>
         /// Gets a universally unique identifier (UUID) that can be used to distinguish between two versions of a module.
         /// </summary>
         public abstract Guid ModuleVersionId { get; }
@@ -55,11 +57,6 @@ namespace IKVM.CoreLib.Symbols
         /// Returns <c>true</c> if the symbol is missing.
         /// </summary>
         public abstract bool IsMissing { get; }
-
-        /// <summary>
-        /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
-        /// </summary>
-        public abstract bool IsComplete { get; }
 
         /// <summary>
         /// Gets a value indicating whether the object is a resource.
@@ -236,6 +233,12 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public bool IsDefined(TypeSymbol attributeType, bool inherit = false) => _customAttributes.IsDefined(attributeType, inherit);
+
+        /// <inheritdoc />
+        public override string? ToString()
+        {
+            return ScopeName;
+        }
 
     }
 

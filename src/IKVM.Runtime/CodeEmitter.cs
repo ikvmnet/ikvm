@@ -439,9 +439,9 @@ namespace IKVM.Runtime
             {
                 var real = ImmutableArray.CreateBuilder<IKVM.CoreLib.Symbols.Emit.Label>(labels.Length);
                 for (int i = 0; i < labels.Length; i++)
-                    real[i] = labels[i].Label;
+                    real.Add(labels[i].Label);
 
-                ilgen_real.Emit(opcode, real.ToImmutable());
+                ilgen_real.Emit(opcode, real.DrainToImmutable());
             }
             else if (arg is ManagedCalliWrapper margs)
             {
@@ -2102,7 +2102,7 @@ namespace IKVM.Runtime
             if (symbols != null)
                 throw new InvalidOperationException();
 
-            symbols = module.DefineSymbolDocument(url, language, languageVendor, documentType);
+            symbols = module.DefineSourceDocument(url, language, languageVendor, documentType);
         }
 
         internal CodeEmitterLocal UnsafeAllocTempLocal(TypeSymbol type)

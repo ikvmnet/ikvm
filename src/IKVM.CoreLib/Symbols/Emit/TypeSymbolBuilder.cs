@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -39,6 +40,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         ImmutableArray<CustomAttribute> _customAttributesCache;
 
         bool _frozen;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -144,7 +146,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override bool IsSZArray => false;
 
         /// <inheritdoc />
-        public override bool IsArray => false;
+        public sealed override bool IsArray => false;
 
         /// <inheritdoc />
         public sealed override bool IsEnum => false;
@@ -163,9 +165,6 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsComplete => false;
 
         /// <summary>
         /// Gets the packing size.
@@ -333,7 +332,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
-        internal void SetFrozen()
+        internal void Freeze()
         {
             _frozen = true;
         }
@@ -432,7 +431,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public MethodSymbolBuilder DefineTypeInitializer()
         {
-            return DefineMethod(ConstructorInfo.TypeConstructorName, MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, null, default, default, [], [], []);
+            return DefineMethod(ConstructorInfo.TypeConstructorName, MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, null, [], [], [], [], []);
         }
 
         /// <summary>
@@ -936,6 +935,20 @@ namespace IKVM.CoreLib.Symbols.Emit
                     args = args.SetItem(i, args[i].Specialize(context));
 
             return MakeGenericType(args);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<TypeSymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

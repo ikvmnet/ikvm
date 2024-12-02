@@ -174,10 +174,6 @@ namespace IKVM.Runtime
         /// <returns></returns>
         internal RuntimeJavaType GetJavaTypeFromType(TypeSymbol type)
         {
-#if !IMPORTER
-            RuntimeJavaType.AssertFinished(type);
-#endif
-
             Debug.Assert(!type.IsPointer);
             Debug.Assert(!type.IsByRef);
 
@@ -406,10 +402,6 @@ namespace IKVM.Runtime
 
         internal void SetWrapperForType(TypeSymbol type, RuntimeJavaType wrapper)
         {
-#if !IMPORTER
-            RuntimeJavaType.AssertFinished(type);
-#endif
-
             lock (globalTypeToTypeWrapper)
             {
                 try

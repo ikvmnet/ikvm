@@ -52,9 +52,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
         public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
         {
             var b = ImmutableArray.CreateBuilder<MethodSymbol>();

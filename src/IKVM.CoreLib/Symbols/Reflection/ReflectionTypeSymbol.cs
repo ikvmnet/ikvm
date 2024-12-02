@@ -103,6 +103,9 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override bool IsEnum => _underlyingType.IsEnum;
 
         /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
         public sealed override string? GetEnumName(object value)
         {
             return _underlyingType.GetEnumName(value);

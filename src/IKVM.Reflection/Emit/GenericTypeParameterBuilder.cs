@@ -198,7 +198,7 @@ namespace IKVM.Reflection.Emit
             this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
         }
 
-        public void SetBaseTypeConstraint(Type baseTypeConstraint)
+        public void SetBaseTypeConstraint(Type? baseTypeConstraint)
         {
             this.baseType = baseTypeConstraint;
             AddConstraint(baseTypeConstraint);

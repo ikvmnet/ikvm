@@ -907,6 +907,7 @@ namespace IKVM.Runtime
                 {
                     // FXBUG Ref.Emit refuses arrays in custom modifiers, so we add an array type for each dimension
                     var modopt = ImmutableArray.CreateBuilder<TypeSymbol>(tw.ArrayRank + 1);
+                    modopt.Count = tw.ArrayRank + 1;
                     modopt[0] = GetModOptHelper(tw1);
                     for (int i = 1; i < modopt.Count; i++)
                         modopt[i] = tw.Context.Types.Array;

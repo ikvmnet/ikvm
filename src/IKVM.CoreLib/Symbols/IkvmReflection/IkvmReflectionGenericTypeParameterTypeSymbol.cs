@@ -50,9 +50,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public sealed override TypeSymbol? BaseType => Context.ResolveTypeSymbol(_underlyingType.BaseType);
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
         internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
         {
             if (_interfaces == null)

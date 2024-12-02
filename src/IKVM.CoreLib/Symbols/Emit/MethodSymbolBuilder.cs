@@ -1,7 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
@@ -18,15 +20,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         readonly CallingConventions _callingConvention;
         MethodAttributes _attributes;
         MethodImplAttributes _methodImplFlags;
-        ImmutableArray<GenericMethodParameterTypeSymbolBuilder> _typeParameters;
+        ImmutableArray<GenericMethodParameterTypeSymbolBuilder> _typeParameters = [];
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
         (bool set, string dllName, string entryName, CallingConvention nativeCallConv, CharSet nativeCharSet) _dllImportData;
         bool _initLocals = true;
-        ILGenerator? _il;
+        internal ILGenerator? _il;
 
         bool _frozen;
-        object? _state1;
-        object? _state2;
+        object? _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -67,6 +68,15 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <inheritdoc />
         public sealed override MethodAttributes Attributes => _attributes;
 
+        /// <summary>
+        /// Gets whether or not to initialize locals.
+        /// </summary>
+        public bool InitLocals
+        {
+            get => _initLocals;
+            set => _initLocals = value;
+        }
+
         /// <inheritdoc />
         public sealed override CallingConventions CallingConvention => _callingConvention;
 
@@ -84,9 +94,6 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsComplete => false;
 
         /// <inheritdoc />
         public sealed override MethodSymbol? BaseDefinition => null;
@@ -115,11 +122,29 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <summary>
+        /// Freezes the type builder.
+        /// </summary>
+        internal void Freeze()
+        {
+            _frozen = true;
+        }
+
+        /// <summary>
+        /// Throws an exception if the builder is frozen.
+        /// </summary>
+        void ThrowIfFrozen()
+        {
+            if (_frozen)
+                throw new InvalidOperationException("MethodSymbolBuilder is frozen.");
+        }
+
+        /// <summary>
         /// Sets the implementation flags for this method.
         /// </summary>
         /// <param name="attributes"></param>
         public void SetImplementationFlags(MethodImplAttributes attributes)
         {
+            ThrowIfFrozen();
             _methodImplFlags = attributes;
         }
 
@@ -132,6 +157,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public ParameterSymbolBuilder DefineParameter(int iSequence, ParameterAttributes attributes, string? strParamName)
         {
+            ThrowIfFrozen();
             _parameters[iSequence - 1]._attributes = attributes;
             _parameters[iSequence - 1]._name = strParamName;
             OnParametersChanged();
@@ -144,6 +170,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterTypes"></param>
         public void SetParameters(ImmutableArray<TypeSymbol> parameterTypes)
         {
+            ThrowIfFrozen();
             _parameters.Clear();
             _parameters.AddRange(parameterTypes.Select((i, j) => new ParameterSymbolBuilder(Context, this, i, j, [], [])));
             _parametersCache = default;
@@ -156,6 +183,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         public void SetReturnType(TypeSymbol? returnType)
         {
+            ThrowIfFrozen();
             _returnParameter = new ParameterSymbolBuilder(Context, this, returnType ?? Context.ResolveCoreType("System.Void"), -1, [], []);
         }
 
@@ -170,6 +198,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterOptionalCustomModifiers"></param>
         public void SetSignature(TypeSymbol? returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
+            ThrowIfFrozen();
             _returnParameter = new ParameterSymbolBuilder(Context, this, returnType ?? Context.ResolveCoreType("System.Void"), -1, returnRequiredCustomModifiers, returnOptionalCustomModifiers);
             _parameters.Clear();
             _parameters.AddRange(parameterTypes.Select((i, j) => new ParameterSymbolBuilder(Context, this, i, j, GetIndex(parameterRequiredCustomModifiers, j), GetIndex(parameterOptionalCustomModifiers, j))));
@@ -184,6 +213,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public ImmutableArray<GenericMethodParameterTypeSymbolBuilder> DefineGenericParameters(params string[] names)
         {
+            ThrowIfFrozen();
             return _typeParameters = names.Select((i, j) => new GenericMethodParameterTypeSymbolBuilder(Context, this, i, GenericParameterAttributes.None, j)).ToImmutableArray();
         }
 
@@ -193,12 +223,14 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public ILGenerator GetILGenerator()
         {
+            ThrowIfFrozen();
             return _il ?? new ILGenerator(Context);
         }
 
         /// <inheritdoc />
         public void SetCustomAttribute(CustomAttribute attribute)
         {
+            ThrowIfFrozen();
             _customAttributes.Add(attribute);
         }
 
@@ -211,7 +243,22 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="nativeCharSet"></param>
         internal void SetDllImportData(string dllName, string entryName, CallingConvention nativeCallConv, CharSet nativeCharSet)
         {
+            ThrowIfFrozen();
             _dllImportData = (true, dllName, entryName, nativeCallConv, nativeCharSet);
+        }
+
+        /// <summary>
+        /// Gets the writer object associated with this builder.
+        /// </summary>
+        /// <typeparam name="TWriter"></typeparam>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal TWriter Writer<TWriter>(Func<MethodSymbolBuilder, TWriter> create)
+        {
+            if (_writer is null)
+                Interlocked.CompareExchange(ref _writer, create(this), null);
+
+            return (TWriter)(_writer ?? throw new InvalidOperationException());
         }
 
     }

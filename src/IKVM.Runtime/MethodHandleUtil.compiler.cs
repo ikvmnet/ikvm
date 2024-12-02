@@ -58,7 +58,7 @@ namespace IKVM.Runtime
         {
             var typeArgs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length);
             for (int i = 0; i < args.Length; i++)
-                typeArgs[i] = TypeWrapperToTypeForLoadConstant(args[i]);
+                typeArgs.Add(TypeWrapperToTypeForLoadConstant(args[i]));
 
             return CreateDelegateType(typeArgs.DrainToImmutable(), TypeWrapperToTypeForLoadConstant(ret));
         }

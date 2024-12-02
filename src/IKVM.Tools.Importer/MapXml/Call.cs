@@ -174,7 +174,7 @@ namespace IKVM.Tools.Importer.MapXml
                     else
                     {
                         // ldftn or ldvirtftn
-                        ilgen.Emit(opcode, (MethodSymbol)method.GetMethod());
+                        ilgen.Emit(opcode, method.GetMethod());
                     }
                 }
                 else
@@ -193,7 +193,7 @@ namespace IKVM.Tools.Importer.MapXml
                         var types = Sig.Split(';');
                         var argTypesBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(types.Length);
                         for (int i = 0; i < types.Length; i++)
-                            argTypesBuilder[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]);
+                            argTypesBuilder.Add(context.ClassLoader.Context.Resolver.ResolveType(types[i]));
 
                         argTypes = argTypesBuilder.DrainToImmutable();
                     }

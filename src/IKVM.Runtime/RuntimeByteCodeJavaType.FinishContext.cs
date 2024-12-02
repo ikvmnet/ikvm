@@ -1387,9 +1387,9 @@ namespace IKVM.Runtime
                 var modopt = ImmutableArray.CreateBuilder<ImmutableArray<TypeSymbol>>(parameters.Length);
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    realParameterTypes[i] = parameters[i].TypeAsSignatureType;
-                    parameterTypes[i] = parameters[i].TypeAsPublicSignatureType;
-                    modopt[i] = wrapper.GetModOpt(parameters[i], true);
+                    realParameterTypes.Add(parameters[i].TypeAsSignatureType);
+                    parameterTypes.Add(parameters[i].TypeAsPublicSignatureType);
+                    modopt.Add(wrapper.GetModOpt(parameters[i], true));
                 }
 
                 var returnType = mw.ReturnType.TypeAsPublicSignatureType;
@@ -1723,10 +1723,12 @@ namespace IKVM.Runtime
                     ilGenerator.Emit(OpCodes.Ldloc, jnienv);
 
                     var modargs = ImmutableArray.CreateBuilder<TypeSymbol>(args.Length + 2);
+                    modargs.Count = args.Length + 2;
                     modargs[0] = context.context.Types.IntPtr;
                     modargs[1] = context.context.Types.IntPtr;
                     for (int i = 0; i < args.Length; i++)
                         modargs[i + 2] = args[i].TypeAsSignatureType;
+
                     int add = 0;
                     if (!m.IsStatic)
                     {
@@ -1851,7 +1853,7 @@ namespace IKVM.Runtime
                 var parameters = mw.GetParameters();
                 var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length);
                 for (int i = 0; i < parameterTypes.Count; i++)
-                    parameterTypes[i] = parameters[i].TypeAsSignatureType;
+                    parameterTypes.Add(parameters[i].TypeAsSignatureType);
 
                 var attribs = MethodAttributes.HideBySig;
                 int argcount = parameterTypes.Count;
@@ -2004,13 +2006,8 @@ namespace IKVM.Runtime
 
             void GenerateUnsupportedAbstractMethodStub(MethodSymbol mb)
             {
-                var parameters = mb.Parameters;
-                var parameterTypes = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length);
-                for (int i = 0; i < parameters.Length; i++)
-                    parameterTypes[i] = parameters[i].ParameterType;
-
                 var attr = MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Private;
-                var m = typeBuilder.DefineMethod("__<unsupported>" + mb.DeclaringType.FullName + "/" + mb.Name, attr, mb.ReturnType, parameterTypes.DrainToImmutable());
+                var m = typeBuilder.DefineMethod("__<unsupported>" + mb.DeclaringType.FullName + "/" + mb.Name, attr, mb.ReturnType, mb.ParameterTypes);
                 if (mb.IsGenericMethodDefinition)
                     CopyGenericArguments(mb, m);
 

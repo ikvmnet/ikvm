@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 
 using FluentAssertions;
 
@@ -17,16 +18,22 @@ namespace IKVM.CoreLib.Tests.Symbols.Emit
 
         protected TInit Init { get; } = new TInit();
 
-        protected abstract AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> customAttributes);
+        [TestMethod]
+        public void ThrowsOnFreeze()
+        {
+            var a = Init.Symbols.DefineAssembly(new AssemblyIdentity("Test"), []);
+            a.Freeze();
+            a.Invoking(_ => _.DefineModule("Test.dll", "Test.dll")).Should().ThrowExactly<InvalidOperationException>();
+        }
 
         [TestMethod]
         public void CanDefineModule()
         {
-            var a = DefineAssembly(new AssemblyIdentity("Test"), []);
+            var a = Init.Symbols.DefineAssembly(new AssemblyIdentity("Test"), []);
             a.FullName.Should().Be("Test, Version=0.0.0.0, PublicKeyToken=null");
-            var m = a.DefineModule("Test", "Test.dll");
-            m.Name.Should().Be("Test");
-            m.FileName.Should().Be("Test.dll");
+            var m = a.DefineModule("Test.dll", "Test.dll");
+            m.Name.Should().Be("Test.dll");
+            m.ScopeName.Should().Be("Test.dll");
         }
 
     }

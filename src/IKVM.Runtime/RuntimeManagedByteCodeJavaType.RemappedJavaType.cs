@@ -144,14 +144,7 @@ namespace IKVM.Runtime
                 MethodSymbol mbNonvirtualHelper = null;
                 if (!mb.IsStatic && !mb.IsConstructor)
                 {
-                    var parameters = mb.Parameters;
-                    var b = ImmutableArray.CreateBuilder<TypeSymbol>(parameters.Length + 1);
-                    b[0] = remappedType;
-                    for (int i = 0; i < parameters.Length; i++)
-                        b[i + 1] = parameters[i].ParameterType;
-
-                    var argTypes = b.DrainToImmutable();
-
+                    var argTypes = mb.ParameterTypes.Insert(0, remappedType);
                     var helper = type.GetMethod("instancehelper_" + mb.Name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static, argTypes);
                     if (helper != null)
                         mbHelper = helper;

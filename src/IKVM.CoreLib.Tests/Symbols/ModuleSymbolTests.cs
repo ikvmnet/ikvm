@@ -37,7 +37,6 @@ namespace IKVM.CoreLib.Tests.Symbols
             var s = Init.Symbols.ResolveCoreType("System.Object").Module;
             s.Name.Should().Be(m.Name);
             s.IsMissing.Should().BeFalse();
-            s.IsComplete.Should().BeTrue();
             s.FullyQualifiedName.Should().Be(m.FullyQualifiedName);
         }
 

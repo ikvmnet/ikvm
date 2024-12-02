@@ -45,9 +45,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override bool IsComplete => true;
-
-        /// <inheritdoc />
         public sealed override object? GetRawConstantValue()
         {
             return _definition.GetRawConstantValue();

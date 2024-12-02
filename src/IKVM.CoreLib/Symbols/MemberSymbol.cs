@@ -55,11 +55,6 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         public abstract bool IsMissing { get; }
 
-        /// <summary>
-        /// Returns <c>true</c> if the symbol is complete. That is, was created with a builder and completed.
-        /// </summary>
-        public abstract bool IsComplete { get; }
-
         /// <inheritdoc />
         ImmutableArray<CustomAttribute> ICustomAttributeProviderInternal.GetDeclaredCustomAttributes() => GetDeclaredCustomAttributes();
 

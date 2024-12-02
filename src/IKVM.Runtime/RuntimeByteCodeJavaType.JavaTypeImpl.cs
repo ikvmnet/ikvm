@@ -1672,6 +1672,7 @@ namespace IKVM.Runtime
                         if (requiredArgCount > 0)
                         {
                             var args = ImmutableArray.CreateBuilder<TypeSymbol>(requiredArgCount);
+                            args.Count = requiredArgCount;
                             for (int i = 0, j = 0; i < o.methods.Length; i++)
                             {
                                 if (!o.methods[i].IsStatic)

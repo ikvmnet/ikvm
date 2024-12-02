@@ -71,7 +71,7 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Returns whether this type contains any missing types.
         /// </summary>
-        public bool ContainsMissingType => IsGenericType && GenericArguments.Any(i => i.ContainsMissingType);
+        public virtual bool ContainsMissingType => IsMissing || GenericArguments.Any(i => i.ContainsMissingType) || GetRequiredCustomModifiers().Any(i => i.ContainsMissingType) || GetOptionalCustomModifiers().Any(i => i.ContainsMissingType);
 
         /// <summary>
         /// Gets a value indicating whether the current <see cref="TypeSymbol"/> object has type parameters that have not been replaced by specific types.

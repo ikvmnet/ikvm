@@ -69,6 +69,7 @@ namespace IKVM.Tools.Importer
             services.AddSingleton<IDiagnosticHandler>(p => p.GetRequiredService<ImportDiagnosticHandler>());
             services.AddSingleton(p => CreateResolver(p.GetRequiredService<IDiagnosticHandler>(), p.GetRequiredService<ImportOptions>()));
             services.AddSingleton(p => p.GetRequiredService<ImportAssemblyResolver>().Universe);
+            services.AddSingleton(p => new IkvmReflectionSymbolOptions(p.GetRequiredService<ImportOptions>().Debug != ImportDebug.Unspecified));
             services.AddSingleton<IkvmReflectionSymbolContext>();
             services.AddSingleton<IRuntimeSymbolResolver, ImportRuntimeSymbolResolver>();
             services.AddSingleton<RuntimeContextOptions>(p => CreateContextOptions(p));

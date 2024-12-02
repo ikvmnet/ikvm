@@ -51,9 +51,6 @@ namespace IKVM.CoreLib.Symbols
         public sealed override bool IsGenericMethodParameter => false;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
         public sealed override bool IsPointer => false;
 
         /// <inheritdoc />
@@ -61,9 +58,6 @@ namespace IKVM.CoreLib.Symbols
 
         /// <inheritdoc />
         public sealed override bool IsUnmanagedFunctionPointer => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsComplete => true;
 
         /// <inheritdoc />
         public sealed override TypeSymbol? GetElementType()
