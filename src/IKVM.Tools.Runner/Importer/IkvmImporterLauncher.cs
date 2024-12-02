@@ -70,7 +70,7 @@ namespace IKVM.Tools.Runner.Importer
                 w.WriteLine($"-out \"{options.Output}\"");
 
             if (options.Assembly is not null)
-                w.WriteLine($"-assembly {options.Assembly}");
+                w.WriteLine($"-assembly \"{options.Assembly}\"");
 
             if (options.Version is not null)
                 w.WriteLine($"-version {options.Version}");
