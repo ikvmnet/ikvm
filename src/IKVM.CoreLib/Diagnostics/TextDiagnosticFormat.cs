@@ -17,6 +17,8 @@ namespace IKVM.CoreLib.Diagnostics
     static class TextDiagnosticFormat
     {
 
+        const int BUFFER_SIZE = 65535;
+
         /// <summary>
         /// Writes the given event data to the specified <see cref="StringWriter"/>.
         /// </summary>
@@ -29,18 +31,10 @@ namespace IKVM.CoreLib.Diagnostics
         /// <param name="writer"></param>
         public static void Write(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer)
         {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
-
-            try
-            {
-                var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
-                Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
-                writer.Write(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
-            }
-            finally
-            {
-                buffer.Dispose();
-            }
+            using var buffer = MemoryPool<byte>.Shared.Rent(BUFFER_SIZE);
+            var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
+            Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
+            writer.Write(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
         }
 
         /// <summary>
@@ -56,18 +50,10 @@ namespace IKVM.CoreLib.Diagnostics
         /// <param name="cancellationToken"></param>
         public static async ValueTask WriteAsync(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer, CancellationToken cancellationToken)
         {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
-
-            try
-            {
-                var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
-                Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
-                await writer.WriteAsync(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
-            }
-            finally
-            {
-                buffer.Dispose();
-            }
+            using var buffer = MemoryPool<byte>.Shared.Rent(BUFFER_SIZE);
+            var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
+            Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
+            await writer.WriteAsync(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
         }
 
         /// <summary>
