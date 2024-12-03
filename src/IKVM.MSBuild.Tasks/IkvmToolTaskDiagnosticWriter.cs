@@ -54,15 +54,15 @@ namespace IKVM.MSBuild.Tasks
                         logger.LogWarning(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Error:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
+                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Fatal:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.High, @event.Message, @event.Args);
+                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                 }
 
                 if (writer != null)
-                    await WriteLogsync(writer, @event, cancellationToken);
+                    await WriteLogAsync(writer, @event, cancellationToken);
             }
             catch (Exception e)
             {
@@ -77,7 +77,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="event"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task WriteLogsync(TextWriter writer, IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
+        async Task WriteLogAsync(TextWriter writer, IkvmToolDiagnosticEvent @event, CancellationToken cancellationToken)
         {
             await TextDiagnosticFormat.WriteAsync(@event.Id, Convert(@event.Level), @event.Message, @event.Args, null, Convert(@event.Location), writer, cancellationToken);
             await writer.WriteLineAsync();

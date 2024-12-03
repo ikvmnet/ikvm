@@ -33,7 +33,6 @@ namespace IKVM.Tools.Core.Diagnostics
             TextDiagnosticFormat.Write(@event.Diagnostic.Id, @event.Diagnostic.Level, @event.Diagnostic.Message, @event.Args, @event.Exception, @event.Location, ref writer, encoding);
             WriteLine(writer, encoding);
             channel.Writer.Write(buffer, writer.WrittenCount);
-            return;
         }
 
         /// <summary>

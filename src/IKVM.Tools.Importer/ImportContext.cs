@@ -569,7 +569,7 @@ namespace IKVM.Tools.Importer
 
             if (options.NoWarn != null)
                 foreach (var diagnostic in options.NoWarn)
-                    compilerOptions.suppressWarnings.Add($"IKVM{diagnostic.Id:D4}");
+                    compilerOptions.suppressWarnings.Add(diagnostic.Id.ToString());
 
             // TODO handle specific diagnostic IDs
             if (options.WarnAsError != null)
@@ -578,7 +578,7 @@ namespace IKVM.Tools.Importer
                     compilerOptions.warnaserror = true;
                 else
                     foreach (var i in options.WarnAsError)
-                        compilerOptions.errorWarnings.Add($"IKVM{i.Id:D4}");
+                        compilerOptions.errorWarnings.Add(i.Id.ToString());
             }
 
             if (options.Runtime != null)
@@ -941,43 +941,50 @@ namespace IKVM.Tools.Importer
 
         static bool EmitStubWarning(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, byte[] buf)
         {
-            IKVM.Runtime.ClassFile cf;
+            IKVM.Runtime.ClassFile cf = null;
 
             try
             {
-                cf = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
-            }
-            catch (ClassFormatError)
-            {
-                return false;
-            }
-            catch (ByteCodeException)
-            {
-                return false;
-            }
-
-            if (cf.IKVMAssemblyAttribute == null)
-            {
-                return false;
-            }
-
-            if (cf.IKVMAssemblyAttribute.StartsWith("[["))
-            {
-                var r = new Regex(@"\[([^\[\]]+)\]");
-                var mc = r.Matches(cf.IKVMAssemblyAttribute);
-                foreach (Match m in mc)
+                try
                 {
-                    options.legacyStubReferences[m.Groups[1].Value] = null;
-                    diagnostics.StubsAreDeprecated(m.Groups[1].Value);
+                    cf = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
                 }
-            }
-            else
-            {
-                options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                diagnostics.StubsAreDeprecated(cf.IKVMAssemblyAttribute);
-            }
+                catch (ClassFormatError)
+                {
+                    return false;
+                }
+                catch (ByteCodeException)
+                {
+                    return false;
+                }
 
-            return true;
+                if (cf.IKVMAssemblyAttribute == null)
+                {
+                    return false;
+                }
+
+                if (cf.IKVMAssemblyAttribute.StartsWith("[["))
+                {
+                    var r = new Regex(@"\[([^\[\]]+)\]");
+                    var mc = r.Matches(cf.IKVMAssemblyAttribute);
+                    foreach (Match m in mc)
+                    {
+                        options.legacyStubReferences[m.Groups[1].Value] = null;
+                        diagnostics.StubsAreDeprecated(m.Groups[1].Value);
+                    }
+                }
+                else
+                {
+                    options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
+                    diagnostics.StubsAreDeprecated(cf.IKVMAssemblyAttribute);
+                }
+
+                return true;
+            }
+            finally
+            {
+                cf?.Dispose();
+            }
         }
 
         static bool IsExcludedOrStubLegacy(RuntimeContext context, StaticCompiler compiler, ImportState options, IDiagnosticHandler diagnostics, ZipArchiveEntry ze, byte[] data)

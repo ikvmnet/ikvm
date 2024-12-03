@@ -2565,7 +2565,6 @@ namespace IKVM.Runtime
                             }
 
                             var message = harderrors[instr.HardErrorMessageId];
-                            clazz.ClassLoader.Diagnostics.GenericCompilerError($"{exceptionType.Name}: {message}\n\tat {classFile.Name}.{m.Name}{m.Signature}");
                             ilGenerator.Emit(OpCodes.Ldstr, message);
                             RuntimeJavaMethod method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
                             method.Link();

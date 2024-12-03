@@ -34,7 +34,7 @@
         /// </summary>
         /// <param name="items"></param>
         /// <returns></returns>
-        static IList<IkvmReferenceItem> Sort(IList<IkvmReferenceItem> items)
+        static IList<IkvmReferenceItem> Sort(IReadOnlyList<IkvmReferenceItem> items)
         {
             // construct a map of nodes to their indegrees
             var m = items.ToDictionary(i => i, i => 0);
@@ -473,7 +473,7 @@
             }
             catch (Exception e)
             {
-                throw new IkvmTaskMessageException(e, Resources.SR.Error_IkvmInvalidArchive, item, path);
+                throw new IkvmTaskMessageException(e, "Error.IkvmInvalidArchive", item, path);
             }
 
             return null;
@@ -495,9 +495,9 @@
                 return id;
 
             if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                throw new IkvmTaskMessageException(Resources.SR.Error_IkvmInvalidAssemblyName, item, item.AssemblyName);
+                throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyName", item, item.AssemblyName);
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                throw new IkvmTaskMessageException(Resources.SR.Error_IkvmInvalidAssemblyVersion, item, item.AssemblyVersion);
+                throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyVersion", item, item.AssemblyVersion);
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);

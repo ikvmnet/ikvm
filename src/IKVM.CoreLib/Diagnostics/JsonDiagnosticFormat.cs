@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 using IKVM.CoreLib.Buffers;
 
@@ -16,58 +13,6 @@ namespace IKVM.CoreLib.Diagnostics
     /// </summary>
     static class JsonDiagnosticFormat
     {
-
-        /// <summary>
-        /// Writes the given event data to the specified <see cref="StringWriter"/>.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="level"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        /// <param name="exception"></param>
-        /// <param name="location"></param>
-        /// <param name="writer"></param>
-        public static void Write(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer)
-        {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
-
-            try
-            {
-                var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
-                Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
-                writer.Write(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
-            }
-            finally
-            {
-                buffer.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Writes the given event data to the specified <see cref="StringWriter"/>.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="level"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        /// <param name="exception"></param>
-        /// <param name="location"></param>
-        /// <param name="writer"></param>
-        public static async ValueTask WriteAsync(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer, CancellationToken cancellationToken)
-        {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
-
-            try
-            {
-                var wrt = new MemoryBufferWriter<byte>(buffer.Memory);
-                Write(id, level, message, args, exception, location, ref wrt, writer.Encoding);
-                await writer.WriteAsync(writer.Encoding.GetString(buffer.Memory.Span[..wrt.WrittenCount]));
-            }
-            finally
-            {
-                buffer.Dispose();
-            }
-        }
 
         /// <summary>
         /// Writes the given event data to the specified <typeparamref name="TWriter"/>.
