@@ -297,11 +297,7 @@ namespace IKVM.Runtime
 
             internal bool IsConstructor => ReferenceEquals(Name, StringConstants.INIT);
 
-#if IMPORTER
-
             internal bool IsCallerSensitive => (flags & FLAG_CALLERSENSITIVE) != 0;
-
-#endif
 
             internal bool IsLambdaFormCompiled => (flags & FLAG_LAMBDAFORM_COMPILED) != 0;
 
