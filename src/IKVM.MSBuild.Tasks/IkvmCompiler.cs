@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -305,6 +304,7 @@ namespace IKVM.MSBuild.Tasks
             options.NoAutoSerialization = NoAutoSerialization;
             options.NoGlobbing = NoGlobbing;
             options.NoJNI = NoJNI;
+            options.Optimize = Optimize;
             options.OptFields = OptFields;
             options.RemoveAssertions = RemoveAssertions;
             options.StrictFinalFieldSemantics = StrictFinalFieldSemantics;

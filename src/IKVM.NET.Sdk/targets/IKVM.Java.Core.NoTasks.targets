@@ -283,6 +283,7 @@ Value = b.ToString();
             <_IkvmCompilerArgs Include="-keyfile &quot;$(KeyOriginatorFile)&quot;" Condition=" '$(KeyOriginatorFile)' != '' " />
             <_IkvmCompilerArgs Include="@(MapFile->'-remap &quot;%(FullPath)&quot;')" Condition=" '@(MapFile)' != '' " />
             <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />
+            <_IkvmCompilerArgs Include="-optimize" Condition=" '$(Optimize)' == 'true' " />
             <_IkvmCompilerArgs Include="-opt:fields" />
             <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
