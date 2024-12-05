@@ -108,6 +108,8 @@ namespace IKVM.MSBuild.Tasks
 
         public bool NoJNI { get; set; }
 
+        public bool Optimize { get; set; } = false;
+
         public bool OptFields { get; set; }
 
         public bool RemoveAssertions { get; set; }
