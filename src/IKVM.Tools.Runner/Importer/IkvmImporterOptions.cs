@@ -111,6 +111,8 @@ namespace IKVM.Tools.Runner.Importer
 
         public bool NoJNI { get; set; }
 
+        public bool Optimize { get; set; }
+
         public bool OptFields { get; set; }
 
         public bool RemoveAssertions { get; set; }

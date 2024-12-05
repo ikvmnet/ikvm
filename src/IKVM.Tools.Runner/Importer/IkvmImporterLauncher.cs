@@ -153,6 +153,9 @@ namespace IKVM.Tools.Runner.Importer
             if (options.NoJNI)
                 w.WriteLine("-nojni");
 
+            if (options.Optimize)
+                w.WriteLine("-optimize");
+
             if (options.OptFields)
                 w.WriteLine("-opt:fields");
 
