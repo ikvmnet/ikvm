@@ -92,6 +92,25 @@ public class MethodHandleTests {
     }
 
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeStaticMethodReference() throws Throwable {
+        final Supplier<String> supplier = System::lineSeparator;
+        final String lineSeparator = supplier.get();
+        if (!lineSeparator.equals(System.lineSeparator())) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeMethodReference() throws Throwable {
+        final Integer intObject = new Integer(1);
+        final Supplier<Integer> supplier = intObject::intValue;
+        final Integer intValue = supplier.get();
+        if (!intValue.equals(intObject)) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canInvokeThroughSupplier() throws Throwable { // Issue #509
         Class<?> effectiveAnchor = MethodHandleTests.class;
         final Supplier<ClassLoader> supplier = new Supplier() {
