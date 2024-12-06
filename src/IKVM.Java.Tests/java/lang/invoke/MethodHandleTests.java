@@ -93,7 +93,7 @@ public class MethodHandleTests {
 
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canInvokeStaticMethodReference() throws Throwable {
-        final Supplier<String> supplier = System::lineSeparator;
+        Supplier<String> supplier = System::lineSeparator;
         final String lineSeparator = supplier.get();
         if (!lineSeparator.equals(System.lineSeparator())) {
             throw new Exception();
@@ -101,9 +101,97 @@ public class MethodHandleTests {
     }
 
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeCallerSensitiveStaticMethodReference() throws Throwable {
+        final Function<String, java.util.logging.Logger> function = java.util.logging.Logger::getLogger;
+        final java.util.logging.Logger value = function.apply("TEST");
+        if (value != java.util.logging.Logger.getLogger("TEST")) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeExactStaticCallerSensitive() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodType mt = MethodType.methodType(java.util.logging.Logger.class, String.class);
+        MethodHandle mh = lookup.findStatic(java.util.logging.Logger.class, "getLogger", mt);
+        java.util.logging.Logger s = (java.util.logging.Logger)mh.invokeExact("TEST");
+        if (s.getName() != "TEST") {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canInvokeMethodReference() throws Throwable {
-        final Integer intObject = new Integer(1);
+        Integer intObject = new Integer(1);
         final Supplier<Integer> supplier = intObject::intValue;
+        final Integer value = supplier.get();
+        if (!value.equals(intObject)) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeCallerSensitiveMethodReference() throws Throwable {
+        Class<?> clazz = MethodHandleTests.class;
+        final Supplier<ClassLoader> supplier = clazz::getClassLoader;
+        final ClassLoader value = supplier.get();
+        if (value != clazz.getClassLoader()) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeMethodReferenceCapturedInAnonymousClass() throws Throwable {
+        Integer intObject = new Integer(1);
+
+        final Supplier<Integer> supplier = new Supplier() {
+            @Override
+            public Integer get() {
+                final Supplier<Integer> supplier = intObject::intValue;
+                final Integer value = supplier.get();
+                return value;
+            }
+        };
+
+        final Integer value = supplier.get();
+        if (!value.equals(intObject)) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeCallerSensitiveMethodReferenceCapturedInAnonymousClass() throws Throwable {
+        Class<?> clazz = MethodHandleTests.class;
+
+        final Supplier<ClassLoader> supplier = new Supplier() {
+            @Override
+            public ClassLoader get() {
+                final Supplier<ClassLoader> supplier = clazz::getClassLoader;
+                final ClassLoader value = supplier.get();
+                return value;
+            }
+        };
+        
+        final ClassLoader value = supplier.get();
+        if (value != clazz.getClassLoader()) {
+            throw new Exception();
+        }
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeMethodReferenceCapturedInAnonymousClassField() throws Throwable {
+        Integer intObject = new Integer(1);
+
+        final Supplier<Integer> supplier = new Supplier() {
+            final Supplier<Integer> supplier = intObject::intValue;
+
+            @Override
+            public Integer get() {
+                final Integer intValue = supplier.get();
+                return intValue;
+            }
+        };
+
         final Integer intValue = supplier.get();
         if (!intValue.equals(intObject)) {
             throw new Exception();
@@ -111,18 +199,23 @@ public class MethodHandleTests {
     }
 
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
-    public void canInvokeThroughSupplier() throws Throwable { // Issue #509
-        Class<?> effectiveAnchor = MethodHandleTests.class;
+    public void canInvokeCallerSensitiveMethodReferenceCapturedInAnonymousClassField() throws Throwable {
+        Class<?> clazz = MethodHandleTests.class;
+
         final Supplier<ClassLoader> supplier = new Supplier() {
-            private final Supplier<? extends ClassLoader> supplier = effectiveAnchor::getClassLoader;
+            private final Supplier<ClassLoader> supplier = clazz::getClassLoader;
 
             @Override
             public ClassLoader get() {
-                return supplier.get();
+                final ClassLoader value = supplier.get();
+                return value;
             }
         };
 
-        final ClassLoader classLoader = supplier.get();
+        final ClassLoader value = supplier.get();
+        if (value != clazz.getClassLoader()) {
+            throw new Exception();
+        }
     }
 
 }
