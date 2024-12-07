@@ -95,6 +95,11 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
+    - name: Install Powershell
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y \
+          powershell
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
