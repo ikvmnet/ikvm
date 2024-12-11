@@ -27,7 +27,7 @@ using System.Diagnostics;
 namespace IKVM.Runtime
 {
 
-#if !IMPORTER
+#if IMPORTER == false
 
     sealed class DynamicCallerIDProvider
     {
@@ -36,7 +36,13 @@ namespace IKVM.Runtime
         // method to be public without giving untrusted code the ability to forge a CallerID token
         internal static readonly DynamicCallerIDProvider Instance = new DynamicCallerIDProvider();
 
-        private DynamicCallerIDProvider() { }
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        private DynamicCallerIDProvider()
+        {
+
+        }
 
         internal ikvm.@internal.CallerID GetCallerID()
         {
@@ -47,14 +53,10 @@ namespace IKVM.Runtime
             {
                 var method = new StackFrame(i++, false).GetMethod();
                 if (method == null)
-                {
                     return ikvm.@internal.CallerID.create(null, null);
-                }
 
                 if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
-                {
                     continue;
-                }
 
                 var caller = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(method.DeclaringType);
                 return CreateCallerID(caller.Host ?? caller);

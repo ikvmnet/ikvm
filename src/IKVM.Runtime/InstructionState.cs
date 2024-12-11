@@ -169,27 +169,24 @@ namespace IKVM.Runtime
         public static InstructionState operator +(InstructionState s1, InstructionState s2)
         {
             if (s1 == null)
-            {
                 return s2.Copy();
-            }
+
             if (s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
-            {
                 throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}",
                     s1.stackSize + s1.stack.Length - s1.stackEnd,
                     s2.stackSize + s2.stack.Length - s2.stackEnd));
-            }
-            InstructionState s = s1.Copy();
+
+            var s = s1.Copy();
             s.changed = s1.changed;
             for (int i = 0; i < s.stackSize; i++)
             {
-                RuntimeJavaType type = s.stack[i];
-                RuntimeJavaType type2 = s2.stack[i];
+                var type = s.stack[i];
+                var type2 = s2.stack[i];
                 if (type == type2)
                 {
                     // perfect match, nothing to do
                 }
-                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type2 == s1.context.PrimitiveJavaTypeFactory.DOUBLE)
-                    || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type == s1.context.PrimitiveJavaTypeFactory.DOUBLE))
+                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type2 == s1.context.PrimitiveJavaTypeFactory.DOUBLE) || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type == s1.context.PrimitiveJavaTypeFactory.DOUBLE))
                 {
                     if (type != s1.context.VerifierJavaTypeFactory.ExtendedDouble)
                     {
@@ -198,8 +195,7 @@ namespace IKVM.Runtime
                         s.changed = true;
                     }
                 }
-                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type2 == s1.context.PrimitiveJavaTypeFactory.FLOAT)
-                    || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type == s1.context.PrimitiveJavaTypeFactory.FLOAT))
+                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type2 == s1.context.PrimitiveJavaTypeFactory.FLOAT) || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type == s1.context.PrimitiveJavaTypeFactory.FLOAT))
                 {
                     if (type != s1.context.VerifierJavaTypeFactory.ExtendedFloat)
                     {
@@ -210,11 +206,10 @@ namespace IKVM.Runtime
                 }
                 else if (!type.IsPrimitive)
                 {
-                    RuntimeJavaType baseType = InstructionState.FindCommonBaseType(s1.context, type, type2);
+                    var baseType = FindCommonBaseType(s1.context, type, type2);
                     if (baseType == s1.context.VerifierJavaTypeFactory.Invalid)
-                    {
                         throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
-                    }
+
                     if (type != baseType)
                     {
                         s.StackCopyOnWrite();
@@ -227,11 +222,12 @@ namespace IKVM.Runtime
                     throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
                 }
             }
+
             for (int i = 0; i < s.locals.Length; i++)
             {
-                RuntimeJavaType type = s.locals[i];
-                RuntimeJavaType type2 = s2.locals[i];
-                RuntimeJavaType baseType = InstructionState.FindCommonBaseType(s1.context, type, type2);
+                var type = s.locals[i];
+                var type2 = s2.locals[i];
+                var baseType = FindCommonBaseType(s1.context, type, type2);
                 if (type != baseType)
                 {
                     s.LocalsCopyOnWrite();
@@ -239,11 +235,13 @@ namespace IKVM.Runtime
                     s.changed = true;
                 }
             }
+
             if (!s.unitializedThis && s2.unitializedThis)
             {
                 s.unitializedThis = true;
                 s.changed = true;
             }
+
             return s;
         }
 

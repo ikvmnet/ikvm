@@ -110,6 +110,13 @@ public class MethodHandleTests {
     }
 
     @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canFindStaticCallerSensitive() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodType mt = MethodType.methodType(java.util.logging.Logger.class, String.class);
+        MethodHandle mh = lookup.findStatic(java.util.logging.Logger.class, "getLogger", mt);
+    }
+
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
     public void canInvokeExactStaticCallerSensitive() throws Throwable {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType mt = MethodType.methodType(java.util.logging.Logger.class, String.class);
