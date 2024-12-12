@@ -31,6 +31,7 @@
         public static readonly string Private = "Private";
         public static readonly string ReferenceOutputAssembly = "ReferenceOutputAssembly";
         public static readonly string Static = "Static";
+        public static readonly string Optimize = "Optimize";
 
     }
 
