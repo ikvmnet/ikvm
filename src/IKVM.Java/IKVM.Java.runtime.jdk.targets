@@ -11,17 +11,120 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <ItemGroup>
+        <___PkgSystem_Memory Remove="@(___PkgSystem_Memory)" />
+        <___PkgSystem_Memory Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" />
+        <___PkgIKVM_ByteCode Remove="@(___PkgIKVM_ByteCode)" />
+        <___PkgIKVM_ByteCode Include="$(PkgIKVM_ByteCode)\lib\netstandard2.0\IKVM.ByteCode.dll" />
+    </ItemGroup>
+
+    <UsingTask TaskName="AddNoInliningAnnotation" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(TargetFramework)' != '' ">
+        <Task>
+            <Reference Include="@(___PkgSystem_Memory)" />
+            <Reference Include="@(___PkgIKVM_ByteCode)" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+using System;
+using System.IO;
+
+using IKVM.ByteCode;
+using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Decoding;
+using IKVM.ByteCode.Encoding;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+    
+public class AddNoInliningAnnotation : Task
+{
+
+    public string SourceFile { get; set; }
+    
+    public string DestinationFile { get; set; }
+    
+    public override bool Execute()
+    {
+        var cf = ClassFile.Read(SourceFile);
+        var cb = new ClassFileBuilder(cf.Version, cf.AccessFlags, cf.Constants.Get(cf.This), cf.Constants.Get(cf.Super));
+
+        foreach (var iface in cf.Interfaces)
+            cb.AddInterface(cf.Constants.Get(iface.Class).Name);
+
+        foreach (var field in cf.Fields)
+        {
+            var attr = new AttributeTableBuilder(cb.Constants);
+            field.Attributes.WriteTo(ref attr.Encoder);
+            cb.AddField(field.AccessFlags, cf.Constants.Get(field.Name).Value, cf.Constants.Get(field.Descriptor).Value, attr);
+        }
+
+        foreach (var method in cf.Methods)
+        {
+            var newMethodAttributes = new AttributeTableBuilder(cb.Constants);
+
+            var found = false;
+            foreach (var methodAttribute in method.Attributes)
+                if (cf.Constants.Get(methodAttribute.Name).Value == AttributeName.RuntimeVisibleAnnotations)
+                {
+                    newMethodAttributes.RuntimeVisibleAnnotations(e => CopyRuntimeVisibleAnnotationsAttribute(cf, cb, (RuntimeVisibleAnnotationsAttribute)methodAttribute, ref e));
+                    found = true;
+                }
+                else
+                    methodAttribute.CopyTo(cf.Constants, cb.Constants, ref newMethodAttributes.Encoder);
+
+            if (found == false)
+                newMethodAttributes.RuntimeVisibleAnnotations(e => AddMethodImplAttribute(cb, ref e));
+
+            cb.AddMethod(method.AccessFlags, cf.Constants.Get(method.Name).Value, cf.Constants.Get(method.Descriptor).Value, newMethodAttributes);
+        }
+        
+        cf.Attributes.CopyTo(cf.Constants, cb.Constants, cb.Attributes);
+
+        var bb = new BlobBuilder();
+        cb.Serialize(bb);
+
+        using var of = File.OpenWrite(DestinationFile);
+        bb.WriteContentTo(of);
+        
+        return true;
+    }
+
+    void CopyRuntimeVisibleAnnotationsAttribute(ClassFile cf, ClassFileBuilder cb, RuntimeVisibleAnnotationsAttribute annotations, ref AnnotationTableEncoder encoder)
+    {
+        annotations.Annotations.CopyTo(cf.Constants, cb.Constants, ref encoder);
+        AddMethodImplAttribute(cb, ref encoder);
+    }
+
+    void AddMethodImplAttribute(ClassFileBuilder cb, ref AnnotationTableEncoder encoder)
+    {
+        encoder.Annotation(
+            cb.Constants.GetOrAddUtf8("Lcli/System/Runtime/CompilerServices/MethodImplAttribute$Annotation;"), e => e
+                .Array(cb.Constants.GetOrAddUtf8("value"), e2 => e2
+                    .Enum(cb.Constants.GetOrAddUtf8("Lcli/System/Runtime/CompilerServices/MethodImplOptions$__Enum;"), cb.Constants.GetOrAddUtf8("NoInlining"))));
+    }
+
+}
+
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="AugmentMethodHandleImplBindCallerClass" DependsOnTargets="CompileJava" Inputs="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" Outputs="$(IntermediateOutputPath)\MethodHandleImpl$BindCaller$T.class">
+        <AddNoInliningAnnotation SourceFile="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" DestinationFile="$(IntermediateOutputPath)\MethodHandleImpl$BindCaller$T.class" />
+    </Target>
+
     <!-- a few class files should not be converted to IL, but instead included as resources -->
-    <Target Name="ClassAsResource" DependsOnTargets="CompileJava">
+    <Target Name="ClassAsResource" DependsOnTargets="CompileJava;AugmentMethodHandleImplBindCallerClass">
         <ItemGroup>
             <Convert Remove="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" />
             <JavaResource Include="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
-            <JavaResource Include="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+            <JavaResource Include="$(IntermediateOutputPath)MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <CoreCompileDependsOn>
+            AugmentMethodHandleImplBindCallerClass;
             ClassAsResource;
             $(CoreCompileDependsOn);
         </CoreCompileDependsOn>

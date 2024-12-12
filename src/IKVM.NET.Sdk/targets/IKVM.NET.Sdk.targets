@@ -30,7 +30,7 @@
     <!-- Inline tasks require some packages present. -->
     <ItemGroup Condition=" '$(UseIkvmTasks)' == 'false' ">
         <PackageReference Include="System.Collections.Immutable" Version="8.0.0" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
-        <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
+        <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" PrivateAssets="all" GeneratePathProperty="true" IsImplicitlyDefined="true" />
     </ItemGroup>
 
 </Project>

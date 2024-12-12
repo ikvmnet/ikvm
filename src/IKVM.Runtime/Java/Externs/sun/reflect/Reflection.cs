@@ -72,6 +72,9 @@ namespace IKVM.Java.Externs.sun.reflect
         /// <returns></returns>
         internal static bool IsHideFromStackWalk(MethodBase mb)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var type = mb.DeclaringType;
             if (type == null ||
                 type.Assembly == typeof(object).Assembly ||
@@ -82,6 +85,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 return true;
 
             return false;
+#endif
         }
 
         public static global::java.lang.Class getCallerClass()

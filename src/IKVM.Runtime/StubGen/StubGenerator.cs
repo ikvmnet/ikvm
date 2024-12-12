@@ -658,7 +658,7 @@ namespace IKVM.Runtime.StubGen
                 if (TypeAnnotationTable.TryRead(ref reader, out var table) == false)
                     throw new Exception();
 
-                table.EncodeTo(new ConstantHandleMap(type.GetConstantPool(), builder.Constants), ref encoder);
+                table.CopyTo(new ConstantView(type.GetConstantPool()), builder.Constants, ref encoder);
                 return table.Count > 0;
             }
 #endif
@@ -669,21 +669,18 @@ namespace IKVM.Runtime.StubGen
         /// <summary>
         /// Maps handles from a set of allowed primitive types in a view array to a new pool.
         /// </summary>
-        class ConstantHandleMap : IConstantHandleMap
+        class ConstantView : IConstantView
         {
 
             readonly object[] view;
-            readonly IConstantPool pool;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="view"></param>
-            /// <param name="pool"></param>
-            public ConstantHandleMap(object[] view, IConstantPool pool)
+            public ConstantView(object[] view)
             {
                 this.view = view;
-                this.pool = pool;
             }
 
             public Constant Get(ConstantHandle handle)
@@ -817,96 +814,6 @@ namespace IKVM.Runtime.StubGen
             public PackageConstant Get(PackageConstantHandle handle)
             {
                 throw new NotImplementedException();
-            }
-
-            public ConstantHandle Map(ConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public Utf8ConstantHandle Map(Utf8ConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public IntegerConstantHandle Map(IntegerConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public FloatConstantHandle Map(FloatConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public LongConstantHandle Map(LongConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public DoubleConstantHandle Map(DoubleConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public ClassConstantHandle Map(ClassConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public StringConstantHandle Map(StringConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public FieldrefConstantHandle Map(FieldrefConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public MethodrefConstantHandle Map(MethodrefConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public InterfaceMethodrefConstantHandle Map(InterfaceMethodrefConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public NameAndTypeConstantHandle Map(NameAndTypeConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public MethodHandleConstantHandle Map(MethodHandleConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public MethodTypeConstantHandle Map(MethodTypeConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public DynamicConstantHandle Map(DynamicConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public InvokeDynamicConstantHandle Map(InvokeDynamicConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public ModuleConstantHandle Map(ModuleConstantHandle handle)
-            {
-                return pool.Import(this, handle);
-            }
-
-            public PackageConstantHandle Map(PackageConstantHandle handle)
-            {
-                return pool.Import(this, handle);
             }
 
         }
