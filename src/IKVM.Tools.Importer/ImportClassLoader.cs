@@ -171,16 +171,12 @@ namespace IKVM.Tools.Importer
             if (EmitStackTraceInfo)
                 Context.AttributeHelper.SetSourceFile(moduleBuilder, null);
 
-            // if configured to emit debug info or stack trace info, add debug DebuggableAttribute
-            if (EmitSymbols || EmitStackTraceInfo)
-            {
-                var debugModes = DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints;
-                if (EmitSymbols)
-                    debugModes |= DebuggableAttribute.DebuggingModes.DisableOptimizations;
+            // latest roslyn emits ignore symbol store always, but only disables optimizations if specified through args
+            var debugModes = DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints;
+            if (EnableOptimizations == false)
+                debugModes |= DebuggableAttribute.DebuggingModes.DisableOptimizations;
 
-                Context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugModes);
-            }
-
+            Context.AttributeHelper.SetDebuggingModes(assemblyBuilder, debugModes);
             Context.AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
 
             if (state.baseAddress != 0)
