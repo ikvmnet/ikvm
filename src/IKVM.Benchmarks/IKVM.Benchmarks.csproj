@@ -1,0 +1,29 @@
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />
+    
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net6.0;net481</TargetFrameworks>
+        <LangVersion>13</LangVersion>
+        <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Benchmarks.Java\IKVM.Benchmarks.Java.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.targets" />
+</Project>

@@ -345,6 +345,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Core", "src\IKVM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.CoreLib.Tests", "src\IKVM.CoreLib.Tests\IKVM.CoreLib.Tests.csproj", "{21179656-9D00-45C9-A8BF-50E456AA29D4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Benchmarks", "src\IKVM.Benchmarks\IKVM.Benchmarks.csproj", "{EBF6F5D2-08A0-4DD0-B10E-B12B06059571}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Benchmarks.Java", "src\IKVM.Benchmarks.Java\IKVM.Benchmarks.Java.csproj", "{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -927,6 +931,14 @@ Global
 		{21179656-9D00-45C9-A8BF-50E456AA29D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21179656-9D00-45C9-A8BF-50E456AA29D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21179656-9D00-45C9-A8BF-50E456AA29D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBF6F5D2-08A0-4DD0-B10E-B12B06059571}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBF6F5D2-08A0-4DD0-B10E-B12B06059571}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBF6F5D2-08A0-4DD0-B10E-B12B06059571}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBF6F5D2-08A0-4DD0-B10E-B12B06059571}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
