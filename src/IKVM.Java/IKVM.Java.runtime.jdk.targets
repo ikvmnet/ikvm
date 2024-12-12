@@ -108,7 +108,7 @@ public class AddNoInliningAnnotation : Task
             </Code>
         </Task>
     </UsingTask>
-    
+
     <Target Name="AugmentMethodHandleImplBindCallerClass" DependsOnTargets="CompileJava" Inputs="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" Outputs="$(IntermediateOutputPath)\MethodHandleImpl$BindCaller$T.class">
         <AddNoInliningAnnotation SourceFile="$(IntermediateOutputPath)classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" DestinationFile="$(IntermediateOutputPath)\MethodHandleImpl$BindCaller$T.class" />
     </Target>
@@ -118,7 +118,7 @@ public class AddNoInliningAnnotation : Task
         <ItemGroup>
             <Convert Remove="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" />
             <JavaResource Include="$(IntermediateOutputPath)classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
-        <JavaResource Include="$(IntermediateOutputPath)MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+            <JavaResource Include="$(IntermediateOutputPath)MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
         </ItemGroup>
     </Target>
 
