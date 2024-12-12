@@ -7,6 +7,75 @@ namespace IKVM.CoreLib.Symbols
     {
 
         /// <summary>
+        /// Returns the appropriate <see cref="TypeCode"/> for the type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static TypeCode GetTypeCode(TypeSymbol? type)
+        {
+            if (type == null)
+                return TypeCode.Empty;
+
+            if (type.IsMissing == false && type.IsEnum)
+                type = type.GetEnumUnderlyingType();
+
+            var context = type.Context;
+            if (type == context.ResolveCoreType("System.Boolean"))
+                return TypeCode.Boolean;
+
+            if (type == context.ResolveCoreType("System.Char"))
+                return TypeCode.Char;
+
+            if (type == context.ResolveCoreType("System.SByte"))
+                return TypeCode.SByte;
+
+            if (type == context.ResolveCoreType("System.Byte"))
+                return TypeCode.Byte;
+
+            if (type == context.ResolveCoreType("System.Int16"))
+                return TypeCode.Int16;
+
+            if (type == context.ResolveCoreType("System.UInt16"))
+                return TypeCode.UInt16;
+
+            if (type == context.ResolveCoreType("System.Int32"))
+                return TypeCode.Int32;
+
+            if (type == context.ResolveCoreType("System.UInt32"))
+                return TypeCode.UInt32;
+
+            if (type == context.ResolveCoreType("System.Int64"))
+                return TypeCode.Int64;
+
+            if (type == context.ResolveCoreType("System.UInt64"))
+                return TypeCode.UInt64;
+
+            if (type == context.ResolveCoreType("System.Single"))
+                return TypeCode.Single;
+
+            if (type == context.ResolveCoreType("System.Double"))
+                return TypeCode.Double;
+
+            if (type == context.ResolveCoreType("System.DateTime"))
+                return TypeCode.DateTime;
+
+            if (type == context.ResolveCoreType("System.DBNull"))
+                return TypeCode.DBNull;
+
+            if (type == context.ResolveCoreType("System.Decimal"))
+                return TypeCode.Decimal;
+
+            if (type == context.ResolveCoreType("System.String"))
+                return TypeCode.String;
+
+            if (type.IsMissing)
+                throw new MissingTypeSymbolException(type);
+
+            return TypeCode.Object;
+
+        }
+
+        /// <summary>
         /// Gets the associated <see cref="System.Type"/> for the specified type code.
         /// </summary>
         /// <param name="symbol"></param>

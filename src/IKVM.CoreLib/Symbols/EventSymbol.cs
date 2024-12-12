@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -9,6 +10,8 @@ namespace IKVM.CoreLib.Symbols
     {
 
         readonly TypeSymbol _declaringType;
+
+        ImmutableArray<MethodSymbol> _otherMethodsPublic;
 
         /// <summary>
         /// Initializes a new instance.
@@ -45,17 +48,22 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Returns the method used to add an event handler delegate to the event source.
         /// </summary>
-        public MethodSymbol? AddMethod => GetAddMethod(true);
+        public abstract MethodSymbol? AddMethod { get; }
 
         /// <summary>
         /// Returns the method used to remove an event handler delegate from the event source.
         /// </summary>
-        public MethodSymbol? RemoveMethod => GetRemoveMethod(true);
+        public abstract MethodSymbol? RemoveMethod { get; }
 
         /// <summary>
         /// Returns the method that is called when the event is raised.
         /// </summary>
-        public MethodSymbol? RaiseMethod => GetRaiseMethod(true);
+        public abstract MethodSymbol? RaiseMethod { get; }
+
+        /// <summary>
+        /// Returns the methods that have been associated with the event in metadata using the .other directive.
+        /// </summary>
+        public abstract ImmutableArray<MethodSymbol> OtherMethods { get; }
 
         /// <summary>
         /// Returns the method used to add an event handler delegate to the event source.
@@ -68,7 +76,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="nonPublic"></param>
         /// <returns></returns>
-        public abstract MethodSymbol? GetAddMethod(bool nonPublic);
+        public MethodSymbol? GetAddMethod(bool nonPublic) => nonPublic || (AddMethod is { } m && m.IsPublic) ? AddMethod : null;
 
         /// <summary>
         /// Returns the method used to remove an event handler delegate from the event source.
@@ -81,7 +89,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="nonPublic"></param>
         /// <returns></returns>
-        public abstract MethodSymbol? GetRemoveMethod(bool nonPublic);
+        public MethodSymbol? GetRemoveMethod(bool nonPublic) => nonPublic || (RemoveMethod is { } m && m.IsPublic) ? RemoveMethod : null;
 
         /// <summary>
         /// Returns the method that is called when the event is raised.
@@ -94,7 +102,7 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="nonPublic"></param>
         /// <returns></returns>
-        public abstract MethodSymbol? GetRaiseMethod(bool nonPublic);
+        public MethodSymbol? GetRaiseMethod(bool nonPublic) => nonPublic || (RaiseMethod is { } m && m.IsPublic) ? RaiseMethod : null;
 
         /// <summary>
         /// Returns the public methods that have been associated with an event in metadata using the .other directive.
@@ -107,8 +115,18 @@ namespace IKVM.CoreLib.Symbols
         /// </summary>
         /// <param name="nonPublic"></param>
         /// <returns></returns>
-        public abstract ImmutableArray<MethodSymbol> GetOtherMethods(bool nonPublic);
+        public ImmutableArray<MethodSymbol> GetOtherMethods(bool nonPublic)
+        {
+            if (nonPublic)
+                return OtherMethods;
+            else
+            {
+                if (_otherMethodsPublic.IsDefault)
+                    ImmutableInterlocked.InterlockedInitialize(ref _otherMethodsPublic, OtherMethods.Where(i => i.IsPublic).ToImmutableArray());
 
+                return _otherMethodsPublic;
+            }
+        }
     }
 
 }

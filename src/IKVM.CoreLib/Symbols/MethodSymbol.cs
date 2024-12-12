@@ -260,12 +260,12 @@ namespace IKVM.CoreLib.Symbols
         /// <summary>
         /// Gets the return type of this method.
         /// </summary>
-        public abstract TypeSymbol ReturnType { get; }
+        public TypeSymbol ReturnType => ReturnParameter.ParameterType;
 
         /// <summary>
         /// Gets the custom attributes for the return type.
         /// </summary>
-        public abstract ICustomAttributeProvider ReturnTypeCustomAttributes { get; }
+        public ICustomAttributeProvider ReturnTypeCustomAttributes => ReturnParameter;
 
         /// <summary>
         /// When overridden in a derived class, returns the <see cref="MethodSymbol"/> object for the method on the direct or indirect base class in which the method represented by this instance was first declared.

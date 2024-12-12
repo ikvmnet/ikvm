@@ -17,6 +17,13 @@ namespace IKVM.CoreLib.Symbols
         }
 
         /// <summary>
+        /// Attempts to resolve the specified type definition. If the type definition is missing, <c>null</c> is returned.
+        /// </summary>
+        /// <param name="definitionTypeSymbol"></param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        internal abstract TypeDefinition? ResolveTypeSource(DefinitionTypeSymbol definitionTypeSymbol);
+
+        /// <summary>
         /// Gets the binder.
         /// </summary>
         internal DefaultBinder DefaultBinder { get; }
@@ -36,6 +43,12 @@ namespace IKVM.CoreLib.Symbols
         /// <returns></returns>
         public abstract AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes);
 
+        /// <summary>
+        /// Attempts to resolve the source of the assembly with the specified identity.
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <returns></returns>
+        internal abstract AssemblyDefinition? ResolveAssemblyDef(AssemblyIdentity identity);
 
     }
 

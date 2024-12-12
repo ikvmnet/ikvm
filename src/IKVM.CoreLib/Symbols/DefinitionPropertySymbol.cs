@@ -1,7 +1,7 @@
 ﻿namespace IKVM.CoreLib.Symbols
 {
 
-    abstract class DefinitionPropertySymbol : PropertySymbol
+    class DefinitionPropertySymbol : PropertySymbol
     {
 
         /// <summary>
