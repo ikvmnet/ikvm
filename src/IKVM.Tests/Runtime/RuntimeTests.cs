@@ -29,11 +29,13 @@ namespace IKVM.Tests.Runtime
             /// <param name="clazz"></param>
             /// <param name="name"></param>
             /// <returns></returns>
-            public Class Load(ClassFileBuilder clazz, string name)
+            public Type Load(ClassFileBuilder builder, string name)
             {
-                var clazzBuffer = new BlobBuilder();
-                clazz.Serialize(clazzBuffer);
-                return defineClass(name, clazzBuffer.ToArray(), 0, clazzBuffer.Count);
+                var buffer = new BlobBuilder();
+                builder.Serialize(buffer);
+
+                var clazz = defineClass(name, buffer.ToArray(), 0, buffer.Count);
+                return global::ikvm.runtime.Util.getRuntimeTypeFromClass(clazz);
             }
 
         }
@@ -81,11 +83,11 @@ namespace IKVM.Tests.Runtime
                 .Areturn(), 2, 0);
 
             var cldr = new ByteArrayClassLoader();
-            var clazz = cldr.Load(builder, "Test");
+            var type = cldr.Load(builder, "Test");
 
-            var instance = clazz.newInstance();
-            var method = clazz.getMethod("CreateObject", []);
-            var result = method.invoke(instance, []);
+            var instance = Activator.CreateInstance(type);
+            var method = type.GetMethod("CreateObject", []);
+            var result = method.Invoke(instance, []);
             result.Should().BeOfType<global::java.lang.Object>();
         }
 
