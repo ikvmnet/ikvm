@@ -31,28 +31,39 @@ using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// A customized and simplified version of <see cref="MethodAnalyzer"/> that exists purely to inline jsr instructions.
+    /// </summary>
     sealed class JsrInliner
     {
-
-        private ClassFile.Method.Instruction[] codeCopy;
-        private int codeLength;
-        private InstructionFlags[] flags;
-        private readonly ClassFile.Method m;
-        private readonly JsrMethodAnalyzer ma;
 
         internal static void InlineJsrs(RuntimeClassLoader classLoader, RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method m)
         {
             JsrInliner inliner;
+
             do
             {
-                ClassFile.Method.Instruction[] codeCopy = (ClassFile.Method.Instruction[])m.Instructions.Clone();
-                InstructionFlags[] flags = new InstructionFlags[codeCopy.Length];
-                JsrMethodAnalyzer ma = new JsrMethodAnalyzer(mw, classFile, m, classLoader, flags);
+                var codeCopy = (ClassFile.Method.Instruction[])m.Instructions.Clone();
+                var flags = new InstructionFlags[codeCopy.Length];
+                var ma = new JsrMethodAnalyzer(mw, classFile, m, classLoader, flags);
                 inliner = new JsrInliner(codeCopy, flags, m, ma);
             } while (inliner.InlineJsrs());
         }
 
-        private JsrInliner(ClassFile.Method.Instruction[] codeCopy, InstructionFlags[] flags, ClassFile.Method m, JsrMethodAnalyzer ma)
+        ClassFile.Method.Instruction[] codeCopy;
+        int codeLength;
+        InstructionFlags[] flags;
+        readonly ClassFile.Method m;
+        readonly JsrMethodAnalyzer ma;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="codeCopy"></param>
+        /// <param name="flags"></param>
+        /// <param name="m"></param>
+        /// <param name="ma"></param>
+        JsrInliner(ClassFile.Method.Instruction[] codeCopy, InstructionFlags[] flags, ClassFile.Method m, JsrMethodAnalyzer ma)
         {
             this.codeCopy = codeCopy;
             codeLength = codeCopy.Length;
@@ -61,21 +72,23 @@ namespace IKVM.Runtime
             this.ma = ma;
         }
 
-        private void Add(ClassFile.Method.Instruction instr)
+        void Add(ClassFile.Method.Instruction instr)
         {
             if (codeLength == codeCopy.Length)
             {
                 Array.Resize(ref codeCopy, codeLength * 2);
                 Array.Resize(ref flags, codeLength * 2);
             }
+
             codeCopy[codeLength++] = instr;
         }
 
-        private bool InlineJsrs()
+        bool InlineJsrs()
         {
-            bool hasJsrs = false;
-            List<SubroutineCall> subs = new List<SubroutineCall>();
+            var hasJsrs = false;
+            var subs = new List<SubroutineCall>();
             int len = codeLength;
+
             for (int i = 0; i < len; i++)
             {
                 // note that we're also (needlessly) processing the subroutines here, but that shouldn't be a problem (just a minor waste of cpu)
@@ -84,18 +97,18 @@ namespace IKVM.Runtime
                 {
                     int subroutineId = m.Instructions[i].TargetIndex;
                     codeCopy[i].PatchOpCode(NormalizedByteCode.__goto, codeLength);
-                    SubroutineCall sub = new SubroutineCall(this, subroutineId, i + 1);
+                    var sub = new SubroutineCall(this, subroutineId, i + 1);
                     hasJsrs |= sub.InlineSubroutine();
                     subs.Add(sub);
                 }
             }
-            List<ClassFile.Method.ExceptionTableEntry> exceptions = new List<ClassFile.Method.ExceptionTableEntry>(m.ExceptionTable);
-            foreach (SubroutineCall sub in subs)
-            {
+
+            var exceptions = new List<ClassFile.Method.ExceptionTableEntry>(m.ExceptionTable);
+            foreach (var sub in subs)
                 sub.DoExceptions(m.ExceptionTable, exceptions);
-            }
+
             m.ExceptionTable = exceptions.ToArray();
-            ClassFile.Method.Instruction instr = new ClassFile.Method.Instruction();
+            var instr = new ClassFile.Method.Instruction();
             instr.SetTermNop(0xFFFF);
             Add(instr);
             Array.Resize(ref codeCopy, codeLength);
@@ -104,15 +117,22 @@ namespace IKVM.Runtime
             return hasJsrs;
         }
 
-        private sealed class SubroutineCall
+        sealed class SubroutineCall
         {
-            private readonly JsrInliner inliner;
-            private readonly int subroutineIndex;
-            private readonly int returnIndex;
-            private readonly int[] branchMap;
-            private readonly int baseIndex;
-            private int endIndex;
 
+            readonly JsrInliner inliner;
+            readonly int subroutineIndex;
+            readonly int returnIndex;
+            readonly int[] branchMap;
+            readonly int baseIndex;
+            int endIndex;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="inliner"></param>
+            /// <param name="subroutineIndex"></param>
+            /// <param name="returnIndex"></param>
             internal SubroutineCall(JsrInliner inliner, int subroutineIndex, int returnIndex)
             {
                 this.inliner = inliner;
@@ -126,14 +146,14 @@ namespace IKVM.Runtime
                 }
             }
 
-            private void Emit(ClassFile.Method.Instruction instr)
+            void Emit(ClassFile.Method.Instruction instr)
             {
                 inliner.Add(instr);
             }
 
-            private void EmitGoto(int targetIndex)
+            void EmitGoto(int targetIndex)
             {
-                ClassFile.Method.Instruction instr = new ClassFile.Method.Instruction();
+                var instr = new ClassFile.Method.Instruction();
                 instr.PatchOpCode(NormalizedByteCode.__goto, targetIndex);
                 instr.SetPC(-1);
                 Emit(instr);
@@ -142,10 +162,11 @@ namespace IKVM.Runtime
             internal bool InlineSubroutine()
             {
                 bool hasJsrs = false;
+
                 // start with a pre-amble to load a dummy return address on the stack and to branch to the subroutine
                 {
                     // TODO consider exception handling around these instructions
-                    ClassFile.Method.Instruction instr = new ClassFile.Method.Instruction();
+                    var instr = new ClassFile.Method.Instruction();
                     instr.PatchOpCode(NormalizedByteCode.__aconst_null);
                     instr.SetPC(inliner.m.Instructions[subroutineIndex].PC);
                     Emit(instr);
@@ -181,13 +202,9 @@ namespace IKVM.Runtime
                                 {
                                     int subid = inliner.ma.GetLocalTypeWrapper(instructionIndex, inliner.m.Instructions[instructionIndex].TargetIndex).SubroutineIndex;
                                     if (subid == subroutineIndex)
-                                    {
                                         EmitGoto(returnIndex);
-                                    }
                                     else
-                                    {
                                         Emit(inliner.m.Instructions[instructionIndex]);
-                                    }
                                     break;
                                 }
                             default:
@@ -207,7 +224,7 @@ namespace IKVM.Runtime
                 return hasJsrs;
             }
 
-            private void DoFixups()
+            void DoFixups()
             {
                 for (int instructionIndex = baseIndex; instructionIndex < endIndex; instructionIndex++)
                 {
@@ -249,70 +266,66 @@ namespace IKVM.Runtime
                 }
             }
 
-            private int MapExceptionStartEnd(int index)
+            int MapExceptionStartEnd(int index)
             {
                 while (branchMap[index] < baseIndex)
                 {
                     index++;
                     if (index == branchMap.Length)
-                    {
                         return endIndex;
-                    }
                 }
+
                 return branchMap[index];
             }
 
             internal void DoExceptions(ClassFile.Method.ExceptionTableEntry[] table, List<ClassFile.Method.ExceptionTableEntry> newExceptions)
             {
-                foreach (ClassFile.Method.ExceptionTableEntry entry in table)
+                foreach (var entry in table)
                 {
                     int start = MapExceptionStartEnd(entry.startIndex);
                     int end = MapExceptionStartEnd(entry.endIndex);
                     if (start != end)
                     {
-                        ClassFile.Method.ExceptionTableEntry newEntry = new ClassFile.Method.ExceptionTableEntry(start, end, branchMap[entry.handlerIndex], entry.catchType, entry.ordinal);
+                        var newEntry = new ClassFile.Method.ExceptionTableEntry(start, end, branchMap[entry.handlerIndex], entry.catchType, entry.ordinal);
                         newExceptions.Add(newEntry);
                     }
                 }
             }
+
         }
 
         class SimpleType
         {
-            internal static readonly SimpleType Invalid = null;
-            internal static readonly SimpleType Primitive = new SimpleType();
-            internal static readonly SimpleType WidePrimitive = new SimpleType();
-            internal static readonly SimpleType Object = new SimpleType();
-            internal static readonly SimpleType[] EmptyArray = new SimpleType[0];
 
-            private SimpleType() { }
-
-            internal bool IsPrimitive
+            sealed class ReturnAddressType : SimpleType
             {
-                get
-                {
-                    return this == SimpleType.Primitive
-                        || this == SimpleType.WidePrimitive;
-                }
-            }
 
-            internal bool IsWidePrimitive
-            {
-                get
-                {
-                    return this == SimpleType.WidePrimitive;
-                }
-            }
-
-            private sealed class ReturnAddressType : SimpleType
-            {
                 internal readonly int subroutineIndex;
 
                 internal ReturnAddressType(int subroutineIndex)
                 {
                     this.subroutineIndex = subroutineIndex;
                 }
+
             }
+
+            internal static readonly SimpleType Invalid = null;
+            internal static readonly SimpleType Primitive = new SimpleType();
+            internal static readonly SimpleType WidePrimitive = new SimpleType();
+            internal static readonly SimpleType Object = new SimpleType();
+            internal static readonly SimpleType[] EmptyArray = [];
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            SimpleType()
+            {
+
+            }
+
+            internal bool IsPrimitive => this == SimpleType.Primitive || this == SimpleType.WidePrimitive;
+
+            internal bool IsWidePrimitive => this == SimpleType.WidePrimitive;
 
             internal static SimpleType MakeRet(int subroutineIndex)
             {
@@ -324,36 +337,42 @@ namespace IKVM.Runtime
                 return w is ReturnAddressType;
             }
 
-            internal int SubroutineIndex
-            {
-                get
-                {
-                    return ((ReturnAddressType)this).subroutineIndex;
-                }
-            }
+            internal int SubroutineIndex => ((ReturnAddressType)this).subroutineIndex;
+
         }
 
         sealed class JsrMethodAnalyzer
         {
-            private ClassFile classFile;
-            private InstructionState[] state;
-            private List<int>[] callsites;
-            private List<int>[] returnsites;
 
+            readonly ClassFile _classFile;
+            readonly InstructionState[] _state;
+            readonly List<int>[] _callsites;
+            readonly List<int>[] _returnsites;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="mw"></param>
+            /// <param name="classFile"></param>
+            /// <param name="method"></param>
+            /// <param name="classLoader"></param>
+            /// <param name="flags"></param>
+            /// <exception cref="VerifyError"></exception>
+            /// <exception cref="ClassFormatError"></exception>
+            /// <exception cref="InvalidOperationException"></exception>
+            /// <exception cref="NotImplementedException"></exception>
             internal JsrMethodAnalyzer(RuntimeJavaMethod mw, ClassFile classFile, ClassFile.Method method, RuntimeClassLoader classLoader, InstructionFlags[] flags)
             {
                 if (method.VerifyError != null)
-                {
                     throw new VerifyError(method.VerifyError);
-                }
 
-                this.classFile = classFile;
-                state = new InstructionState[method.Instructions.Length];
-                callsites = new List<int>[method.Instructions.Length];
-                returnsites = new List<int>[method.Instructions.Length];
+                _classFile = classFile;
+                _state = new InstructionState[method.Instructions.Length];
+                _callsites = new List<int>[method.Instructions.Length];
+                _returnsites = new List<int>[method.Instructions.Length];
 
                 // because types have to have identity, the subroutine return address types are cached here
-                Dictionary<int, SimpleType> returnAddressTypes = new Dictionary<int, SimpleType>();
+                var returnAddressTypes = new Dictionary<int, SimpleType>();
 
                 try
                 {
@@ -364,9 +383,7 @@ namespace IKVM.Runtime
                         int end = method.ExceptionTable[i].endIndex;
                         int handler = method.ExceptionTable[i].handlerIndex;
                         if (start >= end || start == -1 || end == -1 || handler <= 0)
-                        {
                             throw new IndexOutOfRangeException();
-                        }
                     }
                 }
                 catch (IndexOutOfRangeException)
@@ -375,22 +392,24 @@ namespace IKVM.Runtime
                 }
 
                 // start by computing the initial state, the stack is empty and the locals contain the arguments
-                state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
+                _state[0] = new InstructionState(method.MaxLocals, method.MaxStack);
                 SimpleType thisType;
                 int firstNonArgLocalIndex = 0;
-                if (!method.IsStatic)
+                if (method.IsStatic == false)
                 {
                     thisType = SimpleType.Object;
-                    state[0].SetLocalType(firstNonArgLocalIndex++, thisType, -1);
+                    _state[0].SetLocalType(firstNonArgLocalIndex++, thisType, -1);
                 }
                 else
                 {
                     thisType = null;
                 }
-                RuntimeJavaType[] argTypeWrappers = mw.GetParameters();
+
+                var argTypeWrappers = mw.GetParameters();
                 for (int i = 0; i < argTypeWrappers.Length; i++)
                 {
-                    RuntimeJavaType tw = argTypeWrappers[i];
+                    var tw = argTypeWrappers[i];
+
                     SimpleType type;
                     if (tw.IsWidePrimitive)
                     {
@@ -404,51 +423,47 @@ namespace IKVM.Runtime
                     {
                         type = SimpleType.Object;
                     }
-                    state[0].SetLocalType(firstNonArgLocalIndex++, type, -1);
+
+                    _state[0].SetLocalType(firstNonArgLocalIndex++, type, -1);
                     if (type.IsWidePrimitive)
-                    {
                         firstNonArgLocalIndex++;
-                    }
                 }
-                SimpleType[] argumentsByLocalIndex = new SimpleType[firstNonArgLocalIndex];
+
+                var argumentsByLocalIndex = new SimpleType[firstNonArgLocalIndex];
                 for (int i = 0; i < argumentsByLocalIndex.Length; i++)
-                {
-                    argumentsByLocalIndex[i] = state[0].GetLocalTypeEx(i);
-                }
-                InstructionState s = state[0].Copy();
-                bool done = false;
-                ClassFile.Method.Instruction[] instructions = method.Instructions;
+                    argumentsByLocalIndex[i] = _state[0].GetLocalTypeEx(i);
+
+                var s = _state[0].Copy();
+                var done = false;
+                var instructions = method.Instructions;
+
                 while (!done)
                 {
                     done = true;
                     for (int i = 0; i < instructions.Length; i++)
                     {
-                        if (state[i] != null && state[i].changed)
+                        if (_state[i] != null && _state[i].changed)
                         {
                             try
                             {
-                                //Console.WriteLine(method.Instructions[i].PC + ": " + method.Instructions[i].OpCode.ToString());
                                 done = false;
-                                state[i].changed = false;
+                                _state[i].changed = false;
+
                                 // mark the exception handlers reachable from this instruction
                                 for (int j = 0; j < method.ExceptionTable.Length; j++)
-                                {
                                     if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
-                                    {
-                                        MergeExceptionHandler(method.ExceptionTable[j].handlerIndex, state[i]);
-                                    }
-                                }
-                                state[i].CopyTo(s);
-                                ClassFile.Method.Instruction instr = instructions[i];
+                                        MergeExceptionHandler(method.ExceptionTable[j].handlerIndex, _state[i]);
+
+                                _state[i].CopyTo(s);
+                                var instr = instructions[i];
+
                                 switch (instr.NormalizedOpCode)
                                 {
                                     case NormalizedByteCode.__aload:
                                         {
-                                            SimpleType type = s.GetLocalType(instr.NormalizedArg1);
+                                            var type = s.GetLocalType(instr.NormalizedArg1);
                                             if (type == SimpleType.Invalid || type.IsPrimitive)
-                                            {
                                                 throw new VerifyError("Object reference expected");
-                                            }
                                             s.PushType(type);
                                             break;
                                         }
@@ -617,18 +632,15 @@ namespace IKVM.Runtime
                                     case NormalizedByteCode.__invokeinterface:
                                     case NormalizedByteCode.__invokestatic:
                                         {
-                                            ClassFile.ConstantPoolItemMI cpi = GetMethodref(instr.Arg1);
+                                            var cpi = GetMethodref(instr.Arg1);
                                             s.MultiPopAnyType(cpi.GetArgTypes().Length);
                                             if (instr.NormalizedOpCode != NormalizedByteCode.__invokestatic)
-                                            {
                                                 s.PopType();
-                                            }
-                                            string sig = cpi.Signature;
+
+                                            var sig = cpi.Signature;
                                             sig = sig.Substring(sig.IndexOf(')') + 1);
                                             if (sig != "V")
-                                            {
                                                 s.PushType(sig);
-                                            }
                                             break;
                                         }
                                     case NormalizedByteCode.__goto:
@@ -714,13 +726,11 @@ namespace IKVM.Runtime
                                     case NormalizedByteCode.__multianewarray:
                                         {
                                             if (instr.Arg2 < 1)
-                                            {
                                                 throw new VerifyError("Illegal dimension argument");
-                                            }
+
                                             for (int j = 0; j < instr.Arg2; j++)
-                                            {
                                                 s.PopPrimitive();
-                                            }
+
                                             s.PushObject();
                                             break;
                                         }
@@ -734,22 +744,22 @@ namespace IKVM.Runtime
                                         break;
                                     case NormalizedByteCode.__swap:
                                         {
-                                            SimpleType t1 = s.PopType();
-                                            SimpleType t2 = s.PopType();
+                                            var t1 = s.PopType();
+                                            var t2 = s.PopType();
                                             s.PushType(t1);
                                             s.PushType(t2);
                                             break;
                                         }
                                     case NormalizedByteCode.__dup:
                                         {
-                                            SimpleType t = s.PopType();
+                                            var t = s.PopType();
                                             s.PushType(t);
                                             s.PushType(t);
                                             break;
                                         }
                                     case NormalizedByteCode.__dup2:
                                         {
-                                            SimpleType t = s.PopAnyType();
+                                            var t = s.PopAnyType();
                                             if (t.IsWidePrimitive)
                                             {
                                                 s.PushType(t);
@@ -757,7 +767,7 @@ namespace IKVM.Runtime
                                             }
                                             else
                                             {
-                                                SimpleType t2 = s.PopType();
+                                                var t2 = s.PopType();
                                                 s.PushType(t2);
                                                 s.PushType(t);
                                                 s.PushType(t2);
@@ -767,8 +777,8 @@ namespace IKVM.Runtime
                                         }
                                     case NormalizedByteCode.__dup_x1:
                                         {
-                                            SimpleType value1 = s.PopType();
-                                            SimpleType value2 = s.PopType();
+                                            var value1 = s.PopType();
+                                            var value2 = s.PopType();
                                             s.PushType(value1);
                                             s.PushType(value2);
                                             s.PushType(value1);
@@ -776,18 +786,18 @@ namespace IKVM.Runtime
                                         }
                                     case NormalizedByteCode.__dup2_x1:
                                         {
-                                            SimpleType value1 = s.PopAnyType();
+                                            var value1 = s.PopAnyType();
                                             if (value1.IsWidePrimitive)
                                             {
-                                                SimpleType value2 = s.PopType();
+                                                var value2 = s.PopType();
                                                 s.PushType(value1);
                                                 s.PushType(value2);
                                                 s.PushType(value1);
                                             }
                                             else
                                             {
-                                                SimpleType value2 = s.PopType();
-                                                SimpleType value3 = s.PopType();
+                                                var value2 = s.PopType();
+                                                var value3 = s.PopType();
                                                 s.PushType(value2);
                                                 s.PushType(value1);
                                                 s.PushType(value3);
@@ -798,8 +808,8 @@ namespace IKVM.Runtime
                                         }
                                     case NormalizedByteCode.__dup_x2:
                                         {
-                                            SimpleType value1 = s.PopType();
-                                            SimpleType value2 = s.PopAnyType();
+                                            var value1 = s.PopType();
+                                            var value2 = s.PopAnyType();
                                             if (value2.IsWidePrimitive)
                                             {
                                                 s.PushType(value1);
@@ -808,7 +818,7 @@ namespace IKVM.Runtime
                                             }
                                             else
                                             {
-                                                SimpleType value3 = s.PopType();
+                                                var value3 = s.PopType();
                                                 s.PushType(value1);
                                                 s.PushType(value3);
                                                 s.PushType(value2);
@@ -818,10 +828,10 @@ namespace IKVM.Runtime
                                         }
                                     case NormalizedByteCode.__dup2_x2:
                                         {
-                                            SimpleType value1 = s.PopAnyType();
+                                            var value1 = s.PopAnyType();
                                             if (value1.IsWidePrimitive)
                                             {
-                                                SimpleType value2 = s.PopAnyType();
+                                                var value2 = s.PopAnyType();
                                                 if (value2.IsWidePrimitive)
                                                 {
                                                     // Form 4
@@ -832,7 +842,7 @@ namespace IKVM.Runtime
                                                 else
                                                 {
                                                     // Form 2
-                                                    SimpleType value3 = s.PopType();
+                                                    var value3 = s.PopType();
                                                     s.PushType(value1);
                                                     s.PushType(value3);
                                                     s.PushType(value2);
@@ -841,8 +851,8 @@ namespace IKVM.Runtime
                                             }
                                             else
                                             {
-                                                SimpleType value2 = s.PopType();
-                                                SimpleType value3 = s.PopAnyType();
+                                                var value2 = s.PopType();
+                                                var value3 = s.PopAnyType();
                                                 if (value3.IsWidePrimitive)
                                                 {
                                                     // Form 3
@@ -855,7 +865,7 @@ namespace IKVM.Runtime
                                                 else
                                                 {
                                                     // Form 4
-                                                    SimpleType value4 = s.PopType();
+                                                    var value4 = s.PopType();
                                                     s.PushType(value2);
                                                     s.PushType(value1);
                                                     s.PushType(value4);
@@ -871,11 +881,10 @@ namespace IKVM.Runtime
                                         break;
                                     case NormalizedByteCode.__pop2:
                                         {
-                                            SimpleType type = s.PopAnyType();
+                                            var type = s.PopAnyType();
                                             if (!type.IsWidePrimitive)
-                                            {
                                                 s.PopType();
-                                            }
+
                                             break;
                                         }
                                     case NormalizedByteCode.__monitorenter:
@@ -1034,15 +1043,14 @@ namespace IKVM.Runtime
                                         {
                                             // TODO if we're returning from a higher level subroutine, invalidate
                                             // all the intermediate return addresses
-                                            int subroutineIndex = s.GetLocalRet(instr.Arg1);
+                                            var subroutineIndex = s.GetLocalRet(instr.Arg1);
                                             s.CheckSubroutineActive(subroutineIndex);
                                             break;
                                         }
                                     case NormalizedByteCode.__nop:
                                         if (i + 1 == instructions.Length)
-                                        {
                                             throw new VerifyError("Falling off the end of the code");
-                                        }
+
                                         break;
                                     case NormalizedByteCode.__invokedynamic:
                                         // it is impossible to have a valid invokedynamic in a pre-7.0 class file
@@ -1050,17 +1058,14 @@ namespace IKVM.Runtime
                                     default:
                                         throw new NotImplementedException(instr.NormalizedOpCode.ToString());
                                 }
+
                                 if (s.GetStackHeight() > method.MaxStack)
-                                {
                                     throw new VerifyError("Stack size too large");
-                                }
+
                                 for (int j = 0; j < method.ExceptionTable.Length; j++)
-                                {
                                     if (method.ExceptionTable[j].endIndex == i + 1)
-                                    {
                                         MergeExceptionHandler(method.ExceptionTable[j].handlerIndex, s);
-                                    }
-                                }
+
                                 try
                                 {
                                     // another big switch to handle the opcode targets
@@ -1070,9 +1075,9 @@ namespace IKVM.Runtime
                                         case NormalizedByteCode.__lookupswitch:
                                             for (int j = 0; j < instr.SwitchEntryCount; j++)
                                             {
-                                                state[instr.GetSwitchTargetIndex(j)] += s;
+                                                _state[instr.GetSwitchTargetIndex(j)] += s;
                                             }
-                                            state[instr.DefaultTarget] += s;
+                                            _state[instr.DefaultTarget] += s;
                                             break;
                                         case NormalizedByteCode.__ifeq:
                                         case NormalizedByteCode.__ifne:
@@ -1090,31 +1095,31 @@ namespace IKVM.Runtime
                                         case NormalizedByteCode.__if_acmpne:
                                         case NormalizedByteCode.__ifnull:
                                         case NormalizedByteCode.__ifnonnull:
-                                            state[i + 1] += s;
-                                            state[instr.TargetIndex] += s;
+                                            _state[i + 1] += s;
+                                            _state[instr.TargetIndex] += s;
                                             break;
                                         case NormalizedByteCode.__goto:
-                                            state[instr.TargetIndex] += s;
+                                            _state[instr.TargetIndex] += s;
                                             break;
                                         case NormalizedByteCode.__jsr:
                                             {
                                                 int index = instr.TargetIndex;
                                                 s.SetSubroutineId(index);
-                                                SimpleType retAddressType;
-                                                if (!returnAddressTypes.TryGetValue(index, out retAddressType))
+
+                                                if (!returnAddressTypes.TryGetValue(index, out var retAddressType))
                                                 {
                                                     retAddressType = SimpleType.MakeRet(index);
                                                     returnAddressTypes[index] = retAddressType;
                                                 }
+
                                                 s.PushType(retAddressType);
-                                                state[index] += s;
-                                                List<int> returns = GetReturnSites(i);
+                                                _state[index] += s;
+
+                                                var returns = GetReturnSites(i);
                                                 if (returns != null)
                                                 {
                                                     foreach (int returnIndex in returns)
-                                                    {
-                                                        state[i + 1] = InstructionState.MergeSubroutineReturn(state[i + 1], s, state[returnIndex], state[returnIndex].GetLocalsModified(index));
-                                                    }
+                                                        _state[i + 1] = InstructionState.MergeSubroutineReturn(_state[i + 1], s, _state[returnIndex], _state[returnIndex].GetLocalsModified(index));
                                                 }
                                                 AddCallSite(index, i);
                                                 break;
@@ -1130,7 +1135,7 @@ namespace IKVM.Runtime
                                                 for (int j = 0; j < cs.Length; j++)
                                                 {
                                                     AddReturnSite(cs[j], i);
-                                                    state[cs[j] + 1] = InstructionState.MergeSubroutineReturn(state[cs[j] + 1], state[cs[j]], s, locals_modified);
+                                                    _state[cs[j] + 1] = InstructionState.MergeSubroutineReturn(_state[cs[j] + 1], _state[cs[j]], s, locals_modified);
                                                 }
                                                 break;
                                             }
@@ -1143,7 +1148,7 @@ namespace IKVM.Runtime
                                         case NormalizedByteCode.__athrow:
                                             break;
                                         default:
-                                            state[i + 1] += s;
+                                            _state[i + 1] += s;
                                             break;
                                     }
                                 }
@@ -1158,13 +1163,11 @@ namespace IKVM.Runtime
                             }
                             catch (VerifyError x)
                             {
-                                string opcode = instructions[i].NormalizedOpCode.ToString();
+                                var opcode = instructions[i].NormalizedOpCode.ToString();
                                 if (opcode.StartsWith("__"))
-                                {
                                     opcode = opcode.Substring(2);
-                                }
-                                throw new VerifyError(string.Format("{5} (class: {0}, method: {1}, signature: {2}, offset: {3}, instruction: {4})",
-                                    classFile.Name, method.Name, method.Signature, instructions[i].PC, opcode, x.Message), x);
+
+                                throw new VerifyError($"{x.Message} (class: {classFile.Name}, method: {method.Name}, signature: {method.Signature}, offset: {instructions[i].PC}, instruction: {opcode})", x);
                             }
                         }
                     }
@@ -1257,29 +1260,25 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+
                     if (didJsrOrRet)
                     {
                         for (int i = 0; i < instructions.Length; i++)
                         {
-                            if (instructions[i].NormalizedOpCode == NormalizedByteCode.__ret
-                                && (flags[i] & InstructionFlags.Reachable) != 0)
+                            if (instructions[i].NormalizedOpCode == NormalizedByteCode.__ret && (flags[i] & InstructionFlags.Reachable) != 0)
                             {
-                                int subroutineIndex = state[i].GetLocalRet(instructions[i].Arg1);
-                                int[] cs = GetCallSites(subroutineIndex);
+                                var subroutineIndex = _state[i].GetLocalRet(instructions[i].Arg1);
+                                var cs = GetCallSites(subroutineIndex);
                                 for (int j = 0; j < cs.Length; j++)
-                                {
                                     if ((flags[cs[j]] & InstructionFlags.Reachable) != 0)
-                                    {
                                         flags[cs[j] + 1] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-                                    }
-                                }
                             }
                         }
                     }
                 }
             }
 
-            private void MergeExceptionHandler(int handlerIndex, InstructionState curr)
+            void MergeExceptionHandler(int handlerIndex, InstructionState curr)
             {
                 // NOTE this used to be CopyLocalsAndSubroutines, but it doesn't (always) make
                 // sense to copy the subroutine state
@@ -1288,16 +1287,16 @@ namespace IKVM.Runtime
                 // UPDATE subroutines must be copied as well, but I think I now have a better
                 // understanding of subroutine merges, so the problems that triggered the previous
                 // change here hopefully won't arise anymore
-                InstructionState ex = curr.CopyLocalsAndSubroutines();
+                var ex = curr.CopyLocalsAndSubroutines();
                 ex.PushObject();
-                state[handlerIndex] += ex;
+                _state[handlerIndex] += ex;
             }
 
             ClassFile.ConstantPoolItemMI GetMethodref(int index)
             {
                 try
                 {
-                    var item = classFile.GetMethodref(new MethodrefConstantHandle(checked((ushort)index)));
+                    var item = _classFile.GetMethodref(new MethodrefConstantHandle(checked((ushort)index)));
                     if (item != null)
                         return item;
                 }
@@ -1321,7 +1320,7 @@ namespace IKVM.Runtime
             {
                 try
                 {
-                    var item = classFile.GetFieldref(new FieldrefConstantHandle(checked((ushort)index)));
+                    var item = _classFile.GetFieldref(new FieldrefConstantHandle(checked((ushort)index)));
                     if (item != null)
                         return item;
                 }
@@ -1345,7 +1344,7 @@ namespace IKVM.Runtime
             {
                 try
                 {
-                    return classFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)index)));
+                    return _classFile.GetConstantPoolConstantType(new ConstantHandle(ConstantKind.Unknown, checked((ushort)index)));
                 }
                 catch (OverflowException)
                 {
@@ -1371,86 +1370,81 @@ namespace IKVM.Runtime
                 throw new VerifyError("Illegal constant pool index");
             }
 
-            private void AddReturnSite(int callSiteIndex, int returnSiteIndex)
+            void AddReturnSite(int callSiteIndex, int returnSiteIndex)
             {
-                if (returnsites[callSiteIndex] == null)
-                {
-                    returnsites[callSiteIndex] = new List<int>();
-                }
-                List<int> l = returnsites[callSiteIndex];
+                _returnsites[callSiteIndex] ??= new List<int>();
+
+                var l = _returnsites[callSiteIndex];
                 if (l.IndexOf(returnSiteIndex) == -1)
                 {
-                    state[callSiteIndex].changed = true;
+                    _state[callSiteIndex].changed = true;
                     l.Add(returnSiteIndex);
                 }
             }
 
-            private List<int> GetReturnSites(int callSiteIndex)
+            List<int> GetReturnSites(int callSiteIndex)
             {
-                return returnsites[callSiteIndex];
+                return _returnsites[callSiteIndex];
             }
 
-            private void AddCallSite(int subroutineIndex, int callSiteIndex)
+            void AddCallSite(int subroutineIndex, int callSiteIndex)
             {
-                if (callsites[subroutineIndex] == null)
-                {
-                    callsites[subroutineIndex] = new List<int>();
-                }
-                List<int> l = callsites[subroutineIndex];
+                _callsites[subroutineIndex] ??= new List<int>();
+
+                var l = _callsites[subroutineIndex];
                 if (l.IndexOf(callSiteIndex) == -1)
                 {
                     l.Add(callSiteIndex);
-                    state[subroutineIndex].AddCallSite();
+                    _state[subroutineIndex].AddCallSite();
                 }
             }
 
-            private int[] GetCallSites(int subroutineIndex)
+            int[] GetCallSites(int subroutineIndex)
             {
-                return callsites[subroutineIndex].ToArray();
+                return _callsites[subroutineIndex].ToArray();
             }
 
             internal SimpleType GetLocalTypeWrapper(int index, int local)
             {
-                return state[index].GetLocalTypeEx(local);
+                return _state[index].GetLocalTypeEx(local);
             }
 
             internal bool IsSubroutineActive(int instructionIndex, int subroutineIndex)
             {
-                return state[instructionIndex].IsSubroutineActive(subroutineIndex);
+                return _state[instructionIndex].IsSubroutineActive(subroutineIndex);
             }
 
             sealed class Subroutine
             {
-                private int subroutineIndex;
-                private bool[] localsModified;
 
-                private Subroutine(int subroutineIndex, bool[] localsModified)
+                readonly int subroutineIndex;
+                readonly bool[] localsModified;
+
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="subroutineIndex"></param>
+                /// <param name="localsModified"></param>
+                Subroutine(int subroutineIndex, bool[] localsModified)
                 {
                     this.subroutineIndex = subroutineIndex;
                     this.localsModified = localsModified;
                 }
 
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="subroutineIndex"></param>
+                /// <param name="maxLocals"></param>
                 internal Subroutine(int subroutineIndex, int maxLocals)
                 {
                     this.subroutineIndex = subroutineIndex;
                     localsModified = new bool[maxLocals];
                 }
 
-                internal int SubroutineIndex
-                {
-                    get
-                    {
-                        return subroutineIndex;
-                    }
-                }
+                internal int SubroutineIndex => subroutineIndex;
 
-                internal bool[] LocalsModified
-                {
-                    get
-                    {
-                        return localsModified;
-                    }
-                }
+                internal bool[] LocalsModified => localsModified;
 
                 internal void SetLocalModified(int local)
                 {
@@ -1461,18 +1455,13 @@ namespace IKVM.Runtime
                 {
                     return new Subroutine(subroutineIndex, (bool[])localsModified.Clone());
                 }
+
             }
 
             sealed class InstructionState
             {
-                private SimpleType[] stack;
-                private int stackSize;
-                private int stackEnd;
-                private SimpleType[] locals;
-                private List<Subroutine> subroutines;
-                private int callsites;
-                internal bool changed = true;
-                private enum ShareFlags : byte
+
+                enum ShareFlags : byte
                 {
                     None = 0,
                     Stack = 1,
@@ -1480,8 +1469,25 @@ namespace IKVM.Runtime
                     Subroutines = 4,
                     All = Stack | Locals | Subroutines
                 }
-                private ShareFlags flags;
 
+                SimpleType[] stack;
+                int stackSize;
+                int stackEnd;
+                SimpleType[] locals;
+                List<Subroutine> subroutines;
+                int callsites;
+                internal bool changed = true;
+                ShareFlags flags;
+
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="stack"></param>
+                /// <param name="stackSize"></param>
+                /// <param name="stackEnd"></param>
+                /// <param name="locals"></param>
+                /// <param name="subroutines"></param>
+                /// <param name="callsites"></param>
                 private InstructionState(SimpleType[] stack, int stackSize, int stackEnd, SimpleType[] locals, List<Subroutine> subroutines, int callsites)
                 {
                     this.flags = ShareFlags.All;
@@ -1493,6 +1499,11 @@ namespace IKVM.Runtime
                     this.callsites = callsites;
                 }
 
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="maxLocals"></param>
+                /// <param name="maxStack"></param>
                 internal InstructionState(int maxLocals, int maxStack)
                 {
                     this.flags = ShareFlags.None;
@@ -1520,7 +1531,7 @@ namespace IKVM.Runtime
 
                 internal InstructionState CopyLocalsAndSubroutines()
                 {
-                    InstructionState copy = new InstructionState(new SimpleType[stack.Length], 0, stack.Length, locals, subroutines, callsites);
+                    var copy = new InstructionState(new SimpleType[stack.Length], 0, stack.Length, locals, subroutines, callsites);
                     copy.flags &= ~ShareFlags.Stack;
                     return copy;
                 }
@@ -1528,14 +1539,12 @@ namespace IKVM.Runtime
                 private static List<Subroutine> CopySubroutines(List<Subroutine> l)
                 {
                     if (l == null)
-                    {
                         return null;
-                    }
-                    List<Subroutine> n = new List<Subroutine>(l.Count);
-                    foreach (Subroutine s in l)
-                    {
+
+                    var n = new List<Subroutine>(l.Count);
+                    foreach (var s in l)
                         n.Add(s.Copy());
-                    }
+
                     return n;
                 }
 
@@ -1552,11 +1561,12 @@ namespace IKVM.Runtime
                     else
                     {
                         SubroutinesCopyOnWrite();
-                        List<Subroutine> ss1 = subroutines;
+
+                        var ss1 = subroutines;
                         subroutines = new List<Subroutine>();
-                        foreach (Subroutine ss2 in s2.subroutines)
+                        foreach (var ss2 in s2.subroutines)
                         {
-                            foreach (Subroutine ss in ss1)
+                            foreach (var ss in ss1)
                             {
                                 if (ss.SubroutineIndex == ss2.SubroutineIndex)
                                 {
@@ -1572,10 +1582,9 @@ namespace IKVM.Runtime
                                 }
                             }
                         }
+
                         if (ss1.Count != subroutines.Count)
-                        {
                             changed = true;
-                        }
                     }
 
                     if (s2.callsites > callsites)
@@ -1588,15 +1597,13 @@ namespace IKVM.Runtime
 
                 internal static InstructionState MergeSubroutineReturn(InstructionState jsrSuccessor, InstructionState jsr, InstructionState ret, bool[] locals_modified)
                 {
-                    InstructionState next = ret.Copy();
+                    var next = ret.Copy();
                     next.LocalsCopyOnWrite();
+
                     for (int i = 0; i < locals_modified.Length; i++)
-                    {
                         if (!locals_modified[i])
-                        {
                             next.locals[i] = jsr.locals[i];
-                        }
-                    }
+
                     next.flags |= ShareFlags.Subroutines;
                     next.subroutines = jsr.subroutines;
                     next.callsites = jsr.callsites;
@@ -1606,28 +1613,24 @@ namespace IKVM.Runtime
                 public static InstructionState operator +(InstructionState s1, InstructionState s2)
                 {
                     if (s1 == null)
-                    {
                         return s2.Copy();
-                    }
+
                     if (s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
-                    {
-                        throw new VerifyError(string.Format("Inconsistent stack height: {0} != {1}",
-                            s1.stackSize + s1.stack.Length - s1.stackEnd,
-                            s2.stackSize + s2.stack.Length - s2.stackEnd));
-                    }
-                    InstructionState s = s1.Copy();
+                        throw new VerifyError($"Inconsistent stack height: {s1.stackSize + s1.stack.Length - s1.stackEnd} != {s2.stackSize + s2.stack.Length - s2.stackEnd}");
+
+                    var s = s1.Copy();
                     s.changed = s1.changed;
                     for (int i = 0; i < s.stackSize; i++)
                     {
-                        SimpleType type = s.stack[i];
-                        SimpleType type2 = s2.stack[i];
+                        var type = s.stack[i];
+                        var type2 = s2.stack[i];
                         if (type == type2)
                         {
                             // perfect match, nothing to do
                         }
                         else if (!type.IsPrimitive)
                         {
-                            SimpleType baseType = InstructionState.FindCommonBaseType(type, type2);
+                            var baseType = InstructionState.FindCommonBaseType(type, type2);
                             if (baseType == SimpleType.Invalid)
                             {
                                 if (SimpleType.IsRet(type) && SimpleType.IsRet(type2))
@@ -1736,57 +1739,45 @@ namespace IKVM.Runtime
                 internal static SimpleType FindCommonBaseType(SimpleType type1, SimpleType type2)
                 {
                     if (type1 == type2)
-                    {
                         return type1;
-                    }
+
                     if (type1 == SimpleType.Object)
-                    {
                         return type2;
-                    }
+
                     if (type2 == SimpleType.Object)
-                    {
                         return type1;
-                    }
+
                     if (type1 == SimpleType.Invalid || type2 == SimpleType.Invalid)
-                    {
                         return SimpleType.Invalid;
-                    }
+
                     if (type1.IsPrimitive || type2.IsPrimitive)
-                    {
                         return SimpleType.Invalid;
-                    }
+
                     if (SimpleType.IsRet(type1) || SimpleType.IsRet(type2))
-                    {
                         return SimpleType.Invalid;
-                    }
+
                     return SimpleType.Object;
                 }
 
-                private void SetLocal1(int index, SimpleType type)
+                void SetLocal1(int index, SimpleType type)
                 {
                     try
                     {
                         LocalsCopyOnWrite();
                         SubroutinesCopyOnWrite();
+
                         if (index > 0 && locals[index - 1] != SimpleType.Invalid && locals[index - 1].IsWidePrimitive)
                         {
                             locals[index - 1] = SimpleType.Invalid;
                             if (subroutines != null)
-                            {
-                                foreach (Subroutine s in subroutines)
-                                {
+                                foreach (var s in subroutines)
                                     s.SetLocalModified(index - 1);
-                                }
-                            }
                         }
+
                         locals[index] = type;
                         if (subroutines != null)
-                        {
-                            foreach (Subroutine s in subroutines)
-                            {
+                            foreach (var s in subroutines)
                                 s.SetLocalModified(index);
-                            }
-                        }
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -1794,28 +1785,27 @@ namespace IKVM.Runtime
                     }
                 }
 
-                private void SetLocal2(int index, SimpleType type)
+                void SetLocal2(int index, SimpleType type)
                 {
                     try
                     {
                         LocalsCopyOnWrite();
                         SubroutinesCopyOnWrite();
+
                         if (index > 0 && locals[index - 1] != SimpleType.Invalid && locals[index - 1].IsWidePrimitive)
                         {
                             locals[index - 1] = SimpleType.Invalid;
                             if (subroutines != null)
-                            {
-                                foreach (Subroutine s in subroutines)
-                                {
+                                foreach (var s in subroutines)
                                     s.SetLocalModified(index - 1);
-                                }
-                            }
                         }
+
                         locals[index] = type;
                         locals[index + 1] = SimpleType.Invalid;
+
                         if (subroutines != null)
                         {
-                            foreach (Subroutine s in subroutines)
+                            foreach (var s in subroutines)
                             {
                                 s.SetLocalModified(index);
                                 s.SetLocalModified(index + 1);
@@ -1860,24 +1850,19 @@ namespace IKVM.Runtime
 
                 internal int GetLocalRet(int index)
                 {
-                    SimpleType type = GetLocalType(index);
+                    var type = GetLocalType(index);
                     if (SimpleType.IsRet(type))
-                    {
                         return type.SubroutineIndex;
-                    }
+
                     throw new VerifyError("incorrect local type, not ret");
                 }
 
                 internal void SetLocalType(int index, SimpleType type, int instructionIndex)
                 {
                     if (type.IsWidePrimitive)
-                    {
                         SetLocalWidePrimitive(index, instructionIndex);
-                    }
                     else
-                    {
                         SetLocal1(index, type);
-                    }
                 }
 
                 internal void PushType(string signature)
@@ -1916,62 +1901,52 @@ namespace IKVM.Runtime
                 // object reference or a subroutine return address
                 internal SimpleType PopObjectType()
                 {
-                    SimpleType type = PopType();
+                    var type = PopType();
                     if (type.IsPrimitive)
-                    {
                         throw new VerifyError("Expected object reference on stack");
-                    }
+
                     return type;
                 }
 
                 internal void MultiPopAnyType(int count)
                 {
                     while (count-- != 0)
-                    {
                         PopAnyType();
-                    }
                 }
 
                 internal SimpleType PopAnyType()
                 {
                     if (stackSize == 0)
-                    {
                         throw new VerifyError("Unable to pop operand off an empty stack");
-                    }
-                    SimpleType type = stack[--stackSize];
+
+                    var type = stack[--stackSize];
                     if (type.IsWidePrimitive)
-                    {
                         stackEnd++;
-                    }
+
                     return type;
                 }
 
                 // NOTE this can *not* be used to pop double or long
                 internal SimpleType PopType()
                 {
-                    SimpleType type = PopAnyType();
+                    var type = PopAnyType();
                     if (type.IsWidePrimitive)
-                    {
                         throw new VerifyError("Attempt to split long or double on the stack");
-                    }
+
                     return type;
                 }
 
                 internal void PopPrimitive()
                 {
                     if (!PopType().IsPrimitive)
-                    {
                         throw new VerifyError("Primitive type expected on stack");
-                    }
                 }
 
                 internal void PopWidePrimitive()
                 {
-                    SimpleType type = PopAnyType();
+                    var type = PopAnyType();
                     if (type != SimpleType.WidePrimitive)
-                    {
                         throw new VerifyError("Wide primitive type expected on stack");
-                    }
                 }
 
                 internal void PopType(string signature)
@@ -2000,13 +1975,11 @@ namespace IKVM.Runtime
                 internal void PushType(SimpleType type)
                 {
                     if (type.IsWidePrimitive)
-                    {
                         stackEnd--;
-                    }
+
                     if (stackSize >= stackEnd)
-                    {
                         throw new VerifyError("Stack overflow");
-                    }
+
                     StackCopyOnWrite();
                     stack[stackSize++] = type;
                 }
@@ -2079,7 +2052,11 @@ namespace IKVM.Runtime
                     }
                     Console.WriteLine();
                 }
+
             }
+
         }
+
     }
+
 }
