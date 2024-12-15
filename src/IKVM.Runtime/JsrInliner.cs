@@ -83,6 +83,10 @@ namespace IKVM.Runtime
             codeCopy[codeLength++] = instr;
         }
 
+        /// <summary>
+        /// Conducts a pass through the instruction set, inlining JSR instructions, and returning <c>true</c> if any JSR instructions were inlined.
+        /// </summary>
+        /// <returns></returns>
         bool InlineJsrs()
         {
             var hasJsrs = false;
@@ -141,9 +145,7 @@ namespace IKVM.Runtime
                 baseIndex = inliner.codeLength;
                 branchMap = new int[inliner.m.Instructions.Length];
                 for (int i = 0; i < branchMap.Length; i++)
-                {
                     branchMap[i] = i;
-                }
             }
 
             void Emit(ClassFile.Method.Instruction instr)
@@ -161,7 +163,7 @@ namespace IKVM.Runtime
 
             internal bool InlineSubroutine()
             {
-                bool hasJsrs = false;
+                var hasJsrs = false;
 
                 // start with a pre-amble to load a dummy return address on the stack and to branch to the subroutine
                 {
@@ -173,14 +175,14 @@ namespace IKVM.Runtime
                     EmitGoto(subroutineIndex);
                 }
 
-                bool fallThru = false;
+                var fallThru = false;
                 for (int instructionIndex = 0; instructionIndex < inliner.m.Instructions.Length; instructionIndex++)
                 {
-                    if ((inliner.flags[instructionIndex] & InstructionFlags.Reachable) != 0
-                        && inliner.ma.IsSubroutineActive(instructionIndex, subroutineIndex))
+                    if ((inliner.flags[instructionIndex] & InstructionFlags.Reachable) != 0 && inliner.ma.IsSubroutineActive(instructionIndex, subroutineIndex))
                     {
                         fallThru = false;
                         branchMap[instructionIndex] = inliner.codeLength;
+
                         switch (inliner.m.Instructions[instructionIndex].NormalizedOpCode)
                         {
                             case NormalizedByteCode.__tableswitch:
@@ -233,11 +235,10 @@ namespace IKVM.Runtime
                         case NormalizedByteCode.__lookupswitch:
                         case NormalizedByteCode.__tableswitch:
                             {
-                                int[] targets = new int[inliner.codeCopy[instructionIndex].SwitchEntryCount];
+                                var targets = new int[inliner.codeCopy[instructionIndex].SwitchEntryCount];
                                 for (int i = 0; i < targets.Length; i++)
-                                {
                                     targets[i] = branchMap[inliner.codeCopy[instructionIndex].GetSwitchTargetIndex(i)];
-                                }
+
                                 inliner.codeCopy[instructionIndex].SetSwitchTargets(targets);
                                 inliner.codeCopy[instructionIndex].DefaultTarget = branchMap[inliner.codeCopy[instructionIndex].DefaultTarget];
                             }
@@ -294,6 +295,9 @@ namespace IKVM.Runtime
 
         }
 
+        /// <summary>
+        /// Simple data flow type sufficient for <see cref="JsrInliner"/>.
+        /// </summary>
         class SimpleType
         {
 
@@ -440,6 +444,7 @@ namespace IKVM.Runtime
                 while (!done)
                 {
                     done = true;
+
                     for (int i = 0; i < instructions.Length; i++)
                     {
                         if (_state[i] != null && _state[i].changed)
@@ -464,6 +469,7 @@ namespace IKVM.Runtime
                                             var type = s.GetLocalType(instr.NormalizedArg1);
                                             if (type == SimpleType.Invalid || type.IsPrimitive)
                                                 throw new VerifyError("Object reference expected");
+
                                             s.PushType(type);
                                             break;
                                         }
@@ -1106,7 +1112,7 @@ namespace IKVM.Runtime
                                                 int index = instr.TargetIndex;
                                                 s.SetSubroutineId(index);
 
-                                                if (!returnAddressTypes.TryGetValue(index, out var retAddressType))
+                                                if (returnAddressTypes.TryGetValue(index, out var retAddressType) == false)
                                                 {
                                                     retAddressType = SimpleType.MakeRet(index);
                                                     returnAddressTypes[index] = retAddressType;
@@ -1117,10 +1123,9 @@ namespace IKVM.Runtime
 
                                                 var returns = GetReturnSites(i);
                                                 if (returns != null)
-                                                {
                                                     foreach (int returnIndex in returns)
                                                         _state[i + 1] = InstructionState.MergeSubroutineReturn(_state[i + 1], s, _state[returnIndex], _state[returnIndex].GetLocalsModified(index));
-                                                }
+
                                                 AddCallSite(index, i);
                                                 break;
                                             }
@@ -1129,14 +1134,15 @@ namespace IKVM.Runtime
                                                 // HACK if the ret is processed before all of the jsr instructions to this subroutine
                                                 // we wouldn't be able to properly merge, so that is why we track the number of callsites
                                                 // for each subroutine instruction (see Instruction.AddCallSite())
-                                                int subroutineIndex = s.GetLocalRet(instr.Arg1);
-                                                int[] cs = GetCallSites(subroutineIndex);
-                                                bool[] locals_modified = s.GetLocalsModified(subroutineIndex);
+                                                var subroutineIndex = s.GetLocalRet(instr.Arg1);
+                                                var cs = GetCallSites(subroutineIndex);
+                                                var locals_modified = s.GetLocalsModified(subroutineIndex);
                                                 for (int j = 0; j < cs.Length; j++)
                                                 {
                                                     AddReturnSite(cs[j], i);
                                                     _state[cs[j] + 1] = InstructionState.MergeSubroutineReturn(_state[cs[j] + 1], _state[cs[j]], s, locals_modified);
                                                 }
+
                                                 break;
                                             }
                                         case NormalizedByteCode.__ireturn:
@@ -1176,36 +1182,36 @@ namespace IKVM.Runtime
                 // Now we do another pass to compute reachability
                 done = false;
                 flags[0] |= InstructionFlags.Reachable;
+
                 while (!done)
                 {
                     done = true;
-                    bool didJsrOrRet = false;
+                    var didJsrOrRet = false;
                     for (int i = 0; i < instructions.Length; i++)
                     {
                         if ((flags[i] & (InstructionFlags.Reachable | InstructionFlags.Processed)) == InstructionFlags.Reachable)
                         {
                             done = false;
                             flags[i] |= InstructionFlags.Processed;
+
                             // mark the exception handlers reachable from this instruction
                             for (int j = 0; j < method.ExceptionTable.Length; j++)
-                            {
                                 if (method.ExceptionTable[j].startIndex <= i && i < method.ExceptionTable[j].endIndex)
-                                {
                                     flags[method.ExceptionTable[j].handlerIndex] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
-                                }
-                            }
+
                             // mark the successor instructions
                             switch (instructions[i].NormalizedOpCode)
                             {
                                 case NormalizedByteCode.__tableswitch:
                                 case NormalizedByteCode.__lookupswitch:
                                     {
-                                        bool hasbackbranch = false;
+                                        var hasbackbranch = false;
                                         for (int j = 0; j < instructions[i].SwitchEntryCount; j++)
                                         {
                                             hasbackbranch |= instructions[i].GetSwitchTargetIndex(j) < i;
                                             flags[instructions[i].GetSwitchTargetIndex(j)] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                         }
+
                                         hasbackbranch |= instructions[i].DefaultTarget < i;
                                         flags[instructions[i].DefaultTarget] |= InstructionFlags.Reachable | InstructionFlags.BranchTarget;
                                         break;
@@ -1655,11 +1661,12 @@ namespace IKVM.Runtime
                             throw new VerifyError(string.Format("cannot merge {0} and {1}", type, type2));
                         }
                     }
+
                     for (int i = 0; i < s.locals.Length; i++)
                     {
-                        SimpleType type = s.locals[i];
-                        SimpleType type2 = s2.locals[i];
-                        SimpleType baseType = InstructionState.FindCommonBaseType(type, type2);
+                        var type = s.locals[i];
+                        var type2 = s2.locals[i];
+                        var baseType = InstructionState.FindCommonBaseType(type, type2);
                         if (type != baseType)
                         {
                             s.LocalsCopyOnWrite();
@@ -1667,6 +1674,7 @@ namespace IKVM.Runtime
                             s.changed = true;
                         }
                     }
+
                     s.MergeSubroutineHelper(s2);
                     return s;
                 }
@@ -1680,13 +1688,14 @@ namespace IKVM.Runtime
                 internal void SetSubroutineId(int subroutineIndex)
                 {
                     SubroutinesCopyOnWrite();
+
                     if (subroutines == null)
                     {
                         subroutines = new List<Subroutine>();
                     }
                     else
                     {
-                        foreach (Subroutine s in subroutines)
+                        foreach (var s in subroutines)
                         {
                             if (s.SubroutineIndex == subroutineIndex)
                             {
@@ -1695,45 +1704,34 @@ namespace IKVM.Runtime
                             }
                         }
                     }
+
                     subroutines.Add(new Subroutine(subroutineIndex, locals.Length));
                 }
 
                 internal bool[] GetLocalsModified(int subroutineIndex)
                 {
                     if (subroutines != null)
-                    {
-                        foreach (Subroutine s in subroutines)
-                        {
+                        foreach (var s in subroutines)
                             if (s.SubroutineIndex == subroutineIndex)
-                            {
                                 return s.LocalsModified;
-                            }
-                        }
-                    }
+
                     throw new VerifyError("return from wrong subroutine");
                 }
 
                 internal bool IsSubroutineActive(int subroutineIndex)
                 {
                     if (subroutines != null)
-                    {
-                        foreach (Subroutine s in subroutines)
-                        {
+                        foreach (var s in subroutines)
                             if (s.SubroutineIndex == subroutineIndex)
-                            {
                                 return true;
-                            }
-                        }
-                    }
+
                     return false;
                 }
 
                 internal void CheckSubroutineActive(int subroutineIndex)
                 {
                     if (!IsSubroutineActive(subroutineIndex))
-                    {
                         throw new VerifyError("inactive subroutine");
-                    }
                 }
 
                 internal static SimpleType FindCommonBaseType(SimpleType type1, SimpleType type2)
