@@ -76,7 +76,7 @@ namespace IKVM.Tests.Runtime
         {
             var builder = new ClassFileBuilder(52, AccessFlag.Public, "Test", "java/lang/Object");
             AddDefaultConstructor(builder);
-            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "CreateObject", "()Ljava/lang/Object;", c => c
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "Method", "()Ljava/lang/Object;", c => c
                 .New(builder.Constants.GetOrAddClass("java/lang/Object"))
                 .Dup()
                 .InvokeSpecial(builder.Constants.GetOrAddMethodref(builder.Constants.GetOrAddClass("java/lang/Object"), builder.Constants.GetOrAddNameAndType("<init>", "()V")))
@@ -86,9 +86,159 @@ namespace IKVM.Tests.Runtime
             var type = cldr.Load(builder, "Test");
 
             var instance = Activator.CreateInstance(type);
-            var method = type.GetMethod("CreateObject", []);
+            var method = type.GetMethod("Method", []);
             var result = method.Invoke(instance, []);
             result.Should().BeOfType<global::java.lang.Object>();
+        }
+
+        [TestMethod]
+        public void InvokeDynamicOneSameArg()
+        {
+            var builder = new ClassFileBuilder(52, AccessFlag.Public, "Test", "java/lang/Object");
+            AddDefaultConstructor(builder);
+
+            // bootstrap method invokes LambdaMetadataFactory.metafactory, passing the Test.lambda method as a reference
+            builder.Attributes.BootstrapMethods(e => e.Method(
+                builder.Constants.GetOrAddMethodHandle(
+                    MethodHandleKind.InvokeStatic,
+                    builder.Constants.GetOrAddMethodref(
+                        "java/lang/invoke/LambdaMetafactory",
+                        "metafactory",
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")),
+                    c => c
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/Object;)V"))
+                        .Constant(builder.Constants.GetOrAddMethodHandle(
+                            MethodHandleKind.InvokeStatic,
+                            builder.Constants.GetOrAddMethodref(
+                                "Test",
+                                "Lambda",
+                                "(Ljava/lang/Object;)V")))
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/Object;)V"))));
+
+            // the InvokeDynamic method uses the actual InvokeDynamic instruction to create and return the Consumer
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "CreateFunc", "()Ljava/util/function/Consumer;", code => code
+                .InvokeDynamic(builder.Constants.GetOrAddInvokeDynamic(0, "accept", "()Ljava/util/function/Consumer;"), 0, 0)
+                .Areturn(), 1, 0);
+
+            // the lambda method is the actual Consumer accept impl
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "Lambda", "(Ljava/lang/Object;)V", code => code
+                .Aload0()
+                .Pop()
+                .Return(), 1, 1);
+
+            var cldr = new ByteArrayClassLoader();
+            var type = cldr.Load(builder, "Test");
+
+            // create an instance of the type and invoke CreateFunc, which should return a Consumer
+            var instance = Activator.CreateInstance(type);
+            var method = type.GetMethod("CreateFunc", []);
+            var func = method.Invoke(instance, []);
+            func.Should().BeAssignableTo<global::java.util.function.Consumer>();
+
+            // invoke the accept method on the Consumer
+            var r = func.GetType().GetMethod("accept").Invoke(func, [new object()]);
+            r.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void InvokeDynamicOneConvArg()
+        {
+            var builder = new ClassFileBuilder(52, AccessFlag.Public, "Test", "java/lang/Object");
+            AddDefaultConstructor(builder);
+
+            // bootstrap method invokes LambdaMetadataFactory.metafactory, passing the Test.lambda method as a reference
+            builder.Attributes.BootstrapMethods(e => e.Method(
+                builder.Constants.GetOrAddMethodHandle(
+                    MethodHandleKind.InvokeStatic,
+                    builder.Constants.GetOrAddMethodref(
+                        "java/lang/invoke/LambdaMetafactory",
+                        "metafactory",
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")),
+                    c => c
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/Object;)V"))
+                        .Constant(builder.Constants.GetOrAddMethodHandle(
+                            MethodHandleKind.InvokeStatic,
+                            builder.Constants.GetOrAddMethodref(
+                                "Test",
+                                "Lambda",
+                                "(Ljava/lang/String;)V")))
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/String;)V"))));
+
+            // the InvokeDynamic method uses the actual InvokeDynamic instruction to create and return the Consumer
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "CreateFunc", "()Ljava/util/function/Consumer;", code => code
+                .InvokeDynamic(builder.Constants.GetOrAddInvokeDynamic(0, "accept", "()Ljava/util/function/Consumer;"), 0, 0)
+                .Areturn(), 1, 0);
+
+            // the lambda method is the actual Consumer accept impl
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "Lambda", "(Ljava/lang/String;)V", code => code
+                .Aload0()
+                .Pop()
+                .Return(), 1, 1);
+
+            var cldr = new ByteArrayClassLoader();
+            var type = cldr.Load(builder, "Test");
+
+            // create an instance of the type and invoke CreateFunc, which should return a Consumer
+            var instance = Activator.CreateInstance(type);
+            var method = type.GetMethod("CreateFunc", []);
+            var func = method.Invoke(instance, []);
+            func.Should().BeAssignableTo<global::java.util.function.Consumer>();
+
+            // invoke the accept method on the Consumer
+            var r = func.GetType().GetMethod("accept").Invoke(func, ["TEST"]);
+            r.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void InvokeDynamicOneGhostInstantiationArg()
+        {
+            var builder = new ClassFileBuilder(52, AccessFlag.Public, "Test", "java/lang/Object");
+            AddDefaultConstructor(builder);
+
+            // bootstrap method invokes LambdaMetadataFactory.metafactory, passing the Test.lambda method as a reference
+            builder.Attributes.BootstrapMethods(e => e.Method(
+                builder.Constants.GetOrAddMethodHandle(
+                    MethodHandleKind.InvokeStatic,
+                    builder.Constants.GetOrAddMethodref(
+                        "java/lang/invoke/LambdaMetafactory",
+                        "metafactory",
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")),
+                    c => c
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/Object;)V"))
+                        .Constant(builder.Constants.GetOrAddMethodHandle(
+                            MethodHandleKind.InvokeStatic,
+                            builder.Constants.GetOrAddMethodref(
+                                "Test",
+                                "Lambda",
+                                "(Ljava/lang/CharSequence;)V")))
+                        .Constant(builder.Constants.GetOrAddMethodType("(Ljava/lang/String;)V"))));
+
+            // the InvokeDynamic method uses the actual InvokeDynamic instruction to create and return the Consumer
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "CreateFunc", "()Ljava/util/function/Consumer;", code => code
+                .InvokeDynamic(builder.Constants.GetOrAddInvokeDynamic(0, "accept", "()Ljava/util/function/Consumer;"), 0, 0)
+                .Areturn(), 1, 0);
+
+            // the lambda method is the actual Consumer accept impl
+            AddMethod(builder, AccessFlag.Public | AccessFlag.Static, "Lambda", "(Ljava/lang/CharSequence;)V", code => code
+                .Aload0()
+                .Pop()
+                .GetStatic(builder.Constants.GetOrAddFieldref("java/lang/System", "out", "Ljava/io/PrintStream;"))
+                .LoadConstant(builder.Constants.GetOrAddString("HIT"))
+                .InvokeVirtual(builder.Constants.GetOrAddMethodref("java/io/PrintStream", "println", "(Ljava/lang/String;)V"))
+                .Return(), 2, 1);
+
+            var cldr = new ByteArrayClassLoader();
+            var type = cldr.Load(builder, "Test");
+
+            // create an instance of the type and invoke CreateFunc, which should return a Consumer
+            var instance = Activator.CreateInstance(type);
+            var method = type.GetMethod("CreateFunc", []);
+            var func = method.Invoke(instance, []);
+            func.Should().BeAssignableTo<global::java.util.function.Consumer>();
+
+            // invoke the accept method on the Consumer
+            var r = func.GetType().GetMethod("accept").Invoke(func, ["TEST"]);
+            r.Should().BeNull();
         }
 
     }

@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.ByteCode;
-using IKVM.CoreLib.Diagnostics;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -43,19 +42,33 @@ using System.Reflection.Emit;
 namespace IKVM.Runtime
 {
 
+    /// <summary>
+    /// IL based implementation of InvokeDynamic. Supports LambdaMetafactory specific boot strap methods.
+    /// </summary>
     sealed class LambdaMetafactory
     {
 
-        private MethodBuilder getInstance;
+        MethodBuilder getInstance;
 
+        /// <summary>
+        /// Emits the required IL for the invokedynamic constant item.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="classFile"></param>
+        /// <param name="constantPoolIndex"></param>
+        /// <param name="cpi"></param>
+        /// <param name="ilgen"></param>
+        /// <returns></returns>
         internal static bool Emit(RuntimeByteCodeJavaType.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
         {
-            ClassFile.BootstrapMethod bsm = classFile.GetBootstrapMethod(cpi.BootstrapMethod);
+            var bsm = classFile.GetBootstrapMethod(cpi.BootstrapMethod);
+
+            // only support emitting IL for LambdaMetafactory bootstrap methods
             if (!IsLambdaMetafactory(classFile, bsm) && !IsLambdaAltMetafactory(classFile, bsm))
-            {
                 return false;
-            }
-            LambdaMetafactory lmf = context.GetValue<LambdaMetafactory>(constantPoolIndex);
+
+            // we associate a single LambdaMetafactory instance for each dynamic invoke constant
+            var lmf = context.GetValue<LambdaMetafactory>(constantPoolIndex);
             if (lmf.getInstance == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
             {
 #if IMPORTER
@@ -64,25 +77,41 @@ namespace IKVM.Runtime
 #endif
                 return false;
             }
+
+            // call getInstance at the call site
             ilgen.Emit(OpCodes.Call, lmf.getInstance);
             return true;
         }
 
-        private bool EmitImpl(RuntimeByteCodeJavaType.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, ClassFile.BootstrapMethod bsm, CodeEmitter ilgen)
+        /// <summary>
+        /// Emits the getInstance and supporting infrastructure.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="classFile"></param>
+        /// <param name="cpi"></param>
+        /// <param name="bsm"></param>
+        /// <param name="ilgen"></param>
+        /// <returns></returns>
+        bool EmitImpl(RuntimeByteCodeJavaType.FinishContext context, ClassFile classFile, ClassFile.ConstantPoolItemInvokeDynamic cpi, ClassFile.BootstrapMethod bsm, CodeEmitter ilgen)
         {
             if (HasUnloadable(cpi))
             {
                 Fail("cpi has unloadable");
                 return false;
             }
-            bool serializable = false;
+
+            var serializable = false;
             var markers = Array.Empty<RuntimeJavaType>();
             ClassFile.ConstantPoolItemMethodType[] bridges = null;
+
+            // argument count >3 indicates altMetafactory call
+            // scan for flags, markers and bridges
             if (bsm.ArgumentCount > 3)
             {
-                AltFlags flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3));
+                var flags = (AltFlags)classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(3));
                 serializable = (flags & AltFlags.Serializable) != 0;
                 int argpos = 4;
+
                 if ((flags & AltFlags.Markers) != 0)
                 {
                     markers = new RuntimeJavaType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
@@ -95,6 +124,7 @@ namespace IKVM.Runtime
                         }
                     }
                 }
+
                 if ((flags & AltFlags.Bridges) != 0)
                 {
                     bridges = new ClassFile.ConstantPoolItemMethodType[classFile.GetConstantPoolConstantInteger((IntegerConstantHandle)bsm.GetArgument(argpos++))];
@@ -113,42 +143,46 @@ namespace IKVM.Runtime
             var samMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(0));
             var implMethod = classFile.GetConstantPoolConstantMethodHandle((MethodHandleConstantHandle)bsm.GetArgument(1));
             var instantiatedMethodType = classFile.GetConstantPoolConstantMethodType((MethodTypeConstantHandle)bsm.GetArgument(2));
-            if (HasUnloadable(samMethodType)
-                || HasUnloadable((ClassFile.ConstantPoolItemMI)implMethod.MemberConstantPoolItem)
-                || HasUnloadable(instantiatedMethodType))
+            if (HasUnloadable(samMethodType) || HasUnloadable((ClassFile.ConstantPoolItemMI)implMethod.MemberConstantPoolItem) || HasUnloadable(instantiatedMethodType))
             {
                 Fail("bsm args has unloadable");
                 return false;
             }
 
-            RuntimeJavaType interfaceType = cpi.GetRetType();
-            RuntimeJavaMethod[] methodList;
-            if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out methodList))
+            var interfaceType = cpi.GetRetType();
+            if (!CheckSupportedInterfaces(context.TypeWrapper, interfaceType, markers, bridges, out var methodList))
             {
                 Fail("unsupported interface");
                 return false;
             }
-            if (serializable && Array.Exists(methodList, delegate (RuntimeJavaMethod mw) { return mw.Name == "writeReplace" && mw.Signature == "()Ljava.lang.Object;"; }))
+
+            if (serializable && Array.Exists(methodList, mw => mw.Name == "writeReplace" && mw.Signature == "()Ljava.lang.Object;"))
             {
                 Fail("writeReplace");
                 return false;
             }
+
             if (!IsSupportedImplMethod(implMethod, context.TypeWrapper, cpi.GetArgTypes(), instantiatedMethodType))
             {
                 Fail("implMethod " + implMethod.MemberConstantPoolItem.Class + "::" + implMethod.MemberConstantPoolItem.Name + implMethod.MemberConstantPoolItem.Signature);
                 return false;
             }
-            RuntimeJavaType[] implParameters = GetImplParameters(implMethod);
+
+            // get implementation parameters
+            var implParameters = GetImplParameters(implMethod);
             CheckConstraints(instantiatedMethodType, samMethodType, cpi.GetArgTypes(), implParameters);
+
+            // check bridges
             if (bridges != null)
             {
-                foreach (ClassFile.ConstantPoolItemMethodType bridge in bridges)
+                foreach (var bridge in bridges)
                 {
                     if (bridge.Signature == samMethodType.Signature)
                     {
                         Fail("bridge signature matches sam");
                         return false;
                     }
+
                     if (!CheckConstraints(instantiatedMethodType, bridge, cpi.GetArgTypes(), implParameters))
                     {
                         Fail("bridge constraints");
@@ -156,71 +190,92 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
+            // check that we can adapt instantiated return type to interface return type
             if (instantiatedMethodType.GetRetType() != context.Context.PrimitiveJavaTypeFactory.VOID)
             {
-                RuntimeJavaType Rt = instantiatedMethodType.GetRetType();
-                RuntimeJavaType Ra = GetImplReturnType(implMethod);
+                var Rt = instantiatedMethodType.GetRetType();
+                var Ra = GetImplReturnType(implMethod);
                 if (Ra == context.Context.PrimitiveJavaTypeFactory.VOID || !IsAdaptable(Ra, Rt, true))
                 {
                     Fail("The return type Rt is void, or the return type Ra is not void and is adaptable to Rt");
                     return false;
                 }
             }
+
+            // find desired functional interface method
             RuntimeJavaMethod interfaceMethod = null;
-            List<RuntimeJavaMethod> methods = new List<RuntimeJavaMethod>();
-            foreach (RuntimeJavaMethod mw in methodList)
+            var methods = new List<RuntimeJavaMethod>();
+            foreach (var mw in methodList)
             {
+                // method exactly matches interface method signature
                 if (mw.Name == cpi.Name && mw.Signature == samMethodType.Signature)
                 {
                     interfaceMethod = mw;
                     methods.Add(mw);
+                    continue;
                 }
-                else if (mw.IsAbstract && !IsObjectMethod(mw))
+
+                if (mw.IsAbstract && !IsObjectMethod(mw))
                 {
                     methods.Add(mw);
+                    continue;
                 }
             }
+
+            // check interface method
             if (interfaceMethod == null || !interfaceMethod.IsAbstract || IsObjectMethod(interfaceMethod) || !MatchSignatures(interfaceMethod, samMethodType))
             {
                 Fail("interfaceMethod");
                 return false;
             }
 
-            TypeBuilder tb = context.DefineAnonymousClass();
+            // define a new anonymous class to implement the functional interface
+            var tb = context.DefineAnonymousClass();
+
             // we're not implementing the interfaces recursively (because we don't care about .NET Compact anymore),
             // but should we decide to do that, we'd need to somehow communicate to AnonymousTypeWrapper what the 'real' interface is
             tb.AddInterfaceImplementation(interfaceType.TypeAsBaseType);
             if (serializable && Array.IndexOf(markers, context.Context.JavaBase.TypeOfJavaIoSerializable) == -1)
-            {
                 tb.AddInterfaceImplementation(context.Context.JavaBase.TypeOfJavaIoSerializable.TypeAsBaseType);
-            }
-            foreach (RuntimeJavaType marker in markers)
-            {
+
+            // implement marker interfaces
+            foreach (var marker in markers)
                 tb.AddInterfaceImplementation(marker.TypeAsBaseType);
-            }
+
             getInstance = CreateConstructorAndDispatch(context, cpi, tb, methods, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
             AddDefaultInterfaceMethods(context, methodList, tb);
             return true;
         }
 
         [Conditional("TRACE_LAMBDA_METAFACTORY")]
-        private static void Fail(string msg)
+        static void Fail(string msg)
         {
             Console.WriteLine("Fail: " + msg);
         }
 
-        private static bool CheckConstraints(ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ClassFile.ConstantPoolItemMethodType methodType, RuntimeJavaType[] args, RuntimeJavaType[] implParameters)
+        /// <summary>
+        /// Returns <c>true</c> if the various signatures are compatible or adaptable to each other.
+        /// </summary>
+        /// <param name="instantiatedMethodType"></param>
+        /// <param name="methodType"></param>
+        /// <param name="args"></param>
+        /// <param name="implParameters"></param>
+        /// <returns></returns>
+        static bool CheckConstraints(ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ClassFile.ConstantPoolItemMethodType methodType, RuntimeJavaType[] args, RuntimeJavaType[] implParameters)
         {
             if (!IsSubTypeOf(instantiatedMethodType, methodType))
             {
                 Fail("instantiatedMethodType <= methodType");
                 return false;
             }
+
             if (args.Length + methodType.GetArgTypes().Length != implParameters.Length)
             {
                 Fail("K + N = M");
                 return false;
             }
+
             for (int i = 0, K = args.Length; i < K; i++)
             {
                 if (args[i] == implParameters[i])
@@ -233,6 +288,7 @@ namespace IKVM.Runtime
                     return false;
                 }
             }
+
             for (int i = 0, N = methodType.GetArgTypes().Length, k = args.Length; i < N; i++)
             {
                 if (!IsAdaptable(instantiatedMethodType.GetArgTypes()[i], implParameters[i + k], false))
@@ -241,31 +297,29 @@ namespace IKVM.Runtime
                     return false;
                 }
             }
+
             return true;
         }
 
-        private static RuntimeJavaType[] GetImplParameters(ClassFile.ConstantPoolItemMethodHandle implMethod)
+        static RuntimeJavaType[] GetImplParameters(ClassFile.ConstantPoolItemMethodHandle implMethod)
         {
-            RuntimeJavaMethod mw = (RuntimeJavaMethod)implMethod.Member;
-            RuntimeJavaType[] parameters = mw.GetParameters();
+            var mw = (RuntimeJavaMethod)implMethod.Member;
+            var parameters = mw.GetParameters();
             if (mw.IsStatic || mw.IsConstructor)
-            {
                 return parameters;
-            }
+
             return ArrayUtil.Concat(mw.DeclaringType, parameters);
         }
 
-        private static RuntimeJavaType GetImplReturnType(ClassFile.ConstantPoolItemMethodHandle implMethod)
+        static RuntimeJavaType GetImplReturnType(ClassFile.ConstantPoolItemMethodHandle implMethod)
         {
             return implMethod.Kind == MethodHandleKind.NewInvokeSpecial ? implMethod.Member.DeclaringType : ((RuntimeJavaMethod)implMethod.Member).ReturnType;
         }
 
-        private static bool IsAdaptable(RuntimeJavaType Q, RuntimeJavaType S, bool isReturn)
+        static bool IsAdaptable(RuntimeJavaType Q, RuntimeJavaType S, bool isReturn)
         {
             if (Q == S)
-            {
                 return true;
-            }
 
             if (Q.IsPrimitive)
             {
@@ -301,7 +355,7 @@ namespace IKVM.Runtime
                 else
                 {
                     // S is a supertype of the Wrapper(Q)
-                    return GetWrapper(Q).IsAssignableTo(S);
+                    return GetBoxedPrimitiveType(Q).IsAssignableTo(S);
                 }
             }
             else if (isReturn)
@@ -313,7 +367,7 @@ namespace IKVM.Runtime
                 if (S.IsPrimitive)
                 {
                     // If Q is a primitive wrapper, check that Primitive(Q) can be widened to S
-                    RuntimeJavaType primitive = GetPrimitiveFromWrapper(Q);
+                    var primitive = GetUnboxedPrimitiveType(Q);
                     return primitive != null && IsAdaptable(primitive, S, isReturn);
                 }
                 else
@@ -324,7 +378,13 @@ namespace IKVM.Runtime
             }
         }
 
-        private static RuntimeJavaType GetWrapper(RuntimeJavaType primitive)
+        /// <summary>
+        /// For a given primitive type, returns the boxed primitive type.
+        /// </summary>
+        /// <param name="primitive"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        static RuntimeJavaType GetBoxedPrimitiveType(RuntimeJavaType primitive)
         {
             Debug.Assert(primitive.IsPrimitive);
             switch (primitive.SigName[0])
@@ -350,7 +410,12 @@ namespace IKVM.Runtime
             }
         }
 
-        private static RuntimeJavaType GetPrimitiveFromWrapper(RuntimeJavaType wrapper)
+        /// <summary>
+        /// For a given boxed primitive type, returns the primitive type.
+        /// </summary>
+        /// <param name="wrapper"></param>
+        /// <returns></returns>
+        static RuntimeJavaType GetUnboxedPrimitiveType(RuntimeJavaType wrapper)
         {
             switch (wrapper.Name)
             {
@@ -375,49 +440,55 @@ namespace IKVM.Runtime
             }
         }
 
-        private static bool IsSubTypeOf(ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ClassFile.ConstantPoolItemMethodType samMethodType)
+        static bool IsSubTypeOf(ClassFile.ConstantPoolItemMethodType instantiatedMethodType, ClassFile.ConstantPoolItemMethodType samMethodType)
         {
-            RuntimeJavaType[] T = instantiatedMethodType.GetArgTypes();
-            RuntimeJavaType[] U = samMethodType.GetArgTypes();
+            var T = instantiatedMethodType.GetArgTypes();
+            var U = samMethodType.GetArgTypes();
             if (T.Length != U.Length)
-            {
                 return false;
-            }
+
             for (int i = 0; i < T.Length; i++)
-            {
                 if (!T[i].IsAssignableTo(U[i]))
-                {
                     return false;
-                }
-            }
-            RuntimeJavaType Rt = instantiatedMethodType.GetRetType();
-            RuntimeJavaType Ru = samMethodType.GetRetType();
+
+            var Rt = instantiatedMethodType.GetRetType();
+            var Ru = samMethodType.GetRetType();
             return Rt.IsAssignableTo(Ru);
         }
 
-        private static MethodBuilder CreateConstructorAndDispatch(RuntimeByteCodeJavaType.FinishContext context, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeBuilder tb,
-            List<RuntimeJavaMethod> methods, RuntimeJavaType[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod,
-            ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
+        /// <summary>
+        /// Creates the constrctor and dispatch methods for the indy.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="cpi"></param>
+        /// <param name="tb"></param>
+        /// <param name="methods"></param>
+        /// <param name="implParameters"></param>
+        /// <param name="samMethodType"></param>
+        /// <param name="implMethod"></param>
+        /// <param name="instantiatedMethodType"></param>
+        /// <param name="serializable"></param>
+        /// <returns></returns>
+        static MethodBuilder CreateConstructorAndDispatch(RuntimeByteCodeJavaType.FinishContext context, ClassFile.ConstantPoolItemInvokeDynamic cpi, TypeBuilder tb, List<RuntimeJavaMethod> methods, RuntimeJavaType[] implParameters, ClassFile.ConstantPoolItemMethodType samMethodType, ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, bool serializable)
         {
-            RuntimeJavaType[] args = cpi.GetArgTypes();
+            var args = cpi.GetArgTypes();
 
             // captured values
-            Type[] capturedTypes = new Type[args.Length];
-            FieldBuilder[] capturedFields = new FieldBuilder[capturedTypes.Length];
+            var capturedTypes = new Type[args.Length];
+            var capturedFields = new FieldBuilder[capturedTypes.Length];
             for (int i = 0; i < capturedTypes.Length; i++)
             {
                 capturedTypes[i] = args[i].TypeAsSignatureType;
-                FieldAttributes attr = FieldAttributes.Private;
+                var attr = FieldAttributes.Private;
                 if (i > 0 || !args[0].IsGhost)
-                {
                     attr |= FieldAttributes.InitOnly;
-                }
+
                 capturedFields[i] = tb.DefineField("arg$" + (i + 1), capturedTypes[i], attr);
             }
 
             // constructor
-            MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, capturedTypes);
-            CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(ctor);
+            var ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, capturedTypes);
+            var ilgen = context.Context.CodeEmitterFactory.Create(ctor);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Call, context.Context.Types.Object.GetConstructor(Type.EmptyTypes));
             for (int i = 0; i < capturedTypes.Length; i++)
@@ -430,17 +501,17 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
 
             // instance getter
-            MethodBuilder getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, cpi.GetRetType().TypeAsBaseType, capturedTypes);
-            CodeEmitter ilgenGet = context.Context.CodeEmitterFactory.Create(getInstance);
+            var getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, cpi.GetRetType().TypeAsBaseType, capturedTypes);
+            var ilgenGet = context.Context.CodeEmitterFactory.Create(getInstance);
 
             if (capturedTypes.Length == 0)
             {
                 // use singleton for lambdas with no captures
-                FieldBuilder instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
+                var instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
 
                 // static constructor
-                MethodBuilder cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.ClassLoader);
-                CodeEmitter ilgenCCtor = context.Context.CodeEmitterFactory.Create(cctor);
+                var cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.ClassLoader);
+                var ilgenCCtor = context.Context.CodeEmitterFactory.Create(cctor);
                 ilgenCCtor.Emit(OpCodes.Newobj, ctor);
                 ilgenCCtor.Emit(OpCodes.Stsfld, instField);
                 ilgenCCtor.Emit(OpCodes.Ret);
@@ -454,6 +525,7 @@ namespace IKVM.Runtime
                 // new instance
                 for (int i = 0; i < capturedTypes.Length; i++)
                     ilgenGet.EmitLdarg(i);
+
                 ilgenGet.Emit(OpCodes.Newobj, ctor);
             }
 
@@ -463,15 +535,13 @@ namespace IKVM.Runtime
             ilgenGet.DoEmit();
 
             // dispatch methods
-            foreach (RuntimeJavaMethod mw in methods)
-            {
+            foreach (var mw in methods)
                 EmitDispatch(context, args, tb, mw, implParameters, implMethod, instantiatedMethodType, capturedFields);
-            }
 
             // writeReplace method
             if (serializable)
             {
-                MethodBuilder writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, context.Context.Types.Object, Type.EmptyTypes);
+                var writeReplace = tb.DefineMethod("writeReplace", MethodAttributes.Private, context.Context.Types.Object, Type.EmptyTypes);
                 ilgen = context.Context.CodeEmitterFactory.Create(writeReplace);
                 context.TypeWrapper.EmitClassLiteral(ilgen);
                 ilgen.Emit(OpCodes.Ldstr, cpi.GetRetType().Name.Replace('.', '/'));
@@ -518,18 +588,27 @@ namespace IKVM.Runtime
             return getInstance;
         }
 
-        private static void EmitDispatch(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType[] args, TypeBuilder tb, RuntimeJavaMethod interfaceMethod, RuntimeJavaType[] implParameters,
-            ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, FieldBuilder[] capturedFields)
+        /// <summary>
+        /// Emits the Dispatch method. That is, the implementation of the functional interface method who's job it is to call the final implementation method.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="args"></param>
+        /// <param name="tb"></param>
+        /// <param name="interfaceMethod"></param>
+        /// <param name="implParameters"></param>
+        /// <param name="implMethod"></param>
+        /// <param name="instantiatedMethodType"></param>
+        /// <param name="capturedFields"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        static void EmitDispatch(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaType[] args, TypeBuilder tb, RuntimeJavaMethod interfaceMethod, RuntimeJavaType[] implParameters, ClassFile.ConstantPoolItemMethodHandle implMethod, ClassFile.ConstantPoolItemMethodType instantiatedMethodType, FieldBuilder[] capturedFields)
         {
-            MethodBuilder mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
+            var mb = interfaceMethod.GetDefineMethodHelper().DefineMethod(context.TypeWrapper, tb, interfaceMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final);
             if (interfaceMethod.Name != interfaceMethod.RealName)
-            {
                 tb.DefineMethodOverride(mb, (MethodInfo)interfaceMethod.GetMethod());
-            }
 
             context.Context.AttributeHelper.HideFromJava(mb);
 
-            CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(mb);
+            var ilgen = context.Context.CodeEmitterFactory.Create(mb);
             for (int i = 0; i < capturedFields.Length; i++)
             {
                 ilgen.EmitLdarg(0);
@@ -545,18 +624,26 @@ namespace IKVM.Runtime
                             break;
                     }
                 }
+
                 ilgen.Emit(opc, capturedFields[i]);
             }
+
+            // emit conversions for interface arguments
+            // Ui represents the type on the interface, which for generics may be erased to Object
+            // Ti represents the incoming type on the interface, which usually matches Ui, but may not in the case of generics
+            // Aj represents the outgoing type on the implementation, to which we need to convert the argument to before calling
             for (int i = 0, count = interfaceMethod.GetParameters().Length, k = capturedFields.Length; i < count; i++)
             {
                 ilgen.EmitLdarg(i + 1);
-                RuntimeJavaType Ui = interfaceMethod.GetParameters()[i];
-                RuntimeJavaType Ti = instantiatedMethodType.GetArgTypes()[i];
-                RuntimeJavaType Aj = implParameters[i + k];
+                var Ui = interfaceMethod.GetParameters()[i];
+                var Ti = instantiatedMethodType.GetArgTypes()[i];
+                var Aj = implParameters[i + k];
+
+                // incoming byte arguments are first converted to integers
                 if (Ui == context.Context.PrimitiveJavaTypeFactory.BYTE)
-                {
                     ilgen.Emit(OpCodes.Conv_I1);
-                }
+
+                // instantiation type does not equal interface type
                 if (Ti != Ui)
                 {
                     if (Ti.IsGhost)
@@ -572,35 +659,55 @@ namespace IKVM.Runtime
                         Ti.EmitCheckcast(ilgen);
                     }
                 }
-                if (Ti != Aj)
+
+                // implementation type does not equal instantiation type
+                if (Aj != Ti)
                 {
                     if (Ti.IsPrimitive && !Aj.IsPrimitive)
                     {
+                        // box primitive
                         context.Context.Boxer.EmitBox(ilgen, Ti);
                     }
                     else if (!Ti.IsPrimitive && Aj.IsPrimitive)
                     {
-                        RuntimeJavaType primitive = GetPrimitiveFromWrapper(Ti);
+                        // unbox primitive
+                        var primitive = GetUnboxedPrimitiveType(Ti);
                         context.Context.Boxer.EmitUnbox(ilgen, primitive, false);
                         if (primitive == context.Context.PrimitiveJavaTypeFactory.BYTE)
-                        {
                             ilgen.Emit(OpCodes.Conv_I1);
-                        }
                     }
                     else if (Aj == context.Context.PrimitiveJavaTypeFactory.LONG)
                     {
+                        // long is i8
                         ilgen.Emit(OpCodes.Conv_I8);
                     }
                     else if (Aj == context.Context.PrimitiveJavaTypeFactory.FLOAT)
                     {
+                        // float is r4
                         ilgen.Emit(OpCodes.Conv_R4);
                     }
                     else if (Aj == context.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     {
+                        // double is r8
                         ilgen.Emit(OpCodes.Conv_R8);
+                    }
+                    else if (Aj.IsGhost)
+                    {
+                        // convert to ghost type
+                        Aj.EmitConvStackTypeToSignatureType(ilgen, Ti);
+                    }
+                    else if (Ti.IsGhost)
+                    {
+                        // convert from ghost type
+                        Ti.EmitConvSignatureTypeToStackType(ilgen);
+                    }
+                    else
+                    {
+                        Aj.EmitCheckcast(ilgen);
                     }
                 }
             }
+
             switch (implMethod.Kind)
             {
                 case MethodHandleKind.InvokeVirtual:
@@ -617,13 +724,16 @@ namespace IKVM.Runtime
                 default:
                     throw new InvalidOperationException();
             }
-            RuntimeJavaType Ru = interfaceMethod.ReturnType;
-            RuntimeJavaType Ra = GetImplReturnType(implMethod);
-            RuntimeJavaType Rt = instantiatedMethodType.GetRetType();
+
+            var Ru = interfaceMethod.ReturnType;
+            var Ra = GetImplReturnType(implMethod);
+            var Rt = instantiatedMethodType.GetRetType();
+
             if (Ra == context.Context.PrimitiveJavaTypeFactory.BYTE)
             {
                 ilgen.Emit(OpCodes.Conv_I1);
             }
+
             if (Ra != Ru)
             {
                 if (Ru == context.Context.PrimitiveJavaTypeFactory.VOID)
@@ -639,6 +749,7 @@ namespace IKVM.Runtime
                     Ru.EmitConvStackTypeToSignatureType(ilgen, Ra);
                 }
             }
+
             if (Ra != Rt)
             {
                 if (Rt.IsPrimitive)
@@ -649,7 +760,7 @@ namespace IKVM.Runtime
                     }
                     else if (!Ra.IsPrimitive)
                     {
-                        RuntimeJavaType primitive = GetPrimitiveFromWrapper(Ra);
+                        var primitive = GetUnboxedPrimitiveType(Ra);
                         if (primitive != null)
                         {
                             context.Context.Boxer.EmitUnbox(ilgen, primitive, false);
@@ -675,11 +786,10 @@ namespace IKVM.Runtime
                 }
                 else if (Ra.IsPrimitive)
                 {
-                    RuntimeJavaType tw = GetPrimitiveFromWrapper(Rt);
+                    var tw = GetUnboxedPrimitiveType(Rt);
                     if (tw == null)
-                    {
                         tw = Ra;
-                    }
+
                     context.Context.Boxer.EmitBox(ilgen, tw);
                 }
                 else
@@ -692,7 +802,7 @@ namespace IKVM.Runtime
             ilgen.DoEmit();
         }
 
-        private static void EmitConvertingUnbox(CodeEmitter ilgen, RuntimeJavaType tw)
+        static void EmitConvertingUnbox(CodeEmitter ilgen, RuntimeJavaType tw)
         {
             switch (tw.SigName[0])
             {
@@ -723,7 +833,7 @@ namespace IKVM.Runtime
             }
         }
 
-        private static void EmitUnboxNumber(RuntimeContext context, CodeEmitter ilgen, string methodName, string methodSig)
+        static void EmitUnboxNumber(RuntimeContext context, CodeEmitter ilgen, string methodName, string methodSig)
         {
             var tw = context.ClassLoaderFactory.LoadClassCritical("java.lang.Number");
             tw.EmitCheckcast(ilgen);
@@ -732,34 +842,32 @@ namespace IKVM.Runtime
             mw.EmitCallvirt(ilgen);
         }
 
-        private static void AddDefaultInterfaceMethods(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaMethod[] methodList, TypeBuilder tb)
+        static void AddDefaultInterfaceMethods(RuntimeByteCodeJavaType.FinishContext context, RuntimeJavaMethod[] methodList, TypeBuilder tb)
         {
             // we use special name to hide these from Java reflection
             const MethodAttributes attr = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final | MethodAttributes.SpecialName;
-            RuntimeJavaTypeFactory factory = context.TypeWrapper.ClassLoader.GetTypeWrapperFactory();
-            foreach (RuntimeJavaMethod mw in methodList)
+
+            var factory = context.TypeWrapper.ClassLoader.GetTypeWrapperFactory();
+            foreach (var mw in methodList)
             {
                 if (!mw.IsAbstract)
                 {
-                    MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
+                    var mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
                     if (mw.Name != mw.RealName)
-                    {
                         tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-                    }
+
                     context.EmitCallDefaultInterfaceMethod(mb, mw);
                 }
                 else if (IsObjectMethod(mw))
                 {
-                    MethodBuilder mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
+                    var mb = mw.GetDefineMethodHelper().DefineMethod(factory, tb, mw.Name, attr);
                     if (mw.Name != mw.RealName)
-                    {
                         tb.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
-                    }
-                    CodeEmitter ilgen = context.Context.CodeEmitterFactory.Create(mb);
+
+                    var ilgen = context.Context.CodeEmitterFactory.Create(mb);
                     for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
-                    {
                         ilgen.EmitLdarg(i);
-                    }
+
                     context.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
@@ -780,11 +888,11 @@ namespace IKVM.Runtime
                 default:
                     return false;
             }
-            RuntimeJavaMethod mw = (RuntimeJavaMethod)implMethod.Member;
+
+            var mw = (RuntimeJavaMethod)implMethod.Member;
             if (mw == null || mw.HasCallerID || RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(mw.DeclaringType.Name, mw.Name, mw.Signature))
-            {
                 return false;
-            }
+
             RuntimeJavaType instance;
             if (mw.IsConstructor)
             {
@@ -799,27 +907,22 @@ namespace IKVM.Runtime
                 // if implMethod is an instance method, the type of the first captured value must be subtype of implMethod.DeclaringType
                 instance = captured.Length == 0 ? instantiatedMethodType.GetArgTypes()[0] : captured[0];
                 if (!instance.IsAssignableTo(mw.DeclaringType))
-                {
                     return false;
-                }
             }
+
             if (!mw.IsAccessibleFrom(mw.DeclaringType, caller, instance))
-            {
                 return false;
-            }
+
             mw.Link();
             return true;
         }
 
-        private static bool IsSupportedInterface(RuntimeJavaType tw, RuntimeJavaType caller)
+        static bool IsSupportedInterface(RuntimeJavaType tw, RuntimeJavaType caller)
         {
-            return tw.IsInterface
-                && !tw.IsGhost
-                && tw.IsAccessibleFrom(caller)
-                && !tw.Context.Serialization.IsISerializable(tw);
+            return tw.IsInterface && !tw.IsGhost && tw.IsAccessibleFrom(caller) && !tw.Context.Serialization.IsISerializable(tw);
         }
 
-        private static bool CheckSupportedInterfaces(RuntimeJavaType caller, RuntimeJavaType tw, RuntimeJavaType[] markers, ClassFile.ConstantPoolItemMethodType[] bridges, out RuntimeJavaMethod[] methodList)
+        static bool CheckSupportedInterfaces(RuntimeJavaType caller, RuntimeJavaType tw, RuntimeJavaType[] markers, ClassFile.ConstantPoolItemMethodType[] bridges, out RuntimeJavaMethod[] methodList)
         {
             // we don't need to check for unloadable, because we already did that while validating the invoke signature
             if (!IsSupportedInterface(tw, caller))
@@ -827,55 +930,58 @@ namespace IKVM.Runtime
                 methodList = null;
                 return false;
             }
+
             Dictionary<MethodKey, RuntimeJavaMethod> methods = new Dictionary<MethodKey, RuntimeJavaMethod>();
             int abstractMethodCount = 0;
             int bridgeMethodCount = 0;
             if (GatherAllInterfaceMethods(tw, bridges, methods, ref abstractMethodCount, ref bridgeMethodCount) && abstractMethodCount == 1)
             {
-                foreach (RuntimeJavaType marker in markers)
+                foreach (var marker in markers)
                 {
                     if (!IsSupportedInterface(marker, caller))
                     {
                         methodList = null;
                         return false;
                     }
+
                     if (!GatherAllInterfaceMethods(marker, null, methods, ref abstractMethodCount, ref bridgeMethodCount) || abstractMethodCount != 1)
                     {
                         methodList = null;
                         return false;
                     }
                 }
+
                 if (bridges != null && bridgeMethodCount != bridges.Length)
                 {
                     methodList = null;
                     return false;
                 }
+
                 methodList = new RuntimeJavaMethod[methods.Count];
                 methods.Values.CopyTo(methodList, 0);
                 return true;
             }
+
             methodList = null;
             return false;
         }
 
-        private static bool GatherAllInterfaceMethods(RuntimeJavaType tw, ClassFile.ConstantPoolItemMethodType[] bridges, Dictionary<MethodKey, RuntimeJavaMethod> methods, ref int abstractMethodCount, ref int bridgeMethodCount)
+        static bool GatherAllInterfaceMethods(RuntimeJavaType tw, ClassFile.ConstantPoolItemMethodType[] bridges, Dictionary<MethodKey, RuntimeJavaMethod> methods, ref int abstractMethodCount, ref int bridgeMethodCount)
         {
-            foreach (RuntimeJavaMethod mw in tw.GetMethods())
+            foreach (var mw in tw.GetMethods())
             {
                 if (mw.IsVirtual)
                 {
-                    RuntimeMirandaJavaMethod mmw = mw as RuntimeMirandaJavaMethod;
-                    if (mmw != null)
+                    if (mw is RuntimeMirandaJavaMethod mmw)
                     {
                         if (mmw.Error != null)
-                        {
                             return false;
-                        }
+
                         continue;
                     }
-                    MethodKey key = new MethodKey("", mw.Name, mw.Signature);
-                    RuntimeJavaMethod current;
-                    if (methods.TryGetValue(key, out current))
+
+                    var key = new MethodKey("", mw.Name, mw.Signature);
+                    if (methods.TryGetValue(key, out var current))
                     {
                         if (!MatchSignatures(mw, current))
                         {
@@ -886,98 +992,93 @@ namespace IKVM.Runtime
                     else
                     {
                         methods.Add(key, mw);
+
                         if (mw.IsAbstract && !IsObjectMethod(mw))
                         {
                             if (bridges != null && IsBridge(mw, bridges))
-                            {
                                 bridgeMethodCount++;
-                            }
                             else
-                            {
                                 abstractMethodCount++;
-                            }
                         }
                     }
+
                     mw.Link();
                     if (mw.GetMethod() == null)
-                    {
                         return false;
-                    }
+
                     if (current != null && mw.RealName != current.RealName)
-                    {
                         return false;
-                    }
                 }
             }
-            foreach (RuntimeJavaType tw1 in tw.Interfaces)
-            {
+
+            foreach (var tw1 in tw.Interfaces)
                 if (!GatherAllInterfaceMethods(tw1, bridges, methods, ref abstractMethodCount, ref bridgeMethodCount))
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 
-        private static bool IsBridge(RuntimeJavaMethod mw, ClassFile.ConstantPoolItemMethodType[] bridges)
+        static bool IsBridge(RuntimeJavaMethod mw, ClassFile.ConstantPoolItemMethodType[] bridges)
         {
             foreach (ClassFile.ConstantPoolItemMethodType bridge in bridges)
-            {
                 if (bridge.Signature == mw.Signature)
-                {
                     return true;
-                }
-            }
+
             return false;
         }
 
-        private static bool IsObjectMethod(RuntimeJavaMethod mw)
+        static bool IsObjectMethod(RuntimeJavaMethod mw)
         {
             RuntimeJavaMethod objectMethod;
             return (objectMethod = mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
         }
 
-        private static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)
+        static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)
         {
             return interfaceMethod.ReturnType == samMethodType.GetRetType() && MatchTypes(interfaceMethod.GetParameters(), samMethodType.GetArgTypes());
         }
 
-        private static bool MatchSignatures(RuntimeJavaMethod mw1, RuntimeJavaMethod mw2)
+        static bool MatchSignatures(RuntimeJavaMethod mw1, RuntimeJavaMethod mw2)
         {
             mw1.Link();
             mw2.Link();
             return mw1.ReturnType == mw2.ReturnType && MatchTypes(mw1.GetParameters(), mw2.GetParameters());
         }
 
-        private static bool MatchTypes(RuntimeJavaType[] ar1, RuntimeJavaType[] ar2)
+        static bool MatchTypes(RuntimeJavaType[] ar1, RuntimeJavaType[] ar2)
         {
             if (ar1.Length != ar2.Length)
-            {
                 return false;
-            }
+
             for (int i = 0; i < ar1.Length; i++)
-            {
                 if (ar1[i] != ar2[i])
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 
-        private static bool IsLambdaMetafactory(ClassFile classFile, ClassFile.BootstrapMethod bsm)
+        /// <summary>
+        /// Returns <c>true</c> if the given class file bootstrap method is a reference to the java.lang.invoke.LambdaMetafactory:metafactory method.
+        /// </summary>
+        /// <param name="classFile"></param>
+        /// <param name="bsm"></param>
+        /// <returns></returns>
+        static bool IsLambdaMetafactory(ClassFile classFile, ClassFile.BootstrapMethod bsm)
         {
-            ClassFile.ConstantPoolItemMethodHandle mh;
-            return bsm.ArgumentCount == 3
-                && classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
-                && classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
-                && classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
-                && (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == MethodHandleKind.InvokeStatic
-                && mh.Member != null
-                && IsLambdaMetafactory(mh.Member);
+            return bsm.ArgumentCount == 3 &&
+                classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType &&
+                classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle &&
+                classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType &&
+                classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex) is { Kind: MethodHandleKind.InvokeStatic, Member: not null } mh &&
+                IsLambdaMetafactory(mh.Member);
         }
 
-        private static bool IsLambdaMetafactory(RuntimeJavaMember mw)
+        /// <summary>
+        /// Returns <c>true</c> if the given member is a reference to the java.lang.invoke.LambdaMetafactory:metafactory method.
+        /// </summary>
+        /// <param name="mw"></param>
+        /// <returns></returns>
+        static bool IsLambdaMetafactory(RuntimeJavaMember mw)
         {
             return mw.Name == "metafactory"
                 && mw.Signature == "(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodType;Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.CallSite;"

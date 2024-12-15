@@ -4,6 +4,7 @@ import java.lang.*;
 import java.lang.invoke.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.*;
 
 @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute.Annotation()
 public class MethodHandleTests {
@@ -223,6 +224,18 @@ public class MethodHandleTests {
         if (value != clazz.getClassLoader()) {
             throw new Exception();
         }
+    }
+    
+    @cli.Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute.Annotation()
+    public void canInvokeDynamicWithGhostArgFromGenericInstantiationType()
+    {
+        Predicate<? super String> test = MethodHandleTests::canInvokeDynamicWithGhostArgFromGenericInstantiationTypeTest;
+        test.test("");
+    }
+
+    static boolean canInvokeDynamicWithGhostArgFromGenericInstantiationTypeTest(CharSequence in)
+    {
+        return true;
     }
 
 }
