@@ -696,11 +696,6 @@ namespace IKVM.Runtime
                         // convert to ghost type
                         Aj.EmitConvStackTypeToSignatureType(ilgen, Ti);
                     }
-                    else if (Ti.IsGhost)
-                    {
-                        // convert from ghost type
-                        Ti.EmitConvSignatureTypeToStackType(ilgen);
-                    }
                 }
             }
 
