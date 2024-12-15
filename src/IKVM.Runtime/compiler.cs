@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 
-using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.ByteCode;
 
@@ -45,36 +44,11 @@ using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Runtime.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Runtime.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
-using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
 
-    struct MethodKey : IEquatable<MethodKey>
-    {
-
-        readonly string className;
-        readonly string methodName;
-        readonly string methodSig;
-
-        internal MethodKey(string className, string methodName, string methodSig)
-        {
-            this.className = className;
-            this.methodName = methodName;
-            this.methodSig = methodSig;
-        }
-
-        public bool Equals(MethodKey other)
-        {
-            return className == other.className && methodName == other.methodName && methodSig == other.methodSig;
-        }
-
-        public override int GetHashCode()
-        {
-            return className.GetHashCode() ^ methodName.GetHashCode() ^ methodSig.GetHashCode();
-        }
-
-    }
+    record struct MethodKey(string ClassName, string MethodName, string MethodSig);
 
     /// <summary>
     /// Manages instances of <see cref="Compiler"/>.
