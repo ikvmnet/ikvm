@@ -50,6 +50,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Executable.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Field.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Method.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\java\lang\reflect\Proxy.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\math\**\*.java" PackagePath="java\math" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\net\**\*.java" PackagePath="java\net" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\share\classes\java\nio\**\*.java" PackagePath="java\nio" />
