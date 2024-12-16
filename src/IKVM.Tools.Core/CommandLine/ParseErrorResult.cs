@@ -24,16 +24,27 @@ namespace IKVM.Tools.Core.CommandLine
         public void Apply(InvocationContext context)
         {
             var terminal = context.Console.GetTerminal();
-            terminal.ResetColor();
-            terminal.ForegroundColor = ConsoleColor.Red;
+            if (terminal != null)
+            {
+                terminal.ResetColor();
+                terminal.ForegroundColor = ConsoleColor.Red;
 
-            foreach (var error in context.ParseResult.Errors)
-                if (error.SymbolResult != null)
-                    terminal.Error.WriteLine($"{error.SymbolResult.Symbol}: {error.Message}");
-                else
-                    terminal.Error.WriteLine(error.Message);
+                foreach (var error in context.ParseResult.Errors)
+                    if (error.SymbolResult != null)
+                        terminal.Error.WriteLine($"{error.SymbolResult.Symbol}: {error.Message}");
+                    else
+                        terminal.Error.WriteLine(error.Message);
 
-            terminal.ResetColor();
+                terminal.ResetColor();
+            }
+            else
+            {
+                foreach (var error in context.ParseResult.Errors)
+                    if (error.SymbolResult != null)
+                        context.Console.Error.WriteLine($"{error.SymbolResult.Symbol}: {error.Message}");
+                    else
+                        context.Console.Error.WriteLine(error.Message);
+            }
 
             context.ExitCode = _errorExitCode ?? 1;
         }
