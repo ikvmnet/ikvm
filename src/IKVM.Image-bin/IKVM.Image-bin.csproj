@@ -29,7 +29,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm;android-arm64" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />

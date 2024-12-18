@@ -26,7 +26,7 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
-        <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-android</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-androideabi</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
     </PropertyGroup>
 
@@ -122,7 +122,9 @@
     <PropertyGroup>
         <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows-x86_64</AndroidHostTag>
         <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows</AndroidHostTag>
-        <AndroidSysrootDir Condition=" '$(AndroidSysrootDir)' == '' ">$(ANDROID_NDK_HOME)\toolchains\llvm\prebuilt\$(AndroidHostTag)\sysroot</AndroidSysrootDir>
+        <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Linux')) ">linux-x86_64</AndroidHostTag>
+        <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Linux')) ">linux</AndroidHostTag>
+        <AndroidSysrootDir Condition=" '$(AndroidSysrootDir)' == '' And '$(AndroidHostTag)' != '' ">$(ANDROID_NDK_HOME)\toolchains\llvm\prebuilt\$(AndroidHostTag)\sysroot</AndroidSysrootDir>
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('android-'))">

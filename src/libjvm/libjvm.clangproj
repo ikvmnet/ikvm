@@ -23,12 +23,12 @@
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+        <PreprocessorDefinitions Include="TARGET_ARCH_arm" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\aarch64\vm" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
+        <PreprocessorDefinitions Include="TARGET_ARCH_aarch64" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\aarch64\vm" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
