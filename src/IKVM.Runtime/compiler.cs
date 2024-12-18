@@ -524,10 +524,7 @@ namespace IKVM.Runtime
             }
             catch (VerifyError x)
             {
-#if IMPORTER
                 classLoader.Diagnostics.EmittedVerificationError(classFile.Name + "." + m.Name + m.Signature, x.Message);
-#endif
-                classLoader.Diagnostics.GenericVerifierError(x.ToString());
                 clazz.SetHasVerifyError();
                 // because in Java the method is only verified if it is actually called,
                 // we generate code here to throw the VerificationError
@@ -536,10 +533,7 @@ namespace IKVM.Runtime
             }
             catch (ClassFormatError x)
             {
-#if IMPORTER
                 classLoader.Diagnostics.EmittedClassFormatError(classFile.Name + "." + m.Name + m.Signature, x.Message);
-#endif
-                classLoader.Diagnostics.GenericVerifierError(x.ToString());
                 clazz.SetHasClassFormatError();
                 ilGenerator.EmitThrow("java.lang.ClassFormatError", x.Message);
                 return;
