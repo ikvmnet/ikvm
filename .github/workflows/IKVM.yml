@@ -43,8 +43,7 @@ jobs:
     - name: Install Java
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y \
-          openjdk-8-jdk-headless && \
+        sudo apt-get install -y openjdk-8-jdk-headless && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
@@ -98,8 +97,7 @@ jobs:
     - name: Install Powershell
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y \
-          powershell
+        sudo apt-get install -y powershell
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v4
       with:
@@ -115,20 +113,17 @@ jobs:
     - name: Install Mono
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y \
-          mono-runtime \
-          mono-devel
+        sudo apt-get install -y mono-runtime mono-devel
     - name: Install Java
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y \
-          openjdk-8-jdk-headless && \
+        sudo apt-get install -y openjdk-8-jdk-headless && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y clang-17 llvm-17 && \
-        echo "PATH=/usr/lib/llvm-17/bin:$PATH" >> $GITHUB_ENV
+        sudo apt-get install -y clang-18 llvm-18 && \
+        echo "PATH=/usr/lib/llvm-18/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
       with:
