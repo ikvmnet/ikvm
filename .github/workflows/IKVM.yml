@@ -24,7 +24,7 @@ env:
 jobs:
   build-jtreg:
     name: Build OpenJDK Test Harness
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout Source
       uses: actions/checkout@v4
@@ -361,7 +361,7 @@ jobs:
     name: Test Variables
     needs:
     - build-ikvm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.test-vars.outputs.matrix }}
     steps:
@@ -662,7 +662,7 @@ jobs:
     name: Release
     needs:
     - test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Free Disk Space (Linux)
       uses: jlumbroso/free-disk-space@main
