@@ -75,6 +75,12 @@
         <PackageProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

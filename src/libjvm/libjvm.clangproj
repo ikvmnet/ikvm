@@ -48,7 +48,7 @@
         <AdditionalLinkOptions Include="-Wl,-export:jio_vfprintf" />
         <AdditionalLinkOptions Include="-Wl,-export:jio_vsnprintf" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_linux" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
         <Dependencies Include="c" />

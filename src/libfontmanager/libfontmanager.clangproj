@@ -7,6 +7,7 @@
     <PropertyGroup>
         <TargetName>fontmanager</TargetName>
         <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -43,7 +44,7 @@
         <Dependencies Include="user32" />
         <Dependencies Include="gdi32" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <IncludeDirectories Include="$(LinuxSdkDir)\include\freetype2" />
         <Dependencies Include="c" />
         <Dependencies Include="m" />

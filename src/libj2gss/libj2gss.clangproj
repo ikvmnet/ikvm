@@ -18,7 +18,7 @@
         <Header Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.h" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\jgss\wrapper\*.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libj2gss\mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

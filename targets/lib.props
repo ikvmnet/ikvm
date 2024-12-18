@@ -26,11 +26,14 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-android</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
     </PropertyGroup>
 
     <ItemGroup>
         <PreprocessorDefinitions Include="_AMD64_;amd64" Condition="$(TargetIdentifier.EndsWith('-x64'))" />
         <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetIdentifier.EndsWith('-x86'))" />
+        <PreprocessorDefinitions Include="_ARM_;arm" Condition="$(TargetIdentifier.EndsWith('-arm'))" />
         <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetIdentifier.EndsWith('-arm64'))" />
         <AdditionalCompileOptions Include="-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
     </ItemGroup>
@@ -116,11 +119,23 @@
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
     </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <PropertyGroup>
+        <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows-x86_64</AndroidHostTag>
+        <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows</AndroidHostTag>
+        <AndroidSysrootDir Condition=" '$(AndroidSysrootDir)' == '' ">$(ANDROID_NDK_HOME)\toolchains\llvm\prebuilt\$(AndroidHostTag)\sysroot</AndroidSysrootDir>
+    </PropertyGroup>
+
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('android-'))">
+        <SystemRootDirectories Include="$(AndroidSysrootDir)" />
+        <SystemIncludeDirectories Include="$(AndroidSysrootDir)\usr\include" />
+        <LibraryDirectories Include="$(AndroidSysrootDir)\usr\lib" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <PreprocessorDefinitions Include="LINUX;__linux__" />
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-nostdlib" />
@@ -144,6 +159,10 @@
         <AdditionalLinkOptions Include="-t" />
         <AdditionalLinkOptions Include="-mmacosx-version-min" Value="10.10" Separator="=" />
         <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f." />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('android-'))">
+        <PreprocessorDefinitions Include="ANDROID;__ANDROID__" />
     </ItemGroup>
 
 </Project>
