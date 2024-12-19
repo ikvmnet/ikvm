@@ -52,6 +52,7 @@
         <PackageProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
         <PackageProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
         <PackageProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+        <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))" />
         <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))" />
         <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win-x64\IKVM.Image.JRE.runtime.win-x64.csproj" PackageTargetPath="nuget" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
