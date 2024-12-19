@@ -16,7 +16,7 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" LinkBase="" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" LinkBase="" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libverify\mapfile-vers" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />

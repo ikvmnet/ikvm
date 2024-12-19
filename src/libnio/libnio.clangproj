@@ -52,7 +52,7 @@
         <LibNioFile Include="WindowsNativeDispatcher.c" />
         <LibNioFile Include="WindowsSelectorImpl.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libnio\mapfile-linux" />
         <LibNioFile Include="EPoll.c" />

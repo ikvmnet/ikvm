@@ -35,7 +35,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\zlib" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\util\zip\zlib\*.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <PreprocessorDefinitions Include="USE_MMAP" />
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libzip\mapfile-vers" />
     </ItemGroup>

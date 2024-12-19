@@ -90,7 +90,7 @@
         <LibJavaExclude Include="WinCAPISeedGenerator.c" />
         <LibJavaExclude Include="Win32ErrorMode.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjava\mapfile-linux" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider" />
