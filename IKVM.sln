@@ -349,6 +349,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Benchmarks", "src\IKVM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Benchmarks.Java", "src\IKVM.Benchmarks.Java\IKVM.Benchmarks.Java.csproj", "{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Image.runtime.android-arm64", "src\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj", "{843B0704-DA5E-4357-B683-3D6F64DEF57B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -939,6 +941,10 @@ Global
 		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F5CDC85-BCD8-468E-9FC6-4DC9E3A576D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{843B0704-DA5E-4357-B683-3D6F64DEF57B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{843B0704-DA5E-4357-B683-3D6F64DEF57B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{843B0704-DA5E-4357-B683-3D6F64DEF57B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{843B0704-DA5E-4357-B683-3D6F64DEF57B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

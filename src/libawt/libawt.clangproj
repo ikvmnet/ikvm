@@ -7,6 +7,7 @@
     <PropertyGroup>
         <TargetName>awt</TargetName>
         <OutputType>dll</OutputType>
+        <TargetIdentifiers>win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64</TargetIdentifiers>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
@@ -210,7 +211,7 @@
         <Dependencies Include="advapi32" />
         <Dependencies Include="comsuppw" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <Dependencies Include="dl" />
         <Dependencies Include="m" />
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libawt\mapfile-vers" />

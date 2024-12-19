@@ -14,7 +14,7 @@
 #include <io.h>
 #endif
 
-#if defined LINUX || defined MACOS
+#if defined LINUX || defined MACOS || defined ANDROID
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
@@ -25,6 +25,7 @@
 #include <time.h>
 #include <poll.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #endif
 
 #ifdef __cplusplus

@@ -7,7 +7,7 @@
     <PropertyGroup>
         <TargetName>sctp</TargetName>
         <OutputType>dll</OutputType>
-        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64</TargetIdentifiers>
+        <TargetIdentifiers>linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;android-arm64</TargetIdentifiers>
         <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
     <ItemGroup>
@@ -17,7 +17,7 @@
         <ProjectReference Include="..\libnio\libnio.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Dependencies Include="pthread" />
+        <Dependencies Include="pthread" Condition="$(TargetIdentifier.StartsWith('linux-'))" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\nio\ch\sctp" />
         <AdditionalCompileOptions Include="-fcommon" />
         <AdditionalLinkOptions Include="-fcommon" />

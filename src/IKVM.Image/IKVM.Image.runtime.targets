@@ -29,16 +29,16 @@
 
     <PropertyGroup>
         <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsApiDir>
-        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-'))">solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-')) Or $(ImageRuntimeIdentifier.StartsWith('android-'))">solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsDir>
-        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))">linux</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('android-'))">linux</OpenJdkTargetOsDir>
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
     </PropertyGroup>
 
 
     <ItemGroup>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
-        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) OR $(ImageRuntimeIdentifier.StartsWith('android-'))"/>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\macosx\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))"/>
     </ItemGroup>
 
