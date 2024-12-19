@@ -9,26 +9,12 @@
         <OutputType>dll</OutputType>
     </PropertyGroup>
     <ItemGroup>
+        <PreprocessorDefinitions Include="TARGET_ARCH_zero" />
         <AdditionalCompileOptions Include="-Wno-dll-attribute-on-redeclaration" />
         <IncludeDirectories Include="$(MSBuildThisFileDirectory)" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\share\vm\prims" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x86'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-x64'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_x86" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\x86\vm" />
-    </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
-        <PreprocessorDefinitions Include="TARGET_ARCH_aarch64" />
-        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\aarch64\vm" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\zero\vm" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
