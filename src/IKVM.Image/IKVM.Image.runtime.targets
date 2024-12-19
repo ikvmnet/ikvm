@@ -38,7 +38,7 @@
 
     <ItemGroup>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
-        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) OR $(ImageRuntimeIdentifier.StartsWith('android-'))"/>
+        <IkvmImageItem Include="$(OpenJdkDir)jdk\src\solaris\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('android-')) Or $(ImageRuntimeIdentifier.StartsWith('browser-'))"/>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\macosx\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))"/>
     </ItemGroup>
 

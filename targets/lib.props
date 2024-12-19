@@ -28,6 +28,7 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-androideabi</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">wasm32-unknown-enscripten</TargetTriple>
     </PropertyGroup>
 
     <ItemGroup>

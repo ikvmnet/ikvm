@@ -1,0 +1,24 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\browser-wasm\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net6.0\browser-wasm\**\*">
+            <TargetFramework>net6.0</TargetFramework>
+            <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net8.0\browser-wasm\**\*">
+            <TargetFramework>net8.0</TargetFramework>
+            <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>
