@@ -295,8 +295,7 @@ namespace IKVM.MSBuild.Tasks
             options.Debug = Debug?.ToLower() switch
             {
                 "none" or "" or null => IkvmImporterDebugMode.None,
-                "portable" => IkvmImporterDebugMode.Portable,
-                "full" or "pdbonly" => IkvmImporterDebugMode.Full,
+                "full" or "pdbonly" or "portable" => IkvmImporterDebugMode.Portable,
                 "embedded" => IkvmImporterDebugMode.Embedded,
                 _ => throw new NotImplementedException($"Unknown Debug option '{Debug}'.")
             };

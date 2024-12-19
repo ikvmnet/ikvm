@@ -120,7 +120,7 @@ namespace IKVM.Tools.Importer
             if (context.ParseResult.GetValueForOption(command.DelaySignOption) is true)
                 options.DelaySign = true;
 
-            if (GetParsedEnumValueForOption(context, command.DebugOption, ImportDebug.Unspecified) is ImportDebug _debug and not ImportDebug.Unspecified)
+            if (GetParsedEnumValueForOption(context, command.DebugOption, ImportDebug.None) is ImportDebug _debug and not ImportDebug.None)
                 options.Debug = _debug;
 
             if (context.ParseResult.GetValueForOption(command.DeterministicOption) is false)

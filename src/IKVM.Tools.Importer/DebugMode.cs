@@ -10,11 +10,6 @@
         None,
 
         /// <summary>
-        /// Emit debugging information to .pdb file using default format for the current platform: Windows PDB on Windows, Portable PDB on other systems.
-        /// </summary>
-        Full,
-
-        /// <summary>
         /// Emit debugging information to to .pdb file using cross-platform Portable PDB format
         /// </summary>
         Portable,

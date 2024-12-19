@@ -106,7 +106,7 @@ namespace IKVM.Tools.Importer
         /// <summary>
         /// How debug symbols should be produced along with the assembly.
         /// </summary>
-        public ImportDebug Debug { get; set; } = ImportDebug.Unspecified;
+        public ImportDebug Debug { get; set; } = ImportDebug.None;
 
         /// <summary>
         /// Whether to disable auto generation of serialization capabilities.

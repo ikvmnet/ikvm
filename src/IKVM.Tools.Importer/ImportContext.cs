@@ -521,9 +521,8 @@ namespace IKVM.Tools.Importer
 
             switch (options.Debug)
             {
-                case ImportDebug.Full:
-                    compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;
-                    compilerOptions.debugMode = DebugMode.Full;
+                case ImportDebug.None:
+                    compilerOptions.debugMode = DebugMode.None;
                     break;
                 case ImportDebug.Portable:
                     compilerOptions.codegenoptions |= CodeGenOptions.EmitSymbols;

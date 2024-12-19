@@ -189,6 +189,7 @@ namespace IKVM.MSBuild.Tests
         [DataRow(EnvironmentPreference.Core, "net8.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Core, "net8.0", "osx-x64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Core, "net8.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Core, "net8.0", "android-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x86", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-x64", "{0}.exe", "{0}.dll")]
         [DataRow(EnvironmentPreference.Framework, "net472", "win-arm64", "{0}.exe", "{0}.dll")]
@@ -228,6 +229,7 @@ namespace IKVM.MSBuild.Tests
         [DataRow(EnvironmentPreference.Framework, "net8.0", "linux-musl-arm64", "{0}", "lib{0}.so")]
         [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-x64", "{0}", "lib{0}.dylib")]
         [DataRow(EnvironmentPreference.Framework, "net8.0", "osx-arm64", "{0}", "lib{0}.dylib")]
+        [DataRow(EnvironmentPreference.Framework, "net8.0", "android-arm64", "{0}", "lib{0}.so")]
         public void CanBuildTestProject(EnvironmentPreference env, string tfm, string rid, string exe, string lib)
         {
             // skip framework tests for non-Windows platforms
