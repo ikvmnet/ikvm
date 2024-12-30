@@ -10,7 +10,7 @@
 #include <winsock2.h>
 #endif
 
-#if defined LINUX || defined MACOS
+#if defined LINUX | defined MACOS | defined EMSCRIPTEN
 #define _LARGEFILE64_SOURCE
 #include <errno.h>
 #include <unistd.h>
@@ -19,7 +19,7 @@
 #include <sys/stat.h>
 #endif
 
-#if defined LINUX
+#if defined LINUX | defined EMSCRIPTEN
 #include <sys/stat.h>
 #endif
 

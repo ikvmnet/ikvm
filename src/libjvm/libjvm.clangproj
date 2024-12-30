@@ -30,6 +30,10 @@
         <PreprocessorDefinitions Include="TARGET_ARCH_aarch64" />
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\aarch64\vm" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-wasm'))">
+        <PreprocessorDefinitions Include="TARGET_ARCH_zero" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\cpu\zero\vm" />
+    </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_windows" />
         <PreprocessorDefinitions Include="O_BINARY" Value="_O_BINARY" />
@@ -53,6 +57,10 @@
         <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\linux\vm" />
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-Wl,--version-script=mapfile-vers" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <PreprocessorDefinitions Include="TARGET_OS_FAMILY_posix" />
+        <IncludeDirectories Include="$(OpenJdkDir)hotspot\src\os\posix\vm" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <PreprocessorDefinitions Include="TARGET_OS_FAMILY_bsd" />

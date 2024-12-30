@@ -56,7 +56,7 @@
             <_ReferencedClangProjectReference Include="@(DotNetClangProjectReference)">
                 <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
             </_ReferencedClangProjectReference>
-            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledImageRuntimes.Contains(';%(RuntimeIdentifier);'))">
                 <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>

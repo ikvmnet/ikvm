@@ -28,7 +28,12 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-androideabi</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
-        <TargetTriple Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">wasm32-unknown-enscripten</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">wasm32-unknown-emscripten</TargetTriple>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <ClangToolExe>$(EMSDK)\upstream\bin\clang.exe</ClangToolExe>
+        <LlvmArToolExe>$(EMSDK)\upstream\bin\llvm-ar.exe</LlvmArToolExe>
     </PropertyGroup>
 
     <ItemGroup>
@@ -36,6 +41,7 @@
         <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetIdentifier.EndsWith('-x86'))" />
         <PreprocessorDefinitions Include="_ARM_;arm" Condition="$(TargetIdentifier.EndsWith('-arm'))" />
         <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetIdentifier.EndsWith('-arm64'))" />
+        <PreprocessorDefinitions Include="_WASM_;wasm" Condition="$(TargetIdentifier.EndsWith('-wasm'))" />
         <AdditionalCompileOptions Include="-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
     </ItemGroup>
 
@@ -120,7 +126,7 @@
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
     </ItemGroup>
 
-    <PropertyGroup>
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('android-'))">
         <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows-x86_64</AndroidHostTag>
         <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Windows')) ">windows</AndroidHostTag>
         <AndroidHostTag Condition=" '$(AndroidHostTag)' == '' And $([MSBuild]::IsOSPlatform('Linux')) ">linux-x86_64</AndroidHostTag>
@@ -134,7 +140,151 @@
         <LibraryDirectories Include="$(AndroidSysrootDir)\usr\lib" />
     </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <SystemIncludeDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\include\fakesdl" />
+        <SystemIncludeDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\include\compat" />
+        <SystemIncludeDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\include" />
+        <LibraryDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\lib\wasm32-emscripten\pic" />
+        <PreprocessorDefinitions Include="EMSCRIPTEN" />
+        <AdditionalCompileOptions Include="-fvisibility=default " />
+        <AdditionalCompileOptions Include="-fPIC" />
+        <AdditionalCompileOptions Include="-fignore-exceptions" />
+        <AdditionalCompileOptions Include="-mno-bulk-memory" />
+        <AdditionalCompileOptions Include="-mno-bulk-memory-opt" />
+        <AdditionalCompileOptions Include="-mno-nontrapping-fptoint" />
+        <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--combiner-global-alias-analysis=false" />
+        <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--enable-emscripten-sjlj" />
+        <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--disable-lsr" />
+        <AdditionalCompileOptions Include="-Werror" Value="implicit-function-declaration" />
+        <AdditionalCompileOptions Include="-Xclang" Separator=" " Value="-iwithsysroot/include/fakesdl" />
+        <AdditionalCompileOptions Include="-Xclang" Separator=" " Value="-iwithsysroot/include/compat" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' And '$(OutputType)' == 'exe' ">
+        <Dependencies Include="GL-getprocaddr" />
+        <Dependencies Include="al" />
+        <Dependencies Include="html5" />
+        <Dependencies Include="standalonewasm-nocatch" />
+        <Dependencies Include="stubs-debug" />
+        <Dependencies Include="c-debug" />
+        <Dependencies Include="dlmalloc" />
+        <Dependencies Include="compiler_rt" />
+        <Dependencies Include="c++-noexcept" />
+        <Dependencies Include="c++abi-debug-noexcept" />
+        <Dependencies Include="sockets" />
+        <AdditionalLinkOptions Include="-nostdlib" />
+        <AdditionalLinkOptions Include="-Wl,$(EMSDK)\upstream\emscripten\cache\sysroot\lib\wasm32-emscripten\pic\crt1.o" />
+        <AdditionalLinkOptions Include="-Wl,-v" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--combiner-global-alias-analysis=false" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--enable-emscripten-sjlj" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--disable-lsr" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=setThrew" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=_emscripten_stack_restore" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=emscripten_stack_get_current" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=calloc" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=_emscripten_stack_alloc" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=_emscripten_tempret_get" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=_emscripten_tempret_set" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=strerror" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=htons" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=ntohs" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=malloc" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=htonl" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=_emscripten_timeout" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=emscripten_stack_get_base" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=emscripten_stack_get_end" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=free" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__cxa_can_catch" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__cxa_increment_exception_refcount" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__cxa_get_exception_ptr" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__cxa_decrement_exception_refcount" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=fileno" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=emscripten_builtin_memalign" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__dl_seterr" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=memcmp" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=memcpy" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=realloc" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__errno_location" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__cxa_demangle" />
+        <AdditionalLinkOptions Include="-Wl,--import-memory" />
+        <AdditionalLinkOptions Include="-Wl,--strip-debug" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_stack_get_end" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_stack_get_free" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_stack_get_base" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_stack_get_current" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_stack_set_limits" />
+        <AdditionalLinkOptions Include="-Wl,--export=setThrew" />
+        <AdditionalLinkOptions Include="-Wl,--export=_emscripten_stack_restore" />
+        <AdditionalLinkOptions Include="-Wl,--export=calloc" />
+        <AdditionalLinkOptions Include="-Wl,--export=_emscripten_stack_alloc" />
+        <AdditionalLinkOptions Include="-Wl,--export=_emscripten_tempret_get" />
+        <AdditionalLinkOptions Include="-Wl,--export=_emscripten_tempret_set" />
+        <AdditionalLinkOptions Include="-Wl,--export=strerror" />
+        <AdditionalLinkOptions Include="-Wl,--export=htons" />
+        <AdditionalLinkOptions Include="-Wl,--export=ntohs" />
+        <AdditionalLinkOptions Include="-Wl,--export=malloc" />
+        <AdditionalLinkOptions Include="-Wl,--export=htonl" />
+        <AdditionalLinkOptions Include="-Wl,--export=_emscripten_timeout" />
+        <AdditionalLinkOptions Include="-Wl,--export=free" />
+        <AdditionalLinkOptions Include="-Wl,--export=__cxa_can_catch" />
+        <AdditionalLinkOptions Include="-Wl,--export=__cxa_increment_exception_refcount" />
+        <AdditionalLinkOptions Include="-Wl,--export=__cxa_get_exception_ptr" />
+        <AdditionalLinkOptions Include="-Wl,--export=__cxa_decrement_exception_refcount" />
+        <AdditionalLinkOptions Include="-Wl,--export=fileno" />
+        <AdditionalLinkOptions Include="-Wl,--export=emscripten_builtin_memalign" />
+        <AdditionalLinkOptions Include="-Wl,--export=__dl_seterr" />
+        <AdditionalLinkOptions Include="-Wl,--export=memcmp" />
+        <AdditionalLinkOptions Include="-Wl,--export=memcpy" />
+        <AdditionalLinkOptions Include="-Wl,--export=realloc" />
+        <AdditionalLinkOptions Include="-Wl,--export=__errno_location" />
+        <AdditionalLinkOptions Include="-Wl,--export=__cxa_demangle" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_asm" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_asm" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_lib_deps" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_lib_deps" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_js" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_js" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__wasm_apply_data_relocs" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__memory_base" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stack_pointer" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__table_base" />
+        <AdditionalLinkOptions Include="-Wl,--experimental-pic " />
+        <AdditionalLinkOptions Include="-Wl,--unresolved-symbols=import-dynamic" />
+        <AdditionalLinkOptions Include="-Wl,--no-shlib-sigcheck" />
+        <AdditionalLinkOptions Include="-Wl,-pie" />
+        <AdditionalLinkOptions Include="-Wl,--no-export-dynamic" />
+        <AdditionalLinkOptions Include="-Wl,-z,stack-size=65536" />
+        <AdditionalLinkOptions Include="-Wl,--initial-memory=16777216" />
+        <AdditionalLinkOptions Include="-Wl,--stack-first" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' And '$(OutputType)' == 'dll' ">
+        <AdditionalLinkOptions Include="-nostdlib" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--combiner-global-alias-analysis=false" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--enable-emscripten-sjlj" />
+        <AdditionalLinkOptions Include="-Wl,-mllvm,--disable-lsr" />
+        <AdditionalLinkOptions Include="-Wl,--import-memory" />
+        <AdditionalLinkOptions Include="-Wl,--strip-debug" />
+        <AdditionalLinkOptions Include="-Wl,--export-dynamic" />
+        <AdditionalLinkOptions Include="-Wl,--export=__wasm_call_ctors" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_asm" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_asm" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_lib_deps" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_lib_deps" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__start_em_js" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__stop_em_js" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=main" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__main_argc_argv" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=__wasm_apply_data_relocs" />
+        <AdditionalLinkOptions Include="-Wl,--export-if-defined=fflush" />
+        <AdditionalLinkOptions Include="-Wl,--experimental-pic" />
+        <AdditionalLinkOptions Include="-Wl,--unresolved-symbols=import-dynamic" />
+        <AdditionalLinkOptions Include="-Wl,--no-shlib-sigcheck" />
+        <AdditionalLinkOptions Include="-Wl,--stack-first" />
+        <AdditionalLinkOptions Include="-Wl,--no-entry" />
+    </ItemGroup>
+    
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or $(TargetIdentifier.StartsWith('browser-'))">
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 

@@ -10,10 +10,14 @@
 #include <windows.h>
 #endif
 
-#if defined LINUX | MACOSX
+#if defined LINUX | MACOSX | EMSCRIPTEN
 #include <pthread.h>
 #include <errno.h>
 #include <dlfcn.h>
+#endif
+
+#if defined EMSCRIPTEN
+#include <emscripten.h>
 #endif
 
 #if defined LINUX | MACOSX
@@ -39,6 +43,7 @@ NETEXPORT void NETCALL IKVM_dl_close(void* handle)
 {
 #ifdef WIN32
     FreeLibrary((HMODULE)handle);
+#elif EMSCRIPTEN
 #else
     dlclose(handle);
 #endif
@@ -49,9 +54,13 @@ NETEXPORT void* NETCALL IKVM_dl_sym(void* handle, const char* name)
 #ifdef WIN32
     return (void*)GetProcAddress((HMODULE)handle, name);
 #else
+#ifndef EMSCRIPTEN
     pthread_mutex_lock(&dl_mutex);
+#endif
     void* result = dlsym(handle, name);
+#ifndef EMSCRIPTEN
     pthread_mutex_unlock(&dl_mutex);
+#endif
     return result;
 #endif
 }

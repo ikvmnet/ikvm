@@ -14,7 +14,7 @@
 #include <io.h>
 #endif
 
-#if defined LINUX || defined MACOS || defined ANDROID
+#if defined LINUX || defined MACOS || defined ANDROID || defined EMSCRIPTEN
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
@@ -92,7 +92,7 @@ enum OSReturn
     OS_NORESOURCE = -6  // Operation failed for lack of nonmemory resource
 };
 
-#if defined LINUX || defined MACOS
+#if defined LINUX || defined MACOS || defined EMSCRIPTEN
 
 // macro for restartable system calls
 #define RESTARTABLE(_cmd, _result) do { \
@@ -135,7 +135,7 @@ jlong os_javaTimeMillis()
     return windows_to_java_time(wt);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 jlong os_javaTimeMillis()
 {
     timeval time;
@@ -165,7 +165,7 @@ jlong os_javaTimeNanos()
     return os_javaTimeMillis() * NANOSECS_PER_MILLISEC;
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 jlong os_javaTimeNanos()
 {
     struct timespec tp;
@@ -248,7 +248,7 @@ size_t os_lasterror(char* buf, size_t len)
     return 0;
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 size_t os_lasterror(char* buf, size_t len)
 {
     if (errno == 0)  return 0;
@@ -506,7 +506,7 @@ int os_socket_close(int fd)
     return ::closesocket(fd);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_socket_close(int fd)
 {
     return ::close(fd);
@@ -530,7 +530,7 @@ int os_socket_shutdown(int fd, int howto)
     return ::shutdown(fd, howto);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_socket_shutdown(int fd, int howto)
 {
     return ::shutdown(fd, howto);
@@ -554,7 +554,7 @@ int os_recv(int fd, char* buf, size_t nBytes, uint flags)
     return ::recv(fd, buf, (int)nBytes, flags);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_recv(int fd, char* buf, size_t nBytes, uint flags)
 {
     RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
@@ -578,7 +578,7 @@ int os_send(int fd, char* buf, size_t nBytes, uint flags)
     return ::send(fd, buf, (int)nBytes, flags);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_send(int fd, char* buf, size_t nBytes, uint flags)
 {
     RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
@@ -610,7 +610,7 @@ int os_timeout(int fd, long timeout) {
     return ::select(1, &tbl, 0, 0, &t);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_timeout(int fd, long timeout)
 {
     julong prevtime, newtime;
@@ -692,7 +692,7 @@ int os_listen(int fd, int count)
     return ::listen(fd, count);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_listen(int fd, int count)
 {
     return ::listen(fd, count);
@@ -715,7 +715,7 @@ int os_connect(int fd, struct sockaddr* him, socklen_t len) {
     return ::connect(fd, him, len);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_connect(int fd, struct sockaddr* him, socklen_t len)
 {
     RESTARTABLE_RETURN_INT(::connect(fd, him, len));
@@ -739,7 +739,7 @@ int os_bind(int fd, struct sockaddr* him, socklen_t len)
     return ::bind(fd, him, len);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_bind(int fd, struct sockaddr* him, socklen_t len)
 {
     return ::bind(fd, him, len);
@@ -763,7 +763,7 @@ int os_accept(int fd, struct sockaddr* him, socklen_t* len)
     return ::accept(fd, him, len);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_accept(int fd, struct sockaddr* him, socklen_t* len)
 {
     // Linux doc says this can't return EINTR, unlike accept() on Solaris.
@@ -793,7 +793,7 @@ int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, so
     return ::recvfrom(fd, buf, (int)nBytes, flags, from, fromlen);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_recvfrom(int fd, char* buf, size_t nBytes, uint flags, sockaddr* from, socklen_t* fromlen)
 {
     RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
@@ -820,7 +820,7 @@ int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len)
     return ::getsockname(fd, him, len);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_get_sock_name(int fd, struct sockaddr* him, socklen_t* len)
 {
     return ::getsockname(fd, him, len);
@@ -847,7 +847,7 @@ int os_sendto(int fd, char* buf, size_t len, uint flags, struct sockaddr* to, so
     return ::sendto(fd, buf, (int)len, flags, to, tolen);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_sendto(int fd, char* buf, size_t len, uint flags, struct sockaddr* to, socklen_t tolen)
 {
     RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
@@ -872,7 +872,7 @@ int os_socket_available(int fd, jint* pbytes)
     return (ret < 0) ? 0 : 1;
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 int os_socket_available(int fd, jint* pbytes)
 {
     // Linux doc says EINTR not returned, unlike Solaris
@@ -911,7 +911,7 @@ int os_get_sock_opt(int fd, int level, int optname, char* optval, socklen_t* opt
     return ::getsockopt(fd, level, optname, optval, optlen);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_get_sock_opt(int fd, int level, int optname, char* optval, socklen_t* optlen)
 {
     return ::getsockopt(fd, level, optname, optval, optlen);
@@ -938,7 +938,7 @@ int os_set_sock_opt(int fd, int level, int optname, const char* optval, socklen_
     return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline int os_set_sock_opt(int fd, int level, int optname, const char* optval, socklen_t optlen)
 {
     return ::setsockopt(fd, level, optname, optval, optlen);
@@ -986,7 +986,7 @@ void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
     return NULL;
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 void* os_dll_load(const char* filename, char* ebuf, int ebuflen)
 {
     void* result = ::dlopen(filename, RTLD_LAZY);
@@ -1127,7 +1127,7 @@ inline char* os_native_path(char* path)
   return path;
 }
 #endif
-#ifdef LINUX
+#if defined LINUX || defined EMSCRIPTEN
 inline char* os_native_path(char* path)
 {
     return path;
@@ -1230,7 +1230,7 @@ inline int os_open(const char *path, int oflag, int mode)
   return fd;
 }
 #endif
-#ifdef MACOS
+#if defined MACOS || defined EMSCRIPTEN
 #ifndef O_DELETE
 #define O_DELETE 0x10000
 #endif
@@ -1346,6 +1346,12 @@ inline void os_dll_unload(void* lib)
     ::dlclose(lib);
 }
 #endif
+#ifdef EMSCRIPTEN
+inline void os_dll_unload(void* lib)
+{
+    // no-op: emscripten cannot unload
+}
+#endif
 
 void JNICALL JVM_UnloadLibrary(void* handle)
 {
@@ -1370,7 +1376,12 @@ void* os_dll_lookup(void* handle, const char* name)
 }
 #endif
 #ifdef MACOS
-void* os_dll_lookup(void* handle, const char* name)
+void *os_dll_lookup(void *handle, const char *name) {
+  return dlsym(handle, name);
+}
+#endif
+#ifdef EMSCRIPTEN
+void *os_dll_lookup(void *handle, const char *name)
 {
     return dlsym(handle, name);
 }

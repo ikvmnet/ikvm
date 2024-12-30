@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
+    <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or '$(TargetIdentifier)' == 'browser-wasm'">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">i386</OpenJdkTargetCpuOsArch>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">amd64</OpenJdkTargetCpuOsArch>
@@ -44,7 +44,7 @@
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or '$(TargetIdentifier)' == 'browser-wasm' ">
         <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
     </ItemGroup>
