@@ -8,6 +8,7 @@
         <AssemblyName>javac</AssemblyName>
         <TargetFrameworks>net8.0;net472;net6.0;</TargetFrameworks>
         <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win-x86;win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
         <PublishReadyToRun>true</PublishReadyToRun>
         <SelfContained>true</SelfContained>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
