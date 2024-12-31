@@ -22,7 +22,7 @@
         <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsApiDir>
         <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-')) Or $(ImageRuntimeIdentifier.StartsWith('android-')) Or '$(ImageRuntimeIdentifier)' == 'browser-wasm' ">solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsDir>
-        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('android-'))">linux</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('android-')) Or '$(ImageRuntimeIdentifier)' == 'browser-wasm' ">linux</OpenJdkTargetOsDir>
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
     </PropertyGroup>
 
