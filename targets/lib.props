@@ -155,7 +155,7 @@
         <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--combiner-global-alias-analysis=false" />
         <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--enable-emscripten-sjlj" />
         <AdditionalCompileOptions Include="-mllvm" Separator=" " Value="--disable-lsr" />
-        <AdditionalCompileOptions Include="-Werror" Value="implicit-function-declaration" />
+        <AdditionalCompileOptions Include="-Werror" Separator="=" Value="implicit-function-declaration" />
         <AdditionalCompileOptions Include="-Xclang" Separator=" " Value="-iwithsysroot/include/fakesdl" />
         <AdditionalCompileOptions Include="-Xclang" Separator=" " Value="-iwithsysroot/include/compat" />
     </ItemGroup>

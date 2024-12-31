@@ -138,7 +138,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\sun\tools\jdi\**\*.java" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' Or '$(IkvmJavaRuntimeIdentifier)' == 'browser-wasm' ">
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\**\*.java" PackagePath="" />
@@ -165,7 +165,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\tools\attach\**\*.java" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'browser-wasm' ">
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\linux\classes\**\*.java" PackagePath="" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\jdk\internal\platform\SystemMetrics.java" />
     </ItemGroup>
@@ -184,7 +184,12 @@
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\macosx\classes\**\*.java" PackagePath="" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'linux' ">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'browser-wasm' " >
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\nio\sctp\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\**\*.java" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'linux' And '$(IkvmJavaRuntimeIdentifier)' != 'browser-wasm' ">
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\attach\LinuxAttachProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\tools\attach\LinuxVirtualMachine.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\ch\EPoll.java" />

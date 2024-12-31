@@ -1,0 +1,13 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+        <PackageId>IKVM.Java.runtime.browser-wasm</PackageId>
+        <IkvmJavaRuntimeIdentifier>browser-wasm</IkvmJavaRuntimeIdentifier>
+    </PropertyGroup>
+    
+    <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="..\IKVM.Java\IKVM.Java.runtime.targets" />
+</Project>

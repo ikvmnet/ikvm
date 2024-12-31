@@ -13,7 +13,6 @@
 
     <Import Project="$(MSBuildThisFileDirectory)lib.props" />
 
-    <!-- common preprocessor declarations -->
     <ItemGroup Condition=" '$(TargetIdentifier)' != '' ">
         <PreprocessorDefinitions Include="JDK_MAJOR_VERSION" Value="&quot;$(OpenJdkMajorVersion)&quot;" />
         <PreprocessorDefinitions Include="JDK_MINOR_VERSION" Value="&quot;$(OpenJdkMinorVersion)&quot;" />
@@ -22,7 +21,6 @@
         <PreprocessorDefinitions Include="JDK_BUILD_NUMBER" Value="&quot;$(OpenJdkBuildNumber)&quot;" />
     </ItemGroup>
 
-    <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetIdentifier.StartsWith('win-')) ">
         <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">x86</OpenJdkTargetCpuOsArch>
@@ -34,22 +32,21 @@
         <PreprocessorDefinitions Include="_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL" />
     </ItemGroup>
 
-    <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or '$(TargetIdentifier)' == 'browser-wasm'">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x86'))">i386</OpenJdkTargetCpuOsArch>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">amd64</OpenJdkTargetCpuOsArch>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-arm'))">arm</OpenJdkTargetCpuOsArch>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-arm64'))">aarch64</OpenJdkTargetCpuOsArch>
+        <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-wasm'))">zero</OpenJdkTargetCpuOsArch>
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or '$(TargetIdentifier)' == 'browser-wasm' ">
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) ">
         <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 
-    <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetIdentifier.StartsWith('osx-')) ">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetCpuOsArch Condition="$(TargetIdentifier.EndsWith('-x64'))">x86_64</OpenJdkTargetCpuOsArch>
@@ -60,6 +57,11 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <ProjectReference Include="..\IKVM.Java.runtime.browser-wasm\IKVM.Java.runtime.browser-wasm.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <PreprocessorDefinitions Include="_GNU_SOURCE;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 
 </Project>

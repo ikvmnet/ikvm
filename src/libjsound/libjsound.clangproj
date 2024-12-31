@@ -33,6 +33,9 @@
     <ItemGroup Condition="$(TargetIdentifier.EndsWith('-arm64'))">
         <PreprocessorDefinitions Include="X_ARCH" Value="X_AARCH64" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetIdentifier.EndsWith('-wasm'))">
+        <PreprocessorDefinitions Include="X_ARCH" Value="X_ZERO" />
+    </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <PreprocessorDefinitions Include="X_PLATFORM" Value="X_WINDOWS" />
         <PreprocessorDefinitions Include="USE_PLATFORM_MIDI_OUT" Value="TRUE" />

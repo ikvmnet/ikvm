@@ -14,7 +14,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" UnsupportedRuntimes="browser-wasm" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
@@ -26,7 +26,7 @@
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
-        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" />
+        <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" UnsupportedRuntimes="browser-wasm" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <DotNetClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm64" />
@@ -46,10 +46,12 @@
     <Target Name="GetDotNetClangProjectReferencesByRuntime" Inputs="@(DotNetClangProjectReference)" Outputs="%(DotNetClangProjectReference.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
         <PropertyGroup>
             <__SupportedRuntimes>%(DotNetClangProjectReference.SupportedRuntimes)</__SupportedRuntimes>
-            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(_SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(_SupportedImageRuntimes)</__SupportedRuntimes>
+            <__UnsupportedRuntimes>%(DotNetClangProjectReference.UnsupportedRuntimes)</__UnsupportedRuntimes>
         </PropertyGroup>
         <ItemGroup>
             <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
+            <__SupportedRuntimes Remove="$(__UnsupportedRuntimes)" />
         </ItemGroup>
         <ItemGroup>
             <_ReferencedClangProjectReference Remove="@(_ReferencedClangProjectReference)" />

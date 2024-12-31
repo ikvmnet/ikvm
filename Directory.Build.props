@@ -2,19 +2,24 @@
     <PropertyGroup Label="Runtime Info">
         <SupportedRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-arm64;browser-wasm</SupportedRuntimes>
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
-        <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;browser-wasm</SupportedImageRuntimes>
+        <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-arm64;browser-wasm</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
+        <SupportedImageBinRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageBinRuntimes>
+        <EnabledImageBinRuntimes Condition=" '$(EnabledImageBinRuntimes)' == '' ">$(SupportedImageBinRuntimes)</EnabledImageBinRuntimes>
         <SupportedToolRuntimes>win-x64;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
 
         <EnabledRuntimes>win-x86;win-x64;browser-wasm</EnabledRuntimes>
         <EnabledImageRuntimes>win-x86;win-x64;browser-wasm</EnabledImageRuntimes>
+        <EnabledImageBinRuntimes>win-x86;win-x64</EnabledImageBinRuntimes>
         <EnabledToolRuntimes>win-x86;win-x64</EnabledToolRuntimes>
 
         <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
         <_SupportedImageRuntimes>;$(SupportedImageRuntimes);</_SupportedImageRuntimes>
         <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
+        <_SupportedImageBinRuntimes>;$(SupportedImageBinRuntimes);</_SupportedImageBinRuntimes>
+        <_EnabledImageBinRuntimes>;$(EnabledImageBinRuntimes);</_EnabledImageBinRuntimes>
         <_SupportedToolRuntimes>;$(SupportedToolRuntimes);</_SupportedToolRuntimes>
         <_EnabledToolRuntimes>;$(EnabledToolRuntimes);</_EnabledToolRuntimes>
     </PropertyGroup>
@@ -103,7 +108,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.103">
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.106">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

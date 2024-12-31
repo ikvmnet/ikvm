@@ -13,10 +13,11 @@
 
     <PropertyGroup>
         <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsApiDir>
-        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetOsApiDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' Or '$(IkvmJavaRuntimeIdentifier)' == 'browser-wasm' ">solaris</OpenJdkTargetOsApiDir>
         <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'win' Or '$(IkvmJavaRuntimeIdentifier)' == 'ref' ">windows</OpenJdkTargetOsDir>
         <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">linux</OpenJdkTargetOsDir>
         <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">macosx</OpenJdkTargetOsDir>
+        <OpenJdkTargetOsDir Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'browser-wasm' ">unix</OpenJdkTargetOsDir>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\IKVM.MSBuild.props" />

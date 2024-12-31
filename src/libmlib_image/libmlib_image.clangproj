@@ -16,7 +16,7 @@
         <PreprocessorDefinitions Include="MLIB_OS64BIT" Condition="$(TargetIdentifier.EndsWith('-x64')) Or $(TargetIdentifier.EndsWith('-arm64'))" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\awt\medialib" />
-        <Dependencies Include="c;m;dl" Condition="!$(TargetIdentifier.StartsWith('win-'))" />
+        <Dependencies Include="c;m;dl" Condition="!$(TargetIdentifier.StartsWith('win-')) And '$(TargetIdentifier)' != 'browser-wasm' " />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\*.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\awt_ImagingLib.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\sun\awt\medialib\mlib_c_ImageBlendTable.c" />
