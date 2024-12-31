@@ -54,39 +54,45 @@
     </ItemGroup>
 
     <ItemGroup>
+        <_WindowsRuntimeIdentifiers Include="win-x64;win-x86;win-arm64" />
+        <_LinuxNormRuntimeIdentifiers Include="linux-arm;linux-arm64;linux-x64" />
+        <_LinuxMuslRuntimeIdentifiers Include="linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <_LinuxRuntimeIdentifiers Include="@(_LinuxNormRuntimeIdentifiers);@(_LinuxMuslRuntimeIdentifiers)" />
+        <_OSXRuntimeIdentifiers Include="osx-x64;osx-arm64" />
+        <_AndroidRuntimeIdentifiers Include="android-arm64" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers);@(_AndroidRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2pkcs11\libj2pkcs11.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjaas\libjaas.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libzip\libzip.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="@(_OSXRuntimeIdentifiers)" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers);@(_AndroidRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="@(_LinuxRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="@(_LinuxRuntimeIdentifiers);@(_AndroidRuntimeIdentifiers)" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="@(_LinuxRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjpeg\libjpeg.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="@(_LinuxRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers);@(_LinuxRuntimeIdentifiers);@(_OSXRuntimeIdentifiers)" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="@(_OSXRuntimeIdentifiers)" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2gss\libj2gss.clangproj" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsspi_bridge\libsspi_bridge.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsspi_bridge\libsspi_bridge.clangproj" SupportedRuntimes="@(_WindowsRuntimeIdentifiers)" />
     </ItemGroup>
 
     <Target Name="GetIkvmClangProjectReferencesByRuntime" Inputs="@(IkvmClangProjectReference)" Outputs="%(IkvmClangProjectReference.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
