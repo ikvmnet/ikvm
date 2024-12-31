@@ -8,7 +8,6 @@
         <Description>IKVM Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>browser-wasm</ImageRuntimeIdentifier>
-        <SupportedImageTargetFrameworks>net8.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
