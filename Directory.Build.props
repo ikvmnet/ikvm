@@ -9,6 +9,11 @@
         <SupportedToolRuntimes>win-x64;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
 
+        <!--<EnabledRuntimes>win-x64</EnabledRuntimes>
+        <EnabledImageRuntimes>win-x64</EnabledImageRuntimes>
+        <EnabledImageBinRuntimes>win-x64</EnabledImageBinRuntimes>
+        <EnabledToolRuntimes>win-x64</EnabledToolRuntimes>-->
+
         <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
         <_SupportedImageRuntimes>;$(SupportedImageRuntimes);</_SupportedImageRuntimes>
