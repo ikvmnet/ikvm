@@ -4,16 +4,19 @@
     <PropertyGroup Label="Globals">
         <ProjectGuid>55cbf630-905a-4b2b-a812-b4cb9ff19af5</ProjectGuid>
     </PropertyGroup>
+    
     <PropertyGroup>
         <TargetName>iava</TargetName>
         <OutputType>dll</OutputType>
         <LanguageStandard>c99</LanguageStandard>
     </PropertyGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
         <ProjectReference Include="..\libverify\libverify.clangproj" />
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
+    
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\native\common\*.h" />
         <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.h" />
@@ -40,6 +43,7 @@
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\util" />
         <LibJavaExclude Include="check_code.c;check_format.c;jspawnhelper.c" />
     </ItemGroup>
+    
     <ItemGroup>
         <!-- IKVM specific excludes -->
         <LibJavaExclude Include="Shutdown.c" />
@@ -66,9 +70,11 @@
         <LibJavaExclude Include="Reflection.c" />
         <LibJavaExclude Include="AtomicLong.c" />
     </ItemGroup>
+    
     <ItemGroup Condition="!$(TargetIdentifier.StartsWith('osx-'))">
         <LibJavaExclude Include="java_props_macosx.c" />
     </ItemGroup>
+    
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="shell32;delayimp;advapi32;version" />
         <AdditionalLinkOptions Include="-Wl,/FORCE" />
@@ -82,6 +88,7 @@
         <LibJavaExclude Include="UnixFileSystem_md.c" />
         <LibJavaExclude Include="FileSystemPreferences.c" />
     </ItemGroup>
+    
     <ItemGroup Condition="!$(TargetIdentifier.StartsWith('win-'))">
         <LibJavaExclude Include="ProcessImpl_md.c" />
         <LibJavaExclude Include="WinNTFileSystem_md.c" />
@@ -90,16 +97,26 @@
         <LibJavaExclude Include="WinCAPISeedGenerator.c" />
         <LibJavaExclude Include="Win32ErrorMode.c" />
     </ItemGroup>
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) Or '$(TargetIdentifier)' == 'browser-wasm' ">
+    
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <Dependencies Include="c" />
         <AdditionalLinkOptions Include="-Wl,--version-script=$(OpenJdkDir)jdk\make\mapfiles\libjava\mapfile-linux" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\linux\native\jdk\internal\platform\cgroupv1" />
     </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\provider" />
+        <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\io" />
+        <Compile Include="emscripten\TimeZone_md.c" />
+        <LibJavaExclude Include="TimeZone_md.c" />
+    </ItemGroup>
+    
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-musl-'))">
         <PreprocessorDefinitions Include="isnanf" Value="isnan" />
     </ItemGroup>
+    
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
         <AdditionalLinkOptions Include="-framework" Value="CoreFoundation" Separator=" " />
         <AdditionalLinkOptions Include="-framework" Value="Foundation" Separator=" " />
@@ -107,6 +124,7 @@
         <AdditionalLinkOptions Include="-framework" Value="SystemConfiguration" Separator=" " />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\macosx\native\sun\util\locale\provider" />
     </ItemGroup>
+    
     <ItemGroup>
         <IncludeDirectories Include="@(LibJavaDirs)" />
     </ItemGroup>
