@@ -46,7 +46,7 @@
     <Target Name="GetDotNetClangProjectReferencesByRuntime" Inputs="@(DotNetClangProjectReference)" Outputs="%(DotNetClangProjectReference.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
         <PropertyGroup>
             <__SupportedRuntimes>%(DotNetClangProjectReference.SupportedRuntimes)</__SupportedRuntimes>
-            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(_SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(_SupportedImageRuntimes)</__SupportedRuntimes>
         </PropertyGroup>
         <ItemGroup>
             <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
@@ -56,7 +56,7 @@
             <_ReferencedClangProjectReference Include="@(DotNetClangProjectReference)">
                 <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
             </_ReferencedClangProjectReference>
-            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledImageRuntimes.Contains(';%(RuntimeIdentifier);'))">
                 <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>

@@ -6,7 +6,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
-        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <RuntimeIdentifiers>$(_SupportedImageBinRuntimes)</RuntimeIdentifiers>
         <SelfContained>true</SelfContained>
         <StartupObject>sun.rmi.rmic.Main</StartupObject>
         <RootNamespace>ikvm.tools.rmic</RootNamespace>

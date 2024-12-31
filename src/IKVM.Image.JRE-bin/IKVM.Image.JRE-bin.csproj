@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
-        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
+        <RuntimeIdentifiers>$(_SupportedImageBinRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
     </PropertyGroup>
