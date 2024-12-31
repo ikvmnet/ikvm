@@ -45,19 +45,19 @@ namespace IKVM.MSBuild.Tasks
                 switch (@event.Level)
                 {
                     case IkvmToolDiagnosticEventLevel.Trace:
-                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Low, @event.Message, @event.Args);
+                        logger.LogMessage(null, $"IKVM{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Low, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Info:
-                        logger.LogMessage(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
+                        logger.LogMessage(null, $"IKVM{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, MessageImportance.Normal, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Warning:
-                        logger.LogWarning(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
+                        logger.LogWarning(null, $"IKVM{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Error:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
+                        logger.LogError(null, $"IKVM{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                     case IkvmToolDiagnosticEventLevel.Fatal:
-                        logger.LogError(null, $"{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
+                        logger.LogError(null, $"IKVM{@event.Id:D4}", null, null, @event.Location.StartLine, @event.Location.StartColumn, @event.Location.EndLine, @event.Location.EndColumn, @event.Message, @event.Args);
                         break;
                 }
 
