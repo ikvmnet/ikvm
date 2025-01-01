@@ -14,6 +14,11 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.11" />
+        <PackageReference Include="IKVM" Version="$(PackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IkvmReference Include="..\helloworld\helloworld-2.0-1\helloworld-2.0.jar" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" />
