@@ -4,6 +4,8 @@
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
         <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-x64;android-arm64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
+        <SupportedImageBinRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageBinRuntimes>
+        <EnabledImageBinRuntimes Condition=" '$(EnabledImageBinRuntimes)' == '' ">$(SupportedImageBinRuntimes)</EnabledImageBinRuntimes>
         <SupportedToolRuntimes>win-x64;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
 
@@ -11,6 +13,8 @@
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
         <_SupportedImageRuntimes>;$(SupportedImageRuntimes);</_SupportedImageRuntimes>
         <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
+        <_SupportedImageBinRuntimes>;$(SupportedImageBinRuntimes);</_SupportedImageBinRuntimes>
+        <_EnabledImageBinRuntimes>;$(EnabledImageBinRuntimes);</_EnabledImageBinRuntimes>
         <_SupportedToolRuntimes>;$(SupportedToolRuntimes);</_SupportedToolRuntimes>
         <_EnabledToolRuntimes>;$(EnabledToolRuntimes);</_EnabledToolRuntimes>
     </PropertyGroup>
@@ -33,9 +37,7 @@
 
     <ItemGroup>
         <Authors Include="Jeroen Frijters" />
-        <Authors Include="Windward Studios" />
         <Authors Include="Jerome Haltom" />
-        <Authors Include="Shad Storhaug" />
     </ItemGroup>
 
     <PropertyGroup Label="Copyright Info">
