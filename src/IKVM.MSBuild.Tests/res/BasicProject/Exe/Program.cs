@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-using IKVM.Sdk.Tests.Project.Lib;
+using IKVM.MSBuild.Tests.Project.Lib;
 
-namespace IKVM.Sdk.Tests.Project.Exe
+namespace IKVM.MSBuild.Tests.Project.Exe
 {
 
     public static class Program

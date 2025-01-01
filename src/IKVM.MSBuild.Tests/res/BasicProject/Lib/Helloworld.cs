@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace IKVM.Sdk.Tests.Project.Lib
+namespace IKVM.MSBuild.Tests.Project.Lib
 {
 
     public static class Helloworld

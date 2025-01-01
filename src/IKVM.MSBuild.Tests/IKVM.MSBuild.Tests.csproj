@@ -7,15 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="Project\**\*" />
-        <None Include="Project\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <Compile Remove="res\**\*" />
+        <None Include="res\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="Project\helloworld\helloworld-2.0-1\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="res\BasicProject\helloworld\helloworld-2.0-1\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="Project\helloworld\helloworld-2.0-2\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="res\BasicProject\helloworld\helloworld-2.0-2\helloworld-2.0.jar">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="res\BlazorProject\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
