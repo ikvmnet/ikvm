@@ -103,7 +103,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.103">
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.106">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
