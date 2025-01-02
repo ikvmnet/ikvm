@@ -181,7 +181,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetIkvmJavaRuntimeLibraryAssets" BeforeTargets="GenerateBuildDependencyFileExtensions;GetNearestIkvmJavaRuntimeIdentifier">
+    <Target Name="GetIkvmJavaRuntimeLibraryAssets" DependsOnTargets="GetNearestIkvmJavaRuntimeIdentifier" BeforeTargets="GenerateBuildDependencyFileExtensions">
         <ItemGroup>
             <AdditionalRuntimeLibraryAssets Include="@(IkvmJavaItem)" Condition =" '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)' != 'ref' And ('$(_NearestIkvmJavaRuntimeIdentifier)' == '' Or '$(_NearestIkvmJavaRuntimeIdentifier)' == '%(IkvmJavaItem.IkvmJavaRuntimeIdentifier)')">
                 <LibraryName>IKVM.Java</LibraryName>

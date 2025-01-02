@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
-using Buildalyzer;
 using Buildalyzer.Environment;
 
 using FluentAssertions;
@@ -18,25 +16,18 @@ namespace IKVM.MSBuild.Tests
     public class BasicProjectTests
     {
 
-        static Dictionary<string, string> properties;
-        static string testRoot;
-        static string tempRoot;
-        static string workRoot;
-        static string nugetPackageRoot;
-        static string ikvmCachePath;
-        static string ikvmExportCachePath;
+        static ProjectTestUtil.ProjectState state;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
         {
-            ProjectTestUtil.Init(context, "BasicProject", out properties, out testRoot, out tempRoot, out workRoot, out nugetPackageRoot, out ikvmCachePath, out ikvmExportCachePath);
+            ProjectTestUtil.Init(context, "BasicProject", "BasicProject", Path.Combine("Exe", "ProjectExe.csproj"), out state);
         }
 
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            if (Directory.Exists(tempRoot))
-                Directory.Delete(tempRoot, true);
+            ProjectTestUtil.Clean(state);
         }
 
         public TestContext TestContext { get; set; }
@@ -127,25 +118,9 @@ namespace IKVM.MSBuild.Tests
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                     return;
 
-            var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(testRoot, "Exe", "ProjectExe.csproj"));
-            analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            analyzer.AddBinaryLogger(Path.Combine(workRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
-            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
-            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
-            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("Configuration", "Release");
-
+            var analyzer = state.CreateAnalyzer(TestContext, $"{env}-{tfm}-{rid}");
             var options = new EnvironmentOptions();
-            options.WorkingDirectory = testRoot;
+            options.WorkingDirectory = state.TestRoot;
             options.Preference = env;
             options.DesignTime = false;
             options.Restore = false;
@@ -158,10 +133,10 @@ namespace IKVM.MSBuild.Tests
             options.Arguments.Add("/v:d");
 
             var result = analyzer.Build(options);
-            TestContext.AddResultFile(Path.Combine(workRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
+            TestContext.AddResultFile(Path.Combine(state.WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
 
-            var binDir = Path.Combine("Project", "Exe", "bin", "Release", tfm, rid);
+            var binDir = Path.Combine(state.TestRoot, "Exe", "bin", "Release", tfm, rid);
 
             // check in build output and publish output
             foreach (var i in new[] { "", "publish" })
@@ -179,50 +154,52 @@ namespace IKVM.MSBuild.Tests
                 File.Exists(Path.Combine(outDir, "IKVM.Java.dll")).Should().BeTrue();
                 File.Exists(Path.Combine(outDir, string.Format(lib, "ikvm"))).Should().BeTrue();
 
-                // ikvm image direcetories
-                Directory.Exists(Path.Combine(outDir, "ikvm")).Should().BeTrue();
-                Directory.Exists(Path.Combine(outDir, "ikvm", rid)).Should().BeTrue();
-                Directory.Exists(Path.Combine(outDir, "ikvm", rid, "bin")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "TRADEMARK")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Runtime.dll")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", "IKVM.Java.dll")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzdb.dat")).Should().BeTrue();
+                // some rids imply other rids
+                var rids = new[] { rid };
+                if (rid == "win-x86")
+                    rids = [rid, "win-x64"];
 
-                if (rid.StartsWith("win-"))
-                    File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "tzmappings")).Should().BeTrue();
+                foreach (var r in rids)
+                {
+                    // ikvm image directories
+                    var ridDir = Path.Combine(outDir, "ikvm", r);
+                    Directory.Exists(ridDir).Should().BeTrue();
+                    Directory.Exists(Path.Combine(ridDir, "bin")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "TRADEMARK")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "bin", "IKVM.Runtime.dll")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "bin", "IKVM.Java.dll")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "lib", "tzdb.dat")).Should().BeTrue();
 
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "currency.data")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.policy")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", rid, "lib", "security", "java.security")).Should().BeTrue();
+                    if (r.StartsWith("win-"))
+                        File.Exists(Path.Combine(ridDir, "lib", "tzmappings")).Should().BeTrue();
 
-                // ikvm image bin exeecutables
-                foreach (var exeName in new[] { "jar", "jarsigner", "java", "javac", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport", "xjc" })
-                    File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(exe, exeName))).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "lib", "currency.data")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "lib", "security", "java.policy")).Should().BeTrue();
+                    File.Exists(Path.Combine(ridDir, "lib", "security", "java.security")).Should().BeTrue();
 
-                // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
-                    File.Exists(Path.Combine(outDir, "ikvm", rid, "bin", string.Format(lib, libName))).Should().BeTrue();
-            }
+                    // ikvm image bin exeecutables
+                    foreach (var exeName in new[] { "jar", "jarsigner", "java", "javac", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport", "xjc" })
+                        File.Exists(Path.Combine(ridDir, "bin", string.Format(exe, exeName))).Should().BeTrue("binary '{0}' must exist", exeName);
 
-            if (rid == "win-x86")
-            {
-                var outDir = Path.Combine(binDir, "publish");
-                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(2);
-                Directory.Exists(Path.Combine(outDir, "ikvm")).Should().BeTrue();
-                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64")).Should().BeTrue();
-                Directory.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Runtime.dll")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", "IKVM.Java.dll")).Should().BeTrue();
-                File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, "iava"))).Should().BeTrue();
+                    // ikvm image native libraries
+                    foreach (var libName in new[] { "awt", "fontmanager", "iava", "j2gss", "j2pkcs11", "jawt", "jpeg", "jsound", "jvm", "lcms", "management", "mlib_image", "net", "nio", "sunec", "unpack", "verify", "zip" })
+                        File.Exists(Path.Combine(ridDir, "bin", string.Format(lib, libName))).Should().BeTrue("library '{0}' must exist", libName);
 
-                // ikvm image native libraries
-                foreach (var libName in new[] { "awt", "iava", "jvm", "management", "net", "nio", "sunec", "unpack", "verify" })
-                    File.Exists(Path.Combine(outDir, "ikvm", "win-x64", "bin", string.Format(lib, libName))).Should().BeTrue();
-            }
-            else
-            {
-                var outDir = Path.Combine(binDir, "publish");
-                Directory.GetDirectories(Path.Combine(outDir, "ikvm")).Should().HaveCount(1);
+                    // Windows specific libraries
+                    if (r.StartsWith("win-"))
+                        foreach (var libName in new[] { "freetype", "jaas_nt", "jsoundds", "w2k_lsa_auth", "sunmscapi" })
+                            File.Exists(Path.Combine(ridDir, "bin", string.Format(lib, libName))).Should().BeTrue("library '{0}' must exist on Windows", libName);
+
+                    // Linux specific libraries
+                    if (r.StartsWith("linux-"))
+                        foreach (var libName in new[] { "awt_headless", "awt_xawt", "freetype", "jaas_unix", "jsoundalsa", "krb5", "sctp" })
+                            File.Exists(Path.Combine(ridDir, "bin", string.Format(lib, libName))).Should().BeTrue("library '{0}' must exist on Linux", libName);
+
+                    // OSX specific libraries
+                    if (r.StartsWith("osx-"))
+                        foreach (var libName in new[] { "awt_lwawt", "jaas_unix", "osx", "osxapp", "osxui", "osxkrb5" })
+                            File.Exists(Path.Combine(ridDir, "bin", string.Format(lib, libName))).Should().BeTrue("library '{0}' must exist on OSX", libName);
+                }
             }
         }
 

@@ -9,16 +9,17 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
-        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <PublishTrimmed>false</PublishTrimmed>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.11" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.11" PrivateAssets="all" />
         <PackageReference Include="IKVM" Version="$(PackageVersion)" />
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="..\helloworld\helloworld-2.0-1\helloworld-2.0.jar" />
+        <IkvmReference Include="..\helloworld-2.0.jar" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" />

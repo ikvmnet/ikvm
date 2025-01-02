@@ -138,12 +138,13 @@
 
     <Target Name="GetIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)">
         <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
-            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToOutputDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
-            <Output TaskParameter="Items" ItemName="_SourceItemsToCopyToPublishDirectory" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
-            <Output TaskParameter="Items" ItemName="None" Condition=" '$(IkvmImageItemToNone)' == 'true' " />
+            <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
         </_FilterIkvmImageItems>
         <ItemGroup>
             <_IkvmImageItemExpanded Remove="@(_IkvmImageItemExpanded)" />
+            <_SourceItemsToCopyToOutputDirectory Include="@(_IkvmImageItemFiltered)" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <_SourceItemsToCopyToPublishDirectory Include="@(_IkvmImageItemFiltered)" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
+            <None Include="@(_IkvmImageItemFiltered)" ItemName="None" Condition=" '$(IkvmImageItemToNone)' == 'true' " />
         </ItemGroup>
     </Target>
 
@@ -183,5 +184,7 @@
             $(AssignTargetPathsDependsOn);
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
+
+    <Import Project="IKVM.Image.WebAssembly.targets" Condition=" '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true' Or '$(UsingMicrosoftNETSdkWebAssembly)' == 'true' " />
 
 </Project>

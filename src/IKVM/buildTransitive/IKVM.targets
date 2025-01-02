@@ -25,5 +25,9 @@
         </ItemGroup>
     </Target>
 
+    <ItemGroup Condition=" '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true' Or '$(UsingMicrosoftNETSdkWebAssembly)' == 'true' ">
+        <NativeFileReference Include="$(MSBuildThisFileDirectory)..\runtimes\blazor-wasm\native\*.dll" />
+    </ItemGroup>
+
     <Import Project="IKVM.IkvmReference.targets" />
 </Project>

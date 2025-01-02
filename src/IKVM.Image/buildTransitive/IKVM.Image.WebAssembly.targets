@@ -1,0 +1,20 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ShouldIncludeNativeIkvmForWebAssembly Condition=" '$(ShouldIncludeNativeIkvmForWebAssembly)' == '' ">true</ShouldIncludeNativeIkvmForWebAssembly>
+        <WasmBuildNative Condition=" '$(WasmBuildNative)' == '' ">true</WasmBuildNative>
+        <WasmGenerateAppBundle Condition=" '$(WasmGenerateAppBundle)' == '' ">true</WasmGenerateAppBundle>
+    </PropertyGroup>
+
+    <Target Name="IncludeNativeIkvmForWebAssembly" DependsOnTargets="GetIkvmImageItemsOutputItems" BeforeTargets="_WasmWriteRspFilesForLinking" Condition=" '$(TargetFrameworkVersion)' != '' And '$(ShouldIncludeNativeIkvmForWebAssembly)' == 'true' ">
+        <ItemGroup>
+            <WasmFilesToIncludeInFileSystem Include="@(_IkvmImageItemFiltered)" />
+            <WasmNativeAsset Include="@(_IkvmImageItemFiltered)" />
+            <_WasmLinkDependencies Include="@(_IkvmImageItemFiltered)" />
+        </ItemGroup>
+    </Target>
+
+</Project>

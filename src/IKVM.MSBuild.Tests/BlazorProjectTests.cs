@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 
 using Buildalyzer;
@@ -17,25 +16,18 @@ namespace IKVM.MSBuild.Tests
     public class BlazorProjectTests
     {
 
-        static Dictionary<string, string> properties;
-        static string testRoot;
-        static string tempRoot;
-        static string workRoot;
-        static string nugetPackageRoot;
-        static string ikvmCachePath;
-        static string ikvmExportCachePath;
+        static ProjectTestUtil.ProjectState state;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
         {
-            ProjectTestUtil.Init(context, "BlazorProject", out properties, out testRoot, out tempRoot, out workRoot, out nugetPackageRoot, out ikvmCachePath, out ikvmExportCachePath);
+            ProjectTestUtil.Init(context, "BlazorProject", "BlazorProject", Path.Combine("BlazorApp", "BlazorApp.csproj"), out state);
         }
 
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            if (Directory.Exists(tempRoot))
-                Directory.Delete(tempRoot, true);
+            ProjectTestUtil.Clean(state);
         }
 
         public TestContext TestContext { get; set; }
@@ -43,34 +35,19 @@ namespace IKVM.MSBuild.Tests
         [TestMethod]
         public void CanBuildBlazorApp()
         {
-            var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(testRoot, "BlazorApp", "BlazorApp.csproj"));
-            analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            analyzer.AddBinaryLogger(Path.Combine(workRoot, $"BlazorApp-msbuild.binlog"));
-            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
-            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
-            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("Configuration", "Release");
-
+            var analyzer = state.CreateAnalyzer(TestContext, "BlazorApp");
             var options = new EnvironmentOptions();
-            options.WorkingDirectory = testRoot;
+            options.WorkingDirectory = state.TestRoot;
             options.DesignTime = false;
             options.Restore = false;
             options.TargetsToBuild.Clear();
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Build");
+            options.TargetsToBuild.Add("Publish");
             options.Arguments.Add("/v:d");
 
             var result = analyzer.Build(options);
-            TestContext.AddResultFile(Path.Combine(workRoot, $"BlazorApp-msbuild.binlog"));
+            TestContext.AddResultFile(Path.Combine(state.WorkRoot, $"BlazorApp-msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
         }
 

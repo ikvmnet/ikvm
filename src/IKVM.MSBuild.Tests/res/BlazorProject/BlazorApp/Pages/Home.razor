@@ -1,9 +1,10 @@
 ﻿@page "/"
 
 @using Microsoft.AspNetCore.Components.Web
+@using java.time;
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
-Welcome to your new app.
+The time is currently @ZonedDateTime.now(ZoneId.of("Europe/Madrid")).
