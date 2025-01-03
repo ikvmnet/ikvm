@@ -31,7 +31,6 @@
         <None Include="README.md" Pack="true" PackagePath="." />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Content Include="ikvm.properties" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
