@@ -5,7 +5,7 @@
 
     <ItemGroup>
         <IkvmImageAvailableTargetFrameworks Include="net472;net6.0;net8.0" />
-        <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-arm64" />
+        <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-x64;android-arm64" />
     </ItemGroup>
 
     <PropertyGroup>
