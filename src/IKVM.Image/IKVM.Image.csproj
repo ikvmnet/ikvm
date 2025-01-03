@@ -23,6 +23,7 @@
         <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
         <ProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
         <ProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-x64;'))" />
         <ProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))" />
     </ItemGroup>
 
