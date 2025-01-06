@@ -1638,6 +1638,22 @@
                 </body>
             </method>
         </class>
+        <class name="com.sun.crypto.provider.AESCrypt">
+            <method name="encryptBlock" sig="([BI[BI)V">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldfld class="com.sun.crypto.provider.AESCrypt" name="K" sig="[I" />
+                    <!-- bool AESCrypt.EncryptBlock(byte[] in, int inOffset, byte[] out, int outOffset, int[] K) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.AESCrypt" name="EncryptBlock" sig="([BI[BI[I)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+        </class>
         <!-- This is where the "native" helper methods start -->
         <class name="ikvm.lang.CIL">
             <method name="unbox_byte" sig="(Ljava.lang.Object;)B">
