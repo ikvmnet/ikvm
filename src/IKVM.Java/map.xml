@@ -1653,6 +1653,20 @@
                     <label name="continue" />
                 </prologue>
             </method>
+            <method name="decryptBlock" sig="([BI[BI)V">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldfld class="com.sun.crypto.provider.AESCrypt" name="K" sig="[I" />
+                    <!-- bool AESCrypt.DecryptBlock(byte[] in, int inOffset, byte[] out, int outOffset, int[] K) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.AESCrypt" name="DecryptBlock" sig="([BI[BI[I)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
         </class>
         <!-- This is where the "native" helper methods start -->
         <class name="ikvm.lang.CIL">
