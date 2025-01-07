@@ -14,7 +14,7 @@ internal static partial class AESCrypt
 #if NETCOREAPP3_0_OR_GREATER
         if (X86.IsSupported)
         {
-            X86.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), MemoryMarshal.AsBytes((ReadOnlySpan<int>)K));
+            X86.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
             return true;
         }
 #endif
@@ -28,7 +28,7 @@ internal static partial class AESCrypt
 #if NETCOREAPP3_0_OR_GREATER
         if (X86.IsSupported)
         {
-            X86.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), MemoryMarshal.AsBytes((ReadOnlySpan<int>)K));
+            X86.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
             return true;
         }
 #endif
