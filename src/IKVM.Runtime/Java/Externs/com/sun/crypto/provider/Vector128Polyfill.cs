@@ -20,30 +20,14 @@ internal static class Vector128Polyfill
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<T> Create<T>(T[] values, int index) where T : unmanaged
+    public static void CopyTo<T>(this Vector128<T> vector, Span<T> destination) where T : unmanaged
     {
-        if ((index < 0) || ((values.Length - index) < Vector128<T>.Count))
-        {
-            throw new IndexOutOfRangeException(nameof(values));
-        }
-
-        return Unsafe.ReadUnaligned<Vector128<T>>(ref Unsafe.As<T, byte>(ref values[index]));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CopyTo<T>(this Vector128<T> vector, T[] destination, int startIndex) where T : unmanaged
-    {
-        if ((uint)startIndex >= (uint)destination.Length)
-        {
-            throw new IndexOutOfRangeException(nameof(startIndex));
-        }
-
-        if ((destination.Length - startIndex) < Vector128<T>.Count)
+        if (destination.Length < Vector128<T>.Count)
         {
             throw new ArgumentException(null, nameof(destination));
         }
 
-        Unsafe.WriteUnaligned(ref Unsafe.As<T, byte>(ref destination[startIndex]), vector);
+        Unsafe.WriteUnaligned(ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(destination)), vector);
     }
 }
 #endif

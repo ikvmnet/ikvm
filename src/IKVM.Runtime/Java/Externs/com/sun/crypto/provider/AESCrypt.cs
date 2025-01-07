@@ -1,6 +1,7 @@
 using IKVM.Attributes;
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Java.Externs.com.sun.crypto.provider;
 
@@ -13,7 +14,7 @@ internal static partial class AESCrypt
 #if NETCOREAPP3_0_OR_GREATER
         if (X86.IsSupported)
         {
-            X86.EncryptBlock(@in, inOffset, @out, outOffset, K);
+            X86.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), MemoryMarshal.AsBytes((ReadOnlySpan<int>)K));
             return true;
         }
 #endif
@@ -27,7 +28,7 @@ internal static partial class AESCrypt
 #if NETCOREAPP3_0_OR_GREATER
         if (X86.IsSupported)
         {
-            X86.DecryptBlock(@in, inOffset, @out, outOffset, K);
+            X86.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), MemoryMarshal.AsBytes((ReadOnlySpan<int>)K));
             return true;
         }
 #endif
@@ -38,7 +39,7 @@ internal static partial class AESCrypt
 #if NETCOREAPP3_0_OR_GREATER
     private static partial class X86
     {
-        public static ReadOnlySpan<int> KeyShuffleMask => [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f];
+        private static ReadOnlySpan<int> KeyShuffleMask => [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f];
     }
 #endif
 }
