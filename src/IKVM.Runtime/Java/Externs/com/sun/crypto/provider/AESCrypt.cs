@@ -1,6 +1,4 @@
-#if NETCOREAPP3_0_OR_GREATER
 using System;
-#endif
 
 namespace IKVM.Java.Externs.com.sun.crypto.provider;
 

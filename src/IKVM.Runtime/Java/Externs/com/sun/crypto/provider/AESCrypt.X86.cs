@@ -12,8 +12,13 @@ partial class AESCrypt
 
     private static Vector128<byte> LoadKey_X86(ReadOnlySpan<int> key, int offset, Vector128<byte>? shuffle_mask = null)
     {
-        Vector128<byte> xmmdest = Vector128.Create(key, offset).AsBytes();
+#if NET8_0_OR_GREATER
+        var xmmdest = Vector128.Create(key[offset..]).AsByte();
         shuffle_mask ??= Vector128.Create(KeyShuffleMask).AsByte();
+#else
+        var xmmdest = Vector128Polyfill.Create(key).AsByte();
+        shuffle_mask ??= Vector128Polyfill.Create(KeyShuffleMask).AsByte();
+#endif
         Ssse3.Shuffle(xmmdest, shuffle_mask.Value);
         return xmmdest;
     }
@@ -21,11 +26,18 @@ partial class AESCrypt
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void EncryptBlock_X86(byte[] @in, int inOffset, byte[] @out, int outOffset, int[] K)
     {
-        Vector128<byte> xmm_temp1, xmm_temp2, xmm_temp3, xmm_temp4;
-        Vector128<byte> xmm_key_shuf_mask = Vector128.Create(KeyShuffleMask).AsByte();
-        Vector128<byte> xmm_result = Vector128.Create(@in, inOffset);
+        // ext\openjdk\hotspot\src\cpu\x86\vm\stubGenerator_x86_32.cpp:2189-2277
 
-        xmm_temp1 = LoadKey_X86(K, 0, xmm_key_shuf_mask);
+        Vector128<byte> xmm_temp1, xmm_temp2, xmm_temp3, xmm_temp4;
+#if NET8_0_OR_GREATER
+        var xmm_key_shuf_mask = Vector128.Create(KeyShuffleMask).AsByte();
+        var xmm_result = Vector128.Create(@in, inOffset);
+#else
+        var xmm_key_shuf_mask = Vector128Polyfill.Create(KeyShuffleMask).AsByte();
+        var xmm_result = Vector128Polyfill.Create(@in, inOffset);
+#endif
+
+        xmm_temp1 = LoadKey_X86(K, 0x00, xmm_key_shuf_mask);
         Sse2.Xor(xmm_result, xmm_temp1);
 
         xmm_temp1 = LoadKey_X86(K, 0x10, xmm_key_shuf_mask);
@@ -51,6 +63,9 @@ partial class AESCrypt
         xmm_temp1 = LoadKey_X86(K, 0x90, xmm_key_shuf_mask);
         xmm_temp2 = LoadKey_X86(K, 0xa0, xmm_key_shuf_mask);
 
+        /*
+         * ext\openjdk\hotspot\src\cpu\x86\vm\stubGenerator_x86_32.cpp:2215,2216
+         */
         if (K.Length != 11)
         {
             xmm_result = Aes.Encrypt(xmm_result, xmm_temp1);
