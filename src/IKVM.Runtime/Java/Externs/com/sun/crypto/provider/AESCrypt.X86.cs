@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
-namespace IKVM.Runtime.Java.Externs.com.sun.crypto.provider;
+namespace IKVM.Java.Externs.com.sun.crypto.provider;
 
 partial class AESCrypt
 {

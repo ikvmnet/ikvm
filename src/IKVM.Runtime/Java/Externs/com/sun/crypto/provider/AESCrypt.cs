@@ -2,7 +2,7 @@
 using System;
 #endif
 
-namespace IKVM.Runtime.Java.Externs.com.sun.crypto.provider;
+namespace IKVM.Java.Externs.com.sun.crypto.provider;
 
 internal static partial class AESCrypt
 {
