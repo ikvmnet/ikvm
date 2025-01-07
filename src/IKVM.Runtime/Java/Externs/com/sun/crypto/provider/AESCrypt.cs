@@ -1,11 +1,13 @@
 using IKVM.Attributes;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Java.Externs.com.sun.crypto.provider;
 
 [HideFromJava]
 internal static partial class AESCrypt
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EncryptBlock(byte[] @in, int inOffset, byte[] @out, int outOffset, int[] K)
     {
 #if NETCOREAPP3_0_OR_GREATER
@@ -19,6 +21,7 @@ internal static partial class AESCrypt
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool DecryptBlock(byte[] @in, int inOffset, byte[] @out, int outOffset, int[] K)
     {
 #if NETCOREAPP3_0_OR_GREATER
