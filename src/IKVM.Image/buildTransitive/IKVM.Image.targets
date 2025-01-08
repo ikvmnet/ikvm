@@ -8,14 +8,7 @@
         <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-x64;android-arm64" />
     </ItemGroup>
 
-    <PropertyGroup>
-        <IkvmImageTargetPath Condition=" '$(IkvmImageTargetPath)' == '' ">ikvm</IkvmImageTargetPath>
-        <IkvmPropertiesFileName Condition=" '$(IkvmPropertiesFileName)' == '' ">ikvm.properties</IkvmPropertiesFileName>
-        <CopyIkvmImageItemToOutputDirectory Condition=" '$(CopyIkvmImageItemToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmImageItemToOutputDirectory>
-        <CopyIkvmImageItemToPublishDirectory Condition=" '$(CopyIkvmImageItemToPublishDirectory)' == '' "></CopyIkvmImageItemToPublishDirectory>
-        <CopyIkvmPropertiesFileToOutputDirectory Condition=" '$(CopyIkvmPropertiesFileToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmPropertiesFileToOutputDirectory>
-        <CopyIkvmPropertiesFileToPublishDirectory Condition=" '$(CopyIkvmPropertiesFileToPublishDirectory)' == '' "></CopyIkvmPropertiesFileToPublishDirectory>
-    </PropertyGroup>
+    <Import Project="IKVM.Image.properties.targets" />
 
     <Choose>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
@@ -146,6 +139,13 @@
         </Task>
     </UsingTask>
 
+    <PropertyGroup>
+        <GetIkvmImageItemsOutputItemsDependsOn>
+            $(GetIkvmImageItemsOutputItemsDependsOn);
+            ExpandIkvmImageItems;
+        </GetIkvmImageItemsOutputItemsDependsOn>
+    </PropertyGroup>
+
     <Target Name="GetIkvmImageItemsOutputItems" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths" DependsOnTargets="$(GetIkvmImageItemsOutputItemsDependsOn)">
         <_FilterIkvmImageItems Items="@(_IkvmImageItemExpanded)">
             <Output TaskParameter="Items" ItemName="_IkvmImageItemFiltered" />
@@ -155,31 +155,6 @@
             <_SourceItemsToCopyToOutputDirectory Include="@(_IkvmImageItemFiltered)" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
             <_SourceItemsToCopyToPublishDirectory Include="@(_IkvmImageItemFiltered)" Condition=" '$(IkvmImageItemToNone)' != 'true' " />
             <None Include="@(_IkvmImageItemFiltered)" ItemName="None" Condition=" '$(IkvmImageItemToNone)' == 'true' " />
-        </ItemGroup>
-    </Target>
-
-    <PropertyGroup>
-        <GetIkvmImageItemsOutputItemsDependsOn>
-            $(GetIkvmImageItemsOutputItemsDependsOn);
-            ExpandIkvmImageItems;
-        </GetIkvmImageItemsOutputItemsDependsOn>
-    </PropertyGroup>
-
-    <Target Name="WriteIkvmPropertiesFile">
-        <ItemGroup>
-            <_IkvmPropertiesFileLine Include="ikvm.home.root=$(IkvmImageTargetPath)" />
-        </ItemGroup>
-        <WriteLinesToFile Lines="@(_IkvmPropertiesFileLine)" File="$(IntermediateOutputPath)$(IkvmPropertiesFileName)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-    </Target>
-
-    <Target Name="IncludeIkvmPropertiesFile" DependsOnTargets="WriteIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
-        <ItemGroup>
-            <None Include="$(IntermediateOutputPath)$(IkvmPropertiesFileName)" Condition="Exists('$(IntermediateOutputPath)$(IkvmPropertiesFileName)')">
-                <CopyToOutputDirectory>$(CopyIkvmPropertiesFileToOutputDirectory)</CopyToOutputDirectory>
-                <CopyToPublishDirectory>$(CopyIkvmPropertiesFileToPublishDirectory)</CopyToPublishDirectory>
-                <TargetPath>$(IkvmPropertiesFileName)</TargetPath>
-                <Link>$(IkvmPropertiesFileName)</Link>
-            </None>
         </ItemGroup>
     </Target>
 
@@ -198,8 +173,6 @@
     <PropertyGroup>
         <AssignTargetPathsDependsOn>
             CollectIkvmImageItemsOutputItems;
-            WriteIkvmPropertiesFile;
-            IncludeIkvmPropertiesFile;
             $(AssignTargetPathsDependsOn);
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
