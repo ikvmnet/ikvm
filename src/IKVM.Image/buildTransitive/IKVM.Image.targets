@@ -13,7 +13,7 @@
         <IkvmPropertiesFileName Condition=" '$(IkvmPropertiesFileName)' == '' ">ikvm.properties</IkvmPropertiesFileName>
         <CopyIkvmImageItemToOutputDirectory Condition=" '$(CopyIkvmImageItemToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmImageItemToOutputDirectory>
         <CopyIkvmImageItemToPublishDirectory Condition=" '$(CopyIkvmImageItemToPublishDirectory)' == '' "></CopyIkvmImageItemToPublishDirectory>
-        <CopyIkvmPropertiesFileToOutputDirectory Condition=" '$(CopyIkvmImageItemToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmPropertiesFileToOutputDirectory>
+        <CopyIkvmPropertiesFileToOutputDirectory Condition=" '$(CopyIkvmPropertiesFileToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmPropertiesFileToOutputDirectory>
         <CopyIkvmPropertiesFileToPublishDirectory Condition=" '$(CopyIkvmPropertiesFileToPublishDirectory)' == '' "></CopyIkvmPropertiesFileToPublishDirectory>
     </PropertyGroup>
 
@@ -169,7 +169,7 @@
         <ItemGroup>
             <_IkvmPropertiesFileLine Include="ikvm.home.root=$(IkvmImageTargetPath)" />
         </ItemGroup>
-        <WriteLinesToFile Lines="@(_IkvmPropertiesFileLine)" File="$(IntermediateOutputPath)$(IkvmPropertiesFileName)" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile Lines="@(_IkvmPropertiesFileLine)" File="$(IntermediateOutputPath)$(IkvmPropertiesFileName)" Overwrite="true" WriteOnlyWhenDifferent="true" />
     </Target>
 
     <Target Name="IncludeIkvmPropertiesFile" DependsOnTargets="WriteIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
