@@ -8,7 +8,14 @@
         <IkvmImageAvailableRuntimeIdentifiers Include="win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-x64;android-arm64" />
     </ItemGroup>
 
-    <Import Project="IKVM.Image.properties.targets" />
+    <PropertyGroup>
+        <IkvmImageTargetPath Condition=" '$(IkvmImageTargetPath)' == '' ">ikvm</IkvmImageTargetPath>
+        <IkvmPropertiesFileName Condition=" '$(IkvmPropertiesFileName)' == '' ">ikvm.properties</IkvmPropertiesFileName>
+        <CopyIkvmImageItemToOutputDirectory Condition=" '$(CopyIkvmImageItemToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmImageItemToOutputDirectory>
+        <CopyIkvmImageItemToPublishDirectory Condition=" '$(CopyIkvmImageItemToPublishDirectory)' == '' "></CopyIkvmImageItemToPublishDirectory>
+        <CopyIkvmPropertiesFileToOutputDirectory Condition=" '$(CopyIkvmPropertiesFileToOutputDirectory)' == '' ">PreserveNewest</CopyIkvmPropertiesFileToOutputDirectory>
+        <CopyIkvmPropertiesFileToPublishDirectory Condition=" '$(CopyIkvmPropertiesFileToPublishDirectory)' == '' "></CopyIkvmPropertiesFileToPublishDirectory>
+    </PropertyGroup>
 
     <Choose>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
@@ -173,6 +180,24 @@
     <PropertyGroup>
         <AssignTargetPathsDependsOn>
             CollectIkvmImageItemsOutputItems;
+            $(AssignTargetPathsDependsOn);
+        </AssignTargetPathsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="IncludeIkvmPropertiesFile" BeforeTargets="_GetPackageFiles;AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <None Include="$(MSBuildThisFileDirectory)$(IkvmPropertiesFileName)">
+                <CopyToOutputDirectory>$(CopyIkvmPropertiesFileToOutputDirectory)</CopyToOutputDirectory>
+                <CopyToPublishDirectory>$(CopyIkvmPropertiesFileToPublishDirectory)</CopyToPublishDirectory>
+                <TargetPath>$(IkvmPropertiesFileName)</TargetPath>
+                <Pack>false</Pack>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <AssignTargetPathsDependsOn>
+            IncludeIkvmPropertiesFile;
             $(AssignTargetPathsDependsOn);
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
