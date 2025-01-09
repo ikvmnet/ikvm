@@ -27,6 +27,7 @@
                 <CopyToPublishDirectory>$(CopyIkvmPropertiesFileToPublishDirectory)</CopyToPublishDirectory>
                 <TargetPath>$(IkvmPropertiesFileName)</TargetPath>
                 <Link>$(IkvmPropertiesFileName)</Link>
+                <Pack>false</Pack>
             </None>
         </ItemGroup>
     </Target>
