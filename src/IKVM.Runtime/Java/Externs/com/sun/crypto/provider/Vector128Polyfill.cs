@@ -9,6 +9,15 @@ namespace IKVM.Java.Externs.com.sun.crypto.provider;
 internal static class Vector128Polyfill
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector128<T> LoadUnsafe<T>(ref readonly T source) where T : struct
+    {
+        // Use with caution.
+        // Supports blittable primitives only.
+        ref byte address = ref Unsafe.As<T, byte>(ref Unsafe.AsRef(in source));
+        return Unsafe.ReadUnaligned<Vector128<T>>(ref address);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<T> LoadUnsafe<T>(ref readonly T source, nuint elementOffset) where T : struct
     {
         // Use with caution.

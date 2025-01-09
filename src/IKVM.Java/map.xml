@@ -1670,6 +1670,22 @@
                 </prologue>
             </method>
         </class>
+        <class name="com.sun.crypto.provider.GHASH">
+            <method name="processBlocks" sig="([BII[J[J)V">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <!-- bool GHASH.ProcessBlocks(byte[] data, int inOffs, int blocks, long[] state, long[] subH) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.GHASH" name="ProcessBlocks" sig="([BII[J[J)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+        </class>
         <!-- This is where the "native" helper methods start -->
         <class name="ikvm.lang.CIL">
             <method name="unbox_byte" sig="(Ljava.lang.Object;)B">
