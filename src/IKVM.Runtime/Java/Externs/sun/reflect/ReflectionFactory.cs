@@ -729,8 +729,13 @@ namespace IKVM.Java.Externs.sun.reflect
                     // this instance
                     if (s != null)
                     {
-                        // null for static, reference for valuetype/ghost, reference for instance
-                        il.Emit(mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost ? OpCodes.Ldloca : OpCodes.Ldloc, s);
+                        // reference for valuetype/ghost
+                        if (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost)
+                            il.Emit(OpCodes.Ldloca, s);
+                        else
+                            il.Emit(OpCodes.Ldloc, s);
+
+                        // finished with s
                         il.ReleaseTempLocal(s);
                     }
 
@@ -745,11 +750,11 @@ namespace IKVM.Java.Externs.sun.reflect
                     if (mw.HasCallerID)
                         il.Emit(OpCodes.Ldarg_2);
 
-                    // call method
+                    // static Java method is always a call
                     if (s != null)
-                        il.Emit(OpCodes.Callvirt, mw.GetMethod());
+                        mw.EmitCall(il);
                     else
-                        il.Emit(OpCodes.Call, mw.GetMethod());
+                        mw.EmitCallvirtReflect(il); // reflection virt may be static (remapped) or non-static
 
                     // handle return value
                     mw.ReturnType.EmitConvSignatureTypeToStackType(il);
