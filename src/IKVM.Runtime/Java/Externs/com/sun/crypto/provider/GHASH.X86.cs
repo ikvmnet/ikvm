@@ -9,7 +9,7 @@ namespace IKVM.Java.Externs.com.sun.crypto.provider.X86;
 
 internal static class GHASH
 {
-    public static bool IsSupported => Pclmulqdq.IsSupported && Ssse3.IsSupported && Sse2.IsSupported;
+    public static bool IsSupported => Pclmulqdq.IsSupported && Ssse3.IsSupported;
 
     private static ReadOnlySpan<int> ByteSwapMask => [0x0c0d0e0f, 0x08090a0b, 0x04050607, 0x00010203];
 
@@ -30,24 +30,24 @@ internal static class GHASH
             xmm_temp7;
 
 #if NET8_0_OR_GREATER
-        xmm_temp0 = Vector128.LoadUnsafe(in Unsafe.As<long, int>(ref MemoryMarshal.GetReference(state)), 0);
-        xmm_temp0 = Ssse3.Shuffle(xmm_temp0.AsByte(), Vector128.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask)))).AsInt32();
-        xmm_temp1 = Vector128.LoadUnsafe(in Unsafe.As<long, int>(ref MemoryMarshal.GetReference(subH)), 0);
-        xmm_temp1 = Ssse3.Shuffle(xmm_temp1.AsByte(), Vector128.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask)))).AsInt32();
+        xmm_temp0 = Vector128.LoadUnsafe(in MemoryMarshal.GetReference(state)).AsInt32();
+        xmm_temp0 = Ssse3.Shuffle(xmm_temp0.AsByte(), Vector128.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte()).AsInt32();
+        xmm_temp1 = Vector128.LoadUnsafe(in MemoryMarshal.GetReference(subH)).AsInt32();
+        xmm_temp1 = Ssse3.Shuffle(xmm_temp1.AsByte(), Vector128.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte()).AsInt32();
 #else
-        xmm_temp0 = Vector128Polyfill.LoadUnsafe(in Unsafe.As<long, int>(ref MemoryMarshal.GetReference(state)), 0);
-        xmm_temp0 = Ssse3.Shuffle(xmm_temp0.AsByte(), Vector128Polyfill.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask)))).AsInt32();
-        xmm_temp1 = Vector128Polyfill.LoadUnsafe(in Unsafe.As<long, int>(ref MemoryMarshal.GetReference(subH)), 0);
-        xmm_temp1 = Ssse3.Shuffle(xmm_temp1.AsByte(), Vector128Polyfill.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask)))).AsInt32();
+        xmm_temp0 = Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(state)).AsInt32();
+        xmm_temp0 = Ssse3.Shuffle(xmm_temp0.AsByte(), Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte()).AsInt32();
+        xmm_temp1 = Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(subH)).AsInt32();
+        xmm_temp1 = Ssse3.Shuffle(xmm_temp1.AsByte(), Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte()).AsInt32();
 #endif
 
     ghash_loop:
 #if NET8_0_OR_GREATER
-        xmm_temp2 = Vector128.LoadUnsafe(in Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(data)), 0);
-        xmm_temp2 = Ssse3.Shuffle(xmm_temp2.AsByte(), Vector128.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(ByteSwapMask)))).AsInt32();
+        xmm_temp2 = Vector128.LoadUnsafe(in MemoryMarshal.GetReference(data)).AsInt32();
+        xmm_temp2 = Ssse3.Shuffle(xmm_temp2.AsByte(), Vector128.LoadUnsafe(in MemoryMarshal.GetReference(ByteSwapMask)).AsByte()).AsInt32();
 #else
-        xmm_temp2 = Vector128Polyfill.LoadUnsafe(in Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(data)), 0);
-        xmm_temp2 = Ssse3.Shuffle(xmm_temp2.AsByte(), Vector128Polyfill.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(ByteSwapMask)))).AsInt32();
+        xmm_temp2 = Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(data)).AsInt32();
+        xmm_temp2 = Ssse3.Shuffle(xmm_temp2.AsByte(), Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(ByteSwapMask)).AsByte()).AsInt32();
 #endif
         xmm_temp0 = Sse2.Xor(xmm_temp0, xmm_temp2);
 
@@ -118,10 +118,10 @@ internal static class GHASH
 
     exit:;
 #if NET8_0_OR_GREATER
-        Ssse3.Shuffle(xmm_temp6.AsByte(), Vector128.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask))))
+        Ssse3.Shuffle(xmm_temp6.AsByte(), Vector128.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte())
             .AsInt64().CopyTo(state);
 #else
-        Ssse3.Shuffle(xmm_temp6.AsByte(), Vector128Polyfill.LoadUnsafe(in Unsafe.As<int, byte>(ref MemoryMarshal.GetReference(LongSwapMask))))
+        Ssse3.Shuffle(xmm_temp6.AsByte(), Vector128Polyfill.LoadUnsafe(in MemoryMarshal.GetReference(LongSwapMask)).AsByte())
             .AsInt64().CopyTo(state);
 #endif
     }
