@@ -751,7 +751,7 @@ namespace IKVM.Java.Externs.sun.reflect
                         il.Emit(OpCodes.Ldarg_2);
 
                     // static Java method is always a call
-                    if (s != null)
+                    if (s == null)
                         mw.EmitCall(il);
                     else
                         mw.EmitCallvirtReflect(il); // reflection virt may be static (remapped) or non-static
