@@ -1638,6 +1638,88 @@
                 </body>
             </method>
         </class>
+        <class name="com.sun.crypto.provider.AESCrypt">
+            <method name="decryptBlock" sig="([BI[BI)V">
+                <prologue>
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <ldarg_0 />
+                    <ldfld class="com.sun.crypto.provider.AESCrypt" name="K" sig="[I" />
+                    <!-- bool AESCrypt.DecryptBlock(byte[] in, int inOffset, byte[] out, int outOffset, int[] K) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.AESCrypt" name="DecryptBlock" sig="([BI[BI[I)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+            <method name="encryptBlock" sig="([BI[BI)V">
+                <prologue>
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <ldarg_0 />
+                    <ldfld class="com.sun.crypto.provider.AESCrypt" name="K" sig="[I" />
+                    <!-- bool AESCrypt.EncryptBlock(byte[] in, int inOffset, byte[] out, int outOffset, int[] K) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.AESCrypt" name="EncryptBlock" sig="([BI[BI[I)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+        </class>
+        <class name="com.sun.crypto.provider.GHASH">
+            <method name="processBlocks" sig="([BII[J[J)V">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <!-- bool GHASH.ProcessBlocks(byte[] data, int inOffs, int blocks, long[] state, long[] subH) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.GHASH" name="ProcessBlocks" sig="([BII[J[J)Z" />
+                    <brfalse name="continue" />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+        </class>
+        <class name="com.sun.crypto.provider.CipherBlockChaining">
+            <method name="implDecrypt" sig="([BII[BI)I">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <ldarg_s argNum="5" />
+                    <!-- bool CipherBlockChaining.DecryptAESCrypt(object self, byte[] cipher, int cipherOffset, int cipherLen, byte[] plain, int plainOffset, ) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.CipherBlockChaining" name="DecryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)Z" />
+                    <brfalse name="continue" />
+                    <ldarg_3 />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+            <method name="implEncrypt" sig="([BII[BI)I">
+                <prologue>
+                    <ldarg_0 />
+                    <ldarg_1 />
+                    <ldarg_2 />
+                    <ldarg_3 />
+                    <ldarg_s argNum="4" />
+                    <ldarg_s argNum="5" />
+                    <!-- bool CipherBlockChaining.EncryptAESCrypt(object self, byte[] plain, int plainOffset, int plainLen, byte[] cipher, int cipherOffset) -->
+                    <call type="IKVM.Java.Externs.com.sun.crypto.provider.CipherBlockChaining" name="EncryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)Z" />
+                    <brfalse name="continue" />
+                    <ldarg_3 />
+                    <ret />
+                    <label name="continue" />
+                </prologue>
+            </method>
+        </class>
         <!-- This is where the "native" helper methods start -->
         <class name="ikvm.lang.CIL">
             <method name="unbox_byte" sig="(Ljava.lang.Object;)B">
