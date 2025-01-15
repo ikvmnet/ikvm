@@ -30,7 +30,7 @@ internal static class CipherBlockChaining
 
         if (X86.AESCrypt.IsSupported)
         {
-            X86.CipherBlockChaining.EncryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
+            X86.CipherBlockChaining.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
             return true;
         }
 #endif
