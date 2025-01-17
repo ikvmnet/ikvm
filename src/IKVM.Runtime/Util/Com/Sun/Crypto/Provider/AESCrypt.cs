@@ -32,9 +32,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             throw new NotImplementedException();
 #else
 #if NETCOREAPP3_0_OR_GREATER
-            if (x86.AESCrypt.IsSupported)
+            if (AESCrypt_x86.IsSupported)
             {
-                x86.AESCrypt.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
+                AESCrypt_x86.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
                 return true;
             }
 #endif
@@ -61,9 +61,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             throw new NotImplementedException();
 #else
 #if NETCOREAPP3_0_OR_GREATER
-            if (x86.AESCrypt.IsSupported)
+            if (AESCrypt_x86.IsSupported)
             {
-                x86.AESCrypt.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
+                AESCrypt_x86.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
                 return true;
             }
 #endif

@@ -52,9 +52,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             var k = AESCryptAccessor.K(aes);
 
-            if (x86.AESCrypt.IsSupported)
+            if (AESCrypt_x86.IsSupported)
             {
-                x86.CipherBlockChaining.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
+                CipherBlockChaining_x86.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
                 return true;
             }
 #endif
@@ -93,9 +93,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             var k = AESCryptAccessor.K(aes);
 
-            if (x86.AESCrypt.IsSupported)
+            if (AESCrypt_x86.IsSupported)
             {
-                x86.CipherBlockChaining.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
+                CipherBlockChaining_x86.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
                 return true;
             }
 #endif

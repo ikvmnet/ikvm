@@ -31,9 +31,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             throw new NotImplementedException();
 #else
 #if NETCOREAPP3_0_OR_GREATER
-            if (x86.GHASH.IsSupported)
+            if (GHASH_x86.IsSupported)
             {
-                x86.GHASH.ProcessBlocks(data.AsSpan(inOfs), blocks, st, subH);
+                GHASH_x86.ProcessBlocks(data.AsSpan(inOfs), blocks, st, subH);
                 return true;
             }
 #endif
