@@ -10,15 +10,26 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 {
 
     /// <summary>
-    /// X86 implementation of the AES functions.
+    /// X86 implementation of the AES intrinsic functions.
     /// </summary>
     static class AESCrypt_x86
     {
 
+        /// <summary>
+        /// Returns <c>true</c> if the current platform is supported by this implementation.
+        /// </summary>
         public static bool IsSupported => Aes.IsSupported && Ssse3.IsSupported;
 
         public static ReadOnlySpan<int> KeyShuffleMask => [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f];
 
+        /// <summary>
+        /// Implementation of com.sun.crypto.provider.AESCrypt.decryptBlock for the x86 platform.
+        /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_aescrypt_decryptBlock'.
+        /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="key"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DecryptBlock(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key)
         {
@@ -80,6 +91,14 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             xmm_result.CopyTo(to);
         }
 
+        /// <summary>
+        /// Implementation of com.sun.crypto.provider.AESCrypt.encryptBlock for the x86 platform.
+        /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_aescrypt_encryptBlock'.
+        /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="key"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EncryptBlock(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key)
         {

@@ -52,7 +52,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             var k = AESCryptAccessor.K(aes);
 
-            if (AESCrypt_x86.IsSupported)
+            if (CipherBlockChaining_x86.IsSupported)
             {
                 CipherBlockChaining_x86.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
                 return true;

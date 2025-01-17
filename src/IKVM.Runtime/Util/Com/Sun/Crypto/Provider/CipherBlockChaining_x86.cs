@@ -10,7 +10,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 {
 
     /// <summary>
-    /// X86 implementations of the CipherBlockChaining functions.
+    /// X86 implementations of the CipherBlockChaining intrinsic functions.
     /// </summary>
     static class CipherBlockChaining_x86
     {
@@ -18,7 +18,14 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         const int AESBlockSize = 16;
 
         /// <summary>
+        /// Returns <c>true</c> if the current platform is supported by this implementation.
+        /// </summary>
+        public static bool IsSupported => AESCrypt_x86.IsSupported;
+
+        /// <summary>
+        /// Implementation of com.sun.crypto.provider.CipherBlockChaining.implDecrypt for the x86 platform.
         /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_cipherBlockChaining_decryptAESCrypt'.
+        /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
@@ -147,6 +154,16 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             goto exit;
         }
 
+        /// <summary>
+        /// Implementation of com.sun.crypto.provider.CipherBlockChaining.implEncrypt for the x86 platform.
+        /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_cipherBlockChaining_encryptAESCrypt'.
+        /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="key"></param>
+        /// <param name="rvec"></param>
+        /// <param name="length"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EncryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {

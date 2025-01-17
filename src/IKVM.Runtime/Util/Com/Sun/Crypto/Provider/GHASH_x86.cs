@@ -10,17 +10,29 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 {
 
     /// <summary>
-    /// X86 implementation of the GHASH functions.
+    /// X86 implementation of the GHASH intrinsic functions.
     /// </summary>
     static class GHASH_x86
     {
 
+        /// <summary>
+        /// Returns <c>true</c> if the current platform is supported by this implementation.
+        /// </summary>
         public static bool IsSupported => Pclmulqdq.IsSupported && Ssse3.IsSupported;
 
         static ReadOnlySpan<int> ByteSwapMask => [0x0c0d0e0f, 0x08090a0b, 0x04050607, 0x00010203];
 
         static ReadOnlySpan<int> LongSwapMask => [0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504];
 
+        /// <summary>
+        /// Implementation of com.sun.crypto.provider.GHASH.processBlocks for the x86 platform.
+        /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_ghash_processBlocks'.
+        /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="blocks"></param>
+        /// <param name="state"></param>
+        /// <param name="subH"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ProcessBlocks(ReadOnlySpan<byte> data, int blocks, Span<long> state, ReadOnlySpan<long> subH)
         {
