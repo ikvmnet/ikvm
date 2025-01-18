@@ -62,12 +62,8 @@ namespace IKVM.Runtime
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
-                {
                     if (argTypeWrappers != null)
-                    {
                         return;
-                    }
-                }
 
                 var classLoader = thisType.ClassLoader;
                 var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
@@ -83,25 +79,13 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal string Signature
-            {
-                get { return descriptor; }
-            }
+            internal string Signature => descriptor;
 
-            internal RuntimeJavaType[] GetArgTypes()
-            {
-                return argTypeWrappers;
-            }
+            internal RuntimeJavaType[] GetArgTypes() => argTypeWrappers;
 
-            internal RuntimeJavaType GetRetType()
-            {
-                return retTypeWrapper;
-            }
+            internal RuntimeJavaType GetRetType() => retTypeWrapper;
 
-            internal override ConstantType GetConstantType()
-            {
-                return ConstantType.MethodType;
-            }
+            internal override ConstantType GetConstantType() => ConstantType.MethodType;
 
         }
 

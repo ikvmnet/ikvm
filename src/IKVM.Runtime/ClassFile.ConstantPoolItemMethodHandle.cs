@@ -85,35 +85,17 @@ namespace IKVM.Runtime
                 cpi.MarkLinkRequired();
             }
 
-            internal string Class
-            {
-                get { return cpi.Class; }
-            }
+            internal string Class => cpi.Class;
 
-            internal string Name
-            {
-                get { return cpi.Name; }
-            }
+            internal string Name => cpi.Name;
 
-            internal string Signature
-            {
-                get { return cpi.Signature; }
-            }
+            internal string Signature => cpi.Signature;
 
-            internal ConstantPoolItemFMI MemberConstantPoolItem
-            {
-                get { return cpi; }
-            }
+            internal ConstantPoolItemFMI MemberConstantPoolItem => cpi;
 
-            internal MethodHandleKind Kind
-            {
-                get { return data.Kind; }
-            }
+            internal MethodHandleKind Kind => data.Kind;
 
-            internal RuntimeJavaMember Member
-            {
-                get { return cpi.GetMember(); }
-            }
+            internal RuntimeJavaMember Member => cpi.GetMember();
 
             internal RuntimeJavaType GetClassType()
             {
@@ -125,10 +107,7 @@ namespace IKVM.Runtime
                 cpi.Link(thisType, mode);
             }
 
-            internal override ConstantType GetConstantType()
-            {
-                return ConstantType.MethodHandle;
-            }
+            internal override ConstantType GetConstantType() => ConstantType.MethodHandle;
 
         }
 

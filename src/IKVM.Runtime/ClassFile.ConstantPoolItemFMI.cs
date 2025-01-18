@@ -61,14 +61,12 @@ namespace IKVM.Runtime
                 clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(clazzHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
                 if (name_and_type == null || clazz == null)
-                {
                     throw new ClassFormatError("Bad index in constant pool");
-                }
 
-                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
+                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
                 descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
                 Validate(name, descriptor, classFile.MajorVersion);
-                descriptor = String.Intern(descriptor.Replace('/', '.'));
+                descriptor = string.Intern(descriptor.Replace('/', '.'));
             }
 
             protected abstract void Validate(string name, string descriptor, int majorVersion);
@@ -83,29 +81,11 @@ namespace IKVM.Runtime
                 clazz.Link(thisType, mode);
             }
 
-            internal string Name
-            {
-                get
-                {
-                    return name;
-                }
-            }
+            internal string Name => name;
 
-            internal string Signature
-            {
-                get
-                {
-                    return descriptor;
-                }
-            }
+            internal string Signature => descriptor;
 
-            internal string Class
-            {
-                get
-                {
-                    return clazz.Name;
-                }
-            }
+            internal string Class => clazz.Name;
 
             internal RuntimeJavaType GetClassType()
             {
@@ -113,7 +93,9 @@ namespace IKVM.Runtime
             }
 
             internal abstract RuntimeJavaMember GetMember();
+
         }
+
     }
 
 }

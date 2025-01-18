@@ -81,36 +81,33 @@ namespace IKVM.Runtime
 #if !IMPORTER
                     if (classFile.MajorVersion < 49 && (options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
                     {
-                        char prev = name[0];
-                        if (Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
+                        var prev = name[0];
+                        if (char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
                         {
                             int skip = 1;
                             int end = name.Length;
                             if (prev == '[')
                             {
                                 if (!IsValidFieldSig(name))
-                                {
-                                    goto barf;
-                                }
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", name);
+
                                 while (name[skip] == '[')
-                                {
                                     skip++;
-                                }
+
                                 if (name.EndsWith(";"))
-                                {
                                     end--;
-                                }
                             }
+
                             for (int i = skip; i < end; i++)
                             {
-                                char c = name[i];
-                                if (!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
-                                {
-                                    goto barf;
-                                }
+                                var c = name[i];
+                                if (!char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", name);
+
                                 prev = c;
                             }
-                            name = String.Intern(name.Replace('/', '.'));
+
+                            name = string.Intern(name.Replace('/', '.'));
                             return;
                         }
                     }
@@ -123,34 +120,26 @@ namespace IKVM.Runtime
                         if (name[0] == '[')
                         {
                             if (!IsValidFieldSig(name))
-                            {
-                                goto barf;
-                            }
+                                throw new ClassFormatError("Invalid class name \"{0}\"", name);
+
                             // the semicolon is only allowed at the end and IsValidFieldSig enforces this,
                             // but since invalidJava15Characters contains the semicolon, we decrement end
                             // to make the following check against invalidJava15Characters ignore the
                             // trailing semicolon.
                             if (name[end - 1] == ';')
-                            {
                                 end--;
-                            }
+
                             while (name[start] == '[')
-                            {
                                 start++;
-                            }
                         }
 
                         if (name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
-                        {
-                            goto barf;
-                        }
+                            throw new ClassFormatError("Invalid class name \"{0}\"", name);
 
                         name = string.Intern(name.Replace('/', '.'));
                         return;
                     }
                 }
-            barf:
-                throw new ClassFormatError("Invalid class name \"{0}\"", name);
             }
 
             internal override void MarkLinkRequired()
@@ -168,7 +157,8 @@ namespace IKVM.Runtime
                 if (typeWrapper == Context.VerifierJavaTypeFactory.Null)
                 {
                     var tw = thisType.ClassLoader.LoadClass(name, mode | LoadMode.WarnClassNotFound);
-#if !IMPORTER && !FIRST_PASS
+
+#if IMPORTER == false && FIRST_PASS == false
                     if (!tw.IsUnloadable)
                     {
                         try
@@ -181,17 +171,12 @@ namespace IKVM.Runtime
                         }
                     }
 #endif
+
                     typeWrapper = tw;
                 }
             }
 
-            internal string Name
-            {
-                get
-                {
-                    return name;
-                }
-            }
+            internal string Name => name;
 
             internal RuntimeJavaType GetClassType()
             {

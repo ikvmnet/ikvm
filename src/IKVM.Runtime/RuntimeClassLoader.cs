@@ -949,7 +949,7 @@ namespace IKVM.Runtime
             get
             {
 #if IMPORTER
-                var cfp = ClassFileParseOptions.LocalVariableTable;
+                var cfp = ClassFileParseOptions.LocalVariableTable | ClassFileParseOptions.StaticImport;
                 if (EmitStackTraceInfo)
                     cfp |= ClassFileParseOptions.LineNumberTable;
                 if (context.ClassLoaderFactory.bootstrapClassLoader is ImportClassLoader)

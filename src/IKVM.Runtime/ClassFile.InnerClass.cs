@@ -32,10 +32,12 @@ namespace IKVM.Runtime
 
         internal struct InnerClass
         {
+
             internal ClassConstantHandle innerClass;     // ConstantPoolItemClass
             internal ClassConstantHandle outerClass;     // ConstantPoolItemClass
             internal Utf8ConstantHandle name;           // ConstantPoolItemUtf8
             internal Modifiers accessFlags;
+
         }
 
     }

@@ -33,8 +33,8 @@ namespace IKVM.Runtime
         internal struct BootstrapMethod
         {
 
-            private MethodHandleConstantHandle method;
-            private ConstantHandle[] args;
+            MethodHandleConstantHandle method;
+            ConstantHandle[] args;
 
             internal BootstrapMethod(MethodHandleConstantHandle method, ConstantHandle[] args)
             {
@@ -42,15 +42,9 @@ namespace IKVM.Runtime
                 this.args = args;
             }
 
-            internal MethodHandleConstantHandle BootstrapMethodIndex
-            {
-                get { return method; }
-            }
+            internal MethodHandleConstantHandle BootstrapMethodIndex => method;
 
-            internal int ArgumentCount
-            {
-                get { return args.Length; }
-            }
+            internal int ArgumentCount => args.Length;
 
             internal ConstantHandle GetArgument(int index)
             {

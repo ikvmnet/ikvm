@@ -27,8 +27,10 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
         internal enum ConstantType
         {
+
             Integer,
             Long,
             Float,
@@ -38,7 +40,9 @@ namespace IKVM.Runtime
             MethodHandle,
             MethodType,
             LiveObject,     // used by anonymous class constant pool patching
+
         }
+
     }
 
 }

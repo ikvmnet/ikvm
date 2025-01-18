@@ -26,7 +26,6 @@ using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Diagnostics;
 
-
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif

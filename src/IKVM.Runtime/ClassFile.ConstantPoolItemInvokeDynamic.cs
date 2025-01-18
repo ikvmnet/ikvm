@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 
@@ -31,6 +29,7 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
         {
 
@@ -67,12 +66,8 @@ namespace IKVM.Runtime
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
-                {
                     if (argTypeWrappers != null)
-                    {
                         return;
-                    }
-                }
 
                 var classLoader = thisType.ClassLoader;
                 var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
@@ -98,20 +93,11 @@ namespace IKVM.Runtime
                 return retTypeWrapper;
             }
 
-            internal string Name
-            {
-                get { return name; }
-            }
+            internal string Name => name;
 
-            internal string Signature
-            {
-                get { return descriptor; }
-            }
+            internal string Signature => descriptor;
 
-            internal ushort BootstrapMethod
-            {
-                get { return bootstrapMethodAttributeIndex; }
-            }
+            internal ushort BootstrapMethod => bootstrapMethodAttributeIndex;
 
         }
 

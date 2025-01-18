@@ -67,18 +67,14 @@ namespace IKVM.Runtime
             {
                 base.Link(thisType, mode);
                 lock (this)
-                {
                     if (fieldTypeWrapper != null)
-                    {
                         return;
-                    }
-                }
+
                 RuntimeJavaField fw = null;
-                RuntimeJavaType wrapper = GetClassType();
+                var wrapper = GetClassType();
                 if (wrapper == null)
-                {
                     return;
-                }
+
                 if (!wrapper.IsUnloadable)
                 {
                     fw = wrapper.GetFieldWrapper(Name, Signature);
@@ -87,8 +83,10 @@ namespace IKVM.Runtime
                         fw.Link(mode);
                     }
                 }
-                RuntimeClassLoader classLoader = thisType.ClassLoader;
-                RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
+                var classLoader = thisType.ClassLoader;
+                var fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
                 lock (this)
                 {
                     if (fieldTypeWrapper == null)

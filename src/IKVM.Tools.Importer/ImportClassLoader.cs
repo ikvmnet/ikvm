@@ -2659,7 +2659,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
+                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.StaticImport, null);
 
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
@@ -2690,7 +2690,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
+                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.StaticImport, null);
                         if (f.Name == className)
                         {
                             foreach (var m in f.Methods)

@@ -53,19 +53,15 @@ namespace IKVM.Runtime
             protected override void Validate(string name, string descriptor, int majorVersion)
             {
                 if (!IsValidMethodSig(descriptor))
-                {
                     throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-                }
+
                 if (!IsValidMethodName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                 {
                     if (!ReferenceEquals(name, StringConstants.INIT))
-                    {
                         throw new ClassFormatError("Invalid method name \"{0}\"", name);
-                    }
+
                     if (!descriptor.EndsWith("V"))
-                    {
                         throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-                    }
                 }
             }
 
@@ -79,9 +75,10 @@ namespace IKVM.Runtime
                         return;
                     }
                 }
-                RuntimeClassLoader classLoader = thisType.ClassLoader;
-                RuntimeJavaType[] args = classLoader.ArgJavaTypeListFromSig(this.Signature, mode);
-                RuntimeJavaType ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
+
+                var classLoader = thisType.ClassLoader;
+                var args = classLoader.ArgJavaTypeListFromSig(this.Signature, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (argTypeWrappers == null)
@@ -116,7 +113,9 @@ namespace IKVM.Runtime
             {
                 return method;
             }
+
         }
+
     }
 
 }

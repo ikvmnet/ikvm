@@ -36,6 +36,7 @@ namespace IKVM.Runtime
         RelaxedClassNameValidation = 4,
         TrustedAnnotations = 8,
         RemoveAssertions = 16,
+        StaticImport = 32,
 
     }
 

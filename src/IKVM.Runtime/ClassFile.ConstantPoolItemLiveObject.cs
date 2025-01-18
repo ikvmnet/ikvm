@@ -45,6 +45,7 @@ namespace IKVM.Runtime
             {
                 return ConstantType.LiveObject;
             }
+
         }
 
     }
