@@ -36,8 +36,8 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
         {
 
-            RuntimeJavaField field;
-            RuntimeJavaType fieldTypeWrapper;
+            RuntimeJavaField _field;
+            RuntimeJavaType _fieldJavaType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -60,14 +60,14 @@ namespace IKVM.Runtime
 
             internal RuntimeJavaType GetFieldType()
             {
-                return fieldTypeWrapper;
+                return _fieldJavaType;
             }
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
-                    if (fieldTypeWrapper != null)
+                    if (_fieldJavaType != null)
                         return;
 
                 RuntimeJavaField fw = null;
@@ -89,22 +89,22 @@ namespace IKVM.Runtime
 
                 lock (this)
                 {
-                    if (fieldTypeWrapper == null)
+                    if (_fieldJavaType == null)
                     {
-                        fieldTypeWrapper = fld;
-                        field = fw;
+                        _fieldJavaType = fld;
+                        _field = fw;
                     }
                 }
             }
 
             internal RuntimeJavaField GetField()
             {
-                return field;
+                return _field;
             }
 
             internal override RuntimeJavaMember GetMember()
             {
-                return field;
+                return _field;
             }
 
         }

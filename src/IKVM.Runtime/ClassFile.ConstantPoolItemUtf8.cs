@@ -33,17 +33,17 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemUtf8 : ConstantPoolItem
         {
 
-            readonly string str;
+            readonly string value;
 
-            internal ConstantPoolItemUtf8(RuntimeContext context, string str) :
+            internal ConstantPoolItemUtf8(RuntimeContext context, string value) :
                 base(context)
             {
-                this.str = str;
+                this.value = value;
             }
 
             internal override object GetRuntimeValue()
             {
-                return str;
+                return value;
             }
 
         }

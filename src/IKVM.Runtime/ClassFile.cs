@@ -525,16 +525,16 @@ namespace IKVM.Runtime
                                 }
                                 break;
                             case ConstantType.Integer:
-                                ((ConstantPoolItemInteger)constantpool[i]).v = ((java.lang.Integer)constantPoolPatches[i]).intValue();
+                                ((ConstantPoolItemInteger)constantpool[i])._value = ((java.lang.Integer)constantPoolPatches[i]).intValue();
                                 break;
                             case ConstantType.Long:
                                 ((ConstantPoolItemLong)constantpool[i]).l = ((java.lang.Long)constantPoolPatches[i]).longValue();
                                 break;
                             case ConstantType.Float:
-                                ((ConstantPoolItemFloat)constantpool[i]).v = ((java.lang.Float)constantPoolPatches[i]).floatValue();
+                                ((ConstantPoolItemFloat)constantpool[i])._value = ((java.lang.Float)constantPoolPatches[i]).floatValue();
                                 break;
                             case ConstantType.Double:
-                                ((ConstantPoolItemDouble)constantpool[i]).d = ((java.lang.Double)constantPoolPatches[i]).doubleValue();
+                                ((ConstantPoolItemDouble)constantpool[i])._value = ((java.lang.Double)constantPoolPatches[i]).doubleValue();
                                 break;
                             default:
                                 throw new NotImplementedException("ConstantPoolPatch: " + constantPoolPatches[i]);

@@ -33,22 +33,27 @@ namespace IKVM.Runtime
         internal struct BootstrapMethod
         {
 
-            MethodHandleConstantHandle method;
-            ConstantHandle[] args;
+            readonly MethodHandleConstantHandle _method;
+            readonly ConstantHandle[] _args;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="method"></param>
+            /// <param name="args"></param>
             internal BootstrapMethod(MethodHandleConstantHandle method, ConstantHandle[] args)
             {
-                this.method = method;
-                this.args = args;
+                this._method = method;
+                this._args = args;
             }
 
-            internal MethodHandleConstantHandle BootstrapMethodIndex => method;
+            internal MethodHandleConstantHandle BootstrapMethodIndex => _method;
 
-            internal int ArgumentCount => args.Length;
+            internal int ArgumentCount => _args.Length;
 
             internal ConstantHandle GetArgument(int index)
             {
-                return args[index];
+                return _args[index];
             }
 
         }

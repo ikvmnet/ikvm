@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.ByteCode;
 
 namespace IKVM.Runtime
@@ -34,12 +32,12 @@ namespace IKVM.Runtime
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
         {
 
-            readonly ClassConstantHandle clazzHandle;
-            readonly NameAndTypeConstantHandle nameAndType;
+            readonly ClassConstantHandle _clazzHandle;
+            readonly NameAndTypeConstantHandle _nameAndType;
 
-            ConstantPoolItemClass clazz;
-            string name;
-            string descriptor;
+            ConstantPoolItemClass _clazz;
+            string _name;
+            string _descriptor;
 
             /// <summary>
             /// Initializes a new instance.
@@ -50,47 +48,44 @@ namespace IKVM.Runtime
             internal ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
                 base(context)
             {
-                this.clazzHandle = clazz;
-                this.nameAndType = nameAndType;
+                this._clazzHandle = clazz;
+                this._nameAndType = nameAndType;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndType);
+                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndType);
 
-                clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(clazzHandle);
+                _clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(_clazzHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
-                if (name_and_type == null || clazz == null)
+                if (name_and_type == null || _clazz == null)
                     throw new ClassFormatError("Bad index in constant pool");
 
-                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
-                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
-                Validate(name, descriptor, classFile.MajorVersion);
-                descriptor = string.Intern(descriptor.Replace('/', '.'));
+                _name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
+                _descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
+                Validate(_name, _descriptor, classFile.MajorVersion);
+                _descriptor = string.Intern(_descriptor.Replace('/', '.'));
             }
 
             protected abstract void Validate(string name, string descriptor, int majorVersion);
 
             internal override void MarkLinkRequired()
             {
-                clazz.MarkLinkRequired();
+                _clazz.MarkLinkRequired();
             }
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                clazz.Link(thisType, mode);
+                _clazz.Link(thisType, mode);
             }
 
-            internal string Name => name;
+            internal string Name => _name;
 
-            internal string Signature => descriptor;
+            internal string Signature => _descriptor;
 
-            internal string Class => clazz.Name;
+            internal string Class => _clazz.Name;
 
-            internal RuntimeJavaType GetClassType()
-            {
-                return clazz.GetClassType();
-            }
+            internal RuntimeJavaType GetClassType() => _clazz.GetClassType();
 
             internal abstract RuntimeJavaMember GetMember();
 

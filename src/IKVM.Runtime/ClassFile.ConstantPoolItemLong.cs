@@ -48,9 +48,9 @@ namespace IKVM.Runtime
 
             internal override ConstantType GetConstantType() => ConstantType.Long;
 
-            internal long Value => l;
-
             internal override object GetRuntimeValue() => l;
+
+            internal long Value => l;
 
         }
 

@@ -32,7 +32,7 @@ namespace IKVM.Runtime
         internal abstract class ConstantPoolItem
         {
 
-            readonly RuntimeContext context;
+            readonly RuntimeContext _context;
 
             /// <summary>
             /// Initializes a new instance.
@@ -40,13 +40,18 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             protected ConstantPoolItem(RuntimeContext context)
             {
-                this.context = context ?? throw new ArgumentNullException(nameof(context));
+                this._context = context ?? throw new ArgumentNullException(nameof(context));
             }
 
             /// <summary>
             /// Gets the <see cref="RuntimeContext"/> that hosts this instanc.
             /// </summary>
-            public RuntimeContext Context => context;
+            public RuntimeContext Context => _context;
+
+            internal virtual ConstantType GetConstantType()
+            {
+                throw new InvalidOperationException();
+            }
 
             internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
@@ -56,11 +61,6 @@ namespace IKVM.Runtime
             internal virtual void Link(RuntimeJavaType thisType, LoadMode mode)
             {
 
-            }
-
-            internal virtual ConstantType GetConstantType()
-            {
-                throw new InvalidOperationException();
             }
 
             internal virtual void MarkLinkRequired()

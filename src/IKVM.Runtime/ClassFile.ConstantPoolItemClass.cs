@@ -34,12 +34,11 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemClass : ConstantPoolItem, IEquatable<ConstantPoolItemClass>
         {
 
-            static readonly char[] invalidJava15Characters = { '.', ';', '[', ']' };
+            static readonly char[] invalidJava15Characters = ['.', ';', '[', ']'];
 
-            readonly ClassConstantData data;
-
-            string name;
-            RuntimeJavaType typeWrapper;
+            readonly ClassConstantData _data;
+            string _name;
+            RuntimeJavaType _javaType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -50,7 +49,7 @@ namespace IKVM.Runtime
             internal ConstantPoolItemClass(RuntimeContext context, ClassConstantData data) :
                 base(context)
             {
-                this.data = data;
+                this._data = data;
             }
 
             /// <summary>
@@ -62,18 +61,18 @@ namespace IKVM.Runtime
             internal ConstantPoolItemClass(RuntimeContext context, string name, RuntimeJavaType typeWrapper) :
                 base(context)
             {
-                this.name = name;
-                this.typeWrapper = typeWrapper;
+                this._name = name;
+                this._javaType = typeWrapper;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 // if the item was patched, we already have a name
-                if (name != null)
+                if (_name != null)
                     return;
 
-                name = classFile.GetConstantPoolUtf8String(utf8_cp, data.Name);
-                if (name.Length > 0)
+                _name = classFile.GetConstantPoolUtf8String(utf8_cp, _data.Name);
+                if (_name.Length > 0)
                 {
                     // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
                     // class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
@@ -81,33 +80,33 @@ namespace IKVM.Runtime
 #if !IMPORTER
                     if (classFile.MajorVersion < 49 && (options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
                     {
-                        var prev = name[0];
+                        var prev = _name[0];
                         if (char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
                         {
                             int skip = 1;
-                            int end = name.Length;
+                            int end = _name.Length;
                             if (prev == '[')
                             {
-                                if (!IsValidFieldSig(name))
-                                    throw new ClassFormatError("Invalid class name \"{0}\"", name);
+                                if (!IsValidFieldSig(_name))
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", _name);
 
-                                while (name[skip] == '[')
+                                while (_name[skip] == '[')
                                     skip++;
 
-                                if (name.EndsWith(";"))
+                                if (_name.EndsWith(";"))
                                     end--;
                             }
 
                             for (int i = skip; i < end; i++)
                             {
-                                var c = name[i];
+                                var c = _name[i];
                                 if (!char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
-                                    throw new ClassFormatError("Invalid class name \"{0}\"", name);
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", _name);
 
                                 prev = c;
                             }
 
-                            name = string.Intern(name.Replace('/', '.'));
+                            _name = string.Intern(_name.Replace('/', '.'));
                             return;
                         }
                     }
@@ -116,27 +115,27 @@ namespace IKVM.Runtime
                     {
                         // since 1.5 the restrictions on class names have been greatly reduced
                         int start = 0;
-                        int end = name.Length;
-                        if (name[0] == '[')
+                        int end = _name.Length;
+                        if (_name[0] == '[')
                         {
-                            if (!IsValidFieldSig(name))
-                                throw new ClassFormatError("Invalid class name \"{0}\"", name);
+                            if (!IsValidFieldSig(_name))
+                                throw new ClassFormatError("Invalid class name \"{0}\"", _name);
 
                             // the semicolon is only allowed at the end and IsValidFieldSig enforces this,
                             // but since invalidJava15Characters contains the semicolon, we decrement end
                             // to make the following check against invalidJava15Characters ignore the
                             // trailing semicolon.
-                            if (name[end - 1] == ';')
+                            if (_name[end - 1] == ';')
                                 end--;
 
-                            while (name[start] == '[')
+                            while (_name[start] == '[')
                                 start++;
                         }
 
-                        if (name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
-                            throw new ClassFormatError("Invalid class name \"{0}\"", name);
+                        if (_name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
+                            throw new ClassFormatError("Invalid class name \"{0}\"", _name);
 
-                        name = string.Intern(name.Replace('/', '.'));
+                        _name = string.Intern(_name.Replace('/', '.'));
                         return;
                     }
                 }
@@ -144,19 +143,19 @@ namespace IKVM.Runtime
 
             internal override void MarkLinkRequired()
             {
-                typeWrapper ??= Context.VerifierJavaTypeFactory.Null;
+                _javaType ??= Context.VerifierJavaTypeFactory.Null;
             }
 
             internal void LinkSelf(RuntimeJavaType thisType)
             {
-                this.typeWrapper = thisType;
+                this._javaType = thisType;
             }
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                if (typeWrapper == Context.VerifierJavaTypeFactory.Null)
+                if (_javaType == Context.VerifierJavaTypeFactory.Null)
                 {
-                    var tw = thisType.ClassLoader.LoadClass(name, mode | LoadMode.WarnClassNotFound);
+                    var tw = thisType.ClassLoader.LoadClass(_name, mode | LoadMode.WarnClassNotFound);
 
 #if IMPORTER == false && FIRST_PASS == false
                     if (!tw.IsUnloadable)
@@ -167,20 +166,20 @@ namespace IKVM.Runtime
                         }
                         catch (java.lang.SecurityException)
                         {
-                            tw = new RuntimeUnloadableJavaType(Context, name);
+                            tw = new RuntimeUnloadableJavaType(Context, _name);
                         }
                     }
 #endif
 
-                    typeWrapper = tw;
+                    _javaType = tw;
                 }
             }
 
-            internal string Name => name;
+            internal string Name => _name;
 
             internal RuntimeJavaType GetClassType()
             {
-                return typeWrapper;
+                return _javaType;
             }
 
             internal override ConstantType GetConstantType()
@@ -190,12 +189,12 @@ namespace IKVM.Runtime
 
             public sealed override int GetHashCode()
             {
-                return name.GetHashCode();
+                return _name.GetHashCode();
             }
 
             public bool Equals(ConstantPoolItemClass other)
             {
-                return ReferenceEquals(name, other.name);
+                return ReferenceEquals(_name, other._name);
             }
 
         }

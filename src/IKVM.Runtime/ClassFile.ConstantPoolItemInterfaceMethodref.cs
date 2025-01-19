@@ -54,11 +54,8 @@ namespace IKVM.Runtime
                     if (!wrapper.IsUnloadable)
                         method = wrapper.GetInterfaceMethod(Name, Signature);
 
-                    if (method == null)
-                    {
-                        // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-                        method = thisType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(Name, Signature, false);
-                    }
+                    // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
+                    method ??= thisType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(Name, Signature, false);
 
                     if (method != null)
                         method.Link(mode);

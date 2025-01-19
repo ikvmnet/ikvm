@@ -22,8 +22,6 @@
   
 */
 
-using System;
-
 namespace IKVM.Runtime
 {
 
@@ -33,18 +31,22 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemLiveObject : ConstantPoolItem
         {
 
-            internal readonly object Value;
+            readonly object _value;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="context"></param>
+            /// <param name="value"></param>
             internal ConstantPoolItemLiveObject(RuntimeContext context, object value) :
                 base(context)
             {
-                this.Value = value;
+                _value = value;
             }
 
-            internal override ConstantType GetConstantType()
-            {
-                return ConstantType.LiveObject;
-            }
+            internal override ConstantType GetConstantType() => ConstantType.LiveObject;
+
+            public object Value => _value;
 
         }
 

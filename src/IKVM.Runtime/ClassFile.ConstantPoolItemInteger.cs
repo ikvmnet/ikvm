@@ -33,7 +33,7 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemInteger : ConstantPoolItem
         {
 
-            internal int v;
+            internal int _value;
 
             /// <summary>
             /// Initializes a new instance.
@@ -43,14 +43,14 @@ namespace IKVM.Runtime
             internal ConstantPoolItemInteger(RuntimeContext context, IntegerConstantData data) :
                 base(context)
             {
-                v = data.Value;
+                _value = data.Value;
             }
+
+            internal int Value => _value;
 
             internal override ConstantType GetConstantType() => ConstantType.Integer;
 
-            internal int Value => v;
-
-            internal override object GetRuntimeValue() => v;
+            internal override object GetRuntimeValue() => _value;
 
         }
 

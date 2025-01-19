@@ -33,13 +33,13 @@ namespace IKVM.Runtime
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
         {
 
-            readonly ushort bootstrapMethodAttributeIndex;
-            readonly NameAndTypeConstantHandle nameAndTypeHandle;
+            readonly ushort _bootstrapMethodAttributeIndex;
+            readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
-            string name;
-            string descriptor;
-            RuntimeJavaType[] argTypeWrappers;
-            RuntimeJavaType retTypeWrapper;
+            string _name;
+            string _descriptor;
+            RuntimeJavaType[] _argTypes;
+            RuntimeJavaType _returnType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -49,55 +49,55 @@ namespace IKVM.Runtime
             internal ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantData data) :
                 base(context)
             {
-                bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
-                nameAndTypeHandle = data.NameAndType;
+                _bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
+                _nameAndTypeHandle = data.NameAndType;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndTypeHandle);
+                var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndTypeHandle);
                 if (nameAndType == null)
                     throw new ClassFormatError("Bad index in constant pool");
 
-                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.NameHandle));
-                descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.DescriptorHandle).Replace('/', '.'));
+                _name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.NameHandle));
+                _descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.DescriptorHandle).Replace('/', '.'));
             }
 
             internal override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
-                    if (argTypeWrappers != null)
+                    if (_argTypes != null)
                         return;
 
                 var classLoader = thisType.ClassLoader;
-                var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
-                var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
+                var args = classLoader.ArgJavaTypeListFromSig(_descriptor, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(_descriptor, mode);
 
                 lock (this)
                 {
-                    if (argTypeWrappers == null)
+                    if (_argTypes == null)
                     {
-                        argTypeWrappers = args;
-                        retTypeWrapper = ret;
+                        _argTypes = args;
+                        _returnType = ret;
                     }
                 }
             }
 
             internal RuntimeJavaType[] GetArgTypes()
             {
-                return argTypeWrappers;
+                return _argTypes;
             }
 
             internal RuntimeJavaType GetRetType()
             {
-                return retTypeWrapper;
+                return _returnType;
             }
 
-            internal string Name => name;
+            internal string Name => _name;
 
-            internal string Signature => descriptor;
+            internal string Signature => _descriptor;
 
-            internal ushort BootstrapMethod => bootstrapMethodAttributeIndex;
+            internal ushort BootstrapMethod => _bootstrapMethodAttributeIndex;
 
         }
 

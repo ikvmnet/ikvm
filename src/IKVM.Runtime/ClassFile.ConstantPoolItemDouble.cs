@@ -22,9 +22,6 @@
   
 */
 
-using System;
-
-using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 
 namespace IKVM.Runtime
@@ -36,7 +33,7 @@ namespace IKVM.Runtime
         sealed class ConstantPoolItemDouble : ConstantPoolItem
         {
 
-            internal double d;
+            internal double _value;
 
             /// <summary>
             /// Initializes a new instance.
@@ -46,14 +43,14 @@ namespace IKVM.Runtime
             internal ConstantPoolItemDouble(RuntimeContext context, DoubleConstantData data) :
                 base(context)
             {
-                d = data.Value;
+                _value = data.Value;
             }
+
+            internal double Value => _value;
 
             internal override ConstantType GetConstantType() => ConstantType.Double;
 
-            internal double Value => d;
-
-            internal override object GetRuntimeValue() => d;
+            internal override object GetRuntimeValue() => _value;
 
         }
 

@@ -43,6 +43,7 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
+using System.Collections.Immutable;
 #endif
 
 #if IMPORTER
@@ -846,7 +847,7 @@ namespace IKVM.Runtime
         internal RuntimeJavaType[] ArgJavaTypeListFromSig(string sig, LoadMode mode)
         {
             if (sig[1] == ')')
-                return Array.Empty<RuntimeJavaType>();
+                return [];
 
             var list = new List<RuntimeJavaType>();
             for (int i = 1; sig[i] != ')';)
