@@ -11,7 +11,6 @@ using Buildalyzer.Environment;
 using FluentAssertions;
 
 using Microsoft.Build.Framework;
-using Microsoft.Build.Tasks;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
