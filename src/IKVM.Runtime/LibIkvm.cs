@@ -46,64 +46,6 @@ namespace IKVM.Runtime
             internal static extern void IKVM_dl_close(nint handle);
 
             /// <summary>
-            /// Invokes the native 'IKVM_io_is_file' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern long IKVM_io_is_file(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_is_socket' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern long IKVM_io_is_socket(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_duplicate_file' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern long IKVM_io_duplicate_file(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_duplicate_socket' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern long IKVM_io_duplicate_socket(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_close_file' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern void IKVM_io_close_file(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_close_socket' function.
-            /// </summary>
-            /// <param name="handle"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern void IKVM_io_close_socket(long handle);
-
-            /// <summary>
-            /// Invokes the native 'IKVM_io_close_socket' function.
-            /// </summary>
-            /// <param name="pathname"></param>
-            /// <param name="st_ino"></param>
-            /// <param name="st_dev"></param>
-            /// <returns></returns>
-            [DllImport("ikvm", SetLastError = false)]
-            internal static extern int IKVM_io_lstat([MarshalAs(UnmanagedType.LPUTF8Str)] string pathname, out long st_ino, out long st_dev);
-
-            /// <summary>
             /// Invokes the native 'IKVM_sig_get_size_sigaction' function.
             /// </summary>
             /// <returns></returns>
@@ -260,57 +202,6 @@ namespace IKVM.Runtime
         /// <param name="handle"></param>
         /// <returns></returns>
         public void dl_close(nint handle) => Externs.IKVM_dl_close(handle);
-
-        /// <summary>
-        /// Invokes the 'io_is_file' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public bool io_is_file(long handle) => Externs.IKVM_io_is_file(handle) != 0;
-
-        /// <summary>
-        /// Invokes the 'io_is_socket' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public bool io_is_socket(long handle) => Externs.IKVM_io_is_socket(handle) != 0;
-
-        /// <summary>
-        /// Invokes the 'io_close_file' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public void io_close_file(long handle) => Externs.IKVM_io_close_file(handle);
-
-        /// <summary>
-        /// Invokes the 'io_close_socket' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public void io_close_socket(long handle) => Externs.IKVM_io_close_socket(handle);
-
-        /// <summary>
-        /// Invokes the 'io_duplicate_file' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public long io_duplicate_file(long handle) => Externs.IKVM_io_duplicate_file(handle);
-
-        /// <summary>
-        /// Invokes the 'io_duplicate_socket' function.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public long io_duplicate_socket(long handle) => Externs.IKVM_io_duplicate_socket(handle);
-
-        /// <summary>
-        /// Invokes the 'io_lstat' function.
-        /// </summary>
-        /// <param name="pathname"></param>
-        /// <param name="st_ino"></param>
-        /// <param name="st_dev"></param>
-        /// <returns></returns>
-        public int io_lstat(string pathname, out long st_ino, out long st_dev) => Externs.IKVM_io_lstat(pathname, out st_ino, out st_dev);
 
         /// <summary>
         /// Invokes the 'sig_get_size_sigaction' function.
