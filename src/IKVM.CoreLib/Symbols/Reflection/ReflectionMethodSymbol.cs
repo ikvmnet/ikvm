@@ -11,7 +11,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     class ReflectionMethodSymbol : ReflectionMethodBaseSymbol, IMethodSymbol
     {
 
-        readonly MethodInfo _method;
+        readonly MethodInfo _underlyingMethod;
 
         Type[]? _genericParametersSource;
         ReflectionTypeSymbol?[]? _genericParameters;
@@ -23,11 +23,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="type"></param>
-        /// <param name="method"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodInfo method) :
-            base(context, module, type, method)
+        /// <param name="underlyingMethod"></param>
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodInfo underlyingMethod) :
+            base(context, module, type, underlyingMethod)
         {
-            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _underlyingMethod = underlyingMethod ?? throw new ArgumentNullException(nameof(underlyingMethod));
         }
 
         /// <summary>
@@ -41,10 +41,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (genericParameterType is null)
                 throw new ArgumentNullException(nameof(genericParameterType));
 
-            Debug.Assert(genericParameterType.DeclaringMethod == _method);
+            Debug.Assert(genericParameterType.DeclaringMethod == _underlyingMethod);
 
             // initialize tables
-            _genericParametersSource ??= _method.GetGenericArguments();
+            _genericParametersSource ??= _underlyingMethod.GetGenericArguments();
             _genericParameters ??= new ReflectionTypeSymbol?[_genericParametersSource.Length];
 
             // position of the parameter in the list
@@ -77,12 +77,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (genericMethodArguments is null)
                 throw new ArgumentNullException(nameof(genericMethodArguments));
 
-            if (_method.IsGenericMethodDefinition == false)
+            if (_underlyingMethod.IsGenericMethodDefinition == false)
                 throw new InvalidOperationException();
 
             // initialize the available parameters
             if (_genericParametersSource == null)
-                Interlocked.CompareExchange(ref _genericParametersSource, _method.GetGenericArguments(), null);
+                Interlocked.CompareExchange(ref _genericParametersSource, _underlyingMethod.GetGenericArguments(), null);
             if (_genericParametersSource.Length != genericMethodArguments.Length)
                 throw new InvalidOperationException();
 
@@ -98,7 +98,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                         return i.Symbol;
 
                 // generate new symbol
-                var sym = new ReflectionMethodSymbol(Context, ContainingModule, ContainingType, _method.MakeGenericMethod(genericMethodArguments));
+                var sym = new ReflectionMethodSymbol(Context, ContainingModule, ContainingType, _underlyingMethod.MakeGenericMethod(genericMethodArguments));
                 _genericTypes.Add((genericMethodArguments, sym));
                 return sym;
             }
@@ -107,13 +107,13 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
         /// </summary>
-        internal new MethodInfo ReflectionObject => _method;
+        internal MethodInfo UnderlyingMethod => _underlyingMethod;
 
         /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_method.ReturnParameter);
+        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_underlyingMethod.ReturnParameter);
 
         /// <inheritdoc />
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(_method.ReturnType);
+        public ITypeSymbol ReturnType => ResolveTypeSymbol(_underlyingMethod.ReturnType);
 
         /// <inheritdoc />
         public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
@@ -121,19 +121,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <inheritdoc />
         public IMethodSymbol GetBaseDefinition()
         {
-            return ResolveMethodSymbol(_method.GetBaseDefinition());
+            return ResolveMethodSymbol(_underlyingMethod.GetBaseDefinition());
         }
 
         /// <inheritdoc />
         public IMethodSymbol GetGenericMethodDefinition()
         {
-            return ResolveMethodSymbol(_method.GetGenericMethodDefinition());
+            return ResolveMethodSymbol(_underlyingMethod.GetGenericMethodDefinition());
         }
 
         /// <inheritdoc />
         public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
         {
-            return ResolveMethodSymbol(_method.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
+            return ResolveMethodSymbol(_underlyingMethod.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
         }
 
     }

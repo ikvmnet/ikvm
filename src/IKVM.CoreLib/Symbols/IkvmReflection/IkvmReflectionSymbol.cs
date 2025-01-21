@@ -55,13 +55,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="modules"></param>
         /// <returns></returns>
-        protected internal IkvmReflectionModuleSymbol[] ResolveModuleSymbols(Module[] modules)
+        protected internal ImmutableArray<IkvmReflectionModuleSymbol> ResolveModuleSymbols(Module[] modules)
         {
-            var a = new IkvmReflectionModuleSymbol[modules.Length];
+            var a = ImmutableArray.CreateBuilder<IkvmReflectionModuleSymbol>(modules.Length);
             for (int i = 0; i < modules.Length; i++)
-                a[i] = ResolveModuleSymbol(modules[i]);
+                a.Add(ResolveModuleSymbol(modules[i]));
 
-            return a;
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new Module[modules.Length];
             for (int i = 0; i < modules.Length; i++)
-                a[i] = ((IkvmReflectionModuleSymbol)modules[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionModuleSymbol)modules[i]).UnderlyingModule;
 
             return a;
         }
@@ -134,7 +134,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new MemberInfo[members.Length];
             for (int i = 0; i < members.Length; i++)
-                a[i] = ((IkvmReflectionMemberSymbol)members[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionMemberSymbol)members[i]).UnderlyingMember;
 
             return a;
         }
@@ -183,7 +183,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new Type[types.Length];
             for (int i = 0; i < types.Length; i++)
-                a[i] = ((IkvmReflectionTypeSymbol)types[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionTypeSymbol)types[i]).UnderlyingType;
 
             return a;
         }

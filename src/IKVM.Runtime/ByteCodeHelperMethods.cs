@@ -111,9 +111,9 @@ namespace IKVM.Runtime
         public ByteCodeHelperMethods(RuntimeContext context)
         {
 #if IMPORTER || EXPORTER
-            var typeofByteCodeHelper = ((IkvmReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+            var typeofByteCodeHelper = ((IkvmReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).UnderlyingType;
 #else
-            var typeofByteCodeHelper = ((ReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).ReflectionObject;
+            var typeofByteCodeHelper = ((ReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).UnderlyingType;
 #endif
             multianewarray = GetHelper(typeofByteCodeHelper, "multianewarray");
             multianewarray_ghost = GetHelper(typeofByteCodeHelper, "multianewarray_ghost");

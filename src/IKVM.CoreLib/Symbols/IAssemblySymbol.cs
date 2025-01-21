@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -62,14 +63,14 @@ namespace IKVM.CoreLib.Symbols
         /// Gets all the modules that are part of this assembly.
         /// </summary>
         /// <returns></returns>
-        IModuleSymbol[] GetModules();
+        ImmutableArray<IModuleSymbol> GetModules();
 
         /// <summary>
         /// Gets all the modules that are part of this assembly, specifying whether to include resource modules.
         /// </summary>
         /// <param name="getResourceModules"></param>
         /// <returns></returns>
-        IModuleSymbol[] GetModules(bool getResourceModules);
+        ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules);
 
         /// <summary>
         /// Gets an <see cref="AssemblyName"/> for this assembly.

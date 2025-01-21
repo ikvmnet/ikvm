@@ -12,14 +12,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="type"></param>
-        /// <param name="ctor"></param>
-        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol type, ConstructorInfo ctor) :
-            base(context, module, type, ctor)
+        /// <param name="underlyingConstructor"></param>
+        public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol type, ConstructorInfo underlyingConstructor) :
+            base(context, module, type, underlyingConstructor)
         {
 
         }
 
-        internal new ConstructorInfo ReflectionObject => (ConstructorInfo)base.ReflectionObject;
+        internal ConstructorInfo UnderlyingConstructor => (ConstructorInfo)UnderlyingMember;
 
     }
 

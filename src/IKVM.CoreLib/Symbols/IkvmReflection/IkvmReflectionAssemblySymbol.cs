@@ -15,7 +15,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionAssemblySymbol : IkvmReflectionSymbol, IAssemblySymbol
     {
 
-        readonly Assembly _assembly;
+        readonly Assembly _underlyingAssembly;
         readonly ConditionalWeakTable<Module, IkvmReflectionModuleSymbol> _modules = new();
 
         System.Reflection.AssemblyName? _assemblyName;
@@ -24,11 +24,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
-        public IkvmReflectionAssemblySymbol(IkvmReflectionSymbolContext context, Assembly assembly) :
+        /// <param name="underlyingAssembly"></param>
+        public IkvmReflectionAssemblySymbol(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
             base(context)
         {
-            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
         /// <summary>
@@ -39,46 +39,46 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <exception cref="IndexOutOfRangeException"></exception>
         internal IkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
         {
-            Debug.Assert(module.Assembly == _assembly);
+            Debug.Assert(module.Assembly == _underlyingAssembly);
             return _modules.GetValue(module, _ => new IkvmReflectionModuleSymbol(Context, _));
         }
 
-        internal Assembly ReflectionObject => _assembly;
+        internal Assembly UnderlyingAssembly => _underlyingAssembly;
 
-        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_assembly.DefinedTypes);
+        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_underlyingAssembly.DefinedTypes);
 
-        public IMethodSymbol? EntryPoint => _assembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
+        public IMethodSymbol? EntryPoint => _underlyingAssembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
 
-        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_assembly.ExportedTypes);
+        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_underlyingAssembly.ExportedTypes);
 
-        public string? FullName => _assembly.FullName;
+        public string? FullName => _underlyingAssembly.FullName;
 
-        public string ImageRuntimeVersion => _assembly.ImageRuntimeVersion;
+        public string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
 
-        public IModuleSymbol ManifestModule => ResolveModuleSymbol(_assembly.ManifestModule);
+        public IModuleSymbol ManifestModule => ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
 
-        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_assembly.Modules);
+        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_underlyingAssembly.Modules);
 
-        public override bool IsMissing => _assembly.__IsMissing;
+        public override bool IsMissing => _underlyingAssembly.__IsMissing;
 
         public ITypeSymbol[] GetExportedTypes()
         {
-            return ResolveTypeSymbols(_assembly.GetExportedTypes());
+            return ResolveTypeSymbols(_underlyingAssembly.GetExportedTypes());
         }
 
         public IModuleSymbol? GetModule(string name)
         {
-            return _assembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
+            return _underlyingAssembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
         }
 
-        public IModuleSymbol[] GetModules()
+        public ImmutableArray<IModuleSymbol> GetModules()
         {
-            return ResolveModuleSymbols(_assembly.GetModules());
+            return ResolveModuleSymbols(_underlyingAssembly.GetModules()).CastArray<IModuleSymbol>();
         }
 
-        public IModuleSymbol[] GetModules(bool getResourceModules)
+        public ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules)
         {
-            return ResolveModuleSymbols(_assembly.GetModules(getResourceModules));
+            return ResolveModuleSymbols(_underlyingAssembly.GetModules(getResourceModules)).CastArray<IModuleSymbol>();
         }
 
         System.Reflection.AssemblyName ToName(AssemblyName src)
@@ -98,17 +98,17 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public System.Reflection.AssemblyName GetName()
         {
-            return _assemblyName ??= ToName(_assembly.GetName());
+            return _assemblyName ??= ToName(_underlyingAssembly.GetName());
         }
 
         public System.Reflection.AssemblyName GetName(bool copiedName)
         {
-            return ToName(_assembly.GetName());
+            return ToName(_underlyingAssembly.GetName());
         }
 
         public System.Reflection.AssemblyName[] GetReferencedAssemblies()
         {
-            var l = _assembly.GetReferencedAssemblies();
+            var l = _underlyingAssembly.GetReferencedAssemblies();
             var a = new System.Reflection.AssemblyName[l.Length];
             for (int i = 0; i < l.Length; i++)
                 a[i] = ToName(l[i]);
@@ -118,37 +118,37 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public ITypeSymbol? GetType(string name, bool throwOnError)
         {
-            return _assembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return _underlyingAssembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
         public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
         {
-            return _assembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return _underlyingAssembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
         public ITypeSymbol? GetType(string name)
         {
-            return _assembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return _underlyingAssembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
         public ITypeSymbol[] GetTypes()
         {
-            return ResolveTypeSymbols(_assembly.GetTypes());
+            return ResolveTypeSymbols(_underlyingAssembly.GetTypes());
         }
 
         public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
-            return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
+            return ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData());
         }
 
         public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
+            return ResolveCustomAttributes(_underlyingAssembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false));
         }
 
         public bool IsDefined(ITypeSymbol attributeType)
         {
-            return _assembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
+            return _underlyingAssembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false);
         }
 
     }
