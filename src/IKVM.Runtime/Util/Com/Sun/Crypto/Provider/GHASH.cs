@@ -33,9 +33,17 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 #if NETCOREAPP3_0_OR_GREATER
             if (GHASH_x86.IsSupported)
             {
-                GHASH_x86.ProcessBlocks(data.AsSpan(inOfs), blocks, st, subH);
+                GHASH_x86.ProcessBlocks(st, subH, data.AsSpan(inOfs), blocks);
                 return true;
             }
+
+#if NET6_0_OR_GREATER
+            if (GHASH_Arm64.IsSupported)
+            {
+                GHASH_Arm64.ProcessBlocks(st, subH, data.AsSpan(inOfs), blocks);
+                return true;
+            }
+#endif
 #endif
 
             return false;

@@ -29,12 +29,12 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// Derived from the OpenJDK C code 'stubGenerator_x86_32.cpp:generate_ghash_processBlocks'.
         /// Keep the structure of the body of this method as close to the orignal C code as possible to facilitate porting changes.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="blocks"></param>
         /// <param name="state"></param>
         /// <param name="subH"></param>
+        /// <param name="data"></param>
+        /// <param name="blocks"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ProcessBlocks(ReadOnlySpan<byte> data, int blocks, Span<long> state, ReadOnlySpan<long> subH)
+        public static void ProcessBlocks(Span<long> state, ReadOnlySpan<long> subH, ReadOnlySpan<byte> data, int blocks)
         {
             // ext\openjdk\hotspot\src\cpu\x86\vm\stubGenerator_x86_32.cpp:2748-2883
             Vector128<int> xmm_temp0, xmm_temp1, xmm_temp2, xmm_temp3, xmm_temp4, xmm_temp5, xmm_temp6, xmm_temp7;
