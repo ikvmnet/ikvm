@@ -115,7 +115,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetIdentifier.StartsWith('osx-'))">
-        <PreprocessorDefinitions Include="MACOSX" />
         <IncludeSystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx" />
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
     </ItemGroup>
