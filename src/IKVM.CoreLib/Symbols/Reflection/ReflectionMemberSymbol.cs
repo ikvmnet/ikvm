@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 
@@ -153,15 +154,15 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public virtual string Name => _member.Name;
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes()
+        public virtual ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_member.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public virtual ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToImmutableArray();
         }
 
         /// <inheritdoc />

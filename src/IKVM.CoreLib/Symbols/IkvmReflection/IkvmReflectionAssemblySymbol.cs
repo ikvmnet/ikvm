@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -135,12 +136,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveTypeSymbols(_assembly.GetTypes());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_assembly.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
             return ResolveCustomAttributes(_assembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }

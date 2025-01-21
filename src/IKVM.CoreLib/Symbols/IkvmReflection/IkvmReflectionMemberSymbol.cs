@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 
 using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
@@ -144,14 +145,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public override bool IsMissing => _member.__IsMissing;
 
-        public virtual CustomAttributeSymbol[] GetCustomAttributes()
+        public virtual ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_member.GetCustomAttributesData());
         }
 
-        public virtual CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public virtual ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return ResolveCustomAttributes(_member.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToImmutableArray();
         }
 
         public virtual bool IsDefined(ITypeSymbol attributeType)

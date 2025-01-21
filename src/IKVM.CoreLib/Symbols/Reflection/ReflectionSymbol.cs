@@ -341,13 +341,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
+        protected internal ImmutableArray<CustomAttributeSymbol> ResolveCustomAttributes(IList<CustomAttributeData> attributes, Predicate<CustomAttributeData>? filter = null)
         {
-            var a = new CustomAttributeSymbol[attributes.Count];
+            var a = ImmutableArray.CreateBuilder<CustomAttributeSymbol>(attributes.Count);
             for (int i = 0; i < attributes.Count; i++)
-                a[i] = ResolveCustomAttribute(attributes[i]);
+                if (filter == null || filter(attributes[i]))
+                    a.Add(ResolveCustomAttribute(attributes[i]));
 
-            return a;
+            return a.DrainToImmutable();
         }
 
         /// <summary>

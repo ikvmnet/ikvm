@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 
@@ -52,14 +53,14 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         public int Position => _parameter.Position;
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToArray();
+            return ResolveCustomAttributes(_parameter.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToImmutableArray();
         }
 
         public bool IsDefined(ITypeSymbol attributeType)

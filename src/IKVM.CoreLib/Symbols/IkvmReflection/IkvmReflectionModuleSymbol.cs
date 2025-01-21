@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
@@ -335,13 +336,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_module.GetCustomAttributesData());
         }
 
         /// <inheritdoc />
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
             return ResolveCustomAttributes(_module.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }

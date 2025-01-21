@@ -1,4 +1,6 @@
-﻿namespace IKVM.CoreLib.Symbols
+﻿using System.Collections.Immutable;
+
+namespace IKVM.CoreLib.Symbols
 {
 
     /// <summary>
@@ -11,14 +13,14 @@
         /// Returns an array of all of the custom attributes defined on this member, excluding named attributes, or an empty array if there are no custom attributes.
         /// </summary>
         /// <returns></returns>
-        CustomAttributeSymbol[] GetCustomAttributes();
+        ImmutableArray<CustomAttributeSymbol> GetCustomAttributes();
 
         /// <summary>
         /// Returns an array of custom attributes defined on this member, identified by type, or an empty array if there are no custom attributes of that type.
         /// </summary>
         /// <param name="attributeType"></param>
         /// <returns></returns>
-        CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType);
+        ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType);
 
         /// <summary>
         /// Indicates whether one or more instance of <paramref name="attributeType" /> is defined on this member.

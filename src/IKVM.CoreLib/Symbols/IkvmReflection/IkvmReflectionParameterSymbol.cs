@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 using ParameterInfo = IKVM.Reflection.ParameterInfo;
 
@@ -52,12 +53,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public int Position => _parameter.Position;
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
             return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
             return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
         }
