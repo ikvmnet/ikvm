@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <summary>
         /// Returns <c>true</c> if the current platform is supported by this implementation.
         /// </summary>
-        public static bool IsSupported => Aes.IsSupported && AdvSimd.Arm64.IsSupported;
+        public static bool IsSupported => BitConverter.IsLittleEndian && Aes.IsSupported && AdvSimd.Arm64.IsSupported;
 
         /// <summary>
         /// Implementation of com.sun.crypto.provider.GHASH.processBlocks for the Arm platform.
