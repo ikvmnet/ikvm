@@ -1,10 +1,14 @@
-﻿using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
+﻿using System;
+
+using ConstructorInfo = IKVM.Reflection.ConstructorInfo;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
     class IkvmReflectionConstructorSymbol : IkvmReflectionMethodBaseSymbol, IConstructorSymbol
     {
+
+        readonly ConstructorInfo _underlyingConstructor;
 
         /// <summary>
         /// Initializes a new instance.
@@ -16,10 +20,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public IkvmReflectionConstructorSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol type, ConstructorInfo underlyingConstructor) :
             base(context, module, type, underlyingConstructor)
         {
-
+            _underlyingConstructor = underlyingConstructor ?? throw new ArgumentNullException(nameof(underlyingConstructor));
         }
 
-        internal ConstructorInfo UnderlyingConstructor => (ConstructorInfo)UnderlyingMember;
+        internal ConstructorInfo UnderlyingConstructor => _underlyingConstructor;
 
     }
 
