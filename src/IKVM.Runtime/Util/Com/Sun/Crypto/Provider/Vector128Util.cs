@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Provides wrappers for methods from <see cref="Vector128{T}"/> backfilling their implementation on non-supporting Frameworks.
     /// </summary>
-    static class Vector128Util
+    unsafe static class Vector128Util
     {
 
         /// <summary>
@@ -50,6 +50,54 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             return Unsafe.ReadUnaligned<Vector128<T>>(ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(values)));
 #endif
+        }
+
+        /// <summary>
+        /// Loads two consecutive vectors from given source.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static (Vector128<T> V1, Vector128<T> V2) Load2xUnsafe<T>(ref readonly T source) where T : struct
+        {
+            return (
+                LoadUnsafe(in source, 0 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 1 * (nuint)Vector128<T>.Count)
+            );
+        }
+
+        /// <summary>
+        /// Loads three consecutive vectors from given source.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static (Vector128<T> V1, Vector128<T> V2, Vector128<T> V3) Load3x<T>(ref readonly T source) where T : struct
+        {
+            return (
+                LoadUnsafe(in source, 0 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 1 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 2 * (nuint)Vector128<T>.Count)
+            );
+        }
+
+        /// <summary>
+        /// Loads four consecutive vectors from given source.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static (Vector128<T> V1, Vector128<T> V2, Vector128<T> V3, Vector128<T> V4) Load4xUnsafe<T>(ref readonly T source) where T : struct
+        {
+            return (
+                LoadUnsafe(in source, 0 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 1 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 2 * (nuint)Vector128<T>.Count),
+                LoadUnsafe(in source, 3 * (nuint)Vector128<T>.Count)
+            );
         }
 
         /// <summary>
@@ -129,9 +177,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             Unsafe.WriteUnaligned(ref Unsafe.As<T, byte>(ref destination), source);
 #endif
         }
-
     }
-
 }
 
 #endif

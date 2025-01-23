@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Arm implementation of the AES intrinsic functions.
     /// </summary>
-    static class AESCrypt_Arm
+    unsafe static class AESCrypt_Arm
     {
         /// <summary>
         /// Returns <c>true</c> if the current platform is supported by this implementation.
@@ -34,15 +34,15 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             var v0 = Vector128Util.LoadUnsafe(in MemoryMarshal.GetReference(from));
 
+            // ld1(…, __ post(key, X)):
+            // ld1(v1, v2, …) was added with .NET 9 (AdvSimd.Arm64.Load_xVector128)
+            // Unrolled the Load-loop manually for .NET 6+
+            // post post-increments the pointer, and returns the previous location.
+
             var v5 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
             v5 = AdvSimd.ReverseElement8(v5);
 
-            // AdvSimd.Arm64.Load4xVector128 was added with .NET 9
-            // Manually do the steps required.
-            var v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v3 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v4 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            var (v1, v2, v3, v4) = Vector128Util.Load4xUnsafe(in RefUtils.Post(ref key, 64));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
             v3 = AdvSimd.ReverseElement8(v3);
@@ -56,10 +56,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v0 = Aes.Decrypt(v0, v4.AsByte());
             v0 = Aes.InverseMixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v3 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v4 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2, v3, v4) = Vector128Util.Load4xUnsafe(in RefUtils.Post(ref key, 64));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
             v3 = AdvSimd.ReverseElement8(v3);
@@ -73,8 +70,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v0 = Aes.Decrypt(v0, v4.AsByte());
             v0 = Aes.InverseMixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
@@ -88,8 +84,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v0 = Aes.Decrypt(v0, v2.AsByte());
             v0 = Aes.InverseMixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
@@ -103,8 +98,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v0 = Aes.Decrypt(v0, v2.AsByte());
             v0 = Aes.InverseMixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
@@ -135,44 +129,40 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             var v0 = Vector128Util.LoadUnsafe(in MemoryMarshal.GetReference(from));
 
-            // AdvSimd.Arm64.Load4xVector128 was added with .NET 9
-            // Manually do the steps required.
-            var v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v3 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            var v4 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            // ld1(…, __ post(key, X)):
+            // ld1(v1, v2, …) was added with .NET 9 (AdvSimd.Arm64.Load_xVector128)
+            // After benchmarking Load_xVector128 is still slower than Load4xUnsafe here.
+            // post post-increments the pointer, and returns the previous location.
+
+            var (v1, v2, v3, v4) = Vector128Util.Load4xUnsafe(in RefUtils.Post(ref key, 64));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
             v3 = AdvSimd.ReverseElement8(v3);
             v4 = AdvSimd.ReverseElement8(v4);
             v0 = Aes.Encrypt(v0, v1.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v2.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v3.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v4.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v3 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v4 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2, v3, v4) = Vector128Util.Load4xUnsafe(in RefUtils.Post(ref key, 64));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
             v3 = AdvSimd.ReverseElement8(v3);
             v4 = AdvSimd.ReverseElement8(v4);
             v0 = Aes.Encrypt(v0, v1.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v2.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v3.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v4.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
@@ -182,12 +172,11 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             }
 
             v0 = Aes.Encrypt(v0, v1.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v2.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
@@ -197,22 +186,21 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             }
 
             v0 = Aes.Encrypt(v0, v1.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v2.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
 
-            v1 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
-            v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
+            (v1, v2) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
         doLast:;
 
             v0 = Aes.Encrypt(v0, v1.AsByte());
-            v0 = Aes.InverseMixColumns(v0);
+            v0 = Aes.MixColumns(v0);
             v0 = Aes.Encrypt(v0, v2.AsByte());
 
-            v1 = Vector128Util.LoadUnsafe(ref MemoryMarshal.GetReference(key));
+            v1 = Vector128Util.LoadUnsafe(in MemoryMarshal.GetReference(key));
             v1 = AdvSimd.ReverseElement8(v1);
             v0 = AdvSimd.Xor(v0, v1.AsByte());
 

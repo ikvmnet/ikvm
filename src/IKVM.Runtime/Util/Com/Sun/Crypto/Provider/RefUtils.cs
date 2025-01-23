@@ -8,17 +8,27 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 {
     unsafe static class RefUtils
     {
-        public static ref T Post<T>(ref Span<T> data, nint byteOffset) where T : unmanaged
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T Post<T>(ref Span<T> data, nint byteOffset) where T : struct
         {
             ref T element = ref MemoryMarshal.GetReference(data);
-            data = MemoryMarshal.CreateSpan(ref Unsafe.AddByteOffset(ref element, byteOffset), data.Length - (int)(byteOffset / sizeof(T)));
+#if NET8_0_OR_GREATER
+            data = new(ref Unsafe.AddByteOffset(ref element, byteOffset));
+#else
+            data = MemoryMarshal.CreateSpan(ref Unsafe.AddByteOffset(ref element, byteOffset), 1);
+#endif
             return ref element;
         }
 
-        public static ref T Post<T>(ref ReadOnlySpan<T> data, nint byteOffset) where T : unmanaged
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref T Post<T>(ref ReadOnlySpan<T> data, nint byteOffset) where T : struct
         {
             ref T element = ref MemoryMarshal.GetReference(data);
-            data = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AddByteOffset(ref element, byteOffset), data.Length - (int)(byteOffset / sizeof(T)));
+#if NET8_0_OR_GREATER
+            data = new(in Unsafe.AddByteOffset(ref element, byteOffset));
+#else
+            data = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AddByteOffset(ref element, byteOffset), 1);
+#endif
             return ref element;
         }
     }

@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
-
+using System.Runtime.InteropServices;
 using IKVM.Attributes;
 
 namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// Intercepted implementations for 'com.sun.crypto.provider.CipherBlockChaining'.
     /// </summary>
     [HideFromJava]
-    internal static class AESCrypt
+    internal unsafe static class AESCrypt
     {
 
         /// <summary>
