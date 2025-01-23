@@ -15,15 +15,17 @@ namespace IKVM.CoreLib.Symbols.Reflection
         readonly Assembly _underlyingAssembly;
         readonly ConditionalWeakTable<Module, ReflectionModuleSymbol> _modules = new();
 
+        ImmutableArray<CustomAttributeSymbol> _customAttributes = default;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
-        public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly assembly) :
+        /// <param name="underlyingAssembly"></param>
+        public ReflectionAssemblySymbol(ReflectionSymbolContext context, Assembly underlyingAssembly) :
             base(context)
         {
-            _underlyingAssembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
         internal Assembly UnderlyingAssembly => _underlyingAssembly;
@@ -47,8 +49,6 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_underlyingAssembly.ExportedTypes);
 
         public string? FullName => _underlyingAssembly.FullName;
-
-        public string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
 
         public IModuleSymbol ManifestModule => ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
 
@@ -79,29 +79,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
             return _underlyingAssembly.GetName();
         }
 
-        public AssemblyName GetName(bool copiedName)
+        public ImmutableArray<AssemblyName> GetReferencedAssemblies()
         {
-            return _underlyingAssembly.GetName(copiedName);
-        }
-
-        public AssemblyName[] GetReferencedAssemblies()
-        {
-            return _underlyingAssembly.GetReferencedAssemblies();
-        }
-
-        public ITypeSymbol? GetType(string name, bool throwOnError)
-        {
-            return _underlyingAssembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
-        }
-
-        public ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase)
-        {
-            return _underlyingAssembly.GetType(name, throwOnError, ignoreCase) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return _underlyingAssembly.GetReferencedAssemblies().ToImmutableArray();
         }
 
         public ITypeSymbol? GetType(string name)
         {
             return _underlyingAssembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+        }
+
+        public ITypeSymbol? GetType(string name, bool throwOnError)
+        {
+            return _underlyingAssembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
         }
 
         public ITypeSymbol[] GetTypes()
@@ -111,12 +101,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
-            return ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData());
+            return _customAttributes.IsDefault ? _customAttributes = ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()) : _customAttributes;
         }
 
         public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()).Where(i => i.AttributeType == attributeType).ToImmutableArray();
+            return GetCustomAttributes().Where(i => i.AttributeType == attributeType).ToImmutableArray();
         }
 
         public bool IsDefined(ITypeSymbol attributeType)

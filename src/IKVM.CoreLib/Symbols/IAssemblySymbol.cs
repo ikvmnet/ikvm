@@ -32,11 +32,6 @@ namespace IKVM.CoreLib.Symbols
         string? FullName { get; }
 
         /// <summary>
-        /// Gets a string representing the version of the common language runtime (CLR) saved in the file containing the manifest.
-        /// </summary>
-        string ImageRuntimeVersion { get; }
-
-        /// <summary>
         /// Gets the module that contains the manifest for the current assembly.
         /// </summary>
         IModuleSymbol ManifestModule { get; }
@@ -79,41 +74,25 @@ namespace IKVM.CoreLib.Symbols
         AssemblyName GetName();
 
         /// <summary>
-        /// Gets an <see cref="AssemblyName"/> for this assembly, setting the codebase as specified by <paramref name="copiedName"/>.
-        /// </summary>
-        /// <param name="copiedName"></param>
-        /// <returns></returns>
-        AssemblyName GetName(bool copiedName);
-
-        /// <summary>
         /// Gets the <see cref="AssemblyName"/> objects for all the assemblies referenced by this assembly.
         /// </summary>
         /// <returns></returns>
-        AssemblyName[] GetReferencedAssemblies();
+        ImmutableArray<AssemblyName> GetReferencedAssemblies();
 
         /// <summary>
-        /// Gets the <see cref="Type"/> object with the specified name in the assembly instance and optionally throws an exception if the type is not found.
+        /// Gets the <see cref="ITypeSymbol"/> object with the specified name in the assembly instance.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        ITypeSymbol? GetType(string name);
+
+        /// <summary>
+        /// Gets the <see cref="ITypeSymbol"/> object with the specified name in the assembly instance and optionally throws an exception if the type is not found.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="throwOnError"></param>
         /// <returns></returns>
         ITypeSymbol? GetType(string name, bool throwOnError);
-
-        /// <summary>
-        /// Gets the <see cref="Type"/> object with the specified name in the assembly instance, with the options of ignoring the case, and of throwing an exception if the type is not found.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="throwOnError"></param>
-        /// <param name="ignoreCase"></param>
-        /// <returns></returns>
-        ITypeSymbol? GetType(string name, bool throwOnError, bool ignoreCase);
-
-        /// <summary>
-        /// Gets the <see cref="Type"/> object with the specified name in the assembly instance.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        ITypeSymbol? GetType(string name);
 
         /// <summary>
         /// Gets all types defined in this assembly.
