@@ -29,7 +29,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DecryptBlock(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key)
         {
-            var v0 = Vector128Util.LoadUnsafe(ref MemoryMarshal.GetReference(from));
+            var keylen = key.Length;
+
+            var v0 = Vector128Util.LoadUnsafe(in MemoryMarshal.GetReference(from));
 
             var v5 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref key, 16));
             v5 = AdvSimd.ReverseElement8(v5);
@@ -75,7 +77,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
-            if (key.Length == 44)
+            if (keylen == 44)
             {
                 goto doLast;
             }
@@ -90,7 +92,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v1 = AdvSimd.ReverseElement8(v1);
             v2 = AdvSimd.ReverseElement8(v2);
 
-            if (key.Length == 52)
+            if (keylen == 52)
             {
                 goto doLast;
             }
