@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Text;
 
 namespace System.Text
@@ -25,13 +24,6 @@ namespace System.Text
         /// so we won't worry about it.
         /// </remarks>
         const int MaxInputElementsPerIteration = 1 * 1024 * 1024;
-
-        public static unsafe int GetBytes(this Encoding encoding, ReadOnlySpan<char> chars, Span<byte> bytes)
-        {
-            fixed (char* charsPtr = chars)
-            fixed (byte* bytesPtr = bytes)
-                return encoding.GetBytes(charsPtr, chars.Length, bytesPtr, bytes.Length);
-        }
 
         /// <summary>
         /// Encodes the specified <see cref="ReadOnlySpan{Char}"/> to <see langword="byte"/>s using the specified <see cref="Encoding"/>
@@ -75,12 +67,6 @@ namespace System.Text
             return encoding.GetBytes(chars.AsSpan(), bytes);
         }
 
-        public static unsafe int GetByteCount(this Encoding encoding, ReadOnlySpan<char> chars)
-        {
-            fixed (char* charsPtr = chars)
-                return encoding.GetByteCount(charsPtr, chars.Length);
-        }
-
         public static unsafe int GetChars(this Encoding encoding, ReadOnlySpan<byte> bytes, Span<char> chars)
         {
             fixed (byte* bytesPtr = bytes)
@@ -102,18 +88,6 @@ namespace System.Text
             {
                 return encoder.GetByteCount(charsPtr, chars.Length, flush);
             }
-        }
-
-        public static unsafe string GetString(this Encoding self, ReadOnlySpan<byte> bytes)
-        {
-            if (self is null)
-                throw new ArgumentNullException(nameof(self));
-
-            if (bytes.IsEmpty)
-                return string.Empty;
-
-            fixed (byte* bytesPtr = bytes)
-                return self.GetString(bytesPtr, bytes.Length);
         }
 
         /// <summary>
