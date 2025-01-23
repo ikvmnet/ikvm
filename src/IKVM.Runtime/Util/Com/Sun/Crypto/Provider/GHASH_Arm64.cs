@@ -48,8 +48,8 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v16 = AdvSimd.Xor(v16, v1);
 
             {
-            ghash_loop:
-                var v2 = Vector128Util.LoadUnsafe(in Post(ref data, 0x10));
+            ghash_loop:;
+                var v2 = Vector128Util.LoadUnsafe(in RefUtils.Post(ref data, 0x10));
                 v2 = AdvSimd.Arm64.ReverseElementBits(v2);
                 v2 = AdvSimd.Xor(v0.AsByte(), v2);
 
@@ -99,13 +99,6 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             lo = AdvSimd.Xor(lo, t1.AsInt64());
             t0 = Aes.PolynomialMultiplyWideningLower(hi.GetLower(), p.GetLower());
             return AdvSimd.Xor(lo, t0);
-        }
-
-        private static ref T Post<T>(ref ReadOnlySpan<T> data, nint offset)
-        {
-            ref T source = ref MemoryMarshal.GetReference(data);
-            data = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AddByteOffset(ref source, offset), data.Length - (int)offset);
-            return ref source;
         }
     }
 }
