@@ -29,6 +29,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a constant pool item.
+        /// </summary>
         internal abstract class ConstantPoolItem
         {
 
@@ -40,7 +43,7 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             protected ConstantPoolItem(RuntimeContext context)
             {
-                this._context = context ?? throw new ArgumentNullException(nameof(context));
+                _context = context ?? throw new ArgumentNullException(nameof(context));
             }
 
             /// <summary>
@@ -48,29 +51,50 @@ namespace IKVM.Runtime
             /// </summary>
             public RuntimeContext Context => _context;
 
-            internal virtual ConstantType GetConstantType()
+            /// <summary>
+            /// Gets the type of constant represented by this item.
+            /// </summary>
+            /// <returns></returns>
+            /// <exception cref="InvalidOperationException"></exception>
+            public virtual ConstantType GetConstantType()
             {
                 throw new InvalidOperationException();
             }
 
-            internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <summary>
+            /// Resolves the constant information from the specified class file, and UTF8 string cache.
+            /// </summary>
+            /// <param name="classFile"></param>
+            /// <param name="utf8_cp"></param>
+            /// <param name="options"></param>
+            public virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
 
             }
 
-            internal virtual void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <summary>
+            /// Marks the constant as requiring linkage.
+            /// </summary>
+            public virtual void MarkLinkRequired()
             {
 
             }
 
-            internal virtual void MarkLinkRequired()
+            /// <summary>
+            /// Links the constant.
+            /// </summary>
+            /// <param name="thisType"></param>
+            /// <param name="mode"></param>
+            public virtual void Link(RuntimeJavaType thisType, LoadMode mode)
             {
 
             }
 
-            // this is used for sun.reflect.ConstantPool
-            // it returns a boxed System.Int32, System.Int64, System.Float, System.Double or a string
-            internal virtual object GetRuntimeValue()
+            /// <summary>
+            /// Gets the runtime value of the constant.
+            /// </summary>
+            /// <returns></returns>
+            public virtual object GetRuntimeValue()
             {
                 return null;
             }

@@ -30,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a double constant.
+        /// </summary>
         sealed class ConstantPoolItemDouble : ConstantPoolItem
         {
 
@@ -40,17 +43,22 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemDouble(RuntimeContext context, DoubleConstantData data) :
+            public ConstantPoolItemDouble(RuntimeContext context, DoubleConstantData data) :
                 base(context)
             {
                 _value = data.Value;
             }
 
-            internal double Value => _value;
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.Double;
 
-            internal override ConstantType GetConstantType() => ConstantType.Double;
+            /// <inheritdoc />
+            public override object GetRuntimeValue() => _value;
 
-            internal override object GetRuntimeValue() => _value;
+            /// <summary>
+            /// Gets the double value of the constant.
+            /// </summary>
+            public double Value => _value;
 
         }
 

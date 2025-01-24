@@ -112,6 +112,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             return ResolveTypeSymbols(_underlyingProperty.GetRequiredCustomModifiers());
         }
+
     }
 
 }

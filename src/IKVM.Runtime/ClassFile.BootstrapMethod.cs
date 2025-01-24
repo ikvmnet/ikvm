@@ -43,15 +43,26 @@ namespace IKVM.Runtime
             /// <param name="args"></param>
             internal BootstrapMethod(MethodHandleConstantHandle method, ConstantHandle[] args)
             {
-                this._method = method;
-                this._args = args;
+                _method = method;
+                _args = args;
             }
 
-            internal MethodHandleConstantHandle BootstrapMethodIndex => _method;
+            /// <summary>
+            /// Gets the handle to the bootstrap method.
+            /// </summary>
+            public readonly MethodHandleConstantHandle BootstrapMethodIndex => _method;
 
-            internal int ArgumentCount => _args.Length;
+            /// <summary>
+            /// Gets the argument count.
+            /// </summary>
+            public readonly int ArgumentCount => _args.Length;
 
-            internal ConstantHandle GetArgument(int index)
+            /// <summary>
+            /// Gets the argument at the specified index.
+            /// </summary>
+            /// <param name="index"></param>
+            /// <returns></returns>
+            public readonly ConstantHandle GetArgument(int index)
             {
                 return _args[index];
             }

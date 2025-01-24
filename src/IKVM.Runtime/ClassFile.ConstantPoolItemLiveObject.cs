@@ -44,8 +44,12 @@ namespace IKVM.Runtime
                 _value = value;
             }
 
-            internal override ConstantType GetConstantType() => ConstantType.LiveObject;
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.LiveObject;
 
+            /// <summary>
+            /// Gets the live object instance.
+            /// </summary>
             public object Value => _value;
 
         }

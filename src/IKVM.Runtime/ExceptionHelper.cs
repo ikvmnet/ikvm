@@ -437,12 +437,13 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return [
+            return new ObjectStreamField[]
+            {
                 new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
                 new ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
                 new ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[])),
                 new ObjectStreamField("suppressedExceptions", typeof(global::java.util.List))
-            ];
+            };
 #endif
         }
 

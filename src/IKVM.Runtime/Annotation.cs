@@ -63,7 +63,7 @@ namespace IKVM.Runtime
 
             var annotationClass = (string)def[1];
 
-            if (ClassFile.IsValidFieldSig(annotationClass))
+            if (ClassFile.IsValidFieldDescriptor(annotationClass))
             {
                 try
                 {
@@ -98,7 +98,7 @@ namespace IKVM.Runtime
             }
 #endif
 
-            if (ClassFile.IsValidFieldSig(annotationClass))
+            if (ClassFile.IsValidFieldDescriptor(annotationClass))
             {
                 var tw = owner.ClassLoader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
                 // Java allows inaccessible annotations to be used, so when the annotation isn't visible

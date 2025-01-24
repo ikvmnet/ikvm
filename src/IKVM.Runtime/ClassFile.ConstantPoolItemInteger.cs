@@ -30,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a integer constant.
+        /// </summary>
         sealed class ConstantPoolItemInteger : ConstantPoolItem
         {
 
@@ -46,11 +49,17 @@ namespace IKVM.Runtime
                 _value = data.Value;
             }
 
-            internal int Value => _value;
 
-            internal override ConstantType GetConstantType() => ConstantType.Integer;
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.Integer;
 
-            internal override object GetRuntimeValue() => _value;
+            /// <inheritdoc />
+            public override object GetRuntimeValue() => _value;
+
+            /// <summary>
+            /// Gets the integer constant value.
+            /// </summary>
+            public int Value => _value;
 
         }
 

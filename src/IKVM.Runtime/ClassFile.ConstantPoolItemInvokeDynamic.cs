@@ -30,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a invokedynamic constant.
+        /// </summary>
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
         {
 
@@ -46,14 +49,15 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantData data) :
+            public ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantData data) :
                 base(context)
             {
                 _bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
                 _nameAndTypeHandle = data.NameAndType;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndTypeHandle);
                 if (nameAndType == null)
@@ -63,7 +67,8 @@ namespace IKVM.Runtime
                 _descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.DescriptorHandle).Replace('/', '.'));
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
                     if (_argTypes != null)
@@ -83,21 +88,21 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal RuntimeJavaType[] GetArgTypes()
+            public RuntimeJavaType[] GetArgTypes()
             {
                 return _argTypes;
             }
 
-            internal RuntimeJavaType GetRetType()
+            public RuntimeJavaType GetRetType()
             {
                 return _returnType;
             }
 
-            internal string Name => _name;
+            public string Name => _name;
 
-            internal string Signature => _descriptor;
+            public string Signature => _descriptor;
 
-            internal ushort BootstrapMethod => _bootstrapMethodAttributeIndex;
+            public ushort BootstrapMethod => _bootstrapMethodAttributeIndex;
 
         }
 

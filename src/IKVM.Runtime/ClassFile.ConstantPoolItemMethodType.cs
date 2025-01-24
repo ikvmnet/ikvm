@@ -30,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a methodtype constant.
+        /// </summary>
         internal sealed class ConstantPoolItemMethodType : ConstantPoolItem
         {
 
@@ -44,22 +47,27 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantData data) :
+            public ConstantPoolItemMethodType(RuntimeContext context, MethodTypeConstantData data) :
                 base(context)
             {
                 signature = data.Descriptor;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.MethodType;
+
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 var descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature);
-                if (descriptor == null || !IsValidMethodSig(descriptor))
+                if (descriptor == null || !IsValidMethodDescriptor(descriptor))
                     throw new ClassFormatError("Invalid MethodType signature");
 
                 this.descriptor = string.Intern(descriptor.Replace('/', '.'));
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
                     if (argTypeWrappers != null)
@@ -79,13 +87,11 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal string Signature => descriptor;
+            public string Signature => descriptor;
 
-            internal RuntimeJavaType[] GetArgTypes() => argTypeWrappers;
+            public RuntimeJavaType[] GetArgTypes() => argTypeWrappers;
 
-            internal RuntimeJavaType GetRetType() => retTypeWrapper;
-
-            internal override ConstantType GetConstantType() => ConstantType.MethodType;
+            public RuntimeJavaType GetRetType() => retTypeWrapper;
 
         }
 

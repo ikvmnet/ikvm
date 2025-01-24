@@ -29,11 +29,14 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a field, method or interface reference.
+        /// </summary>
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
         {
 
             readonly ClassConstantHandle _clazzHandle;
-            readonly NameAndTypeConstantHandle _nameAndType;
+            readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
             ConstantPoolItemClass _clazz;
             string _name;
@@ -45,16 +48,17 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="clazz"></param>
             /// <param name="nameAndType"></param>
-            internal ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
+            public ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
                 base(context)
             {
-                this._clazzHandle = clazz;
-                this._nameAndType = nameAndType;
+                _clazzHandle = clazz;
+                _nameAndTypeHandle = nameAndType;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndType);
+                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndTypeHandle);
 
                 _clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(_clazzHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
@@ -67,27 +71,44 @@ namespace IKVM.Runtime
                 _descriptor = string.Intern(_descriptor.Replace('/', '.'));
             }
 
+            /// <summary>
+            /// Validates the name and descriptor in accordance with the specified major version.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="descriptor"></param>
+            /// <param name="majorVersion"></param>
             protected abstract void Validate(string name, string descriptor, int majorVersion);
 
-            internal override void MarkLinkRequired()
+            /// <inheritdoc />
+            public override void MarkLinkRequired()
             {
                 _clazz.MarkLinkRequired();
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 _clazz.Link(thisType, mode);
             }
 
-            internal string Name => _name;
+            /// <summary>
+            /// Gets the name of the field, method or interface.
+            /// </summary>
+            public string Name => _name;
 
-            internal string Signature => _descriptor;
+            /// <summary>
+            /// Gets the signature of the field, method or interface.
+            /// </summary>
+            public string Signature => _descriptor;
 
-            internal string Class => _clazz.Name;
+            /// <summary>
+            /// Gets the class of the field, method or interface.
+            /// </summary>
+            public string Class => _clazz.Name;
 
-            internal RuntimeJavaType GetClassType() => _clazz.GetClassType();
+            public RuntimeJavaType GetClassType() => _clazz.GetClassType();
 
-            internal abstract RuntimeJavaMember GetMember();
+            public abstract RuntimeJavaMember GetMember();
 
         }
 

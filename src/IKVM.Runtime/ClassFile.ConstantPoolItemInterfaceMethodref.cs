@@ -38,13 +38,14 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemInterfaceMethodref(RuntimeContext context, InterfaceMethodrefConstantData data) :
+            public ConstantPoolItemInterfaceMethodref(RuntimeContext context, InterfaceMethodrefConstantData data) :
                 base(context, data.Class, data.NameAndType)
             {
 
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
 

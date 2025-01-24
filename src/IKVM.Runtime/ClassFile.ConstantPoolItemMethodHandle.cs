@@ -31,6 +31,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a methodhandle constant.
+        /// </summary>
         internal sealed class ConstantPoolItemMethodHandle : ConstantPoolItem
         {
 
@@ -48,7 +51,11 @@ namespace IKVM.Runtime
                 this.data = data;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.MethodHandle;
+
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 switch (data.Kind)
                 {
@@ -78,34 +85,34 @@ namespace IKVM.Runtime
                     throw new ClassFormatError("Bad method name");
             }
 
-            internal override void MarkLinkRequired()
+            /// <inheritdoc />
+            public override void MarkLinkRequired()
             {
                 cpi.MarkLinkRequired();
             }
 
-            internal string Class => cpi.Class;
-
-            internal string Name => cpi.Name;
-
-            internal string Signature => cpi.Signature;
-
-            internal ConstantPoolItemFMI MemberConstantPoolItem => cpi;
-
-            internal MethodHandleKind Kind => data.Kind;
-
-            internal RuntimeJavaMember Member => cpi.GetMember();
-
-            internal RuntimeJavaType GetClassType()
-            {
-                return cpi.GetClassType();
-            }
-
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 cpi.Link(thisType, mode);
             }
 
-            internal override ConstantType GetConstantType() => ConstantType.MethodHandle;
+            public string Class => cpi.Class;
+
+            public string Name => cpi.Name;
+
+            public string Signature => cpi.Signature;
+
+            public ConstantPoolItemFMI MemberConstantPoolItem => cpi;
+
+            public MethodHandleKind Kind => data.Kind;
+
+            public RuntimeJavaMember Member => cpi.GetMember();
+
+            public RuntimeJavaType GetClassType()
+            {
+                return cpi.GetClassType();
+            }
 
         }
 

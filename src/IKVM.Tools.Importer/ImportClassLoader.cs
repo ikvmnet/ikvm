@@ -3210,7 +3210,7 @@ namespace IKVM.Tools.Importer
                     valid = false;
                     Diagnostics.InvalidPropertyNameInMapFile(getterOrSetter, clazz, property, method.Name);
                 }
-                if (!IKVM.Runtime.ClassFile.IsValidMethodSig(method.Sig))
+                if (!IKVM.Runtime.ClassFile.IsValidMethodDescriptor(method.Sig))
                 {
                     valid = false;
                     Diagnostics.InvalidPropertySignatureInMapFile(getterOrSetter, clazz, property, method.Sig);
@@ -3225,7 +3225,7 @@ namespace IKVM.Tools.Importer
 
         static bool IsValidSig(string sig, bool field)
         {
-            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldSig(sig) : IKVM.Runtime.ClassFile.IsValidMethodSig(sig));
+            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldDescriptor(sig) : IKVM.Runtime.ClassFile.IsValidMethodDescriptor(sig));
         }
 
         internal Type GetTypeFromReferencedAssembly(string name)
