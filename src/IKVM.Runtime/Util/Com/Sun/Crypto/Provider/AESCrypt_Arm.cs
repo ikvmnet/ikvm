@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Arm implementation of the AES intrinsic functions.
     /// </summary>
-    unsafe static class AESCrypt_Arm
+    static class AESCrypt_Arm
     {
         /// <summary>
         /// Returns <c>true</c> if the current platform is supported by this implementation.

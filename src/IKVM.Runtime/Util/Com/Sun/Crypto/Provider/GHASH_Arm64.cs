@@ -30,7 +30,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="data"></param>
         /// <param name="blocks"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static void ProcessBlocks(Span<long> state, ReadOnlySpan<long> subH, ReadOnlySpan<byte> data, int blocks)
+        public static void ProcessBlocks(Span<long> state, ReadOnlySpan<long> subH, ReadOnlySpan<byte> data, int blocks)
         {
             // ext\openjdk\hotspot\src\cpu\aarch64\vm\stubGenerator_aarch64.cpp:3322-3395
             var vzr = Vector128<byte>.Zero;

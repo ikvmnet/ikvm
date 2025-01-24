@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 {
-    unsafe static class RefUtils
+    static class RefUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref T Post<T>(ref Span<T> data, nint byteOffset) where T : struct

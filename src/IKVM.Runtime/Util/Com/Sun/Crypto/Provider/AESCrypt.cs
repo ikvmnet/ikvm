@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// Intercepted implementations for 'com.sun.crypto.provider.CipherBlockChaining'.
     /// </summary>
     [HideFromJava]
-    internal unsafe static class AESCrypt
+    internal static class AESCrypt
     {
 
         /// <summary>

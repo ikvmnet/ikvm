@@ -11,7 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Provides wrappers for methods from <see cref="Vector128{T}"/> backfilling their implementation on non-supporting Frameworks.
     /// </summary>
-    unsafe static class Vector128Util
+    static class Vector128Util
     {
 
         /// <summary>
