@@ -34,6 +34,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int DecryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {
+            // ext\openjdk\hotspot\src\cpu\aarch64\vm\stubGenerator_aarch64.cpp:2606-2699
             int rscratch2 = length;
             if (rscratch2 == 0)
             {
@@ -140,6 +141,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int EncryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {
+            // ext\openjdk\hotspot\src\cpu\aarch64\vm\stubGenerator_aarch64.cpp:2713-2805
             int rscratch2 = length;
             if (rscratch2 == 0)
             {
