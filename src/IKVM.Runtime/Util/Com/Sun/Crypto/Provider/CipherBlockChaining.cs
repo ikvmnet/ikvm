@@ -103,6 +103,13 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             {
                 return CipherBlockChaining_x86.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
             }
+
+#if NET6_0_OR_GREATER
+            if (CipherBlockChaining_Arm.IsSupported)
+            {
+                return CipherBlockChaining_Arm.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
+            }
+#endif
 #endif
 
             return -1;

@@ -74,7 +74,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="source"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static (Vector128<T> V1, Vector128<T> V2, Vector128<T> V3) Load3x<T>(ref readonly T source) where T : struct
+        public static (Vector128<T> V1, Vector128<T> V2, Vector128<T> V3) Load3xUnsafe<T>(ref readonly T source) where T : struct
         {
             return (
                 LoadUnsafe(in source, 0 * (nuint)Vector128<T>.Count),
