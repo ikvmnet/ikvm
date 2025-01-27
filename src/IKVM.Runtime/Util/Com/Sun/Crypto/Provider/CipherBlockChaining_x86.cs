@@ -33,8 +33,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="key"></param>
         /// <param name="rvec"></param>
         /// <param name="length"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DecryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
+        public static int DecryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {
             const int XMM_REG_NUM_KEY_FIRST = 2;
             const int XMM_REG_NUM_KEY_LAST = 7;
@@ -89,7 +90,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
         exit:;
             Unsafe.CopyBlockUnaligned(ref MemoryMarshal.GetReference(rvec), ref prev_block_cipher_ptr, 16);
-            return;
+            return (int)pos;
 
         key_192_256:;
             if (key.Length != 52)
@@ -165,8 +166,9 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="key"></param>
         /// <param name="rvec"></param>
         /// <param name="length"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EncryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
+        public static int EncryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {
             // ext\openjdk\hotspot\src\cpu\x86\vm\stubGenerator_x86_32.cpp:2410-2549
             var xmm_key_shuf_mask = Vector128Util.LoadUnsafe(in MemoryMarshal.GetReference(AESCrypt_x86.KeyShuffleMask)).AsByte();
@@ -216,7 +218,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
         exit:
             xmm_result.StoreUnsafe(ref MemoryMarshal.GetReference(rvec));
-            return;
+            return (int)pos;
 
         key_192_256:;
             if (key.Length != 52)

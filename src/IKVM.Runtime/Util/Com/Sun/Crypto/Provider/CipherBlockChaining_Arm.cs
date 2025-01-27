@@ -30,10 +30,12 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="key"></param>
         /// <param name="rvec"></param>
         /// <param name="length"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DecryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
+        public static int DecryptAESCrypt(ReadOnlySpan<byte> from, Span<byte> to, ReadOnlySpan<int> key, Span<byte> rvec, int length)
         {
-            if (length == 0)
+            int rscratch2 = length;
+            if (rscratch2 == 0)
             {
                 goto finish;
             }
@@ -55,18 +57,18 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
 
             switch (keylen)
             {
-                case < 52: goto loadKeys_44;
-                case 52: goto loadKeys_52;
+                case < 52: goto loadkeys_44;
+                case 52: goto loadkeys_52;
             }
 
             (v17, v18) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v17 = AdvSimd.ReverseElement8(v17);
             v18 = AdvSimd.ReverseElement8(v18);
-        loadKeys_52:;
+        loadkeys_52:;
             (v19, v20) = Vector128Util.Load2xUnsafe(in RefUtils.Post(ref key, 32));
             v19 = AdvSimd.ReverseElement8(v19);
             v20 = AdvSimd.ReverseElement8(v20);
-        loadKeys_44:;
+        loadkeys_44:;
             var (v21, v22, v23, v24) = Vector128Util.Load4xUnsafe(in RefUtils.Post(ref key, 64));
             v21 = AdvSimd.ReverseElement8(v21);
             v22 = AdvSimd.ReverseElement8(v22);
@@ -121,6 +123,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
             v2.CopyTo(rvec);
 
         finish:;
+            return rscratch2;
         }
     }
 }
