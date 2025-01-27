@@ -11,6 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Arm implementations of the CipherBlockChaining intrinsic functions.
     /// </summary>
+    [SkipLocalsInit]
     static class CipherBlockChaining_Arm
     {
 

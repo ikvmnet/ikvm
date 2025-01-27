@@ -12,6 +12,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// X86 implementations of the CipherBlockChaining intrinsic functions.
     /// </summary>
+    [SkipLocalsInit]
     static class CipherBlockChaining_x86
     {
 

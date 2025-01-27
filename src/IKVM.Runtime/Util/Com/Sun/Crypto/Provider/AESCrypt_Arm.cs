@@ -11,6 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Arm implementation of the AES intrinsic functions.
     /// </summary>
+    [SkipLocalsInit]
     static class AESCrypt_Arm
     {
         /// <summary>

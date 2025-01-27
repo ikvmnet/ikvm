@@ -11,6 +11,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// Arm implementation of the GHASH intrinsic functions.
     /// </summary>
+    [SkipLocalsInit]
     static class GHASH_Arm64
     {
         private static ReadOnlySpan<long> P => [0x87, 0x87];
