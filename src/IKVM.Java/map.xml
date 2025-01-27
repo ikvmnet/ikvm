@@ -1699,7 +1699,7 @@
                     <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="DecryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)I" />
                     <ldarg_3 />
                     <bne_un name="continue" />
-                    <ldarg_3 /> />
+                    <ldarg_3 />
                     <ret />
                     <label name="continue" />
                 </prologue>
@@ -1716,7 +1716,7 @@
                     <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="EncryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)I" />
                     <ldarg_3 />
                     <bne_un name="continue" />
-                    <ldarg_3 /> />
+                    <ldarg_3 />
                     <ret />
                     <label name="continue" />
                 </prologue>
