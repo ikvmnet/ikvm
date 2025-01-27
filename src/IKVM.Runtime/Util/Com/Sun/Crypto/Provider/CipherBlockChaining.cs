@@ -57,6 +57,14 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
                 CipherBlockChaining_x86.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
                 return true;
             }
+
+#if NET6_0_OR_GREATER
+            if (CipherBlockChaining_Arm.IsSupported)
+            {
+                CipherBlockChaining_Arm.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
+                return true;
+            }
+#endif
 #endif
 
             return false;
