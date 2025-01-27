@@ -620,7 +620,6 @@ jobs:
             $argl = @(
                 "-f", $tfm,
                 "--blame",
-                "--blame-crash",
                 "--blame-hang",
                 "--blame-hang-timeout", "120m",
                 "--blame-hang-dump-type", "full",
@@ -628,11 +627,14 @@ jobs:
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
                 "--logger:trx"
-                # "--collect", "Code Coverage"
             )
 
             if ($sys -eq "win-x86") {
                 $argl += @("-a", "x86")
+            }
+
+            if ($sys -ne "linux-arm64") {
+                $argl += @("--blame-crash")
             }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
