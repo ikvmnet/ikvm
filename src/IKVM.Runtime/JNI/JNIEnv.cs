@@ -346,7 +346,7 @@ namespace IKVM.Runtime.JNI
             {
                 var env = pEnv->GetContext();
                 var wrapper = RuntimeJavaType.FromClass((java.lang.Class)UnwrapRef(env, clazz));
-                var mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
+                var mw = wrapper.GetMethod("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
                 if (mw != null)
                 {
                     try
@@ -813,7 +813,7 @@ namespace IKVM.Runtime.JNI
         {
             for (; ; )
             {
-                var mw = tw.GetMethodWrapper(name, sig, true);
+                var mw = tw.GetMethod(name, sig, true);
                 if (mw == null || !mw.IsHideFromReflection)
                     return mw;
 
@@ -852,7 +852,7 @@ namespace IKVM.Runtime.JNI
         {
             foreach (var iface in TransitiveInterfaces(tw))
             {
-                var mw = iface.GetMethodWrapper(name, sig, false);
+                var mw = iface.GetMethod(name, sig, false);
                 if (mw != null && !mw.IsHideFromReflection)
                     return mw;
             }
@@ -878,7 +878,7 @@ namespace IKVM.Runtime.JNI
                 {
                     methodsig = methodsig.Replace('/', '.');
                     if (methodname == "<init>" || methodname == "<clinit>")
-                        mw = tw.GetMethodWrapper(methodname, methodsig, false);
+                        mw = tw.GetMethod(methodname, methodsig, false);
                     else
                         mw = GetMethodImpl(tw, methodname, methodsig) ?? GetInterfaceMethodImpl(tw, methodname, methodsig);
                 }

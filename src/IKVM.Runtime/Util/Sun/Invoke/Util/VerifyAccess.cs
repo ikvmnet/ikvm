@@ -26,13 +26,17 @@ using System;
 
 using IKVM.Runtime;
 
-namespace IKVM.Java.Externs.sun.invoke.util
+namespace IKVM.Java.Util.Sun.Invoke.Util
 {
 
     static class VerifyAccess
     {
 
-        // called from map.xml as a replacement for Class.getClassLoader() in sun.invoke.util.VerifyAccess.isTypeVisible()
+        /// <summary>
+        /// Called from map.xml as a replacement for Class.getClassLoader() in the context of sun.invoke.uti.VerifyAccess.isTypeVisible().
+        /// </summary>
+        /// <param name="clazz"></param>
+        /// <returns></returns>
         public static global::java.lang.ClassLoader Class_getClassLoader(global::java.lang.Class clazz)
         {
 #if FIRST_PASS

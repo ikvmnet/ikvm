@@ -831,7 +831,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
             // load exception class
             emitPushArgument(invoker, 1);
             ilgen.Emit(OpCodes.Ldloc, exception);
-            context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
+            context.JavaBase.TypeOfJavaLangClass.GetMethod("isInstance", "(Ljava.lang.Object;)Z", false).EmitCall(ilgen);
             CodeEmitterLabel L_rethrow = ilgen.DefineLabel();
             ilgen.EmitBrfalse(L_rethrow);
 
@@ -1135,7 +1135,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private RuntimeJavaMethod GetMethodWrapper(java.lang.invoke.MemberName member)
         {
-            return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetMethodWrapper(member.getName(), member.getSignature().Replace('/', '.'), true);
+            return RuntimeJavaType.FromClass(member.getDeclaringClass()).GetMethod(member.getName(), member.getSignature().Replace('/', '.'), true);
         }
 
         private bool IsStaticallyInvocable(RuntimeJavaMethod mw)

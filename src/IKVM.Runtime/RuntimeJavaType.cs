@@ -158,9 +158,9 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
                 || type == context.Resolver.ResolveCoreType(typeof(ArgIterator).FullName).AsReflection()
 #endif
-				|| type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName).AsReflection()
-				|| type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName).AsReflection()
-				|| type.ContainsGenericParameters
+                || type == context.Resolver.ResolveCoreType(typeof(RuntimeArgumentHandle).FullName).AsReflection()
+                || type == context.Resolver.ResolveCoreType(typeof(TypedReference).FullName).AsReflection()
+                || type.ContainsGenericParameters
                 || type.IsByRef;
         }
 
@@ -814,30 +814,34 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal RuntimeJavaMethod GetMethodWrapper(string name, string sig, bool inherit)
+        /// <summary>
+        /// Gets the method with the specified name and descriptor. Optionally searches the inheritence hierarchy.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="desc"></param>
+        /// <param name="inherit"></param>
+        /// <returns></returns>
+        internal RuntimeJavaMethod GetMethod(string name, string desc, bool inherit)
         {
-            // we need to get the methods before calling string.IsInterned, because getting them might cause the strings to be interned
-            var methods = GetMethods();
+            // ensure params are interned
+            name = string.Intern(name);
+            desc = string.Intern(desc);
 
-            var _name = string.IsInterned(name);
-            var _sig = string.IsInterned(sig);
-            foreach (var mw in methods)
-            {
-                // NOTE we can use ref equality, because names and signatures are always interned by MemberWrapper
-                if (ReferenceEquals(mw.Name, _name) && ReferenceEquals(mw.Signature, _sig))
-                    return mw;
-            }
+            // scan for method with matching name and descriptor
+            foreach (var method in GetMethods())
+                if (ReferenceEquals(method.Name, name) && ReferenceEquals(method.Signature, desc))
+                    return method;
 
             var baseWrapper = BaseTypeWrapper;
             if (inherit && baseWrapper != null)
-                return baseWrapper.GetMethodWrapper(name, sig, inherit);
+                return baseWrapper.GetMethod(name, desc, inherit);
 
             return null;
         }
 
         internal RuntimeJavaMethod GetInterfaceMethod(string name, string sig)
         {
-            var method = GetMethodWrapper(name, sig, false);
+            var method = GetMethod(name, sig, false);
             if (method != null)
             {
                 return method;

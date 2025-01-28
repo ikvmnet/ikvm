@@ -192,7 +192,7 @@ namespace IKVM.Runtime
                 }
 
                 // find constructor
-                var ctor = exceptionClass.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
+                var ctor = exceptionClass.GetMethod("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
                 if (ctor == null)
                 {
                     JVM.Context.Diagnostics.GenericJniError($"{nameof(LibJvm)}.{nameof(JVM_ThrowException)}: Exception {name} missing constructor.");

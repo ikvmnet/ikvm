@@ -215,7 +215,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
             bool newInvokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
             bool searchBaseClasses = !newInvokeSpecial;
-            RuntimeJavaMethod mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
+            RuntimeJavaMethod mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetMethod(self.getName(), self.getSignature().Replace('/', '.'), searchBaseClasses);
             if (mw == null)
             {
                 if (self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeInterface)
@@ -223,7 +223,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
                     mw = RuntimeJavaType.FromClass(self.getDeclaringClass()).GetInterfaceMethod(self.getName(), self.getSignature().Replace('/', '.'));
                     if (mw == null)
                     {
-                        mw = JVM.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(self.getName(), self.getSignature().Replace('/', '.'), false);
+                        mw = JVM.Context.JavaBase.TypeOfJavaLangObject.GetMethod(self.getName(), self.getSignature().Replace('/', '.'), false);
                     }
                     if (mw != null && mw.IsConstructor)
                     {
@@ -355,15 +355,15 @@ namespace IKVM.Java.Externs.java.lang.invoke
                 // to a more specific base type.
                 if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfCliSystemObject))
                 {
-                    mw = thisType.Context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfCliSystemObject.GetMethod(mw.Name, mw.Signature, true);
                 }
                 else if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfCliSystemException))
                 {
-                    mw = thisType.Context.JavaBase.TypeOfCliSystemException.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfCliSystemException.GetMethod(mw.Name, mw.Signature, true);
                 }
                 else if (thisType.IsAssignableTo(thisType.Context.JavaBase.TypeOfjavaLangThrowable))
                 {
-                    mw = thisType.Context.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper(mw.Name, mw.Signature, true);
+                    mw = thisType.Context.JavaBase.TypeOfjavaLangThrowable.GetMethod(mw.Name, mw.Signature, true);
                 }
             }
             RuntimeJavaType tw = mw.DeclaringType;

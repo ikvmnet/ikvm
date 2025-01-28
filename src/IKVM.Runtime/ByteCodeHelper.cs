@@ -396,7 +396,7 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             RuntimeJavaType tw = RuntimeJavaType.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
-            RuntimeJavaMethod mw = tw.GetMethodWrapper(name, sig, true);
+            RuntimeJavaMethod mw = tw.GetMethod(name, sig, true);
             if (mw == null || mw.IsStatic || !mw.IsPublic)
             {
 #if NO_REF_EMIT
@@ -427,7 +427,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Ldstr, tw.Name + ".Invoke" + sig);
                 JVM.Context.ClassLoaderFactory.GetBootstrapClassLoader()
                     .LoadClassByName(mw == null || mw.IsStatic ? "global::java.lang.AbstractMethodError" : "global::java.lang.IllegalAccessError")
-                    .GetMethodWrapper("<init>", "(Lglobal::java.lang.String;)V", false)
+                    .GetMethod("<init>", "(Lglobal::java.lang.String;)V", false)
                     .EmitNewobj(ilgen);
                 ilgen.Emit(System.Reflection.Emit.OpCodes.Throw);
                 ilgen.DoEmit();

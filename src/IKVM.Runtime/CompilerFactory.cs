@@ -74,11 +74,11 @@ namespace IKVM.Runtime
 
         public RuntimeJavaType Throwable => context.JavaBase.TypeOfjavaLangThrowable;
 
-        public MethodInfo UnmapExceptionMethod => unmapExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { context.Types.Exception });
+        public MethodInfo UnmapExceptionMethod => unmapExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethod("__<unmap>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<unmap>", new Type[] { context.Types.Exception });
 
-        public MethodInfo FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { context.Types.Exception });
+        public MethodInfo FixateExceptionMethod => fixateExceptionMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethod("__<fixate>", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<fixate>", new Type[] { context.Types.Exception });
 
-        public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
+        public MethodInfo SuppressFillInStackTraceMethod => suppressFillInStackTraceMethod ??= bootstrap ? (MethodInfo)Throwable.GetMethod("__<suppressFillInStackTrace>", "()V", false).GetMethod() : Throwable.TypeAsBaseType.GetMethod("__<suppressFillInStackTrace>", Type.EmptyTypes);
 
         public MethodInfo GetTypeFromHandleMethod => getTypeFromHandleMethod ??= context.Types.Type.GetMethod("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, null, [context.Types.RuntimeTypeHandle], null);
 
@@ -86,9 +86,9 @@ namespace IKVM.Runtime
 
         public MethodInfo KeepAliveMethod => keepAliveMethod ??= context.Resolver.ResolveCoreType(typeof(GC).FullName).AsReflection().GetMethod("KeepAlive", BindingFlags.Static | BindingFlags.Public, null, [context.Types.Object], null);
 
-        public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
+        public RuntimeJavaMethod GetClassFromTypeHandle => getClassFromTypeHandle ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethod("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;)Ljava.lang.Class;", false);
 
-        public RuntimeJavaMethod GetClassFromTypeHandle2 => getClassFromTypeHandle2 ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethodWrapper("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
+        public RuntimeJavaMethod GetClassFromTypeHandle2 => getClassFromTypeHandle2 ??= context.ClassLoaderFactory.LoadClassCritical("ikvm.runtime.Util").GetMethod("getClassFromTypeHandle", "(Lcli.System.RuntimeTypeHandle;I)Ljava.lang.Class;", false);
 
     }
 

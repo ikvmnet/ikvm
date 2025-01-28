@@ -292,7 +292,7 @@ namespace IKVM.Tools.Importer
                 RuntimeJavaMethod setter = null;
                 if (prop.Getter != null)
                 {
-                    getter = GetMethodWrapper(prop.Getter.Name, prop.Getter.Sig, true);
+                    getter = GetMethod(prop.Getter.Name, prop.Getter.Sig, true);
                     if (getter == null)
                     {
                         Console.Error.WriteLine("Warning: getter not found for {0}::{1}", clazz.Name, prop.Name);
@@ -301,7 +301,7 @@ namespace IKVM.Tools.Importer
 
                 if (prop.Setter != null)
                 {
-                    setter = GetMethodWrapper(prop.Setter.Name, prop.Setter.Sig, true);
+                    setter = GetMethod(prop.Setter.Name, prop.Setter.Sig, true);
                     if (setter == null)
                         Console.Error.WriteLine("Warning: setter not found for {0}::{1}", clazz.Name, prop.Name);
                 }
@@ -496,7 +496,7 @@ namespace IKVM.Tools.Importer
                         foreach (var constructor in clazz.Constructors)
                         {
                             // are we adding a new constructor?
-                            if (GetMethodWrapper(StringConstants.INIT, constructor.Sig, false) == null)
+                            if (GetMethod(StringConstants.INIT, constructor.Sig, false) == null)
                             {
                                 if (constructor.Body == null)
                                 {
@@ -544,10 +544,10 @@ namespace IKVM.Tools.Importer
                         foreach (var method in clazz.Methods)
                         {
                             // are we adding a new method?
-                            if (GetMethodWrapper(method.Name, method.Sig, false) == null)
+                            if (GetMethod(method.Name, method.Sig, false) == null)
                             {
                                 var attribs = method.MethodAttributes;
-                                MapModifiers(method.Modifiers, false, out var setmodifiers, ref attribs, BaseTypeWrapper == null || BaseTypeWrapper.GetMethodWrapper(method.Name, method.Sig, true) == null);
+                                MapModifiers(method.Modifiers, false, out var setmodifiers, ref attribs, BaseTypeWrapper == null || BaseTypeWrapper.GetMethod(method.Name, method.Sig, true) == null);
                                 if (method.Body == null && (attribs & MethodAttributes.Abstract) == 0)
                                 {
                                     Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
@@ -563,7 +563,7 @@ namespace IKVM.Tools.Importer
 
                                 if (method.Override != null)
                                 {
-                                    var mw = ClassLoader.LoadClassByName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
+                                    var mw = ClassLoader.LoadClassByName(method.Override.Class).GetMethod(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
@@ -615,7 +615,7 @@ namespace IKVM.Tools.Importer
                             {
                                 foreach (Method m in iface.Methods)
                                 {
-                                    var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+                                    var mw = tw.GetMethod(m.Name, m.Sig, false);
                                     if (mw == null)
                                         throw new InvalidOperationException("Method " + m.Name + m.Sig + " not found in interface " + tw.Name);
 
@@ -684,7 +684,7 @@ namespace IKVM.Tools.Importer
                             ilgen.Emit(OpCodes.Isinst, implementers[j].TypeAsTBD);
                             label = ilgen.DefineLabel();
                             ilgen.EmitBrfalse(label);
-                            var mw = implementers[j].GetMethodWrapper(methods[i].Name, methods[i].Signature, true);
+                            var mw = implementers[j].GetMethod(methods[i].Name, methods[i].Signature, true);
                             if (mw == null)
                             {
                                 if (methods[i].IsAbstract)
