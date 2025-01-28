@@ -96,13 +96,13 @@ namespace IKVM.Runtime
                     list.Add(dir != null ? Path.Combine(dir, fsi.Name) : fsi.Name);
 
                 if (list.Count == 0)
-                    return new string[] { path };
+                    return [path];
 
                 return list.ToArray();
             }
             catch
             {
-                return new string[] { path };
+                return [path];
             }
         }
 
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
             for (var i = 0; i < paths.Length; i++)
             {
                 var path = paths[i];
-                if (path.IndexOf('*') != -1 || path.IndexOf('?') != -1)
+                if (path.Contains('*') || path.Contains('?'))
                     list.AddRange(Glob(path));
                 else
                     list.Add(path);
