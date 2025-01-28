@@ -203,14 +203,9 @@ namespace IKVM.Runtime
         static string GetVersionAndCopyrightInfo()
         {
             var assembly = typeof(Launcher).Assembly;
-
-            var description = assembly.GetCustomAttributes<AssemblyTitleAttribute>().FirstOrDefault();
-            if (description is not null)
-            {
-                var copyright = assembly.GetCustomAttributes<AssemblyCopyrightAttribute>().FirstOrDefault();
-                if (copyright is not null)
-                    return $"{description.Title} version {assembly.GetName().Version}{Environment.NewLine}{copyright.Copyright}";
-            }
+            var copyright = assembly.GetCustomAttributes<AssemblyCopyrightAttribute>().FirstOrDefault();
+            if (copyright is not null)
+                return $"IKVM version {assembly.GetName().Version}{Environment.NewLine}{copyright.Copyright}";
 
             return "";
         }
