@@ -1467,6 +1467,7 @@ java/nio/charset/Charset/default.sh                                             
 java/nio/charset/coders/CheckSJISMappingProp.sh                                                                         generic-all
 java/nio/charset/spi/basic.sh                                                                                           generic-all
 java/nio/file/DirectoryStream/Basic.java                                                                                generic-all
+java/nio/file/DirectoryStream/SecureDS.java                                                                             linux-aarch64
 java/nio/file/Files/CheckPermissions.java                                                                               generic-all
 java/nio/file/Files/CopyAndMove.java                                                                                    linux-all,macosx-all
 java/nio/file/Files/InterruptCopy.java                                                                                  generic-all
@@ -3049,6 +3050,7 @@ sun/security/mscapi/SignUsingSHA2withRSA.sh                                     
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
 sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
+sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         linux-aarch64
 sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         macosx-all
 sun/security/pkcs11/fips/TestTLS12.java                                                                                 linux-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
