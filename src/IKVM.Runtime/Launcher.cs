@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Lang.Reflect;
@@ -229,7 +228,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Adds the given assembly to the boot classpath.
         /// </summary>
-        /// <param name="asm"></param>
+        /// <param name="assembly"></param>
         static void AddBootClassPathAssembly(Assembly assembly)
         {
 #if FIRST_PASS || IMPORTER
