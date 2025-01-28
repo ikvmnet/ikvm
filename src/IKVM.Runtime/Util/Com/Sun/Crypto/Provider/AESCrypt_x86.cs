@@ -12,6 +12,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
     /// <summary>
     /// X86 implementation of the AES intrinsic functions.
     /// </summary>
+    [SkipLocalsInit]
     static class AESCrypt_x86
     {
 

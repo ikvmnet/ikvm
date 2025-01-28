@@ -1695,9 +1695,10 @@
                     <ldarg_3 />
                     <ldarg_s argNum="4" />
                     <ldarg_s argNum="5" />
-                    <!-- bool CipherBlockChaining.DecryptAESCrypt(object self, byte[] cipher, int cipherOffset, int cipherLen, byte[] plain, int plainOffset, ) -->
-                    <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="DecryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)Z" />
-                    <brfalse name="continue" />
+                    <!-- int CipherBlockChaining.DecryptAESCrypt(object self, byte[] cipher, int cipherOffset, int cipherLen, byte[] plain, int plainOffset, ) -->
+                    <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="DecryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)I" />
+                    <ldarg_3 />
+                    <bne_un name="continue" />
                     <ldarg_3 />
                     <ret />
                     <label name="continue" />
@@ -1711,9 +1712,10 @@
                     <ldarg_3 />
                     <ldarg_s argNum="4" />
                     <ldarg_s argNum="5" />
-                    <!-- bool CipherBlockChaining.EncryptAESCrypt(object self, byte[] plain, int plainOffset, int plainLen, byte[] cipher, int cipherOffset) -->
-                    <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="EncryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)Z" />
-                    <brfalse name="continue" />
+                    <!-- int CipherBlockChaining.EncryptAESCrypt(object self, byte[] plain, int plainOffset, int plainLen, byte[] cipher, int cipherOffset) -->
+                    <call type="IKVM.Runtime.Util.Com.Sun.Crypto.Provider.CipherBlockChaining" name="EncryptAESCrypt" sig="(Ljava.lang.Object;[BII[BI)I" />
+                    <ldarg_3 />
+                    <bne_un name="continue" />
                     <ldarg_3 />
                     <ret />
                     <label name="continue" />
