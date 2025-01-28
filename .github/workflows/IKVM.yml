@@ -441,6 +441,10 @@ jobs:
           },
           @{
             "run" = "IKVM.MSBuild.Tests"
+            "sys" = "linux-arm64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
             "sys" = "osx-x64"
           },
           @{
