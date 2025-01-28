@@ -56,7 +56,7 @@ namespace IKVM.Runtime
                         method = wrapper.GetInterfaceMethod(Name, Signature);
 
                     // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-                    method ??= thisType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(Name, Signature, false);
+                    method ??= thisType.Context.JavaBase.TypeOfJavaLangObject.GetMethod(Name, Signature, false);
 
                     if (method != null)
                         method.Link(mode);

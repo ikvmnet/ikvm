@@ -59,7 +59,7 @@ namespace IKVM.Runtime
 
                 internal MethodInfo DoLink(TypeBuilder tb)
                 {
-                    RuntimeJavaMethod mw = this.DeclaringType.GetMethodWrapper("Invoke", this.Signature, true);
+                    RuntimeJavaMethod mw = this.DeclaringType.GetMethod("Invoke", this.Signature, true);
 
                     MethodInfo invoke = delegateType.GetMethod("Invoke");
                     ParameterInfo[] parameters = invoke.GetParameters();

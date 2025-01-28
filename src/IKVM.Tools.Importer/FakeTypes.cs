@@ -99,7 +99,7 @@ namespace IKVM.Tools.Importer
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             ilgen.Emit(OpCodes.Ldarg_2);
-            enumTypeWrapper.GetMethodWrapper("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
+            enumTypeWrapper.GetMethod("<init>", "(Ljava.lang.String;I)V", false).EmitCall(ilgen);
             ilgen.Emit(OpCodes.Ret);
             ilgen.DoEmit();
             genericEnumEnumType = tb.CreateType();

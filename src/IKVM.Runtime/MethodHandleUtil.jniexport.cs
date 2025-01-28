@@ -405,7 +405,7 @@ namespace IKVM.Runtime
                     else
                     {
                         // we can re-use the implementations from cli.System.Object (even though the object may not in-fact extend cli.System.Object)
-                        context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
+                        context.JavaBase.TypeOfCliSystemObject.GetMethod(mw.Name, mw.Signature, false).EmitCall(dm.ilgen);
                     }
                 }
                 else if (doDispatch && !mw.IsStatic)

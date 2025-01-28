@@ -814,7 +814,14 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal RuntimeJavaMethod GetMethodWrapper(string name, string desc, bool inherit)
+        /// <summary>
+        /// Gets the method with the specified name and descriptor. Optionally searches the inheritence hierarchy.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="desc"></param>
+        /// <param name="inherit"></param>
+        /// <returns></returns>
+        internal RuntimeJavaMethod GetMethod(string name, string desc, bool inherit)
         {
             // ensure params are interned
             name = string.Intern(name);
@@ -827,14 +834,14 @@ namespace IKVM.Runtime
 
             var baseWrapper = BaseTypeWrapper;
             if (inherit && baseWrapper != null)
-                return baseWrapper.GetMethodWrapper(name, desc, inherit);
+                return baseWrapper.GetMethod(name, desc, inherit);
 
             return null;
         }
 
         internal RuntimeJavaMethod GetInterfaceMethod(string name, string sig)
         {
-            var method = GetMethodWrapper(name, sig, false);
+            var method = GetMethod(name, sig, false);
             if (method != null)
             {
                 return method;

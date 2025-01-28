@@ -444,7 +444,7 @@ namespace IKVM.Runtime
                         {
                             if (!methods[i].IsStatic && !methods[i].IsPrivate && BaseTypeWrapper != null)
                             {
-                                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                                 if (baseMethod != null && baseMethod.IsFinal && !baseMethod.IsStatic && !baseMethod.IsPrivate)
                                     continue;
                             }
@@ -566,7 +566,7 @@ namespace IKVM.Runtime
             methodsList.TryGetValue(key, out var existing);
             if (existing == null && BaseTypeWrapper != null)
             {
-                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                 if (baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
                     return;
             }

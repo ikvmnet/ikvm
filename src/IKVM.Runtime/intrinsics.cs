@@ -334,11 +334,11 @@ namespace IKVM.Runtime
                 if (MatchInvokeStatic(eic, 1, "java.lang.ClassLoader", "getClassLoader", "(Ljava.lang.Class;)Ljava.lang.ClassLoader;"))
                 {
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
-                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
+                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethod("getCallerClassLoader", "()Ljava.lang.ClassLoader;", false);
                 }
                 else
                 {
-                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("getCallerClass", "()Ljava.lang.Class;", false);
+                    mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfIkvmInternalCallerID.GetMethod("getCallerClass", "()Ljava.lang.Class;", false);
                 }
                 mw.Link();
                 mw.EmitCallvirt(eic.Emitter);
@@ -347,7 +347,7 @@ namespace IKVM.Runtime
             else if (RuntimeByteCodeJavaType.RequiresDynamicReflectionCallerClass(eic.ClassFile.Name, eic.Caller.Name, eic.Caller.Signature))
             {
                 // since the non-intrinsic version of Reflection.getCallerClass() always throws an exception, we have to redirect to the dynamic version
-                var getCallerClass = eic.Context.TypeWrapper.Context.ClassLoaderFactory.LoadClassCritical("sun.reflect.Reflection").GetMethodWrapper("getCallerClass", "(I)Ljava.lang.Class;", false);
+                var getCallerClass = eic.Context.TypeWrapper.Context.ClassLoaderFactory.LoadClassCritical("sun.reflect.Reflection").GetMethod("getCallerClass", "(I)Ljava.lang.Class;", false);
                 getCallerClass.Link();
                 eic.Emitter.EmitLdc_I4(2);
                 getCallerClass.EmitCall(eic.Emitter);
@@ -407,7 +407,7 @@ namespace IKVM.Runtime
         {
             eic.Emitter.Emit(OpCodes.Pop);
             eic.Emitter.Emit(OpCodes.Ldnull);
-            var mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+            var mw = eic.Context.TypeWrapper.Context.JavaBase.TypeOfJavaLangClass.GetMethod("<init>", "(Lcli.System.Type;)V", false);
             mw.Link();
             mw.EmitNewobj(eic.Emitter);
             return true;

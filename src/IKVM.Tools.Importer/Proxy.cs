@@ -66,25 +66,25 @@ namespace IKVM.Tools.Importer
             proxyClass = bootClassLoader.TryLoadClassByName("java.lang.reflect.Proxy");
             errorClass = bootClassLoader.TryLoadClassByName("java.lang.Error");
             runtimeExceptionClass = bootClassLoader.TryLoadClassByName("java.lang.RuntimeException");
-            undeclaredThrowableExceptionConstructor = bootClassLoader.TryLoadClassByName("java.lang.reflect.UndeclaredThrowableException").GetMethodWrapper("<init>", "(Ljava.lang.Throwable;)V", false);
+            undeclaredThrowableExceptionConstructor = bootClassLoader.TryLoadClassByName("java.lang.reflect.UndeclaredThrowableException").GetMethod("<init>", "(Ljava.lang.Throwable;)V", false);
             undeclaredThrowableExceptionConstructor.Link();
             invocationHandlerField = proxyClass.GetFieldWrapper("h", "Ljava.lang.reflect.InvocationHandler;");
             invocationHandlerField.Link();
             javaLangReflectMethod = bootClassLoader.TryLoadClassByName("java.lang.reflect.Method");
             javaLangNoSuchMethodException = bootClassLoader.TryLoadClassByName("java.lang.NoSuchMethodException");
-            javaLangNoClassDefFoundErrorConstructor = bootClassLoader.TryLoadClassByName("java.lang.NoClassDefFoundError").GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+            javaLangNoClassDefFoundErrorConstructor = bootClassLoader.TryLoadClassByName("java.lang.NoClassDefFoundError").GetMethod("<init>", "(Ljava.lang.String;)V", false);
             javaLangNoClassDefFoundErrorConstructor.Link();
-            javaLangThrowable_getMessage = bootClassLoader.TryLoadClassByName("java.lang.Throwable").GetMethodWrapper("getMessage", "()Ljava.lang.String;", false);
+            javaLangThrowable_getMessage = bootClassLoader.TryLoadClassByName("java.lang.Throwable").GetMethod("getMessage", "()Ljava.lang.String;", false);
             javaLangThrowable_getMessage.Link();
-            javaLangClass_getMethod = context.JavaBase.TypeOfJavaLangClass.GetMethodWrapper("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
+            javaLangClass_getMethod = context.JavaBase.TypeOfJavaLangClass.GetMethod("getMethod", "(Ljava.lang.String;[Ljava.lang.Class;)Ljava.lang.reflect.Method;", false);
             javaLangClass_getMethod.Link();
             invocationHandlerClass = bootClassLoader.TryLoadClassByName("java.lang.reflect.InvocationHandler");
-            invokeMethod = invocationHandlerClass.GetMethodWrapper("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
-            proxyConstructor = proxyClass.GetMethodWrapper("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
+            invokeMethod = invocationHandlerClass.GetMethod("invoke", "(Ljava.lang.Object;Ljava.lang.reflect.Method;[Ljava.lang.Object;)Ljava.lang.Object;", false);
+            proxyConstructor = proxyClass.GetMethod("<init>", "(Ljava.lang.reflect.InvocationHandler;)V", false);
             proxyConstructor.Link();
-            hashCodeMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("hashCode", "()I", false);
-            equalsMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("equals", "(Ljava.lang.Object;)Z", false);
-            toStringMethod = context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper("toString", "()Ljava.lang.String;", false);
+            hashCodeMethod = context.JavaBase.TypeOfJavaLangObject.GetMethod("hashCode", "()I", false);
+            equalsMethod = context.JavaBase.TypeOfJavaLangObject.GetMethod("equals", "(Ljava.lang.Object;)Z", false);
+            toStringMethod = context.JavaBase.TypeOfJavaLangObject.GetMethod("toString", "()Ljava.lang.String;", false);
         }
 
         internal void Create(ImportClassLoader loader, string proxy)

@@ -55,7 +55,7 @@ namespace IKVM.Runtime
                 var javaType = GetClassType();
                 if (javaType != null && javaType.IsUnloadable == false)
                 {
-                    method = javaType.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
+                    method = javaType.GetMethod(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
                     method?.Link(mode);
 
                     if (Name != StringConstants.INIT &&
@@ -64,7 +64,7 @@ namespace IKVM.Runtime
                         thisJavaType != javaType &&
                         thisJavaType.IsSubTypeOf(javaType))
                     {
-                        invokespecialMethod = thisJavaType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
+                        invokespecialMethod = thisJavaType.BaseTypeWrapper.GetMethod(Name, Signature, true);
                         invokespecialMethod?.Link(mode);
                     }
                 }
