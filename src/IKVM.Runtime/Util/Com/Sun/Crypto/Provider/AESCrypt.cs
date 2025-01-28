@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
-
+using System.Runtime.InteropServices;
 using IKVM.Attributes;
 
 namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
@@ -37,6 +37,14 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
                 AESCrypt_x86.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
                 return true;
             }
+
+#if NET6_0_OR_GREATER
+            if (AESCrypt_Arm.IsSupported)
+            {
+                AESCrypt_Arm.DecryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
+                return true;
+            }
+#endif
 #endif
 
             return false;
@@ -66,6 +74,14 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
                 AESCrypt_x86.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
                 return true;
             }
+
+#if NET6_0_OR_GREATER
+            if (AESCrypt_Arm.IsSupported)
+            {
+                AESCrypt_Arm.EncryptBlock(@in.AsSpan(inOffset), @out.AsSpan(outOffset), K);
+                return true;
+            }
+#endif
 #endif
 
             return false;

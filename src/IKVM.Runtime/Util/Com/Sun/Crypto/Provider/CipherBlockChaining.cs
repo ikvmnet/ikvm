@@ -35,7 +35,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="plainOffset"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool DecryptAESCrypt(object self, byte[] cipher, int cipherOffset, int cipherLen, byte[] plain, int plainOffset)
+        public static int DecryptAESCrypt(object self, byte[] cipher, int cipherOffset, int cipherLen, byte[] plain, int plainOffset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -47,19 +47,25 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
                 embeddedCipher: global::com.sun.crypto.provider.AESCrypt aes
             })
             {
-                return false;
+                return -1;
             }
 
             var k = AESCryptAccessor.K(aes);
 
             if (CipherBlockChaining_x86.IsSupported)
             {
-                CipherBlockChaining_x86.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
-                return true;
+                return CipherBlockChaining_x86.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
+            }
+
+#if NET6_0_OR_GREATER
+            if (CipherBlockChaining_Arm.IsSupported)
+            {
+                return CipherBlockChaining_Arm.DecryptAESCrypt(cipher.AsSpan(cipherOffset), plain.AsSpan(plainOffset), k, r, cipherLen);
             }
 #endif
+#endif
 
-            return false;
+            return -1;
 #endif
         }
 
@@ -76,7 +82,7 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
         /// <param name="cipherOffset"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool EncryptAESCrypt(object self, byte[] plain, int plainOffset, int plainLen, byte[] cipher, int cipherOffset)
+        public static int EncryptAESCrypt(object self, byte[] plain, int plainOffset, int plainLen, byte[] cipher, int cipherOffset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -88,19 +94,25 @@ namespace IKVM.Runtime.Util.Com.Sun.Crypto.Provider
                     embeddedCipher: global::com.sun.crypto.provider.AESCrypt aes
                 })
             {
-                return false;
+                return -1;
             }
 
             var k = AESCryptAccessor.K(aes);
 
             if (AESCrypt_x86.IsSupported)
             {
-                CipherBlockChaining_x86.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
-                return true;
+                return CipherBlockChaining_x86.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
+            }
+
+#if NET6_0_OR_GREATER
+            if (CipherBlockChaining_Arm.IsSupported)
+            {
+                return CipherBlockChaining_Arm.EncryptAESCrypt(plain.AsSpan(plainOffset), cipher.AsSpan(cipherOffset), k, r, plainLen);
             }
 #endif
+#endif
 
-            return false;
+            return -1;
 #endif
         }
 
