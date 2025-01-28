@@ -413,6 +413,10 @@ jobs:
           },
           @{
             "tfm" = "net472"
+            "sys" = "linux-arm64"
+          },
+          @{
+            "tfm" = "net472"
             "sys" = "osx-x64"
           },
           @{
