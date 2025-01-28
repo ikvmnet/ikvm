@@ -122,7 +122,8 @@ namespace IKVM.Runtime
 #endif
             : base(classLoader.Context, f.IsInternal ? TypeFlags.InternalAccess : host != null ? TypeFlags.Anonymous : TypeFlags.None, f.Modifiers, f.Name)
         {
-            Profiler.Count("RuntimeByteCodeJavaType");
+            classLoader.Context.Metrics.RuntimeByteCodeJavaType();
+
             this.classLoader = classLoader;
             this.sourceFileName = f.SourceFileAttribute;
             if (f.IsInterface)

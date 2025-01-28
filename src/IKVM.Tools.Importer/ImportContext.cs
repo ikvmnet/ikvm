@@ -192,7 +192,7 @@ namespace IKVM.Tools.Importer
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<ImportState>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<ISymbolResolver>(), options.Bootstrap, compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new Metrics(), provider.GetRequiredService<ISymbolResolver>(), options.Bootstrap, compiler);
 
             compiler.rootTarget = rootTarget;
             var importer = new ImportContext();

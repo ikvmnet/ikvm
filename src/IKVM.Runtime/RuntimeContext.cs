@@ -4,8 +4,6 @@ using System.Collections.Concurrent;
 using IKVM.CoreLib.Diagnostics;
 using IKVM.CoreLib.Symbols;
 
-
-
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
@@ -29,6 +27,7 @@ namespace IKVM.Runtime
 
         readonly RuntimeContextOptions options;
         readonly IDiagnosticHandler diagnostics;
+        readonly Metrics metrics;
         readonly ISymbolResolver resolver;
         readonly bool bootstrap;
         readonly ConcurrentDictionary<Type, object> singletons = new();
@@ -77,14 +76,17 @@ namespace IKVM.Runtime
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="resolver"></param>
+        /// <param name="options"></param>
         /// <param name="diagnostics"></param>
+        /// <param name="metrics"></param>
+        /// <param name="resolver"></param>
         /// <param name="bootstrap"></param>
         /// <param name="staticCompiler"></param>
-        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, Metrics metrics, ISymbolResolver resolver, bool bootstrap, StaticCompiler staticCompiler)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            this.metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
             this.staticCompiler = staticCompiler;
@@ -92,17 +94,19 @@ namespace IKVM.Runtime
 
 #else
 
-		/// <summary>
-		/// Initializes a new instance.
-		/// </summary>
-		/// <param name="options"></param>
-		/// <param name="diagnostics"></param>
-		/// <param name="resolver"></param>
-		/// <param name="bootstrap"></param>
-		public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, ISymbolResolver resolver, bool bootstrap)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="diagnostics"></param>
+        /// <param name="metrics"></param>
+        /// <param name="resolver"></param>
+        /// <param name="bootstrap"></param>
+        public RuntimeContext(RuntimeContextOptions options, IDiagnosticHandler diagnostics, Metrics metrics, ISymbolResolver resolver, bool bootstrap)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
+            this.metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.bootstrap = bootstrap;
         }
@@ -113,6 +117,11 @@ namespace IKVM.Runtime
         /// Gets the <see cref="IDiagnosticHandler"/> where events should be sent.
         /// </summary>
         public IDiagnosticHandler Diagnostics => diagnostics;
+
+        /// <summary>
+        /// Gets the <see cref="Metrics"/> instance used to record metrics.
+        /// </summary>
+        public Metrics Metrics => metrics;
 
         /// <summary>
         /// Gets or creates a new instance in a thread safe manner.
@@ -143,10 +152,10 @@ namespace IKVM.Runtime
         /// </summary>
         public RuntimeContextOptions Options => options;
 
-		/// <summary>
-		/// Gets the <see cref="ISymbolResolver"/> associated with this instance of the runtime.
-		/// </summary>
-		public ISymbolResolver Resolver => resolver;
+        /// <summary>
+        /// Gets the <see cref="ISymbolResolver"/> associated with this instance of the runtime.
+        /// </summary>
+        public ISymbolResolver Resolver => resolver;
 
         /// <summary>
         /// Gets whether or not the runtime is running in bootstrap mode; that is, we are compiling the Java base assembly itself.

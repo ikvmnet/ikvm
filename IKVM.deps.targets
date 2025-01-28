@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <PackageReference Include="System.Collections.Immutable" Version="8.0.0" GeneratePathProperty="true" />
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
         <PackageReference Include="System.Memory" Version="4.5.5" GeneratePathProperty="true" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" GeneratePathProperty="true" />
         <PackageReference Include="System.Text.Json" Version="8.0.5" GeneratePathProperty="true" />

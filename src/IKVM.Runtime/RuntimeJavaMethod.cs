@@ -27,7 +27,6 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Linq;
-using IKVM.CoreLib.Diagnostics;
 
 
 #if IMPORTER || EXPORTER
