@@ -1294,6 +1294,10 @@ namespace IKVM.Runtime
                     throw new InternalException($"Exception during finishing of: {wrapper.Name}", x);
                 }
 #endif
+                finally
+                {
+
+                }
             }
 
 #if IMPORTER
