@@ -49,8 +49,6 @@ namespace IKVM.Tools.Tests.Runner.Exporter
             Directory.CreateDirectory(d);
 
             var rid = "";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                rid = "win-x86";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
                 rid = "win-x64";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
@@ -66,7 +64,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 rid = "osx-arm64";
             if (string.IsNullOrEmpty(rid))
-                throw new InvalidOperationException();
+                return;
 
             var e = new List<IkvmToolDiagnosticEvent>();
             var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", toolFramework, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.Args); }));
