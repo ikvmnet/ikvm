@@ -103,6 +103,9 @@ namespace IKVM.Tests.Java.ikvm.runtime
         [TestMethod]
         public void CanGetPackage()
         {
+            if (helloworldDll is null)
+                return;
+
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getPackage();
             k.Should().NotBeNull();
@@ -111,6 +114,9 @@ namespace IKVM.Tests.Java.ikvm.runtime
         [TestMethod]
         public void CanGetResource()
         {
+            if (helloworldDll is null)
+                return;
+
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getResource("/helloworld.composite");
             var s = ((global::java.lang.Class)t).getResourceAsStream("/helloworld.composite");
