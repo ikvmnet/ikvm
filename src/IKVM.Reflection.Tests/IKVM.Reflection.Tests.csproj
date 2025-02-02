@@ -31,4 +31,10 @@
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="xunit.runner.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>
