@@ -1,4 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
@@ -8,5 +10,30 @@
         <PackageReference Include="Microsoft.Build" Version="17.3.2" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" GeneratePathProperty="true" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net481" Version="1.0.3" GeneratePathProperty="true" />
     </ItemGroup>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+    <PropertyGroup>
+        <AssignTargetPathsDependsOn>
+            IncludeReferenceAssemblies;
+            $(AssignTargetPathsDependsOn)
+        </AssignTargetPathsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="IncludeReferenceAssemblies" BeforeTargets="AssignTargetPaths">
+        <ItemGroup>
+            <__ReferenceAssemblies Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net472)\build\.NETFramework\v4.7.2\*.dll" Framework="net472" />
+            <__ReferenceAssemblies Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net472)\build\.NETFramework\v4.7.2\Facades\*.dll" Framework="net472" />
+            <__ReferenceAssemblies Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net481)\build\.NETFramework\v4.8.1\*.dll" Framework="net481" />
+            <__ReferenceAssemblies Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net481)\build\.NETFramework\v4.8.1\Facades\*.dll" Framework="net481" />
+            <None Include="@(__ReferenceAssemblies)">
+                <TargetPath>netfxref\%(Framework)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </None>
+        </ItemGroup>
+    </Target>
+    
 </Project>

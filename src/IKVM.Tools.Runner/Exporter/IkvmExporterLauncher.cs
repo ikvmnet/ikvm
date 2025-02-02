@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -145,30 +146,52 @@ namespace IKVM.Tools.Runner.Exporter
             try
             {
                 // locate EXE file
+                string? wrap = null;
                 var exe = GetToolExe();
-                if (File.Exists(exe) == false)
+                if (exe is null || File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
-                // if we're running on Unix, we might need to set the execute bit on the file,
-                // since the NuGet package is built on Windows
+                // executing on Unix requires some considerations
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    try
+                    // tool executables on Unix need to be invoked through Mono
+                    if (exe.EndsWith(".exe"))
                     {
-                        var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
-                        if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                            psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        wrap = "mono";
                     }
-                    catch (Exception e)
+                    else
                     {
-                        throw new IkvmToolException($"Could not set user executable bit on '{exe}'.", e);
+                        // else we need to ensure executable bit is set
+
+                        try
+                        {
+                            var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
+                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        }
+                        catch (Exception e)
+                        {
+                            throw new IkvmToolException($"Could not set user executable bit on '{exe}'.", e);
+                        }
                     }
                 }
 
-                // configure CLI
-                var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
+                // configure CLI, with wrapper if required
+                Command cli;
+                if (wrap != null)
+                {
+                    cli = Cli.Wrap(wrap);
+                    args.Insert(0, exe);
+                }
+                else
+                    cli = Cli.Wrap(exe);
+
+                // set configuration of CLI
+                cli = cli.WithWorkingDirectory(Environment.CurrentDirectory);
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
+
+                // log the command we're about to run
                 await LogEventAsync(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", [cli.TargetFilePath, cli.Arguments], ctk);
 
                 // send output to MSBuild (TODO, replace with binary reading)
