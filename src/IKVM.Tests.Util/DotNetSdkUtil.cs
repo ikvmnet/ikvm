@@ -5,8 +5,6 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
-using Microsoft.Build.Utilities;
-
 namespace IKVM.Tests.Util
 {
 
@@ -63,11 +61,21 @@ namespace IKVM.Tests.Util
         public static IList<string> GetPathToReferenceAssemblies(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             if (targetFrameworkIdentifier == ".NETFramework")
-                return ToolLocationHelper.GetPathToReferenceAssemblies(targetFrameworkIdentifier, targetFrameworkVersion, "");
-            if (targetFrameworkIdentifier == ".NETCore")
-                return GetCorePathToReferenceAssemblies(tfm, targetFrameworkVersion);
+            {
+                var l = new List<string>();
+                var dir = Path.Combine(Path.GetDirectoryName(typeof(DotNetSdkUtil).Assembly.Location), "netfxref", tfm);
+                if (Directory.Exists(dir))
+                    l.Add(dir);
 
-            throw new InvalidOperationException();
+                return l;
+            }
+
+            if (targetFrameworkIdentifier == ".NETCore")
+            {
+                return GetCorePathToReferenceAssemblies(tfm, targetFrameworkVersion);
+            }
+
+            throw new ArgumentException(nameof(targetFrameworkIdentifier));
         }
 
         /// <summary>

@@ -129,7 +129,7 @@ namespace IKVM.Tests.Util
             }
 
             var segments = lines[index]
-                .Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(['[', ']'], StringSplitOptions.RemoveEmptyEntries)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x.Trim())
                 .ToArray();
