@@ -10,8 +10,8 @@
         <PackageReference Include="Microsoft.Build" Version="17.3.2" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" />
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net481" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" GeneratePathProperty="true" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net481" Version="1.0.3" GeneratePathProperty="true" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
