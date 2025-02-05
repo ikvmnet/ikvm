@@ -3075,6 +3075,8 @@ sun/security/ssl/internal/TestRun.sh                                            
 sun/security/ssl/sanity/pluggability/CheckSSLContextExport.java                                                         generic-all
 sun/security/ssl/templates/SSLEngineTemplate.java                                                                       generic-all
 sun/security/ssl/templates/SSLSocketSSLEngineTemplate.java                                                              generic-all
+sun/security/tools/jar/ExtractFilesTest.java                                                                            generic-all
+sun/security/tools/jar/MultipleManifestTest.java                                                                        generic-all
 sun/security/tools/jarsigner/AlgOptions.sh                                                                              generic-all
 sun/security/tools/jarsigner/PercentSign.sh                                                                             generic-all
 sun/security/tools/jarsigner/certpolicy.sh                                                                              generic-all
