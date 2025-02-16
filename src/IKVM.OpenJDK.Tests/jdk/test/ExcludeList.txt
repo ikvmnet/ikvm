@@ -4839,3 +4839,7 @@ javax/swing/reliability/TaskZoomJFrameChangeState.java                          
 javax/swing/reliability/TaskZoomJFrameRepaint.java                                                                      linux-all,macosx-all
 sun/java2d/OpenGL/CopyAreaOOB.java                                                                                      macosx-all,windows-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java                                                                    generic-all
+
+# these use a newer JUnit than what our jtreg has
+tools/jar/ExtractFilesTest.java                                                                                         generic-all
+tools/jar/MultipleManifestTest.java                                                                                     generic-all
