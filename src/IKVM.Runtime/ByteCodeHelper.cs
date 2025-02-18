@@ -821,7 +821,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool VolatileRead(ref bool location)
         {
-            return Volatile.Read(ref location);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Volatile.Read(ref location);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -831,7 +842,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref bool location, bool value)
         {
-            Volatile.Write(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -841,7 +863,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static byte VolatileRead(ref byte location)
         {
-            return Volatile.Read(ref location);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Volatile.Read(ref location);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -851,7 +884,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref byte location, byte value)
         {
-            Volatile.Write(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -861,7 +905,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static char VolatileRead(ref char location)
         {
-            return (char)Volatile.Read(ref Unsafe.As<char, short>(ref location));
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return (char)Volatile.Read(ref Unsafe.As<char, short>(ref location));
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -871,7 +926,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref char location, char value)
         {
-            Volatile.Write(ref Unsafe.As<char, short>(ref location), (short)value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref Unsafe.As<char, short>(ref location), (short)value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -881,7 +947,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static short VolatileRead(ref short location)
         {
-            return Volatile.Read(ref location);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Volatile.Read(ref location);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -891,7 +968,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref short location, short value)
         {
-            Volatile.Write(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -901,7 +989,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static int VolatileRead(ref int location)
         {
-            return Volatile.Read(ref location);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Volatile.Read(ref location);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -911,7 +1010,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref int location, int value)
         {
-            Volatile.Write(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -921,7 +1031,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static long VolatileRead(ref long location)
         {
-            return Interlocked.CompareExchange(ref location, 0, 0);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, 0, 0);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -931,7 +1052,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref long location, long value)
         {
-            Interlocked.Exchange(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Interlocked.Exchange(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -941,7 +1073,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static float VolatileRead(ref float location)
         {
-            return Volatile.Read(ref location);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Volatile.Read(ref location);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -951,7 +1094,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref float location, float value)
         {
-            Volatile.Write(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Volatile.Write(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -961,7 +1115,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static double VolatileRead(ref double location)
         {
-            return Interlocked.CompareExchange(ref location, 0, 0);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, 0, 0);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -971,7 +1136,18 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref double location, double value)
         {
-            Interlocked.Exchange(ref location, value);
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Interlocked.Exchange(ref location, value);
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -983,7 +1159,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref object location, object expected, object value)
         {
-            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, value, expected) == expected;
+            }
+            catch (SEHException e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -995,16 +1182,16 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref int location, int expected, int value)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             try
             {
                 return Interlocked.CompareExchange(ref location, value, expected) == expected;
             }
-            catch (SEHException)
+            catch (SEHException e)
             {
-                throw new global::java.lang.InternalError();
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -1018,16 +1205,16 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref long location, long expected, long value)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             try
             {
                 return Interlocked.CompareExchange(ref location, value, expected) == expected;
             }
-            catch (SEHException)
+            catch (SEHException e)
             {
-                throw new global::java.lang.InternalError();
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -1041,7 +1228,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref double location, double expected, double value)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             try
