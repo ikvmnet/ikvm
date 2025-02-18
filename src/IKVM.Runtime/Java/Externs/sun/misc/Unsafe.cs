@@ -3129,19 +3129,30 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe int CompareExchangeInt32Unaligned(Array obj, long offset, int value, int expected)
         {
-            GCHandle h = new();
-
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
-                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
-                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
-                return r;
+                GCHandle h = new();
+
+                try
+                {
+                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                    return r;
+                }
+                finally
+                {
+                    if (h.IsAllocated)
+                        h.Free();
+                }
             }
-            finally
+            catch (SEHException)
             {
-                if (h.IsAllocated)
-                    h.Free();
+                throw new global::java.lang.InternalError();
             }
+#endif
         }
 
         /// <summary>
@@ -3179,19 +3190,30 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe long CompareExchangeInt64Unaligned(Array obj, long offset, long value, long expected)
         {
-            GCHandle h = new();
-
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
-                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
-                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
-                return r;
+                GCHandle h = new();
+
+                try
+                {
+                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                    return r;
+                }
+                finally
+                {
+                    if (h.IsAllocated)
+                        h.Free();
+                }
             }
-            finally
+            catch (SEHException)
             {
-                if (h.IsAllocated)
-                    h.Free();
+                throw new global::java.lang.InternalError();
             }
+#endif
         }
 
         /// <summary>

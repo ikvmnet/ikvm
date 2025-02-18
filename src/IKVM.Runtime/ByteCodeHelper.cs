@@ -995,7 +995,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref int location, int expected, int value)
         {
-            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, value, expected) == expected;
+            }
+            catch (SEHException)
+            {
+                throw new global::java.lang.InternalError();
+            }
+#endif
         }
 
         /// <summary>
@@ -1007,7 +1018,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref long location, long expected, long value)
         {
-            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, value, expected) == expected;
+            }
+            catch (SEHException)
+            {
+                throw new global::java.lang.InternalError();
+            }
+#endif
         }
 
         /// <summary>
@@ -1019,7 +1041,18 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static bool CompareAndSwap(ref double location, double expected, double value)
         {
-            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, value, expected) == expected;
+            }
+            catch (SEHException)
+            {
+                throw new global::java.lang.InternalError();
+            }
+#endif
         }
 
 #if EXPORTER == false
