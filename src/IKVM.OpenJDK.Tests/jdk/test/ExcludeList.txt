@@ -3050,8 +3050,7 @@ sun/security/mscapi/SignUsingSHA2withRSA.sh                                     
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Provider/ConfigQuotedString.sh                                                                      generic-all
 sun/security/pkcs11/Provider/Login.sh                                                                                   generic-all
-sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         linux-aarch64
-sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         macosx-all
+sun/security/pkcs11/Secmod/TestNssDbSqlite.java                                                                         linux-aarch64,macosx-all
 sun/security/pkcs11/fips/TestTLS12.java                                                                                 linux-all
 sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
@@ -3459,7 +3458,8 @@ java/net/MulticastSocket/JoinGroup.java                                         
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java                                                                generic-all
-java/net/MulticastSocket/SetOutgoingIf.java                                                                             macosx-all
+java/net/MulticastSocket/SetOutgoingIf.java                                                                             linux-aarch64,macosx-all
+java/net/MulticastSocket/TestInterfaces.java                                                                            linux-aarch64
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
