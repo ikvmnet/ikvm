@@ -3456,6 +3456,7 @@ java/net/InetAddress/CheckJNI.java                                              
 java/net/MulticastSocket/B6427403.java                                                                                  macosx-all
 java/net/MulticastSocket/JoinGroup.java                                                                                 macosx-all
 java/net/MulticastSocket/Leave.java                                                                                     macosx-all
+java/net/MulticastSocket/JoinLeave.java                                                                                 linux-aarch64
 java/net/MulticastSocket/Promiscuous.java                                                                               macosx-all
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java                                                                generic-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             linux-aarch64,macosx-all
