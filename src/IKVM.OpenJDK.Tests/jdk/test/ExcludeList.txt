@@ -3461,6 +3461,7 @@ java/net/MulticastSocket/Promiscuous.java                                       
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java                                                                generic-all
 java/net/MulticastSocket/SetOutgoingIf.java                                                                             linux-aarch64,macosx-all
 java/net/MulticastSocket/TestInterfaces.java                                                                            linux-aarch64
+java/net/NetworkInterface/UniqueMacAddressesTest.java                                                                   linux-aarch64
 java/net/PlainSocketImpl/SetBufferSize.java                                                                             macosx-all
 java/net/Socket/LinkLocal.java                                                                                          macosx-all
 java/net/Socket/SetSoLinger.java                                                                                        macosx-all
