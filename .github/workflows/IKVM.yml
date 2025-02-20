@@ -377,7 +377,11 @@ jobs:
         )
 
         if ($env:FULL_TEST -eq "true") {
-          $sys += @( "osx-x64", "osx-arm64" )
+          $sys += @(
+            "linux-arm64",
+            "osx-x64",
+            "osx-arm64"
+          )
         }
         
         $tfm = @(
@@ -412,6 +416,10 @@ jobs:
           },
           @{
             "tfm" = "net472"
+            "sys" = "linux-arm64"
+          },
+          @{
+            "tfm" = "net472"
             "sys" = "osx-x64"
           },
           @{
@@ -433,6 +441,10 @@ jobs:
           @{
             "run" = "IKVM.MSBuild.Tests"
             "sys" = "linux-x64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "sys" = "linux-arm64"
           },
           @{
             "run" = "IKVM.MSBuild.Tests"
@@ -485,7 +497,7 @@ jobs:
       matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x86":["windows-2022"],"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x86":["windows-2022"],"win-x64":["windows-2022"],"linux-x64":["ubuntu-22.04"],"linux-arm64":["ubuntu-22.04-arm"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
@@ -619,7 +631,6 @@ jobs:
             $argl = @(
                 "-f", $tfm,
                 "--blame",
-                "--blame-crash",
                 "--blame-hang",
                 "--blame-hang-timeout", "120m",
                 "--blame-hang-dump-type", "full",
@@ -627,11 +638,14 @@ jobs:
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
                 "--logger:trx"
-                # "--collect", "Code Coverage"
             )
 
             if ($sys -eq "win-x86") {
                 $argl += @("-a", "x86")
+            }
+
+            if ($sys -ne "linux-arm64") {
+                $argl += @("--blame-crash")
             }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)

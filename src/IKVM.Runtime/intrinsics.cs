@@ -868,7 +868,7 @@ namespace IKVM.Runtime
 
                             eic.Emitter.Emit(OpCodes.Stloc, update);
                             eic.Emitter.Emit(OpCodes.Stloc, expect);
-                            eic.Emitter.Emit(OpCodes.Pop);          // discard offset
+                            eic.Emitter.Emit(OpCodes.Pop); // discard offset
                             eic.Emitter.Emit(OpCodes.Stloc, target);
                             EmitConsumeUnsafe(eic);
                             eic.Emitter.Emit(OpCodes.Ldloc, target);
