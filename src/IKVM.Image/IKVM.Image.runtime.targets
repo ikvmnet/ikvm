@@ -75,7 +75,7 @@
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm;android-arm64" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
