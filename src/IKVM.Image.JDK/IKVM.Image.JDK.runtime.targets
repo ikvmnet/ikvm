@@ -28,19 +28,35 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net472'))">
+        <BinProject Include="..\jar\jar.csproj" />
+        <BinProject Include="..\jarsigner\jarsigner.csproj" />
+        <BinProject Include="..\javac\javac.csproj" />
+        <BinProject Include="..\javadoc\javadoc.csproj" />
+        <BinProject Include="..\javah\javah.csproj" />
+        <BinProject Include="..\javap\javap.csproj" />
+        <BinProject Include="..\jdeps\jdeps.csproj" />
+        <BinProject Include="..\native2ascii\native2ascii.csproj" />
+        <BinProject Include="..\rmic\rmic.csproj" />
+        <BinProject Include="..\schemagen\schemagen.csproj" />
+        <BinProject Include="..\wsgen\wsgen.csproj" />
+        <BinProject Include="..\wsimport\wsimport.csproj" />
+        <BinProject Include="..\xjc\xjc.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(_SupportedImageBinRuntimes.Contains(';$(ImageRuntimeIdentifier);')) And $(_EnabledImageBinRuntimes.Contains(';$(ImageRuntimeIdentifier);'))">
+        <PublishProjectReference Include="@(BinProject)" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net472;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net6.0'))">
+        <PublishProjectReference Include="@(BinProject)" Condition="$(SupportedImageTargetFrameworks.Contains(';net6.0;'))">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
             <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains('net8.0'))">
+        <PublishProjectReference Include="@(BinProject)" Condition="$(SupportedImageTargetFrameworks.Contains(';net8.0;'))">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
             <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
@@ -56,6 +72,13 @@
         </ItemGroup>
     </Target>
 
+    <PropertyGroup>
+        <ExpandIkvmImageItemsDependsOn>
+            CollectIkvmImageBinItems;
+            $(ExpandIkvmImageItemsDependsOn);
+        </ExpandIkvmImageItemsDependsOn>
+    </PropertyGroup>
+
     <Import Project="..\IKVM.Image\IKVM.Image.project.targets" />
 
     <PropertyGroup>
@@ -64,8 +87,15 @@
         </GenerateDependsOn>
     </PropertyGroup>
 
-    <Target Name="Generate" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
+    <Target Name="Generate" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
 
     </Target>
+
+    <PropertyGroup>
+        <ExpandIkvmImageItemsDependsOn>
+            Generate;
+            $(ExpandIkvmImageItemsDependsOn);
+        </ExpandIkvmImageItemsDependsOn>
+    </PropertyGroup>
     
 </Project>

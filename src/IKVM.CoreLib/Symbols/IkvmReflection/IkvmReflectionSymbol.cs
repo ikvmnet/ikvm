@@ -55,13 +55,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="modules"></param>
         /// <returns></returns>
-        protected internal IkvmReflectionModuleSymbol[] ResolveModuleSymbols(Module[] modules)
+        protected internal ImmutableArray<IkvmReflectionModuleSymbol> ResolveModuleSymbols(Module[] modules)
         {
-            var a = new IkvmReflectionModuleSymbol[modules.Length];
+            var a = ImmutableArray.CreateBuilder<IkvmReflectionModuleSymbol>(modules.Length);
             for (int i = 0; i < modules.Length; i++)
-                a[i] = ResolveModuleSymbol(modules[i]);
+                a.Add(ResolveModuleSymbol(modules[i]));
 
-            return a;
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new Module[modules.Length];
             for (int i = 0; i < modules.Length; i++)
-                a[i] = ((IkvmReflectionModuleSymbol)modules[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionModuleSymbol)modules[i]).UnderlyingModule;
 
             return a;
         }
@@ -134,7 +134,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new MemberInfo[members.Length];
             for (int i = 0; i < members.Length; i++)
-                a[i] = ((IkvmReflectionMemberSymbol)members[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionMemberSymbol)members[i]).UnderlyingMember;
 
             return a;
         }
@@ -183,7 +183,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             var a = new Type[types.Length];
             for (int i = 0; i < types.Length; i++)
-                a[i] = ((IkvmReflectionTypeSymbol)types[i]).ReflectionObject;
+                a[i] = ((IkvmReflectionTypeSymbol)types[i]).UnderlyingType;
 
             return a;
         }
@@ -350,13 +350,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="attributes"></param>
         /// <returns></returns>
-        protected internal CustomAttributeSymbol[] ResolveCustomAttributes(IList<CustomAttributeData> attributes)
+        protected internal ImmutableArray<CustomAttributeSymbol> ResolveCustomAttributes(IList<CustomAttributeData> attributes)
         {
-            var a = new CustomAttributeSymbol[attributes.Count];
+            var a = ImmutableArray.CreateBuilder<CustomAttributeSymbol>(attributes.Count);
             for (int i = 0; i < attributes.Count; i++)
-                a[i] = ResolveCustomAttribute(attributes[i]);
+                a.Add(ResolveCustomAttribute(attributes[i]));
 
-            return a;
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -364,7 +364,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="customAttributeData"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         protected internal CustomAttributeSymbol ResolveCustomAttribute(CustomAttributeData customAttributeData)
         {
             return new CustomAttributeSymbol(
@@ -381,11 +380,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         ImmutableArray<CustomAttributeSymbolTypedArgument> ResolveCustomAttributeTypedArguments(IList<CustomAttributeTypedArgument> args)
         {
-            var a = new CustomAttributeSymbolTypedArgument[args.Count];
+            var a = ImmutableArray.CreateBuilder<CustomAttributeSymbolTypedArgument>(args.Count);
             for (int i = 0; i < args.Count; i++)
-                a[i] = ResolveCustomAttributeTypedArgument(args[i]);
+                a.Add(ResolveCustomAttributeTypedArgument(args[i]));
 
-            return a.ToImmutableArray();
+            return a.DrainToImmutable();
         }
 
         /// <summary>
@@ -405,11 +404,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <returns></returns>
         ImmutableArray<CustomAttributeSymbolNamedArgument> ResolveCustomAttributeNamedArguments(IList<CustomAttributeNamedArgument> args)
         {
-            var a = new CustomAttributeSymbolNamedArgument[args.Count];
+            var a = ImmutableArray.CreateBuilder<CustomAttributeSymbolNamedArgument>(args.Count);
             for (int i = 0; i < args.Count; i++)
-                a[i] = ResolveCustomAttributeNamedArgument(args[i]);
+                a.Add(ResolveCustomAttributeNamedArgument(args[i]));
 
-            return a.ToImmutableArray();
+            return a.DrainToImmutable();
         }
 
         /// <summary>

@@ -31,31 +31,39 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a string constant.
+        /// </summary>
         sealed class ConstantPoolItemString : ConstantPoolItem
         {
 
-            readonly Utf8ConstantHandle value;
-            string s;
+            readonly Utf8ConstantHandle _handle;
+            string _value;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemString(RuntimeContext context, StringConstantData data) :
+            public ConstantPoolItemString(RuntimeContext context, StringConstantData data) :
                 base(context)
             {
-                value = data.Value;
+                _handle = data.Value;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.String;
+
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                s = classFile.GetConstantPoolUtf8String(utf8_cp, value);
+                _value = classFile.GetConstantPoolUtf8String(utf8_cp, _handle);
             }
 
-            internal override ConstantType GetConstantType() => ConstantType.String;
-
-            internal string Value => s;
+            /// <summary>
+            /// Gets the string value of the constant.
+            /// </summary>
+            public string Value => _value;
 
         }
 

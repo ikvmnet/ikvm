@@ -420,7 +420,7 @@ namespace IKVM.Runtime
                     {
                         var mw = CreateMethodWrapper(name, sig, args, ret, constructors[i], false);
                         var key = mw.Name + mw.Signature;
-                        if (!methodsList.ContainsKey(key))
+                        if (methodsList.ContainsKey(key) == false)
                             methodsList.Add(key, mw);
                     }
                 }
@@ -444,7 +444,7 @@ namespace IKVM.Runtime
                         {
                             if (!methods[i].IsStatic && !methods[i].IsPrivate && BaseTypeWrapper != null)
                             {
-                                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                                 if (baseMethod != null && baseMethod.IsFinal && !baseMethod.IsStatic && !baseMethod.IsPrivate)
                                     continue;
                             }
@@ -566,7 +566,7 @@ namespace IKVM.Runtime
             methodsList.TryGetValue(key, out var existing);
             if (existing == null && BaseTypeWrapper != null)
             {
-                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                 if (baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
                     return;
             }
@@ -810,7 +810,7 @@ namespace IKVM.Runtime
             {
                 // TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
                 var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
-                mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
+                mw.SetDeclaredExceptions(["java.lang.Throwable"]);
                 return mw;
             }
 

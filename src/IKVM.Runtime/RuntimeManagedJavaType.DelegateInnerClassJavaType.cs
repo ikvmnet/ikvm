@@ -97,7 +97,7 @@ namespace IKVM.Runtime
 
             internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
             {
-                return DeclaringTypeWrapper.GetMethodParameters(DeclaringTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, false));
+                return DeclaringTypeWrapper.GetMethodParameters(DeclaringTypeWrapper.GetMethod(mw.Name, mw.Signature, false));
             }
 
         }

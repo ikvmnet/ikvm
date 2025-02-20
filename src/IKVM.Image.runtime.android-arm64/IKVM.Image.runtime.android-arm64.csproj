@@ -8,7 +8,6 @@
         <Description>IKVM Runtime Image</Description>
         <IncludeSymbols>false</IncludeSymbols>
         <ImageRuntimeIdentifier>android-arm64</ImageRuntimeIdentifier>
-        <SupportedImageTargetFrameworks>net6.0;net8.0</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />

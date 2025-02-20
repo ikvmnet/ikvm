@@ -24,9 +24,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionAssemblySymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionAssemblySymbol)symbol).UnderlyingAssembly;
 #else
-            return ((ReflectionAssemblySymbol)symbol).ReflectionObject;
+            return ((ReflectionAssemblySymbol)symbol).UnderlyingAssembly;
 #endif
         }
 
@@ -36,9 +36,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionTypeSymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionTypeSymbol)symbol).UnderlyingType;
 #else
-            return ((ReflectionTypeSymbol)symbol).ReflectionObject;
+            return ((ReflectionTypeSymbol)symbol).UnderlyingType;
 #endif
         }
 
@@ -48,9 +48,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionConstructorSymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionConstructorSymbol)symbol).UnderlyingConstructor;
 #else
-            return ((ReflectionConstructorSymbol)symbol).ReflectionObject;
+            return ((ReflectionConstructorSymbol)symbol).UnderlyingConstructor;
 #endif
         }
 
@@ -60,9 +60,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionMethodSymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionMethodSymbol)symbol).UnderlyingMethod;
 #else
-            return ((ReflectionMethodSymbol)symbol).ReflectionObject;
+            return ((ReflectionMethodSymbol)symbol).UnderlyingMethod;
 #endif
         }
 
@@ -72,9 +72,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionFieldSymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionFieldSymbol)symbol).UnderlyingField;
 #else
-            return ((ReflectionFieldSymbol)symbol).ReflectionObject;
+            return ((ReflectionFieldSymbol)symbol).UnderlyingField;
 #endif
         }
 
@@ -84,9 +84,9 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionPropertySymbol)symbol).ReflectionObject;
+			return ((IkvmReflectionPropertySymbol)symbol).UnderlyingProperty;
 #else
-            return ((ReflectionPropertySymbol)symbol).ReflectionObject;
+            return ((ReflectionPropertySymbol)symbol).UnderlyingProperty;
 #endif
         }
 

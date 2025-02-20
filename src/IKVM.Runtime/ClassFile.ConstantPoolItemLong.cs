@@ -30,27 +30,35 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a long constant.
+        /// </summary>
         sealed class ConstantPoolItemLong : ConstantPoolItem
         {
 
-            internal long l;
+            internal long _value;
 
             /// <summary>
             /// initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemLong(RuntimeContext context, LongConstantData data) :
+            public ConstantPoolItemLong(RuntimeContext context, LongConstantData data) :
                 base(context)
             {
-                l = data.Value;
+                _value = data.Value;
             }
 
-            internal override ConstantType GetConstantType() => ConstantType.Long;
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.Long;
 
-            internal long Value => l;
+            /// <inheritdoc />
+            public override object GetRuntimeValue() => _value;
 
-            internal override object GetRuntimeValue() => l;
+            /// <summary>
+            /// Gets the long value.
+            /// </summary>
+            public long Value => _value;
 
         }
 

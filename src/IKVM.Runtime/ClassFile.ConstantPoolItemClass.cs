@@ -31,15 +31,17 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a class constant.
+        /// </summary>
         internal sealed class ConstantPoolItemClass : ConstantPoolItem, IEquatable<ConstantPoolItemClass>
         {
 
-            static readonly char[] invalidJava15Characters = { '.', ';', '[', ']' };
+            static readonly char[] InvalidJava15Characters = ['.', ';', '[', ']'];
 
-            readonly ClassConstantData data;
-
-            string name;
-            RuntimeJavaType typeWrapper;
+            readonly ClassConstantData _data;
+            string _name;
+            RuntimeJavaType _javaType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -47,10 +49,10 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="data"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            internal ConstantPoolItemClass(RuntimeContext context, ClassConstantData data) :
+            public ConstantPoolItemClass(RuntimeContext context, ClassConstantData data) :
                 base(context)
             {
-                this.data = data;
+                _data = data;
             }
 
             /// <summary>
@@ -58,22 +60,23 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="name"></param>
-            /// <param name="typeWrapper"></param>
-            internal ConstantPoolItemClass(RuntimeContext context, string name, RuntimeJavaType typeWrapper) :
+            /// <param name="javaType"></param>
+            public ConstantPoolItemClass(RuntimeContext context, string name, RuntimeJavaType javaType) :
                 base(context)
             {
-                this.name = name;
-                this.typeWrapper = typeWrapper;
+                _name = name;
+                _javaType = javaType;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 // if the item was patched, we already have a name
-                if (name != null)
+                if (_name != null)
                     return;
 
-                name = classFile.GetConstantPoolUtf8String(utf8_cp, data.Name);
-                if (name.Length > 0)
+                _name = classFile.GetConstantPoolUtf8String(utf8_cp, _data.Name);
+                if (_name.Length > 0)
                 {
                     // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
                     // class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
@@ -81,36 +84,33 @@ namespace IKVM.Runtime
 #if !IMPORTER
                     if (classFile.MajorVersion < 49 && (options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
                     {
-                        char prev = name[0];
-                        if (Char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
+                        var prev = _name[0];
+                        if (char.IsLetter(prev) || prev == '$' || prev == '_' || prev == '[' || prev == '/')
                         {
                             int skip = 1;
-                            int end = name.Length;
+                            int end = _name.Length;
                             if (prev == '[')
                             {
-                                if (!IsValidFieldSig(name))
-                                {
-                                    goto barf;
-                                }
-                                while (name[skip] == '[')
-                                {
+                                if (!IsValidFieldDescriptor(_name))
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", _name);
+
+                                while (_name[skip] == '[')
                                     skip++;
-                                }
-                                if (name.EndsWith(";"))
-                                {
+
+                                if (_name.EndsWith(";"))
                                     end--;
-                                }
                             }
+
                             for (int i = skip; i < end; i++)
                             {
-                                char c = name[i];
-                                if (!Char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
-                                {
-                                    goto barf;
-                                }
+                                var c = _name[i];
+                                if (!char.IsLetterOrDigit(c) && c != '$' && c != '_' && (c != '/' || prev == '/'))
+                                    throw new ClassFormatError("Invalid class name \"{0}\"", _name);
+
                                 prev = c;
                             }
-                            name = String.Intern(name.Replace('/', '.'));
+
+                            _name = string.Intern(_name.Replace('/', '.'));
                             return;
                         }
                     }
@@ -119,56 +119,51 @@ namespace IKVM.Runtime
                     {
                         // since 1.5 the restrictions on class names have been greatly reduced
                         int start = 0;
-                        int end = name.Length;
-                        if (name[0] == '[')
+                        int end = _name.Length;
+                        if (_name[0] == '[')
                         {
-                            if (!IsValidFieldSig(name))
-                            {
-                                goto barf;
-                            }
+                            if (!IsValidFieldDescriptor(_name))
+                                throw new ClassFormatError("Invalid class name \"{0}\"", _name);
+
                             // the semicolon is only allowed at the end and IsValidFieldSig enforces this,
                             // but since invalidJava15Characters contains the semicolon, we decrement end
                             // to make the following check against invalidJava15Characters ignore the
                             // trailing semicolon.
-                            if (name[end - 1] == ';')
-                            {
+                            if (_name[end - 1] == ';')
                                 end--;
-                            }
-                            while (name[start] == '[')
-                            {
+
+                            while (_name[start] == '[')
                                 start++;
-                            }
                         }
 
-                        if (name.IndexOfAny(invalidJava15Characters, start, end - start) >= 0)
-                        {
-                            goto barf;
-                        }
+                        if (_name.IndexOfAny(InvalidJava15Characters, start, end - start) >= 0)
+                            throw new ClassFormatError("Invalid class name \"{0}\"", _name);
 
-                        name = string.Intern(name.Replace('/', '.'));
+                        _name = string.Intern(_name.Replace('/', '.'));
                         return;
                     }
                 }
-            barf:
-                throw new ClassFormatError("Invalid class name \"{0}\"", name);
             }
 
-            internal override void MarkLinkRequired()
+            /// <inheritdoc />
+            public override void MarkLinkRequired()
             {
-                typeWrapper ??= Context.VerifierJavaTypeFactory.Null;
+                _javaType ??= Context.VerifierJavaTypeFactory.Null;
             }
 
             internal void LinkSelf(RuntimeJavaType thisType)
             {
-                this.typeWrapper = thisType;
+                _javaType = thisType;
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                if (typeWrapper == Context.VerifierJavaTypeFactory.Null)
+                if (_javaType == Context.VerifierJavaTypeFactory.Null)
                 {
-                    var tw = thisType.ClassLoader.LoadClass(name, mode | LoadMode.WarnClassNotFound);
-#if !IMPORTER && !FIRST_PASS
+                    var tw = thisType.ClassLoader.LoadClass(_name, mode | LoadMode.WarnClassNotFound);
+
+#if IMPORTER == false && FIRST_PASS == false
                     if (!tw.IsUnloadable)
                     {
                         try
@@ -177,40 +172,49 @@ namespace IKVM.Runtime
                         }
                         catch (java.lang.SecurityException)
                         {
-                            tw = new RuntimeUnloadableJavaType(Context, name);
+                            tw = new RuntimeUnloadableJavaType(Context, _name);
                         }
                     }
 #endif
-                    typeWrapper = tw;
+
+                    _javaType = tw;
                 }
             }
 
-            internal string Name
+            /// <summary>
+            /// Gets the name of the class.
+            /// </summary>
+            public string Name => _name;
+
+            /// <summary>
+            /// Gets the resulved runtime type of the class constant.
+            /// </summary>
+            /// <returns></returns>
+            public RuntimeJavaType GetClassType()
             {
-                get
-                {
-                    return name;
-                }
+                return _javaType;
             }
 
-            internal RuntimeJavaType GetClassType()
-            {
-                return typeWrapper;
-            }
-
-            internal override ConstantType GetConstantType()
+            /// <inheritdoc />
+            public override ConstantType GetConstantType()
             {
                 return ConstantType.Class;
             }
 
-            public sealed override int GetHashCode()
-            {
-                return name.GetHashCode();
-            }
-
+            /// <summary>
+            /// Returns <c>true</c> if this constant is equal to the other constant.
+            /// </summary>
+            /// <param name="other"></param>
+            /// <returns></returns>
             public bool Equals(ConstantPoolItemClass other)
             {
-                return ReferenceEquals(name, other.name);
+                return ReferenceEquals(_name, other._name);
+            }
+
+            /// <inheritdoc />
+            public sealed override int GetHashCode()
+            {
+                return _name.GetHashCode();
             }
 
         }

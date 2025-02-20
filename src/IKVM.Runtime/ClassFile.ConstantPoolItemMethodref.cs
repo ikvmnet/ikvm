@@ -23,7 +23,6 @@
 */
 using IKVM.Attributes;
 using IKVM.ByteCode.Decoding;
-using IKVM.Runtime;
 
 namespace IKVM.Runtime
 {
@@ -31,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a methodref constant.
+        /// </summary>
         internal sealed class ConstantPoolItemMethodref : ConstantPoolItemMI
         {
 
@@ -39,20 +41,21 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemMethodref(RuntimeContext context, MethodrefConstantData data) :
+            public ConstantPoolItemMethodref(RuntimeContext context, MethodrefConstantData data) :
                 base(context, data.Class, data.NameAndType)
             {
 
             }
 
-            internal override void Link(RuntimeJavaType thisJavaType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisJavaType, LoadMode mode)
             {
                 base.Link(thisJavaType, mode);
 
                 var javaType = GetClassType();
                 if (javaType != null && javaType.IsUnloadable == false)
                 {
-                    method = javaType.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
+                    method = javaType.GetMethod(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
                     method?.Link(mode);
 
                     if (Name != StringConstants.INIT &&
@@ -61,7 +64,7 @@ namespace IKVM.Runtime
                         thisJavaType != javaType &&
                         thisJavaType.IsSubTypeOf(javaType))
                     {
-                        invokespecialMethod = thisJavaType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
+                        invokespecialMethod = thisJavaType.BaseTypeWrapper.GetMethod(Name, Signature, true);
                         invokespecialMethod?.Link(mode);
                     }
                 }

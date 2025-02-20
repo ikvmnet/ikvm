@@ -4,8 +4,7 @@
     enum ImportDebug
     {
 
-        Unspecified,
-        Full,
+        None,
         Portable,
         Embedded,
 

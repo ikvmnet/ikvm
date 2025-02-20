@@ -570,7 +570,7 @@ namespace IKVM.Runtime
                     }
                     ilgen.Emit(OpCodes.Stelem, context.Context.Types.Object);
                 }
-                RuntimeJavaMethod ctorSerializedLambda = context.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethodWrapper(StringConstants.INIT,
+                RuntimeJavaMethod ctorSerializedLambda = context.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.SerializedLambda").GetMethod(StringConstants.INIT,
                     "(Ljava.lang.Class;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;ILjava.lang.String;Ljava.lang.String;Ljava.lang.String;Ljava.lang.String;[Ljava.lang.Object;)V", false);
                 ctorSerializedLambda.Link();
                 ctorSerializedLambda.EmitNewobj(ilgen);
@@ -828,7 +828,7 @@ namespace IKVM.Runtime
         {
             var tw = context.ClassLoaderFactory.LoadClassCritical("java.lang.Number");
             tw.EmitCheckcast(ilgen);
-            var mw = tw.GetMethodWrapper(methodName, methodSig, false);
+            var mw = tw.GetMethod(methodName, methodSig, false);
             mw.Link();
             mw.EmitCallvirt(ilgen);
         }
@@ -859,7 +859,7 @@ namespace IKVM.Runtime
                     for (int i = 0, count = mw.GetParameters().Length; i <= count; i++)
                         ilgen.EmitLdarg(i);
 
-                    context.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
+                    context.Context.JavaBase.TypeOfJavaLangObject.GetMethod(mw.Name, mw.Signature, false).EmitCallvirt(ilgen);
                     ilgen.Emit(OpCodes.Ret);
                     ilgen.DoEmit();
                 }
@@ -1021,7 +1021,7 @@ namespace IKVM.Runtime
         static bool IsObjectMethod(RuntimeJavaMethod mw)
         {
             RuntimeJavaMethod objectMethod;
-            return (objectMethod = mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
+            return (objectMethod = mw.DeclaringType.Context.JavaBase.TypeOfJavaLangObject.GetMethod(mw.Name, mw.Signature, false)) != null && objectMethod.IsPublic;
         }
 
         static bool MatchSignatures(RuntimeJavaMethod interfaceMethod, ClassFile.ConstantPoolItemMethodType samMethodType)

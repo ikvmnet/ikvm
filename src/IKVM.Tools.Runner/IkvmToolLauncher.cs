@@ -92,44 +92,16 @@ namespace IKVM.Tools.Runner
         /// <summary>
         /// Gets the path to executable for the given environment.
         /// </summary>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe(OSPlatform platform, Architecture architecture)
+        public string? GetToolExe()
         {
-            return Path.Combine(toolPath, platform == OSPlatform.Windows ? $"{toolName}.exe" : toolName);
-        }
+            foreach (var name in (Span<string>)[toolName + ".exe", toolName])
+                if (File.Exists(Path.Combine(toolPath, name)))
+                    return Path.Combine(toolPath, name);
 
-        /// <summary>
-        /// Gets the path to executable for the given environment.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe()
-        {
-            return GetToolExe(GetOSPlatform(), RuntimeInformation.OSArchitecture);
-        }
-
-        /// <summary>
-        /// Gets the current OS platform.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
-        OSPlatform GetOSPlatform()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return OSPlatform.Windows;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return OSPlatform.Linux;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return OSPlatform.OSX;
-
-            throw new PlatformNotSupportedException();
+            return null;
         }
 
     }

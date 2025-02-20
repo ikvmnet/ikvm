@@ -16,7 +16,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         const BindingFlags DefaultBindingFlags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
-        readonly Type _type;
+        readonly Type _underlyingType;
 
         MethodBase[]? _methodsSource;
         int _methodsBaseRow;
@@ -49,12 +49,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="module"></param>
-        /// <param name="type"></param>
-        public ReflectionTypeSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, Type type) :
-            base(context, module, null, type)
+        /// <param name="underlyingType"></param>
+        public ReflectionTypeSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, Type underlyingType) :
+            base(context, module, null, underlyingType)
         {
-            Debug.Assert(module.ReflectionModule == type.Module);
-            _type = type ?? throw new ArgumentNullException(nameof(type));
+            Debug.Assert(module.UnderlyingModule == underlyingType.Module);
+            _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (method is null)
                 throw new ArgumentNullException(nameof(method));
 
-            Debug.Assert(method.DeclaringType == _type);
+            Debug.Assert(method.DeclaringType == _underlyingType);
 
             var hnd = MetadataTokens.MethodDefinitionHandle(method.MetadataToken);
             var row = MetadataTokens.GetRowNumber(hnd);
@@ -95,7 +95,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             // initialize source table
             if (_methodsSource == null)
             {
-                Interlocked.CompareExchange(ref _methodsSource, _type.GetConstructors(DefaultBindingFlags).Cast<MethodBase>().Concat(_type.GetMethods(DefaultBindingFlags)).OrderBy(i => i.MetadataToken).ToArray(), null);
+                Interlocked.CompareExchange(ref _methodsSource, _underlyingType.GetConstructors(DefaultBindingFlags).Cast<MethodBase>().Concat(_underlyingType.GetMethods(DefaultBindingFlags)).OrderBy(i => i.MetadataToken).ToArray(), null);
                 _methodsBaseRow = _methodsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_methodsSource[0].MetadataToken)) : 0;
             }
 
@@ -145,7 +145,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (field is null)
                 throw new ArgumentNullException(nameof(field));
 
-            Debug.Assert(field.DeclaringType == _type);
+            Debug.Assert(field.DeclaringType == _underlyingType);
 
             var hnd = MetadataTokens.FieldDefinitionHandle(field.MetadataToken);
             var row = MetadataTokens.GetRowNumber(hnd);
@@ -153,7 +153,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             // initialize source table
             if (_fieldsSource == null)
             {
-                Interlocked.CompareExchange(ref _fieldsSource, _type.GetFields(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
+                Interlocked.CompareExchange(ref _fieldsSource, _underlyingType.GetFields(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
                 _fieldsBaseRow = _fieldsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_fieldsSource[0].MetadataToken)) : 0;
             }
 
@@ -193,7 +193,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (property is null)
                 throw new ArgumentNullException(nameof(property));
 
-            Debug.Assert(property.DeclaringType == _type);
+            Debug.Assert(property.DeclaringType == _underlyingType);
 
             var hnd = MetadataTokens.PropertyDefinitionHandle(property.MetadataToken);
             var row = MetadataTokens.GetRowNumber(hnd);
@@ -201,7 +201,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             // initialize source table
             if (_propertiesSource == null)
             {
-                Interlocked.CompareExchange(ref _propertiesSource, _type.GetProperties(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
+                Interlocked.CompareExchange(ref _propertiesSource, _underlyingType.GetProperties(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
                 _propertiesBaseRow = _propertiesSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle(_propertiesSource[0].MetadataToken)) : 0;
             }
 
@@ -241,7 +241,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (@event is null)
                 throw new ArgumentNullException(nameof(@event));
 
-            Debug.Assert(@event.DeclaringType == _type);
+            Debug.Assert(@event.DeclaringType == _underlyingType);
 
             var hnd = MetadataTokens.PropertyDefinitionHandle(@event.MetadataToken);
             var row = MetadataTokens.GetRowNumber(hnd);
@@ -249,7 +249,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             // initialize source events
             if (_eventsSource == null)
             {
-                Interlocked.CompareExchange(ref _eventsSource, _type.GetEvents(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
+                Interlocked.CompareExchange(ref _eventsSource, _underlyingType.GetEvents(DefaultBindingFlags).OrderBy(i => i.MetadataToken).ToArray(), null);
                 _eventsBaseRow = _eventsSource.Length != 0 ? MetadataTokens.GetRowNumber(MetadataTokens.EventDefinitionHandle(_eventsSource[0].MetadataToken)) : 0;
             }
 
@@ -289,11 +289,11 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (genericTypeParameterType is null)
                 throw new ArgumentNullException(nameof(genericTypeParameterType));
 
-            Debug.Assert(genericTypeParameterType.DeclaringType == _type);
+            Debug.Assert(genericTypeParameterType.DeclaringType == _underlyingType);
 
             // initialize tables
             if (_genericParametersSource == null)
-                Interlocked.CompareExchange(ref _genericParametersSource, _type.GetGenericArguments(), null);
+                Interlocked.CompareExchange(ref _genericParametersSource, _underlyingType.GetGenericArguments(), null);
             if (_genericParameters == null)
                 Interlocked.CompareExchange(ref _genericParameters, new ReflectionTypeSymbol?[_genericParametersSource.Length], null);
 
@@ -327,12 +327,12 @@ namespace IKVM.CoreLib.Symbols.Reflection
             if (genericTypeArguments is null)
                 throw new ArgumentNullException(nameof(genericTypeArguments));
 
-            if (_type.IsGenericTypeDefinition == false)
+            if (_underlyingType.IsGenericTypeDefinition == false)
                 throw new InvalidOperationException();
 
             // initialize the available parameters
             if (_genericParametersSource == null)
-                Interlocked.CompareExchange(ref _genericParametersSource, _type.GetGenericArguments(), null);
+                Interlocked.CompareExchange(ref _genericParametersSource, _underlyingType.GetGenericArguments(), null);
             if (_genericParametersSource.Length != genericTypeArguments.Length)
                 throw new InvalidOperationException();
 
@@ -356,7 +356,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
                     _genericTypesLock.EnterWriteLock();
 
                     // generate new symbol
-                    var sym = new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeGenericType(genericTypeArguments));
+                    var sym = new ReflectionTypeSymbol(Context, ContainingModule, _underlyingType.MakeGenericType(genericTypeArguments));
                     _genericTypes.Add((genericTypeArguments, sym));
                     return sym;
                 }
@@ -378,7 +378,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionTypeSymbol ResolveTypeSymbol(Type type)
         {
-            if (type == _type)
+            if (type == _underlyingType)
                 return this;
             else
                 return base.ResolveTypeSymbol(type);
@@ -391,7 +391,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionConstructorSymbol ResolveConstructorSymbol(ConstructorInfo ctor)
         {
-            if (ctor.DeclaringType == _type)
+            if (ctor.DeclaringType == _underlyingType)
                 return GetOrCreateConstructorSymbol(ctor);
             else
                 return base.ResolveConstructorSymbol(ctor);
@@ -404,7 +404,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionMethodSymbol ResolveMethodSymbol(MethodInfo method)
         {
-            if (method.DeclaringType == _type)
+            if (method.DeclaringType == _underlyingType)
                 return GetOrCreateMethodSymbol(method);
             else
                 return base.ResolveMethodSymbol(method);
@@ -417,7 +417,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionFieldSymbol ResolveFieldSymbol(FieldInfo field)
         {
-            if (field.DeclaringType == _type)
+            if (field.DeclaringType == _underlyingType)
                 return GetOrCreateFieldSymbol(field);
             else
                 return base.ResolveFieldSymbol(field);
@@ -430,7 +430,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionPropertySymbol ResolvePropertySymbol(PropertyInfo property)
         {
-            if (property.DeclaringType == _type)
+            if (property.DeclaringType == _underlyingType)
                 return GetOrCreatePropertySymbol(property);
             else
                 return base.ResolvePropertySymbol(property);
@@ -443,7 +443,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <returns></returns>
         protected internal override ReflectionEventSymbol ResolveEventSymbol(EventInfo @event)
         {
-            if (@event.DeclaringType == _type)
+            if (@event.DeclaringType == _underlyingType)
                 return GetOrCreateEventSymbol(@event);
             else
                 return base.ResolveEventSymbol(@event);
@@ -452,145 +452,145 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <summary>
         /// Gets the wrapped <see cref="Type"/>.
         /// </summary>
-        internal new Type ReflectionObject => _type;
+        internal Type UnderlyingType => _underlyingType;
 
-        public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_type.Assembly);
+        public IAssemblySymbol Assembly => Context.GetOrCreateAssemblySymbol(_underlyingType.Assembly);
 
-        public string? AssemblyQualifiedName => _type.AssemblyQualifiedName;
+        public string? AssemblyQualifiedName => _underlyingType.AssemblyQualifiedName;
 
-        public TypeAttributes Attributes => _type.Attributes;
+        public TypeAttributes Attributes => _underlyingType.Attributes;
 
-        public ITypeSymbol? BaseType => _type.BaseType != null ? ResolveTypeSymbol(_type.BaseType) : null;
+        public ITypeSymbol? BaseType => _underlyingType.BaseType != null ? ResolveTypeSymbol(_underlyingType.BaseType) : null;
 
-        public bool ContainsGenericParameters => _type.ContainsGenericParameters;
+        public bool ContainsGenericParameters => _underlyingType.ContainsGenericParameters;
 
-        public IMethodBaseSymbol? DeclaringMethod => _type.DeclaringMethod is MethodInfo m ? ResolveMethodSymbol(m) : null;
+        public IMethodBaseSymbol? DeclaringMethod => _underlyingType.DeclaringMethod is MethodInfo m ? ResolveMethodSymbol(m) : null;
 
-        public string? FullName => _type.FullName;
+        public string? FullName => _underlyingType.FullName;
 
-        public GenericParameterAttributes GenericParameterAttributes => _type.GenericParameterAttributes;
+        public GenericParameterAttributes GenericParameterAttributes => _underlyingType.GenericParameterAttributes;
 
-        public int GenericParameterPosition => _type.GenericParameterPosition;
+        public int GenericParameterPosition => _underlyingType.GenericParameterPosition;
 
-        public ITypeSymbol[] GenericTypeArguments => ResolveTypeSymbols(_type.GenericTypeArguments);
+        public ITypeSymbol[] GenericTypeArguments => ResolveTypeSymbols(_underlyingType.GenericTypeArguments);
 
-        public bool HasElementType => _type.HasElementType;
+        public bool HasElementType => _underlyingType.HasElementType;
 
-        public bool IsAbstract => _type.IsAbstract;
+        public bool IsAbstract => _underlyingType.IsAbstract;
 
-        public bool IsArray => _type.IsArray;
+        public bool IsArray => _underlyingType.IsArray;
 
-        public bool IsAutoLayout => _type.IsAutoLayout;
+        public bool IsAutoLayout => _underlyingType.IsAutoLayout;
 
-        public bool IsByRef => _type.IsByRef;
+        public bool IsByRef => _underlyingType.IsByRef;
 
-        public bool IsClass => _type.IsClass;
+        public bool IsClass => _underlyingType.IsClass;
 
-        public bool IsConstructedGenericType => _type.IsConstructedGenericType;
+        public bool IsConstructedGenericType => _underlyingType.IsConstructedGenericType;
 
-        public bool IsEnum => _type.IsEnum;
+        public bool IsEnum => _underlyingType.IsEnum;
 
-        public bool IsExplicitLayout => _type.IsExplicitLayout;
+        public bool IsExplicitLayout => _underlyingType.IsExplicitLayout;
 
-        public bool IsGenericParameter => _type.IsGenericParameter;
+        public bool IsGenericParameter => _underlyingType.IsGenericParameter;
 
-        public bool IsGenericType => _type.IsGenericType;
+        public bool IsGenericType => _underlyingType.IsGenericType;
 
-        public bool IsGenericTypeDefinition => _type.IsGenericTypeDefinition;
+        public bool IsGenericTypeDefinition => _underlyingType.IsGenericTypeDefinition;
 
-        public bool IsInterface => _type.IsInterface;
+        public bool IsInterface => _underlyingType.IsInterface;
 
-        public bool IsLayoutSequential => _type.IsLayoutSequential;
+        public bool IsLayoutSequential => _underlyingType.IsLayoutSequential;
 
-        public bool IsNested => _type.IsNested;
+        public bool IsNested => _underlyingType.IsNested;
 
-        public bool IsNestedAssembly => _type.IsNestedAssembly;
+        public bool IsNestedAssembly => _underlyingType.IsNestedAssembly;
 
-        public bool IsNestedFamANDAssem => _type.IsNestedFamANDAssem;
+        public bool IsNestedFamANDAssem => _underlyingType.IsNestedFamANDAssem;
 
-        public bool IsNestedFamORAssem => _type.IsNestedFamORAssem;
+        public bool IsNestedFamORAssem => _underlyingType.IsNestedFamORAssem;
 
-        public bool IsNestedFamily => _type.IsNestedFamily;
+        public bool IsNestedFamily => _underlyingType.IsNestedFamily;
 
-        public bool IsNestedPrivate => _type.IsNestedPrivate;
+        public bool IsNestedPrivate => _underlyingType.IsNestedPrivate;
 
-        public bool IsNestedPublic => _type.IsNestedPublic;
+        public bool IsNestedPublic => _underlyingType.IsNestedPublic;
 
-        public bool IsNotPublic => _type.IsNotPublic;
+        public bool IsNotPublic => _underlyingType.IsNotPublic;
 
-        public bool IsPointer => _type.IsPointer;
+        public bool IsPointer => _underlyingType.IsPointer;
 
-        public bool IsPrimitive => _type.IsPrimitive;
+        public bool IsPrimitive => _underlyingType.IsPrimitive;
 
-        public bool IsPublic => _type.IsPublic;
+        public bool IsPublic => _underlyingType.IsPublic;
 
-        public bool IsSealed => _type.IsSealed;
+        public bool IsSealed => _underlyingType.IsSealed;
 
 #pragma warning disable SYSLIB0050 // Type or member is obsolete
-        public bool IsSerializable => _type.IsSerializable;
+        public bool IsSerializable => _underlyingType.IsSerializable;
 #pragma warning restore SYSLIB0050 // Type or member is obsolete
 
-        public bool IsValueType => _type.IsValueType;
+        public bool IsValueType => _underlyingType.IsValueType;
 
-        public bool IsVisible => _type.IsVisible;
+        public bool IsVisible => _underlyingType.IsVisible;
 
-        public string? Namespace => _type.Namespace;
+        public string? Namespace => _underlyingType.Namespace;
 
-        public IConstructorSymbol? TypeInitializer => _type.TypeInitializer is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
+        public IConstructorSymbol? TypeInitializer => _underlyingType.TypeInitializer is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
 
         public int GetArrayRank()
         {
-            return _type.GetArrayRank();
+            return _underlyingType.GetArrayRank();
         }
 
         public IConstructorSymbol? GetConstructor(BindingFlags bindingAttr, ITypeSymbol[] types)
         {
-            return _type.GetConstructor(bindingAttr, binder: null, UnpackTypeSymbols(types), modifiers: null) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
+            return _underlyingType.GetConstructor(bindingAttr, binder: null, UnpackTypeSymbols(types), modifiers: null) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
         }
 
         public IConstructorSymbol? GetConstructor(ITypeSymbol[] types)
         {
-            return _type.GetConstructor(UnpackTypeSymbols(types)) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
+            return _underlyingType.GetConstructor(UnpackTypeSymbols(types)) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
         }
 
         public IConstructorSymbol[] GetConstructors()
         {
-            return ResolveConstructorSymbols(_type.GetConstructors());
+            return ResolveConstructorSymbols(_underlyingType.GetConstructors());
         }
 
         public IConstructorSymbol[] GetConstructors(BindingFlags bindingAttr)
         {
-            return ResolveConstructorSymbols(_type.GetConstructors(bindingAttr));
+            return ResolveConstructorSymbols(_underlyingType.GetConstructors(bindingAttr));
         }
 
         public IMemberSymbol[] GetDefaultMembers()
         {
-            return ResolveMemberSymbols(_type.GetDefaultMembers());
+            return ResolveMemberSymbols(_underlyingType.GetDefaultMembers());
         }
 
         public ITypeSymbol? GetElementType()
         {
-            return _type.GetElementType() is Type t ? ResolveTypeSymbol(t) : null;
+            return _underlyingType.GetElementType() is Type t ? ResolveTypeSymbol(t) : null;
         }
 
         public string? GetEnumName(object value)
         {
-            return _type.GetEnumName(value);
+            return _underlyingType.GetEnumName(value);
         }
 
         public string[] GetEnumNames()
         {
-            return _type.GetEnumNames();
+            return _underlyingType.GetEnumNames();
         }
 
         public ITypeSymbol GetEnumUnderlyingType()
         {
-            return ResolveTypeSymbol(_type.GetEnumUnderlyingType());
+            return ResolveTypeSymbol(_underlyingType.GetEnumUnderlyingType());
         }
 
         public Array GetEnumValues()
         {
-            return _type.GetEnumValues();
+            return _underlyingType.GetEnumValues();
         }
 
         public IEventSymbol? GetEvent(string name, BindingFlags bindingAttr)
@@ -600,62 +600,62 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         public IEventSymbol? GetEvent(string name)
         {
-            return _type.GetEvent(name) is { } f ? ResolveEventSymbol(f) : null;
+            return _underlyingType.GetEvent(name) is { } f ? ResolveEventSymbol(f) : null;
         }
 
         public IEventSymbol[] GetEvents()
         {
-            return ResolveEventSymbols(_type.GetEvents());
+            return ResolveEventSymbols(_underlyingType.GetEvents());
         }
 
         public IEventSymbol[] GetEvents(BindingFlags bindingAttr)
         {
-            return ResolveEventSymbols(_type.GetEvents(bindingAttr));
+            return ResolveEventSymbols(_underlyingType.GetEvents(bindingAttr));
         }
 
         public IFieldSymbol? GetField(string name)
         {
-            return _type.GetField(name) is FieldInfo f ? ResolveFieldSymbol(f) : null;
+            return _underlyingType.GetField(name) is FieldInfo f ? ResolveFieldSymbol(f) : null;
         }
 
         public IFieldSymbol? GetField(string name, BindingFlags bindingAttr)
         {
-            return _type.GetField(name, bindingAttr) is FieldInfo f ? ResolveFieldSymbol(f) : null;
+            return _underlyingType.GetField(name, bindingAttr) is FieldInfo f ? ResolveFieldSymbol(f) : null;
         }
 
         public IFieldSymbol[] GetFields()
         {
-            return ResolveFieldSymbols(_type.GetFields());
+            return ResolveFieldSymbols(_underlyingType.GetFields());
         }
 
         public IFieldSymbol[] GetFields(BindingFlags bindingAttr)
         {
-            return ResolveFieldSymbols(_type.GetFields(bindingAttr));
+            return ResolveFieldSymbols(_underlyingType.GetFields(bindingAttr));
         }
 
         public ITypeSymbol[] GetGenericArguments()
         {
-            return ResolveTypeSymbols(_type.GetGenericArguments());
+            return ResolveTypeSymbols(_underlyingType.GetGenericArguments());
         }
 
         public ITypeSymbol[] GetGenericParameterConstraints()
         {
-            return ResolveTypeSymbols(_type.GetGenericParameterConstraints());
+            return ResolveTypeSymbols(_underlyingType.GetGenericParameterConstraints());
         }
 
         public ITypeSymbol GetGenericTypeDefinition()
         {
-            return ResolveTypeSymbol(_type.GetGenericTypeDefinition());
+            return ResolveTypeSymbol(_underlyingType.GetGenericTypeDefinition());
         }
 
         public ITypeSymbol? GetInterface(string name)
         {
-            return _type.GetInterface(name) is { } i ? ResolveTypeSymbol(i) : null;
+            return _underlyingType.GetInterface(name) is { } i ? ResolveTypeSymbol(i) : null;
         }
 
         public ITypeSymbol? GetInterface(string name, bool ignoreCase)
         {
-            return _type.GetInterface(name, ignoreCase) is { } i ? ResolveTypeSymbol(i) : null;
+            return _underlyingType.GetInterface(name, ignoreCase) is { } i ? ResolveTypeSymbol(i) : null;
         }
 
         public InterfaceMapping GetInterfaceMap(ITypeSymbol interfaceType)
@@ -665,141 +665,141 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
         public ITypeSymbol[] GetInterfaces()
         {
-            return ResolveTypeSymbols(_type.GetInterfaces());
+            return ResolveTypeSymbols(_underlyingType.GetInterfaces());
         }
 
         public IMemberSymbol[] GetMember(string name)
         {
-            return ResolveMemberSymbols(_type.GetMember(name));
+            return ResolveMemberSymbols(_underlyingType.GetMember(name));
         }
 
         public IMemberSymbol[] GetMember(string name, BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(_type.GetMember(name, bindingAttr));
+            return ResolveMemberSymbols(_underlyingType.GetMember(name, bindingAttr));
         }
 
         public IMemberSymbol[] GetMember(string name, MemberTypes type, BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(_type.GetMember(name, type, bindingAttr));
+            return ResolveMemberSymbols(_underlyingType.GetMember(name, type, bindingAttr));
         }
 
         public IMemberSymbol[] GetMembers(BindingFlags bindingAttr)
         {
-            return ResolveMemberSymbols(_type.GetMembers(bindingAttr));
+            return ResolveMemberSymbols(_underlyingType.GetMembers(bindingAttr));
         }
 
         public IMemberSymbol[] GetMembers()
         {
-            return ResolveMemberSymbols(_type.GetMembers());
+            return ResolveMemberSymbols(_underlyingType.GetMembers());
         }
 
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr)
         {
-            return _type.GetMethod(name, bindingAttr) is { } m ? ResolveMethodSymbol(m) : null;
+            return _underlyingType.GetMethod(name, bindingAttr) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
         public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types)
         {
-            return _type.GetMethod(name, UnpackTypeSymbols(types)) is { } m ? ResolveMethodSymbol(m) : null;
+            return _underlyingType.GetMethod(name, UnpackTypeSymbols(types)) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
         public IMethodSymbol? GetMethod(string name, BindingFlags bindingAttr, ITypeSymbol[] types)
         {
-            return _type.GetMethod(name, bindingAttr, null, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
+            return _underlyingType.GetMethod(name, bindingAttr, null, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
         public IMethodSymbol? GetMethod(string name)
         {
-            return _type.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
+            return _underlyingType.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
         public IMethodSymbol[] GetMethods(BindingFlags bindingAttr)
         {
-            return ResolveMethodSymbols(_type.GetMethods(bindingAttr));
+            return ResolveMethodSymbols(_underlyingType.GetMethods(bindingAttr));
         }
 
         public IMethodSymbol[] GetMethods()
         {
-            return ResolveMethodSymbols(_type.GetMethods());
+            return ResolveMethodSymbols(_underlyingType.GetMethods());
         }
 
         public ITypeSymbol? GetNestedType(string name)
         {
-            return _type.GetNestedType(name) is Type t ? ResolveTypeSymbol(t) : null;
+            return _underlyingType.GetNestedType(name) is Type t ? ResolveTypeSymbol(t) : null;
         }
 
         public ITypeSymbol? GetNestedType(string name, BindingFlags bindingAttr)
         {
-            return _type.GetNestedType(name, bindingAttr) is Type t ? ResolveTypeSymbol(t) : null;
+            return _underlyingType.GetNestedType(name, bindingAttr) is Type t ? ResolveTypeSymbol(t) : null;
         }
 
         public ITypeSymbol[] GetNestedTypes()
         {
-            return ResolveTypeSymbols(_type.GetNestedTypes());
+            return ResolveTypeSymbols(_underlyingType.GetNestedTypes());
         }
 
         public ITypeSymbol[] GetNestedTypes(BindingFlags bindingAttr)
         {
-            return ResolveTypeSymbols(_type.GetNestedTypes(bindingAttr));
+            return ResolveTypeSymbols(_underlyingType.GetNestedTypes(bindingAttr));
         }
 
         public IPropertySymbol[] GetProperties()
         {
-            return ResolvePropertySymbols(_type.GetProperties());
+            return ResolvePropertySymbols(_underlyingType.GetProperties());
         }
 
         public IPropertySymbol[] GetProperties(BindingFlags bindingAttr)
         {
-            return ResolvePropertySymbols(_type.GetProperties(bindingAttr));
+            return ResolvePropertySymbols(_underlyingType.GetProperties(bindingAttr));
         }
 
         public IPropertySymbol? GetProperty(string name, ITypeSymbol[] types)
         {
-            return _type.GetProperty(name, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
+            return _underlyingType.GetProperty(name, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
         public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types)
         {
-            var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionObject : null;
-            return _type.GetProperty(name, _returnType, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
+            var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).UnderlyingType : null;
+            return _underlyingType.GetProperty(name, _returnType, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
         public IPropertySymbol? GetProperty(string name, BindingFlags bindingAttr)
         {
-            return _type.GetProperty(name, bindingAttr) is { } p ? ResolvePropertySymbol(p) : null;
+            return _underlyingType.GetProperty(name, bindingAttr) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
         public IPropertySymbol? GetProperty(string name)
         {
-            return _type.GetProperty(name) is { } p ? ResolvePropertySymbol(p) : null;
+            return _underlyingType.GetProperty(name) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
         public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType)
         {
-            var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).ReflectionObject : null;
+            var _returnType = returnType != null ? ((ReflectionTypeSymbol)returnType).UnderlyingType : null;
 
-            return _type.GetProperty(name, _returnType) is { } p ? ResolvePropertySymbol(p) : null;
+            return _underlyingType.GetProperty(name, _returnType) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
         public bool IsAssignableFrom(ITypeSymbol? c)
         {
-            return _type.IsAssignableFrom(c != null ? ((ReflectionTypeSymbol)c).ReflectionObject : null);
+            return _underlyingType.IsAssignableFrom(c != null ? ((ReflectionTypeSymbol)c).UnderlyingType : null);
         }
 
         public bool IsEnumDefined(object value)
         {
-            return _type.IsEnumDefined(value);
+            return _underlyingType.IsEnumDefined(value);
         }
 
         public bool IsSubclassOf(ITypeSymbol c)
         {
-            return _type.IsSubclassOf(((ReflectionTypeSymbol)c).ReflectionObject);
+            return _underlyingType.IsSubclassOf(((ReflectionTypeSymbol)c).UnderlyingType);
         }
 
         public ITypeSymbol MakeArrayType()
         {
             if (_asSZArray == null)
-                Interlocked.CompareExchange(ref _asSZArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType()), null);
+                Interlocked.CompareExchange(ref _asSZArray, new ReflectionTypeSymbol(Context, ContainingModule, _underlyingType.MakeArrayType()), null);
 
             return _asSZArray;
         }
@@ -814,7 +814,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
 
             ref var asArray = ref _asArray[rank];
             if (asArray == null)
-                Interlocked.CompareExchange(ref asArray, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeArrayType(rank)), null);
+                Interlocked.CompareExchange(ref asArray, new ReflectionTypeSymbol(Context, ContainingModule, _underlyingType.MakeArrayType(rank)), null);
 
             return asArray;
         }
@@ -822,7 +822,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public ITypeSymbol MakeByRefType()
         {
             if (_asByRef == null)
-                Interlocked.CompareExchange(ref _asByRef, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakeByRefType()), null);
+                Interlocked.CompareExchange(ref _asByRef, new ReflectionTypeSymbol(Context, ContainingModule, _underlyingType.MakeByRefType()), null);
 
             return _asByRef;
         }
@@ -835,7 +835,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public ITypeSymbol MakePointerType()
         {
             if (_asPointer == null)
-                Interlocked.CompareExchange(ref _asPointer, new ReflectionTypeSymbol(Context, ContainingModule, _type.MakePointerType()), null);
+                Interlocked.CompareExchange(ref _asPointer, new ReflectionTypeSymbol(Context, ContainingModule, _underlyingType.MakePointerType()), null);
 
             return _asPointer;
         }

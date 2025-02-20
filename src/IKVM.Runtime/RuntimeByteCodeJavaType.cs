@@ -132,7 +132,7 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaMethod mw;
                     if (method.IsVirtual
-                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(method.Name, method.Signature, false)) != null
+                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethod(method.Name, method.Signature, false)) != null
                         && mw.IsVirtual
                         && mw.IsFinal)
                     {

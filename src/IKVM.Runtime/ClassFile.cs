@@ -36,6 +36,227 @@ namespace IKVM.Runtime
     sealed partial class ClassFile : IDisposable
     {
 
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid method name given the specified class format version.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public static bool IsValidMethodName(string name, ClassFormatVersion version)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return IsValidMethodName(name.AsSpan(), version);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid method name given the specified class format version.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public static bool IsValidMethodName(ReadOnlySpan<char> name, ClassFormatVersion version)
+        {
+            if (name.Length == 0)
+                return false;
+
+            for (int i = 0; i < name.Length; i++)
+                if (".;[/<>".Contains(name[i]))
+                    return false;
+
+            return version >= 49 || IsValidPre49Identifier(name);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid field name given the specified class format version.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public static bool IsValidFieldName(string name, ClassFormatVersion version)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return IsValidFieldName(name.AsSpan(), version);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid field name given the specified class format version.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public static bool IsValidFieldName(ReadOnlySpan<char> name, ClassFormatVersion version)
+        {
+            if (name.Length == 0)
+                return false;
+
+            for (int i = 0; i < name.Length; i++)
+                if (".;[/".Contains(name[i]))
+                    return false;
+
+            return version >= 49 || IsValidPre49Identifier(name);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid identifier for pre-49 class files.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static bool IsValidPre49Identifier(ReadOnlySpan<char> name)
+        {
+            if (!char.IsLetter(name[0]) && "$_".Contains(name[0]) == false)
+                return false;
+
+            for (int i = 1; i < name.Length; i++)
+                if (!char.IsLetterOrDigit(name[i]) && "$_".Contains(name[i]) == false)
+                    return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified descriptor is a valid field descriptor.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public static bool IsValidFieldDescriptor(string descriptor)
+        {
+            if (descriptor is null)
+                throw new ArgumentNullException(nameof(descriptor));
+
+            return IsValidFieldDescriptor(descriptor.AsSpan());
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified descriptor is a valid field descriptor.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public static bool IsValidFieldDescriptor(string descriptor, int start, int end)
+        {
+            if (descriptor is null)
+                throw new ArgumentNullException(nameof(descriptor));
+
+            return IsValidFieldDescriptor(descriptor.AsSpan());
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified descriptor is a valid field descriptor.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public static bool IsValidFieldDescriptor(ReadOnlySpan<char> descriptor)
+        {
+            if (descriptor.IsEmpty)
+                return false;
+
+            switch (descriptor[0])
+            {
+                case 'L':
+                    // skip L, next semicolon should be last character
+                    descriptor = descriptor.Slice(1);
+                    return descriptor.Length >= 2 && descriptor.IndexOf(';') == descriptor.Length - 1;
+                case '[':
+                    // advance past [ values
+                    while (descriptor[0] == '[')
+                    {
+                        descriptor = descriptor.Slice(1);
+                        if (descriptor.IsEmpty)
+                            return false;
+                    }
+
+                    return IsValidFieldDescriptor(descriptor);
+                case 'B':
+                case 'Z':
+                case 'C':
+                case 'S':
+                case 'I':
+                case 'J':
+                case 'F':
+                case 'D':
+                    // skip char, should be empty
+                    descriptor = descriptor.Slice(1);
+                    return descriptor.IsEmpty;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified descriptor is a valid method descriptor.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public static bool IsValidMethodDescriptor(string descriptor)
+        {
+            if (descriptor is null)
+                throw new ArgumentNullException(nameof(descriptor));
+
+            return IsValidMethodDescriptor(descriptor.AsSpan());
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified descriptor is a valid method descriptor.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        public static bool IsValidMethodDescriptor(ReadOnlySpan<char> descriptor)
+        {
+            if (descriptor.Length < 3 || descriptor[0] != '(')
+                return false;
+
+            int end = descriptor.IndexOf(')');
+            if (end == -1)
+                return false;
+
+            if (!descriptor.EndsWith(")V".AsSpan()) && !IsValidFieldDescriptor(descriptor[(end + 1)..]))
+                return false;
+
+            for (int i = 1; i < end; i++)
+            {
+                switch (descriptor[i])
+                {
+                    case 'B':
+                    case 'Z':
+                    case 'C':
+                    case 'S':
+                    case 'I':
+                    case 'J':
+                    case 'F':
+                    case 'D':
+                        break;
+                    case 'L':
+                        var p = descriptor.Slice(i).IndexOf(';');
+                        i = p == -1 ? -1 : p + i;
+                        break;
+                    case '[':
+                        while (descriptor[i] == '[')
+                            i++;
+
+                        if ("BZCSIJFDL".Contains(descriptor[i]) == false)
+                            return false;
+
+                        if (descriptor[i] == 'L')
+                        {
+                            var o = descriptor.Slice(i).IndexOf(';');
+                            i = o == -1 ? -1 : o + i;
+                        }
+
+                        break;
+                    default:
+                        return false;
+                }
+
+                if (i == -1 || i >= end)
+                    return false;
+            }
+
+            return true;
+        }
+
         const ushort FLAG_MASK_DEPRECATED = 0x100;
         const ushort FLAG_MASK_INTERNAL = 0x200;
         const ushort FLAG_CALLERSENSITIVE = 0x400;
@@ -52,7 +273,6 @@ namespace IKVM.Runtime
         readonly ConstantPoolItem[] constantpool;
         readonly string[] utf8_cp;
 
-        // Modifiers is a ushort, so the next four fields combine into two 32 bit slots
         Modifiers access_flags;
         ushort flags;
         readonly ConstantPoolItemClass[] interfaces;
@@ -525,16 +745,16 @@ namespace IKVM.Runtime
                                 }
                                 break;
                             case ConstantType.Integer:
-                                ((ConstantPoolItemInteger)constantpool[i]).v = ((java.lang.Integer)constantPoolPatches[i]).intValue();
+                                ((ConstantPoolItemInteger)constantpool[i])._value = ((java.lang.Integer)constantPoolPatches[i]).intValue();
                                 break;
                             case ConstantType.Long:
-                                ((ConstantPoolItemLong)constantpool[i]).l = ((java.lang.Long)constantPoolPatches[i]).longValue();
+                                ((ConstantPoolItemLong)constantpool[i])._value = ((java.lang.Long)constantPoolPatches[i]).longValue();
                                 break;
                             case ConstantType.Float:
-                                ((ConstantPoolItemFloat)constantpool[i]).v = ((java.lang.Float)constantPoolPatches[i]).floatValue();
+                                ((ConstantPoolItemFloat)constantpool[i])._value = ((java.lang.Float)constantPoolPatches[i]).floatValue();
                                 break;
                             case ConstantType.Double:
-                                ((ConstantPoolItemDouble)constantpool[i]).d = ((java.lang.Double)constantPoolPatches[i]).doubleValue();
+                                ((ConstantPoolItemDouble)constantpool[i])._value = ((java.lang.Double)constantPoolPatches[i]).doubleValue();
                                 break;
                             default:
                                 throw new NotImplementedException("ConstantPoolPatch: " + constantPoolPatches[i]);
@@ -707,129 +927,17 @@ namespace IKVM.Runtime
                 throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, handle);
         }
 
-        static bool IsValidMethodName(string name, ClassFormatVersion version)
-        {
-            if (name.Length == 0)
-                return false;
+        /// <summary>
+        /// Gets the major version of the class.
+        /// </summary>
+        public int MajorVersion => clazz.Version.Major;
 
-            for (int i = 0; i < name.Length; i++)
-                if (".;[/<>".IndexOf(name[i]) != -1)
-                    return false;
-
-            return version >= 49 || IsValidPre49Identifier(name);
-        }
-
-        static bool IsValidFieldName(string name, ClassFormatVersion version)
-        {
-            if (name.Length == 0)
-                return false;
-
-            for (int i = 0; i < name.Length; i++)
-                if (".;[/".IndexOf(name[i]) != -1)
-                    return false;
-
-            return version >= 49 || IsValidPre49Identifier(name);
-        }
-
-        static bool IsValidPre49Identifier(string name)
-        {
-            if (!char.IsLetter(name[0]) && "$_".IndexOf(name[0]) == -1)
-                return false;
-
-            for (int i = 1; i < name.Length; i++)
-                if (!char.IsLetterOrDigit(name[i]) && "$_".IndexOf(name[i]) == -1)
-                    return false;
-
-            return true;
-        }
-
-        internal static bool IsValidFieldSig(string sig)
-        {
-            return IsValidFieldSigImpl(sig, 0, sig.Length);
-        }
-
-        static bool IsValidFieldSigImpl(string sig, int start, int end)
-        {
-            if (start >= end)
-                return false;
-
-            switch (sig[start])
-            {
-                case 'L':
-                    return sig.IndexOf(';', start + 1) == end - 1;
-                case '[':
-                    while (sig[start] == '[')
-                    {
-                        start++;
-                        if (start == end)
-                            return false;
-                    }
-
-                    return IsValidFieldSigImpl(sig, start, end);
-                case 'B':
-                case 'Z':
-                case 'C':
-                case 'S':
-                case 'I':
-                case 'J':
-                case 'F':
-                case 'D':
-                    return start == end - 1;
-                default:
-                    return false;
-            }
-        }
-
-        internal static bool IsValidMethodSig(string sig)
-        {
-            if (sig.Length < 3 || sig[0] != '(')
-                return false;
-
-            int end = sig.IndexOf(')');
-            if (end == -1)
-                return false;
-
-            if (!sig.EndsWith(")V") && !IsValidFieldSigImpl(sig, end + 1, sig.Length))
-                return false;
-
-            for (int i = 1; i < end; i++)
-            {
-                switch (sig[i])
-                {
-                    case 'B':
-                    case 'Z':
-                    case 'C':
-                    case 'S':
-                    case 'I':
-                    case 'J':
-                    case 'F':
-                    case 'D':
-                        break;
-                    case 'L':
-                        i = sig.IndexOf(';', i);
-                        break;
-                    case '[':
-                        while (sig[i] == '[')
-                            i++;
-                        if ("BZCSIJFDL".IndexOf(sig[i]) == -1)
-                            return false;
-                        if (sig[i] == 'L')
-                            i = sig.IndexOf(';', i);
-                        break;
-                    default:
-                        return false;
-                }
-
-                if (i == -1 || i >= end)
-                    return false;
-            }
-
-            return true;
-        }
-
-        internal int MajorVersion => clazz.Version.Major;
-
-        internal void Link(RuntimeJavaType thisType, LoadMode mode)
+        /// <summary>
+        /// Initiates linkage of this class file to the specified java type instance.
+        /// </summary>
+        /// <param name="thisType"></param>
+        /// <param name="mode"></param>
+        public void Link(RuntimeJavaType thisType, LoadMode mode)
         {
             // this is not just an optimization, it's required for anonymous classes to be able to refer to themselves
             ((ConstantPoolItemClass)constantpool[clazz.This.Slot]).LinkSelf(thisType);
@@ -839,34 +947,68 @@ namespace IKVM.Runtime
                     constantpool[i].Link(thisType, mode);
         }
 
-        internal Modifiers Modifiers => access_flags;
+        /// <summary>
+        /// Gets the modifiers of the class.
+        /// </summary>
+        public Modifiers Modifiers => access_flags;
 
         /// <summary>
-        /// 
+        /// Gets whether this class file represents an abstract class.
         /// </summary>
-        /// <remarks>
-        /// interfaces are implicitly abstract
-        /// </remarks>
-        internal bool IsAbstract => (access_flags & (Modifiers.Abstract | Modifiers.Interface)) != 0;
+        public bool IsAbstract => (access_flags & (Modifiers.Abstract | Modifiers.Interface)) != 0;
 
-        internal bool IsFinal => (access_flags & Modifiers.Final) != 0;
+        /// <summary>
+        /// Gets whether this class file represents a final class.
+        /// </summary>
+        public bool IsFinal => (access_flags & Modifiers.Final) != 0;
 
-        internal bool IsPublic => (access_flags & Modifiers.Public) != 0;
+        /// <summary>
+        /// Gets whether this class file represents a public class.
+        /// </summary>
+        public bool IsPublic => (access_flags & Modifiers.Public) != 0;
 
-        internal bool IsInterface => (access_flags & Modifiers.Interface) != 0;
+        /// <summary>
+        /// Gets whether this class file represents an interface.
+        /// </summary>
+        public bool IsInterface => (access_flags & Modifiers.Interface) != 0;
 
-        internal bool IsEnum => (access_flags & Modifiers.Enum) != 0;
+        /// <summary>
+        /// Gets whether this class file represents an enum.
+        /// </summary>
+        public bool IsEnum => (access_flags & Modifiers.Enum) != 0;
 
-        internal bool IsAnnotation => (access_flags & Modifiers.Annotation) != 0;
+        /// <summary>
+        /// Gets whether this class file represents an annotation.
+        /// </summary>
+        public bool IsAnnotation => (access_flags & Modifiers.Annotation) != 0;
 
-        internal bool IsSuper => (access_flags & Modifiers.Super) != 0;
+        /// <summary>
+        /// Gets whether this class file is a super.
+        /// </summary>
+        public bool IsSuper => (access_flags & Modifiers.Super) != 0;
 
+        /// <summary>
+        /// Returns <c>true</c> if the specified class field is referenced within the class file.
+        /// </summary>
+        /// <param name="fld"></param>
+        /// <returns></returns>
         internal bool IsReferenced(Field fld) => constantpool.OfType<ConstantPoolItemFieldref>().Any(i => i.Class == Name && i.Name == fld.Name && i.Signature == fld.Signature);
 
+        /// <summary>
+        /// Gets the field ref constant for the given handle.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
         internal ConstantPoolItemFieldref GetFieldref(FieldrefConstantHandle handle)
         {
             return (ConstantPoolItemFieldref)constantpool[handle.Slot];
         }
+
+        /// <summary>
+        /// Gets the field ref constant for the given handle.
+        /// </summary>
+        /// <param name="slot"></param>
+        /// <returns></returns>
         internal ConstantPoolItemFieldref GetFieldref(int slot)
         {
             return GetFieldref(new FieldrefConstantHandle(checked((ushort)slot)));
@@ -1046,14 +1188,29 @@ namespace IKVM.Runtime
             return ((ConstantPoolItemLiveObject)constantpool[slot]).Value;
         }
 
+        /// <summary>
+        /// Gets the name of the class.
+        /// </summary>
         internal string Name => GetConstantPoolClass(clazz.This);
 
+        /// <summary>
+        /// Gets the constant pool item that represents the super class.
+        /// </summary>
         internal ConstantPoolItemClass SuperClass => (ConstantPoolItemClass)constantpool[clazz.Super.Slot];
 
+        /// <summary>
+        /// Gets the fields of the class.
+        /// </summary>
         internal Field[] Fields => fields;
 
+        /// <summary>
+        /// Gets the methods of the class.
+        /// </summary>
         internal Method[] Methods => methods;
 
+        /// <summary>
+        /// Gets the interfaces of the class.
+        /// </summary>
         internal ConstantPoolItemClass[] Interfaces => interfaces;
 
         internal string SourceFileAttribute => sourceFile;
@@ -1068,13 +1225,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        internal object[] Annotations
-        {
-            get
-            {
-                return annotations;
-            }
-        }
+        internal object[] Annotations => annotations;
 
         internal string GenericSignature => signature;
 
@@ -1096,6 +1247,9 @@ namespace IKVM.Runtime
 
         internal bool DeprecatedAttribute => (flags & FLAG_MASK_DEPRECATED) != 0;
 
+        /// <summary>
+        /// Gets whether this class is an internal class.
+        /// </summary>
         internal bool IsInternal => (flags & FLAG_MASK_INTERNAL) != 0;
 
         // for use by ikvmc (to implement the -privatepackage option)

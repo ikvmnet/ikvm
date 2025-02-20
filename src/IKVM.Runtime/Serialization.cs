@@ -82,9 +82,9 @@ namespace IKVM.Runtime
                 return false;
             else if (wrapper.IsSubTypeOf(TypeOfIObjectReference))
                 return false;
-            else if (wrapper.GetMethodWrapper("GetObjectData", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
+            else if (wrapper.GetMethod("GetObjectData", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
                 return false;
-            else if (wrapper.GetMethodWrapper("<init>", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
+            else if (wrapper.GetMethod("<init>", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
                 return false;
             else
                 return true;
@@ -101,7 +101,7 @@ namespace IKVM.Runtime
             {
                 if (wrapper.IsSubTypeOf(TypeOfExternalizable))
                 {
-                    var ctor = wrapper.GetMethodWrapper("<init>", "()V", false);
+                    var ctor = wrapper.GetMethod("<init>", "()V", false);
                     if (ctor != null && ctor.IsPublic)
                     {
                         MarkSerializable(typeBuilder);
@@ -112,7 +112,7 @@ namespace IKVM.Runtime
                         {
                             AddGetObjectData(typeBuilder);
                         }
-                        if (wrapper.BaseTypeWrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", true) != null)
+                        if (wrapper.BaseTypeWrapper.GetMethod("readResolve", "()Ljava.lang.Object;", true) != null)
                         {
                             RemoveReadResolve(typeBuilder);
                         }
@@ -130,7 +130,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    var baseCtor = wrapper.BaseTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    var baseCtor = wrapper.BaseTypeWrapper.GetMethod("<init>", "()V", false);
                     if (baseCtor != null && baseCtor.IsAccessibleFrom(wrapper.BaseTypeWrapper, wrapper, wrapper))
                     {
                         MarkSerializable(typeBuilder);
@@ -181,7 +181,7 @@ namespace IKVM.Runtime
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
             RuntimeJavaType serializationHelper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
-            RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+            RuntimeJavaMethod mw = serializationHelper.GetMethod("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
             mw.Link();
             mw.EmitCall(ilgen);
             ilgen.Emit(OpCodes.Ret);
@@ -209,7 +209,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ldarg_1);
                 RuntimeJavaType serializationHelper = context.ClassLoaderFactory.LoadClassCritical("ikvm.internal.Serialization");
-                RuntimeJavaMethod mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+                RuntimeJavaMethod mw = serializationHelper.GetMethod("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
                 mw.Link();
                 mw.EmitCall(ilgen);
             }
@@ -220,7 +220,7 @@ namespace IKVM.Runtime
 
         void AddReadResolve(RuntimeByteCodeJavaType wrapper, TypeBuilder tb)
         {
-            var mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
+            var mw = wrapper.GetMethod("readResolve", "()Ljava.lang.Object;", false);
             if (mw != null && !wrapper.IsSubTypeOf(TypeOfIObjectReference))
             {
                 tb.AddInterfaceImplementation(wrapper.Context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).AsReflection());

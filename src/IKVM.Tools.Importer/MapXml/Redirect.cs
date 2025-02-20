@@ -96,7 +96,7 @@ namespace IKVM.Tools.Importer.MapXml
             else
             {
                 var tw = loader.LoadClassByName(Class);
-                var mw = tw.GetMethodWrapper(Name, Sig, false);
+                var mw = tw.GetMethod(Name, Sig, false);
                 if (mw == null)
                 {
                     throw new InvalidOperationException();

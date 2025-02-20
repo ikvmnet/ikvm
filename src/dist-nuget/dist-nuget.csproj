@@ -76,6 +76,7 @@
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))">
+        <PackageProjectReference Include="..\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';android-x64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))">

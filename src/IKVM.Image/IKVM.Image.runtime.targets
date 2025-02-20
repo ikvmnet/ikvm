@@ -9,8 +9,6 @@
 <Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <SupportedImageTargetFrameworks Condition=" '$(SupportedImageTargetFrameworks)' == '' ">$(TargetFrameworks)</SupportedImageTargetFrameworks>
-        <SupportedImageTargetFrameworks>;$(SupportedImageTargetFrameworks);</SupportedImageTargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,13 +18,6 @@
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
-    <ItemGroup>
-        <IkvmImageItem Include="ikvm\any\**\*" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
-        <IkvmImageItem Include="ikvm\net472\**\*" TargetFramework="net472" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
-        <IkvmImageItem Include="ikvm\net6.0\**\*" TargetFramework="net6.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
-        <IkvmImageItem Include="ikvm\net8.0\**\*" TargetFramework="net8.0" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="%(RecursiveDir)%(Filename)%(Extension)" Condition=" '$(ImageRuntimeIdentifier)' != '' " />
-    </ItemGroup>
-
     <PropertyGroup>
         <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))">windows</OpenJdkTargetOsApiDir>
         <OpenJdkTargetOsApiDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('osx-')) Or $(ImageRuntimeIdentifier.StartsWith('android-'))">solaris</OpenJdkTargetOsApiDir>
@@ -34,7 +25,6 @@
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('linux-')) Or $(ImageRuntimeIdentifier.StartsWith('android-'))">linux</OpenJdkTargetOsDir>
         <OpenJdkTargetOsDir Condition="$(ImageRuntimeIdentifier.StartsWith('osx-'))">macosx</OpenJdkTargetOsDir>
     </PropertyGroup>
-
 
     <ItemGroup>
         <IkvmImageItem Include="$(OpenJdkDir)jdk\src\windows\lib\flavormap.properties" TargetFramework="any" RuntimeIdentifier="$(ImageRuntimeIdentifier)" ImagePath="lib\flavormap.properties" Condition="$(ImageRuntimeIdentifier.StartsWith('win-'))"/>
@@ -64,33 +54,85 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net472;'))">
-            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
-            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
-            <PublishItemMetadata>TargetFramework=net472;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net6.0;'))">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
-            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
-            <PublishItemMetadata>TargetFramework=net6.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.Image-bin\IKVM.Image-bin.csproj" Condition="$(SupportedImageTargetFrameworks.Contains(';net8.0;'))">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=$(ImageRuntimeIdentifier)</SetRuntimeIdentifier>
-            <PublishItemGroup>PublishIkvmImageBinItem</PublishItemGroup>
-            <PublishItemMetadata>TargetFramework=net8.0;RuntimeIdentifier=$(ImageRuntimeIdentifier)</PublishItemMetadata>
-        </PublishProjectReference>
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnio\libnio.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libunpack\libunpack.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunec\libsunec.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt\libawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmanagement\libmanagement.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2pkcs11\libj2pkcs11.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjaas\libjaas.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libzip\libzip.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjnf\libjnf.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxapp\libosxapp.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosx\libosx.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libosxui\libosxui.clangproj" SupportedRuntimes="osx-x64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libkrb5\libkrb5.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsound\libjsound.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundds\libjsoundds.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjsoundalsa\libjsoundalsa.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsctp\libsctp.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;android-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libmlib_image\libmlib_image.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_xawt\libawt_xawt.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\liblcms\liblcms.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjpeg\libjpeg.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_headless\libawt_headless.clangproj" SupportedRuntimes="linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfontmanager\libfontmanager.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libfreetype\libfreetype.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjawt\libjawt.clangproj" SupportedRuntimes="win-x64;win-x86;win-arm64;linux-arm;linux-arm64;linux-x64;linux-musl-arm;linux-musl-arm64;linux-musl-x64;osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libawt_lwawt\libawt_lwawt.clangproj" SupportedRuntimes="osx-x64;osx-arm64" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libj2gss\libj2gss.clangproj" />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libsspi_bridge\libsspi_bridge.clangproj" SupportedRuntimes="win-x86;win-x64;win-arm64" />
     </ItemGroup>
 
-    <Target Name="CollectIkvmImageBinItems" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="CollectPublishProjectReferenceItems;GetPublishProjectReferenceOutputItems">
+    <Target Name="GetIkvmClangProjectReferencesByRuntime" Inputs="@(IkvmClangProjectReference)" Outputs="%(IkvmClangProjectReference.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(IkvmClangProjectReference.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(_SupportedImageRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
         <ItemGroup>
-            <IkvmImageItem Include="@(PublishIkvmImageBinItem)">
-                <ImagePath>bin\%(PublishIkvmImageBinItem.PublishItemPath)</ImagePath>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <__SupportedRuntimes>@(__SupportedRuntimes, ';')</__SupportedRuntimes>
+            <__SupportedRuntimes>;$(__SupportedRuntimes);</__SupportedRuntimes>
+        </PropertyGroup>
+        <ItemGroup>
+            <ClangProjectReference Include="@(IkvmClangProjectReference)" Condition="$(__SupportedRuntimes.Contains(';$(ImageRuntimeIdentifier);')) And $(_EnabledImageRuntimes.Contains(';$(ImageRuntimeIdentifier);'))">
+                <RuntimeIdentifier>$(ImageRuntimeIdentifier)</RuntimeIdentifier>
+                <OutputItemGroup>ClangProjectReferenceItem</OutputItemGroup>
+            </ClangProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferencesDependsOn>
+            GetIkvmClangProjectReferencesByRuntime;
+            $(GetClangProjectReferencesDependsOn);
+        </GetClangProjectReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CollectIkvmImageBinItems" DependsOnTargets="GetClangProjectReferenceOutputItems">
+        <ItemGroup>
+            <IkvmImageItem Include="@(ClangProjectReferenceItem)">
+                <TargetFramework>any</TargetFramework>
+                <ImagePath>bin\%(ClangProjectReferenceItem.Filename)%(ClangProjectReferenceItem.Extension)</ImagePath>
             </IkvmImageItem>
         </ItemGroup>
     </Target>
+
+    <PropertyGroup>
+        <ExpandIkvmImageItemsDependsOn>
+            GetIkvmClangProjectReferencesByRuntime;
+            GetClangProjectReferenceOutputItems;
+            CollectIkvmImageBinItems;
+            $(ExpandIkvmImageItemsDependsOn);
+        </ExpandIkvmImageItemsDependsOn>
+    </PropertyGroup>
 
     <Import Project="IKVM.Image.project.targets" />
 
@@ -150,8 +192,15 @@
         </GenerateDependsOn>
     </PropertyGroup>
 
-    <Target Name="Generate" BeforeTargets="ExpandIkvmImageItems" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
+    <Target Name="Generate" DependsOnTargets="$(GenerateDependsOn)" Condition=" '$(ImageRuntimeIdentifier)' != '' ">
 
     </Target>
+
+    <PropertyGroup>
+        <ExpandIkvmImageItemsDependsOn>
+            Generate;
+            $(ExpandIkvmImageItemsDependsOn);
+        </ExpandIkvmImageItemsDependsOn>
+    </PropertyGroup>
 
 </Project>

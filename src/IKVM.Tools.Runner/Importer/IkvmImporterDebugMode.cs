@@ -5,7 +5,6 @@
     {
 
         None,
-        Full,
         Portable,
         Embedded,
 

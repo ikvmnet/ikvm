@@ -11,6 +11,7 @@
     <Choose>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
             <ItemGroup>
+                <Reference Include="System" />
                 <Reference Include="System.Configuration" />
                 <Reference Include="System.IO.Compression" />
                 <Reference Include="System.Security" />

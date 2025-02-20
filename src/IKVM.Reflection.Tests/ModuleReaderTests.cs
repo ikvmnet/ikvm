@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -11,6 +10,7 @@ using Xunit;
 
 namespace IKVM.Reflection.Tests
 {
+
     public class ModuleReaderTests
     {
 

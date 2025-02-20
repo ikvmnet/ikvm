@@ -165,7 +165,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 else if (Method != null)
                 {
-                    var mw = tw.GetMethodWrapper(Method, Sig, false);
+                    var mw = tw.GetMethod(Method, Sig, false);
                     if (mw == null)
                     {
                         return null;

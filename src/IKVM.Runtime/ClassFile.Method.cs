@@ -26,7 +26,6 @@ using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Diagnostics;
 
-
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
@@ -282,7 +281,7 @@ namespace IKVM.Runtime
 
             protected override void ValidateSig(ClassFile classFile, string descriptor)
             {
-                if (!IsValidMethodSig(descriptor))
+                if (!IsValidMethodDescriptor(descriptor))
                 {
                     throw new ClassFormatError("{0} (Method \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
                 }
