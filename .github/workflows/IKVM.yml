@@ -373,12 +373,15 @@ jobs:
       run: |
         $sys = @(
           "win-x64",
-          "linux-x64",
-          "linux-arm64"
+          "linux-x64"
         )
 
         if ($env:FULL_TEST -eq "true") {
-          $sys += @( "osx-x64", "osx-arm64" )
+          $sys += @(
+            "linux-arm64",
+            "osx-x64",
+            "osx-arm64"
+          )
         }
         
         $tfm = @(
