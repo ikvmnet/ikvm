@@ -67,8 +67,6 @@ jobs:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
-    - name: Disable OOM
-      run: sudo systemctl disable --now systemd-oomd
     - name: Uninstall Packages
       run: |
         sudo apt-get remove --purge -y \
