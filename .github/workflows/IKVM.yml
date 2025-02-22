@@ -68,7 +68,7 @@ jobs:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
     - name: Disable OOM
-      run: systemctl disable --now systemd-oomd
+      run: sudo systemctl disable --now systemd-oomd
     - name: Uninstall Packages
       run: |
         sudo apt-get remove --purge -y \
