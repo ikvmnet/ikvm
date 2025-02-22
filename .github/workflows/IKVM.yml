@@ -67,6 +67,8 @@ jobs:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
+    - name: Disable OOM
+      run: systemctl disable --now systemd-oomd
     - name: Uninstall Packages
       run: |
         sudo apt-get remove --purge -y \
@@ -84,8 +86,7 @@ jobs:
         sudo apt-get --purge autoremove -y && \
         sudo apt-get clean && \
         sudo rm -rf /usr/share/swift
-    - name: Free Disk Space (Linux)
-      if: runner.os == 'Linux'
+    - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
       with:
         android: false
