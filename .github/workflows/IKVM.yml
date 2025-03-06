@@ -84,12 +84,15 @@ jobs:
         sudo apt-get --purge autoremove -y && \
         sudo apt-get clean && \
         sudo rm -rf /usr/share/swift
-    - name: Free Disk Space (Linux)
-      if: runner.os == 'Linux'
+    - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
       with:
         android: false
         swap-storage: false
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 8
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
@@ -164,6 +167,7 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
+      timeout-minutes: 120
       run: |
         dotnet msbuild /m /bl \
           /p:Configuration="Release" \
