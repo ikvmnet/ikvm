@@ -485,58 +485,70 @@
         /// <param name="item"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        internal async Task<string> CalculateIkvmIdentityAsync(IkvmReferenceItem item, CancellationToken cancellationToken)
+        internal async Task<string> CalculateIkvmIdentityAsync(IkvmReferenceItem item, HashSet<IkvmReferenceItem> cycle, CancellationToken cancellationToken)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
 
-            // identity is already computed
-            if (item.IkvmIdentity is string id && string.IsNullOrWhiteSpace(id) == false)
-                return id;
+            // check whether we're processing a circular reference
+            if (cycle.Add(item) == false)
+                throw new IkvmTaskMessageException("Error.IkvmCircularReference", item.ItemSpec);
 
-            if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyName", item, item.AssemblyName);
-            if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyVersion", item, item.AssemblyVersion);
+            try
+            {
+                // identity is already computed
+                if (item.IkvmIdentity is string id && string.IsNullOrWhiteSpace(id) == false)
+                    return id;
 
-            var manifest = new StringWriter();
-            manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("ToolFramework={0}", ToolFramework);
-            manifest.WriteLine("RuntimeAssembly={0}", await fileIdentityUtil.GetIdentityForFileAsync(RuntimeAssembly, Log, cancellationToken));
-            manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
-            manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
-            manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
-            manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
-            manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
-            manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
+                if (string.IsNullOrWhiteSpace(item.AssemblyName))
+                    throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyName", item, item.AssemblyName);
+                if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
+                    throw new IkvmTaskMessageException("Error.IkvmInvalidAssemblyVersion", item, item.AssemblyVersion);
 
-            // each Compile item should be a jar or class file
-            var compiles = new List<string>(16);
-            foreach (var path in item.Compile)
-                if (path.EndsWith(".jar") || path.EndsWith(".class"))
-                    compiles.Add(await GetCompileLine(item, path, cancellationToken));
+                var manifest = new StringWriter();
+                manifest.WriteLine("ToolVersion={0}", ToolVersion);
+                manifest.WriteLine("ToolFramework={0}", ToolFramework);
+                manifest.WriteLine("RuntimeAssembly={0}", await fileIdentityUtil.GetIdentityForFileAsync(RuntimeAssembly, Log, cancellationToken));
+                manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
+                manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
+                manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
+                manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
+                manifest.WriteLine("Debug={0}", Enum.GetName(typeof(IkvmReferenceItemDebug), item.Debug));
+                manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? await fileIdentityUtil.GetIdentityForFileAsync(item.KeyFile, Log, cancellationToken) : "");
+                manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
-            // sort and write the compile lines
-            foreach (var c in compiles.OrderBy(i => i))
-                manifest.WriteLine(c);
+                // each Compile item should be a jar or class file
+                var compiles = new List<string>(16);
+                foreach (var path in item.Compile)
+                    if (path.EndsWith(".jar") || path.EndsWith(".class"))
+                        compiles.Add(await GetCompileLine(item, path, cancellationToken));
 
-            // gather reference lines
-            var references = new List<string>(16);
-            if (References != null)
-                foreach (var reference in References)
-                    references.Add(await GetReferenceLineAsync(item, reference, cancellationToken));
+                // sort and write the compile lines
+                foreach (var c in compiles.OrderBy(i => i))
+                    manifest.WriteLine(c);
 
-            // gather reference lines from metadata
-            foreach (var reference in item.References)
-                references.Add(await GetReferenceLineAsync(item, reference, cancellationToken));
+                // gather reference lines
+                var references = new List<string>(16);
+                if (References != null)
+                    foreach (var reference in References)
+                        references.Add(await GetReferenceLineAsync(item, reference, cancellationToken));
 
-            // sort and write the reference lines
-            foreach (var r in references.Distinct())
-                manifest.WriteLine(r);
+                // gather reference lines from metadata
+                foreach (var reference in item.References)
+                    references.Add(await GetReferenceLineAsync(item, reference, cycle, cancellationToken));
 
-            // hash the resulting manifest and set the identity
-            return GetHashForString(manifest.ToString());
+                // sort and write the reference lines
+                foreach (var r in references.Distinct())
+                    manifest.WriteLine(r);
+
+                // hash the resulting manifest and set the identity
+                return GetHashForString(manifest.ToString());
+            }
+            finally
+            {
+                // clear item from stack
+                cycle.Remove(item);
+            }
         }
 
         /// <summary>
@@ -603,14 +615,16 @@
         /// </summary>
         /// <param name="item"></param>
         /// <param name="reference"></param>
-        async Task<string> GetReferenceLineAsync(IkvmReferenceItem item, IkvmReferenceItem reference, CancellationToken cancellationToken)
+        /// <param name="cycle"></param>
+        /// <param name="cancellationToken"></param>
+        async Task<string> GetReferenceLineAsync(IkvmReferenceItem item, IkvmReferenceItem reference, HashSet<IkvmReferenceItem> cycle, CancellationToken cancellationToken)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
             if (reference is null)
                 throw new ArgumentNullException(nameof(reference));
 
-            return $"Reference={await CalculateIkvmIdentityAsync(reference, cancellationToken)}";
+            return $"Reference={await CalculateIkvmIdentityAsync(reference, cycle, cancellationToken)}";
         }
 
         /// <summary>
@@ -739,11 +753,12 @@
         /// Assigns build information to the items.
         /// </summary>
         /// <param name="items"></param>
+        /// <param name="cancellationToken"></param>
         internal Task AssignBuildInfoAsync(IEnumerable<IkvmReferenceItem> items, CancellationToken cancellationToken)
         {
             var l = new List<Task>();
             foreach (var i in items)
-                l.Add(AssignBuildInfoAsync(i, cancellationToken));
+                l.Add(AssignBuildInfoAsync(i, new HashSet<IkvmReferenceItem>(), cancellationToken));
 
             return Task.WhenAll(l);
         }
@@ -752,9 +767,11 @@
         /// Assigns build information to the item.
         /// </summary>
         /// <param name="item"></param>
-        internal async Task AssignBuildInfoAsync(IkvmReferenceItem item, CancellationToken cancellationToken)
+        /// <param name="cycle"></param>
+        /// <param name="cancellationToken"></param>
+        internal async Task AssignBuildInfoAsync(IkvmReferenceItem item, HashSet<IkvmReferenceItem> cycle, CancellationToken cancellationToken)
         {
-            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
+            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cycle, cancellationToken);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
             item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
