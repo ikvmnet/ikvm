@@ -758,7 +758,7 @@
         {
             var l = new List<Task>();
             foreach (var i in items)
-                l.Add(AssignBuildInfoAsync(i, new HashSet<IkvmReferenceItem>(), cancellationToken));
+                l.Add(AssignBuildInfoAsync(i, cancellationToken));
 
             return Task.WhenAll(l);
         }
@@ -769,9 +769,9 @@
         /// <param name="item"></param>
         /// <param name="cycle"></param>
         /// <param name="cancellationToken"></param>
-        internal async Task AssignBuildInfoAsync(IkvmReferenceItem item, HashSet<IkvmReferenceItem> cycle, CancellationToken cancellationToken)
+        internal async Task AssignBuildInfoAsync(IkvmReferenceItem item, CancellationToken cancellationToken)
         {
-            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cycle, cancellationToken);
+            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, new HashSet<IkvmReferenceItem>(), cancellationToken);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
             item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
