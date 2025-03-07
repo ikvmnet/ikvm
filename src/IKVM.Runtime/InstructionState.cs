@@ -375,6 +375,14 @@ namespace IKVM.Runtime
                 return context.JavaBase.TypeOfJavaLangObject;
             }
 
+            // t1 is an interface and is implemented by t2, common base type is t1
+            if (t1.IsInterface && t2.ImplementsInterface(t1))
+                return t1;
+
+            // t2 is an interface and is implemented by t1, common base type is t2
+            if (t2.IsInterface && t1.ImplementsInterface(t2))
+                return t2;
+
             var st1 = new Stack<RuntimeJavaType>();
             var st2 = new Stack<RuntimeJavaType>();
 
