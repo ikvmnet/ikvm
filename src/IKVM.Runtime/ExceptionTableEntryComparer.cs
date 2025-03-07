@@ -28,34 +28,35 @@ using ExceptionTableEntry = IKVM.Runtime.ClassFile.Method.ExceptionTableEntry;
 namespace IKVM.Runtime
 {
 
-    sealed class ExceptionSorter : IComparer<ExceptionTableEntry>
+    /// <summary>
+    /// Implements the <see cref="IComparer{T}"/> interface for <see cref="ExceptionTableEntry"/>.
+    /// </summary>
+    sealed class ExceptionTableEntryComparer : IComparer<ExceptionTableEntry>
     {
 
+        /// <inheritdoc />
         public int Compare(ExceptionTableEntry e1, ExceptionTableEntry e2)
         {
             if (e1.startIndex < e2.startIndex)
-            {
                 return -1;
-            }
+
             if (e1.startIndex == e2.startIndex)
             {
                 if (e1.endIndex == e2.endIndex)
                 {
                     if (e1.ordinal > e2.ordinal)
-                    {
                         return -1;
-                    }
+
                     if (e1.ordinal == e2.ordinal)
-                    {
                         return 0;
-                    }
+
                     return 1;
                 }
+
                 if (e1.endIndex > e2.endIndex)
-                {
                     return -1;
-                }
             }
+
             return 1;
         }
 
