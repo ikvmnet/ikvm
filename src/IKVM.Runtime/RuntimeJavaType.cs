@@ -1077,25 +1077,31 @@ namespace IKVM.Runtime
             return ClassLoader.TryLoadClassByName(new String('[', rank) + this.SigName);
         }
 
-        internal bool ImplementsInterface(RuntimeJavaType interfaceWrapper)
+        /// <summary>
+        /// Returns <c>true</c> if the current <see cref="RuntimeJavaType"/> implements the <paramref name="iface"/> interface.
+        /// </summary>
+        /// <param name="iface"></param>
+        /// <returns></returns>
+        internal bool ImplementsInterface(RuntimeJavaType iface)
         {
-            RuntimeJavaType typeWrapper = this;
-            while (typeWrapper != null)
+            var self = this;
+
+            while (self != null)
             {
-                RuntimeJavaType[] interfaces = typeWrapper.Interfaces;
+                var interfaces = self.Interfaces;
+
                 for (int i = 0; i < interfaces.Length; i++)
                 {
-                    if (interfaces[i] == interfaceWrapper)
-                    {
+                    if (interfaces[i] == iface)
                         return true;
-                    }
-                    if (interfaces[i].ImplementsInterface(interfaceWrapper))
-                    {
+
+                    if (interfaces[i].ImplementsInterface(iface))
                         return true;
-                    }
                 }
-                typeWrapper = typeWrapper.BaseTypeWrapper;
+
+                self = self.BaseTypeWrapper;
             }
+
             return false;
         }
 
