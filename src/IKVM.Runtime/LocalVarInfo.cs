@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 using InstructionFlags = IKVM.Runtime.ClassFile.Method.InstructionFlags;
 
@@ -290,7 +291,8 @@ namespace IKVM.Runtime
 
             public override string ToString()
             {
-                var sb = new System.Text.StringBuilder();
+                var sb = new ValueStringBuilder();
+
                 if (sites != null)
                 {
                     foreach (var site in sites)
@@ -298,7 +300,10 @@ namespace IKVM.Runtime
                         sb.Append('[');
 
                         for (int i = 0; i < site.Count; i++)
-                            sb.AppendFormat("{0}, ", site[i]);
+                        {
+                            sb.Append(site[i].ToString());
+                            sb.Append(", ");
+                        }
 
                         sb.Append(']');
                     }
@@ -325,15 +330,12 @@ namespace IKVM.Runtime
 
             internal void Add(int instructionIndex)
             {
-                if (data == null)
-                    data = [instructionIndex];
-                else
-                    data = ArrayUtil.Concat(data, instructionIndex);
+                data = data == null ? [instructionIndex] : [.. data, instructionIndex];
             }
 
-            internal int this[int index] => data[index];
+            internal readonly int this[int index] => data[index];
 
-            internal int Count => data == null ? 0 : data.Length;
+            internal readonly int Count => data == null ? 0 : data.Length;
 
         }
 
