@@ -381,7 +381,7 @@ namespace IKVM.Runtime
 
             // t2 is an interface and is implemented by t1, common base type is t2
             if (t2.IsInterface && t1.ImplementsInterface(t2))
-                return t1;
+                return t2;
 
             var st1 = new Stack<RuntimeJavaType>();
             var st2 = new Stack<RuntimeJavaType>();
