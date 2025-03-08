@@ -277,17 +277,25 @@ namespace IKVM.Runtime
 
         internal static RuntimeJavaType FindCommonBaseType(RuntimeContext context, RuntimeJavaType type1, RuntimeJavaType type2)
         {
+            // types are equal
             if (type1 == type2)
                 return type1;
 
+            // merging java.lang.Object with anything can only result in java.lang.Object
+            if (type1 == context.JavaBase.TypeOfJavaLangObject || type2 == context.JavaBase.TypeOfJavaLangObject)
+                return context.JavaBase.TypeOfJavaLangObject;
+
+            // verifier invalid
+            if (type1 == context.VerifierJavaTypeFactory.Invalid || type2 == context.VerifierJavaTypeFactory.Invalid)
+                return context.VerifierJavaTypeFactory.Invalid;
+
+            // first type is null, return second
             if (type1 == context.VerifierJavaTypeFactory.Null)
                 return type2;
 
+            // second type is null, return first
             if (type2 == context.VerifierJavaTypeFactory.Null)
                 return type1;
-
-            if (type1 == context.VerifierJavaTypeFactory.Invalid || type2 == context.VerifierJavaTypeFactory.Invalid)
-                return context.VerifierJavaTypeFactory.Invalid;
 
             if (RuntimeVerifierJavaType.IsFaultBlockException(type1))
             {
@@ -301,24 +309,31 @@ namespace IKVM.Runtime
                 return FindCommonBaseType(context, type1, context.JavaBase.TypeOfjavaLangThrowable);
             }
 
+            // primitive types cannot be merged
             if (type1.IsPrimitive || type2.IsPrimitive)
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // this type without init being run cannot be merged
             if (type1 == context.VerifierJavaTypeFactory.UninitializedThis || type2 == context.VerifierJavaTypeFactory.UninitializedThis)
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // new verifier type cannot be merged
             if (RuntimeVerifierJavaType.IsNew(type1) || RuntimeVerifierJavaType.IsNew(type2))
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // this type can only be its own underlying
             if (RuntimeVerifierJavaType.IsThis(type1))
                 type1 = ((RuntimeVerifierJavaType)type1).UnderlyingType;
 
+            // this type can only be its own underlying
             if (RuntimeVerifierJavaType.IsThis(type2))
                 type2 = ((RuntimeVerifierJavaType)type2).UnderlyingType;
 
+            // unloadable types cannot be merged
             if (type1.IsUnloadable || type2.IsUnloadable)
                 return context.VerifierJavaTypeFactory.Unloadable;
 
+            // unpack array types into underlying element
             if (type1.ArrayRank > 0 && type2.ArrayRank > 0)
             {
                 int rank = 1;
@@ -352,6 +367,7 @@ namespace IKVM.Runtime
                     baseType = FindCommonBaseTypeHelper(context, elem1, elem2);
                 }
 
+                // rebuild array type
                 return baseType.MakeArrayType(rank);
             }
 
