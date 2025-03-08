@@ -285,10 +285,6 @@ namespace IKVM.Runtime
             if (type1 == context.JavaBase.TypeOfJavaLangObject || type2 == context.JavaBase.TypeOfJavaLangObject)
                 return context.JavaBase.TypeOfJavaLangObject;
 
-            // verifier invalid
-            if (type1 == context.VerifierJavaTypeFactory.Invalid || type2 == context.VerifierJavaTypeFactory.Invalid)
-                return context.VerifierJavaTypeFactory.Invalid;
-
             // first type is null, return second
             if (type1 == context.VerifierJavaTypeFactory.Null)
                 return type2;
@@ -296,6 +292,10 @@ namespace IKVM.Runtime
             // second type is null, return first
             if (type2 == context.VerifierJavaTypeFactory.Null)
                 return type1;
+
+            // verifier invalid
+            if (type1 == context.VerifierJavaTypeFactory.Invalid || type2 == context.VerifierJavaTypeFactory.Invalid)
+                return context.VerifierJavaTypeFactory.Invalid;
 
             if (RuntimeVerifierJavaType.IsFaultBlockException(type1))
             {
