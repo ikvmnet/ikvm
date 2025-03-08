@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
@@ -357,73 +358,55 @@ namespace IKVM.Runtime
             return FindCommonBaseTypeHelper(context, type1, type2);
         }
 
-        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeContext context, RuntimeJavaType t1, RuntimeJavaType t2)
+        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeContext context, RuntimeJavaType type1, RuntimeJavaType type2)
         {
-            if (t1 == t2)
-                return t1;
+            if (type1 == type2)
+                return type1;
 
-            if (t1.IsInterface && t2.IsInterface)
-            {
-                // NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
-                // "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
-                // the common base of two interfaces is java.lang.Object, and there is special
-                // treatment for java.lang.Object types that allow it to be assigned to any interface
-                // type, the JVM's typesafety then depends on the invokeinterface instruction to make
-                // sure that the reference actually implements the interface.
-                // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
-                // really do anything more clever than this.
+            // NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
+            // "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
+            // the common base of two interfaces is java.lang.Object, and there is special
+            // treatment for java.lang.Object types that allow it to be assigned to any interface
+            // type, the JVM's typesafety then depends on the invokeinterface instruction to make
+            // sure that the reference actually implements the interface.
+            // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
+            // really do anything more clever than this.
+            if (type1.IsInterface && type2.IsInterface)
                 return context.JavaBase.TypeOfJavaLangObject;
-            }
 
             // t1 is an interface and is implemented by t2, common base type is t1
-            if (t1.IsInterface && t2.ImplementsInterface(t1))
-                return t1;
+            if (type1.IsInterface)
+                return type2.ImplementsInterface(type1) ? type1 : context.JavaBase.TypeOfJavaLangObject;
 
             // t2 is an interface and is implemented by t1, common base type is t2
-            if (t2.IsInterface && t1.ImplementsInterface(t2))
-                return t2;
+            if (type2.IsInterface)
+                return type1.ImplementsInterface(type2) ? type2 : context.JavaBase.TypeOfJavaLangObject;
 
             var st1 = new Stack<RuntimeJavaType>();
+            while (type1 != null)
+            {
+                st1.Push(type1);
+                type1 = type1.BaseTypeWrapper;
+            }
+
             var st2 = new Stack<RuntimeJavaType>();
-
-            while (t1 != null)
+            while (type2 != null)
             {
-                st1.Push(t1);
-                t1 = t1.BaseTypeWrapper;
+                st2.Push(type2);
+                type2 = type2.BaseTypeWrapper;
             }
 
-            while (t2 != null)
-            {
-                st2.Push(t2);
-                t2 = t2.BaseTypeWrapper;
-            }
-
-            if (HasMissingBaseType(context, st1) || HasMissingBaseType(context, st2))
-                return context.VerifierJavaTypeFactory.Unloadable;
-
+            // pop each item off of the stacks until they do not match
             var type = context.JavaBase.TypeOfJavaLangObject;
             for (; ; )
             {
-                t1 = st1.Count > 0 ? st1.Pop() : null;
-                t2 = st2.Count > 0 ? st2.Pop() : null;
-                if (t1 != t2)
+                type1 = st1.Count > 0 ? st1.Pop() : null;
+                type2 = st2.Count > 0 ? st2.Pop() : null;
+                if (type1 != type2)
                     return type;
 
-                type = t1;
+                type = type1;
             }
-        }
-
-        static bool HasMissingBaseType(RuntimeContext context, Stack<RuntimeJavaType> st)
-        {
-#if IMPORTER
-            if (st.Pop().IsUnloadable)
-            {
-                // we have a missing type in base class hierarchy
-                context.StaticCompiler.IssueMissingTypeMessage(st.Pop().TypeAsBaseType.BaseType);
-                return true;
-            }
-#endif
-            return false;
         }
 
         void SetLocal1(int index, RuntimeJavaType type)
