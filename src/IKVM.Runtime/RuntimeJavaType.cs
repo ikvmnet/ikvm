@@ -27,8 +27,6 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
-using System.Runtime.CompilerServices;
-
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
