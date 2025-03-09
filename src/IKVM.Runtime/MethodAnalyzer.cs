@@ -162,7 +162,7 @@ namespace IKVM.Runtime
             var code = _classFileMethod.Instructions;
             for (int i = 0; i < code.Length; i++)
             {
-                if (_state[i] != null)
+                if (_state[i]._initialized)
                 {
                     switch (code[i].NormalizedOpCode)
                     {
@@ -212,7 +212,7 @@ namespace IKVM.Runtime
 
                 for (int i = 0; i < instructions.Length; i++)
                 {
-                    if (_state[i] != null && _state[i]._changed)
+                    if (_state[i]._initialized && _state[i]._changed)
                     {
                         try
                         {
@@ -223,10 +223,10 @@ namespace IKVM.Runtime
                             // mark the exception handlers reachable from this instruction
                             for (int j = 0; j < _classFileMethod.ExceptionTable.Length; j++)
                                 if (_classFileMethod.ExceptionTable[j].startIndex <= i && i < _classFileMethod.ExceptionTable[j].endIndex)
-                                    MergeExceptionHandler(j, _state[i]);
+                                    MergeExceptionHandler(j, ref _state[i]);
 
                             // copy current frame to this frame
-                            _state[i].CopyTo(s);
+                            _state[i].CopyTo(ref s);
 
                             var inst = instructions[i];
                             switch (inst.NormalizedOpCode)
@@ -1148,7 +1148,7 @@ namespace IKVM.Runtime
 
                             for (int j = 0; j < _classFileMethod.ExceptionTable.Length; j++)
                                 if (_classFileMethod.ExceptionTable[j].endIndex == i + 1)
-                                    MergeExceptionHandler(j, s);
+                                    MergeExceptionHandler(j, ref s);
 
                             try
                             {
@@ -1200,7 +1200,7 @@ namespace IKVM.Runtime
             }
         }
 
-        void MergeExceptionHandler(int exceptionIndex, InstructionState curr)
+        void MergeExceptionHandler(int exceptionIndex, ref InstructionState curr)
         {
             var idx = _classFileMethod.ExceptionTable[exceptionIndex].handlerIndex;
             var exp = curr.CopyLocals();
@@ -1232,7 +1232,7 @@ namespace IKVM.Runtime
             var instructions = _classFileMethod.Instructions;
             for (int i = 0; i < instructions.Length; i++)
             {
-                if (_state[i] != null)
+                if (_state[i]._initialized)
                 {
                     try
                     {
@@ -1263,7 +1263,7 @@ namespace IKVM.Runtime
 
         void VerifyInvokePassTwo(int index)
         {
-            var stack = new StackState(_state[index]);
+            var stack = new StackState(_state, index);
             var invoke = _classFileMethod.Instructions[index].NormalizedOpCode;
             var cpi = GetMethodref(_classFileMethod.Instructions[index].Arg1);
             if ((invoke == NormalizedByteCode.__invokestatic || invoke == NormalizedByteCode.__invokespecial) && _classFile.MajorVersion >= 52)
@@ -1387,7 +1387,7 @@ namespace IKVM.Runtime
 
         void VerifyInvokeDynamic(int index)
         {
-            var stack = new StackState(_state[index]);
+            var stack = new StackState(_state, index);
             var cpi = GetInvokeDynamic(_classFileMethod.Instructions[index].Arg1);
             var args = cpi.GetArgTypes();
             for (int j = args.Length - 1; j >= 0; j--)
@@ -1434,9 +1434,9 @@ namespace IKVM.Runtime
                 var instructions = _classFileMethod.Instructions;
                 for (int i = 0; i < instructions.Length; i++)
                 {
-                    if (_state[i] != null)
+                    if (_state[i]._initialized)
                     {
-                        var stack = new StackState(_state[i]);
+                        var stack = new StackState(_state, i);
 
                         switch (instructions[i].NormalizedOpCode)
                         {

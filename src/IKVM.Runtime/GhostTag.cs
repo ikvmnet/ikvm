@@ -23,6 +23,7 @@
 */
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 
 using IKVM.Attributes;
@@ -47,10 +48,8 @@ namespace IKVM.Runtime
         internal static void SetTag(object obj, RuntimeJavaType wrapper)
         {
             if (dict == null)
-            {
-                ConditionalWeakTable<object, RuntimeJavaType> newDict = new ConditionalWeakTable<object, RuntimeJavaType>();
-                Interlocked.CompareExchange(ref dict, newDict, null);
-            }
+                Interlocked.CompareExchange(ref dict, new(), null);
+
             dict.Add(obj, wrapper);
         }
 
@@ -58,10 +57,10 @@ namespace IKVM.Runtime
         {
             if (dict != null)
             {
-                RuntimeJavaType tw;
-                dict.TryGetValue(obj, out tw);
+                dict.TryGetValue(obj, out var tw);
                 return tw;
             }
+
             return null;
         }
 
@@ -71,12 +70,13 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            RuntimeJavaType tw1 = GhostTag.GetTag(obj);
+            var tw1 = GhostTag.GetTag(obj);
             if (tw1 != null)
             {
-                RuntimeJavaType tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
+                var tw2 = tw1.Context.ClassLoaderFactory.GetJavaTypeFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
                 return tw1.IsAssignableTo(tw2);
             }
+
             return false;
 #endif
         }
@@ -88,9 +88,13 @@ namespace IKVM.Runtime
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append(global::ikvm.runtime.Util.getClassFromObject(obj).getName()).Append(" cannot be cast to ")
-                .Append('[', rank).Append('L').Append(global::ikvm.runtime.Util.getClassFromTypeHandle(typeHandle).getName()).Append(';');
+            var sb = new ValueStringBuilder();
+            sb.Append(global::ikvm.runtime.Util.getClassFromObject(obj).getName());
+            sb.Append(" cannot be cast to ");
+            sb.Append('[', rank);
+            sb.Append('L');
+            sb.Append(global::ikvm.runtime.Util.getClassFromTypeHandle(typeHandle).getName());
+            sb.Append(';');
             throw new global::java.lang.ClassCastException(sb.ToString());
 #endif
         }

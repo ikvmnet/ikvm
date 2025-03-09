@@ -43,7 +43,7 @@ namespace System.Text
         /// </summary>
         public int Length
         {
-            get => _pos;
+            readonly get => _pos;
             set
             {
                 Debug.Assert(value >= 0);
@@ -55,7 +55,7 @@ namespace System.Text
         /// <summary>
         /// Gets the capacity.
         /// </summary>
-        public int Capacity => _chars.Length;
+        public readonly int Capacity => _chars.Length;
 
         /// <summary>
         /// Ensures the underlying buffer is capable of meeting the specified capacity.
@@ -123,7 +123,7 @@ namespace System.Text
         }
 
         /// <summary>Returns the underlying storage of the builder.</summary>
-        public Span<char> RawChars => _chars;
+        public readonly Span<char> RawChars => _chars;
 
         /// <summary>
         /// Returns a span around the contents of the builder.
@@ -144,14 +144,14 @@ namespace System.Text
         /// Returns a span around the contents of the builder.
         /// </summary>
         /// <returns></returns>
-        public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+        public readonly ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
 
         /// <summary>
         /// Returns a span around the contents of the builder.
         /// </summary>
         /// <param name="start"></param>
         /// <returns></returns>
-        public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+        public readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
 
         /// <summary>
         /// Returns a span around the contents of the builder.
@@ -159,7 +159,7 @@ namespace System.Text
         /// <param name="start"></param>
         /// <param name="length"></param>
         /// <returns></returns>
-        public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
+        public readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
         /// <summary>
         /// Attempts to copy the characters to the output destination.

@@ -27,6 +27,8 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
+using System.Text;
+
 
 
 #if IMPORTER
@@ -614,7 +616,7 @@ namespace IKVM.Runtime
             return parameterBuilders;
         }
 
-        private static string GetParameterName(string type)
+        static string GetParameterName(string type)
         {
             if (type == "java.lang.String")
             {
@@ -626,7 +628,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                var sb = new System.Text.StringBuilder();
+                var sb = new ValueStringBuilder(type.Length);
                 for (int i = type.LastIndexOf('.') + 1; i < type.Length; i++)
                     if (char.IsUpper(type, i))
                         sb.Append(char.ToLower(type[i]));

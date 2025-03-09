@@ -28,41 +28,44 @@ namespace IKVM.Runtime
     struct StackState
     {
 
-        private InstructionState state;
-        private int sp;
+        readonly InstructionState[] _state;
+        readonly int _pc;
+        int _sp;
 
-        internal StackState(InstructionState state)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="pc"></param>
+        internal StackState(InstructionState[] state, int pc)
         {
-            this.state = state;
-            sp = state.GetStackHeight();
+            _state = state;
+            _pc = pc;
+            _sp = state[_pc].GetStackHeight();
         }
 
         internal RuntimeJavaType PeekType()
         {
-            if (sp == 0)
-            {
+            if (_sp == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
-            }
-            RuntimeJavaType type = state.GetStackByIndex(sp - 1);
+
+            var type = _state[_pc].GetStackByIndex(_sp - 1);
             if (RuntimeVerifierJavaType.IsThis(type))
-            {
                 type = ((RuntimeVerifierJavaType)type).UnderlyingType;
-            }
+
             return type;
         }
 
         internal RuntimeJavaType PopAnyType()
         {
-            if (sp == 0)
-            {
+            if (_sp == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
-            }
 
-            var type = state.GetStackByIndex(--sp);
+            var type = _state[_pc].GetStackByIndex(--_sp);
+
             if (RuntimeVerifierJavaType.IsThis(type))
-            {
                 type = ((RuntimeVerifierJavaType)type).UnderlyingType;
-            }
+
             if (RuntimeVerifierJavaType.IsFaultBlockException(type))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type);
@@ -108,17 +111,25 @@ namespace IKVM.Runtime
             return InstructionState.PopArrayTypeImpl(PopAnyType());
         }
 
-        // either null or an initialized object reference
+        /// <summary>
+        /// Null or an initialized object reference.
+        /// </summary>
+        /// <returns></returns>
         internal RuntimeJavaType PopObjectType()
         {
             return InstructionState.PopObjectTypeImpl(PopAnyType());
         }
 
-        // null or an initialized object reference derived from baseType (or baseType)
+        /// <summary>
+        /// Null or an initialized object reference derived from <paramref name="baseType"/>.
+        /// </summary>
+        /// <param name="baseType"></param>
+        /// <returns></returns>
         internal RuntimeJavaType PopObjectType(RuntimeJavaType baseType)
         {
             return InstructionState.PopObjectTypeImpl(baseType, PopObjectType());
         }
+
     }
 
 }

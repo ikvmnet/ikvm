@@ -29,6 +29,8 @@ using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
+using System.Text;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -603,7 +605,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out RuntimeJavaType retType, out RuntimeJavaType[] paramTypes, ref MemberFlags flags)
+        void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out RuntimeJavaType retType, out RuntimeJavaType[] paramTypes, ref MemberFlags flags)
         {
             retType = method is ConstructorInfo ? Context.PrimitiveJavaTypeFactory.VOID : GetParameterTypeWrapper(Context, ((MethodInfo)method).ReturnParameter);
             var parameters = method.GetParameters();
@@ -652,12 +654,11 @@ namespace IKVM.Runtime
                 }
 
                 if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal))
-                {
                     paramTypes = ArrayUtil.DropFirst(paramTypes);
-                }
 
-                var sb = new System.Text.StringBuilder("(");
-                foreach (RuntimeJavaType tw in paramTypes)
+                var sb = new ValueStringBuilder();
+                sb.Append("(");
+                foreach (var tw in paramTypes)
                     sb.Append(tw.SigName);
                 sb.Append(")");
                 sb.Append(retType.SigName);

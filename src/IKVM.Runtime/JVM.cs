@@ -211,7 +211,9 @@ namespace IKVM.Runtime
             // but in order for ILDASM/ILASM round tripping to work reliably, we have
             // to make sure that we don't produce resource names that'll cause ILDASM
             // to generate invalid filenames.
-            var sb = new StringBuilder("ikvm__", name.Length + 6);
+            var sb = new ValueStringBuilder(name.Length + 6);
+            sb.Append("ikvm__");
+
             foreach (var c in name)
             {
                 if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-+.()$#@~=&{}[]0123456789`".IndexOf(c) != -1)

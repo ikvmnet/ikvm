@@ -23,12 +23,11 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
 
-    sealed class InstructionState
+    struct InstructionState
     {
 
         struct LocalStoreSites
@@ -104,8 +103,8 @@ namespace IKVM.Runtime
         RuntimeJavaType[] _locals;
         bool _uninitializedThis;
         internal bool _changed = true;
-
         ShareFlags _flags;
+        internal bool _initialized = false;
 
         /// <summary>
         /// Initializes a new instance.
@@ -126,6 +125,7 @@ namespace IKVM.Runtime
             _stackEnd = stackEnd;
             _locals = locals;
             _uninitializedThis = uninitializedThis;
+            _initialized = true;
         }
 
         /// <summary>
@@ -142,6 +142,7 @@ namespace IKVM.Runtime
             _stack = new RuntimeJavaType[maxStack];
             _stackEnd = maxStack;
             _locals = new RuntimeJavaType[maxLocals];
+            _initialized = true;
         }
 
         /// <summary>
@@ -157,8 +158,11 @@ namespace IKVM.Runtime
         /// Copies this instruction state to the specified instruction state.
         /// </summary>
         /// <param name="target"></param>
-        internal void CopyTo(InstructionState target)
+        internal void CopyTo(ref InstructionState target)
         {
+            if (_initialized == false)
+                throw new InvalidOperationException();
+
             target._flags = ShareFlags.All;
             target._stack = _stack;
             target._stackLen = _stackLen;
@@ -166,6 +170,7 @@ namespace IKVM.Runtime
             target._locals = _locals;
             target._uninitializedThis = _uninitializedThis;
             target._changed = true;
+            target._initialized = _initialized;
         }
 
         /// <summary>
@@ -188,7 +193,7 @@ namespace IKVM.Runtime
         /// <exception cref="VerifyError"></exception>
         public static InstructionState operator +(InstructionState s1, InstructionState s2)
         {
-            if (s1 == null)
+            if (s1._initialized == false)
                 return s2.Copy();
 
             if (s1._stackLen != s2._stackLen || s1._stackEnd != s2._stackEnd)

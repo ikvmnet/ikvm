@@ -44,6 +44,7 @@ using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
 using System.Collections.Immutable;
+using System.Text;
 #endif
 
 #if IMPORTER
@@ -675,16 +676,17 @@ namespace IKVM.Runtime
                     var cl = GetJavaClassLoader();
                     if (cl != null)
                     {
-                        var sb = new System.Text.StringBuilder();
+                        var sb = new ValueStringBuilder();
                         var sep = "";
                         while (cl != null)
                         {
-                            sb.Append(sep).Append(cl);
+                            sb.Append(sep);
+                            sb.Append(cl.ToString());
                             sep = " -> ";
                             cl = cl.getParent();
                         }
 
-                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb}");
+                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb.ToString()}");
                     }
 
                     var m = ikvm.runtime.Util.mapException(x);

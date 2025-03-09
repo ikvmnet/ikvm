@@ -47,7 +47,14 @@ namespace IKVM.Runtime
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return IsValidMethodName(name.AsSpan(), version);
+            if (name.Length == 0)
+                return false;
+
+            for (int i = 0; i < name.Length; i++)
+                if (".;[/<>".Contains(name[i]))
+                    return false;
+
+            return version >= 49 || IsValidPre49Identifier(name);
         }
 
         /// <summary>
@@ -98,6 +105,26 @@ namespace IKVM.Runtime
                     return false;
 
             return version >= 49 || IsValidPre49Identifier(name);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given string is a valid identifier for pre-49 class files.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static bool IsValidPre49Identifier(string name)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            if (!char.IsLetter(name[0]) && "$_".Contains(name[0]) == false)
+                return false;
+
+            for (int i = 1; i < name.Length; i++)
+                if (!char.IsLetterOrDigit(name[i]) && "$_".Contains(name[i]) == false)
+                    return false;
+
+            return true;
         }
 
         /// <summary>
@@ -493,7 +520,7 @@ namespace IKVM.Runtime
                     fields[i] = new Field(this, utf8_cp, clazz.Fields[i]);
                     var name = fields[i].Name;
 
-                    if (!IsValidFieldName(name, clazz.Version))
+                    if (IsValidFieldName(name, clazz.Version) == false)
                         throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
                 }
 
@@ -503,9 +530,9 @@ namespace IKVM.Runtime
                 for (int i = 0; i < clazz.Methods.Count; i++)
                 {
                     methods[i] = new Method(this, utf8_cp, options, clazz.Methods[i]);
-                    string name = methods[i].Name;
-                    string sig = methods[i].Signature;
-                    if (!IsValidMethodName(name, clazz.Version))
+                    var name = methods[i].Name;
+                    var sig = methods[i].Signature;
+                    if (IsValidMethodName(name, clazz.Version) == false)
                     {
                         if (!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
                             throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);

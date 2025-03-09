@@ -1969,36 +1969,38 @@ namespace IKVM.Tools.Importer
                     helperTypeBuilder.CreateType();
             }
 
-            private static string MakeMethodKey(MethodInfo method)
+            static string MakeMethodKey(MethodInfo method)
             {
-                var sb = new StringBuilder();
-                sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
+                var sb = new ValueStringBuilder(method.ReturnType.AssemblyQualifiedName.Length + 1 + method.Name.Length);
+                sb.Append(method.ReturnType.AssemblyQualifiedName);
+                sb.Append(":");
+                sb.Append(method.Name);
+
                 var paramInfo = method.GetParameters();
-                var paramTypes = new Type[paramInfo.Length];
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
-                    paramTypes[i] = paramInfo[i].ParameterType;
-                    sb.Append(":").Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
+                    sb.Append(":");
+                    sb.Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
                 }
 
                 return sb.ToString();
             }
 
-            private void CreateShadowInstanceOf(ICollection<RemapperTypeWrapper> remappedTypes)
+            void CreateShadowInstanceOf(ICollection<RemapperTypeWrapper> remappedTypes)
             {
                 // FXBUG .NET 1.1 doesn't allow static methods on interfaces
                 if (typeBuilder.IsInterface)
                     return;
 
-                MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-                MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, new Type[] { Context.Types.Object });
+                var attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
+                var mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, [Context.Types.Object]);
                 Context.AttributeHelper.HideFromJava(mb);
                 Context.AttributeHelper.SetEditorBrowsableNever(mb);
-                CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                var ilgen = Context.CodeEmitterFactory.Create(mb);
 
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Isinst, shadowType);
-                CodeEmitterLabel retFalse = ilgen.DefineLabel();
+                var retFalse = ilgen.DefineLabel();
                 ilgen.EmitBrfalse(retFalse);
 
                 if (!shadowType.IsSealed)

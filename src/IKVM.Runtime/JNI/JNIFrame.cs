@@ -112,7 +112,7 @@ namespace IKVM.Runtime.JNI
 
         static string JniMangle(string name)
         {
-            var sb = new StringBuilder();
+            var sb = new ValueStringBuilder(name.Length + 8);
 
             foreach (var c in name)
             {
