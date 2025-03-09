@@ -170,7 +170,7 @@ namespace IKVM.Runtime
 
         internal static void ClearFaultBlockException(RuntimeJavaType w)
         {
-            RuntimeVerifierJavaType vtw = (RuntimeVerifierJavaType)w;
+            var vtw = (RuntimeVerifierJavaType)w;
             vtw.methodAnalyzer.ClearFaultBlockException(vtw.Index);
         }
 

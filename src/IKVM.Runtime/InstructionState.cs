@@ -23,10 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime
 {
@@ -80,21 +77,9 @@ namespace IKVM.Runtime
                 data[count++] = store;
             }
 
-            internal int this[int index]
-            {
-                get
-                {
-                    return data[index];
-                }
-            }
+            internal int this[int index] => data[index];
 
-            internal int Count
-            {
-                get
-                {
-                    return count;
-                }
-            }
+            internal int Count => count;
 
             internal static void MarkShared(LocalStoreSites[] localStoreSites)
             {
@@ -112,131 +97,168 @@ namespace IKVM.Runtime
             All = Stack | Locals
         }
 
-        readonly RuntimeContext context;
-        RuntimeJavaType[] stack;
-        int stackSize;
-        int stackEnd;
-        RuntimeJavaType[] locals;
-        bool unitializedThis;
-        internal bool changed = true;
+        readonly RuntimeContext _context;
+        RuntimeJavaType[] _stack;
+        int _stackLen;
+        int _stackEnd;
+        RuntimeJavaType[] _locals;
+        bool _uninitializedThis;
+        internal bool _changed = true;
 
-        private ShareFlags flags;
+        ShareFlags _flags;
 
-        private InstructionState(RuntimeContext context, RuntimeJavaType[] stack, int stackSize, int stackEnd, RuntimeJavaType[] locals, bool unitializedThis)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="stack"></param>
+        /// <param name="stackLen"></param>
+        /// <param name="stackEnd"></param>
+        /// <param name="locals"></param>
+        /// <param name="uninitializedThis"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        InstructionState(RuntimeContext context, RuntimeJavaType[] stack, int stackLen, int stackEnd, RuntimeJavaType[] locals, bool uninitializedThis)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.flags = ShareFlags.All;
-            this.stack = stack;
-            this.stackSize = stackSize;
-            this.stackEnd = stackEnd;
-            this.locals = locals;
-            this.unitializedThis = unitializedThis;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _flags = ShareFlags.All;
+            _stack = stack;
+            _stackLen = stackLen;
+            _stackEnd = stackEnd;
+            _locals = locals;
+            _uninitializedThis = uninitializedThis;
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="maxLocals"></param>
+        /// <param name="maxStack"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         internal InstructionState(RuntimeContext context, int maxLocals, int maxStack)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.flags = ShareFlags.None;
-            this.stack = new RuntimeJavaType[maxStack];
-            this.stackEnd = maxStack;
-            this.locals = new RuntimeJavaType[maxLocals];
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _flags = ShareFlags.None;
+            _stack = new RuntimeJavaType[maxStack];
+            _stackEnd = maxStack;
+            _locals = new RuntimeJavaType[maxLocals];
         }
 
+        /// <summary>
+        /// Creates a copy of this instance.
+        /// </summary>
+        /// <returns></returns>
         internal InstructionState Copy()
         {
-            return new InstructionState(context, stack, stackSize, stackEnd, locals, unitializedThis);
+            return new InstructionState(_context, _stack, _stackLen, _stackEnd, _locals, _uninitializedThis);
         }
 
+        /// <summary>
+        /// Copies this instruction state to the specified instruction state.
+        /// </summary>
+        /// <param name="target"></param>
         internal void CopyTo(InstructionState target)
         {
-            target.flags = ShareFlags.All;
-            target.stack = stack;
-            target.stackSize = stackSize;
-            target.stackEnd = stackEnd;
-            target.locals = locals;
-            target.unitializedThis = unitializedThis;
-            target.changed = true;
+            target._flags = ShareFlags.All;
+            target._stack = _stack;
+            target._stackLen = _stackLen;
+            target._stackEnd = _stackEnd;
+            target._locals = _locals;
+            target._uninitializedThis = _uninitializedThis;
+            target._changed = true;
         }
 
+        /// <summary>
+        /// Creates a new instance with the same local variables.
+        /// </summary>
+        /// <returns></returns>
         internal InstructionState CopyLocals()
         {
-            InstructionState copy = new InstructionState(context, new RuntimeJavaType[stack.Length], 0, stack.Length, locals, unitializedThis);
-            copy.flags &= ~ShareFlags.Stack;
+            var copy = new InstructionState(_context, new RuntimeJavaType[_stack.Length], 0, _stack.Length, _locals, _uninitializedThis);
+            copy._flags &= ~ShareFlags.Stack;
             return copy;
         }
 
+        /// <summary>
+        /// Creates a new state which is the merged combination of the two specified states.
+        /// </summary>
+        /// <param name="s1"></param>
+        /// <param name="s2"></param>
+        /// <returns></returns>
+        /// <exception cref="VerifyError"></exception>
         public static InstructionState operator +(InstructionState s1, InstructionState s2)
         {
             if (s1 == null)
                 return s2.Copy();
 
-            if (s1.stackSize != s2.stackSize || s1.stackEnd != s2.stackEnd)
-                throw new VerifyError($"Inconsistent stack height: {s1.stackSize + s1.stack.Length - s1.stackEnd} != {s2.stackSize + s2.stack.Length - s2.stackEnd}");
+            if (s1._stackLen != s2._stackLen || s1._stackEnd != s2._stackEnd)
+                throw new VerifyError($"Inconsistent stack height: {s1._stackLen + s1._stack.Length - s1._stackEnd} != {s2._stackLen + s2._stack.Length - s2._stackEnd}");
 
             var s = s1.Copy();
-            s.changed = s1.changed;
-            for (int i = 0; i < s.stackSize; i++)
+            s._changed = s1._changed;
+
+            for (int i = 0; i < s._stackLen; i++)
             {
-                var type = s.stack[i];
-                var type2 = s2.stack[i];
-                if (type == type2)
+                var type1 = s._stack[i];
+                var type2 = s2._stack[i];
+                if (type1 == type2)
                 {
                     // perfect match, nothing to do
                 }
-                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type2 == s1.context.PrimitiveJavaTypeFactory.DOUBLE) || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedDouble && type == s1.context.PrimitiveJavaTypeFactory.DOUBLE))
+                else if ((type1 == s1._context.VerifierJavaTypeFactory.ExtendedDouble && type2 == s1._context.PrimitiveJavaTypeFactory.DOUBLE) || (type2 == s1._context.VerifierJavaTypeFactory.ExtendedDouble && type1 == s1._context.PrimitiveJavaTypeFactory.DOUBLE))
                 {
-                    if (type != s1.context.VerifierJavaTypeFactory.ExtendedDouble)
+                    if (type1 != s1._context.VerifierJavaTypeFactory.ExtendedDouble)
                     {
                         s.StackCopyOnWrite();
-                        s.stack[i] = s1.context.VerifierJavaTypeFactory.ExtendedDouble;
-                        s.changed = true;
+                        s._stack[i] = s1._context.VerifierJavaTypeFactory.ExtendedDouble;
+                        s._changed = true;
                     }
                 }
-                else if ((type == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type2 == s1.context.PrimitiveJavaTypeFactory.FLOAT) || (type2 == s1.context.VerifierJavaTypeFactory.ExtendedFloat && type == s1.context.PrimitiveJavaTypeFactory.FLOAT))
+                else if ((type1 == s1._context.VerifierJavaTypeFactory.ExtendedFloat && type2 == s1._context.PrimitiveJavaTypeFactory.FLOAT) || (type2 == s1._context.VerifierJavaTypeFactory.ExtendedFloat && type1 == s1._context.PrimitiveJavaTypeFactory.FLOAT))
                 {
-                    if (type != s1.context.VerifierJavaTypeFactory.ExtendedFloat)
+                    if (type1 != s1._context.VerifierJavaTypeFactory.ExtendedFloat)
                     {
                         s.StackCopyOnWrite();
-                        s.stack[i] = s1.context.VerifierJavaTypeFactory.ExtendedFloat;
-                        s.changed = true;
+                        s._stack[i] = s1._context.VerifierJavaTypeFactory.ExtendedFloat;
+                        s._changed = true;
                     }
                 }
-                else if (!type.IsPrimitive)
+                else if (!type1.IsPrimitive)
                 {
-                    var baseType = FindCommonBaseType(s1.context, type, type2);
-                    if (baseType == s1.context.VerifierJavaTypeFactory.Invalid)
-                        throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
+                    var baseType = FindCommonBaseType(s1._context, type1, type2);
+                    if (baseType == s1._context.VerifierJavaTypeFactory.Invalid)
+                        throw new VerifyError(string.Format("cannot merge {0} and {1}", type1.Name, type2.Name));
 
-                    if (type != baseType)
+                    if (type1 != baseType)
                     {
                         s.StackCopyOnWrite();
-                        s.stack[i] = baseType;
-                        s.changed = true;
+                        s._stack[i] = baseType;
+                        s._changed = true;
                     }
                 }
                 else
                 {
-                    throw new VerifyError(string.Format("cannot merge {0} and {1}", type.Name, type2.Name));
+                    throw new VerifyError(string.Format("cannot merge {0} and {1}", type1.Name, type2.Name));
                 }
             }
 
-            for (int i = 0; i < s.locals.Length; i++)
+            for (int i = 0; i < s._locals.Length; i++)
             {
-                var type = s.locals[i];
-                var type2 = s2.locals[i];
-                var baseType = FindCommonBaseType(s1.context, type, type2);
+                var type = s._locals[i];
+                var type2 = s2._locals[i];
+                var baseType = FindCommonBaseType(s1._context, type, type2);
                 if (type != baseType)
                 {
                     s.LocalsCopyOnWrite();
-                    s.locals[i] = baseType;
-                    s.changed = true;
+                    s._locals[i] = baseType;
+                    s._changed = true;
                 }
             }
 
-            if (!s.unitializedThis && s2.unitializedThis)
+            if (!s._uninitializedThis && s2._uninitializedThis)
             {
-                s.unitializedThis = true;
-                s.changed = true;
+                s._uninitializedThis = true;
+                s._changed = true;
             }
 
             return s;
@@ -244,26 +266,34 @@ namespace IKVM.Runtime
 
         internal void SetUnitializedThis(bool state)
         {
-            unitializedThis = state;
+            _uninitializedThis = state;
         }
 
         internal void CheckUninitializedThis()
         {
-            if (unitializedThis)
+            if (_uninitializedThis)
                 throw new VerifyError("Base class constructor wasn't called");
         }
 
         internal static RuntimeJavaType FindCommonBaseType(RuntimeContext context, RuntimeJavaType type1, RuntimeJavaType type2)
         {
+            // types are equal
             if (type1 == type2)
                 return type1;
 
+            // merging java.lang.Object with anything can only result in java.lang.Object
+            if (type1 == context.JavaBase.TypeOfJavaLangObject || type2 == context.JavaBase.TypeOfJavaLangObject)
+                return context.JavaBase.TypeOfJavaLangObject;
+
+            // first type is null, return second
             if (type1 == context.VerifierJavaTypeFactory.Null)
                 return type2;
 
+            // second type is null, return first
             if (type2 == context.VerifierJavaTypeFactory.Null)
                 return type1;
 
+            // verifier invalid
             if (type1 == context.VerifierJavaTypeFactory.Invalid || type2 == context.VerifierJavaTypeFactory.Invalid)
                 return context.VerifierJavaTypeFactory.Invalid;
 
@@ -279,24 +309,31 @@ namespace IKVM.Runtime
                 return FindCommonBaseType(context, type1, context.JavaBase.TypeOfjavaLangThrowable);
             }
 
+            // primitive types cannot be merged
             if (type1.IsPrimitive || type2.IsPrimitive)
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // this type without init being run cannot be merged
             if (type1 == context.VerifierJavaTypeFactory.UninitializedThis || type2 == context.VerifierJavaTypeFactory.UninitializedThis)
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // new verifier type cannot be merged
             if (RuntimeVerifierJavaType.IsNew(type1) || RuntimeVerifierJavaType.IsNew(type2))
                 return context.VerifierJavaTypeFactory.Invalid;
 
+            // this type can only be its own underlying
             if (RuntimeVerifierJavaType.IsThis(type1))
                 type1 = ((RuntimeVerifierJavaType)type1).UnderlyingType;
 
+            // this type can only be its own underlying
             if (RuntimeVerifierJavaType.IsThis(type2))
                 type2 = ((RuntimeVerifierJavaType)type2).UnderlyingType;
 
+            // unloadable types cannot be merged
             if (type1.IsUnloadable || type2.IsUnloadable)
                 return context.VerifierJavaTypeFactory.Unloadable;
 
+            // unpack array types into underlying element
             if (type1.ArrayRank > 0 && type2.ArrayRank > 0)
             {
                 int rank = 1;
@@ -330,71 +367,62 @@ namespace IKVM.Runtime
                     baseType = FindCommonBaseTypeHelper(context, elem1, elem2);
                 }
 
+                // rebuild array type
                 return baseType.MakeArrayType(rank);
             }
 
             return FindCommonBaseTypeHelper(context, type1, type2);
         }
 
-        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeContext context, RuntimeJavaType t1, RuntimeJavaType t2)
+        static RuntimeJavaType FindCommonBaseTypeHelper(RuntimeContext context, RuntimeJavaType type1, RuntimeJavaType type2)
         {
-            if (t1 == t2)
-                return t1;
+            if (type1 == type2)
+                return type1;
 
-            if (t1.IsInterface || t2.IsInterface)
-            {
-                // NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
-                // "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
-                // the common base of two interfaces is java.lang.Object, and there is special
-                // treatment for java.lang.Object types that allow it to be assigned to any interface
-                // type, the JVM's typesafety then depends on the invokeinterface instruction to make
-                // sure that the reference actually implements the interface.
-                // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
-                // really do anything more clever than this.
+            // NOTE according to a paper by Alessandro Coglio & Allen Goldberg titled
+            // "Type Safety in the JVM: Some Problems in Java 2 SDK 1.2 and Proposed Solutions"
+            // the common base of two interfaces is java.lang.Object, and there is special
+            // treatment for java.lang.Object types that allow it to be assigned to any interface
+            // type, the JVM's typesafety then depends on the invokeinterface instruction to make
+            // sure that the reference actually implements the interface.
+            // NOTE the ECMA CLI spec also specifies this interface merging algorithm, so we can't
+            // really do anything more clever than this.
+            if (type1.IsInterface && type2.IsInterface)
                 return context.JavaBase.TypeOfJavaLangObject;
-            }
+
+            // t1 is an interface and is implemented by t2, common base type is t1
+            if (type1.IsInterface)
+                return type2.ImplementsInterface(type1) ? type1 : context.JavaBase.TypeOfJavaLangObject;
+
+            // t2 is an interface and is implemented by t1, common base type is t2
+            if (type2.IsInterface)
+                return type1.ImplementsInterface(type2) ? type2 : context.JavaBase.TypeOfJavaLangObject;
 
             var st1 = new Stack<RuntimeJavaType>();
+            while (type1 != null)
+            {
+                st1.Push(type1);
+                type1 = type1.BaseTypeWrapper;
+            }
+
             var st2 = new Stack<RuntimeJavaType>();
-
-            while (t1 != null)
+            while (type2 != null)
             {
-                st1.Push(t1);
-                t1 = t1.BaseTypeWrapper;
+                st2.Push(type2);
+                type2 = type2.BaseTypeWrapper;
             }
 
-            while (t2 != null)
-            {
-                st2.Push(t2);
-                t2 = t2.BaseTypeWrapper;
-            }
-
-            if (HasMissingBaseType(context, st1) || HasMissingBaseType(context, st2))
-                return context.VerifierJavaTypeFactory.Unloadable;
-
+            // pop each item off of the stacks until they do not match
             var type = context.JavaBase.TypeOfJavaLangObject;
             for (; ; )
             {
-                t1 = st1.Count > 0 ? st1.Pop() : null;
-                t2 = st2.Count > 0 ? st2.Pop() : null;
-                if (t1 != t2)
+                type1 = st1.Count > 0 ? st1.Pop() : null;
+                type2 = st2.Count > 0 ? st2.Pop() : null;
+                if (type1 != type2)
                     return type;
 
-                type = t1;
+                type = type1;
             }
-        }
-
-        static bool HasMissingBaseType(RuntimeContext context, Stack<RuntimeJavaType> st)
-        {
-#if IMPORTER
-            if (st.Pop().IsUnloadable)
-            {
-                // we have a missing type in base class hierarchy
-                context.StaticCompiler.IssueMissingTypeMessage(st.Pop().TypeAsBaseType.BaseType);
-                return true;
-            }
-#endif
-            return false;
         }
 
         void SetLocal1(int index, RuntimeJavaType type)
@@ -402,10 +430,10 @@ namespace IKVM.Runtime
             try
             {
                 LocalsCopyOnWrite();
-                if (index > 0 && locals[index - 1] != context.VerifierJavaTypeFactory.Invalid && locals[index - 1].IsWidePrimitive)
-                    locals[index - 1] = context.VerifierJavaTypeFactory.Invalid;
+                if (index > 0 && _locals[index - 1] != _context.VerifierJavaTypeFactory.Invalid && _locals[index - 1].IsWidePrimitive)
+                    _locals[index - 1] = _context.VerifierJavaTypeFactory.Invalid;
 
-                locals[index] = type;
+                _locals[index] = type;
             }
             catch (IndexOutOfRangeException)
             {
@@ -418,11 +446,11 @@ namespace IKVM.Runtime
             try
             {
                 LocalsCopyOnWrite();
-                if (index > 0 && locals[index - 1] != context.VerifierJavaTypeFactory.Invalid && locals[index - 1].IsWidePrimitive)
-                    locals[index - 1] = context.VerifierJavaTypeFactory.Invalid;
+                if (index > 0 && _locals[index - 1] != _context.VerifierJavaTypeFactory.Invalid && _locals[index - 1].IsWidePrimitive)
+                    _locals[index - 1] = _context.VerifierJavaTypeFactory.Invalid;
 
-                locals[index] = type;
-                locals[index + 1] = context.VerifierJavaTypeFactory.Invalid;
+                _locals[index] = type;
+                _locals[index + 1] = _context.VerifierJavaTypeFactory.Invalid;
             }
             catch (IndexOutOfRangeException)
             {
@@ -432,53 +460,53 @@ namespace IKVM.Runtime
 
         internal void GetLocalInt(int index)
         {
-            if (GetLocalType(index) != context.PrimitiveJavaTypeFactory.INT)
+            if (GetLocalType(index) != _context.PrimitiveJavaTypeFactory.INT)
                 throw new VerifyError("Invalid local type");
         }
 
         internal void SetLocalInt(int index, int instructionIndex)
         {
-            SetLocal1(index, context.PrimitiveJavaTypeFactory.INT);
+            SetLocal1(index, _context.PrimitiveJavaTypeFactory.INT);
         }
 
         internal void GetLocalLong(int index)
         {
-            if (GetLocalType(index) != context.PrimitiveJavaTypeFactory.LONG)
+            if (GetLocalType(index) != _context.PrimitiveJavaTypeFactory.LONG)
                 throw new VerifyError("incorrect local type, not long");
         }
 
         internal void SetLocalLong(int index, int instructionIndex)
         {
-            SetLocal2(index, context.PrimitiveJavaTypeFactory.LONG);
+            SetLocal2(index, _context.PrimitiveJavaTypeFactory.LONG);
         }
 
         internal void GetLocalFloat(int index)
         {
-            if (GetLocalType(index) != context.PrimitiveJavaTypeFactory.FLOAT)
+            if (GetLocalType(index) != _context.PrimitiveJavaTypeFactory.FLOAT)
                 throw new VerifyError("incorrect local type, not float");
         }
 
         internal void SetLocalFloat(int index, int instructionIndex)
         {
-            SetLocal1(index, context.PrimitiveJavaTypeFactory.FLOAT);
+            SetLocal1(index, _context.PrimitiveJavaTypeFactory.FLOAT);
         }
 
         internal void GetLocalDouble(int index)
         {
-            if (GetLocalType(index) != context.PrimitiveJavaTypeFactory.DOUBLE)
+            if (GetLocalType(index) != _context.PrimitiveJavaTypeFactory.DOUBLE)
                 throw new VerifyError("incorrect local type, not double");
         }
 
         internal void SetLocalDouble(int index, int instructionIndex)
         {
-            SetLocal2(index, context.PrimitiveJavaTypeFactory.DOUBLE);
+            SetLocal2(index, _context.PrimitiveJavaTypeFactory.DOUBLE);
         }
 
         internal RuntimeJavaType GetLocalType(int index)
         {
             try
             {
-                return locals[index];
+                return _locals[index];
             }
             catch (IndexOutOfRangeException)
             {
@@ -491,7 +519,7 @@ namespace IKVM.Runtime
         // and we don't need to record the fact that we're reading the local.
         internal RuntimeJavaType GetLocalTypeEx(int index)
         {
-            return locals[index];
+            return _locals[index];
         }
 
         internal void SetLocalType(int index, RuntimeJavaType type, int instructionIndex)
@@ -505,39 +533,39 @@ namespace IKVM.Runtime
         internal void PushType(RuntimeJavaType type)
         {
             if (type.IsIntOnStackPrimitive)
-                type = context.PrimitiveJavaTypeFactory.INT;
+                type = _context.PrimitiveJavaTypeFactory.INT;
 
             PushHelper(type);
         }
 
         internal void PushInt()
         {
-            PushHelper(context.PrimitiveJavaTypeFactory.INT);
+            PushHelper(_context.PrimitiveJavaTypeFactory.INT);
         }
 
         internal void PushLong()
         {
-            PushHelper(context.PrimitiveJavaTypeFactory.LONG);
+            PushHelper(_context.PrimitiveJavaTypeFactory.LONG);
         }
 
         internal void PushFloat()
         {
-            PushHelper(context.PrimitiveJavaTypeFactory.FLOAT);
+            PushHelper(_context.PrimitiveJavaTypeFactory.FLOAT);
         }
 
         internal void PushExtendedFloat()
         {
-            PushHelper(context.VerifierJavaTypeFactory.ExtendedFloat);
+            PushHelper(_context.VerifierJavaTypeFactory.ExtendedFloat);
         }
 
         internal void PushDouble()
         {
-            PushHelper(context.PrimitiveJavaTypeFactory.DOUBLE);
+            PushHelper(_context.PrimitiveJavaTypeFactory.DOUBLE);
         }
 
         internal void PushExtendedDouble()
         {
-            PushHelper(context.VerifierJavaTypeFactory.ExtendedDouble);
+            PushHelper(_context.VerifierJavaTypeFactory.ExtendedDouble);
         }
 
         internal void PopInt()
@@ -555,7 +583,7 @@ namespace IKVM.Runtime
         {
             var tw = PopAnyType();
             PopFloatImpl(tw);
-            return tw == context.VerifierJavaTypeFactory.ExtendedFloat;
+            return tw == _context.VerifierJavaTypeFactory.ExtendedFloat;
         }
 
         internal static void PopFloatImpl(RuntimeJavaType tw)
@@ -568,7 +596,7 @@ namespace IKVM.Runtime
         {
             var tw = PopAnyType();
             PopDoubleImpl(tw);
-            return tw == context.VerifierJavaTypeFactory.ExtendedDouble;
+            return tw == _context.VerifierJavaTypeFactory.ExtendedDouble;
         }
 
         internal static void PopDoubleImpl(RuntimeJavaType tw)
@@ -635,10 +663,10 @@ namespace IKVM.Runtime
 
         internal RuntimeJavaType PeekType()
         {
-            if (stackSize == 0)
+            if (_stackLen == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
 
-            return stack[stackSize - 1];
+            return _stack[_stackLen - 1];
         }
 
         internal void MultiPopAnyType(int count)
@@ -649,17 +677,17 @@ namespace IKVM.Runtime
 
         internal RuntimeJavaType PopFaultBlockException()
         {
-            return stack[--stackSize];
+            return _stack[--_stackLen];
         }
 
         internal RuntimeJavaType PopAnyType()
         {
-            if (stackSize == 0)
+            if (_stackLen == 0)
                 throw new VerifyError("Unable to pop operand off an empty stack");
 
-            var type = stack[--stackSize];
-            if (type.IsWidePrimitive || type == context.VerifierJavaTypeFactory.ExtendedDouble)
-                stackEnd++;
+            var type = _stack[--_stackLen];
+            if (type.IsWidePrimitive || type == _context.VerifierJavaTypeFactory.ExtendedDouble)
+                _stackEnd++;
 
             if (RuntimeVerifierJavaType.IsThis(type))
                 type = ((RuntimeVerifierJavaType)type).UnderlyingType;
@@ -667,7 +695,7 @@ namespace IKVM.Runtime
             if (RuntimeVerifierJavaType.IsFaultBlockException(type))
             {
                 RuntimeVerifierJavaType.ClearFaultBlockException(type);
-                type = context.JavaBase.TypeOfjavaLangThrowable;
+                type = _context.JavaBase.TypeOfjavaLangThrowable;
             }
 
             return type;
@@ -752,116 +780,96 @@ namespace IKVM.Runtime
 
         internal int GetStackHeight()
         {
-            return stackSize;
+            return _stackLen;
         }
 
         internal RuntimeJavaType GetStackSlot(int pos)
         {
-            var tw = stack[stackSize - 1 - pos];
-            if (tw == context.VerifierJavaTypeFactory.ExtendedDouble)
-                tw = context.PrimitiveJavaTypeFactory.DOUBLE;
-            else if (tw == context.VerifierJavaTypeFactory.ExtendedFloat)
-                tw = context.PrimitiveJavaTypeFactory.FLOAT;
+            var tw = _stack[_stackLen - 1 - pos];
+            if (tw == _context.VerifierJavaTypeFactory.ExtendedDouble)
+                tw = _context.PrimitiveJavaTypeFactory.DOUBLE;
+            else if (tw == _context.VerifierJavaTypeFactory.ExtendedFloat)
+                tw = _context.PrimitiveJavaTypeFactory.FLOAT;
 
             return tw;
         }
 
         internal RuntimeJavaType GetStackSlotEx(int pos)
         {
-            return stack[stackSize - 1 - pos];
+            return _stack[_stackLen - 1 - pos];
         }
 
         internal RuntimeJavaType GetStackByIndex(int index)
         {
-            return stack[index];
+            return _stack[index];
         }
 
         void PushHelper(RuntimeJavaType type)
         {
-            if (type.IsWidePrimitive || type == context.VerifierJavaTypeFactory.ExtendedDouble)
-                stackEnd--;
+            if (type.IsWidePrimitive || type == _context.VerifierJavaTypeFactory.ExtendedDouble)
+                _stackEnd--;
 
-            if (stackSize >= stackEnd)
+            if (_stackLen >= _stackEnd)
                 throw new VerifyError("Stack overflow");
 
             StackCopyOnWrite();
-            stack[stackSize++] = type;
+            _stack[_stackLen++] = type;
         }
 
         internal void MarkInitialized(RuntimeJavaType type, RuntimeJavaType initType, int instructionIndex)
         {
             System.Diagnostics.Debug.Assert(type != null && initType != null);
 
-            for (int i = 0; i < locals.Length; i++)
+            for (int i = 0; i < _locals.Length; i++)
             {
-                if (locals[i] == type)
+                if (_locals[i] == type)
                 {
                     LocalsCopyOnWrite();
-                    locals[i] = initType;
+                    _locals[i] = initType;
                 }
             }
 
-            for (int i = 0; i < stackSize; i++)
+            for (int i = 0; i < _stackLen; i++)
             {
-                if (stack[i] == type)
+                if (_stack[i] == type)
                 {
                     StackCopyOnWrite();
-                    stack[i] = initType;
+                    _stack[i] = initType;
                 }
             }
         }
 
+        /// <summary>
+        /// Copies the stack for future modification.
+        /// </summary>
         void StackCopyOnWrite()
         {
-            if ((flags & ShareFlags.Stack) != 0)
+            if ((_flags & ShareFlags.Stack) != 0)
             {
-                flags &= ~ShareFlags.Stack;
-                stack = (RuntimeJavaType[])stack.Clone();
+                _flags &= ~ShareFlags.Stack;
+                _stack = (RuntimeJavaType[])_stack.Clone();
             }
         }
 
+        /// <summary>
+        /// Copies the locals for future modification.
+        /// </summary>
         void LocalsCopyOnWrite()
         {
-            if ((flags & ShareFlags.Locals) != 0)
+            if ((_flags & ShareFlags.Locals) != 0)
             {
-                flags &= ~ShareFlags.Locals;
-                locals = (RuntimeJavaType[])locals.Clone();
+                _flags &= ~ShareFlags.Locals;
+                _locals = (RuntimeJavaType[])_locals.Clone();
             }
-        }
-
-        internal void DumpLocals()
-        {
-            Console.Write("// ");
-            string sep = "";
-            for (int i = 0; i < locals.Length; i++)
-            {
-                Console.Write(sep);
-                Console.Write(locals[i]);
-                sep = ", ";
-            }
-            Console.WriteLine();
-        }
-
-        internal void DumpStack()
-        {
-            Console.Write("// ");
-            string sep = "";
-            for (int i = 0; i < stackSize; i++)
-            {
-                Console.Write(sep);
-                Console.Write(stack[i]);
-                sep = ", ";
-            }
-            Console.WriteLine();
         }
 
         internal void ClearFaultBlockException()
         {
-            if (RuntimeVerifierJavaType.IsFaultBlockException(stack[0]))
+            if (RuntimeVerifierJavaType.IsFaultBlockException(_stack[0]))
             {
                 StackCopyOnWrite();
-                changed = true;
-                stack[0] = context.JavaBase.TypeOfjavaLangThrowable;
+                _changed = true;
+                _stack[0] = _context.JavaBase.TypeOfjavaLangThrowable;
             }
         }
 
