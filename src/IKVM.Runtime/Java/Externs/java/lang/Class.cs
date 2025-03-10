@@ -110,9 +110,9 @@ namespace IKVM.Java.Externs.java.lang
                 {
                     javaType.Finish();
                 }
-                catch (RetargetableJavaException x)
+                catch (RetargetableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw e.ToJava();
                 }
 
                 javaType.RunClassInit();
@@ -457,7 +457,7 @@ namespace IKVM.Java.Externs.java.lang
         internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] objAnn)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             var map = new global::java.util.LinkedHashMap();
             if (objAnn != null)
@@ -483,6 +483,7 @@ namespace IKVM.Java.Externs.java.lang
         }
 
 #if !FIRST_PASS
+
         internal static global::java.lang.annotation.Annotation FreezeOrWrapAttribute(global::java.lang.annotation.Annotation ann)
         {
             var attr = ann as global::ikvm.@internal.AnnotationAttributeBase;
@@ -503,27 +504,27 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredAnnotationsImpl(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            var wrapper = RuntimeJavaType.FromClass(thisClass);
+            var type = RuntimeJavaType.FromClass(thisClass);
 
             try
             {
-                wrapper.Finish();
+                type.Finish();
             }
             catch (RetargetableJavaException x)
             {
                 throw x.ToJava();
             }
 
-            return AnnotationsToMap(wrapper.ClassLoader, wrapper.GetDeclaredAnnotations());
+            return AnnotationsToMap(type.ClassLoader, type.GetDeclaredAnnotations());
 #endif
         }
 
         public static object getDeclaredFields0(global::java.lang.Class thisClass, bool publicOnly)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
