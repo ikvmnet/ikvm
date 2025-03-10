@@ -719,44 +719,35 @@ namespace IKVM.Runtime
             return impl.GetGenericSignature();
         }
 
-        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod method)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i] == mw)
-                {
+                if (methods[i] == method)
                     return impl.GetGenericMethodSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
-        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField field)
         {
-            RuntimeJavaField[] fields = GetFields();
+            var fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
-            {
-                if (fields[i] == fw)
-                {
+                if (fields[i] == field)
                     return impl.GetGenericFieldSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod method)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i] == mw)
-                {
+                if (methods[i] == method)
                     return impl.GetMethodParameters(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }

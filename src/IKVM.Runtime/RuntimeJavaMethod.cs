@@ -28,6 +28,8 @@ using IKVM.Attributes;
 
 using System.Linq;
 using IKVM.CoreLib.Diagnostics;
+using System.Threading;
+
 
 
 #if IMPORTER || EXPORTER
@@ -142,7 +144,7 @@ namespace IKVM.Runtime
         {
             declaredExceptions = exceptions != null && exceptions.Length > 0 ? (string[])exceptions.Clone() : Array.Empty<string>();
         }
-        
+
         /// <summary>
         /// Gest the declared exceptions for the method.
         /// </summary>
@@ -153,32 +155,33 @@ namespace IKVM.Runtime
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal java.lang.reflect.Executable ToMethodOrConstructor(bool copy)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            java.lang.reflect.Executable method = reflectionMethod;
+            var method = reflectionMethod;
             if (method == null)
             {
                 Link();
-                RuntimeClassLoader loader = this.DeclaringType.ClassLoader;
-                RuntimeJavaType[] argTypes = GetParameters();
-                java.lang.Class[] parameterTypes = new java.lang.Class[argTypes.Length];
+
+                var loader = DeclaringType.ClassLoader;
+                var argTypes = GetParameters();
+                var parameterTypes = new java.lang.Class[argTypes.Length];
                 for (int i = 0; i < argTypes.Length; i++)
-                {
                     parameterTypes[i] = argTypes[i].EnsureLoadable(loader).ClassObject;
-                }
-                java.lang.Class[] checkedExceptions = GetExceptions();
-                if (this.IsConstructor)
+
+                var checkedExceptions = GetExceptions();
+                if (IsConstructor)
                 {
                     method = new java.lang.reflect.Constructor(
-                        this.DeclaringType.ClassObject,
+                        DeclaringType.ClassObject,
                         parameterTypes,
                         checkedExceptions,
-                        (int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
-                        Array.IndexOf(this.DeclaringType.GetMethods(), this),
-                        this.DeclaringType.GetGenericMethodSignature(this),
+                        (int)Modifiers | (IsInternal ? 0x40000000 : 0),
+                        Array.IndexOf(DeclaringType.GetMethods(), this),
+                        DeclaringType.GetGenericMethodSignature(this),
                         null,
                         null
                     );
@@ -186,49 +189,43 @@ namespace IKVM.Runtime
                 else
                 {
                     method = new java.lang.reflect.Method(
-                        this.DeclaringType.ClassObject,
-                        this.Name,
+                        DeclaringType.ClassObject,
+                        Name,
                         parameterTypes,
-                        this.ReturnType.EnsureLoadable(loader).ClassObject,
+                        ReturnType.EnsureLoadable(loader).ClassObject,
                         checkedExceptions,
-                        (int)this.Modifiers | (this.IsInternal ? 0x40000000 : 0),
-                        Array.IndexOf(this.DeclaringType.GetMethods(), this),
-                        this.DeclaringType.GetGenericMethodSignature(this),
+                        (int)Modifiers | (IsInternal ? 0x40000000 : 0),
+                        Array.IndexOf(DeclaringType.GetMethods(), this),
+                        DeclaringType.GetGenericMethodSignature(this),
                         null,
                         null,
                         null
                     );
                 }
-                lock (this)
-                {
-                    if (reflectionMethod == null)
-                    {
-                        reflectionMethod = method;
-                    }
-                    else
-                    {
-                        method = reflectionMethod;
-                    }
-                }
+
+                Interlocked.CompareExchange(ref reflectionMethod, method, null);
+                method = reflectionMethod;
             }
+
             if (copy)
             {
-                java.lang.reflect.Constructor ctor = method as java.lang.reflect.Constructor;
-                if (ctor != null)
-                {
+                if (method is java.lang.reflect.Constructor ctor)
                     return ctor.copy();
-                }
-                return ((java.lang.reflect.Method)method).copy();
+                else
+                    return ((java.lang.reflect.Method)method).copy();
             }
+
             return method;
 #endif
         }
 
+
 #if !FIRST_PASS
-        private java.lang.Class[] GetExceptions()
+
+        java.lang.Class[] GetExceptions()
         {
-            string[] classes = declaredExceptions;
-            Type[] types = Type.EmptyTypes;
+            var classes = declaredExceptions;
+            var types = Type.EmptyTypes;
             if (classes == null)
             {
                 // NOTE if method is a MethodBuilder, GetCustomAttributes doesn't work (and if
@@ -236,7 +233,7 @@ namespace IKVM.Runtime
                 // been set)
                 if (method != null && method is not MethodBuilder)
                 {
-                    ThrowsAttribute attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
+                    var attr = DeclaringType.Context.AttributeHelper.GetThrows(method);
                     if (attr != null)
                     {
                         classes = attr.classes;
@@ -244,35 +241,36 @@ namespace IKVM.Runtime
                     }
                 }
             }
+
             if (classes != null)
             {
-                java.lang.Class[] array = new java.lang.Class[classes.Length];
+                var array = new java.lang.Class[classes.Length];
                 for (int i = 0; i < classes.Length; i++)
-                {
-                    array[i] = this.DeclaringType.ClassLoader.LoadClassByName(classes[i]).ClassObject;
-                }
+                    array[i] = DeclaringType.ClassLoader.LoadClassByName(classes[i]).ClassObject;
+
                 return array;
             }
             else
             {
-                java.lang.Class[] array = new java.lang.Class[types.Length];
+                var array = new java.lang.Class[types.Length];
                 for (int i = 0; i < types.Length; i++)
-                {
                     array[i] = types[i];
-                }
+
                 return array;
             }
         }
+
 #endif // !FIRST_PASS
 
         internal static RuntimeJavaMethod FromExecutable(java.lang.reflect.Executable executable)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return RuntimeJavaType.FromClass(executable.getDeclaringClass()).GetMethods()[executable._slot()];
 #endif
         }
+
 #endif // !IMPORTER && !EXPORTER
 
         /// <summary>
@@ -302,15 +300,13 @@ namespace IKVM.Runtime
         internal void Link(LoadMode mode)
         {
             lock (this)
-            {
                 if (parameterTypeWrappers != null)
-                {
                     return;
-                }
-            }
-            RuntimeClassLoader loader = this.DeclaringType.ClassLoader;
-            RuntimeJavaType ret = loader.RetTypeWrapperFromSig(Signature, mode);
-            RuntimeJavaType[] parameters = loader.ArgJavaTypeListFromSig(Signature, mode);
+
+            var loader = this.DeclaringType.ClassLoader;
+            var ret = loader.RetTypeWrapperFromSig(Signature, mode);
+            var parameters = loader.ArgJavaTypeListFromSig(Signature, mode);
+
             lock (this)
             {
                 try
@@ -322,6 +318,7 @@ namespace IKVM.Runtime
                     if (parameterTypeWrappers == null)
                     {
                         Debug.Assert(returnTypeWrapper == null || returnTypeWrapper == DeclaringType.Context.PrimitiveJavaTypeFactory.VOID);
+
                         returnTypeWrapper = ret;
                         parameterTypeWrappers = parameters;
                         UpdateNonPublicTypeInSignatureFlag();

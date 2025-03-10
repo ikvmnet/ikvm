@@ -1054,17 +1054,15 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod method)
         {
-            if (mw is RemappedJavaMethod)
-            {
-                return ((RemappedJavaMethod)mw).GetGenericSignature();
-            }
+            if (method is RemappedJavaMethod remappedMethod)
+                return remappedMethod.GetGenericSignature();
 
-            var mb = mw.GetMethod();
-            if (mb != null)
+            var methodBase = method.GetMethod();
+            if (methodBase != null)
             {
-                var attr = Context.AttributeHelper.GetSignature(mb);
+                var attr = Context.AttributeHelper.GetSignature(methodBase);
                 if (attr != null)
                     return attr.Signature;
             }
@@ -1072,9 +1070,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField field)
         {
-            var fi = fw.GetField();
+            var fi = field.GetField();
             if (fi != null)
             {
                 var attr = Context.AttributeHelper.GetSignature(fi);
@@ -1085,14 +1083,11 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod method)
         {
-            var mb = mw.GetMethod();
+            var mb = method.GetMethod();
             if (mb == null)
-            {
-                // delegate constructor
-                return null;
-            }
+                return null; // delegate constructor
 
             var attr = Context.AttributeHelper.GetMethodParameters(mb);
             if (attr == null)

@@ -606,45 +606,34 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredConstructors0(global::java.lang.Class thisClass, bool publicOnly)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            Profiler.Enter("Class.getDeclaredConstructors0");
             try
             {
-                RuntimeJavaType wrapper = RuntimeJavaType.FromClass(thisClass);
-                wrapper.Finish();
-                if (wrapper.HasVerifyError)
-                {
-                    // TODO we should get the message from somewhere
+                var type = RuntimeJavaType.FromClass(thisClass);
+                type.Finish();
+
+                if (type.HasVerifyError)
                     throw new VerifyError();
-                }
-                if (wrapper.HasClassFormatError)
+
+                if (type.HasClassFormatError)
+                    throw new ClassFormatError(type.Name);
+
+                var methods = type.GetMethods();
+                var constructors = new List<global::java.lang.reflect.Constructor>(methods.Length);
+                foreach (var method in methods)
                 {
-                    // TODO we should get the message from somewhere
-                    throw new ClassFormatError(wrapper.Name);
+                    // we don't want to expose "hideFromReflection" methods (one reason is that it would mess up the serialVersionUID computation)
+                    if (method.IsHideFromReflection == false && method.IsConstructor)
+                        if (publicOnly == false || method.IsPublic)
+                            constructors.Add((global::java.lang.reflect.Constructor)method.ToMethodOrConstructor(false));
                 }
-                RuntimeJavaMethod[] methods = wrapper.GetMethods();
-                List<global::java.lang.reflect.Constructor> list = new List<global::java.lang.reflect.Constructor>();
-                for (int i = 0; i < methods.Length; i++)
-                {
-                    // we don't want to expose "hideFromReflection" methods (one reason is that it would
-                    // mess up the serialVersionUID computation)
-                    if (!methods[i].IsHideFromReflection
-                        && methods[i].IsConstructor
-                        && (!publicOnly || methods[i].IsPublic))
-                    {
-                        list.Add((global::java.lang.reflect.Constructor)methods[i].ToMethodOrConstructor(false));
-                    }
-                }
-                return list.ToArray();
+
+                return constructors.ToArray();
             }
             catch (RetargetableJavaException x)
             {
                 throw x.ToJava();
-            }
-            finally
-            {
-                Profiler.Leave("Class.getDeclaredConstructors0");
             }
 #endif
         }
