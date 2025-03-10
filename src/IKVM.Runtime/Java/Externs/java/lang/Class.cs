@@ -62,7 +62,7 @@ namespace IKVM.Java.Externs.java.lang
             if (name == null)
                 throw new global::java.lang.NullPointerException();
 
-            RuntimeJavaType tw = null;
+            RuntimeJavaType javaType = null;
             if (name.IndexOf(',') > 0)
             {
                 // we essentially require full trust before allowing arbitrary types to be loaded,
@@ -72,9 +72,9 @@ namespace IKVM.Java.Externs.java.lang
 
                 var type = Type.GetType(name);
                 if (type != null)
-                    tw = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
+                    javaType = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type);
 
-                if (tw == null)
+                if (javaType == null)
                 {
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
                     throw new global::java.lang.ClassNotFoundException(name);
@@ -84,41 +84,41 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    tw = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByName(name);
+                    javaType = JVM.Context.ClassLoaderFactory.GetClassLoaderWrapper(loader).LoadClassByName(name);
                 }
-                catch (ClassNotFoundException x)
+                catch (ClassNotFoundException e)
                 {
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
-                    throw new global::java.lang.ClassNotFoundException(x.Message);
+                    throw new global::java.lang.ClassNotFoundException(e.Message);
                 }
-                catch (ClassLoadingException x)
+                catch (ClassLoadingException e)
                 {
-                    throw x.InnerException;
+                    throw e.InnerException;
                 }
-                catch (RetargetableJavaException x)
+                catch (RetargetableJavaException e)
                 {
-                    throw x.ToJava();
+                    throw e.ToJava();
                 }
             }
 
             if (loader != null && caller != null && getProtectionDomain0(caller) is global::java.security.ProtectionDomain pd)
-                ClassLoaderAccessor.InvokeCheckPackageAccess(loader, tw.ClassObject, pd);
+                ClassLoaderAccessor.InvokeCheckPackageAccess(loader, javaType.ClassObject, pd);
 
-            if (initialize && tw.IsArray == false)
+            if (initialize && javaType.IsArray == false)
             {
                 try
                 {
-                    tw.Finish();
+                    javaType.Finish();
                 }
                 catch (RetargetableJavaException x)
                 {
                     throw x.ToJava();
                 }
 
-                tw.RunClassInit();
+                javaType.RunClassInit();
             }
 
-            return tw.ClassObject;
+            return javaType.ClassObject;
 #endif
         }
 
@@ -139,6 +139,10 @@ namespace IKVM.Java.Externs.java.lang
 
             readonly object[] constantPool;
 
+            /// <summary>
+            /// Initialzes a new instance.
+            /// </summary>
+            /// <param name="constantPool"></param>
             internal ConstantPoolImpl(object[] constantPool)
             {
                 this.constantPool = constantPool;
@@ -241,37 +245,37 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var tw = RuntimeJavaType.FromClass(thisClass);
-            if (tw.IsPrimitive)
+            var type = RuntimeJavaType.FromClass(thisClass);
+            if (type.IsPrimitive)
             {
-                if (tw == JVM.Context.PrimitiveJavaTypeFactory.BYTE)
+                if (type == JVM.Context.PrimitiveJavaTypeFactory.BYTE)
                     return "byte";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.CHAR)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.CHAR)
                     return "char";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.DOUBLE)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.DOUBLE)
                     return "double";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.FLOAT)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.FLOAT)
                     return "float";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.INT)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.INT)
                     return "int";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.LONG)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.LONG)
                     return "long";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.SHORT)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.SHORT)
                     return "short";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.BOOLEAN)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.BOOLEAN)
                     return "boolean";
-                else if (tw == JVM.Context.PrimitiveJavaTypeFactory.VOID)
+                else if (type == JVM.Context.PrimitiveJavaTypeFactory.VOID)
                     return "void";
             }
 
-            if (tw.IsUnsafeAnonymous)
+            if (type.IsUnsafeAnonymous)
             {
                 // for OpenJDK compatibility and debugging convenience we modify the class name to
                 // include the identity hashcode of the class object
-                return tw.Name + "/" + global::java.lang.System.identityHashCode(thisClass);
+                return type.Name + "/" + global::java.lang.System.identityHashCode(thisClass);
             }
 
-            return tw.Name;
+            return type.Name;
 #endif
         }
 
@@ -287,8 +291,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static global::java.lang.Class getSuperclass(global::java.lang.Class thisClass)
         {
-            var super = RuntimeJavaType.FromClass(thisClass).BaseTypeWrapper;
-            return super != null ? super.ClassObject : null;
+            return RuntimeJavaType.FromClass(thisClass).BaseTypeWrapper?.ClassObject;
         }
 
         public static global::java.lang.Class[] getInterfaces0(global::java.lang.Class thisClass)
@@ -307,8 +310,8 @@ namespace IKVM.Java.Externs.java.lang
 
         public static global::java.lang.Class getComponentType(global::java.lang.Class thisClass)
         {
-            var tw = RuntimeJavaType.FromClass(thisClass);
-            return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
+            var type = RuntimeJavaType.FromClass(thisClass);
+            return type.IsArray ? type.ElementTypeWrapper.ClassObject : null;
         }
 
         public static int getModifiers(global::java.lang.Class thisClass)
@@ -339,13 +342,14 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                var tw = RuntimeJavaType.FromClass(thisClass);
-                tw.Finish();
-                var enc = tw.GetEnclosingMethod();
+                var type = RuntimeJavaType.FromClass(thisClass);
+                type.Finish();
+
+                var enc = type.GetEnclosingMethod();
                 if (enc == null)
                     return null;
 
-                return [tw.ClassLoader.LoadClassByName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/')];
+                return [type.ClassLoader.LoadClassByName(enc[0]).ClassObject, enc[1], enc[2]?.Replace('.', '/')];
             }
             catch (RetargetableJavaException x)
             {
@@ -357,26 +361,24 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                var wrapper = RuntimeJavaType.FromClass(thisClass);
-                wrapper.Finish();
-                var decl = wrapper.DeclaringTypeWrapper;
-                if (decl == null)
+                var type = RuntimeJavaType.FromClass(thisClass);
+                type.Finish();
+
+                var declaringType = type.DeclaringTypeWrapper;
+                if (declaringType == null)
                     return null;
 
-                decl = decl.EnsureLoadable(wrapper.ClassLoader);
-                if (!decl.IsAccessibleFrom(wrapper))
-                    throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
+                declaringType = declaringType.EnsureLoadable(type.ClassLoader);
+                if (declaringType.IsAccessibleFrom(type) == false)
+                    throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", declaringType.Name, type.Name));
 
-                decl.Finish();
-                RuntimeJavaType[] declInner = decl.InnerClasses;
-                for (int i = 0; i < declInner.Length; i++)
-                {
-                    if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.ClassLoader) == wrapper)
-                    {
-                        return decl.ClassObject;
-                    }
-                }
-                throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
+                declaringType.Finish();
+
+                foreach (var declaringTypeInnerType in declaringType.InnerClasses)
+                    if (declaringTypeInnerType.Name == type.Name && declaringTypeInnerType.EnsureLoadable(declaringType.ClassLoader) == type)
+                        return declaringType.ClassObject;
+
+                throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", declaringType.Name, type.Name));
             }
             catch (RetargetableJavaException x)
             {
@@ -389,25 +391,27 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var wrapper = RuntimeJavaType.FromClass(thisClass);
-            if (wrapper.IsArray)
+            var type = RuntimeJavaType.FromClass(thisClass);
+            if (type.IsArray)
                 return null;
 
-            var pd = wrapper.ClassObject.pd;
+            var pd = type.ClassObject.pd;
             if (pd == null)
             {
                 // The protection domain for statically compiled code is created lazily (not at global::java.lang.Class creation time),
                 // to work around boot strap issues.
-                var acl = wrapper.ClassLoader as RuntimeAssemblyClassLoader;
-                if (acl != null)
+                if (type.ClassLoader is RuntimeAssemblyClassLoader acl)
+                {
                     pd = acl.GetProtectionDomain();
-                else if (wrapper is RuntimeAnonymousJavaType)
+                }
+                else if (type is RuntimeAnonymousJavaType)
                 {
                     // dynamically compiled intrinsified lamdba anonymous types end up here and should get their
                     // protection domain from the host class
-                    pd = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(wrapper.TypeAsTBD.DeclaringType).ClassObject.pd;
+                    pd = JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(type.TypeAsTBD.DeclaringType).ClassObject.pd;
                 }
             }
+
             return pd;
 #endif
         }
@@ -445,9 +449,9 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getGenericSignature0(global::java.lang.Class thisClass)
         {
-            RuntimeJavaType tw = RuntimeJavaType.FromClass(thisClass);
-            tw.Finish();
-            return tw.GetGenericSignature();
+            var type = RuntimeJavaType.FromClass(thisClass);
+            type.Finish();
+            return type.GetGenericSignature();
         }
 
         internal static object AnnotationsToMap(RuntimeClassLoader loader, object[] objAnn)
