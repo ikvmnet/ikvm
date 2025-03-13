@@ -71,9 +71,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return sym;
         }
 
-        public System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)_underlyingMethodBase.Attributes;
+        public global::System.Reflection.MethodAttributes Attributes => (global::System.Reflection.MethodAttributes)_underlyingMethodBase.Attributes;
 
-        public System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)_underlyingMethodBase.CallingConvention;
+        public global::System.Reflection.CallingConventions CallingConvention => (global::System.Reflection.CallingConventions)_underlyingMethodBase.CallingConvention;
 
         public bool ContainsGenericParameters => _underlyingMethodBase.ContainsGenericParameters;
 
@@ -107,16 +107,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public bool IsVirtual => _underlyingMethodBase.IsVirtual;
 
-        public System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)_underlyingMethodBase.MethodImplementationFlags;
+        public global::System.Reflection.MethodImplAttributes MethodImplementationFlags => (global::System.Reflection.MethodImplAttributes)_underlyingMethodBase.MethodImplementationFlags;
 
         public ITypeSymbol[] GetGenericArguments()
         {
             return ResolveTypeSymbols(_underlyingMethodBase.GetGenericArguments());
         }
 
-        public System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
+        public global::System.Reflection.MethodImplAttributes GetMethodImplementationFlags()
         {
-            return (System.Reflection.MethodImplAttributes)_underlyingMethodBase.GetMethodImplementationFlags();
+            return (global::System.Reflection.MethodImplAttributes)_underlyingMethodBase.GetMethodImplementationFlags();
         }
 
         public IParameterSymbol[] GetParameters()

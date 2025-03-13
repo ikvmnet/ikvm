@@ -20,7 +20,7 @@ public final class AppDomainAssemblyClassLoader extends ClassLoader {
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        return getResources(super.getResources(name), name);
+        return concatResources(super.getResources(name), name);
     }
 
     private native Enumeration<URL> concatResources(Enumeration<URL> parent, String name);

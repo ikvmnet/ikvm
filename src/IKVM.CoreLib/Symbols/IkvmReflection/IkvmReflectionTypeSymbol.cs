@@ -465,7 +465,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public string? AssemblyQualifiedName => _underlyingType.AssemblyQualifiedName;
 
-        public System.Reflection.TypeAttributes Attributes => (System.Reflection.TypeAttributes)(int)_underlyingType.Attributes;
+        public global::System.Reflection.TypeAttributes Attributes => (global::System.Reflection.TypeAttributes)(int)_underlyingType.Attributes;
 
         public ITypeSymbol? BaseType => _underlyingType.BaseType != null ? ResolveTypeSymbol(_underlyingType.BaseType) : null;
 
@@ -475,7 +475,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public string? FullName => _underlyingType.FullName;
 
-        public System.Reflection.GenericParameterAttributes GenericParameterAttributes => (System.Reflection.GenericParameterAttributes)(int)_underlyingType.GenericParameterAttributes;
+        public global::System.Reflection.GenericParameterAttributes GenericParameterAttributes => (global::System.Reflection.GenericParameterAttributes)(int)_underlyingType.GenericParameterAttributes;
 
         public int GenericParameterPosition => _underlyingType.GenericParameterPosition;
 
@@ -550,7 +550,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetArrayRank();
         }
 
-        public IConstructorSymbol? GetConstructor(System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
+        public IConstructorSymbol? GetConstructor(global::System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
         {
             return _underlyingType.GetConstructor((BindingFlags)bindingAttr, binder: null, UnpackTypeSymbols(types), modifiers: null) is ConstructorInfo ctor ? ResolveConstructorSymbol(ctor) : null;
         }
@@ -565,7 +565,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveConstructorSymbols(_underlyingType.GetConstructors());
         }
 
-        public IConstructorSymbol[] GetConstructors(System.Reflection.BindingFlags bindingAttr)
+        public IConstructorSymbol[] GetConstructors(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveConstructorSymbols(_underlyingType.GetConstructors((BindingFlags)bindingAttr));
         }
@@ -595,7 +595,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveTypeSymbol(_underlyingType.GetEnumUnderlyingType());
         }
 
-        public IEventSymbol? GetEvent(string name, System.Reflection.BindingFlags bindingAttr)
+        public IEventSymbol? GetEvent(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingType.GetEvent(name, (BindingFlags)bindingAttr) is { } f ? ResolveEventSymbol(f) : null;
         }
@@ -610,7 +610,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveEventSymbols(_underlyingType.GetEvents());
         }
 
-        public IEventSymbol[] GetEvents(System.Reflection.BindingFlags bindingAttr)
+        public IEventSymbol[] GetEvents(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveEventSymbols(_underlyingType.GetEvents((BindingFlags)bindingAttr));
         }
@@ -620,7 +620,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetField(name) is FieldInfo f ? ResolveFieldSymbol(f) : null;
         }
 
-        public IFieldSymbol? GetField(string name, System.Reflection.BindingFlags bindingAttr)
+        public IFieldSymbol? GetField(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingType.GetField(name, (BindingFlags)bindingAttr) is FieldInfo f ? ResolveFieldSymbol(f) : null;
         }
@@ -630,7 +630,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveFieldSymbols(_underlyingType.GetFields());
         }
 
-        public IFieldSymbol[] GetFields(System.Reflection.BindingFlags bindingAttr)
+        public IFieldSymbol[] GetFields(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveFieldSymbols(_underlyingType.GetFields((BindingFlags)bindingAttr));
         }
@@ -675,17 +675,17 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveMemberSymbols(_underlyingType.GetMember(name));
         }
 
-        public IMemberSymbol[] GetMember(string name, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMember(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(_underlyingType.GetMember(name, (BindingFlags)bindingAttr));
         }
 
-        public IMemberSymbol[] GetMember(string name, System.Reflection.MemberTypes type, System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMember(string name, global::System.Reflection.MemberTypes type, global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(_underlyingType.GetMember(name, (MemberTypes)type, (BindingFlags)bindingAttr));
         }
 
-        public IMemberSymbol[] GetMembers(System.Reflection.BindingFlags bindingAttr)
+        public IMemberSymbol[] GetMembers(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMemberSymbols(_underlyingType.GetMembers((BindingFlags)bindingAttr));
         }
@@ -695,12 +695,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveMemberSymbols(_underlyingType.GetMembers());
         }
 
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr)
+        public IMethodSymbol? GetMethod(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingType.GetMethod(name, (BindingFlags)bindingAttr) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
+        public IMethodSymbol? GetMethod(string name, global::System.Reflection.BindingFlags bindingAttr, ITypeSymbol[] types)
         {
             return _underlyingType.GetMethod(name, (BindingFlags)bindingAttr, null, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
         }
@@ -715,7 +715,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetMethod(name) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
-        public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public IMethodSymbol? GetMethod(string name, ITypeSymbol[] types, global::System.Reflection.ParameterModifier[]? modifiers)
         {
             if (modifiers != null)
                 throw new NotImplementedException();
@@ -723,7 +723,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetMethod(name, UnpackTypeSymbols(types), null) is { } m ? ResolveMethodSymbol(m) : null;
         }
 
-        public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingAttr)
+        public IMethodSymbol[] GetMethods(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveMethodSymbols(_underlyingType.GetMethods((BindingFlags)bindingAttr));
         }
@@ -738,7 +738,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetNestedType(name) is Type t ? ResolveTypeSymbol(t) : null;
         }
 
-        public ITypeSymbol? GetNestedType(string name, System.Reflection.BindingFlags bindingAttr)
+        public ITypeSymbol? GetNestedType(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingType.GetNestedType(name, (BindingFlags)bindingAttr) is Type t ? ResolveTypeSymbol(t) : null;
         }
@@ -748,7 +748,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveTypeSymbols(_underlyingType.GetNestedTypes());
         }
 
-        public ITypeSymbol[] GetNestedTypes(System.Reflection.BindingFlags bindingAttr)
+        public ITypeSymbol[] GetNestedTypes(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolveTypeSymbols(_underlyingType.GetNestedTypes((BindingFlags)bindingAttr));
         }
@@ -758,12 +758,12 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolvePropertySymbols(_underlyingType.GetProperties());
         }
 
-        public IPropertySymbol[] GetProperties(System.Reflection.BindingFlags bindingAttr)
+        public IPropertySymbol[] GetProperties(global::System.Reflection.BindingFlags bindingAttr)
         {
             return ResolvePropertySymbols(_underlyingType.GetProperties((BindingFlags)bindingAttr));
         }
 
-        public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public IPropertySymbol? GetProperty(string name, ITypeSymbol? returnType, ITypeSymbol[] types, global::System.Reflection.ParameterModifier[]? modifiers)
         {
             if (modifiers != null)
                 throw new NotImplementedException();
@@ -783,7 +783,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return _underlyingType.GetProperty(name, _returnType, UnpackTypeSymbols(types)) is { } p ? ResolvePropertySymbol(p) : null;
         }
 
-        public IPropertySymbol? GetProperty(string name, System.Reflection.BindingFlags bindingAttr)
+        public IPropertySymbol? GetProperty(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingType.GetProperty(name, (BindingFlags)bindingAttr) is { } p ? ResolvePropertySymbol(p) : null;
         }

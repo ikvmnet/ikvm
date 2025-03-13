@@ -135,7 +135,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public virtual ITypeSymbol? DeclaringType => _underlyingMember.DeclaringType is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
 
-        public virtual System.Reflection.MemberTypes MemberType => (System.Reflection.MemberTypes)_underlyingMember.MemberType;
+        public virtual global::System.Reflection.MemberTypes MemberType => (global::System.Reflection.MemberTypes)_underlyingMember.MemberType;
 
         public virtual int MetadataToken => _underlyingMember.MetadataToken;
 

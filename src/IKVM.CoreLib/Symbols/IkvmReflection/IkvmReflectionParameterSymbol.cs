@@ -27,7 +27,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         internal IkvmReflectionMethodBaseSymbol ContainingMethod => _method;
 
-        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)_underlyingParameter.Attributes;
+        public global::System.Reflection.ParameterAttributes Attributes => (global::System.Reflection.ParameterAttributes)_underlyingParameter.Attributes;
 
         public object DefaultValue => _underlyingParameter.RawDefaultValue;
 

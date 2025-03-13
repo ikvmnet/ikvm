@@ -187,13 +187,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IFieldSymbol? GetField(string name, System.Reflection.BindingFlags bindingAttr)
+        public IFieldSymbol? GetField(string name, global::System.Reflection.BindingFlags bindingAttr)
         {
             return _underlyingModule.GetField(name, (BindingFlags)bindingAttr) is { } f ? ResolveFieldSymbol(f) : null;
         }
 
         /// <inheritdoc />
-        public IFieldSymbol[] GetFields(System.Reflection.BindingFlags bindingFlags)
+        public IFieldSymbol[] GetFields(global::System.Reflection.BindingFlags bindingFlags)
         {
             return ResolveFieldSymbols(_underlyingModule.GetFields((BindingFlags)bindingFlags));
         }
@@ -217,7 +217,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod(string name, System.Reflection.BindingFlags bindingAttr, System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, System.Reflection.ParameterModifier[]? modifiers)
+        public IMethodSymbol? GetMethod(string name, global::System.Reflection.BindingFlags bindingAttr, global::System.Reflection.CallingConventions callConvention, ITypeSymbol[] types, global::System.Reflection.ParameterModifier[]? modifiers)
         {
             if (modifiers != null)
                 throw new NotImplementedException();
@@ -232,7 +232,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetMethods(System.Reflection.BindingFlags bindingFlags)
+        public IMethodSymbol[] GetMethods(global::System.Reflection.BindingFlags bindingFlags)
         {
             return ResolveMethodSymbols(_underlyingModule.GetMethods((BindingFlags)bindingFlags));
         }

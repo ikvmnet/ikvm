@@ -24,7 +24,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         public IMethodSymbol? AddMethod => _underlyingEvent.AddMethod is { } m ? ResolveMethodSymbol(m) : null;
 
-        public System.Reflection.EventAttributes Attributes => (System.Reflection.EventAttributes)_underlyingEvent.Attributes;
+        public global::System.Reflection.EventAttributes Attributes => (global::System.Reflection.EventAttributes)_underlyingEvent.Attributes;
 
         public ITypeSymbol? EventHandlerType => _underlyingEvent.EventHandlerType is { } m ? ResolveTypeSymbol(m) : null;
 

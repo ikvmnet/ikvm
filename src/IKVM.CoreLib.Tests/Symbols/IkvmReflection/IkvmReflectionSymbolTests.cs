@@ -47,7 +47,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         {
             try
             {
-                var asm = System.Reflection.Assembly.Load(args.Name);
+                var asm = global::System.Reflection.Assembly.Load(args.Name);
                 if (asm != null && File.Exists(asm.Location))
                     return universe!.LoadFile(asm.Location);
             }
@@ -131,7 +131,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
         [TestMethod]
         public void EnumTypeShouldBeSame()
         {
-            var a = universe!.Load(typeof(System.AttributeTargets).Assembly.FullName);
+            var a = universe!.Load(typeof(global::System.AttributeTargets).Assembly.FullName);
             var t = a.GetType("System.AttributeTargets");
             var c = new IkvmReflectionSymbolContext();
             var s1 = c.GetOrCreateTypeSymbol(t);
@@ -157,7 +157,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             var s = c.GetOrCreateTypeSymbol(t);
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeTrue();
-            var f = s.GetField("field", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var f = s.GetField("field", global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
             f.Name.Should().Be("field");
             f.FieldType.IsGenericType.Should().BeFalse();
             f.FieldType.IsGenericParameter.Should().BeTrue();
@@ -171,7 +171,7 @@ namespace IKVM.CoreLib.Tests.Symbols.IkvmReflection
             var s = c.GetOrCreateTypeSymbol(t);
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeFalse();
-            var f = s.GetField("field", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var f = s.GetField("field", global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
             f.Name.Should().Be("field");
             f.FieldType.IsGenericType.Should().BeFalse();
             f.FieldType.IsGenericParameter.Should().BeFalse();

@@ -27,7 +27,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public PropertyInfo UnderlyingProperty => _underlyingProperty;
 
         /// <inheritdoc />
-        public System.Reflection.PropertyAttributes Attributes => (System.Reflection.PropertyAttributes)_underlyingProperty.Attributes;
+        public global::System.Reflection.PropertyAttributes Attributes => (global::System.Reflection.PropertyAttributes)_underlyingProperty.Attributes;
 
         /// <inheritdoc />
         public ITypeSymbol PropertyType => ResolveTypeSymbol(_underlyingProperty.PropertyType);

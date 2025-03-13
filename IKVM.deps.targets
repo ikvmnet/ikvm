@@ -5,7 +5,7 @@
         <PackageReference Include="System.Memory" Version="4.5.5" GeneratePathProperty="true" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" GeneratePathProperty="true" />
         <PackageReference Include="System.Text.Json" Version="8.0.5" GeneratePathProperty="true" />
-        <PackageReference Include="IKVM.ByteCode" Version="9.3.0" GeneratePathProperty="true" />
+        <PackageReference Include="IKVM.ByteCode" Version="9.3.3" GeneratePathProperty="true" />
     </ItemGroup>
 
     <Choose>

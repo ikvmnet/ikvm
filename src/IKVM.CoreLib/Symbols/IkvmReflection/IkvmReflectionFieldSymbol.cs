@@ -24,7 +24,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         internal FieldInfo UnderlyingField => _underlyingField;
 
-        public System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)_underlyingField.Attributes;
+        public global::System.Reflection.FieldAttributes Attributes => (global::System.Reflection.FieldAttributes)_underlyingField.Attributes;
 
         public ITypeSymbol FieldType => ResolveTypeSymbol(_underlyingField.FieldType);
 

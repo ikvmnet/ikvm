@@ -18,7 +18,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         readonly Assembly _underlyingAssembly;
         readonly ConditionalWeakTable<Module, IkvmReflectionModuleSymbol> _modules = new();
 
-        System.Reflection.AssemblyName? _assemblyName;
+        global::System.Reflection.AssemblyName? _assemblyName;
         ImmutableArray<CustomAttributeSymbol> _customAttributes = default;
 
         /// <summary>
@@ -80,30 +80,30 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveModuleSymbols(_underlyingAssembly.GetModules(getResourceModules)).CastArray<IModuleSymbol>();
         }
 
-        System.Reflection.AssemblyName ToName(AssemblyName src)
+        global::System.Reflection.AssemblyName ToName(AssemblyName src)
         {
 #pragma warning disable SYSLIB0037 // Type or member is obsolete
-            return new System.Reflection.AssemblyName()
+            return new global::System.Reflection.AssemblyName()
             {
                 Name = src.Name,
                 Version = src.Version,
                 CultureName = src.CultureName,
-                HashAlgorithm = (System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
-                Flags = (System.Reflection.AssemblyNameFlags)src.Flags,
-                ContentType = (System.Reflection.AssemblyContentType)src.ContentType,
+                HashAlgorithm = (global::System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
+                Flags = (global::System.Reflection.AssemblyNameFlags)src.Flags,
+                ContentType = (global::System.Reflection.AssemblyContentType)src.ContentType,
             };
 #pragma warning restore SYSLIB0037 // Type or member is obsolete
         }
 
-        public System.Reflection.AssemblyName GetName()
+        public global::System.Reflection.AssemblyName GetName()
         {
             return _assemblyName ??= ToName(_underlyingAssembly.GetName());
         }
 
-        public ImmutableArray<System.Reflection.AssemblyName> GetReferencedAssemblies()
+        public ImmutableArray<global::System.Reflection.AssemblyName> GetReferencedAssemblies()
         {
             var l = _underlyingAssembly.GetReferencedAssemblies().ToImmutableArray();
-            var a = ImmutableArray.CreateBuilder<System.Reflection.AssemblyName>(l.Length);
+            var a = ImmutableArray.CreateBuilder<global::System.Reflection.AssemblyName>(l.Length);
             for (int i = 0; i < l.Length; i++)
                 a.Add(ToName(l[i]));
 
