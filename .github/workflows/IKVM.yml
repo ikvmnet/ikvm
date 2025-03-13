@@ -114,6 +114,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
     - name: Install Mono
       run: |
         sudo apt-get update && \
@@ -560,6 +564,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+    - name: Setup .NET 9.0
+      if: matrix.sys != 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
     - name: Setup .NET 6.0
       if: matrix.sys == 'win-x86'
       uses: actions/setup-dotnet@v4
@@ -579,6 +588,13 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
+    - name: Setup .NET 9.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
