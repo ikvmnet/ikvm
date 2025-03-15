@@ -64,12 +64,35 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public readonly int CompareTo(ModuleVersionComponent other)
         {
-            // attempt integer comparison
             if (IsInteger && other.IsInteger)
                 return AsInteger().CompareTo(other.AsInteger());
+            else
+                return AsString().CompareTo(other.AsString());
+        }
 
-            // else fallback to string comparison
-            return AsString().CompareTo(other.AsString());
+        /// <inheritdoc />
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is ModuleVersionComponent other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified instance is equal to this instance.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public readonly bool Equals(ModuleVersionComponent other)
+        {
+            return CompareTo(other) == 0;
+        }
+
+        /// <inheritdoc />
+        public readonly override int GetHashCode()
+        {
+            if (IsInteger)
+                return AsInteger().GetHashCode();
+            else
+                return AsString().GetHashCode();
         }
 
     }
