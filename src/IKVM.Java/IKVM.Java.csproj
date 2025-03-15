@@ -5,6 +5,7 @@
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
         <PackageId>IKVM.Java</PackageId>
         <IkvmJavaRuntimeIdentifier>ref</IkvmJavaRuntimeIdentifier>
+        <EnableDefaultItems>false</EnableDefaultItems>
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
         <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);ConvertRefAssembly</TargetsTriggeredByCompilation>
@@ -16,6 +17,10 @@
             <ExcludeAssets>all</ExcludeAssets>
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="SocketOptionRegistry.java" />
     </ItemGroup>
 
     <Target Name="ConvertRefAssembly">

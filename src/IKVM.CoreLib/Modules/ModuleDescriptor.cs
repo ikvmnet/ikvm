@@ -31,7 +31,9 @@ namespace IKVM.CoreLib.Modules
 
             try
             {
-                // check that the class is a module
+                if (clazz.Version < 53)
+                    throw new InvalidModuleDescriptorException($"Unsupported class file version '{clazz.Version}'.");
+
                 if ((clazz.AccessFlags & AccessFlag.Module) != AccessFlag.Module)
                     throw new InvalidModuleDescriptorException("AccessFlags should be ACC_MODULE.");
 
@@ -51,19 +53,9 @@ namespace IKVM.CoreLib.Modules
                 if (clazz.Interfaces.Count > 0)
                     throw new InvalidModuleDescriptorException("Bad interfaces.");
 
-                var module = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.Module);
-                if (module.IsNil)
-                    throw new InvalidModuleDescriptorException($"Attribute '{AttributeName.Module}' not found.");
-
-                var builder = ReadModuleAttribute(clazz, (ModuleAttribute)module);
-
-                var modulePackages = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.ModulePackages);
-                if (modulePackages.IsNotNil)
-                    ReadModulePackagesAttribute(clazz, (ModulePackagesAttribute)modulePackages, builder);
-
-                var moduleMainClass = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.ModuleMainClass);
-                if (moduleMainClass.IsNotNil)
-                    ReadModuleMainClassAttribute(clazz, (ModuleMainClassAttribute)moduleMainClass, builder);
+                var builder = ReadModuleAttribute(clazz);
+                ReadModulePackagesAttribute(clazz, builder);
+                ReadModuleMainClassAttribute(clazz, builder);
 
                 return builder.Build();
             }
@@ -77,10 +69,25 @@ namespace IKVM.CoreLib.Modules
         /// Reads the Module attribute.
         /// </summary>
         /// <param name="clazz"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidModuleDescriptorException"></exception>
+        static Builder ReadModuleAttribute(ClassFile clazz)
+        {
+            var attribute = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.Module);
+            if (attribute.IsNil)
+                throw new InvalidModuleDescriptorException($"Attribute '{AttributeName.Module}' not found.");
+
+            return ReadModuleAttribute(clazz, (ModuleAttribute)attribute);
+        }
+
+        /// <summary>
+        /// Reads the Module attribute.
+        /// </summary>
+        /// <param name="clazz"></param>
         /// <param name="attribute"></param>
         /// <returns></returns>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static Builder ReadModuleAttribute(ClassFile clazz, ModuleAttribute attribute)
+        static Builder ReadModuleAttribute(ClassFile clazz, in ModuleAttribute attribute)
         {
             var moduleName = clazz.Constants.Get(attribute.Name).Name;
             if (moduleName is null || string.IsNullOrEmpty(moduleName))
@@ -112,9 +119,23 @@ namespace IKVM.CoreLib.Modules
         /// Reads the ModulePackages attribute.
         /// </summary>
         /// <param name="clazz"></param>
+        /// <param name="builder"></param>
+        static void ReadModulePackagesAttribute(ClassFile clazz, Builder builder)
+        {
+            var attribute = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.ModulePackages);
+            if (attribute.IsNil)
+                return;
+
+            ReadModulePackagesAttribute(clazz, (ModulePackagesAttribute)attribute, builder);
+        }
+
+        /// <summary>
+        /// Reads the ModulePackages attribute.
+        /// </summary>
+        /// <param name="clazz"></param>
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
-        static void ReadModulePackagesAttribute(ClassFile clazz, ModulePackagesAttribute attribute, Builder builder)
+        static void ReadModulePackagesAttribute(ClassFile clazz, in ModulePackagesAttribute attribute, Builder builder)
         {
             foreach (var package in attribute.Packages)
             {
@@ -127,12 +148,26 @@ namespace IKVM.CoreLib.Modules
         }
 
         /// <summary>
+        /// Reads the ModuleMainClass attribute.
+        /// </summary>
+        /// <param name="clazz"></param>
+        /// <param name="builder"></param>
+        static void ReadModuleMainClassAttribute(ClassFile clazz, Builder builder)
+        {
+            var attribute = clazz.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && clazz.Constants.Get(i.Name).Value == AttributeName.ModuleMainClass);
+            if (attribute.IsNil)
+                return;
+
+            ReadModuleMainClassAttribute(clazz, (ModuleMainClassAttribute)attribute, builder);
+        }
+
+        /// <summary>
         /// Reads the ModulePackages attribute.
         /// </summary>
         /// <param name="clazz"></param>
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
-        static void ReadModuleMainClassAttribute(ClassFile clazz, ModuleMainClassAttribute attribute, Builder builder)
+        static void ReadModuleMainClassAttribute(ClassFile clazz, in ModuleMainClassAttribute attribute, Builder builder)
         {
             var mainClassName = clazz.Constants.Get(attribute.MainClass).Name;
             if (mainClassName is null || string.IsNullOrEmpty(mainClassName))
@@ -148,7 +183,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static void ReadModuleRequires(ClassFile clazz, ModuleAttribute attribute, Builder builder)
+        static void ReadModuleRequires(ClassFile clazz, in ModuleAttribute attribute, Builder builder)
         {
             foreach (var requires in attribute.Requires)
             {
@@ -199,7 +234,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static void ReadModuleExports(ClassFile clazz, ModuleAttribute attribute, Builder builder)
+        static void ReadModuleExports(ClassFile clazz, in ModuleAttribute attribute, Builder builder)
         {
             foreach (var exports in attribute.Exports)
             {
@@ -224,7 +259,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static void ReadModuleOpens(ClassFile clazz, ModuleAttribute attribute, Builder builder)
+        static void ReadModuleOpens(ClassFile clazz, in ModuleAttribute attribute, Builder builder)
         {
             if (builder.IsOpen)
                 if (attribute.Opens.Count > 0)
@@ -253,7 +288,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static void ReadModuleUses(ClassFile clazz, ModuleAttribute attribute, Builder builder)
+        static void ReadModuleUses(ClassFile clazz, in ModuleAttribute attribute, Builder builder)
         {
             foreach (var uses in attribute.Uses)
             {
@@ -272,7 +307,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="attribute"></param>
         /// <param name="builder"></param>
         /// <exception cref="InvalidModuleDescriptorException"></exception>
-        static void ReadModuleProvides(ClassFile clazz, ModuleAttribute attribute, Builder builder)
+        static void ReadModuleProvides(ClassFile clazz, in ModuleAttribute attribute, Builder builder)
         {
             foreach (var provides in attribute.Provides)
             {
@@ -290,7 +325,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="clazz"></param>
         /// <param name="modules"></param>
         /// <returns></returns>
-        static ImmutableHashSet<string> ToHashSet(ClassFile clazz, ModuleConstantHandleTable modules)
+        static ImmutableHashSet<string> ToHashSet(ClassFile clazz, in ModuleConstantHandleTable modules)
         {
             var hs = ImmutableHashSet.CreateBuilder<string>();
             foreach (var i in modules)
@@ -306,7 +341,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="clazz"></param>
         /// <param name="classes"></param>
         /// <returns></returns>
-        static ImmutableArray<string> ToArray(ClassFile clazz, ClassConstantHandleTable classes)
+        static ImmutableArray<string> ToArray(ClassFile clazz, in ClassConstantHandleTable classes)
         {
             var ar = ImmutableArray.CreateBuilder<string>(classes.Count);
             foreach (var i in classes)
@@ -519,7 +554,7 @@ namespace IKVM.CoreLib.Modules
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public readonly bool Equals(ModuleDescriptor other)
+        public readonly bool Equals(in ModuleDescriptor other)
         {
             return
                 _name.Equals(other._name) &&

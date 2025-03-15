@@ -53,6 +53,10 @@ namespace IKVM.CoreLib.Tests.Modules
 
             using var cf = ClassFile.Read(m);
             var md = ModuleDescriptor.Read(cf);
+            md.IsOpen.Should().BeFalse();
+            md.IsAutomatic.Should().BeFalse();
+            md.Name.Should().Be("org.test");
+            md.Version.Should().Be(ModuleVersion.Parse("1.2.3"));
         }
 
     }

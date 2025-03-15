@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.ByteCode" Version="9.3.3" />
+        <PackageReference Include="IKVM.ByteCode" Version="9.3.4" />
         <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
         <PackageReference Include="Polyfill" Version="7.12.0">

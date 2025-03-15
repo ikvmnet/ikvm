@@ -3,7 +3,7 @@ using System.Linq;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
-using IKVM.Util.Modules;
+using IKVM.CoreLib.Modules;
 
 using static IKVM.Util.Jar.JarFileUtil;
 
@@ -53,7 +53,7 @@ namespace IKVM.Util.Jar
                     var m = (ModuleAttribute)a;
                     var name_ = c.Constants.Get(m.Name).Name;
                     var version_ = c.Constants.Get(m.Version).Value;
-                    return new ModuleInfo(name_, version_ != null && ModuleVersion.TryParse(version_.AsSpan(), out var version) ? version : null);
+                    return new ModuleInfo(name_, version_ != null && ModuleVersion.TryParse(version_, out var version) ? version : default);
                 }
             }
 
@@ -70,7 +70,7 @@ namespace IKVM.Util.Jar
             if (jar.Manifest is null)
                 return null;
 
-            return new ModuleInfo(jar.Manifest.MainAttributes.TryGetValue("Automatic-Module-Name", out var name) ? name : null, null);
+            return new ModuleInfo(jar.Manifest.MainAttributes.TryGetValue("Automatic-Module-Name", out var name) ? name : null, default);
         }
 
     }
