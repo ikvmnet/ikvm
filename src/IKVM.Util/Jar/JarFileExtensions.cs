@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 
-using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Modules;
 
@@ -45,19 +43,8 @@ namespace IKVM.Util.Jar
 
             using var s = e.Open();
             using var c = ClassFile.Read(s);
-            if ((c.AccessFlags & AccessFlag.Module) != 0)
-            {
-                var a = c.Attributes.FirstOrDefault(i => i.IsNotNil && i.Name.IsNotNil && c.Constants.Get(i.Name).Value == AttributeName.Module);
-                if (a.IsNotNil)
-                {
-                    var m = (ModuleAttribute)a;
-                    var name_ = c.Constants.Get(m.Name).Name;
-                    var version_ = c.Constants.Get(m.Version).Value;
-                    return new ModuleInfo(name_, version_ != null && ModuleVersion.TryParse(version_, out var version) ? version : default);
-                }
-            }
-
-            return null;
+            var m = ModuleDescriptor.Read(c);
+            return new ModuleInfo(m.Name, m.Version);
         }
 
         /// <summary>

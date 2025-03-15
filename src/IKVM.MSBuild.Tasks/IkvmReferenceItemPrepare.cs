@@ -13,8 +13,8 @@
     using System.Threading.Tasks;
     using System.Xml.Linq;
 
+    using IKVM.CoreLib.Modules;
     using IKVM.Util.Jar;
-    using IKVM.Util.Modules;
 
     using Microsoft.Build.Framework;
     using Microsoft.Build.Globbing;
@@ -426,7 +426,7 @@
 
                         // attempt to derive a default assembly version from the compile item
                         if (string.IsNullOrWhiteSpace(item.AssemblyVersion) && item.DisableAutoAssemblyVersion == false)
-                            item.AssemblyVersion = info.Version != null ? ToAssemblyVersion(info.Version)?.ToString() : null;
+                            item.AssemblyVersion = info.Version.IsValid ? ToAssemblyVersion(info.Version)?.ToString() : null;
                     }
                 }
             }
@@ -439,6 +439,9 @@
         /// <returns></returns>
         static Version ToAssemblyVersion(ModuleVersion version)
         {
+            if (version.IsValid == false)
+                return null;
+
             // only include major and minor by default
             var major = GetAssemblyVersionComponent(version, 0);
             var minor = GetAssemblyVersionComponent(version, 1);
@@ -456,7 +459,7 @@
         /// <returns></returns>
         static int? GetAssemblyVersionComponent(ModuleVersion version, int index)
         {
-            return version.Number.Count > index && version.Number[index] is int i ? Math.Min(i, ushort.MaxValue - 1) : null;
+            return version.Sequence.Length > index && version.Sequence[index].IsInteger ? Math.Min(version.Sequence[index].AsInteger(), ushort.MaxValue - 1) : null;
         }
 
         /// <summary>
