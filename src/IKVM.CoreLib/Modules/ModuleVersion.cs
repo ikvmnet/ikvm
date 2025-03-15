@@ -19,15 +19,15 @@ namespace IKVM.CoreLib.Modules
 
         public static bool operator !=(ModuleVersion x, ModuleVersion y) => x.Equals(y) == false;
 
-        public static bool operator <(ModuleVersion x, ModuleVersion y) => CompareTo(x, y) < 0;
+        public static bool operator <(ModuleVersion x, ModuleVersion y) => Compare(x, y) < 0;
 
-        public static bool operator >(ModuleVersion x, ModuleVersion y) => CompareTo(x, y) > 0;
+        public static bool operator >(ModuleVersion x, ModuleVersion y) => Compare(x, y) > 0;
 
-        public static bool operator <=(ModuleVersion x, ModuleVersion y) => CompareTo(x, y) <= 0;
+        public static bool operator <=(ModuleVersion x, ModuleVersion y) => Compare(x, y) <= 0;
 
-        public static bool operator >=(ModuleVersion x, ModuleVersion y) => CompareTo(x, y) >= 0;
+        public static bool operator >=(ModuleVersion x, ModuleVersion y) => Compare(x, y) >= 0;
 
-        public static int CompareTo(ModuleVersion x, ModuleVersion y) => x.CompareTo(y);
+        public static int Compare(ModuleVersion x, ModuleVersion y) => x.CompareTo(y);
 
         /// <summary>
         /// Attempts to parse the specified version value.
@@ -36,7 +36,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="parsed"></param>
         public static bool TryParse(string value, out ModuleVersion parsed)
         {
-            return TryParse(value, out parsed);
+            return TryParse(value.AsSpan(), out parsed);
         }
 
         /// <summary>

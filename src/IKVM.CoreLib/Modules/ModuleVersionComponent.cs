@@ -9,6 +9,20 @@ namespace IKVM.CoreLib.Modules
     public readonly struct ModuleVersionComponent : IComparable<ModuleVersionComponent>
     {
 
+        public static bool operator ==(ModuleVersionComponent x, ModuleVersionComponent y) => x.Equals(y);
+
+        public static bool operator !=(ModuleVersionComponent x, ModuleVersionComponent y) => x.Equals(y) == false;
+
+        public static bool operator <(ModuleVersionComponent x, ModuleVersionComponent y) => Compare(x, y) < 0;
+
+        public static bool operator >(ModuleVersionComponent x, ModuleVersionComponent y) => Compare(x, y) > 0;
+
+        public static bool operator <=(ModuleVersionComponent x, ModuleVersionComponent y) => Compare(x, y) <= 0;
+
+        public static bool operator >=(ModuleVersionComponent x, ModuleVersionComponent y) => Compare(x, y) >= 0;
+
+        public static int Compare(ModuleVersionComponent x, ModuleVersionComponent y) => x.CompareTo(y);
+
         readonly int _integer;
         readonly string? _string;
 
