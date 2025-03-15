@@ -586,6 +586,12 @@ namespace IKVM.CoreLib.Modules
             return hc.ToHashCode();
         }
 
+        /// <inheritdoc />
+        public override string? ToString()
+        {
+            return _version.IsValid ? _name + " (@" + _version + ")" : _name;
+        }
+
     }
 
 }
