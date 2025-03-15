@@ -17,8 +17,6 @@ file with contents like the following, using the latest version.
 
 ## Limitations
 
-.NET Framwork projects will not yet build on Linux.
-
 The project will compile fine in Visual Studio, with some caveats. Since we don't yet have a Visual Studio extension,
 manual modifications will be required to the `.sln` file. Ensure that after you add the project to your solution, you
 adjust the Project Type Guid to the C# project value of `{9A19103F-16F7-4668-BE54-9A1E7A4F7556}`.
