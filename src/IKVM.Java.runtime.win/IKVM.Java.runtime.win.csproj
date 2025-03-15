@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <Compile Include="SocketOptionRegistry.java" />
-        <Compile Include="UnixConstants.java" />
     </ItemGroup>
     
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
