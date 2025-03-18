@@ -9,6 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="SocketOptionRegistry.java" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Include="SocketOptionRegistry.java" />
     </ItemGroup>
     

@@ -20,6 +20,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="SocketOptionRegistry.java" />
+        <None Include="map.xml" />
+        <None Include="*.props" />
+        <None Include="*.targets" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Include="SocketOptionRegistry.java" />
     </ItemGroup>
 
