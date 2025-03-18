@@ -29,17 +29,11 @@
     </PropertyGroup>
 
     <Target Name="CleanIkvmCacheDir" AfterTargets="AfterBuild" Condition=" '$(IkvmCacheDir)' != '' ">
-        <PropertyGroup>
-            <IkvmCacheDir>$([System.IO.Path]::GetFullPath('$(IkvmCacheDir)'))</IkvmCacheDir>
-        </PropertyGroup>
-        <IkvmCleanDir Directory="$(IkvmCacheDir)" MaxAge="$(IkvmCacheDirMaxAge)" />
+        <IkvmCleanDir Directory="$([System.IO.Path]::GetFullPath('$(IkvmCacheDir)'))" MaxAge="$(IkvmCacheDirMaxAge)" />
     </Target>
 
     <Target Name="CleanIkvmExportCacheDir" AfterTargets="AfterBuild" Condition=" '$(IkvmExportCacheDir)' != '' ">
-        <PropertyGroup>
-            <IkvmExportCacheDir>$([System.IO.Path]::GetFullPath('$(IkvmExportCacheDir)'))</IkvmExportCacheDir>
-        </PropertyGroup>
-        <IkvmCleanDir Directory="$(IkvmExportCacheDir)" MaxAge="$(IkvmExportCacheDirMaxAge)" />
+        <IkvmCleanDir Directory="$([System.IO.Path]::GetFullPath('$(IkvmExportCacheDir)'))" MaxAge="$(IkvmExportCacheDirMaxAge)" />
     </Target>
 
     <PropertyGroup>

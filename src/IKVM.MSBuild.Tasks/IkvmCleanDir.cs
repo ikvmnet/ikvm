@@ -58,11 +58,13 @@
 
                     try
                     {
+                        Log.LogMessage(MessageImportance.Low, "Removing file: {0}", file.FullName);
                         file.Delete();
                     }
                     catch
                     {
                         Log.LogMessage("Failed to remove file: {0}", file.FullName);
+                        return true;
                     }
                 }
 
@@ -74,11 +76,13 @@
 
                     try
                     {
+                        Log.LogMessage(MessageImportance.Low, "Removing directory: {0}", path.FullName);
                         path.Delete(false);
                     }
                     catch
                     {
                         Log.LogMessage("Failed to remove directory: {0}", path.FullName);
+                        return true;
                     }
                 }
             }
