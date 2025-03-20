@@ -1,6 +1,7 @@
 ﻿using System;
 
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jar;
 using IKVM.CoreLib.Modules;
 
 using static IKVM.Util.Jar.JarFileUtil;

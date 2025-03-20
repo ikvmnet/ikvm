@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
+using IKVM.CoreLib.Jar;
 using IKVM.CoreLib.Modules;
 
 namespace IKVM.Util.Jar
