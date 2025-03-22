@@ -17,6 +17,20 @@ namespace IKVM.CoreLib.Modules
     public readonly partial struct ModuleDescriptor : IComparable<ModuleDescriptor>
     {
 
+        public static bool operator ==(ModuleDescriptor x, ModuleDescriptor y) => x.Equals(y);
+
+        public static bool operator !=(ModuleDescriptor x, ModuleDescriptor y) => x.Equals(y) == false;
+
+        public static bool operator <(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) < 0;
+
+        public static bool operator >(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) > 0;
+
+        public static bool operator <=(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) <= 0;
+
+        public static bool operator >=(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) >= 0;
+
+        public static int Compare(ModuleDescriptor x, ModuleDescriptor y) => x.CompareTo(y);
+
         /// <summary>
         /// Reads a <see cref="ModuleDescriptor"/> from a <see cref="ClassFile"/> loaded from a 'module-info.class'.
         /// </summary>
@@ -222,8 +236,15 @@ namespace IKVM.CoreLib.Modules
                     }
                 }
 
-                var version = clazz.Constants.Get(requires.Version).Value;
-                builder = builder.Requires(modifiers, moduleName, version);
+                if (requires.Version.IsNotNil)
+                {
+                    var version = clazz.Constants.Get(requires.Version).Value;
+                    builder = builder.Requires(modifiers, moduleName, version);
+                }
+                else
+                {
+                    builder = builder.Requires(modifiers, moduleName);
+                }
             }
         }
 

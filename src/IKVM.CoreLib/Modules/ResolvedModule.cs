@@ -30,14 +30,19 @@ namespace IKVM.CoreLib.Modules
         public ModuleConfiguration Configuration => _configuration;
 
         /// <summary>
-        /// Returns the module name.
-        /// </summary>
-        public string Name => _reference.Descriptor.Name;
-
-        /// <summary>
         /// Returns the reference to the module's content.
         /// </summary>
         public ModuleReference Reference => _reference;
+
+        /// <summary>
+        /// Returns the module descriptor.
+        /// </summary>
+        public ModuleDescriptor Descriptor => _reference.Descriptor;
+
+        /// <summary>
+        /// Returns the module name.
+        /// </summary>
+        public string Name => _reference.Descriptor.Name;
 
         /// <summary>
         /// Returns the set of resolved modules that this resolved module reads.

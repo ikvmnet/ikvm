@@ -1,16 +1,32 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.CoreLib.Collections
 {
 
-    class ArrayDeque<T>
+    /// <summary>
+    /// Resizable-array implementation of the IDeque interface. Array deques have no capacity restrictions; they grow
+    /// as necessary to support usage. They are not thread-safe; in the absence of external synchronization, they do
+    /// not support concurrent access by multiple threads. This class is likely to be faster than <see cref="Stack{T}"/>
+    /// when used as a stack, and faster than <see cref="LinkedList{T}"/> when used as a queue.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal class ArrayDeque<T> : IDeque<T>
     {
 
         const int MIN_INITIAL_CAPACITY = 8;
 
-        static int calculateSize(int numElements)
+        /// <summary>
+        /// Calculates the appropriate element array size to hold the specified number of elements.
+        /// </summary>
+        /// <param name="numElements"></param>
+        /// <returns></returns>
+        static int CalculateSize(int numElements)
         {
             int initialCapacity = MIN_INITIAL_CAPACITY;
 
@@ -29,6 +45,7 @@ namespace IKVM.CoreLib.Collections
                 if (initialCapacity < 0)   // Too many elements, must back off
                     initialCapacity >>>= 1;// Good luck allocating 2 ^ 30 elements
             }
+
             return initialCapacity;
         }
 
@@ -36,59 +53,41 @@ namespace IKVM.CoreLib.Collections
         int _head;
         int _tail;
 
-        /**
-         * Constructs an empty array deque with an initial capacity
-         * sufficient to hold 16 elements.
-         */
+        /// <summary>
+        /// Constructs an empty array deque with an initial capacity sufficient to hold 16 elements.
+        /// </summary>
         public ArrayDeque()
         {
             _elements = new T?[16];
         }
 
-        /**
-         * Constructs an empty array deque with an initial capacity
-         * sufficient to hold the specified number of elements.
-         *
-         * @param numElements  lower bound on initial capacity of the deque
-         */
-        public ArrayDeque(int numElements)
+        /// <summary>
+        /// Constructs an empty array deque with an initial capacity sufficient to hold the specified number of elements.
+        /// </summary>
+        /// <param name="initialCapacity">lower bound on initial capacity of the deque</param>
+        public ArrayDeque(int initialCapacity)
         {
-            allocateElements(numElements);
+            EnsureCapacity(initialCapacity);
         }
 
-        /**
-         * Constructs a deque containing the elements of the specified
-         * collection, in the order they are returned by the collection's
-         * iterator.  (The first element returned by the collection's
-         * iterator becomes the first element, or <i>front</i> of the
-         * deque.)
-         *
-         * @param c the collection whose elements are to be placed into the deque
-         * @throws NullPointerException if the specified collection is null
-         */
-        public ArrayDeque(ICollection<T> c)
+        /// <summary>
+        /// Allocates array to hold the given number of elements.
+        /// </summary>
+        /// <param name="capacity"></param>
+        [MemberNotNull(nameof(_elements))]
+        void EnsureCapacity(int capacity)
         {
-            allocateElements(c.Count);
-            addAll(c);
+            _elements = new T?[CalculateSize(capacity)];
         }
 
-        /**
-         * Allocates empty array to hold the given number of elements.
-         *
-         * @param numElements  the number of elements to hold
-         */
-        void allocateElements(int numElements)
-        {
-            _elements = new T?[calculateSize(numElements)];
-        }
-
-        /**
-         * Doubles the capacity of this deque.  Call only when full, i.e.,
-         * when head and tail have wrapped around to become equal.
-         */
-        void doubleCapacity()
+        /// <summary>
+        /// Doubles the capacity of this deque. Call only when full, i.e., when head and tail have wrapped around to
+        /// become equal.
+        /// </summary>
+        void DoubleCapacity()
         {
             Debug.Assert(_head == _tail);
+
             int p = _head;
             int n = _elements.Length;
             int r = n - p; // number of elements to the right of p
@@ -100,22 +99,304 @@ namespace IKVM.CoreLib.Collections
             Array.Copy(_elements, p, a, 0, r);
             Array.Copy(_elements, 0, a, r, p);
             _elements = a;
+
             _head = 0;
             _tail = n;
         }
 
-        /**
-         * Copies the elements from our element array into the specified array,
-         * in order (from first to last element in the deque).  It is assumed
-         * that the array is large enough to hold all elements in the deque.
-         *
-         * @return its argument
-         */
-        T[] copyElements(T[] a)
+        /// <inheritdoc />
+        public int Count => (_tail - _head) & (_elements.Length - 1);
+
+        /// <inheritdoc />
+        public bool IsEmpty => _head == _tail;
+
+        /// <inheritdoc />
+        public void InsertFirst(T item)
+        {
+            var m = _elements.Length - 1;
+            var p = (_head - 1) & m;
+
+            _elements[p] = item;
+            _head = p;
+
+            if (_head == _tail)
+                DoubleCapacity();
+        }
+
+        /// <inheritdoc />
+        public bool TryRemoveFirst([MaybeNullWhen(false)] out T result)
+        {
+            if (_head == _tail)
+            {
+                result = default;
+                return false;
+            }
+
+            var m = _elements.Length - 1;
+            var h = _head;
+
+            result = _elements[h]!;
+#if NET
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+#endif
+                _elements[h] = default;
+            _head = (h + 1) & m;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public T RemoveFirst()
+        {
+            if (TryRemoveFirst(out var result) == false)
+                throw new InvalidOperationException("The deque is empty.");
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public void InsertLast(T item)
+        {
+            var m = _elements.Length - 1;
+            var p = (_tail + 1) & m;
+
+            _elements[_tail] = item;
+            _tail = p;
+
+            if (_tail == _head)
+                DoubleCapacity();
+        }
+
+        /// <inheritdoc />
+        public bool TryRemoveLast([MaybeNullWhen(false)] out T result)
+        {
+            if (_head == _tail)
+            {
+                result = default;
+                return false;
+            }
+
+            var m = _elements.Length - 1;
+            var p = (_tail - 1) & m;
+
+            result = _elements[p]!;
+#if NET
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+#endif
+                _elements[p] = default;
+            _tail = p;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public T RemoveLast()
+        {
+            if (TryRemoveLast(out var result) == false)
+                throw new InvalidOperationException("The deque is empty.");
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public bool TryPeekFirst([MaybeNullWhen(false)] out T result)
+        {
+            if (_head == _tail)
+            {
+                result = default;
+                return false;
+            }
+
+            result = _elements[_head]!;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public T PeekFirst()
+        {
+            if (TryPeekFirst(out var result) == false)
+                throw new InvalidOperationException("The deque is empty.");
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public bool TryPeekLast([MaybeNullWhen(false)] out T result)
+        {
+            if (_head == _tail)
+            {
+                result = default;
+                return false;
+            }
+
+            var m = _elements.Length - 1;
+            var t = (_tail - 1) & m;
+            result = _elements[t]!;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public T PeekLast()
+        {
+            if (TryPeekLast(out var result) == false)
+                throw new InvalidOperationException("The deque is empty.");
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public bool RemoveFirst(T item)
+        {
+            int m = _elements.Length - 1;
+            int p = _head;
+
+            while (p != _tail)
+            {
+                if (EqualityComparer<T?>.Default.Equals(item, _elements[p]))
+                {
+                    DeleteAt(p);
+                    return true;
+                }
+
+                p = (p + 1) & m;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool RemoveLast(T item)
+        {
+            int m = _elements.Length - 1;
+            int p = _tail;
+
+            while (p != _head)
+            {
+                p = (p - 1) & m;
+
+                if (EqualityComparer<T?>.Default.Equals(item, _elements[p]))
+                {
+                    DeleteAt(p);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Removes the element at the specified position in the elements array, adjusting head and tail as necessary.
+        /// This can result in motion of elements backwards or forwards in the array.
+        /// </summary>
+        /// <remarks>
+        /// This method is called delete rather than remove to emphasize that its semantics differ from those of <see
+        /// cref="IList.RemoveAt(int)"/>
+        /// </remarks>
+        /// <param name="i"></param>
+        /// <returns>true if elements moved backwards</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        bool DeleteAt(int i)
+        {
+            var elements = _elements;
+            int m = elements.Length - 1;
+            int h = _head;
+            int t = _tail;
+            int f = (i - h) & m;
+            int b = (t - i) & m;
+
+            // invariant: head <= i < tail mod circularity
+            if (f >= ((t - h) & m))
+                throw new InvalidOperationException("Concurrent operation.");
+
+            if (f < b)
+            {
+                if (h <= i)
+                {
+                    Array.Copy(elements, h, elements, h + 1, f);
+                }
+                else
+                {
+                    Array.Copy(elements, 0, elements, 1, i);
+                    elements[0] = elements[m];
+                    Array.Copy(elements, h, elements, h + 1, m - h);
+                }
+
+                elements[h] = default;
+                _head = (h + 1) & m;
+                return false;
+            }
+            else
+            {
+                if (i < t)
+                {
+                    Array.Copy(elements, i + 1, elements, i, b);
+                    _tail = t - 1;
+                }
+                else
+                {
+                    Array.Copy(elements, i + 1, elements, i, m - i);
+                    elements[m] = elements[0];
+                    Array.Copy(elements, 1, elements, 0, t);
+                    _tail = (t - 1) & m;
+                }
+
+                return true;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool Contains(T item)
+        {
+            int m = _elements.Length - 1;
+            int i = _head;
+
+            while (i != _tail)
+            {
+                if (EqualityComparer<T?>.Default.Equals(item, _elements[i]))
+                    return true;
+
+                i = (i + 1) & m;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
+        public void Clear()
+        {
+            int h = _head;
+            int t = _tail;
+
+            if (h != t)
+            {
+                _head = _tail = 0;
+
+#if NET
+                // no need to zero out elements for unmanaged structs
+                if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                {
+#endif
+                    int i = h;
+                    int m = _elements.Length - 1;
+
+                    do
+                    {
+                        _elements[i] = default;
+                        i = (i + 1) & m;
+                    } while (i != t);
+#if NET
+                }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// Copies the elements from our element array into the specified array, in order (from first to last element
+        /// in the deque). It is assumed that the array is large enough to hold all elements in the deque.
+        /// </summary>
+        public void CopyTo(T[] a)
         {
             if (_head < _tail)
             {
-                Array.Copy(_elements, _head, a, 0, size());
+                Array.Copy(_elements, _head, a, 0, Count);
             }
             else if (_head > _tail)
             {
@@ -123,512 +404,98 @@ namespace IKVM.CoreLib.Collections
                 Array.Copy(_elements, _head, a, 0, headPortionLen);
                 Array.Copy(_elements, 0, a, headPortionLen, _tail);
             }
+        }
 
+        /// <summary>
+        /// Copies the elements from our element array into the specified list, in order (from first to last element
+        /// in the deque).
+        /// </summary>
+        public void CopyTo(IList<T> list)
+        {
+            if (_head < _tail)
+            {
+                for (int i = _head; i < Count; i++)
+                    list.Add(_elements[i]!);
+            }
+            else if (_head > _tail)
+            {
+                int headPortionLen = _elements.Length - _head;
+
+                for (int i = _head; i < headPortionLen; i++)
+                    list.Add(_elements[i]!);
+
+                for (int i = headPortionLen; i < _tail; i++)
+                    list.Add(_elements[i]!);
+            }
+        }
+
+        /// <summary>
+        /// Copies the elements from our element array into the specified array builder, in order (from first to last element
+        /// in the deque). It is assumed that the array is large enough to hold all elements in the deque.
+        /// </summary>
+        public void CopyTo(ImmutableArray<T>.Builder builder)
+        {
+            if (_head < _tail)
+            {
+                builder.AddRange(_elements.AsSpan().Slice(_head, Count)!);
+            }
+            else if (_head > _tail)
+            {
+                int headPortionLen = _elements.Length - _head;
+                builder.AddRange(_elements.AsSpan().Slice(_head, headPortionLen)!);
+                builder.AddRange(_elements.AsSpan().Slice(headPortionLen, _tail)!);
+            }
+        }
+
+        /// <summary>
+        /// Returns an array containing all of the elements in this deque in proper sequence (from first to last
+        /// element).
+        /// 
+        /// The returned array will be "safe" in that no references to it are maintained by this deque. In other word,
+        /// this method must allocate a new array). The caller is thus free to modify the returned array.
+        /// </summary>
+        public T[] ToArray()
+        {
+            var a = new T[Count];
+            CopyTo(a);
             return a;
         }
 
-        // The main insertion and extraction methods are addFirst,
-        // addLast, pollFirst, pollLast. The other methods are defined in
-        // terms of these.
-
-        /**
-         * Inserts the specified element at the front of this deque.
-         *
-         * @param e the element to add
-         * @throws NullPointerException if the specified element is null
-         */
-        public void addFirst(T e)
+        /// <summary>
+        /// Returns an immutable array containing all of the elements in this deque in proper sequence (from first to last
+        /// element).
+        /// </summary>
+        public ImmutableArray<T> ToImmutableArray()
         {
-            _elements[_head = (_head - 1) & (_elements.Length - 1)] = e;
-            if (_head == _tail)
-                doubleCapacity();
+            var a = ImmutableArray.CreateBuilder<T>(Count);
+            CopyTo(a);
+            return a.DrainToImmutable();
         }
 
-        /**
-         * Inserts the specified element at the end of this deque.
-         *
-         * <p>This method is equivalent to {@link #add}.
-         *
-         * @param e the element to add
-         * @throws NullPointerException if the specified element is null
-         */
-        public void addLast(T e)
+        /// <inheritdoc />
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            _elements[_tail] = e;
-            if ((_tail = (_tail + 1) & (_elements.Length - 1)) == _head)
-                doubleCapacity();
-        }
-
-        /**
-         * Inserts the specified element at the front of this deque.
-         *
-         * @param e the element to add
-         * @return {@code true} (as specified by {@link Deque#offerFirst})
-         * @throws NullPointerException if the specified element is null
-         */
-        public bool offerFirst(T e)
-        {
-            addFirst(e);
-            return true;
-        }
-
-        /**
-         * Inserts the specified element at the end of this deque.
-         *
-         * @param e the element to add
-         * @return {@code true} (as specified by {@link Deque#offerLast})
-         * @throws NullPointerException if the specified element is null
-         */
-        public bool offerLast(T e)
-        {
-            addLast(e);
-            return true;
-        }
-
-        /**
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T removeFirst()
-        {
-            T? x = pollFirst();
-            if (x == null)
-                throw new InvalidOperationException("The deque is empty.");
-
-            return x;
-        }
-
-        public T? pollFirst()
-        {
-            int h = _head;
-            var result = _elements[h];
-            if (result == null)
-                return default(T);
-
-            _elements[h] = default;
-            _head = (h + 1) & (_elements.Length - 1);
-            return result;
-        }
-
-        public T? pollLast()
-        {
-            int t = (_tail - 1) & (_elements.Length - 1);
-            var result = _elements[t];
-            if (result == null)
-                return default;
-
-            _elements[t] = default;
-            _tail = t;
-            return result;
-        }
-
-        /**
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T getFirst()
-        {
-            var result = _elements[_head];
-            if (result == null)
-                throw new InvalidOperationException("The deque is empty.");
-
-            return result;
-        }
-
-        /**
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T getLast()
-        {
-            var result = _elements[(_tail - 1) & (_elements.Length - 1)];
-            if (result == null)
-                throw new InvalidOperationException("The deque is empty.");
-
-            return result;
-        }
-
-        public T? peekFirst()
-        {
-            // elements[head] is null if deque empty
-            return _elements[_head];
-        }
-
-        public T? peekLast()
-        {
-            return _elements[(_tail - 1) & (_elements.Length - 1)];
-        }
-
-        /**
-         * Removes the first occurrence of the specified element in this
-         * deque (when traversing the deque from head to tail).
-         * If the deque does not contain the element, it is unchanged.
-         * More formally, removes the first element {@code e} such that
-         * {@code o.equals(e)} (if such an element exists).
-         * Returns {@code true} if this deque contained the specified element
-         * (or equivalently, if this deque changed as a result of the call).
-         *
-         * @param o element to be removed from this deque, if present
-         * @return {@code true} if the deque contained the specified element
-         */
-        public bool removeFirstOccurrence(T o)
-        {
-            int mask = _elements.Length - 1;
-            int i = _head;
-            T? x;
-            while ((x = _elements[i]) != null)
+            if (_head < _tail)
             {
-                if (o.Equals(x))
-                {
-                    delete(i);
-                    return true;
-                }
-                i = (i + 1) & mask;
+                for (int i = _head; i < Count; i++)
+                    yield return _elements[i]!;
             }
-            return false;
-        }
-
-        /**
-         * Removes the last occurrence of the specified element in this
-         * deque (when traversing the deque from head to tail).
-         * If the deque does not contain the element, it is unchanged.
-         * More formally, removes the last element {@code e} such that
-         * {@code o.equals(e)} (if such an element exists).
-         * Returns {@code true} if this deque contained the specified element
-         * (or equivalently, if this deque changed as a result of the call).
-         *
-         * @param o element to be removed from this deque, if present
-         * @return {@code true} if the deque contained the specified element
-         */
-        public bool removeLastOccurrence(T o)
-        {
-            int mask = _elements.Length - 1;
-            int i = (_tail - 1) & mask;
-            T? x;
-            while ((x = _elements[i]) != null)
+            else if (_head > _tail)
             {
-                if (o.Equals(x))
-                {
-                    delete(i);
-                    return true;
-                }
-                i = (i - 1) & mask;
-            }
-            return false;
-        }
+                int headPortionLen = _elements.Length - _head;
 
-        // *** Queue methods ***
+                for (int i = _head; i < headPortionLen; i++)
+                    yield return _elements[i]!;
 
-        /**
-         * Inserts the specified element at the end of this deque.
-         *
-         * <p>This method is equivalent to {@link #addLast}.
-         *
-         * @param e the element to add
-         * @return {@code true} (as specified by {@link Collection#add})
-         * @throws NullPointerException if the specified element is null
-         */
-        public bool add(T e)
-        {
-            addLast(e);
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * <p>This implementation iterates over the specified collection, and adds
-         * each object returned by the iterator to this collection, in turn.
-         *
-         * <p>Note that this implementation will throw an
-         * <tt>UnsupportedOperationException</tt> unless <tt>add</tt> is
-         * overridden (assuming the specified collection is non-empty).
-         *
-         * @throws UnsupportedOperationException {@inheritDoc}
-         * @throws ClassCastException            {@inheritDoc}
-         * @throws NullPointerException          {@inheritDoc}
-         * @throws IllegalArgumentException      {@inheritDoc}
-         * @throws IllegalStateException         {@inheritDoc}
-         *
-         * @see #add(Object)
-         */
-        public bool addAll(IEnumerable<T> c)
-        {
-            var modified = false;
-            foreach (var e in c)
-                if (add(e))
-                    modified = true;
-
-            return modified;
-        }
-
-        /**
-         * Inserts the specified element at the end of this deque.
-         *
-         * <p>This method is equivalent to {@link #offerLast}.
-         *
-         * @param e the element to add
-         * @return {@code true} (as specified by {@link Queue#offer})
-         * @throws NullPointerException if the specified element is null
-         */
-        public bool offer(T e)
-        {
-            return offerLast(e);
-        }
-
-        /**
-         * Retrieves and removes the head of the queue represented by this deque.
-         *
-         * This method differs from {@link #poll poll} only in that it throws an
-         * exception if this deque is empty.
-         *
-         * <p>This method is equivalent to {@link #removeFirst}.
-         *
-         * @return the head of the queue represented by this deque
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T remove()
-        {
-            return removeFirst();
-        }
-
-        /**
-         * Retrieves and removes the head of the queue represented by this deque
-         * (in other words, the first element of this deque), or returns
-         * {@code null} if this deque is empty.
-         *
-         * <p>This method is equivalent to {@link #pollFirst}.
-         *
-         * @return the head of the queue represented by this deque, or
-         *         {@code null} if this deque is empty
-         */
-        public T? poll()
-        {
-            return pollFirst();
-        }
-
-        /**
-         * Retrieves, but does not remove, the head of the queue represented by
-         * this deque.  This method differs from {@link #peek peek} only in
-         * that it throws an exception if this deque is empty.
-         *
-         * <p>This method is equivalent to {@link #getFirst}.
-         *
-         * @return the head of the queue represented by this deque
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T element()
-        {
-            return getFirst();
-        }
-
-        /**
-         * Retrieves, but does not remove, the head of the queue represented by
-         * this deque, or returns {@code null} if this deque is empty.
-         *
-         * <p>This method is equivalent to {@link #peekFirst}.
-         *
-         * @return the head of the queue represented by this deque, or
-         *         {@code null} if this deque is empty
-         */
-        public T? peek()
-        {
-            return peekFirst();
-        }
-
-        // *** Stack methods ***
-
-        /**
-         * Pushes an element onto the stack represented by this deque.  In other
-         * words, inserts the element at the front of this deque.
-         *
-         * <p>This method is equivalent to {@link #addFirst}.
-         *
-         * @param e the element to push
-         * @throws NullPointerException if the specified element is null
-         */
-        public void push(T e)
-        {
-            addFirst(e);
-        }
-
-        /**
-         * Pops an element from the stack represented by this deque.  In other
-         * words, removes and returns the first element of this deque.
-         *
-         * <p>This method is equivalent to {@link #removeFirst()}.
-         *
-         * @return the element at the front of this deque (which is the top
-         *         of the stack represented by this deque)
-         * @throws NoSuchElementException {@inheritDoc}
-         */
-        public T pop()
-        {
-            return removeFirst();
-        }
-
-        private void checkInvariants()
-        {
-            Debug.Assert(_elements[_tail] == null);
-            Debug.Assert(_head == _tail ? _elements[_head] == null : (_elements[_head] != null && _elements[(_tail - 1) & (_elements.Length - 1)] != null));
-            Debug.Assert(_elements[(_head - 1) & (_elements.Length - 1)] == null);
-        }
-
-        /**
-         * Removes the element at the specified position in the elements array,
-         * adjusting head and tail as necessary.  This can result in motion of
-         * elements backwards or forwards in the array.
-         *
-         * <p>This method is called delete rather than remove to emphasize
-         * that its semantics differ from those of {@link List#remove(int)}.
-         *
-         * @return true if elements moved backwards
-         */
-        private bool delete(int i)
-        {
-            checkInvariants();
-            T?[] elements = this._elements;
-            int mask = elements.Length - 1;
-            int h = _head;
-            int t = _tail;
-            int front = (i - h) & mask;
-            int back = (t - i) & mask;
-
-            // Invariant: head <= i < tail mod circularity
-            if (front >= ((t - h) & mask))
-                throw new InvalidOperationException("Concurrent operation.");
-
-            // Optimize for least element motion
-            if (front < back)
-            {
-                if (h <= i)
-                {
-                    Array.Copy(elements, h, elements, h + 1, front);
-                }
-                else
-                { // Wrap around
-                    Array.Copy(elements, 0, elements, 1, i);
-                    elements[0] = elements[mask];
-                    Array.Copy(elements, h, elements, h + 1, mask - h);
-                }
-                elements[h] = default;
-                _head = (h + 1) & mask;
-                return false;
-            }
-            else
-            {
-                if (i < t)
-                { // Copy the null tail as well
-                    Array.Copy(elements, i + 1, elements, i, back);
-                    _tail = t - 1;
-                }
-                else
-                { // Wrap around
-                    Array.Copy(elements, i + 1, elements, i, mask - i);
-                    elements[mask] = elements[0];
-                    Array.Copy(elements, 1, elements, 0, t);
-                    _tail = (t - 1) & mask;
-                }
-                return true;
+                for (int i = headPortionLen; i < _tail; i++)
+                    yield return _elements[i]!;
             }
         }
 
-        // *** Collection Methods ***
-
-        /**
-         * Returns the number of elements in this deque.
-         *
-         * @return the number of elements in this deque
-         */
-        public int size()
+        /// <inheritdoc />
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            return (_tail - _head) & (_elements.Length - 1);
-        }
-
-        /**
-         * Returns {@code true} if this deque contains no elements.
-         *
-         * @return {@code true} if this deque contains no elements
-         */
-        public bool isEmpty()
-        {
-            return _head == _tail;
-        }
-
-        /**
-         * Returns {@code true} if this deque contains the specified element.
-         * More formally, returns {@code true} if and only if this deque contains
-         * at least one element {@code e} such that {@code o.equals(e)}.
-         *
-         * @param o object to be checked for containment in this deque
-         * @return {@code true} if this deque contains the specified element
-         */
-        public bool contains(T o)
-        {
-            int mask = _elements.Length - 1;
-            int i = _head;
-            T? x;
-            while ((x = _elements[i]) != null)
-            {
-                if (o.Equals(x))
-                    return true;
-                i = (i + 1) & mask;
-            }
-            return false;
-        }
-
-        /**
-         * Removes a single instance of the specified element from this deque.
-         * If the deque does not contain the element, it is unchanged.
-         * More formally, removes the first element {@code e} such that
-         * {@code o.equals(e)} (if such an element exists).
-         * Returns {@code true} if this deque contained the specified element
-         * (or equivalently, if this deque changed as a result of the call).
-         *
-         * <p>This method is equivalent to {@link #removeFirstOccurrence(Object)}.
-         *
-         * @param o element to be removed from this deque, if present
-         * @return {@code true} if this deque contained the specified element
-         */
-        public bool remove(T o)
-        {
-            return removeFirstOccurrence(o);
-        }
-
-        /**
-         * Removes all of the elements from this deque.
-         * The deque will be empty after this call returns.
-         */
-        public void clear()
-        {
-            int h = _head;
-            int t = _tail;
-            if (h != t)
-            { // clear all cells
-                _head = _tail = 0;
-                int i = h;
-                int mask = _elements.Length - 1;
-                do
-                {
-                    _elements[i] = default;
-                    i = (i + 1) & mask;
-                } while (i != t);
-            }
-        }
-
-        /**
-         * Returns an array containing all of the elements in this deque
-         * in proper sequence (from first to last element).
-         *
-         * <p>The returned array will be "safe" in that no references to it are
-         * maintained by this deque.  (In other words, this method must allocate
-         * a new array).  The caller is thus free to modify the returned array.
-         *
-         * <p>This method acts as bridge between array-based and collection-based
-         * APIs.
-         *
-         * @return an array containing all of the elements in this deque
-         */
-        public T[] toArray()
-        {
-            return copyElements(new T[size()]);
+            return ((IEnumerable<T>)this).GetEnumerator();
         }
 
     }

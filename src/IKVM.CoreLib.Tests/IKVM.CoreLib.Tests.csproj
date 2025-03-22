@@ -3,6 +3,7 @@
         <TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <JavaBinDir>C:\Program Files\Microsoft\jdk-21.0.6.7-hotspot\bin</JavaBinDir>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,5 +13,31 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <None Include="res\**\*.class" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="res\**\*.jar" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <Target Name="BuildModuleTests" BeforeTargets="Build" Condition=" '$(TargetFramework)' == '' And '$(BuildingInsideVisualStudio)' == 'true' ">
+        <ItemGroup>
+            <_M1 Include="res\Modules\m1\**\*.java" />
+            <_M2 Include="res\Modules\m2\**\*.java" />
+            <_M3 Include="res\Modules\m3\**\*.java" />
+            <_M4 Include="res\Modules\m4\**\*.java" />
+        </ItemGroup>
+
+        <MakeDir Directories="res\Modules" />
+        <Exec Command="&quot;$(JavaBinDir)\javac&quot; --release 9 -p res\Modules -d res\Modules\m3 @(_M3, ' ')" />
+        <Exec Command="&quot;$(JavaBinDir)\javac&quot; --release 9 -p res\Modules -d res\Modules\m2 @(_M2, ' ')" />
+        <Exec Command="&quot;$(JavaBinDir)\javac&quot; --release 9 -p res\Modules -d res\Modules\m1 @(_M1, ' ')" />
+        <Exec Command="&quot;$(JavaBinDir)\javac&quot; --release 9 -p res\Modules -d res\Modules\m4 @(_M4, ' ')" />
+
+        <MakeDir Directories="res\Modules\jars" />
+        <Exec Command="&quot;$(JavaBinDir)\jar&quot; -cf res\Modules\jars\m1.jar -C res\Modules\m1 ." />
+        <Exec Command="&quot;$(JavaBinDir)\jar&quot; -cf res\Modules\jars\m2.jar -C res\Modules\m2 ." />
+        <Exec Command="&quot;$(JavaBinDir)\jar&quot; -cf res\Modules\jars\m3.jar -C res\Modules\m3 ." />
+        <Exec Command="&quot;$(JavaBinDir)\jar&quot; -cf res\Modules\jars\m4.jar -C res\Modules\m4 ." />
+    </Target>
 
 </Project>

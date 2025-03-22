@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace IKVM.CoreLib.Modules
+﻿namespace IKVM.CoreLib.Modules
 {
 
     /// <summary>

@@ -7,8 +7,6 @@ using System.Text.RegularExpressions;
 using IKVM.ByteCode.Decoding;
 using IKVM.CoreLib.Jar;
 
-using static System.Net.Mime.MediaTypeNames;
-
 namespace IKVM.CoreLib.Modules
 {
 
@@ -22,6 +20,46 @@ namespace IKVM.CoreLib.Modules
     internal class ModulePath : ModuleFinder
     {
 
+        /// <summary>
+        /// Returns a ModuleFinder that locates modules on the file system by searching a sequence of directories
+        /// and/or packaged modules.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <returns></returns>
+        public new static IModuleFinder Create(ImmutableArray<string> entries)
+        {
+            if (entries.IsDefault)
+                throw new ArgumentNullException(nameof(entries));
+
+            return new ModulePath(JarFile.RUNTIME_VERSION, entries);
+        }
+
+        /// <summary>
+        /// Returns a ModuleFinder that locates modules on the file system by searching a sequence of directories
+        /// and/or packaged modules.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <returns></returns>
+        public new static IModuleFinder Create(params string[] entries)
+        {
+            if (entries is null)
+                throw new ArgumentNullException(nameof(entries));
+
+            return new ModulePath(JarFile.RUNTIME_VERSION, entries.ToImmutableArray());
+        }
+
+        /// <summary>
+        /// Returns a ModuleFinder that locates modules on the file system by searching a sequence of directories
+        /// and/or packaged modules.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <param name="entries"></param>
+        /// <returns></returns>
+        public static IModuleFinder Create(RuntimeVersion version, ImmutableArray<string> entries)
+        {
+            return new ModulePath(version, entries);
+        }
+
         const string MODULE_INFO = "module-info.class";
         const string AUTOMATIC_MODULE_NAME = "Automatic-Module-Name";
 
@@ -29,6 +67,7 @@ namespace IKVM.CoreLib.Modules
         readonly ImmutableArray<string> _entries;
         readonly Dictionary<string, ModuleReference> _cachedModules = new();
 
+        ImmutableHashSet<ModuleReference>? _all;
         int _next;
 
         /// <summary>
@@ -38,6 +77,9 @@ namespace IKVM.CoreLib.Modules
         /// <param name="entries"></param>
         public ModulePath(RuntimeVersion releaseVersion, ImmutableArray<string> entries)
         {
+            if (entries.IsDefault)
+                throw new ArgumentException("Uninitialized immutable array.", nameof(entries));
+
             _runtimeVersion = releaseVersion;
             _entries = entries;
         }
@@ -66,10 +108,22 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public override ImmutableHashSet<ModuleReference> FindAll()
         {
+            if (_all is null)
+            {
+                ScanAll();
+                _all = [.. _cachedModules.Values];
+            }
+
+            return _all;
+        }
+
+        /// <summary>
+        /// Advances the module path through all available entries.
+        /// </summary>
+        void ScanAll()
+        {
             while (HasNextEntry())
                 ScanNextEntry();
-
-            return ImmutableHashSet.CreateRange(_cachedModules.Values);
         }
 
         /// <summary>
@@ -93,7 +147,7 @@ namespace IKVM.CoreLib.Modules
 
                 // update cache, ignore duplicates
                 foreach (var kvp in modules)
-                    _cachedModules[kvp.Key] = kvp.Value;
+                    _cachedModules.TryAdd(kvp.Key, kvp.Value);
             }
         }
 
@@ -136,7 +190,7 @@ namespace IKVM.CoreLib.Modules
         {
             var nameToReference = new Dictionary<string, ModuleReference>();
 
-            foreach (var entry in Directory.EnumerateFiles(dir))
+            foreach (var entry in Directory.EnumerateFileSystemEntries(dir))
             {
                 var mref = ReadModule(entry);
                 if (mref is not null)

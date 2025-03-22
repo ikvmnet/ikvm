@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Xml.Schema;
 
 namespace IKVM.CoreLib.Modules
 {
@@ -26,38 +27,22 @@ namespace IKVM.CoreLib.Modules
             _runtimeVersion = runtimeVersion;
         }
 
-        /// <summary>
-        /// Translates a file within 
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        string GetResourceName(string path)
-        {
-            if (Path.DirectorySeparatorChar != '/')
-                return path[_dir.Length..].Replace(Path.DirectorySeparatorChar, '/');
-            else
-                return path[_dir.Length..];
-        }
-
         /// <inheritdoc />
         public override IEnumerable<string> List()
         {
             foreach (var i in Directory.EnumerateFiles(_dir, "*", SearchOption.AllDirectories))
-                yield return GetResourceName(i);
+                if (Resources.ToResourceName(_dir, i) is { } path and { Length: > 0 })
+                    yield return path;
         }
 
         /// <inheritdoc />
         public override Stream? Open(string name)
         {
-            var path = name;
-            if (Path.DirectorySeparatorChar != '/')
-                path = name.Replace('/', Path.DirectorySeparatorChar);
+            var path = Resources.ToFilePath(_dir, name);
+            if (path is null)
+                return null;
 
-            path = Path.GetFullPath(Path.Combine(_dir, path));
-            if (File.Exists(path))
-                return File.OpenRead(path);
-
-            return null;
+            return File.OpenRead(path);
         }
 
         /// <inheritdoc />

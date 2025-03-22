@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.IO;
 
 namespace IKVM.CoreLib.Modules
 {
@@ -101,9 +100,29 @@ namespace IKVM.CoreLib.Modules
         /// </summary>
         /// <param name="entries">A possibly-empty array of paths to directories of modules or paths to packaged or exploded modules.</param>
         /// <returns>A <see cref="IModuleFinder"/> that locates modules on the file system</returns>
-        public static IModuleFinder Of(ImmutableArray<FileSystemInfo> entries)
+        public static IModuleFinder Create(ImmutableArray<string> entries)
         {
-            throw new NotImplementedException();
+            if (entries.IsDefault)
+                throw new ArgumentNullException(nameof(entries));
+
+            if (entries.Length == 0)
+                return EmptyModuleFinder.Instance;
+            else
+                return ModulePath.Create(entries);
+        }
+
+        /// <summary>
+        /// Returns a module finder that locates modules on the file system by searching a sequence of directories
+        /// and/or packaged modules. This implementation is the same as <see cref="Create(ImmutableArray{string})"/>.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <returns></returns>
+        public static IModuleFinder Create(params string[] entries)
+        {
+            if (entries is null)
+                throw new ArgumentNullException(nameof(entries));
+
+            return Create(ImmutableArray.CreateRange(entries));
         }
 
         /// <summary>
@@ -118,7 +137,10 @@ namespace IKVM.CoreLib.Modules
         /// <returns></returns>
         public static IModuleFinder Compose(ImmutableArray<IModuleFinder> finders)
         {
-            throw new NotImplementedException();
+            if (finders.Length == 0)
+                return EmptyModuleFinder.Instance;
+            else
+                return new ComposableModuleFinder(finders);
         }
 
         /// <inheritdoc />

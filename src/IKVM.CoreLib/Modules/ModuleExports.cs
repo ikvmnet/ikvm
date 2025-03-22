@@ -33,12 +33,12 @@ namespace IKVM.CoreLib.Modules
         }
 
         /// <summary>
-        /// Gets the set of modifiers.
+        /// Returns the set of modifiers.
         /// </summary>
         public readonly ModuleExportsFlag Modifiers => _modifiers;
 
         /// <summary>
-        /// Gets the package name.
+        /// Returns the package name.
         /// </summary>
         public readonly string Source => _source;
 
@@ -47,6 +47,11 @@ namespace IKVM.CoreLib.Modules
         /// package is exported.For an unqualified export, returns an empty set.
         /// </summary>
         public readonly ImmutableHashSet<string> Targets => _targets;
+
+        /// <summary>
+        /// Returns <c>true</c> if this is a qualified export.
+        /// </summary>
+        public readonly bool IsQualified => _targets.IsEmpty == false;
 
         /// <inheritdoc />
         public readonly int CompareTo(ModuleExports other)

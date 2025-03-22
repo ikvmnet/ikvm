@@ -20,11 +20,11 @@ namespace IKVM.CoreLib.Jar
         const string MANIFEST_NAME = META_INF + "MANIFEST.MF";
         const string INDEX_NAME = "META-INF/INDEX.LIST";
 
-        static readonly RuntimeVersion BASE_VERSION = RuntimeVersion.Parse("8");
-        static readonly int BASE_VERSION_FEATURE = BASE_VERSION.Feature;
-        static readonly RuntimeVersion RUNTIME_VERSION = RuntimeVersion.Parse("8");
-        static readonly bool MULTI_RELEASE_ENABLED = false;
-        static readonly bool MULTI_RELEASE_FORCED = false;
+        internal static readonly RuntimeVersion BASE_VERSION = RuntimeVersion.Parse("8");
+        internal static readonly int BASE_VERSION_FEATURE = BASE_VERSION.Feature;
+        internal static readonly RuntimeVersion RUNTIME_VERSION = RuntimeVersion.Parse("8");
+        internal static readonly bool MULTI_RELEASE_ENABLED = false;
+        internal static readonly bool MULTI_RELEASE_FORCED = false;
 
         readonly ZipArchive _archive;
         readonly RuntimeVersion _version;
