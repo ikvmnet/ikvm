@@ -10,9 +10,7 @@ namespace IKVM.CoreLib.Modules
     class JarModuleReference : ModuleReference
     {
 
-        readonly ModuleDescriptor _descriptor;
         readonly RuntimeVersion _runtimeVersion;
-        readonly string _file;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,22 +18,14 @@ namespace IKVM.CoreLib.Modules
         /// <param name="descriptor"></param>
         /// <param name="runtimeVersion"></param>
         /// <param name="file"></param>
-        public JarModuleReference(ModuleDescriptor descriptor, RuntimeVersion runtimeVersion, string file)
+        public JarModuleReference(ModuleDescriptor descriptor, RuntimeVersion runtimeVersion, string file) :
+            base(descriptor, Path.GetFullPath(file))
         {
-            _descriptor = descriptor;
             _runtimeVersion = runtimeVersion;
-            _file = file ?? throw new ArgumentNullException(nameof(file));
-            _file = Path.GetFullPath(_file);
         }
 
         /// <inheritdoc />
-        public override ModuleDescriptor Descriptor => _descriptor;
-
-        /// <inheritdoc />
-        public override string? Location => _file;
-
-        /// <inheritdoc />
-        public override ModuleReader Open() => new JarModuleReader(_file, _runtimeVersion);
+        public override ModuleReader Open() => new JarModuleReader(Location ?? throw new InvalidOperationException(), _runtimeVersion);
 
     }
 

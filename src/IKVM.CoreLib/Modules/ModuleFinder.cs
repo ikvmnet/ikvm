@@ -11,6 +11,11 @@ namespace IKVM.CoreLib.Modules
     {
 
         /// <summary>
+        /// Gets a <see cref="IModuleFinder"/> instance that is empty.
+        /// </summary>
+        public static IModuleFinder Empty => EmptyModuleFinder.Instance;
+
+        /// <summary>
         /// Returns a module finder that locates modules on the file system by searching a sequence of directories
         /// and/or packaged modules. Each element in the given array is one of:
         /// 

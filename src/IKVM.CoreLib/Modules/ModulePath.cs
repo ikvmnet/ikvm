@@ -38,20 +38,6 @@ namespace IKVM.CoreLib.Modules
         /// Returns a ModuleFinder that locates modules on the file system by searching a sequence of directories
         /// and/or packaged modules.
         /// </summary>
-        /// <param name="entries"></param>
-        /// <returns></returns>
-        public new static IModuleFinder Create(params string[] entries)
-        {
-            if (entries is null)
-                throw new ArgumentNullException(nameof(entries));
-
-            return new ModulePath(JarFile.RUNTIME_VERSION, entries.ToImmutableArray());
-        }
-
-        /// <summary>
-        /// Returns a ModuleFinder that locates modules on the file system by searching a sequence of directories
-        /// and/or packaged modules.
-        /// </summary>
         /// <param name="version"></param>
         /// <param name="entries"></param>
         /// <returns></returns>

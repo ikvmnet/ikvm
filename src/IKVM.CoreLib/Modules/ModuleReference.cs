@@ -31,15 +31,29 @@
             return new ExplodedModuleReference(descriptor, runtimeVersion, path);
         }
 
+        readonly ModuleDescriptor _descriptor;
+        readonly string? _location;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <param name="location"></param>
+        public ModuleReference(ModuleDescriptor descriptor, string? location)
+        {
+            _descriptor = descriptor;
+            _location = location;
+        }
+
         /// <summary>
         /// Returns the module descriptor.
         /// </summary>
-        public abstract ModuleDescriptor Descriptor { get; }
+        public ModuleDescriptor Descriptor => _descriptor;
 
         /// <summary>
         /// Returns the location of this module's content, if known.
         /// </summary>
-        public abstract string? Location { get; }
+        public string? Location => _location;
 
         /// <summary>
         /// Opens the module content for reading.

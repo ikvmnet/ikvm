@@ -334,6 +334,9 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public readonly override int GetHashCode()
         {
+            if (IsValid == false)
+                return 0;
+
             var hc = new HashCode();
 
             foreach (var i in _sequence)

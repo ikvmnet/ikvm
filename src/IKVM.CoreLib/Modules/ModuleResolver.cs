@@ -477,7 +477,7 @@ namespace IKVM.CoreLib.Modules
                         // automatic modules read self and export all packages
                         if (desc2 != desc1)
                             foreach (var source in desc2.Packages)
-                                if (TryAddAndGet(packageToExporter, source, desc2, out var supplier) == false)
+                                if (TryAdd(packageToExporter, source, desc2, out var supplier) == false)
                                     throw FailTwoSuppliers(desc1, source, desc2, supplier); // descriptor2 and 'supplier' export source to descriptor1
                     }
                     else
@@ -488,7 +488,7 @@ namespace IKVM.CoreLib.Modules
                                 if (export.Targets.Contains(desc1.Name) == false)
                                     continue;
 
-                            if (TryAddAndGet(packageToExporter, export.Source, desc2, out var supplier))
+                            if (TryAdd(packageToExporter, export.Source, desc2, out var supplier) == false)
                                 throw FailTwoSuppliers(desc1, export.Source, desc2, supplier); // descriptor2 and 'supplier' export source to descriptor1
                         }
                     }
@@ -619,7 +619,7 @@ namespace IKVM.CoreLib.Modules
         /// <param name="value"></param>
         /// <param name="existing"></param>
         /// <returns></returns>
-        bool TryAddAndGet<TKey, TValue>(IDictionary<TKey, TValue> self, TKey key, TValue value, [MaybeNullWhen(false)] out TValue existing)
+        bool TryAdd<TKey, TValue>(IDictionary<TKey, TValue> self, TKey key, TValue value, [MaybeNullWhen(false)] out TValue existing)
         {
             if (self.TryGetValue(key, out existing))
                 return false;
