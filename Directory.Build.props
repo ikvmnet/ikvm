@@ -106,7 +106,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="IKVM.JdkUtil.MSBuild" Version="1.0.1-pre.2">
+        <PackageReference Include="IKVM.JdkUtil.MSBuild" Version="1.0.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
