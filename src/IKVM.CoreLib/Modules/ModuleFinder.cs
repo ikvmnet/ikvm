@@ -81,18 +81,18 @@ namespace IKVM.CoreLib.Modules
         ///     
         /// </list>
         /// 
-        /// If a <see cref="ModuleDescriptor"/> cannot be created (by means of the <see cref="ModuleDescriptor.Builder"/> API) for an automatic
-        /// module then <see cref="FindException"/> is thrown. This can arise when the value of the "Automatic-Module-Name"
-        /// attribute is not a legal module name, a legal module name cannot be derived from the file name of the JAR
-        /// file, where the JAR file contains a .class in the top-level directory of the JAR file, where an entry in a
-        /// service configuration file is not a legal class name or its package name is not in the set of packages
-        /// derived for the module.
+        /// If a <see cref="ModuleDescriptor"/> cannot be created (by means of the <see cref="ModuleDescriptor.Builder"/>
+        /// API) for an automatic module then <see cref="FindException"/> is thrown. This can arise when the value of
+        /// the "Automatic-Module-Name" attribute is not a legal module name, a legal module name cannot be derived
+        /// from the file name of the JAR file, where the JAR file contains a .class in the top-level directory of the
+        /// JAR file, where an entry in a service configuration file is not a legal class name or its package name is
+        /// not in the set of packages derived for the module.
         /// 
         /// In addition to JAR files, an implementation may also support modules that are packaged in other
         /// implementation specific module formats. If an element in the array specified to this method is a path to
         /// a directory of modules then entries in the directory that not recognized as modules are ignored. If an
-        /// element in the array is a path to a packaged module that is not recognized then a <see cref="FindException"/> is thrown
-        /// when the file is encountered. Paths to files that do not exist are always ignored.
+        /// element in the array is a path to a packaged module that is not recognized then a <see cref="FindException"/>
+        /// is thrown when the file is encountered. Paths to files that do not exist are always ignored.
         /// 
         /// As with automatic modules, the contents of a packaged or exploded module may need to be scanned in order to
         /// determine the packages in the module. Whether hidden files are ignored or not is implementation specific
@@ -100,8 +100,9 @@ namespace IKVM.CoreLib.Modules
         /// directory then it is assumed to be a class in the unnamed package and so <see cref="FindException"/> is thrown.
         /// 
         /// Finders created by this method are lazy and do not eagerly check that the given file paths are directories
-        /// or packaged modules. Consequently, the <see cref="Find(string)"/> or <see cref="FindAll()"/> methods will only fail if invoking these methods
-        /// results in searching a directory or packaged module and an error is encountered.
+        /// or packaged modules. Consequently, the <see cref="Find(string)"/> or <see cref="FindAll()"/> methods will
+        /// only fail if invoking these methods results in searching a directory or packaged module and an error is
+        /// encountered.
         /// </summary>
         /// <param name="entries">A possibly-empty array of paths to directories of modules or paths to packaged or exploded modules.</param>
         /// <returns>A <see cref="IModuleFinder"/> that locates modules on the file system</returns>
