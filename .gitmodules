@@ -3,7 +3,6 @@
 	url = https://github.com/ikvmnet/jdk8u.git
 	ignore = dirty
 	shallow = true
-	branch = master
 [submodule "ext/jtreg"]
 	path = ext/jtreg
 	url = https://github.com/ikvmnet/jtreg.git
