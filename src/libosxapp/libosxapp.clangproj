@@ -1,4 +1,5 @@
 ﻿<Project>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(AlternateCommonProps)' == ''"/>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
     <PropertyGroup Label="Globals">
@@ -33,12 +34,12 @@
         <Compile Include="**\*.c" />
     </ItemGroup>
 
-    <Target Name="FindJdk">
-        <FindJdk Family="8">
-            <Output TaskParameter="JdkPath" PropertyName="JdkPath" />
-        </FindJdk>
-        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. IKVM.Image projects require JDK version 8 available on the system." />
-    </Target>
+    <ItemGroup>
+        <PackageReference Include="IKVM.JdkUtil.MSBuild" Version="1.0.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
     <Target Name="ResolveJava" DependsOnTargets="FindJdk" Condition=" '$(JavaPath)' == '' ">
         <PropertyGroup>
@@ -61,16 +62,16 @@
         <Message Text="Using javac executable found at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
     </Target>
-    
+
     <ItemGroup>
         <OSXIcon Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\resource\icons\JavaApp.icns" Destination="$(IntermediateOutputPath)\gensrc\AWTIconData.h" />
     </ItemGroup>
-    
+
     <Target Name="GenerateOSXIcons" DependsOnTargets="BuildJdkBuildTools;ResolveJava" BeforeTargets="CollectIkvmImageItemsOutputItems" Inputs="@(OSXIcon)" Outputs="%(OSXIcon.Destination)">
         <Error Text="Could not locate java executable." Condition=" '$(JavaPath)' == '' " />
         <Error Text="java could not be located at '$(JavaPath)'." Condition="!Exists('$(JavaPath)')" />
         <Exec Command="chmod +x $(JavaPath) &gt;/dev/null 2&gt;&amp;1" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="low" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
-        
+
         <ItemGroup>
             <_Src Remove="@(_Src)" />
             <_Src Include="%(OSXIcon.Identity)" />
@@ -79,28 +80,28 @@
             <_Dst Remove="@(_Dst)" />
             <_Dst Include="%(OSXIcon.Destination)" />
         </ItemGroup>
-        
+
         <WriteLinesToFile Lines="static unsigned char sAWTIconData[] = { " File="@(_Tmp)" />
         <Message Text="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
         <Exec Command="$(JavaExec) -cp $(JdkBuildToolsOutputPath) build.tools.icondata.osxapp.ToBin &lt; @(_Src) &gt;&gt; @(_Tmp)" />
         <WriteLinesToFile Lines="}%3b" File="@(_Tmp)" />
-        
+
         <Delete Files="@(_Dst)" Condition="Exists('@(_Dst)')" />
         <Move SourceFiles="@(_Tmp)" DestinationFiles="@(_Dst)" OverwriteReadOnlyFiles="true" />
-        
+
         <ItemGroup>
             <FileWrites Include="@(_Tmp)" />
             <FileWrites Include="@(_Dst)" />
         </ItemGroup>
     </Target>
-    
+
     <PropertyGroup>
         <CompileDependsOn>
             GenerateOSXIcons;
             $(CompileDependsOn);
         </CompileDependsOn>
     </PropertyGroup>
-    
+
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.buildtools.targets" />
