@@ -50,13 +50,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tests", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.csproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
+Project("{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.ikvmproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj", "{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}"
+Project("{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}") = "IKVM.Java.runtime.linux", "src\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.ikvmproj", "{BC8E0429-5E53-4F23-8CE8-86A1B44D669E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.win", "src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.csproj", "{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}"
+Project("{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}") = "IKVM.Java.runtime.win", "src\IKVM.Java.runtime.win\IKVM.Java.runtime.win.ikvmproj", "{537B5ACE-81A2-4DCA-AB4D-9862E63F448D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj", "{C6BC9419-F394-4B59-A707-F9A82A3FE625}"
+Project("{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}") = "IKVM.Java.runtime.osx", "src\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.ikvmproj", "{C6BC9419-F394-4B59-A707-F9A82A3FE625}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
