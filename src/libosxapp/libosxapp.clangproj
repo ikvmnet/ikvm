@@ -41,6 +41,14 @@
         </PackageReference>
     </ItemGroup>
 
+    <Target Name="FindJdk">
+        <PropertyGroup>
+            <JdkPath Condition=" '$(JAVA_HOME)' != '' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)'))</JdkPath>
+            <JdkPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And '$(JAVA_HOME)' != '' And Exists('$(JAVA_HOME)\bin\java.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)'))</JdkPath>
+        </PropertyGroup>
+        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. IKVM.Java requires JDK version 8 available on the system." />
+    </Target>
+
     <Target Name="ResolveJava" DependsOnTargets="FindJdk" Condition=" '$(JavaPath)' == '' ">
         <PropertyGroup>
             <JavaPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JdkPath)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JdkPath)\bin\java'))</JavaPath>
