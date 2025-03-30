@@ -96,7 +96,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac-ref\javac-ref.csproj" IsJavaCompiler="true" TargetFramework="net8.0" />
+        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac-ref\javac-ref.ikvmproj" IsJavaCompiler="true" TargetFramework="net8.0" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmc\ikvmc.csproj" IsIkvmCompiler="true" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmstub\ikvmstub.csproj" IsIkvmExporter="true" />
     </ItemGroup>
