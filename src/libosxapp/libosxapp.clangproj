@@ -34,13 +34,6 @@
         <Compile Include="**\*.c" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="IKVM.JdkUtil.MSBuild" Version="1.0.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
-
     <Target Name="FindJdk">
         <PropertyGroup>
             <JdkPath Condition=" '$(JAVA_HOME)' != '' And Exists('$(JAVA_HOME)\bin\java') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)'))</JdkPath>
