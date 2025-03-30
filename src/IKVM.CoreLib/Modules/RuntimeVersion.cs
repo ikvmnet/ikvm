@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Modules
     /// A representation of a version string for an implementation of the Java SE Platform. A version string consists
     /// of a version number optionally followed by pre-release and build information.
     /// </summary>
-    internal readonly struct RuntimeVersion : IComparable<RuntimeVersion>
+    public readonly struct RuntimeVersion : IComparable<RuntimeVersion>
     {
 
         /// <summary>
