@@ -4,8 +4,20 @@ using System.Linq;
 namespace IKVM.CoreLib.Modules
 {
 
-    static class Checks
+    /// <summary>
+    /// Provides various methods for working with Java identifiers.
+    /// </summary>
+    static class Identifer
     {
+
+        static readonly string[] RESERVED =
+        [
+            "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue",
+            "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if",
+            "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private",
+            "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
+            "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null", "_"
+        ];
 
         /// <summary>
         /// Returns <c>true</c> if the given name is a legal package name.
@@ -98,63 +110,6 @@ namespace IKVM.CoreLib.Modules
 
             //return true;
         }
-
-        static readonly string[] RESERVED = [
-            "abstract",
-            "assert",
-            "boolean",
-            "break",
-            "byte",
-            "case",
-            "catch",
-            "char",
-            "class",
-            "const",
-            "continue",
-            "default",
-            "do",
-            "double",
-            "else",
-            "enum",
-            "extends",
-            "final",
-            "finally",
-            "float",
-            "for",
-            "goto",
-            "if",
-            "implements",
-            "import",
-            "instanceof",
-            "int",
-            "interface",
-            "long",
-            "native",
-            "new",
-            "package",
-            "private",
-            "protected",
-            "public",
-            "return",
-            "short",
-            "static",
-            "strictfp",
-            "super",
-            "switch",
-            "synchronized",
-            "this",
-            "throw",
-            "throws",
-            "transient",
-            "try",
-            "void",
-            "volatile",
-            "while",
-            "true",
-            "false",
-            "null",
-            "_"
-        ];
 
     }
 

@@ -328,7 +328,7 @@ namespace IKVM.CoreLib.Modules
                 mainClass = mainClass.Replace('/', '.');
 
                 // check for valid class name
-                if (Checks.IsClassName(mainClass))
+                if (Identifer.IsClassName(mainClass))
                 {
                     var pn = GetPackageName(mainClass);
                     if (pn is not null && packages.Contains(pn))
@@ -373,7 +373,7 @@ namespace IKVM.CoreLib.Modules
             }
 
             var pn = className.Substring(0, index).Replace('/', '.');
-            return Checks.IsPackageName(pn) ? pn : null;
+            return Identifer.IsPackageName(pn) ? pn : null;
         }
 
         /// <summary>
