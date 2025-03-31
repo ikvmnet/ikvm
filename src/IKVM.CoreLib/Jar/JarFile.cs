@@ -40,6 +40,18 @@ namespace IKVM.CoreLib.Jar
         /// Initializes a new instance.
         /// </summary>
         /// <param name="archive"></param>
+        /// <param name="dispose"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public JarFile(ZipArchive archive, bool dispose = false) :
+            this(archive, RUNTIME_VERSION, dispose)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="archive"></param>
         /// <param name="version"></param>
         /// <param name="dispose"></param>
         /// <exception cref="ArgumentNullException"></exception>
@@ -68,10 +80,31 @@ namespace IKVM.CoreLib.Jar
         /// Initializes a new instance.
         /// </summary>
         /// <param name="stream"></param>
+        /// <param name="dispose"></param>
+        public JarFile(Stream stream, bool dispose = true) :
+            this(stream, RUNTIME_VERSION, dispose)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="stream"></param>
         /// <param name="releaseVersion"></param>
         /// <param name="dispose"></param>
         public JarFile(Stream stream, RuntimeVersion releaseVersion, bool dispose = true) :
             this(new ZipArchive(stream, ZipArchiveMode.Read, dispose), releaseVersion, dispose)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="path"></param>
+        public JarFile(string path) :
+            this(path, RUNTIME_VERSION)
         {
 
         }

@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 
+using IKVM.CoreLib.Jar;
 using IKVM.Util.Jar;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
