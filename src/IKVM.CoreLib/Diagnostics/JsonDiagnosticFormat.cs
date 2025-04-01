@@ -96,7 +96,7 @@ namespace IKVM.CoreLib.Diagnostics
                     if (mem != null)
                     {
                         // decode into chars
-                        var len = Encoding.UTF8.GetCharCount(mem.Memory.Span[..(int)json.BytesCommitted]);
+                        var len = Encoding.UTF8.GetMaxCharCount((int)json.BytesCommitted);
                         using var tmp = MemoryPool<char>.Shared.Rent(len);
                         len = Encoding.UTF8.GetChars(mem.Memory.Span[..len], tmp.Memory.Span);
 
