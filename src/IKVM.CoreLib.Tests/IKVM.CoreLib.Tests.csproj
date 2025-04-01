@@ -16,6 +16,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="..\..\ext\helloworld\*.jar" LinkBase="res\helloworld">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
         <JavaBuild Include="res\Modules\automatic\alib\**\*.java" TargetPath="res\Modules\automatic\alib\" TargetJar="res\Modules\automatic\jars\alib.jar" />
         <JavaBuild Include="res\Modules\automatic\m\**\*.java" ModulePath="res\Modules\automatic\jars" TargetPath="res\Modules\automatic\m\" TargetJar="res\Modules\automatic\jars\m.jar" />
         <JavaBuild Include="res\Modules\m3\**\*.java" ModulePath="res\Modules" TargetPath="res\Modules\m3\" TargetJar="res\Modules\jars\m3.jar" />
