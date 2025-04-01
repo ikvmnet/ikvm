@@ -22,12 +22,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaBuild Include="res\Modules\automatic\alib\**\*.java" TargetPath="res\Modules\automatic\alib\" TargetJar="res\Modules\automatic\jars\alib.jar" />
-        <JavaBuild Include="res\Modules\automatic\m\**\*.java" ModulePath="res\Modules\automatic\jars" TargetPath="res\Modules\automatic\m\" TargetJar="res\Modules\automatic\jars\m.jar" />
-        <JavaBuild Include="res\Modules\m3\**\*.java" ModulePath="res\Modules" TargetPath="res\Modules\m3\" TargetJar="res\Modules\jars\m3.jar" />
-        <JavaBuild Include="res\Modules\m2\**\*.java" ModulePath="res\Modules" TargetPath="res\Modules\m2\" TargetJar="res\Modules\jars\m2.jar" />
-        <JavaBuild Include="res\Modules\m1\**\*.java" ModulePath="res\Modules" TargetPath="res\Modules\m1\" TargetJar="res\Modules\jars\m1.jar" />
-        <JavaBuild Include="res\Modules\m4\**\*.java" ModulePath="res\Modules" TargetPath="res\Modules\m4\" TargetJar="res\Modules\jars\m4.jar" />
+        <JavaBuild Include="res\Modules\automatic\alib\**\*.java" TargetDir="res\Modules\automatic\alib\" TargetJar="res\Modules\automatic\jars\alib.jar" />
+        <JavaBuild Include="res\Modules\automatic\m\**\*.java" ModulePath="res\Modules\automatic\jars" TargetDir="res\Modules\automatic\m\" TargetJar="res\Modules\automatic\jars\m.jar" />
+        <JavaBuild Include="res\Modules\m3\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m3\" TargetJar="res\Modules\jars\m3.jar" />
+        <JavaBuild Include="res\Modules\m2\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m2\" TargetJar="res\Modules\jars\m2.jar" />
+        <JavaBuild Include="res\Modules\m1\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m1\" TargetJar="res\Modules\jars\m1.jar" />
+        <JavaBuild Include="res\Modules\m4\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m4\" TargetJar="res\Modules\jars\m4.jar" />
     </ItemGroup>
 
     <Import Sdk="MSTest.Sdk" Project="Sdk.targets" />
@@ -59,25 +59,30 @@
 
     <Target Name="CompileJavaOutput" DependsOnTargets="FindJdk" Inputs="@(JavaBuild)" Outputs="$(IntermediateOutputPath)java\%(JavaBuild.TargetJar)" Condition=" '$(TargetFramework)' != '' ">
         <PropertyGroup>
-            <_JavaBuildTargetPath>%(JavaBuild.TargetPath)</_JavaBuildTargetPath>
+            <JavacExe>$(JdkPath)\bin\javac</JavacExe>
+            <JarExe>$(JdkPath)\bin\jar</JarExe>
+            <_JavaBuildTargetDir>%(JavaBuild.TargetDir)</_JavaBuildTargetDir>
+            <_JavaBuildTargetDirTmp>$(IntermediateOutputPath)java\$(_JavaBuildTargetDir)</_JavaBuildTargetDirTmp>
             <_JavaBuildTargetJar>%(JavaBuild.TargetJar)</_JavaBuildTargetJar>
+            <_JavaBuildTargetJarTmp>$(IntermediateOutputPath)java\$(_JavaBuildTargetJar)</_JavaBuildTargetJarTmp>
+            <_JavaBuildModulePathTmp>$(IntermediateOutputPath)java\%(JavaBuild.ModulePath)</_JavaBuildModulePathTmp>
         </PropertyGroup>
 
-        <RemoveDir Directories="$(IntermediateOutputPath)java\$(_JavaBuildTargetPath)" />
-        <MakeDir Directories="$(IntermediateOutputPath)java\$(_JavaBuildTargetPath)" />
-        <Exec Command="&quot;$(JdkPath)\bin\javac&quot; --release 9 -p $(IntermediateOutputPath)java\%(JavaBuild.ModulePath) -d $(IntermediateOutputPath)java\$(_JavaBuildTargetPath) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' != '' " />
-        <Exec Command="&quot;$(JdkPath)\bin\javac&quot; --release 9 -d $(IntermediateOutputPath)java\$(_JavaBuildTargetPath) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' == '' " />
-        <Exec Command="&quot;$(JdkPath)\bin\jar&quot; -cf $(IntermediateOutputPath)java\$(_JavaBuildTargetJar) -C $(IntermediateOutputPath)java\$(_JavaBuildTargetPath) ." />
+        <RemoveDir Directories="$(_JavaBuildTargetDirTmp)" />
+        <MakeDir Directories="$(_JavaBuildTargetDirTmp)" />
+        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -p $(_JavaBuildModulePathTmp) -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' != '' " />
+        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' == '' " />
+        <Exec Command="&quot;$(JarExe)&quot; -cf $(_JavaBuildTargetJarTmp) -C $(_JavaBuildTargetDirTmp) ." />
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)java\$(_JavaBuildTargetPath)\**\*.class" />
-            <FileWrites Include="$(IntermediateOutputPath)java\$(_JavaBuildTargetJar)" />
+            <FileWrites Include="$(_JavaBuildTargetDirTmp)\**\*.class" />
+            <FileWrites Include="$(_JavaBuildTargetJarTmp)" />
             <_JavaOutput Remove="@(_JavaOutput)" />
-            <_JavaOutput Include="$(IntermediateOutputPath)java\$(_JavaBuildTargetPath)\**\*.class" />
+            <_JavaOutput Include="$(_JavaBuildTargetDirTmp)\**\*.class" />
             <JavaOutput Remove="@(JavaOutput)" />
             <JavaOutput Include="@(_JavaOutput)">
-                <TargetPath>$(_JavaBuildTargetPath)%(_JavaOutput.RecursiveDir)%(_JavaOutput.Filename)%(_JavaOutput.Extension)</TargetPath>
+                <TargetPath>$(_JavaBuildTargetDir)%(_JavaOutput.RecursiveDir)%(_JavaOutput.Filename)%(_JavaOutput.Extension)</TargetPath>
             </JavaOutput>
-            <JavaOutput Include="$(IntermediateOutputPath)java\$(_JavaBuildTargetJar)">
+            <JavaOutput Include="$(_JavaBuildTargetJarTmp)">
                 <TargetPath>$(_JavaBuildTargetJar)</TargetPath>
             </JavaOutput>
             <None Include="@(JavaOutput)" CopyToOutputDirectory="PreserveNewest" />
