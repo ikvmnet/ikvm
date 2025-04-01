@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,10 +9,11 @@ namespace IKVM.Tools.Core.Diagnostics
     /// <summary>
     /// Provides the capability to look up diagnostic channels.
     /// </summary>
-    class DiagnosticChannelProvider
+    class DiagnosticChannelProvider : IDisposable
     {
 
         readonly IEnumerable<IDiagnosticChannelFactory> _factories;
+        readonly ConcurrentDictionary<string, IDiagnosticChannel?> _cache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,9 +30,19 @@ namespace IKVM.Tools.Core.Diagnostics
         /// </summary>
         /// <param name="spec"></param>
         /// <returns></returns>
-        public IDiagnosticChannel? FindChannel(string spec)
+        public IDiagnosticChannel? GetOrCreateChannel(string spec)
         {
-            return _factories.Select(i => i.GetChannel(spec)).FirstOrDefault(i => i != null);
+            return _cache.GetOrAdd(spec, _ => _factories.Select(i => i.CreateChannel(_)).FirstOrDefault(i => i != null));
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            foreach (var i in _cache.Values)
+                if (i is IDisposable d)
+                    d.Dispose();
+
+            _cache.Clear();
         }
 
     }
