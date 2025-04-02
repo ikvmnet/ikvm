@@ -115,7 +115,7 @@ namespace IKVM.Tools.Importer.MapXml
                 if (Class != null)
                 {
                     Debug.Assert(Sig != null);
-                    var method = context.ClassLoader.LoadClassByName(Class).GetMethodWrapper(Name, Sig, false);
+                    var method = context.ClassLoader.LoadClassByName(Class).GetMethod(Name, Sig, false);
                     if (method == null)
                     {
                         throw new InvalidOperationException("method not found: " + Class + "." + Name + Sig);

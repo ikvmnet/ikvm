@@ -18,9 +18,9 @@ namespace IKVM.Reflection.Tests
         public static IEnumerable<object[]> GetFrameworkTestData()
         {
             yield return new object[] { new FrameworkSpec("net472", ".NETFramework", "4.7.2") };
-            yield return new object[] { new FrameworkSpec("net48", ".NETFramework", "4.8") };
+            yield return new object[] { new FrameworkSpec("net481", ".NETFramework", "4.8.1") };
             yield return new object[] { new FrameworkSpec("net6.0", ".NETCore", "6.0") };
-            yield return new object[] { new FrameworkSpec("net7.0", ".NETCore", "7.0") };
+            yield return new object[] { new FrameworkSpec("net8.0", ".NETCore", "8.0") };
         }
 
     }

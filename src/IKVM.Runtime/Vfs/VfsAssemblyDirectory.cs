@@ -58,7 +58,7 @@ namespace IKVM.Runtime.Vfs
             try
             {
                 var assemblyName = new AssemblyName();
-                var sb = new StringBuilder();
+                var sb = new ValueStringBuilder();
                 var part = 0;
                 for (var i = 0; i <= directoryName.Length; i++)
                 {
@@ -99,7 +99,11 @@ namespace IKVM.Runtime.Vfs
                             while ('0' <= directoryName[end] && directoryName[end] <= '9')
                                 end++;
 
+#if NETFRAMEWORK
                             if (directoryName[end] != '_' || !int.TryParse(directoryName.Substring(start, end - start), out int repeatCount))
+#else
+                            if (directoryName[end] != '_' || !int.TryParse(directoryName.AsSpan(start, end - start), out int repeatCount))
+#endif
                                 return null;
 
                             sb.Append('_', repeatCount);

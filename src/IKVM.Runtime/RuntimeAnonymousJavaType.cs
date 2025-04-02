@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 
 using IKVM.Attributes;
 
@@ -127,7 +128,9 @@ namespace IKVM.Runtime
             returnType = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, mi.ReturnParameter);
             var parameters = mi.GetParameters();
             parameterTypes = new RuntimeJavaType[parameters.Length];
-            var sb = new System.Text.StringBuilder("(");
+
+            var sb = new ValueStringBuilder(256);
+            sb.Append("(");
             for (int i = 0; i < parameters.Length; i++)
             {
                 parameterTypes[i] = RuntimeManagedByteCodeJavaType.GetParameterTypeWrapper(Context, parameters[i]);

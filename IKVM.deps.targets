@@ -5,7 +5,7 @@
         <PackageReference Include="System.Memory" Version="4.5.5" GeneratePathProperty="true" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" GeneratePathProperty="true" />
         <PackageReference Include="System.Text.Json" Version="8.0.5" GeneratePathProperty="true" />
-        <PackageReference Include="IKVM.ByteCode" Version="9.3.0" GeneratePathProperty="true" />
+        <PackageReference Include="IKVM.ByteCode" Version="9.3.4" GeneratePathProperty="true" />
     </ItemGroup>
 
     <Choose>
@@ -24,13 +24,13 @@
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
             <ItemGroup>
                 <PackageReference Include="System.Data.Odbc" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="8.0.2" />
             </ItemGroup>
         </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
             <ItemGroup>
                 <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
-                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+                <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.1" />
             </ItemGroup>
         </When>
     </Choose>

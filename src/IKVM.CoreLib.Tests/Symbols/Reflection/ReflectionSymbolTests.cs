@@ -107,7 +107,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var s = c.GetOrCreateTypeSymbol(typeof(Foo<>));
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeTrue();
-            var f = s.GetField("field", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var f = s.GetField("field", global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
             f.Name.Should().Be("field");
             f.FieldType.IsGenericType.Should().BeFalse();
             f.FieldType.IsGenericParameter.Should().BeTrue();
@@ -120,7 +120,7 @@ namespace IKVM.CoreLib.Tests.Symbols.Reflection
             var s = c.GetOrCreateTypeSymbol(typeof(Foo<int>));
             s.IsGenericType.Should().BeTrue();
             s.IsGenericTypeDefinition.Should().BeFalse();
-            var f = s.GetField("field", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var f = s.GetField("field", global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
             f.Name.Should().Be("field");
             f.FieldType.IsGenericType.Should().BeFalse();
             f.FieldType.IsGenericParameter.Should().BeFalse();

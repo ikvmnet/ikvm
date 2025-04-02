@@ -1,8 +1,8 @@
 <Project>
     <PropertyGroup Label="Runtime Info">
-        <SupportedRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-arm64;browser-wasm</SupportedRuntimes>
+        <SupportedRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;browser-wasm</SupportedRuntimes>
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
-        <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;android-arm64;browser-wasm</SupportedImageRuntimes>
+        <SupportedImageRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64;browser-wasm</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
         <SupportedImageBinRuntimes>win-x64;win-x86;win-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedImageBinRuntimes>
         <EnabledImageBinRuntimes Condition=" '$(EnabledImageBinRuntimes)' == '' ">$(SupportedImageBinRuntimes)</EnabledImageBinRuntimes>
@@ -29,7 +29,7 @@
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>432</OpenJdkUpdateVersion>
+        <OpenJdkUpdateVersion>442</OpenJdkUpdateVersion>
         <OpenJdkBuildNumber>b06</OpenJdkBuildNumber>
         <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
         <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
@@ -42,9 +42,7 @@
 
     <ItemGroup>
         <Authors Include="Jeroen Frijters" />
-        <Authors Include="Windward Studios" />
         <Authors Include="Jerome Haltom" />
-        <Authors Include="Shad Storhaug" />
     </ItemGroup>
 
     <PropertyGroup Label="Copyright Info">
@@ -82,6 +80,7 @@
         <CopyRetryCount>60</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <PropertyGroup Label="Assembly Info">
@@ -102,7 +101,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac-ref\javac-ref.csproj" IsJavaCompiler="true" TargetFramework="net8.0" />
+        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac-ref\javac-ref.ikvmproj" IsJavaCompiler="true" TargetFramework="net8.0" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmc\ikvmc.csproj" IsIkvmCompiler="true" />
         <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmstub\ikvmstub.csproj" IsIkvmExporter="true" />
     </ItemGroup>

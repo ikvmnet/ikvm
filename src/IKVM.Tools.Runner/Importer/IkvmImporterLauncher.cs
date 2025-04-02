@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -263,40 +264,62 @@ namespace IKVM.Tools.Runner.Importer
             try
             {
                 // create response file
-                Directory.CreateDirectory(Path.GetDirectoryName(response));
+                Directory.CreateDirectory(Path.GetDirectoryName(response) ?? throw new InvalidOperationException());
                 File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
+                string? wrap = null;
                 var exe = GetToolExe();
-                if (File.Exists(exe) == false)
+                if (exe is null || File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
-                // if we're running on Linux, we might need to set the execute bit on the file,
-                // since the NuGet package is built on Windows
+                // executing on Unix requires some considerations
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    try
+                    // tool executables on Unix need to be invoked through Mono
+                    if (exe.EndsWith(".exe"))
                     {
-                        var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
-                        var prm = psx.FileAccessPermissions;
-                        prm |= Mono.Unix.FileAccessPermissions.UserExecute;
-                        prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                        prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                        if (prm != psx.FileAccessPermissions)
-                            psx.FileAccessPermissions = prm;
+                        wrap = "mono";
                     }
-                    catch (Exception e)
+                    else
                     {
-                        throw new IkvmToolException($"Could not set user executable bit on '{exe}'.", e);
+                        // else we need to ensure executable bit is set
+
+                        try
+                        {
+                            var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
+                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        }
+                        catch (Exception e)
+                        {
+                            throw new IkvmToolException($"Could not set user executable bit on '{exe}'.", e);
+                        }
                     }
                 }
 
-                // configure CLI
-                var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
+                // assemble list of args
+                var args = new List<string>();
+                args.Add($"@{response}");
 
-                // execute the contents of the response file
-                cli = cli.WithArguments([$"@{response}"]);
+                // configure CLI, with wrapper if required
+                Command cli;
+                if (wrap != null)
+                {
+                    cli = Cli.Wrap(wrap);
+                    args.Insert(0, exe);
+                }
+                else
+                    cli = Cli.Wrap(exe);
+
+                // set working directory
+                cli = cli.WithWorkingDirectory(Environment.CurrentDirectory);
+
+                // set configuration of CLI
+                cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
+
+                // log the command we're about to run
                 await LogEventAsync(IkvmToolDiagnosticEventLevel.Trace, "Executing {0} {1}", [cli.TargetFilePath, cli.Arguments], ctk);
 
                 // send output to MSBuild (TODO, replace with binary reading)

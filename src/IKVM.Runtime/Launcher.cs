@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Attributes;
-using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Lang.Reflect;
@@ -97,13 +96,13 @@ namespace IKVM.Runtime
                     list.Add(dir != null ? Path.Combine(dir, fsi.Name) : fsi.Name);
 
                 if (list.Count == 0)
-                    return new string[] { path };
+                    return [path];
 
                 return list.ToArray();
             }
             catch
             {
-                return new string[] { path };
+                return [path];
             }
         }
 
@@ -118,7 +117,7 @@ namespace IKVM.Runtime
             for (var i = 0; i < paths.Length; i++)
             {
                 var path = paths[i];
-                if (path.IndexOf('*') != -1 || path.IndexOf('?') != -1)
+                if (path.Contains('*') || path.Contains('?'))
                     list.AddRange(Glob(path));
                 else
                     list.Add(path);
@@ -203,14 +202,9 @@ namespace IKVM.Runtime
         static string GetVersionAndCopyrightInfo()
         {
             var assembly = typeof(Launcher).Assembly;
-
-            var description = assembly.GetCustomAttributes<AssemblyTitleAttribute>().FirstOrDefault();
-            if (description is not null)
-            {
-                var copyright = assembly.GetCustomAttributes<AssemblyCopyrightAttribute>().FirstOrDefault();
-                if (copyright is not null)
-                    return $"{description.Title} version {assembly.GetName().Version}{Environment.NewLine}{copyright.Copyright}";
-            }
+            var copyright = assembly.GetCustomAttributes<AssemblyCopyrightAttribute>().FirstOrDefault();
+            if (copyright is not null)
+                return $"IKVM version {assembly.GetName().Version}{Environment.NewLine}{copyright.Copyright}";
 
             return "";
         }
@@ -234,7 +228,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Adds the given assembly to the boot classpath.
         /// </summary>
-        /// <param name="asm"></param>
+        /// <param name="assembly"></param>
         static void AddBootClassPathAssembly(Assembly assembly)
         {
 #if FIRST_PASS || IMPORTER

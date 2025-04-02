@@ -28,19 +28,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <BinProject Include="..\jar\jar.csproj" />
-        <BinProject Include="..\jarsigner\jarsigner.csproj" />
-        <BinProject Include="..\javac\javac.csproj" />
-        <BinProject Include="..\javadoc\javadoc.csproj" />
-        <BinProject Include="..\javah\javah.csproj" />
-        <BinProject Include="..\javap\javap.csproj" />
-        <BinProject Include="..\jdeps\jdeps.csproj" />
-        <BinProject Include="..\native2ascii\native2ascii.csproj" />
-        <BinProject Include="..\rmic\rmic.csproj" />
-        <BinProject Include="..\schemagen\schemagen.csproj" />
-        <BinProject Include="..\wsgen\wsgen.csproj" />
-        <BinProject Include="..\wsimport\wsimport.csproj" />
-        <BinProject Include="..\xjc\xjc.csproj" />
+        <BinProject Include="..\jar\jar.ikvmproj" />
+        <BinProject Include="..\jarsigner\jarsigner.ikvmproj" />
+        <BinProject Include="..\javac\javac.ikvmproj" />
+        <BinProject Include="..\javadoc\javadoc.ikvmproj" />
+        <BinProject Include="..\javah\javah.ikvmproj" />
+        <BinProject Include="..\javap\javap.ikvmproj" />
+        <BinProject Include="..\jdeps\jdeps.ikvmproj" />
+        <BinProject Include="..\native2ascii\native2ascii.ikvmproj" />
+        <BinProject Include="..\rmic\rmic.ikvmproj" />
+        <BinProject Include="..\schemagen\schemagen.ikvmproj" />
+        <BinProject Include="..\wsgen\wsgen.ikvmproj" />
+        <BinProject Include="..\wsimport\wsimport.ikvmproj" />
+        <BinProject Include="..\xjc\xjc.ikvmproj" />
     </ItemGroup>
 
     <ItemGroup Condition="$(_SupportedImageBinRuntimes.Contains(';$(ImageRuntimeIdentifier);')) And $(_EnabledImageBinRuntimes.Contains(';$(ImageRuntimeIdentifier);'))">

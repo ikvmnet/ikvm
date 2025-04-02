@@ -1018,7 +1018,7 @@ namespace IKVM.Tools.Importer
                             // make sure default interface methods are implemented (they currently have to be explicitly implemented in map.xml)
                             if (mw.IsVirtual && !mw.IsAbstract)
                             {
-                                if (GetMethodWrapper(mw.Name, mw.Signature, true) == null)
+                                if (GetMethod(mw.Name, mw.Signature, true) == null)
                                 {
                                     classLoader.Diagnostics.RemappedTypeMissingDefaultInterfaceMethod(Name, iface.Name + "." + mw.Name + mw.Signature);
                                 }
@@ -1353,7 +1353,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     ilgen.EmitLdarg(i);
                                 }
-                                var mw = tw.GetMethodWrapper(m.Name, m.Sig, false);
+                                var mw = tw.GetMethod(m.Name, m.Sig, false);
                                 mw.Link();
                                 mw.EmitCallvirt(ilgen);
                                 ilgen.Emit(OpCodes.Ret);
@@ -1382,7 +1382,7 @@ namespace IKVM.Tools.Importer
                             // skip instance methods in sealed types, but we do need to add them to the overriders
                             if (typeWrapper.BaseTypeWrapper != null && (m.Modifiers & IKVM.Tools.Importer.MapXml.MapModifiers.Private) == 0)
                             {
-                                RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
+                                RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethod(m.Name, m.Sig, true) as RemappedMethodWrapper;
                                 if (baseMethod != null &&
                                     !baseMethod.IsFinal &&
                                     !baseMethod.IsPrivate &&
@@ -1417,7 +1417,7 @@ namespace IKVM.Tools.Importer
                                 }
                                 if (typeWrapper.BaseTypeWrapper != null)
                                 {
-                                    RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethodWrapper(m.Name, m.Sig, true) as RemappedMethodWrapper;
+                                    RemappedMethodWrapper baseMethod = typeWrapper.BaseTypeWrapper.GetMethod(m.Name, m.Sig, true) as RemappedMethodWrapper;
                                     if (baseMethod != null)
                                     {
                                         baseMethod.overriders.Add(typeWrapper);
@@ -1623,7 +1623,7 @@ namespace IKVM.Tools.Importer
                         }
                         foreach (RemapperTypeWrapper overrider in overriders)
                         {
-                            RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethodWrapper(Name, Signature, false);
+                            RemappedMethodWrapper mw = (RemappedMethodWrapper)overrider.GetMethod(Name, Signature, false);
                             if (mw.m.Redirect == null && mw.m.Body == null && mw.m.AlternateBody == null)
                             {
                                 // the overridden method doesn't actually do anything special (that means it will end
@@ -1687,7 +1687,7 @@ namespace IKVM.Tools.Importer
                             }
                             else
                             {
-                                var baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true) as RemappedMethodWrapper;
+                                var baseMethod = DeclaringType.BaseTypeWrapper.GetMethod(Name, Signature, true) as RemappedMethodWrapper;
                                 if (baseMethod == null || baseMethod.m.Override == null)
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
 
@@ -1763,7 +1763,7 @@ namespace IKVM.Tools.Importer
                     else
                     {
                         var tw = classLoader.LoadClassByName(m.Redirect.Class);
-                        var mw = tw.GetMethodWrapper(redirName, redirSig, false) ?? throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
+                        var mw = tw.GetMethod(redirName, redirSig, false) ?? throw new InvalidOperationException("Missing redirect method: " + tw.Name + "." + redirName + redirSig);
                         mw.Link();
                         mw.EmitCall(ilgen);
                     }
@@ -1969,36 +1969,38 @@ namespace IKVM.Tools.Importer
                     helperTypeBuilder.CreateType();
             }
 
-            private static string MakeMethodKey(MethodInfo method)
+            static string MakeMethodKey(MethodInfo method)
             {
-                var sb = new StringBuilder();
-                sb.Append(method.ReturnType.AssemblyQualifiedName).Append(":").Append(method.Name);
+                var sb = new ValueStringBuilder(method.ReturnType.AssemblyQualifiedName.Length + 1 + method.Name.Length);
+                sb.Append(method.ReturnType.AssemblyQualifiedName);
+                sb.Append(":");
+                sb.Append(method.Name);
+
                 var paramInfo = method.GetParameters();
-                var paramTypes = new Type[paramInfo.Length];
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
-                    paramTypes[i] = paramInfo[i].ParameterType;
-                    sb.Append(":").Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
+                    sb.Append(":");
+                    sb.Append(paramInfo[i].ParameterType.AssemblyQualifiedName);
                 }
 
                 return sb.ToString();
             }
 
-            private void CreateShadowInstanceOf(ICollection<RemapperTypeWrapper> remappedTypes)
+            void CreateShadowInstanceOf(ICollection<RemapperTypeWrapper> remappedTypes)
             {
                 // FXBUG .NET 1.1 doesn't allow static methods on interfaces
                 if (typeBuilder.IsInterface)
                     return;
 
-                MethodAttributes attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
-                MethodBuilder mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, new Type[] { Context.Types.Object });
+                var attr = MethodAttributes.SpecialName | MethodAttributes.Public | MethodAttributes.Static;
+                var mb = typeBuilder.DefineMethod("__<instanceof>", attr, Context.Types.Boolean, [Context.Types.Object]);
                 Context.AttributeHelper.HideFromJava(mb);
                 Context.AttributeHelper.SetEditorBrowsableNever(mb);
-                CodeEmitter ilgen = Context.CodeEmitterFactory.Create(mb);
+                var ilgen = Context.CodeEmitterFactory.Create(mb);
 
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Isinst, shadowType);
-                CodeEmitterLabel retFalse = ilgen.DefineLabel();
+                var retFalse = ilgen.DefineLabel();
                 ilgen.EmitBrfalse(retFalse);
 
                 if (!shadowType.IsSealed)
@@ -2265,7 +2267,7 @@ namespace IKVM.Tools.Importer
 
             internal void Emit(MapXml.CodeGenContext context, CodeEmitter ilgen)
             {
-                var mwSuppressFillInStackTrace = rcontext.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+                var mwSuppressFillInStackTrace = rcontext.JavaBase.TypeOfjavaLangThrowable.GetMethod("__<suppressFillInStackTrace>", "()V", false);
                 mwSuppressFillInStackTrace.Link();
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Callvirt, rcontext.CompilerFactory.GetTypeMethod);
@@ -2300,7 +2302,7 @@ namespace IKVM.Tools.Importer
                     else
                     {
                         var tw = context.ClassLoader.LoadClassByName(map[i].Destination);
-                        var mw = tw.GetMethodWrapper("<init>", "()V", false);
+                        var mw = tw.GetMethod("<init>", "()V", false);
                         mw.Link();
                         mwSuppressFillInStackTrace.EmitCall(ilgen);
                         mw.EmitNewobj(ilgen);
@@ -2659,7 +2661,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
+                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(assemblyType.GetData()), null, ClassFileParseOptions.StaticImport, null);
 
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
@@ -2690,7 +2692,7 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
+                        using var f = new IKVM.Runtime.ClassFile(context, diagnostics, IKVM.ByteCode.Decoding.ClassFile.Read(h[className].GetData()), null, ClassFileParseOptions.StaticImport, null);
                         if (f.Name == className)
                         {
                             foreach (var m in f.Methods)
@@ -2987,7 +2989,7 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(DiagnosticEvent.MainClassNotFound());
                 }
 
-                var mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
+                var mw = wrapper.GetMethod("main", "([Ljava.lang.String;)V", false);
                 if (mw == null || !mw.IsStatic)
                     throw new FatalCompilerErrorException(DiagnosticEvent.MainMethodNotFound());
 
@@ -3081,7 +3083,7 @@ namespace IKVM.Tools.Importer
                 if (classLoaderType.IsAssignableTo(Context.ClassLoaderFactory.LoadClassCritical("java.lang.ClassLoader")) == false)
                     throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderNotClassLoader());
 
-                var classLoaderInitMethod = classLoaderType.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
+                var classLoaderInitMethod = classLoaderType.GetMethod("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
                 if (classLoaderInitMethod == null)
                     throw new FatalCompilerErrorException(DiagnosticEvent.ClassLoaderConstructorMissing());
 
@@ -3090,7 +3092,7 @@ namespace IKVM.Tools.Importer
                 assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
 
                 // the class loader type defines a module initialize method, ensure we call it upon module load
-                var mwModuleInit = classLoaderType.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
+                var mwModuleInit = classLoaderType.GetMethod("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
                 if (mwModuleInit != null && mwModuleInit.IsStatic == false)
                 {
                     moduleInitBuilders.Add((mb, il) =>
@@ -3210,7 +3212,7 @@ namespace IKVM.Tools.Importer
                     valid = false;
                     Diagnostics.InvalidPropertyNameInMapFile(getterOrSetter, clazz, property, method.Name);
                 }
-                if (!IKVM.Runtime.ClassFile.IsValidMethodSig(method.Sig))
+                if (!IKVM.Runtime.ClassFile.IsValidMethodDescriptor(method.Sig))
                 {
                     valid = false;
                     Diagnostics.InvalidPropertySignatureInMapFile(getterOrSetter, clazz, property, method.Sig);
@@ -3225,7 +3227,7 @@ namespace IKVM.Tools.Importer
 
         static bool IsValidSig(string sig, bool field)
         {
-            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldSig(sig) : IKVM.Runtime.ClassFile.IsValidMethodSig(sig));
+            return sig != null && (field ? IKVM.Runtime.ClassFile.IsValidFieldDescriptor(sig) : IKVM.Runtime.ClassFile.IsValidMethodDescriptor(sig));
         }
 
         internal Type GetTypeFromReferencedAssembly(string name)

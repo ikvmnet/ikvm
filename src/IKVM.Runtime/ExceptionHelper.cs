@@ -31,7 +31,6 @@ using System.Security;
 
 using IKVM.Attributes;
 
-using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
 using MethodBase = System.Reflection.MethodBase;
 
@@ -82,17 +81,28 @@ namespace IKVM.Runtime
             readonly ExceptionHelper exceptionHelper;
 
             [NonSerialized]
-            private StackTrace tracePart1;
+            StackTrace tracePart1;
             [NonSerialized]
-            private StackTrace tracePart2;
-            private StackTraceElement[] stackTrace;
+            StackTrace tracePart2;
+            StackTraceElement[] stackTrace;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="exceptionHelper"></param>
+            /// <param name="stackTrace"></param>
             internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, StackTraceElement[] stackTrace)
             {
                 this.exceptionHelper = exceptionHelper;
                 this.stackTrace = stackTrace;
             }
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="exceptionHelper"></param>
+            /// <param name="tracePart1"></param>
+            /// <param name="tracePart2"></param>
             internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, StackTrace tracePart1, StackTrace tracePart2)
             {
                 this.exceptionHelper = exceptionHelper;
@@ -100,25 +110,29 @@ namespace IKVM.Runtime
                 this.tracePart2 = tracePart2;
             }
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="exceptionHelper"></param>
+            /// <param name="x"></param>
+            /// <param name="captureAdditionalStackTrace"></param>
             [HideFromJava]
             internal ExceptionInfoHelper(ExceptionHelper exceptionHelper, Exception x, bool captureAdditionalStackTrace)
             {
                 this.exceptionHelper = exceptionHelper;
                 tracePart1 = new StackTrace(x, true);
                 if (captureAdditionalStackTrace)
-                {
                     tracePart2 = new StackTrace(true);
-                }
             }
 
             [OnSerializing]
-            private void OnSerializing(StreamingContext context)
+            void OnSerializing(StreamingContext context)
             {
                 // make sure the stack trace is computed before serializing
                 get_StackTrace(null);
             }
 
-            private static bool IsPrivateScope(MethodBase mb)
+            static bool IsPrivateScope(MethodBase mb)
             {
                 return (mb.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.PrivateScope;
             }
@@ -129,7 +143,8 @@ namespace IKVM.Runtime
                 {
                     if (stackTrace == null)
                     {
-                        List<StackTraceElement> list = new List<StackTraceElement>();
+                        var list = new List<StackTraceElement>();
+
                         if (tracePart1 != null)
                         {
                             int skip1 = 0;
@@ -144,8 +159,10 @@ namespace IKVM.Runtime
                                     skip1 = 1;
                                 }
                             }
+
                             Append(exceptionHelper, list, tracePart1, skip1, false);
                         }
+
                         if (tracePart2 != null && tracePart2.FrameCount > 0)
                         {
                             int skip = 0;
@@ -155,26 +172,26 @@ namespace IKVM.Runtime
                                 // filter out fillInStackTrace and the following constructor frames.
                                 if (tracePart1 == null)
                                 {
-                                    MethodBase mb = tracePart2.GetFrame(skip).GetMethod();
+                                    var mb = tracePart2.GetFrame(skip).GetMethod();
                                     if (mb.DeclaringType == typeof(Throwable) && mb.Name.EndsWith("fillInStackTrace", StringComparison.Ordinal))
                                     {
                                         skip++;
+
                                         while (tracePart2.FrameCount > skip)
                                         {
                                             mb = tracePart2.GetFrame(skip).GetMethod();
                                             if (mb.DeclaringType != typeof(Throwable) || !mb.Name.EndsWith("fillInStackTrace", StringComparison.Ordinal))
-                                            {
                                                 break;
-                                            }
+
                                             skip++;
                                         }
+
                                         while (tracePart2.FrameCount > skip)
                                         {
                                             mb = tracePart2.GetFrame(skip).GetMethod();
                                             if (mb.Name != ".ctor" || !mb.DeclaringType.IsInstanceOfType(t))
-                                            {
                                                 break;
-                                            }
+
                                             skip++;
                                         }
                                     }
@@ -184,9 +201,8 @@ namespace IKVM.Runtime
                                     // Skip java.lang.Throwable.__<map> and other mapping methods, because we need to be able to remove the frame
                                     // that called map (if it is the same as where the exception was caught).
                                     while (tracePart2.FrameCount > skip && IsHideFromJava(tracePart2.GetFrame(skip).GetMethod()))
-                                    {
                                         skip++;
-                                    }
+
                                     if (tracePart1.FrameCount > 0 &&
                                         tracePart2.FrameCount > skip &&
                                         tracePart1.GetFrame(tracePart1.FrameCount - 1).GetMethod() == tracePart2.GetFrame(skip).GetMethod())
@@ -196,21 +212,23 @@ namespace IKVM.Runtime
                                     }
                                 }
                             }
+
                             Append(exceptionHelper, list, tracePart2, skip, true);
                         }
+
                         if (cleanStackTrace && list.Count > 0)
                         {
-                            StackTraceElement elem = list[list.Count - 1];
+                            var elem = list[list.Count - 1];
                             if (elem.getClassName() == "java.lang.reflect.Method")
-                            {
                                 list.RemoveAt(list.Count - 1);
-                            }
                         }
+
                         tracePart1 = null;
                         tracePart2 = null;
                         this.stackTrace = list.ToArray();
                     }
                 }
+
                 return (StackTraceElement[])stackTrace.Clone();
             }
 
@@ -218,13 +236,12 @@ namespace IKVM.Runtime
             {
                 for (int i = skip; i < st.FrameCount; i++)
                 {
-                    StackFrame frame = st.GetFrame(i);
-                    MethodBase m = frame.GetMethod();
+                    var frame = st.GetFrame(i);
+                    var m = frame.GetMethod();
                     if (m == null)
-                    {
                         continue;
-                    }
-                    Type type = m.DeclaringType;
+
+                    var type = m.DeclaringType;
                     if (cleanStackTrace &&
                         (type == null
                         || typeof(MethodBase).IsAssignableFrom(type)
@@ -236,6 +253,7 @@ namespace IKVM.Runtime
                     {
                         continue;
                     }
+
                     var lineNumber = frame.GetFileLineNumber();
                     if (lineNumber == 0)
                         lineNumber = exceptionHelper.GetLineNumber(frame);
@@ -264,20 +282,23 @@ namespace IKVM.Runtime
                         stackTrace.RemoveAt(stackTrace.Count - 1);
             }
         }
+
 #endif
 
         [Serializable]
-        private sealed class Key : ISerializable
+        sealed class Key : ISerializable
         {
 
             [Serializable]
-            private sealed class Helper : IObjectReference
+            sealed class Helper : IObjectReference
             {
+
                 [SecurityCritical]
-                public Object GetRealObject(StreamingContext context)
+                public object GetRealObject(StreamingContext context)
                 {
                     return EXCEPTION_DATA_KEY;
                 }
+
             }
 
             [SecurityCritical]
@@ -285,6 +306,7 @@ namespace IKVM.Runtime
             {
                 info.SetType(typeof(Helper));
             }
+
         }
 
         static bool IsNative(MethodBase m)
@@ -292,7 +314,7 @@ namespace IKVM.Runtime
             var methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
             if (methodFlagAttribs.Length == 1)
             {
-                ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
+                var modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
                 return (modifiersAttrib.Modifiers & Modifiers.Native) != 0;
             }
 
@@ -301,7 +323,7 @@ namespace IKVM.Runtime
 
         static string GetMethodName(MethodBase mb)
         {
-            object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
+            var attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
             if (attr.Length == 1)
             {
                 return ((NameSigAttribute)attr[0]).Name;
@@ -347,24 +369,18 @@ namespace IKVM.Runtime
             throw new NotImplementedException();
 #else
             if (type == null)
-            {
                 return "<Module>";
-            }
+
             if (context.ClassLoaderFactory.IsRemappedType(type))
-            {
                 return RuntimeManagedJavaType.GetName(context, type);
-            }
-            RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(type);
+
+            var tw = context.ClassLoaderFactory.GetJavaTypeFromType(type);
             if (tw != null)
             {
                 if (tw.IsPrimitive)
-                {
                     return RuntimeManagedJavaType.GetName(context, type);
-                }
                 if (tw.IsUnsafeAnonymous)
-                {
                     return tw.ClassObject.getName();
-                }
 
                 return tw.Name;
             }
@@ -375,21 +391,18 @@ namespace IKVM.Runtime
 
         int GetLineNumber(StackFrame frame)
         {
-            int ilOffset = frame.GetILOffset();
+            var ilOffset = frame.GetILOffset();
             if (ilOffset != StackFrame.OFFSET_UNKNOWN)
             {
-                MethodBase mb = frame.GetMethod();
+                var mb = frame.GetMethod();
                 if (mb != null && mb.DeclaringType != null)
                 {
                     if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
-                    {
                         return -1;
-                    }
-                    RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+
+                    var tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                     if (tw != null)
-                    {
                         return tw.GetSourceLineNumber(mb, ilOffset);
-                    }
                 }
             }
 
@@ -398,18 +411,15 @@ namespace IKVM.Runtime
 
         string GetFileName(StackFrame frame)
         {
-            MethodBase mb = frame.GetMethod();
+            var mb = frame.GetMethod();
             if (mb != null && mb.DeclaringType != null)
             {
                 if (context.ClassLoaderFactory.IsRemappedType(mb.DeclaringType))
-                {
                     return null;
-                }
-                RuntimeJavaType tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
+
+                var tw = context.ClassLoaderFactory.GetJavaTypeFromType(mb.DeclaringType);
                 if (tw != null)
-                {
                     return tw.GetSourceFileName();
-                }
             }
 
             return null;
@@ -427,7 +437,8 @@ namespace IKVM.Runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new ObjectStreamField[] {
+            return new ObjectStreamField[]
+            {
                 new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
                 new ObjectStreamField("cause", typeof(global::java.lang.Throwable)),
                 new ObjectStreamField("stackTrace", typeof(global::java.lang.StackTraceElement[])),
@@ -483,7 +494,7 @@ namespace IKVM.Runtime
             {
                 // when you serialize a .NET exception it gets replaced by a com.sun.xml.internal.ws.developer.ServerSideException,
                 // so we know that Exception is always a Throwable
-                Throwable _this = (Throwable)e;
+                var _this = (Throwable)e;
 
                 // this the equivalent of s.defaultReadObject();
                 var fields = ((ObjectInputStream)stream).readFields();
@@ -492,12 +503,12 @@ namespace IKVM.Runtime
                 var ctor = typeof(Throwable).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(string), typeof(Exception), typeof(bool), typeof(bool) }, null);
                 if (cause == _this)
                 {
-                    ctor.Invoke(_this, new object[] { detailMessage, null, false, false });
+                    ctor.Invoke(_this, [detailMessage, null, false, false]);
                     _this.cause = _this;
                 }
                 else
                 {
-                    ctor.Invoke(_this, new object[] { detailMessage, cause, false, false });
+                    ctor.Invoke(_this, [detailMessage, cause, false, false]);
                 }
 
                 _this.stackTrace = (StackTraceElement[])fields.get("stackTrace", null);
@@ -521,6 +532,7 @@ namespace IKVM.Runtime
                                 throw new java.lang.NullPointerException("Cannot suppress a null exception.");
                             if (entry == _this)
                                 throw new java.lang.IllegalArgumentException("Self-suppression not permitted");
+
                             suppressed.add(entry);
                         }
                     }
@@ -532,7 +544,7 @@ namespace IKVM.Runtime
                 {
                     if (_this.stackTrace.Length == 0)
                     {
-                        _this.stackTrace = new StackTraceElement[0];
+                        _this.stackTrace = [];
                     }
                     else if (_this.stackTrace.Length == 1 && java.lang.ThrowableHelper.SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(_this.stackTrace[0]))
                     {
@@ -540,18 +552,14 @@ namespace IKVM.Runtime
                     }
                     else
                     {
-                        foreach (StackTraceElement elem in _this.stackTrace)
-                        {
+                        foreach (var elem in _this.stackTrace)
                             if (elem == null)
-                            {
                                 throw new java.lang.NullPointerException("null StackTraceElement in serial stream. ");
-                            }
-                        }
                     }
                 }
                 else
                 {
-                    _this.stackTrace = new StackTraceElement[0];
+                    _this.stackTrace = [];
                 }
             }
 #endif
@@ -627,13 +635,10 @@ namespace IKVM.Runtime
             lock (self)
             {
                 if (self == e)
-                {
                     throw new java.lang.IllegalArgumentException("Self-suppression not permitted", e);
-                }
                 if (e == null)
-                {
                     throw new java.lang.NullPointerException("Cannot suppress a null exception.");
-                }
+
                 if (self is not Throwable _thisJava)
                 {
                     // we ignore suppressed exceptions for non-Java exceptions

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
-using IKVM.Util.Modules;
+using IKVM.CoreLib.Modules;
 
 namespace IKVM.Util.Jar
 {
@@ -69,12 +69,12 @@ namespace IKVM.Util.Jar
 
             using var jar = new JarFile(path);
             var info = jar.GetModuleInfo() ?? new ModuleInfo();
-            if (info.Name is null || info.Version is null)
+            if (info.Name is null || info.Version.IsValid == false)
             {
                 var fromFileName = GetModuleNameAndVersionFromFileName(path);
                 if (info.Name is null && fromFileName.Name is not null)
                     info.Name = fromFileName.Name;
-                if (info.Version is null && fromFileName.Version is not null)
+                if (info.Version.IsValid == false && fromFileName.Version.IsValid)
                     info.Version = fromFileName.Version;
             }
 
@@ -125,7 +125,7 @@ namespace IKVM.Util.Jar
         /// <returns></returns>
         static ModuleVersion TryParseVersion(ReadOnlySpan<char> span)
         {
-            return ModuleVersion.TryParse(span, out var v) ? v : null;
+            return ModuleVersion.TryParse(span, out var v) ? v : default;
         }
 
     }

@@ -9,12 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" GeneratePathProperty="true" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.ikvmproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,7 +31,7 @@
     <ItemGroup>
         <Transform Include="JVM.Constants.cs.tt" TargetPath="$(IntermediateOutputPath)transform\JVM.Constants.cs" />
         <Compile Include="$(IntermediateOutputPath)transform\JVM.Constants.cs" Visible="False" Link="JVM.Constants.cs" />
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_Platforms)\runtime.json" LogicalName="runtime.json" Link="runtime.json" />
+        <EmbeddedResource Include="$(RuntimeIdentifierGraphPath)" LogicalName="runtime.json" Link="runtime.json" />
     </ItemGroup>
 
     <ItemGroup>

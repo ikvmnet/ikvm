@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Text;
 
 using IKVM.Attributes;
 
@@ -65,7 +66,8 @@ namespace IKVM.Runtime
                 var invoke = delegateType.GetMethod("Invoke");
                 var parameters = invoke.GetParameters();
                 var argTypeWrappers = new RuntimeJavaType[parameters.Length];
-                var sb = new System.Text.StringBuilder("(");
+                var sb = new ValueStringBuilder();
+                sb.Append("(");
                 var flags = MemberFlags.None;
 
                 for (int i = 0; i < parameters.Length; i++)
@@ -81,10 +83,10 @@ namespace IKVM.Runtime
                 }
 
                 var returnType = Context.ClassLoaderFactory.GetJavaTypeFromType(invoke.ReturnType);
-                sb.Append(")").Append(returnType.SigName);
-                var invokeMethod = new DynamicOnlyJavaMethod(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags);
-                SetMethods(new RuntimeJavaMethod[] { invokeMethod });
-                SetFields(Array.Empty<RuntimeJavaField>());
+                sb.Append(")");
+                sb.Append(returnType.SigName);
+                SetMethods([new DynamicOnlyJavaMethod(this, "Invoke", sb.ToString(), returnType, argTypeWrappers, flags)]);
+                SetFields([]);
             }
 
             internal override RuntimeJavaType DeclaringTypeWrapper => Context.ClassLoaderFactory.GetJavaTypeFromType(fakeType.GetGenericArguments()[0]);
@@ -97,7 +99,7 @@ namespace IKVM.Runtime
 
             internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
             {
-                return DeclaringTypeWrapper.GetMethodParameters(DeclaringTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, false));
+                return DeclaringTypeWrapper.GetMethodParameters(DeclaringTypeWrapper.GetMethod(mw.Name, mw.Signature, false));
             }
 
         }

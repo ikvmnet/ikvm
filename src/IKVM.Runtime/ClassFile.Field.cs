@@ -193,7 +193,7 @@ namespace IKVM.Runtime
 
             protected override void ValidateSig(ClassFile classFile, string descriptor)
             {
-                if (!IsValidFieldSig(descriptor))
+                if (!IsValidFieldDescriptor(descriptor))
                     throw new ClassFormatError("{0} (Field \"{1}\" has invalid signature \"{2}\")", classFile.Name, this.Name, descriptor);
             }
 

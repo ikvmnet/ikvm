@@ -32,7 +32,7 @@
     <ItemGroup Condition="!$(TargetIdentifier.StartsWith('win-'))">
         <LibNetDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\net\sdp" />
     </ItemGroup>
-    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
+    <ItemGroup Condition="!$(TargetIdentifier.StartsWith('linux-')) And !$(TargetIdentifier.StartsWith('android-'))">
         <LibNetExclude Include="linux_close.c" />
     </ItemGroup>
     <ItemGroup Condition="!$(TargetIdentifier.StartsWith('osx-'))">

@@ -30,10 +30,13 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a integer constant.
+        /// </summary>
         sealed class ConstantPoolItemInteger : ConstantPoolItem
         {
 
-            internal int v;
+            internal int _value;
 
             /// <summary>
             /// Initializes a new instance.
@@ -43,14 +46,20 @@ namespace IKVM.Runtime
             internal ConstantPoolItemInteger(RuntimeContext context, IntegerConstantData data) :
                 base(context)
             {
-                v = data.Value;
+                _value = data.Value;
             }
 
-            internal override ConstantType GetConstantType() => ConstantType.Integer;
 
-            internal int Value => v;
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.Integer;
 
-            internal override object GetRuntimeValue() => v;
+            /// <inheritdoc />
+            public override object GetRuntimeValue() => _value;
+
+            /// <summary>
+            /// Gets the integer constant value.
+            /// </summary>
+            public int Value => _value;
 
         }
 

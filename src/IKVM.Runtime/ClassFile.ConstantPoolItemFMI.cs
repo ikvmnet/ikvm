@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.ByteCode;
 
 namespace IKVM.Runtime
@@ -31,15 +29,18 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a field, method or interface reference.
+        /// </summary>
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
         {
 
-            readonly ClassConstantHandle clazzHandle;
-            readonly NameAndTypeConstantHandle nameAndType;
+            readonly ClassConstantHandle _clazzHandle;
+            readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
-            ConstantPoolItemClass clazz;
-            string name;
-            string descriptor;
+            ConstantPoolItemClass _clazz;
+            string _name;
+            string _descriptor;
 
             /// <summary>
             /// Initializes a new instance.
@@ -47,73 +48,70 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="clazz"></param>
             /// <param name="nameAndType"></param>
-            internal ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
+            public ConstantPoolItemFMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndType) :
                 base(context)
             {
-                this.clazzHandle = clazz;
-                this.nameAndType = nameAndType;
+                _clazzHandle = clazz;
+                _nameAndTypeHandle = nameAndType;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndType);
+                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndTypeHandle);
 
-                clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(clazzHandle);
+                _clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(_clazzHandle);
                 // if the constant pool items referred to were strings, GetConstantPoolItem returns null
-                if (name_and_type == null || clazz == null)
-                {
+                if (name_and_type == null || _clazz == null)
                     throw new ClassFormatError("Bad index in constant pool");
-                }
 
-                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
-                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
-                Validate(name, descriptor, classFile.MajorVersion);
-                descriptor = String.Intern(descriptor.Replace('/', '.'));
+                _name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.NameHandle));
+                _descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.DescriptorHandle);
+                Validate(_name, _descriptor, classFile.MajorVersion);
+                _descriptor = string.Intern(_descriptor.Replace('/', '.'));
             }
 
+            /// <summary>
+            /// Validates the name and descriptor in accordance with the specified major version.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="descriptor"></param>
+            /// <param name="majorVersion"></param>
             protected abstract void Validate(string name, string descriptor, int majorVersion);
 
-            internal override void MarkLinkRequired()
+            /// <inheritdoc />
+            public override void MarkLinkRequired()
             {
-                clazz.MarkLinkRequired();
+                _clazz.MarkLinkRequired();
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
-                clazz.Link(thisType, mode);
+                _clazz.Link(thisType, mode);
             }
 
-            internal string Name
-            {
-                get
-                {
-                    return name;
-                }
-            }
+            /// <summary>
+            /// Gets the name of the field, method or interface.
+            /// </summary>
+            public string Name => _name;
 
-            internal string Signature
-            {
-                get
-                {
-                    return descriptor;
-                }
-            }
+            /// <summary>
+            /// Gets the signature of the field, method or interface.
+            /// </summary>
+            public string Signature => _descriptor;
 
-            internal string Class
-            {
-                get
-                {
-                    return clazz.Name;
-                }
-            }
+            /// <summary>
+            /// Gets the class of the field, method or interface.
+            /// </summary>
+            public string Class => _clazz.Name;
 
-            internal RuntimeJavaType GetClassType()
-            {
-                return clazz.GetClassType();
-            }
+            public RuntimeJavaType GetClassType() => _clazz.GetClassType();
 
-            internal abstract RuntimeJavaMember GetMember();
+            public abstract RuntimeJavaMember GetMember();
+
         }
+
     }
 
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 using ParameterInfo = IKVM.Reflection.ParameterInfo;
 
@@ -8,7 +9,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     class IkvmReflectionParameterSymbol : IkvmReflectionSymbol, IParameterSymbol
     {
 
-        readonly ParameterInfo _parameter;
+        readonly ParameterInfo _underlyingParameter;
         readonly IkvmReflectionMethodBaseSymbol _method;
 
         /// <summary>
@@ -16,55 +17,55 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="method"></param>
-        /// <param name="parameter"></param>
-        public IkvmReflectionParameterSymbol(IkvmReflectionSymbolContext context, IkvmReflectionMethodBaseSymbol method, ParameterInfo parameter) :
+        /// <param name="underlyingParameter"></param>
+        public IkvmReflectionParameterSymbol(IkvmReflectionSymbolContext context, IkvmReflectionMethodBaseSymbol method, ParameterInfo underlyingParameter) :
             base(context)
         {
             _method = method ?? throw new ArgumentNullException(nameof(method));
-            _parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
+            _underlyingParameter = underlyingParameter ?? throw new ArgumentNullException(nameof(underlyingParameter));
         }
 
         internal IkvmReflectionMethodBaseSymbol ContainingMethod => _method;
 
-        public System.Reflection.ParameterAttributes Attributes => (System.Reflection.ParameterAttributes)_parameter.Attributes;
+        public global::System.Reflection.ParameterAttributes Attributes => (global::System.Reflection.ParameterAttributes)_underlyingParameter.Attributes;
 
-        public object DefaultValue => _parameter.RawDefaultValue;
+        public object DefaultValue => _underlyingParameter.RawDefaultValue;
 
-        public bool HasDefaultValue => _parameter.HasDefaultValue;
+        public bool HasDefaultValue => _underlyingParameter.HasDefaultValue;
 
-        public bool IsIn => _parameter.IsIn;
+        public bool IsIn => _underlyingParameter.IsIn;
 
-        public bool IsLcid => _parameter.IsLcid;
+        public bool IsLcid => _underlyingParameter.IsLcid;
 
-        public bool IsOptional => _parameter.IsOptional;
+        public bool IsOptional => _underlyingParameter.IsOptional;
 
-        public bool IsOut => _parameter.IsOut;
+        public bool IsOut => _underlyingParameter.IsOut;
 
-        public bool IsRetval => _parameter.IsRetval;
+        public bool IsRetval => _underlyingParameter.IsRetval;
 
-        public IMemberSymbol Member => ResolveMemberSymbol(_parameter.Member);
+        public IMemberSymbol Member => ResolveMemberSymbol(_underlyingParameter.Member);
 
-        public int MetadataToken => _parameter.MetadataToken;
+        public int MetadataToken => _underlyingParameter.MetadataToken;
 
-        public string? Name => _parameter.Name;
+        public string? Name => _underlyingParameter.Name;
 
-        public ITypeSymbol ParameterType => ResolveTypeSymbol(_parameter.ParameterType);
+        public ITypeSymbol ParameterType => ResolveTypeSymbol(_underlyingParameter.ParameterType);
 
-        public int Position => _parameter.Position;
+        public int Position => _underlyingParameter.Position;
 
-        public CustomAttributeSymbol[] GetCustomAttributes()
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
         {
-            return ResolveCustomAttributes(_parameter.GetCustomAttributesData());
+            return ResolveCustomAttributes(_underlyingParameter.GetCustomAttributesData());
         }
 
-        public CustomAttributeSymbol[] GetCustomAttributes(ITypeSymbol attributeType)
+        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
         {
-            return ResolveCustomAttributes(_parameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false));
+            return ResolveCustomAttributes(_underlyingParameter.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false));
         }
 
         public bool IsDefined(ITypeSymbol attributeType)
         {
-            return _parameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).ReflectionObject, false);
+            return _underlyingParameter.IsDefined(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false);
         }
 
     }

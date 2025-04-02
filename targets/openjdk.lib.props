@@ -28,7 +28,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-')) ">
-        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.win\IKVM.Java.runtime.win.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL" />
     </ItemGroup>
 
@@ -42,8 +42,8 @@
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 
-    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-')) ">
-        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+    <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
+        <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 
@@ -55,7 +55,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('osx-'))">
-        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.osx\IKVM.Java.runtime.osx.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT" />
     </ItemGroup>
 

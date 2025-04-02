@@ -30,6 +30,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a methodref or interfaceref constant.
+        /// </summary>
         internal class ConstantPoolItemMI : ConstantPoolItemFMI
         {
 
@@ -44,44 +47,40 @@ namespace IKVM.Runtime
             /// <param name="context"></param>
             /// <param name="clazz"></param>
             /// <param name="nameAndTypeIndex"></param>
-            internal ConstantPoolItemMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndTypeIndex) :
+            public ConstantPoolItemMI(RuntimeContext context, ClassConstantHandle clazz, NameAndTypeConstantHandle nameAndTypeIndex) :
                 base(context, clazz, nameAndTypeIndex)
             {
 
             }
 
+            /// <inheritdoc />
             protected override void Validate(string name, string descriptor, int majorVersion)
             {
-                if (!IsValidMethodSig(descriptor))
-                {
+                if (!IsValidMethodDescriptor(descriptor))
                     throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-                }
+
                 if (!IsValidMethodName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                 {
                     if (!ReferenceEquals(name, StringConstants.INIT))
-                    {
                         throw new ClassFormatError("Invalid method name \"{0}\"", name);
-                    }
+
                     if (!descriptor.EndsWith("V"))
-                    {
                         throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-                    }
                 }
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
+
                 lock (this)
-                {
                     if (argTypeWrappers != null)
-                    {
                         return;
-                    }
-                }
-                RuntimeClassLoader classLoader = thisType.ClassLoader;
-                RuntimeJavaType[] args = classLoader.ArgJavaTypeListFromSig(this.Signature, mode);
-                RuntimeJavaType ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
+
+                var classLoader = thisType.ClassLoader;
+                var args = classLoader.ArgJavaTypeListFromSig(this.Signature, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
                 lock (this)
                 {
                     if (argTypeWrappers == null)
@@ -92,31 +91,34 @@ namespace IKVM.Runtime
                 }
             }
 
-            internal RuntimeJavaType[] GetArgTypes()
+            public RuntimeJavaType[] GetArgTypes()
             {
                 return argTypeWrappers;
             }
 
-            internal RuntimeJavaType GetRetType()
+            public RuntimeJavaType GetRetType()
             {
                 return retTypeWrapper;
             }
 
-            internal RuntimeJavaMethod GetMethod()
+            public RuntimeJavaMethod GetMethod()
             {
                 return method;
             }
 
-            internal RuntimeJavaMethod GetMethodForInvokespecial()
+            public RuntimeJavaMethod GetMethodForInvokespecial()
             {
-                return invokespecialMethod != null ? invokespecialMethod : method;
+                return invokespecialMethod ?? method;
             }
 
-            internal override RuntimeJavaMember GetMember()
+            /// <inheritdoc />
+            public override RuntimeJavaMember GetMember()
             {
                 return method;
             }
+
         }
+
     }
 
 }

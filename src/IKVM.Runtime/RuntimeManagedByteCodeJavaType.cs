@@ -29,6 +29,8 @@ using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
+using System.Text;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -603,7 +605,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        private void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out RuntimeJavaType retType, out RuntimeJavaType[] paramTypes, ref MemberFlags flags)
+        void GetNameSigFromMethodBase(MethodBase method, out string name, out string sig, out RuntimeJavaType retType, out RuntimeJavaType[] paramTypes, ref MemberFlags flags)
         {
             retType = method is ConstructorInfo ? Context.PrimitiveJavaTypeFactory.VOID : GetParameterTypeWrapper(Context, ((MethodInfo)method).ReturnParameter);
             var parameters = method.GetParameters();
@@ -652,12 +654,11 @@ namespace IKVM.Runtime
                 }
 
                 if (method.IsSpecialName && method.Name.StartsWith(NamePrefix.DefaultMethod, StringComparison.Ordinal))
-                {
                     paramTypes = ArrayUtil.DropFirst(paramTypes);
-                }
 
-                var sb = new System.Text.StringBuilder("(");
-                foreach (RuntimeJavaType tw in paramTypes)
+                var sb = new ValueStringBuilder();
+                sb.Append("(");
+                foreach (var tw in paramTypes)
                     sb.Append(tw.SigName);
                 sb.Append(")");
                 sb.Append(retType.SigName);
@@ -1053,17 +1054,15 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod method)
         {
-            if (mw is RemappedJavaMethod)
-            {
-                return ((RemappedJavaMethod)mw).GetGenericSignature();
-            }
+            if (method is RemappedJavaMethod remappedMethod)
+                return remappedMethod.GetGenericSignature();
 
-            var mb = mw.GetMethod();
-            if (mb != null)
+            var methodBase = method.GetMethod();
+            if (methodBase != null)
             {
-                var attr = Context.AttributeHelper.GetSignature(mb);
+                var attr = Context.AttributeHelper.GetSignature(methodBase);
                 if (attr != null)
                     return attr.Signature;
             }
@@ -1071,9 +1070,9 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField field)
         {
-            var fi = fw.GetField();
+            var fi = field.GetField();
             if (fi != null)
             {
                 var attr = Context.AttributeHelper.GetSignature(fi);
@@ -1084,14 +1083,11 @@ namespace IKVM.Runtime
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod method)
         {
-            var mb = mw.GetMethod();
+            var mb = method.GetMethod();
             if (mb == null)
-            {
-                // delegate constructor
-                return null;
-            }
+                return null; // delegate constructor
 
             var attr = Context.AttributeHelper.GetMethodParameters(mb);
             if (attr == null)

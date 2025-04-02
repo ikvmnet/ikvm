@@ -159,23 +159,25 @@ namespace IKVM.Runtime
                 var mi = mbNonvirtualHelper ?? mbHelper;
                 return mi.Invoke(null, ArrayUtil.Concat(obj, args));
             }
+
 #endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
 #if EMITTERS
+
             internal override void EmitCallvirtReflect(CodeEmitter ilgen)
             {
                 var mb = mbHelper ?? GetMethod();
                 ilgen.Emit(mb.IsStatic ? OpCodes.Call : OpCodes.Callvirt, mb);
             }
+
 #endif // EMITTERS
 
             internal string GetGenericSignature()
             {
-                SignatureAttribute attr = DeclaringType.Context.AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
+                var attr = DeclaringType.Context.AttributeHelper.GetSignature(mbHelper != null ? mbHelper : GetMethod());
                 if (attr != null)
-                {
                     return attr.Signature;
-                }
+
                 return null;
             }
 

@@ -71,7 +71,7 @@ namespace IKVM.Runtime
                 // we know that a DelegateInnerClassTypeWrapper has only one method
                 Debug.Assert(iface.GetMethods().Length == 1);
 
-                var mw = targetType.GetMethodWrapper(GetDelegateInvokeStubName(DeclaringType.TypeAsTBD), iface.GetMethods()[0].Signature, true);
+                var mw = targetType.GetMethod(GetDelegateInvokeStubName(DeclaringType.TypeAsTBD), iface.GetMethods()[0].Signature, true);
                 if (mw == null || mw.IsStatic || !mw.IsPublic)
                 {
                     context.Emitter.Emit(OpCodes.Ldftn, CreateErrorStub(context, targetType, mw == null || mw.IsStatic));

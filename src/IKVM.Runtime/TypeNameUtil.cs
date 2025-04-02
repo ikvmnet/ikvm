@@ -22,6 +22,9 @@
   
 */
 
+using System.Text;
+using System;
+
 namespace IKVM.Runtime
 {
 
@@ -43,29 +46,30 @@ namespace IKVM.Runtime
         {
             int pos = name.IndexOf('\\');
             if (pos == -1)
-            {
                 return name;
-            }
-            System.Text.StringBuilder sb = new System.Text.StringBuilder(name.Length);
-            sb.Append(name, 0, pos);
+
+            var sb = new ValueStringBuilder(name.Length);
+            sb.Append(name.AsSpan(0, pos));
+
             for (int i = pos; i < name.Length; i++)
             {
-                char c = name[i];
+                var c = name[i];
                 if (c == '\\')
-                {
                     c = name[++i];
-                }
+
                 sb.Append(c);
             }
+
             return sb.ToString();
         }
 
         internal static string MangleNestedTypeName(string name)
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            var sb = new ValueStringBuilder();
+
             foreach (char c in name)
             {
-                int index = specialCharactersString.IndexOf(c);
+                var index = specialCharactersString.IndexOf(c);
                 if (c == '.')
                 {
                     sb.Append("_");
@@ -78,25 +82,25 @@ namespace IKVM.Runtime
                 {
                     sb.Append(c);
                     if (c == '^')
-                    {
                         sb.Append(c);
-                    }
                 }
                 else
                 {
-                    sb.Append('^').AppendFormat("{0:X1}", index);
+                    sb.Append('^');
+                    sb.Append(string.Format("{0:X1}", index));
                 }
             }
+
             return sb.ToString();
         }
 
         internal static string UnmangleNestedTypeName(string name)
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            var sb = new ValueStringBuilder(name.Length);
             for (int i = 0; i < name.Length; i++)
             {
-                char c = name[i];
-                int index = specialCharactersString.IndexOf(c);
+                var c = name[i];
+                var index = specialCharactersString.IndexOf(c);
                 if (c == '_')
                 {
                     sb.Append('.');
@@ -105,33 +109,32 @@ namespace IKVM.Runtime
                 {
                     c = name[++i];
                     if (c == '-')
-                    {
                         sb.Append('_');
-                    }
                     else if (c == '^')
-                    {
                         sb.Append('^');
-                    }
                     else
-                    {
                         sb.Append(specialCharactersString[c - '0']);
-                    }
                 }
                 else
                 {
                     sb.Append(c);
                 }
             }
+
             return sb.ToString();
         }
 
         internal static string GetProxyNestedName(RuntimeJavaType[] interfaces)
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            foreach (RuntimeJavaType tw in interfaces)
+            var sb = new ValueStringBuilder();
+
+            foreach (var tw in interfaces)
             {
-                sb.Append(tw.Name.Length).Append('|').Append(tw.Name);
+                sb.Append(tw.Name.Length.ToString());
+                sb.Append('|');
+                sb.Append(tw.Name);
             }
+
             return TypeNameUtil.MangleNestedTypeName(sb.ToString());
         }
 

@@ -26,8 +26,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using IKVM.Attributes;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+
+using System.Text;
+
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -126,11 +127,11 @@ namespace IKVM.Runtime
 
             if (type.IsGenericType && !type.ContainsGenericParameters)
             {
-                var sb = new System.Text.StringBuilder();
+                var sb = new ValueStringBuilder();
                 sb.Append(MangleTypeName(type.GetGenericTypeDefinition().FullName));
                 sb.Append("_$$$_");
-                string sep = "";
-                foreach (Type t1 in type.GetGenericArguments())
+                var sep = "";
+                foreach (var t1 in type.GetGenericArguments())
                 {
                     var t = t1;
                     sb.Append(sep);
@@ -157,13 +158,9 @@ namespace IKVM.Runtime
                     {
                         string s;
                         if (context.ClassLoaderFactory.IsRemappedType(t) || context.AttributeHelper.IsJavaModule(t.Module))
-                        {
                             s = context.ClassLoaderFactory.GetJavaTypeFromType(t).Name;
-                        }
                         else
-                        {
                             s = RuntimeManagedJavaType.GetName(context, t);
-                        }
 
                         // only do the mangling for non-generic types (because we don't want to convert
                         // the double underscores in two adjacent _$$$_ or _$$$$_ markers)
@@ -173,7 +170,8 @@ namespace IKVM.Runtime
                             s = s.Replace(".", "__");
                         }
 
-                        sb.Append('L').Append(s);
+                        sb.Append('L');
+                        sb.Append(s);
                     }
 
                     sep = "_$$_";
@@ -191,7 +189,9 @@ namespace IKVM.Runtime
 
         static string MangleTypeName(string name)
         {
-            var sb = new System.Text.StringBuilder(NamePrefix, NamePrefix.Length + name.Length);
+            var sb = new ValueStringBuilder(NamePrefix.Length + name.Length);
+            sb.Append(NamePrefix);
+
             var escape = false;
             var nested = false;
             for (int i = 0; i < name.Length; i++)
@@ -231,10 +231,10 @@ namespace IKVM.Runtime
         // ensuring that the original name was in fact the canonical name.
         internal static string DemangleTypeName(string name)
         {
-            if (!name.StartsWith(NamePrefix))
+            if (name.StartsWith(NamePrefix, StringComparison.Ordinal) == false)
                 return name.Replace('$', '+');
 
-            var sb = new System.Text.StringBuilder(name.Length - NamePrefix.Length);
+            var sb = new ValueStringBuilder(name.Length - NamePrefix.Length);
             for (int i = NamePrefix.Length; i < name.Length; i++)
             {
                 var c = name[i];
@@ -420,7 +420,7 @@ namespace IKVM.Runtime
                     {
                         var mw = CreateMethodWrapper(name, sig, args, ret, constructors[i], false);
                         var key = mw.Name + mw.Signature;
-                        if (!methodsList.ContainsKey(key))
+                        if (methodsList.ContainsKey(key) == false)
                             methodsList.Add(key, mw);
                     }
                 }
@@ -444,7 +444,7 @@ namespace IKVM.Runtime
                         {
                             if (!methods[i].IsStatic && !methods[i].IsPrivate && BaseTypeWrapper != null)
                             {
-                                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                                 if (baseMethod != null && baseMethod.IsFinal && !baseMethod.IsStatic && !baseMethod.IsPrivate)
                                     continue;
                             }
@@ -566,7 +566,7 @@ namespace IKVM.Runtime
             methodsList.TryGetValue(key, out var existing);
             if (existing == null && BaseTypeWrapper != null)
             {
-                var baseMethod = BaseTypeWrapper.GetMethodWrapper(name, sig, true);
+                var baseMethod = BaseTypeWrapper.GetMethod(name, sig, true);
                 if (baseMethod != null && !baseMethod.IsStatic && baseMethod.IsPublic)
                     return;
             }
@@ -624,7 +624,7 @@ namespace IKVM.Runtime
                 return false;
             }
 
-            var sb = new System.Text.StringBuilder();
+            var sb = new ValueStringBuilder();
             sb.Append('(');
             var parameters = mb.GetParameters();
             args = new RuntimeJavaType[parameters.Length];
@@ -810,7 +810,7 @@ namespace IKVM.Runtime
             {
                 // TODO if the .NET also has a "finalize" method, we need to hide that one (or rename it, or whatever)
                 var mw = new RuntimeSimpleCallJavaMethod(this, "finalize", "()V", (MethodInfo)mb, Context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), mods, MemberFlags.None, SimpleOpCode.Call, SimpleOpCode.Callvirt);
-                mw.SetDeclaredExceptions(new string[] { "java.lang.Throwable" });
+                mw.SetDeclaredExceptions(["java.lang.Throwable"]);
                 return mw;
             }
 

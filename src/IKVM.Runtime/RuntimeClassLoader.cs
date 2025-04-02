@@ -43,6 +43,8 @@ using ProtectionDomain = System.Object;
 using System.Reflection;
 
 using ProtectionDomain = java.security.ProtectionDomain;
+using System.Collections.Immutable;
+using System.Text;
 #endif
 
 #if IMPORTER
@@ -674,16 +676,17 @@ namespace IKVM.Runtime
                     var cl = GetJavaClassLoader();
                     if (cl != null)
                     {
-                        var sb = new System.Text.StringBuilder();
+                        var sb = new ValueStringBuilder();
                         var sep = "";
                         while (cl != null)
                         {
-                            sb.Append(sep).Append(cl);
+                            sb.Append(sep);
+                            sb.Append(cl.ToString());
                             sep = " -> ";
                             cl = cl.getParent();
                         }
 
-                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb}");
+                        Diagnostics.GenericClassLoadingError($"ClassLoader chain: {sb.ToString()}");
                     }
 
                     var m = ikvm.runtime.Util.mapException(x);
@@ -846,7 +849,7 @@ namespace IKVM.Runtime
         internal RuntimeJavaType[] ArgJavaTypeListFromSig(string sig, LoadMode mode)
         {
             if (sig[1] == ')')
-                return Array.Empty<RuntimeJavaType>();
+                return [];
 
             var list = new List<RuntimeJavaType>();
             for (int i = 1; sig[i] != ')';)
@@ -949,7 +952,7 @@ namespace IKVM.Runtime
             get
             {
 #if IMPORTER
-                var cfp = ClassFileParseOptions.LocalVariableTable;
+                var cfp = ClassFileParseOptions.LocalVariableTable | ClassFileParseOptions.StaticImport;
                 if (EmitStackTraceInfo)
                     cfp |= ClassFileParseOptions.LineNumberTable;
                 if (context.ClassLoaderFactory.bootstrapClassLoader is ImportClassLoader)

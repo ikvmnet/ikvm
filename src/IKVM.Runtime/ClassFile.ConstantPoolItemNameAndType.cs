@@ -31,6 +31,9 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a nameandtype constant.
+        /// </summary>
         sealed class ConstantPoolItemNameAndType : ConstantPoolItem
         {
 
@@ -42,14 +45,15 @@ namespace IKVM.Runtime
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantData data) :
+            public ConstantPoolItemNameAndType(RuntimeContext context, NameAndTypeConstantData data) :
                 base(context)
             {
                 NameHandle = data.Name;
                 DescriptorHandle = data.Descriptor;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
                 if (classFile.GetConstantPoolUtf8String(utf8_cp, NameHandle) == null || classFile.GetConstantPoolUtf8String(utf8_cp, DescriptorHandle) == null)
                     throw new ClassFormatError("Illegal constant pool index");

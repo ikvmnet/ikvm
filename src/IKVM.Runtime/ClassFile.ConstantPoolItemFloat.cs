@@ -30,30 +30,35 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a float constant.
+        /// </summary>
         sealed class ConstantPoolItemFloat : ConstantPoolItem
         {
 
-            internal float v;
+            internal float _value;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemFloat(RuntimeContext context, FloatConstantData data) :
+            public ConstantPoolItemFloat(RuntimeContext context, FloatConstantData data) :
                 base(context)
             {
-                v = data.Value;
+                _value = data.Value;
             }
 
-            internal override ConstantType GetConstantType()
-            {
-                return ConstantType.Float;
-            }
+            /// <inheritdoc />
+            public override ConstantType GetConstantType() => ConstantType.Float;
 
-            internal float Value => v;
+            /// <inheritdoc />
+            public override object GetRuntimeValue() => _value;
 
-            internal override object GetRuntimeValue() => v;
+            /// <summary>
+            /// Gets the float value of the constant.
+            /// </summary>
+            public float Value => _value;
 
         }
 

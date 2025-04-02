@@ -251,9 +251,8 @@ namespace IKVM.Runtime.Vfs
                 return assembly.ManifestModule.ModuleVersionId.ToString("N");
 
             var name = assembly.GetName();
-            var path = new StringBuilder();
-
             var simpleName = name.Name;
+            var path = new ValueStringBuilder(simpleName.Length + 4);
             for (var i = 0; i < simpleName.Length; i++)
             {
                 if (simpleName[i] == '_')
@@ -265,13 +264,23 @@ namespace IKVM.Runtime.Vfs
             var publicKeyToken = name.GetPublicKeyToken();
             if (publicKeyToken != null && publicKeyToken.Length != 0)
             {
-                path.Append("__").Append(name.Version).Append("__");
+                var v = name.Version.ToString();
+                path.EnsureCapacity(2 + v.Length + 2 + publicKeyToken.Length * 2);
+
+                path.Append("__");
+                path.Append(v);
+                path.Append("__");
                 for (int i = 0; i < publicKeyToken.Length; i++)
-                    path.AppendFormat("{0:x2}", publicKeyToken[i]);
+                    path.Append(string.Format("{0:x2}", publicKeyToken[i]));
             }
 
             if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
-                path.Append("__").Append(name.CultureInfo.Name);
+            {
+                var n = name.CultureInfo.Name;
+                path.EnsureCapacity(2 + n.Length);
+                path.Append("__");
+                path.Append(name.CultureInfo.Name);
+            }
 
             return path.ToString();
         }

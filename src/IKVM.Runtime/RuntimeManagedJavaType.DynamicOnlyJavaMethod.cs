@@ -57,7 +57,7 @@ namespace IKVM.Runtime
                 // a DynamicOnlyMethodWrapper is an interface method, but now that we've been called on an actual object instance,
                 // we can resolve to a real method and call that instead
                 var tw = RuntimeJavaType.FromClass(IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(obj));
-                var mw = tw.GetMethodWrapper(this.Name, this.Signature, true);
+                var mw = tw.GetMethod(this.Name, this.Signature, true);
                 if (mw == null || mw.IsStatic)
                     throw new java.lang.AbstractMethodError(tw.Name + "." + this.Name + this.Signature);
 

@@ -27,6 +27,8 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.CoreLib.Diagnostics;
+using System.Text;
+
 
 
 #if IMPORTER
@@ -132,7 +134,7 @@ namespace IKVM.Runtime
                 {
                     RuntimeJavaMethod mw;
                     if (method.IsVirtual
-                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethodWrapper(method.Name, method.Signature, false)) != null
+                        && (mw = Context.JavaBase.TypeOfJavaLangObject.GetMethod(method.Name, method.Signature, false)) != null
                         && mw.IsVirtual
                         && mw.IsFinal)
                     {
@@ -614,7 +616,7 @@ namespace IKVM.Runtime
             return parameterBuilders;
         }
 
-        private static string GetParameterName(string type)
+        static string GetParameterName(string type)
         {
             if (type == "java.lang.String")
             {
@@ -626,7 +628,7 @@ namespace IKVM.Runtime
             }
             else
             {
-                var sb = new System.Text.StringBuilder();
+                var sb = new ValueStringBuilder(type.Length);
                 for (int i = type.LastIndexOf('.') + 1; i < type.Length; i++)
                     if (char.IsUpper(type, i))
                         sb.Append(char.ToLower(type[i]));
@@ -717,44 +719,35 @@ namespace IKVM.Runtime
             return impl.GetGenericSignature();
         }
 
-        internal override string GetGenericMethodSignature(RuntimeJavaMethod mw)
+        internal override string GetGenericMethodSignature(RuntimeJavaMethod method)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i] == mw)
-                {
+                if (methods[i] == method)
                     return impl.GetGenericMethodSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
-        internal override string GetGenericFieldSignature(RuntimeJavaField fw)
+        internal override string GetGenericFieldSignature(RuntimeJavaField field)
         {
-            RuntimeJavaField[] fields = GetFields();
+            var fields = GetFields();
             for (int i = 0; i < fields.Length; i++)
-            {
-                if (fields[i] == fw)
-                {
+                if (fields[i] == field)
                     return impl.GetGenericFieldSignature(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }
 
-        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod mw)
+        internal override MethodParametersEntry[] GetMethodParameters(RuntimeJavaMethod method)
         {
-            RuntimeJavaMethod[] methods = GetMethods();
+            var methods = GetMethods();
             for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i] == mw)
-                {
+                if (methods[i] == method)
                     return impl.GetMethodParameters(i);
-                }
-            }
+
             Debug.Fail("Unreachable code");
             return null;
         }

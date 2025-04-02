@@ -9,7 +9,6 @@ using System.Runtime.Serialization;
 using System.Threading;
 
 using IKVM.ByteCode;
-using IKVM.ByteCode.Encoding;
 using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
@@ -207,11 +206,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => throw new global::java.lang.IllegalArgumentException(),
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -247,11 +242,7 @@ namespace IKVM.Java.Externs.sun.misc
                         throw new global::java.lang.IllegalArgumentException();
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -280,11 +271,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<bool>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -321,11 +308,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -354,11 +337,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<byte>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -395,11 +374,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -428,11 +403,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<short>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -469,11 +440,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -502,11 +469,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<char>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -543,11 +506,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -576,11 +535,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<int>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -617,11 +572,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -650,11 +601,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<long>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -691,11 +638,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -724,11 +667,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<float>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -765,11 +704,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -798,11 +733,7 @@ namespace IKVM.Java.Externs.sun.misc
                     _ => GetField<double>(o, offset)
                 };
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -839,11 +770,7 @@ namespace IKVM.Java.Externs.sun.misc
                         break;
                 }
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -865,11 +792,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return Marshal.ReadByte((IntPtr)address);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -891,11 +814,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteByte((IntPtr)address, x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -917,11 +836,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return Marshal.ReadInt16((IntPtr)address);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -943,11 +858,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteInt16((IntPtr)address, x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -969,11 +880,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return (char)Marshal.ReadInt16((IntPtr)address);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -995,11 +902,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteInt16((IntPtr)address, (short)x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1021,11 +924,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return Marshal.ReadInt32((IntPtr)address);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1047,11 +946,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteInt32((IntPtr)address, x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1073,11 +968,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return Marshal.ReadInt64((IntPtr)address);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1099,11 +990,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteInt64((IntPtr)address, x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1125,11 +1012,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return global::java.lang.Float.intBitsToFloat(getInt(self, address));
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1166,11 +1049,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return global::java.lang.Double.longBitsToDouble(getLong(self, address));
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1207,11 +1086,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return Marshal.ReadIntPtr((IntPtr)address).ToInt64();
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1233,11 +1108,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 Marshal.WriteIntPtr((IntPtr)address, (IntPtr)x);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1267,15 +1138,11 @@ namespace IKVM.Java.Externs.sun.misc
                 System.GC.AddMemoryPressure((long)len);
                 return (long)ptr + sizeof(IntPtr);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
             catch (OutOfMemoryException e)
             {
                 throw new global::java.lang.OutOfMemoryError(e.Message).initCause(e);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1315,15 +1182,11 @@ namespace IKVM.Java.Externs.sun.misc
                 System.GC.AddMemoryPressure((long)len);
                 return (long)ptr + sizeof(IntPtr);
             }
-            catch (global::java.lang.Exception)
-            {
-                throw;
-            }
             catch (OutOfMemoryException e)
             {
                 throw new global::java.lang.OutOfMemoryError(e.Message).initCause(e);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
                 throw new global::java.lang.InternalError(e);
             }
@@ -1344,27 +1207,34 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o == null)
-                new Span<byte>((void*)(IntPtr)offset, (int)bytes).Fill(value);
-            else if (o is byte[] array)
-                ((Span<byte>)array).Slice((int)offset, (int)bytes).Fill(value);
-            else if (o is Array array2)
+            try
             {
-                GCHandle h = new();
+                if (o == null)
+                    new Span<byte>((void*)(IntPtr)offset, (int)bytes).Fill(value);
+                else if (o is byte[] array)
+                    ((Span<byte>)array).Slice((int)offset, (int)bytes).Fill(value);
+                else if (o is Array array2)
+                {
+                    GCHandle h = new();
 
-                try
-                {
-                    h = GCHandle.Alloc(array2, GCHandleType.Pinned);
-                    new Span<byte>((byte*)h.AddrOfPinnedObject(), Buffer.ByteLength(array2)).Slice((int)offset, (int)bytes).Fill(value);
+                    try
+                    {
+                        h = GCHandle.Alloc(array2, GCHandleType.Pinned);
+                        new Span<byte>((byte*)h.AddrOfPinnedObject(), Buffer.ByteLength(array2)).Slice((int)offset, (int)bytes).Fill(value);
+                    }
+                    finally
+                    {
+                        if (h.IsAllocated)
+                            h.Free();
+                    }
                 }
-                finally
-                {
-                    if (h.IsAllocated)
-                        h.Free();
-                }
+                else
+                    throw new global::java.lang.IllegalArgumentException();
             }
-            else
-                throw new global::java.lang.IllegalArgumentException();
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -1380,96 +1250,107 @@ namespace IKVM.Java.Externs.sun.misc
         /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
         public static unsafe void copyMemory(object self, object srcBase, long srcOffset, object destBase, long destOffset, long bytes)
         {
-            if (srcBase == null)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
             {
-                if (destBase is byte[] byteArray)
+                if (srcBase == null)
                 {
-                    Marshal.Copy((IntPtr)srcOffset, byteArray, (int)destOffset, (int)bytes);
+                    if (destBase is byte[] byteArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, byteArray, (int)destOffset, (int)bytes);
+                    }
+                    else if (destBase is bool[])
+                    {
+                        var tmp = new byte[(int)bytes];
+                        copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
+                        copyMemory(self, tmp, 0, destBase, destOffset, bytes);
+                    }
+                    else if (destBase is short[] shortArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, shortArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                    }
+                    else if (destBase is char[] charArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, charArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                    }
+                    else if (destBase is int[] intArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, intArray, (int)(destOffset >> 2), (int)(bytes >> 2));
+                    }
+                    else if (destBase is float[] floatArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, floatArray, (int)(destOffset >> 2), (int)(bytes >> 2));
+                    }
+                    else if (destBase is long[] longArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, longArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                    }
+                    else if (destBase is double[] doubleArray)
+                    {
+                        Marshal.Copy((IntPtr)srcOffset, doubleArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                    }
+                    else if (destBase == null)
+                    {
+                        Buffer.MemoryCopy((void*)(IntPtr)srcOffset, (void*)(IntPtr)destOffset, long.MaxValue, bytes);
+                    }
+                    else
+                    {
+                        throw new global::java.lang.IllegalArgumentException();
+                    }
                 }
-                else if (destBase is bool[])
+                else if (srcBase is Array && destBase is Array)
                 {
-                    var tmp = new byte[(int)bytes];
-                    copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
-                    copyMemory(self, tmp, 0, destBase, destOffset, bytes);
-                }
-                else if (destBase is short[] shortArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, shortArray, (int)(destOffset >> 1), (int)(bytes >> 1));
-                }
-                else if (destBase is char[] charArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, charArray, (int)(destOffset >> 1), (int)(bytes >> 1));
-                }
-                else if (destBase is int[] intArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, intArray, (int)(destOffset >> 2), (int)(bytes >> 2));
-                }
-                else if (destBase is float[] floatArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, floatArray, (int)(destOffset >> 2), (int)(bytes >> 2));
-                }
-                else if (destBase is long[] longArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, longArray, (int)(destOffset >> 3), (int)(bytes >> 3));
-                }
-                else if (destBase is double[] doubleArray)
-                {
-                    Marshal.Copy((IntPtr)srcOffset, doubleArray, (int)(destOffset >> 3), (int)(bytes >> 3));
-                }
-                else if (destBase == null)
-                {
-                    Buffer.MemoryCopy((void*)(IntPtr)srcOffset, (void*)(IntPtr)destOffset, long.MaxValue, bytes);
+                    Buffer.BlockCopy((Array)srcBase, (int)srcOffset, (Array)destBase, (int)destOffset, (int)bytes);
                 }
                 else
                 {
-                    throw new global::java.lang.IllegalArgumentException();
+                    if (srcBase is byte[] byteArray)
+                    {
+                        Marshal.Copy(byteArray, (int)srcOffset, (IntPtr)destOffset, (int)bytes);
+                    }
+                    else if (srcBase is bool[])
+                    {
+                        var tmp = new byte[(int)bytes];
+                        copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
+                        copyMemory(self, tmp, 0, destBase, destOffset, bytes);
+                    }
+                    else if (srcBase is short[] shortArray)
+                    {
+                        Marshal.Copy(shortArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
+                    }
+                    else if (srcBase is char[] charArray)
+                    {
+                        Marshal.Copy(charArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
+                    }
+                    else if (srcBase is int[] intArray)
+                    {
+                        Marshal.Copy(intArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
+                    }
+                    else if (srcBase is float[] floatArray)
+                    {
+                        Marshal.Copy(floatArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
+                    }
+                    else if (srcBase is long[] longArray)
+                    {
+                        Marshal.Copy(longArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
+                    }
+                    else if (srcBase is double[] doubleArray)
+                    {
+                        Marshal.Copy(doubleArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
+                    }
+                    else
+                    {
+                        throw new global::java.lang.IllegalArgumentException();
+                    }
                 }
             }
-            else if (srcBase is Array && destBase is Array)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
-                Buffer.BlockCopy((Array)srcBase, (int)srcOffset, (Array)destBase, (int)destOffset, (int)bytes);
+                throw new global::java.lang.InternalError(e);
             }
-            else
-            {
-                if (srcBase is byte[] byteArray)
-                {
-                    Marshal.Copy(byteArray, (int)srcOffset, (IntPtr)destOffset, (int)bytes);
-                }
-                else if (srcBase is bool[])
-                {
-                    var tmp = new byte[(int)bytes];
-                    copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
-                    copyMemory(self, tmp, 0, destBase, destOffset, bytes);
-                }
-                else if (srcBase is short[] shortArray)
-                {
-                    Marshal.Copy(shortArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
-                }
-                else if (srcBase is char[] charArray)
-                {
-                    Marshal.Copy(charArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
-                }
-                else if (srcBase is int[] intArray)
-                {
-                    Marshal.Copy(intArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
-                }
-                else if (srcBase is float[] floatArray)
-                {
-                    Marshal.Copy(floatArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
-                }
-                else if (srcBase is long[] longArray)
-                {
-                    Marshal.Copy(longArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
-                }
-                else if (srcBase is double[] doubleArray)
-                {
-                    Marshal.Copy(doubleArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
-                }
-                else
-                {
-                    throw new global::java.lang.IllegalArgumentException();
-                }
-            }
+#endif
         }
 
         /// <summary>
@@ -1794,23 +1675,16 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            var f = RuntimeJavaField.FromCookie((IntPtr)offset);
+            if (o is RuntimeJavaType w)
             {
-                var f = RuntimeJavaField.FromCookie((IntPtr)offset);
-                if (o is RuntimeJavaType w)
-                {
-                    if (w != f.DeclaringType)
-                        throw new global::java.lang.IllegalArgumentException();
+                if (w != f.DeclaringType)
+                    throw new global::java.lang.IllegalArgumentException();
 
-                    return f.UnsafeVolatileGet<T>(null);
-                }
+                return f.UnsafeVolatileGet<T>(null);
+            }
 
-                return f.UnsafeVolatileGet<T>(o);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            return f.UnsafeVolatileGet<T>(o);
 #endif
         }
 
@@ -1827,23 +1701,16 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
+            var f = RuntimeJavaField.FromCookie((IntPtr)offset);
+            if (o is RuntimeJavaType w)
             {
-                var f = RuntimeJavaField.FromCookie((IntPtr)offset);
-                if (o is RuntimeJavaType w)
-                {
-                    if (w != f.DeclaringType)
-                        throw new global::java.lang.IllegalArgumentException();
+                if (w != f.DeclaringType)
+                    throw new global::java.lang.IllegalArgumentException();
 
-                    f.UnsafeVolatileSet<T>(null, value);
-                }
+                f.UnsafeVolatileSet<T>(null, value);
+            }
 
-                f.UnsafeVolatileSet<T>(o, value);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            f.UnsafeVolatileSet<T>(o, value);
 #endif
         }
 
@@ -1894,14 +1761,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
-            {
-                return ((Func<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            return ((Func<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
 #endif
         }
 
@@ -1955,14 +1815,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
-            {
-                ((Action<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            ((Action<object[], long, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
 #endif
         }
 
@@ -1978,14 +1831,21 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                RuntimeJavaType w => GetField<object>(null, offset),
-                object[] array when array.GetType() == typeof(object[]) => Volatile.Read(ref array[offset / IntPtr.Size]),
-                object[] array => GetArrayObjectVolatile(array, offset),
-                object obj => GetFieldVolatile<object>(obj, offset),
-                _ => throw new global::java.lang.IllegalArgumentException(),
-            };
+                return o switch
+                {
+                    RuntimeJavaType w => GetField<object>(null, offset),
+                    object[] array when array.GetType() == typeof(object[]) => Volatile.Read(ref array[offset / IntPtr.Size]),
+                    object[] array => GetArrayObjectVolatile(array, offset),
+                    object obj => GetFieldVolatile<object>(obj, offset),
+                    _ => throw new global::java.lang.IllegalArgumentException(),
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2001,22 +1861,29 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case RuntimeJavaType w:
-                    PutField(w, offset, x);
-                    break;
-                case object[] array when array.GetType() == typeof(object[]):
-                    Volatile.Write(ref array[offset / IntPtr.Size], x);
-                    break;
-                case object[] array:
-                    PutArrayObjectVolatile(array, offset, x);
-                    break;
-                case object obj:
-                    PutFieldVolatile(o, offset, x);
-                    break;
-                default:
-                    throw new global::java.lang.IllegalArgumentException();
+                switch (o)
+                {
+                    case RuntimeJavaType w:
+                        PutField(w, offset, x);
+                        break;
+                    case object[] array when array.GetType() == typeof(object[]):
+                        Volatile.Write(ref array[offset / IntPtr.Size], x);
+                        break;
+                    case object[] array:
+                        PutArrayObjectVolatile(array, offset, x);
+                        break;
+                    case object obj:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                    default:
+                        throw new global::java.lang.IllegalArgumentException();
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2033,13 +1900,20 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((void*)(IntPtr)offset)),
-                RuntimeJavaType w => GetFieldVolatile<int>(null, offset),
-                Array array => ReadInt32Volatile(array, offset),
-                _ => GetFieldVolatile<int>(o, offset)
-            };
+                return o switch
+                {
+                    null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((void*)(IntPtr)offset)),
+                    RuntimeJavaType w => GetFieldVolatile<int>(null, offset),
+                    Array array => ReadInt32Volatile(array, offset),
+                    _ => GetFieldVolatile<int>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2055,20 +1929,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt32Volatile(array, offset, x);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt32Volatile(array, offset, x);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2085,13 +1966,20 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset)) != 0,
-                RuntimeJavaType w => GetFieldVolatile<bool>(null, offset),
-                Array array => ReadByteVolatile(array, offset) != 0,
-                _ => GetFieldVolatile<bool>(o, offset)
-            };
+                return o switch
+                {
+                    null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset)) != 0,
+                    RuntimeJavaType w => GetFieldVolatile<bool>(null, offset),
+                    Array array => ReadByteVolatile(array, offset) != 0,
+                    _ => GetFieldVolatile<bool>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2107,20 +1995,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset), x ? (byte)1 : (byte)0);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteByteVolatile(array, offset, x ? (byte)1 : (byte)0);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset), x ? (byte)1 : (byte)0);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteByteVolatile(array, offset, x ? (byte)1 : (byte)0);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2137,13 +2032,20 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset)),
-                RuntimeJavaType w => GetFieldVolatile<byte>(null, offset),
-                Array array => ReadByteVolatile(array, offset),
-                _ => GetFieldVolatile<byte>(o, offset)
-            };
+                return o switch
+                {
+                    null => Volatile.Read(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset)),
+                    RuntimeJavaType w => GetFieldVolatile<byte>(null, offset),
+                    Array array => ReadByteVolatile(array, offset),
+                    _ => GetFieldVolatile<byte>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2159,20 +2061,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteByteVolatile(array, offset, x);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteByteVolatile(array, offset, x);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2186,11 +2095,22 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static short getShortVolatile(object self, object o, long offset)
         {
-            return o switch
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
             {
-                Array array => ReadInt16Volatile(array, offset),
-                _ => GetFieldVolatile<short>(o, offset)
-            };
+                return o switch
+                {
+                    Array array => ReadInt16Volatile(array, offset),
+                    _ => GetFieldVolatile<short>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -2205,20 +2125,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt16Volatile(array, offset, x);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt16Volatile(array, offset, x);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2232,11 +2159,22 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static char getCharVolatile(object self, object o, long offset)
         {
-            return o switch
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
             {
-                Array array => (char)ReadInt16Volatile(array, offset),
-                _ => GetFieldVolatile<char>(o, offset)
-            };
+                return o switch
+                {
+                    Array array => (char)ReadInt16Volatile(array, offset),
+                    _ => GetFieldVolatile<char>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -2251,20 +2189,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((void*)(IntPtr)offset), (short)x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt16Volatile(array, offset, (short)x);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((void*)(IntPtr)offset), (short)x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt16Volatile(array, offset, (short)x);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2281,11 +2226,18 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                Array array => ReadInt64Volatile(array, offset),
-                _ => GetFieldVolatile<long>(o, offset)
-            };
+                return o switch
+                {
+                    Array array => ReadInt64Volatile(array, offset),
+                    _ => GetFieldVolatile<long>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2301,20 +2253,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt64Volatile(array, offset, x);
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt64Volatile(array, offset, x);
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2332,11 +2291,18 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                Array array => global::java.lang.Float.intBitsToFloat(ReadInt32Volatile(array, offset)),
-                _ => GetFieldVolatile<float>(o, offset)
-            };
+                return o switch
+                {
+                    Array array => global::java.lang.Float.intBitsToFloat(ReadInt32Volatile(array, offset)),
+                    _ => GetFieldVolatile<float>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2352,20 +2318,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<float>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt32Volatile(array, offset, global::java.lang.Float.floatToRawIntBits(x));
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<float>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt32Volatile(array, offset, global::java.lang.Float.floatToRawIntBits(x));
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2383,11 +2356,18 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                Array array => global::java.lang.Double.longBitsToDouble(ReadInt64Volatile(array, offset)),
-                _ => GetFieldVolatile<double>(o, offset)
-            };
+                return o switch
+                {
+                    Array array => global::java.lang.Double.longBitsToDouble(ReadInt64Volatile(array, offset)),
+                    _ => GetFieldVolatile<double>(o, offset)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2403,20 +2383,27 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            switch (o)
+            try
             {
-                case null:
-                    Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<double>((void*)(IntPtr)offset), x);
-                    break;
-                case RuntimeJavaType w:
-                    PutFieldVolatile(w, offset, x);
-                    break;
-                case Array array:
-                    WriteInt64Volatile(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
-                    break;
-                default:
-                    PutFieldVolatile(o, offset, x);
-                    break;
+                switch (o)
+                {
+                    case null:
+                        Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<double>((void*)(IntPtr)offset), x);
+                        break;
+                    case RuntimeJavaType w:
+                        PutFieldVolatile(w, offset, x);
+                        break;
+                    case Array array:
+                        WriteInt64Volatile(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
+                        break;
+                    default:
+                        PutFieldVolatile(o, offset, x);
+                        break;
+                }
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2451,14 +2438,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
-            {
-                return RuntimeJavaField.FromCookie((IntPtr)offset).UnsafeCompareAndSwap(o, expected, value);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            return RuntimeJavaField.FromCookie((IntPtr)offset).UnsafeCompareAndSwap(o, expected, value);
 #endif
         }
 
@@ -2518,14 +2498,7 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            try
-            {
-                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
+            return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(JVM.Context.ClassLoaderFactory.GetJavaTypeFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
 #endif
         }
 
@@ -2538,18 +2511,24 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="expected"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapObject(object self, object o, long offset, object expected, object x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return o switch
+            try
             {
-                object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset / IntPtr.Size], x, expected) == expected,
-                object[] array => CompareAndSwapObjectArray(array, offset, x, expected) == expected,
-                _ => CompareAndSwapField(o, offset, expected, x)
-            };
+                return o switch
+                {
+                    object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset / IntPtr.Size], x, expected) == expected,
+                    object[] array => CompareAndSwapObjectArray(array, offset, x, expected) == expected,
+                    _ => CompareAndSwapField(o, offset, expected, x)
+                };
+            }
+            catch (Exception e) when (e is not global::java.lang.Throwable)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
 #endif
         }
 
@@ -2562,27 +2541,33 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="expected"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapInt(object self, object o, long offset, int expected, int x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is int[] array && (offset % sizeof(int)) == 0)
+            try
             {
-                return Interlocked.CompareExchange(ref array[offset / sizeof(int)], x, expected) == expected;
+                if (o is int[] array && (offset % sizeof(int)) == 0)
+                {
+                    return Interlocked.CompareExchange(ref array[offset / sizeof(int)], x, expected) == expected;
+                }
+                else if (o is Array array1 && (offset % sizeof(int)) == 0)
+                {
+                    return CompareExchangeInt32(array1, offset, x, expected) == expected;
+                }
+                else if (o is Array array2)
+                {
+                    return CompareExchangeInt32Unaligned(array2, offset, x, expected) == expected;
+                }
+                else
+                {
+                    return CompareAndSwapField(o, offset, expected, x);
+                }
             }
-            else if (o is Array array1 && (offset % sizeof(int)) == 0)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
-                return CompareExchangeInt32(array1, offset, x, expected) == expected;
-            }
-            else if (o is Array array2)
-            {
-                return CompareExchangeInt32Unaligned(array2, offset, x, expected) == expected;
-            }
-            else
-            {
-                return CompareAndSwapField(o, offset, expected, x);
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2596,27 +2581,33 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="expected"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapLong(object self, object o, long offset, long expected, long x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is long[] array && (offset % sizeof(long)) == 0)
+            try
             {
-                return Interlocked.CompareExchange(ref array[offset / sizeof(long)], x, expected) == expected;
+                if (o is long[] array && (offset % sizeof(long)) == 0)
+                {
+                    return Interlocked.CompareExchange(ref array[offset / sizeof(long)], x, expected) == expected;
+                }
+                else if (o is Array array1 && (offset % sizeof(long)) == 0)
+                {
+                    return CompareExchangeInt64(array1, offset, x, expected) == expected;
+                }
+                else if (o is Array array2)
+                {
+                    return CompareExchangeInt64Unaligned(array2, offset, x, expected) == expected;
+                }
+                else
+                {
+                    return CompareAndSwapField(o, offset, expected, x);
+                }
             }
-            else if (o is Array array1 && (offset % sizeof(long)) == 0)
+            catch (Exception e) when (e is not global::java.lang.Throwable)
             {
-                return CompareExchangeInt64(array1, offset, x, expected) == expected;
-            }
-            else if (o is Array array2)
-            {
-                return CompareExchangeInt64Unaligned(array2, offset, x, expected) == expected;
-            }
-            else
-            {
-                return CompareAndSwapField(o, offset, expected, x);
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -2738,6 +2729,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe byte ReadByte(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2751,6 +2745,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2761,6 +2756,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe byte ReadByteVolatile(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2775,6 +2773,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2785,6 +2784,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe short ReadInt16(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2798,6 +2800,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2808,6 +2811,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe short ReadInt16Volatile(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2822,6 +2828,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2832,6 +2839,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe int ReadInt32(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2845,6 +2855,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2855,6 +2866,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe int ReadInt32Volatile(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2869,6 +2883,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2879,6 +2894,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe long ReadInt64(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2892,6 +2910,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2902,6 +2921,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe long ReadInt64Volatile(Array obj, long offset)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2916,6 +2938,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2926,6 +2949,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteByte(Array obj, long offset, byte value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2938,6 +2964,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2948,6 +2975,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteByteVolatile(Array obj, long offset, byte value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2960,6 +2990,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2970,6 +3001,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt16(Array obj, long offset, short value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -2982,6 +3016,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -2992,6 +3027,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt16Volatile(Array obj, long offset, short value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3004,6 +3042,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3014,6 +3053,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt32(Array obj, long offset, int value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3026,6 +3068,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3036,6 +3079,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt32Volatile(Array obj, long offset, int value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3048,6 +3094,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3058,6 +3105,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt64(Array obj, long offset, long value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3070,6 +3120,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3080,6 +3131,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         static unsafe void WriteInt64Volatile(Array obj, long offset, long value)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3092,6 +3146,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3104,6 +3159,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe int CompareExchangeInt32(Array obj, long offset, int value, int expected)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3117,6 +3175,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3129,6 +3188,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe int CompareExchangeInt32Unaligned(Array obj, long offset, int value, int expected)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3142,6 +3204,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3154,6 +3217,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe long CompareExchangeInt64(Array obj, long offset, long value, long expected)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3167,6 +3233,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3179,6 +3246,9 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static unsafe long CompareExchangeInt64Unaligned(Array obj, long offset, long value, long expected)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             GCHandle h = new();
 
             try
@@ -3192,6 +3262,7 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -3201,7 +3272,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static long InterlockedRead(ref long location)
         {
-            return Interlocked.Read(ref location);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.Read(ref location);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -3211,7 +3293,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static double InterlockedRead(ref double location)
         {
-            return Interlocked.CompareExchange(ref location, 0, 0);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return Interlocked.CompareExchange(ref location, 0, 0);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -3221,7 +3314,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static void InterlockedWrite(ref long location, long value)
         {
-            Interlocked.Exchange(ref location, value);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Interlocked.Exchange(ref location, value);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -3231,7 +3335,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static void InterlockedWrite(ref double location, double value)
         {
-            Interlocked.Exchange(ref location, value);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                Interlocked.Exchange(ref location, value);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
     }

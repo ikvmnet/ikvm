@@ -59,7 +59,7 @@ namespace IKVM.Runtime
         {
             if (name != null)
             {
-                var mw = DeclaringType.GetMethodWrapper(name, sig, false);
+                var mw = DeclaringType.GetMethod(name, sig, false);
                 if (mw != null && mw.IsStatic == isstatic)
                 {
                     mw.IsPropertyAccessor = true;

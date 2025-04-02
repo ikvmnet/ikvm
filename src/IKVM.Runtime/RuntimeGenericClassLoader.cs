@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Text;
 
 namespace IKVM.Runtime
 {
@@ -75,19 +76,21 @@ namespace IKVM.Runtime
 
         internal string GetName()
         {
-            var sb = new System.Text.StringBuilder();
-
+            var sb = new ValueStringBuilder();
             sb.Append('[');
+
             foreach (var loader in delegates)
             {
                 sb.Append('[');
-                var gcl = loader as RuntimeGenericClassLoader;
-                if (gcl != null)
+
+                if (loader is RuntimeGenericClassLoader gcl)
                     sb.Append(gcl.GetName());
                 else
                     sb.Append(((RuntimeAssemblyClassLoader)loader).MainAssembly.FullName);
+
                 sb.Append(']');
             }
+
             sb.Append(']');
 
             return sb.ToString();

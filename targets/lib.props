@@ -26,6 +26,7 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-x64' ">x86_64-linux-android</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-androideabi</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">wasm32-unknown-emscripten</TargetTriple>
@@ -121,7 +122,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetIdentifier.StartsWith('osx-'))">
-        <PreprocessorDefinitions Include="MACOSX" />
         <IncludeSystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx" />
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
     </ItemGroup>

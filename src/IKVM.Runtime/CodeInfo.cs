@@ -22,14 +22,16 @@
   
 */
 
+using System;
+
 namespace IKVM.Runtime
 {
 
     readonly struct CodeInfo
     {
 
-        readonly RuntimeContext context;
-        readonly InstructionState[] state;
+        readonly RuntimeContext _context;
+        readonly InstructionState[] _state;
 
         /// <summary>
         /// Initializes a new instance.
@@ -38,43 +40,42 @@ namespace IKVM.Runtime
         /// <param name="state"></param>
         internal CodeInfo(RuntimeContext context, InstructionState[] state)
         {
-            this.context = context;
-            this.state = state;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _state = state ?? throw new ArgumentNullException(nameof(state));
         }
 
-        internal bool HasState(int index)
+        internal bool HasState(int pc)
         {
-            return state[index] != null;
+            return _state[pc]._initialized;
         }
 
-        internal int GetStackHeight(int index)
+        internal int GetStackHeight(int pc)
         {
-            return state[index].GetStackHeight();
+            return _state[pc].GetStackHeight();
         }
 
-        internal RuntimeJavaType GetStackTypeWrapper(int index, int pos)
+        internal RuntimeJavaType GetStackTypeWrapper(int pc, int pos)
         {
-            RuntimeJavaType type = state[index].GetStackSlot(pos);
+            var type = _state[pc].GetStackSlot(pos);
             if (RuntimeVerifierJavaType.IsThis(type))
-            {
                 type = ((RuntimeVerifierJavaType)type).UnderlyingType;
-            }
+
             return type;
         }
 
-        internal RuntimeJavaType GetRawStackTypeWrapper(int index, int pos)
+        internal RuntimeJavaType GetRawStackTypeWrapper(int pc, int pos)
         {
-            return state[index].GetStackSlot(pos);
+            return _state[pc].GetStackSlot(pos);
         }
 
-        internal bool IsStackTypeExtendedDouble(int index, int pos)
+        internal bool IsStackTypeExtendedDouble(int pc, int pos)
         {
-            return state[index].GetStackSlotEx(pos) == context.VerifierJavaTypeFactory.ExtendedDouble;
+            return _state[pc].GetStackSlotEx(pos) == _context.VerifierJavaTypeFactory.ExtendedDouble;
         }
 
-        internal RuntimeJavaType GetLocalTypeWrapper(int index, int local)
+        internal RuntimeJavaType GetLocalTypeWrapper(int pc, int local)
         {
-            return state[index].GetLocalTypeEx(local);
+            return _state[pc].GetLocalTypeEx(local);
         }
 
     }

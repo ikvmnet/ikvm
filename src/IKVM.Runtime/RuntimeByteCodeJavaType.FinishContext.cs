@@ -239,11 +239,11 @@ namespace IKVM.Runtime
                                 bool needRename = false;
                                 if (mw.IsPublic || mw.IsProtected)
                                 {
-                                    var fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                    var fmw = wrapper.GetMethod(mw.Name, mw.Signature, true);
                                     while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate))
                                     {
                                         needRename = true;
-                                        fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                        fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethod(mw.Name, mw.Signature, true);
                                     }
                                     if (fmw == mw && fmw.DeclaringType != wrapper)
                                     {
@@ -252,11 +252,11 @@ namespace IKVM.Runtime
                                 }
                                 else
                                 {
-                                    var fmw = wrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                    var fmw = wrapper.GetMethod(mw.Name, mw.Signature, true);
                                     while (fmw != mw && (fmw.IsStatic || fmw.IsPrivate || !(mw.DeclaringType.IsPackageAccessibleFrom(fmw.DeclaringType) || (mw.IsInternal && mw.DeclaringType.InternalsVisibleTo(fmw.DeclaringType)))))
                                     {
                                         needRename = true;
-                                        fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethodWrapper(mw.Name, mw.Signature, true);
+                                        fmw = fmw.DeclaringType.BaseTypeWrapper.GetMethod(mw.Name, mw.Signature, true);
                                     }
                                     if (fmw == mw && fmw.DeclaringType != wrapper)
                                     {
@@ -1354,7 +1354,7 @@ namespace IKVM.Runtime
                         if ((mw.IsPublic || (mw.IsProtected && !wrapper.IsFinal))
                             && (!mw.IsAbstract || wrapper.IsAbstract)
                             && mw.Name != StringConstants.INIT
-                            && wrapper.GetMethodWrapper(mw.Name, mw.Signature, true) == mw
+                            && wrapper.GetMethod(mw.Name, mw.Signature, true) == mw
                             && ParametersAreAccessible(mw))
                         {
                             GenerateAccessStub(id, mw, true, true);
@@ -1503,7 +1503,7 @@ namespace IKVM.Runtime
                 var lookup = (RuntimeJavaType)wrapper;
                 while (lookup != null)
                 {
-                    mce = lookup.GetMethodWrapper(ifmethod.Name, ifmethod.Signature, true);
+                    mce = lookup.GetMethod(ifmethod.Name, ifmethod.Signature, true);
                     if (mce == null || !mce.IsStatic)
                         break;
 
@@ -1572,7 +1572,7 @@ namespace IKVM.Runtime
                 }
                 else
                 {
-                    if (!wrapper.IsAbstract || (!baseClassInterface && wrapper.GetMethodWrapper(ifmethod.Name, ifmethod.Signature, false) != null))
+                    if (!wrapper.IsAbstract || (!baseClassInterface && wrapper.GetMethod(ifmethod.Name, ifmethod.Signature, false) != null))
                     {
                         // the type doesn't implement the interface method and isn't abstract either. The JVM allows this, but the CLR doesn't,
                         // so we have to create a stub method that throws an AbstractMethodError
@@ -1911,7 +1911,7 @@ namespace IKVM.Runtime
                 ilgen.Emit(OpCodes.Ldc_I4_1);
                 ilgen.Emit(OpCodes.Ldc_I4_0);
                 ilgen.Emit(OpCodes.Newobj, context.Resolver.ResolveCoreType(typeof(StackFrame).FullName).AsReflection().GetConstructor(new Type[] { context.Types.Int32, context.Types.Boolean }));
-                var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethodWrapper("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
+                var callerID = context.JavaBase.TypeOfIkvmInternalCallerID.GetMethod("create", "(Lcli.System.Diagnostics.StackFrame;)Likvm.internal.CallerID;", false);
                 callerID.Link();
                 callerID.EmitCall(ilgen);
                 if (mw.IsStatic)
@@ -1955,7 +1955,7 @@ namespace IKVM.Runtime
                                         typeBuilder.DefineMethodOverride(mb, context.Resolver.ResolveCoreType(typeof(System.Collections.IEnumerable).FullName).GetMethod("GetEnumerator").AsReflection());
                                         var ilgen = context.CodeEmitterFactory.Create(mb);
                                         ilgen.Emit(OpCodes.Ldarg_0);
-                                        var mw = enumeratorType.GetMethodWrapper("<init>", "(Ljava.lang.Iterable;)V", false);
+                                        var mw = enumeratorType.GetMethod("<init>", "(Ljava.lang.Iterable;)V", false);
                                         mw.Link();
                                         mw.EmitNewobj(ilgen);
                                         ilgen.Emit(OpCodes.Ret);
@@ -2104,7 +2104,7 @@ namespace IKVM.Runtime
                 var tw = context.JavaBase.TypeOfIkvmInternalCallerID;
                 if (tw.InternalsVisibleTo(wrapper))
                 {
-                    var create = tw.GetMethodWrapper("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
+                    var create = tw.GetMethod("create", "(Lcli.System.RuntimeTypeHandle;)Likvm.internal.CallerID;", false);
                     ilGenerator.Emit(OpCodes.Ldtoken, this.typeBuilder);
                     create.Link();
                     create.EmitCall(ilGenerator);
@@ -2124,7 +2124,7 @@ namespace IKVM.Runtime
                 var cb = ReflectUtil.DefineConstructor(typeCallerID, MethodAttributes.Assembly, null);
                 var ctorIlgen = context.CodeEmitterFactory.Create(cb);
                 ctorIlgen.Emit(OpCodes.Ldarg_0);
-                var mw = tw.GetMethodWrapper("<init>", "()V", false);
+                var mw = tw.GetMethod("<init>", "()V", false);
                 mw.Link();
                 mw.EmitCall(ctorIlgen);
                 ctorIlgen.Emit(OpCodes.Ret);
@@ -2212,7 +2212,7 @@ namespace IKVM.Runtime
                 var cb = ReflectUtil.DefineConstructor(tb, MethodAttributes.Assembly, Type.EmptyTypes);
                 var ctorilgen = context.CodeEmitterFactory.Create(cb);
                 ctorilgen.Emit(OpCodes.Ldarg_0);
-                var basector = threadLocal.GetMethodWrapper("<init>", "()V", false);
+                var basector = threadLocal.GetMethod("<init>", "()V", false);
                 basector.Link();
                 basector.EmitCall(ctorilgen);
                 ctorilgen.Emit(OpCodes.Ret);
@@ -2235,7 +2235,7 @@ namespace IKVM.Runtime
                     arfuMap.Add(field, cb);
                     CodeEmitter ctorilgen = context.CodeEmitterFactory.Create(cb);
                     ctorilgen.Emit(OpCodes.Ldarg_0);
-                    RuntimeJavaMethod basector = arfuTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    RuntimeJavaMethod basector = arfuTypeWrapper.GetMethod("<init>", "()V", false);
                     basector.Link();
                     basector.EmitCall(ctorilgen);
                     ctorilgen.Emit(OpCodes.Ret);

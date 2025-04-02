@@ -63,7 +63,7 @@ namespace IKVM.Runtime
 
             var annotationClass = (string)def[1];
 
-            if (ClassFile.IsValidFieldSig(annotationClass))
+            if (ClassFile.IsValidFieldDescriptor(annotationClass))
             {
                 try
                 {
@@ -98,7 +98,7 @@ namespace IKVM.Runtime
             }
 #endif
 
-            if (ClassFile.IsValidFieldSig(annotationClass))
+            if (ClassFile.IsValidFieldDescriptor(annotationClass))
             {
                 var tw = owner.ClassLoader.RetTypeWrapperFromSig(annotationClass.Replace('/', '.'), LoadMode.Link);
                 // Java allows inaccessible annotations to be used, so when the annotation isn't visible
@@ -260,7 +260,7 @@ namespace IKVM.Runtime
             return def;
         }
 
-        private static object[] ValueQualifyClassNames(RuntimeClassLoader loader, object[] val)
+        static object[] ValueQualifyClassNames(RuntimeClassLoader loader, object[] val)
         {
             if (val[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION))
             {
@@ -268,49 +268,47 @@ namespace IKVM.Runtime
             }
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_CLASS))
             {
-                string sig = (string)val[1];
-                if (sig.StartsWith("L"))
+                var sig = (string)val[1];
+                if (sig.StartsWith("L", StringComparison.Ordinal))
                 {
-                    RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                    var tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                     if (tw != null)
-                    {
-                        return new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";" };
-                    }
+                        return [AnnotationDefaultAttribute.TAG_CLASS, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";"];
                 }
                 return val;
             }
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ENUM))
             {
-                string sig = (string)val[1];
-                RuntimeJavaType tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
+                var sig = (string)val[1];
+                var tw = loader.TryLoadClassByName(sig.Substring(1, sig.Length - 2).Replace('/', '.'));
                 if (tw != null)
-                {
-                    return new object[] { AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2] };
-                }
+                    return [AnnotationDefaultAttribute.TAG_ENUM, "L" + tw.TypeAsBaseType.AssemblyQualifiedName.Replace('.', '/') + ";", val[2]];
+
                 return val;
             }
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ARRAY))
             {
-                bool copy = false;
+                var copy = false;
                 for (int i = 1; i < val.Length; i++)
                 {
-                    object[] nval = val[i] as object[];
-                    if (nval != null)
+                    if (val[i] is object[] nval)
                     {
-                        object newnval = ValueQualifyClassNames(loader, nval);
+                        var newnval = ValueQualifyClassNames(loader, nval);
                         if (newnval != nval)
                         {
-                            if (!copy)
+                            if (copy == false)
                             {
                                 copy = true;
-                                object[] newval = new object[val.Length];
+                                var newval = new object[val.Length];
                                 Array.Copy(val, newval, val.Length);
                                 val = newval;
                             }
+
                             val[i] = newnval;
                         }
                     }
                 }
+
                 return val;
             }
             else if (val[0].Equals(AnnotationDefaultAttribute.TAG_ERROR))

@@ -22,9 +22,19 @@
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
         <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\stage\1\</IkvmStageDir>
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
+        <IkvmCacheDirMaxAge Condition=" '$(IkvmCacheDirMaxAge)' == '' ">10080</IkvmCacheDirMaxAge>
         <IkvmExportStageDir Condition=" '$(IkvmExportStageDir)' == '' ">$(IntermediateOutputPath)ikvm\expstage\1\</IkvmExportStageDir>
         <IkvmExportCacheDir Condition=" '$(IkvmExportCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\expcache\1\</IkvmExportCacheDir>
+        <IkvmExportCacheDirMaxAge Condition=" '$(IkvmExportCacheDirMaxAge)' == '' ">10080</IkvmExportCacheDirMaxAge>
     </PropertyGroup>
+
+    <Target Name="CleanIkvmCacheDir" AfterTargets="AfterBuild" Condition=" '$(IkvmCacheDir)' != '' ">
+        <IkvmCleanDir Directory="$([System.IO.Path]::GetFullPath('$(IkvmCacheDir)'))" MaxAge="$(IkvmCacheDirMaxAge)" />
+    </Target>
+
+    <Target Name="CleanIkvmExportCacheDir" AfterTargets="AfterBuild" Condition=" '$(IkvmExportCacheDir)' != '' ">
+        <IkvmCleanDir Directory="$([System.IO.Path]::GetFullPath('$(IkvmExportCacheDir)'))" MaxAge="$(IkvmExportCacheDirMaxAge)" />
+    </Target>
 
     <PropertyGroup>
         <ResolveIkvmRuntimeAssemblyDependsOn>

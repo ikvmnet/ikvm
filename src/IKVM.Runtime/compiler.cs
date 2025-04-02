@@ -95,7 +95,7 @@ namespace IKVM.Runtime
             this.strictfp = m.IsStrictfp;
             if (mw.IsConstructor)
             {
-                var finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
+                var finalize = clazz.GetMethod(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
                 keepAlive = finalize != null && finalize.DeclaringType != finish.Context.JavaBase.TypeOfJavaLangObject && finalize.DeclaringType != finish.Context.JavaBase.TypeOfCliSystemObject && finalize.DeclaringType != finish.Context.JavaBase.TypeOfjavaLangThrowable && finalize.DeclaringType != finish.Context.JavaBase.TypeOfCliSystemException;
             }
 #if IMPORTER
@@ -1239,15 +1239,15 @@ namespace IKVM.Runtime
                                 // to a more specific base type.
                                 if (thisType.IsAssignableTo(finish.Context.JavaBase.TypeOfCliSystemObject))
                                 {
-                                    method = finish.Context.JavaBase.TypeOfCliSystemObject.GetMethodWrapper(method.Name, method.Signature, true);
+                                    method = finish.Context.JavaBase.TypeOfCliSystemObject.GetMethod(method.Name, method.Signature, true);
                                 }
                                 else if (thisType.IsAssignableTo(finish.Context.JavaBase.TypeOfCliSystemException))
                                 {
-                                    method = finish.Context.JavaBase.TypeOfCliSystemException.GetMethodWrapper(method.Name, method.Signature, true);
+                                    method = finish.Context.JavaBase.TypeOfCliSystemException.GetMethod(method.Name, method.Signature, true);
                                 }
                                 else if (thisType.IsAssignableTo(finish.Context.JavaBase.TypeOfjavaLangThrowable))
                                 {
-                                    method = finish.Context.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper(method.Name, method.Signature, true);
+                                    method = finish.Context.JavaBase.TypeOfjavaLangThrowable.GetMethod(method.Name, method.Signature, true);
                                 }
                             }
 
@@ -1315,7 +1315,7 @@ namespace IKVM.Runtime
                                         // test, because cli.System.Exception overrides fillInStackTrace.
                                         if (code[i + 1].NormalizedOpCode == NormalizedByteCode.__athrow)
                                         {
-                                            if (thisType.GetMethodWrapper("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == finish.Context.JavaBase.TypeOfjavaLangThrowable)
+                                            if (thisType.GetMethod("fillInStackTrace", "()Ljava.lang.Throwable;", true).DeclaringType == finish.Context.JavaBase.TypeOfjavaLangThrowable)
                                                 ilGenerator.Emit(OpCodes.Call, finish.Context.CompilerFactory.SuppressFillInStackTraceMethod);
                                             if ((flags[i + 1] & InstructionFlags.BranchTarget) == 0)
                                                 code[i + 1].PatchOpCode(NormalizedByteCode.__athrow_no_unmap);
@@ -1459,7 +1459,7 @@ namespace IKVM.Runtime
                                     // extends System.Exception instead of java.lang.Object in the .NET type system).
                                     if (RuntimeVerifierJavaType.IsThis(type)
                                         && (method.IsFinal || clazz.IsFinal)
-                                        && clazz.GetMethodWrapper(method.Name, method.Signature, true) == method)
+                                        && clazz.GetMethod(method.Name, method.Signature, true) == method)
                                     {
                                         // we're calling a method on our own instance that can't possibly be overriden,
                                         // so we don't need to use callvirt
@@ -2470,17 +2470,17 @@ namespace IKVM.Runtime
                             }
                             if (wrapIncompatibleClassChangeError)
                             {
-                                finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.IncompatibleClassChangeError").GetMethodWrapper("<init>", "()V", false).EmitNewobj(ilGenerator);
+                                finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.IncompatibleClassChangeError").GetMethod("<init>", "()V", false).EmitNewobj(ilGenerator);
                             }
 
                             var message = harderrors[instr.HardErrorMessageId];
                             ilGenerator.Emit(OpCodes.Ldstr, message);
-                            RuntimeJavaMethod method = exceptionType.GetMethodWrapper("<init>", "(Ljava.lang.String;)V", false);
+                            RuntimeJavaMethod method = exceptionType.GetMethod("<init>", "(Ljava.lang.String;)V", false);
                             method.Link();
                             method.EmitNewobj(ilGenerator);
                             if (wrapIncompatibleClassChangeError)
                             {
-                                finish.Context.JavaBase.TypeOfjavaLangThrowable.GetMethodWrapper("initCause", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCallvirt(ilGenerator);
+                                finish.Context.JavaBase.TypeOfjavaLangThrowable.GetMethod("initCause", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCallvirt(ilGenerator);
                             }
                             ilGenerator.Emit(OpCodes.Throw);
                             break;
@@ -2634,7 +2634,7 @@ namespace IKVM.Runtime
             internal static void Emit(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, Type delegateType)
             {
                 var typeofOpenIndyCallSite = compiler.finish.Context.Resolver.ResolveRuntimeType("IKVM.Runtime.IndyCallSite`1").AsReflection();
-                var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
+                var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethod("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
 
                 var typeofIndyCallSite = typeofOpenIndyCallSite.MakeGenericType(delegateType);
@@ -2732,7 +2732,7 @@ namespace IKVM.Runtime
 
             static bool EmitCallBootstrapMethod(Compiler compiler, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen, CodeEmitterLocal ok)
             {
-                var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethodWrapper("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
+                var methodLookup = compiler.finish.Context.ClassLoaderFactory.LoadClassCritical("java.lang.invoke.MethodHandles").GetMethod("lookup", "()Ljava.lang.invoke.MethodHandles$Lookup;", false);
                 methodLookup.Link();
 
                 var bsm = compiler.classFile.GetBootstrapMethod(cpi.BootstrapMethod);
@@ -2877,7 +2877,7 @@ namespace IKVM.Runtime
                     if (constType.IsPrimitive)
                     {
                         var wrapper = GetWrapperType(constType, out var dummy);
-                        wrapper.GetMethodWrapper("valueOf", "(" + constType.SigName + ")" + wrapper.SigName, false).EmitCall(ilgen);
+                        wrapper.GetMethod("valueOf", "(" + constType.SigName + ")" + wrapper.SigName, false).EmitCall(ilgen);
                     }
 
                     if (targetType.IsUnloadable)
@@ -2888,7 +2888,7 @@ namespace IKVM.Runtime
                     {
                         var wrapper = GetWrapperType(targetType, out var unbox);
                         ilgen.Emit(OpCodes.Castclass, wrapper.TypeAsBaseType);
-                        wrapper.GetMethodWrapper(unbox, "()" + targetType.SigName, false).EmitCallvirt(ilgen);
+                        wrapper.GetMethod(unbox, "()" + targetType.SigName, false).EmitCallvirt(ilgen);
                     }
                     else if (!constType.IsAssignableTo(targetType))
                     {
@@ -3414,7 +3414,7 @@ namespace IKVM.Runtime
                 }
                 Type delegateType = compiler.finish.Context.MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
                 ilgen.Emit(OpCodes.Call, compiler.finish.Context.ByteCodeHelperMethods.LoadMethodType.MakeGenericMethod(delegateType));
-                compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.GetMethodWrapper("asType", "(Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MethodHandle;", false).EmitCallvirt(ilgen);
+                compiler.finish.Context.JavaBase.TypeOfJavaLangInvokeMethodHandle.GetMethod("asType", "(Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MethodHandle;", false).EmitCallvirt(ilgen);
                 MethodInfo mi = compiler.finish.Context.ByteCodeHelperMethods.GetDelegateForInvokeExact.MakeGenericMethod(delegateType);
                 ilgen.Emit(OpCodes.Call, mi);
                 for (int i = 0; i < args.Length; i++)

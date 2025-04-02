@@ -9,7 +9,7 @@
     <Import Project="$(CustomBeforeIkvmNetSdkProps)" Condition=" '$(CustomBeforeIkvmNetSdkProps)' != '' And Exists('$(CustomBeforeIkvmNetSdkProps)') " />
 
     <PropertyGroup>
-        <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{9A19103F-16F7-4668-BE54-9A1E7A4F7556}</DefaultProjectTypeGuid>
+        <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}</DefaultProjectTypeGuid>
         <EnableDefaultItems>true</EnableDefaultItems>
         <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
         <!--<DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>-->

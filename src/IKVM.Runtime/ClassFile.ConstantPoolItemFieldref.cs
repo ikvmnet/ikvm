@@ -22,8 +22,6 @@
   
 */
 
-using System;
-
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 
@@ -33,18 +31,21 @@ namespace IKVM.Runtime
     sealed partial class ClassFile
     {
 
+        /// <summary>
+        /// Type-model representation of a fieldRef constant.
+        /// </summary>
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
         {
 
-            RuntimeJavaField field;
-            RuntimeJavaType fieldTypeWrapper;
+            RuntimeJavaField _field;
+            RuntimeJavaType _fieldJavaType;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantData data) :
+            public ConstantPoolItemFieldref(RuntimeContext context, FieldrefConstantData data) :
                 base(context, data.Class, data.NameAndType)
             {
 
@@ -52,61 +53,67 @@ namespace IKVM.Runtime
 
             protected override void Validate(string name, string descriptor, int majorVersion)
             {
-                if (!IsValidFieldSig(descriptor))
+                if (!IsValidFieldDescriptor(descriptor))
                     throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
                 if (!IsValidFieldName(name, new ClassFormatVersion((ushort)majorVersion, 0)))
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
             }
 
-            internal RuntimeJavaType GetFieldType()
-            {
-                return fieldTypeWrapper;
-            }
-
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 base.Link(thisType, mode);
                 lock (this)
-                {
-                    if (fieldTypeWrapper != null)
-                    {
+                    if (_fieldJavaType != null)
                         return;
-                    }
-                }
+
                 RuntimeJavaField fw = null;
-                RuntimeJavaType wrapper = GetClassType();
+                var wrapper = GetClassType();
                 if (wrapper == null)
-                {
                     return;
-                }
+
                 if (!wrapper.IsUnloadable)
                 {
                     fw = wrapper.GetFieldWrapper(Name, Signature);
                     if (fw != null)
-                    {
                         fw.Link(mode);
-                    }
                 }
-                RuntimeClassLoader classLoader = thisType.ClassLoader;
-                RuntimeJavaType fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
+                var classLoader = thisType.ClassLoader;
+                var fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+
                 lock (this)
                 {
-                    if (fieldTypeWrapper == null)
+                    if (_fieldJavaType == null)
                     {
-                        fieldTypeWrapper = fld;
-                        field = fw;
+                        _fieldJavaType = fld;
+                        _field = fw;
                     }
                 }
             }
 
-            internal RuntimeJavaField GetField()
+            /// <summary>
+            /// Gets the type of the linked field.
+            /// </summary>
+            /// <returns></returns>
+            public RuntimeJavaType GetFieldType()
             {
-                return field;
+                return _fieldJavaType;
             }
 
-            internal override RuntimeJavaMember GetMember()
+            /// <summary>
+            /// Gets the linked field.
+            /// </summary>
+            /// <returns></returns>
+            public RuntimeJavaField GetField()
             {
-                return field;
+                return _field;
+            }
+
+            /// <inheritdoc />
+            public override RuntimeJavaMember GetMember()
+            {
+                return _field;
             }
 
         }

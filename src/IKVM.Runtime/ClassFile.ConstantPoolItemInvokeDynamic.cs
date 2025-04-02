@@ -21,8 +21,6 @@
   jeroen@frijters.net
   
 */
-using System;
-
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
 
@@ -31,87 +29,80 @@ namespace IKVM.Runtime
 
     sealed partial class ClassFile
     {
+
+        /// <summary>
+        /// Type-model representation of a invokedynamic constant.
+        /// </summary>
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
         {
 
-            readonly ushort bootstrapMethodAttributeIndex;
-            readonly NameAndTypeConstantHandle nameAndTypeHandle;
+            readonly ushort _bootstrapMethodAttributeIndex;
+            readonly NameAndTypeConstantHandle _nameAndTypeHandle;
 
-            string name;
-            string descriptor;
-            RuntimeJavaType[] argTypeWrappers;
-            RuntimeJavaType retTypeWrapper;
+            string _name;
+            string _descriptor;
+            RuntimeJavaType[] _argTypes;
+            RuntimeJavaType _returnType;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="context"></param>
             /// <param name="data"></param>
-            internal ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantData data) :
+            public ConstantPoolItemInvokeDynamic(RuntimeContext context, InvokeDynamicConstantData data) :
                 base(context)
             {
-                bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
-                nameAndTypeHandle = data.NameAndType;
+                _bootstrapMethodAttributeIndex = data.BootstrapMethodAttributeIndex;
+                _nameAndTypeHandle = data.NameAndType;
             }
 
-            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            /// <inheritdoc />
+            public override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(nameAndTypeHandle);
+                var nameAndType = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(_nameAndTypeHandle);
                 if (nameAndType == null)
                     throw new ClassFormatError("Bad index in constant pool");
 
-                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.NameHandle));
-                descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.DescriptorHandle).Replace('/', '.'));
+                _name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.NameHandle));
+                _descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameAndType.DescriptorHandle).Replace('/', '.'));
             }
 
-            internal override void Link(RuntimeJavaType thisType, LoadMode mode)
+            /// <inheritdoc />
+            public override void Link(RuntimeJavaType thisType, LoadMode mode)
             {
                 lock (this)
-                {
-                    if (argTypeWrappers != null)
-                    {
+                    if (_argTypes != null)
                         return;
-                    }
-                }
 
                 var classLoader = thisType.ClassLoader;
-                var args = classLoader.ArgJavaTypeListFromSig(descriptor, mode);
-                var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
+                var args = classLoader.ArgJavaTypeListFromSig(_descriptor, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(_descriptor, mode);
 
                 lock (this)
                 {
-                    if (argTypeWrappers == null)
+                    if (_argTypes == null)
                     {
-                        argTypeWrappers = args;
-                        retTypeWrapper = ret;
+                        _argTypes = args;
+                        _returnType = ret;
                     }
                 }
             }
 
-            internal RuntimeJavaType[] GetArgTypes()
+            public RuntimeJavaType[] GetArgTypes()
             {
-                return argTypeWrappers;
+                return _argTypes;
             }
 
-            internal RuntimeJavaType GetRetType()
+            public RuntimeJavaType GetRetType()
             {
-                return retTypeWrapper;
+                return _returnType;
             }
 
-            internal string Name
-            {
-                get { return name; }
-            }
+            public string Name => _name;
 
-            internal string Signature
-            {
-                get { return descriptor; }
-            }
+            public string Signature => _descriptor;
 
-            internal ushort BootstrapMethod
-            {
-                get { return bootstrapMethodAttributeIndex; }
-            }
+            public ushort BootstrapMethod => _bootstrapMethodAttributeIndex;
 
         }
 
