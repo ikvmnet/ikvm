@@ -5,7 +5,18 @@
         <TargetFrameworks>net8.0</TargetFrameworks>
         <PackageId>IKVM.Java.runtime.browser-wasm</PackageId>
         <IkvmJavaRuntimeIdentifier>browser-wasm</IkvmJavaRuntimeIdentifier>
+        <EnableDefaultItems>false</EnableDefaultItems>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="SocketOptionRegistry.java" />
+        <None Include="UnixConstants.java" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="SocketOptionRegistry.java" />
+        <Compile Include="UnixConstants.java" />
+    </ItemGroup>
     
     <Import Project="..\IKVM.Java\IKVM.Java.runtime.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />

@@ -51,7 +51,7 @@
             <OutputItemType>IkvmJavaItem</OutputItemType>
             <IkvmJavaRuntimeIdentifier>osx</IkvmJavaRuntimeIdentifier>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.browser-wasm\IKVM.Java.runtime.browser-wasm.csproj" Condition="$(_EnabledRuntimes.Contains(';browser-wasm;')) And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.browser-wasm\IKVM.Java.runtime.browser-wasm.ikvmproj" Condition="$(_EnabledRuntimes.Contains(';browser-wasm;')) And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <PrivateAssets>all</PrivateAssets>

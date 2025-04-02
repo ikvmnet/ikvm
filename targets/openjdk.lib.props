@@ -60,7 +60,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
-        <ProjectReference Include="..\IKVM.Java.runtime.browser-wasm\IKVM.Java.runtime.browser-wasm.csproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <ProjectReference Include="..\IKVM.Java.runtime.browser-wasm\IKVM.Java.runtime.browser-wasm.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_GNU_SOURCE;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 
