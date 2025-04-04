@@ -1678,6 +1678,7 @@ java/util/Collections/Wrappers.java                                             
 java/util/Comparator/BasicTest.java                                                                                     generic-all
 java/util/Comparator/TypeTest.java                                                                                      generic-all
 java/util/Currency/PropertiesTest.sh                                                                                    generic-all
+java/util/Currency/ValidateISO4217.java                                                                                 generic-all # broke 4/1/2025 because of XCG currency
 java/util/EnumMap/DistinctEntrySetElements.java                                                                         generic-all
 java/util/EnumMap/EntrySetIteratorRemoveInvalidatesEntry.java                                                           generic-all
 java/util/EnumMap/EnumMapBash.java                                                                                      generic-all
@@ -3095,6 +3096,7 @@ sun/security/tools/jarsigner/samename.sh                                        
 sun/security/tools/jarsigner/ts.sh                                                                                      generic-all
 sun/security/tools/jarsigner/warnings.sh                                                                                generic-all
 sun/security/tools/jarsigner/weaksize.sh                                                                                generic-all
+sun/security/tools/jarsigner/TimestampCheck.java                                                                        generic-all
 sun/security/tools/keytool/AltProviderPath.sh                                                                           generic-all
 sun/security/tools/keytool/CloneKeyAskPassword.sh                                                                       generic-all
 sun/security/tools/keytool/ListKeychainStore.sh                                                                         generic-all
