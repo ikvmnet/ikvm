@@ -114,7 +114,7 @@ namespace IKVM.Tools.Core.Diagnostics
                     item.Owner.Dispose();
 
                 // complete the channel
-                _channel.Writer.Complete();
+                _channel.Writer.TryComplete();
             }
         }
 

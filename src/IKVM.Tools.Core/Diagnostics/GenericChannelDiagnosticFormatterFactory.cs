@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
 
 namespace IKVM.Tools.Core.Diagnostics
@@ -46,16 +45,15 @@ namespace IKVM.Tools.Core.Diagnostics
 
             // split and parse option information
             var opts = new TOptions();
-            var chls = new ConcurrentDictionary<string, IDiagnosticChannel?>();
             foreach (var optionSpec in specArray.Skip(1))
-                ParseOption(chls, opts, optionSpec);
+                ParseOption(opts, optionSpec);
 
             // set default channel if missing
-            opts.TraceChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDOUT);
-            opts.InfoChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDOUT);
-            opts.WarningChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
-            opts.ErrorChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
-            opts.FatalChannel ??= GetOrCreateChannel(chls, FileDiagnosticChannelFactory.STDERR);
+            opts.TraceChannel ??= GetOrCreateChannel(FileDiagnosticChannelFactory.STDOUT);
+            opts.InfoChannel ??= GetOrCreateChannel(FileDiagnosticChannelFactory.STDOUT);
+            opts.WarningChannel ??= GetOrCreateChannel(FileDiagnosticChannelFactory.STDERR);
+            opts.ErrorChannel ??= GetOrCreateChannel(FileDiagnosticChannelFactory.STDERR);
+            opts.FatalChannel ??= GetOrCreateChannel(FileDiagnosticChannelFactory.STDERR);
 
             // process options and create formatter
             return CreateFormatter(opts);
@@ -71,10 +69,9 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <summary>
         /// Parses a string option into multiple named components.
         /// </summary>
-        /// <param name="cache"></param>
         /// <param name="options"></param>
         /// <param name="spec"></param>
-        void ParseOption(ConcurrentDictionary<string, IDiagnosticChannel?> cache, TOptions options, string spec)
+        void ParseOption(TOptions options, string spec)
         {
             var a = spec.Split(SEPARATOR, 2, StringSplitOptions.None);
             var key = a.Length >= 1 ? a[0] : "";
@@ -84,15 +81,15 @@ namespace IKVM.Tools.Core.Diagnostics
                 return;
 
             if (key is "file" or "trace:file")
-                options.TraceChannel = GetOrCreateChannel(cache, val);
+                options.TraceChannel = GetOrCreateChannel(val);
             if (key is "file" or "info:file")
-                options.InfoChannel = GetOrCreateChannel(cache, val);
+                options.InfoChannel = GetOrCreateChannel(val);
             if (key is "file" or "warning:file")
-                options.WarningChannel = GetOrCreateChannel(cache, val);
+                options.WarningChannel = GetOrCreateChannel(val);
             if (key is "file" or "error:file")
-                options.ErrorChannel = GetOrCreateChannel(cache, val);
+                options.ErrorChannel = GetOrCreateChannel(val);
             if (key is "file" or "fatal:file")
-                options.FatalChannel = GetOrCreateChannel(cache, val);
+                options.FatalChannel = GetOrCreateChannel(val);
         }
 
         /// <summary>
@@ -102,9 +99,9 @@ namespace IKVM.Tools.Core.Diagnostics
         /// <param name="spec"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        IDiagnosticChannel GetOrCreateChannel(ConcurrentDictionary<string, IDiagnosticChannel?> cache, string spec)
+        IDiagnosticChannel GetOrCreateChannel(string spec)
         {
-            return cache.GetOrAdd(spec, _channels.FindChannel) ?? throw new InvalidOperationException($"Cannot find channel for specification '{spec}'.");
+            return _channels.GetOrCreateChannel(spec) ?? throw new InvalidOperationException($"Cannot find channel for specification '{spec}'.");
         }
 
     }

@@ -33,15 +33,14 @@ using IKVM.CoreLib.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime.Syntax;
 
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 #else
-using IKVM.Runtime.Vfs;
-
 using System.Reflection;
+
+using IKVM.Runtime.Vfs;
 #endif
 
 #if IMPORTER

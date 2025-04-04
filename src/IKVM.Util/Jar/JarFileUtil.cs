@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
+using IKVM.CoreLib.Jar;
 using IKVM.CoreLib.Modules;
 
 namespace IKVM.Util.Jar
@@ -67,7 +68,7 @@ namespace IKVM.Util.Jar
             if (File.Exists(path) == false)
                 throw new FileNotFoundException("Cannot find JAR file.", path);
 
-            using var jar = new JarFile(path);
+            using var jar = new JarFile(path, JarFile.RUNTIME_VERSION);
             var info = jar.GetModuleInfo() ?? new ModuleInfo();
             if (info.Name is null || info.Version.IsValid == false)
             {

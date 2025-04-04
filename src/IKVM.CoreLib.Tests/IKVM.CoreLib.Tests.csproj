@@ -1,4 +1,6 @@
-﻿<Project Sdk="MSTest.Sdk">
+﻿<Project>
+    <Import Sdk="MSTest.Sdk" Project="Sdk.props" />
+
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
         <Nullable>enable</Nullable>
@@ -12,5 +14,79 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\ext\helloworld\*.jar" LinkBase="res\helloworld">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <JavaBuild Include="res\Modules\automatic\alib\**\*.java" TargetDir="res\Modules\automatic\alib\" TargetJar="res\Modules\automatic\jars\alib.jar" />
+        <JavaBuild Include="res\Modules\automatic\m\**\*.java" ModulePath="res\Modules\automatic\jars" TargetDir="res\Modules\automatic\m\" TargetJar="res\Modules\automatic\jars\m.jar" />
+        <JavaBuild Include="res\Modules\m3\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m3\" TargetJar="res\Modules\jars\m3.jar" />
+        <JavaBuild Include="res\Modules\m2\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m2\" TargetJar="res\Modules\jars\m2.jar" />
+        <JavaBuild Include="res\Modules\m1\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m1\" TargetJar="res\Modules\jars\m1.jar" />
+        <JavaBuild Include="res\Modules\m4\**\*.java" ModulePath="res\Modules" TargetDir="res\Modules\m4\" TargetJar="res\Modules\jars\m4.jar" />
+    </ItemGroup>
+
+    <Import Sdk="MSTest.Sdk" Project="Sdk.targets" />
+
+    <PropertyGroup>
+        <AssignTargetPathsDependsOn>
+            FindJdk;
+            CompileJavaOutput;
+            $(AssignTargetPathsDependsOn);
+        </AssignTargetPathsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="FindJdk">
+        <FindJdk Family="21">
+            <Output TaskParameter="JdkPath" PropertyName="JdkPath" />
+        </FindJdk>
+        <Error Condition=" '$(JdkPath)' == '' " Text="Failed to locate JDK. IKVM.CoreLib.Tests requires JDK version 21 available on the system." />
+        <PropertyGroup>
+            <JavaCompilerPath>$(JdkPath)/bin/javac$(_ExeExtension)</JavaCompilerPath>
+            <JavaArchiverPath>$(JdkPath)/bin/jar$(_ExeExtension)</JavaArchiverPath>
+        </PropertyGroup>
+        <PropertyGroup Condition="'$([MSBuild]::IsOSUnixLike())' != 'true'">
+            <JavaCompilerPath>$(JdkPath)\bin\javac.exe</JavaCompilerPath>
+            <JavaArchiverPath>$(JdkPath)\bin\jar.exe</JavaArchiverPath>
+        </PropertyGroup>
+        <Error Condition="!Exists('$(JavaCompilerPath)')" Text="Failed to locate javac executable." />
+        <Error Condition="!Exists('$(JavaArchiverPath)')" Text="Failed to locate jar executable." />
+    </Target>
+
+    <Target Name="CompileJavaOutput" DependsOnTargets="FindJdk" Inputs="@(JavaBuild)" Outputs="$(IntermediateOutputPath)java\%(JavaBuild.TargetJar)" Condition=" '$(TargetFramework)' != '' ">
+        <PropertyGroup>
+            <JavacExe>$(JdkPath)\bin\javac</JavacExe>
+            <JarExe>$(JdkPath)\bin\jar</JarExe>
+            <_JavaBuildTargetDir>%(JavaBuild.TargetDir)</_JavaBuildTargetDir>
+            <_JavaBuildTargetDirTmp>$(IntermediateOutputPath)java\$(_JavaBuildTargetDir)</_JavaBuildTargetDirTmp>
+            <_JavaBuildTargetJar>%(JavaBuild.TargetJar)</_JavaBuildTargetJar>
+            <_JavaBuildTargetJarTmp>$(IntermediateOutputPath)java\$(_JavaBuildTargetJar)</_JavaBuildTargetJarTmp>
+            <_JavaBuildModulePathTmp>$(IntermediateOutputPath)java\%(JavaBuild.ModulePath)</_JavaBuildModulePathTmp>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(_JavaBuildTargetDirTmp)" />
+        <MakeDir Directories="$(_JavaBuildTargetDirTmp)" />
+        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -p $(_JavaBuildModulePathTmp) -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' != '' " />
+        <Exec Command="&quot;$(JavacExe)&quot; --release 9 -d $(_JavaBuildTargetDirTmp) @(JavaBuild, ' ')" Condition=" '%(JavaBuild.ModulePath)' == '' " />
+        <Exec Command="&quot;$(JarExe)&quot; -cf $(_JavaBuildTargetJarTmp) -C $(_JavaBuildTargetDirTmp) ." />
+        <ItemGroup>
+            <FileWrites Include="$(_JavaBuildTargetDirTmp)\**\*.class" />
+            <FileWrites Include="$(_JavaBuildTargetJarTmp)" />
+            <_JavaOutput Remove="@(_JavaOutput)" />
+            <_JavaOutput Include="$(_JavaBuildTargetDirTmp)\**\*.class" />
+            <JavaOutput Remove="@(JavaOutput)" />
+            <JavaOutput Include="@(_JavaOutput)">
+                <TargetPath>$(_JavaBuildTargetDir)%(_JavaOutput.RecursiveDir)%(_JavaOutput.Filename)%(_JavaOutput.Extension)</TargetPath>
+            </JavaOutput>
+            <JavaOutput Include="$(_JavaBuildTargetJarTmp)">
+                <TargetPath>$(_JavaBuildTargetJar)</TargetPath>
+            </JavaOutput>
+            <None Include="@(JavaOutput)" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
 
 </Project>

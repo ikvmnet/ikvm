@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
@@ -16,6 +17,20 @@ namespace IKVM.CoreLib.Modules
     /// </summary>
     public readonly partial struct ModuleDescriptor : IComparable<ModuleDescriptor>
     {
+
+        public static bool operator ==(ModuleDescriptor x, ModuleDescriptor y) => x.Equals(y);
+
+        public static bool operator !=(ModuleDescriptor x, ModuleDescriptor y) => x.Equals(y) == false;
+
+        public static bool operator <(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) < 0;
+
+        public static bool operator >(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) > 0;
+
+        public static bool operator <=(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) <= 0;
+
+        public static bool operator >=(ModuleDescriptor x, ModuleDescriptor y) => Compare(x, y) >= 0;
+
+        public static int Compare(ModuleDescriptor x, ModuleDescriptor y) => x.CompareTo(y);
 
         /// <summary>
         /// Reads a <see cref="ModuleDescriptor"/> from a <see cref="ClassFile"/> loaded from a 'module-info.class'.
@@ -57,7 +72,23 @@ namespace IKVM.CoreLib.Modules
                 ReadModulePackagesAttribute(clazz, builder);
                 ReadModuleMainClassAttribute(clazz, builder);
 
-                return builder.Build();
+                var descriptor = builder.Build();
+
+                // various checks based on whether we are reading java.base or not
+                if (descriptor.Name == "java.base")
+                {
+                    // building java.base itself: should have no requires
+                    if (descriptor.Requires.Count > 0)
+                        throw new InvalidModuleDescriptorException("The requires table for java.base must be 0 length.");
+                }
+                else
+                {
+                    // modules must explicitely require java.base
+                    if (descriptor.Requires.Any(i => i.Name == "java.base") == false)
+                        throw new InvalidModuleDescriptorException("The requires table must have an entry for java.base.");
+                }
+
+                return descriptor;
             }
             catch (ByteCodeException e)
             {
@@ -90,6 +121,8 @@ namespace IKVM.CoreLib.Modules
         static Builder ReadModuleAttribute(ClassFile clazz, in ModuleAttribute attribute)
         {
             var moduleName = clazz.Constants.Get(attribute.Name).Name;
+            if (moduleName is not null)
+                moduleName = DecodeModuleName(moduleName);
             if (moduleName is null || string.IsNullOrEmpty(moduleName))
                 throw new InvalidModuleDescriptorException("Module name not found.");
 
@@ -140,6 +173,8 @@ namespace IKVM.CoreLib.Modules
             foreach (var package in attribute.Packages)
             {
                 var packageName = clazz.Constants.Get(package).Name;
+                if (packageName is not null)
+                    packageName = packageName.Replace('/', '.');
                 if (packageName is null || string.IsNullOrEmpty(packageName))
                     throw new InvalidModuleDescriptorException("Bad package name on module packages.");
 
@@ -170,6 +205,8 @@ namespace IKVM.CoreLib.Modules
         static void ReadModuleMainClassAttribute(ClassFile clazz, in ModuleMainClassAttribute attribute, Builder builder)
         {
             var mainClassName = clazz.Constants.Get(attribute.MainClass).Name;
+            if (mainClassName is not null)
+                mainClassName = mainClassName.Replace('/', '.');
             if (mainClassName is null || string.IsNullOrEmpty(mainClassName))
                 throw new InvalidModuleDescriptorException("Bad main class name on module main class attribute.");
 
@@ -188,6 +225,8 @@ namespace IKVM.CoreLib.Modules
             foreach (var requires in attribute.Requires)
             {
                 var moduleName = clazz.Constants.Get(requires.Module).Name;
+                if (moduleName is not null)
+                    moduleName = DecodeModuleName(moduleName);
                 if (moduleName is null || string.IsNullOrEmpty(moduleName))
                     throw new InvalidModuleDescriptorException("Bad module name on requires.");
 
@@ -222,8 +261,15 @@ namespace IKVM.CoreLib.Modules
                     }
                 }
 
-                var version = clazz.Constants.Get(requires.Version).Value;
-                builder = builder.Requires(modifiers, moduleName, version);
+                if (requires.Version.IsNotNil)
+                {
+                    var version = clazz.Constants.Get(requires.Version).Value;
+                    builder = builder.Requires(modifiers, moduleName, version);
+                }
+                else
+                {
+                    builder = builder.Requires(modifiers, moduleName);
+                }
             }
         }
 
@@ -239,6 +285,8 @@ namespace IKVM.CoreLib.Modules
             foreach (var exports in attribute.Exports)
             {
                 var packageName = clazz.Constants.Get(exports.Package).Name;
+                if (packageName is not null)
+                    packageName = packageName.Replace('/', '.');
                 if (packageName is null || string.IsNullOrEmpty(packageName))
                     throw new InvalidModuleDescriptorException("Bad package name on module exports.");
 
@@ -268,6 +316,8 @@ namespace IKVM.CoreLib.Modules
             foreach (var opens in attribute.Opens)
             {
                 var packageName = clazz.Constants.Get(opens.Package).Name;
+                if (packageName is not null)
+                    packageName = packageName.Replace('/', '.');
                 if (packageName is null || string.IsNullOrEmpty(packageName))
                     throw new InvalidModuleDescriptorException("Bad package name on module opens.");
 
@@ -293,6 +343,8 @@ namespace IKVM.CoreLib.Modules
             foreach (var uses in attribute.Uses)
             {
                 var className = clazz.Constants.Get(uses).Name;
+                if (className is not null)
+                    className = className.Replace('/', '.');
                 if (className is null || string.IsNullOrEmpty(className))
                     throw new InvalidModuleDescriptorException("Bad class name on module uses.");
 
@@ -312,11 +364,137 @@ namespace IKVM.CoreLib.Modules
             foreach (var provides in attribute.Provides)
             {
                 var serviceName = clazz.Constants.Get(provides.Class).Name;
+                if (serviceName is not null)
+                    serviceName = serviceName.Replace('/', '.');
                 if (serviceName is null || string.IsNullOrEmpty(serviceName))
                     throw new InvalidModuleDescriptorException("Bad service name on module provides.");
 
                 builder = builder.Provides(serviceName, ToArray(clazz, provides.With));
             }
+        }
+
+        /// <summary>
+        /// "Decode" a module name that has been read from the constant pool.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidModuleDescriptorException"></exception>
+        static string DecodeModuleName(string value)
+        {
+            if (value.Length == 0)
+                throw new InvalidModuleDescriptorException("Module name is zero length.");
+
+            int i = 0;
+            while (i < value.Length)
+            {
+                int cp = char.ConvertToUtf32(value, i);
+                if (cp == ':' || cp == '@' || cp < 0x20)
+                    throw new InvalidModuleDescriptorException($"Module name has illegal character: U+{cp:X4}.");
+
+                // blackslash is the escape character
+                if (cp == '\\')
+                    return DecodeModuleName(i, value);
+
+                i += CharCount(cp);
+            }
+
+            return value;
+        }
+
+        /// <summary>
+        /// "Decode" a module name that has been read from the constant pool and partly checked for illegal characters
+        /// (up to position <paramref name="i"/>).
+        /// </summary>
+        static string DecodeModuleName(int i, string value)
+        {
+            var sb = new ValueStringBuilder(value.Length - i);
+
+            // copy the code points that have been checked
+            int j = 0;
+            while (j < i)
+            {
+                int cp = char.ConvertToUtf32(value, j);
+                AppendUtf32(ref sb, cp);
+                j += CharCount(cp);
+            }
+
+            // decode from position i to end
+            while (i < value.Length)
+            {
+                int cp = char.ConvertToUtf32(value, i);
+                if (cp == ':' || cp == '@' || cp < 0x20)
+                {
+                    throw new InvalidModuleDescriptorException($"Module name has illegal character: U+{cp:X4}.");
+                }
+
+                // blackslash is the escape character
+                if (cp == '\\')
+                {
+                    j = i + CharCount(cp);
+                    if (j >= value.Length)
+                        throw new InvalidModuleDescriptorException("Module name has illegal escape sequence.");
+
+                    int next = char.ConvertToUtf32(value, j);
+                    if (next != '\\' && next != ':' && next != '@')
+                        throw new InvalidModuleDescriptorException("Module name has illegal escape sequence.");
+
+                    AppendUtf32(ref sb, next);
+                    i += CharCount(next);
+                }
+                else
+                {
+                    AppendUtf32(ref sb, cp);
+                }
+
+                i += CharCount(cp);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Appends the specified UTF32 code point to the <see cref="ValueStringBuilder"/>.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="utf32"></param>
+        static void AppendUtf32(ref ValueStringBuilder builder, int utf32)
+        {
+            var c = (Span<char>)stackalloc char[2];
+            var l = WriteCodePoint(utf32, c);
+            builder.Append(c[..l]);
+        }
+
+        /// <summary>
+        /// Writes the specified UTF32 code point to a UTF16 span, which should hold at least 2 characters.
+        /// </summary>
+        /// <param name="utf32"></param>
+        /// <param name="utf16"></param>
+        /// <returns></returns>
+        static int WriteCodePoint(int utf32, Span<char> utf16)
+        {
+            if (utf32 < 0xD800 || (utf32 > 0xDFFF && utf32 < 0x10000))
+            {
+                utf16[0] = (char)utf32;
+                utf16[1] = (char)0;
+                return 1;
+            }
+
+            utf32 -= 0x010000;
+
+            utf16[0] = (char)(((0b11111111110000000000 & utf32) >> 10) + 0xD800);
+            utf16[1] = (char)(((0b00000000001111111111 & utf32) >> 00) + 0xDC00);
+
+            return 2;
+        }
+
+        /// <summary>
+        /// Returns the number of characters that make up this code point.
+        /// </summary>
+        /// <param name="utf32"></param>
+        /// <returns></returns>
+        static int CharCount(int utf32)
+        {
+            return utf32 < 0xD800 || (utf32 > 0xDFFF && utf32 < 0x10000) ? 2 : 1;
         }
 
         /// <summary>
@@ -330,7 +508,7 @@ namespace IKVM.CoreLib.Modules
             var hs = ImmutableHashSet.CreateBuilder<string>();
             foreach (var i in modules)
                 if (clazz.Constants.Get(i).Name is { } name)
-                    hs.Add(name);
+                    hs.Add(DecodeModuleName(name));
 
             return hs.ToImmutable();
         }
@@ -346,7 +524,7 @@ namespace IKVM.CoreLib.Modules
             var ar = ImmutableArray.CreateBuilder<string>(classes.Count);
             foreach (var i in classes)
                 if (clazz.Constants.Get(i).Name is { } name)
-                    ar.Add(name);
+                    ar.Add(name.Replace('/', '.'));
 
             return ar.ToImmutable();
         }

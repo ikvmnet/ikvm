@@ -125,7 +125,7 @@ jobs:
     - name: Install Java
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y openjdk-8-jdk-headless && \
+        sudo apt-get install -y openjdk-8-jdk-headless openjdk-21-jdk && \
         echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> $GITHUB_ENV
     - name: Install LLVM and Clang
       run: |

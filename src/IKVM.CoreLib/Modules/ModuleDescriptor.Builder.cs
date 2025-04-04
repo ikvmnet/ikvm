@@ -89,6 +89,11 @@ namespace IKVM.CoreLib.Modules
             }
 
             /// <summary>
+            /// Gets the module name.
+            /// </summary>
+            public string Name => _name;
+
+            /// <summary>
             /// Gets the modifiers.
             /// </summary>
             public ModuleFlag Modifiers => _modifiers;

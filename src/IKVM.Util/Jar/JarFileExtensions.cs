@@ -1,6 +1,7 @@
 ﻿using System;
 
 using IKVM.ByteCode.Decoding;
+using IKVM.CoreLib.Jar;
 using IKVM.CoreLib.Modules;
 
 using static IKVM.Util.Jar.JarFileUtil;
@@ -41,7 +42,7 @@ namespace IKVM.Util.Jar
             if (e == null)
                 return null;
 
-            using var s = e.Open();
+            using var s = e.Value.Open();
             using var c = ClassFile.Read(s);
             var m = ModuleDescriptor.Read(c);
             return new ModuleInfo(m.Name, m.Version);

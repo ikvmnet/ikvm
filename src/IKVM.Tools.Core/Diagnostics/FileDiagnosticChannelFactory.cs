@@ -28,7 +28,7 @@ namespace IKVM.Tools.Core.Diagnostics
         }
 
         /// <inheritdoc />
-        public IDiagnosticChannel? GetChannel(string spec)
+        public IDiagnosticChannel? CreateChannel(string spec)
         {
             if (spec is null)
                 throw new ArgumentNullException(nameof(spec));
