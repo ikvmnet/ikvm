@@ -106,7 +106,7 @@ namespace IKVM.NET.Sdk.Tests
                             new XAttribute("value", "https://api.nuget.org/v3/index.json")),
                         new XElement("add",
                             new XAttribute("key", "dev"),
-                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))))))
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), "nuget"))))))
                 .Save(Path.Combine(TestRoot, "nuget.config"));
 
             var manager = new AnalyzerManager();
