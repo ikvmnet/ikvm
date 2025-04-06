@@ -90,6 +90,10 @@ jobs:
       with:
         android: false
         swap-storage: false
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 8
     - name: Checkout Source
       uses: actions/checkout@v4
       with:
