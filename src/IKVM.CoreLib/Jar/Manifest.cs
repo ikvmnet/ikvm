@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 
-namespace IKVM.Util.Jar
+namespace IKVM.CoreLib.Jar
 {
 
     /// <summary>
@@ -13,10 +13,10 @@ namespace IKVM.Util.Jar
     public class Manifest
     {
 
-        static readonly char[] ManifestNameValueSeparatorChars = new[] { ':' };
+        static readonly char[] ManifestNameValueSeparatorChars = [':'];
 
-        readonly Attributes mainAttributes = new();
-        readonly Dictionary<string, Attributes> attributes = new(StringComparer.OrdinalIgnoreCase);
+        readonly ImmutableDictionary<string, string> _mainAttributes;
+        readonly ImmutableDictionary<string, ImmutableDictionary<string, string>> _attributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,16 +24,27 @@ namespace IKVM.Util.Jar
         /// <param name="reader"></param>
         public Manifest(TextReader reader)
         {
-            // reads the mains section
-            if (ReadSection(reader) is Attributes main)
-            {
-                this.mainAttributes = main;
+            var attributes = ImmutableDictionary.CreateBuilder<string, ImmutableDictionary<string, string>>();
 
-                // read the remaining sections
-                while (ReadSection(reader) is Attributes section)
-                    if (section.TryGetValue("Name", out var name) && section.Remove("Name"))
-                        attributes[name] = section;
+            // read the remaining sections
+            while (ReadSection(reader) is { } section)
+            {
+                if (section.TryGetValue("Name", out var name))
+                {
+                    section = section.Remove("Name");
+                    attributes[name] = section;
+                }
+                else
+                {
+                    _mainAttributes = section;
+                }
             }
+
+            if (_mainAttributes is null)
+                throw new Exception("Could not find main manifest section.");
+
+            // finalize non-main sections
+            _attributes = attributes.ToImmutable();
         }
 
         /// <summary>
@@ -60,9 +71,9 @@ namespace IKVM.Util.Jar
         /// Reads a section of the manifest data in from the reader.
         /// </summary>
         /// <param name="reader"></param>
-        Attributes ReadSection(TextReader reader)
+        ImmutableDictionary<string, string>? ReadSection(TextReader reader)
         {
-            var attributes = new Attributes();
+            var attributes = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.OrdinalIgnoreCase);
 
             // read until we hit an empty line or the end of the file
             while (reader.ReadLine() is string s && s.Trim() != "")
@@ -70,18 +81,18 @@ namespace IKVM.Util.Jar
                     attributes[p[0].Trim()] = p[1].Trim();
 
             // only return attributes if there is any
-            return attributes.Count > 0 ? attributes : null;
+            return attributes.Count > 0 ? attributes.ToImmutable() : null;
         }
 
         /// <summary>
         /// Returns the main Attributes for the Manifest.
         /// </summary>
-        public Attributes MainAttributes => mainAttributes;
+        public ImmutableDictionary<string, string> MainAttributes => _mainAttributes;
 
         /// <summary>
         /// Returns the Attributes for the specified entry name.
         /// </summary>
-        public IDictionary<string, Attributes> Attributes => attributes;
+        public ImmutableDictionary<string, ImmutableDictionary<string, string>> Attributes => _attributes;
 
     }
 

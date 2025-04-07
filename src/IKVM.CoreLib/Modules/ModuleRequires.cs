@@ -78,7 +78,13 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(_modifiers, _name, _version);
+            var hc = new HashCode();
+            hc.Add(_modifiers);
+            hc.Add(_name);
+            if (_version.IsValid)
+                hc.Add(_version);
+
+            return hc.ToHashCode();
         }
 
     }

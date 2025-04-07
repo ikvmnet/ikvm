@@ -388,7 +388,10 @@ namespace IKVM.Tools.Exporter
 
                         try
                         {
-                            ProcessClass(c);
+                            rc = ProcessClass(c);
+                            if (rc != 0)
+                                return rc;
+
                             WriteClass(c);
                         }
                         catch (Exception x)
@@ -421,7 +424,7 @@ namespace IKVM.Tools.Exporter
             return !tw.IsArray && tw.TypeAsBaseType.IsArray;
         }
 
-        void AddToExportListIfNeeded(RuntimeJavaType javaType)
+        int AddToExportListIfNeeded(RuntimeJavaType javaType)
         {
             while (javaType.IsArray)
                 javaType = javaType.ElementTypeWrapper;
@@ -429,8 +432,7 @@ namespace IKVM.Tools.Exporter
             if (javaType.IsUnloadable && javaType is RuntimeUnloadableJavaType unloadableJavaType)
             {
                 javaType.Diagnostics.MissingType(unloadableJavaType.MissingType.Name, unloadableJavaType.MissingType.Assembly.FullName);
-                Environment.Exit(1);
-                return;
+                return 1;
             }
 
             if (javaType is RuntimeStubJavaType)
@@ -441,21 +443,37 @@ namespace IKVM.Tools.Exporter
             {
                 AddToExportList(javaType);
             }
+
+            return 0;
         }
 
-        void AddToExportListIfNeeded(RuntimeJavaType[] types)
+        int AddToExportListIfNeeded(RuntimeJavaType[] types)
         {
             foreach (var tw in types)
-                AddToExportListIfNeeded(tw);
+            {
+                var rc = AddToExportListIfNeeded(tw);
+                if (rc != 0)
+                    return rc;
+            }
+
+            return 0;
         }
 
-        void ProcessClass(RuntimeJavaType tw)
+        int ProcessClass(RuntimeJavaType tw)
         {
-            RuntimeJavaType superclass = tw.BaseTypeWrapper;
-            if (superclass != null)
-                AddToExportListIfNeeded(superclass);
+            int rc = 0;
 
-            AddToExportListIfNeeded(tw.Interfaces);
+            var superclass = tw.BaseTypeWrapper;
+            if (superclass != null)
+            {
+                rc = AddToExportListIfNeeded(superclass);
+                if (rc != 0)
+                    return rc;
+            }
+
+            rc = AddToExportListIfNeeded(tw.Interfaces);
+            if (rc != 0)
+                return rc;
 
             var outerClass = tw.DeclaringTypeWrapper;
             if (outerClass != null)
@@ -470,8 +488,14 @@ namespace IKVM.Tools.Exporter
                 if (mw.IsPublic || mw.IsProtected)
                 {
                     mw.Link();
-                    AddToExportListIfNeeded(mw.ReturnType);
-                    AddToExportListIfNeeded(mw.GetParameters());
+
+                    rc = AddToExportListIfNeeded(mw.ReturnType);
+                    if (rc != 0)
+                        return rc;
+
+                    rc = AddToExportListIfNeeded(mw.GetParameters());
+                    if (rc != 0)
+                        return rc;
                 }
             }
 
@@ -480,9 +504,13 @@ namespace IKVM.Tools.Exporter
                 if (fw.IsPublic || fw.IsProtected)
                 {
                     fw.Link();
-                    AddToExportListIfNeeded(fw.FieldTypeWrapper);
+                    rc = AddToExportListIfNeeded(fw.FieldTypeWrapper);
+                    if (rc != 0)
+                        return rc;
                 }
             }
+
+            return 0;
         }
 
     }

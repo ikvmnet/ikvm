@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 

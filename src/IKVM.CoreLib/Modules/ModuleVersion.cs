@@ -334,6 +334,9 @@ namespace IKVM.CoreLib.Modules
         /// <inheritdoc />
         public readonly override int GetHashCode()
         {
+            if (IsValid == false)
+                return 0;
+
             var hc = new HashCode();
 
             foreach (var i in _sequence)
@@ -361,11 +364,19 @@ namespace IKVM.CoreLib.Modules
         /// <returns></returns>
         public readonly bool Equals(ModuleVersion other)
         {
-            return _sequence.SequenceEqual(other._sequence) && _pre.SequenceEqual(other._pre) && _build.SequenceEqual(other._build);
+            // both are invalid
+            if (IsValid == false && other.IsValid == false)
+                return true;
+
+            // both are valid, actually compare
+            if (IsValid && other.IsValid)
+                return _sequence.SequenceEqual(other._sequence) && _pre.SequenceEqual(other._pre) && _build.SequenceEqual(other._build);
+
+            return false;
         }
 
         /// <inheritdoc />
-        public readonly override string ToString()
+        public readonly override string? ToString()
         {
             return _rawValue;
         }

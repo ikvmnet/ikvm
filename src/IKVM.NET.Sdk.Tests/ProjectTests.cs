@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Xml.Linq;
 
 using Buildalyzer;
@@ -16,7 +14,6 @@ using CliWrap.Buffered;
 using FluentAssertions;
 
 using Microsoft.Build.Framework;
-using Microsoft.Build.Tasks;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -136,6 +133,7 @@ namespace IKVM.NET.Sdk.Tests
             options.Arguments.Add("/v:diag");
 
             var result = analyzer.Build(options);
+            context.WriteLine(Path.Combine(WorkRoot, "msbuild.binlog"));
             context.AddResultFile(Path.Combine(WorkRoot, "msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
         }
@@ -265,6 +263,7 @@ namespace IKVM.NET.Sdk.Tests
             options.Arguments.Add("/v:diag");
 
             var result = analyzer.Build(options);
+            TestContext.WriteLine(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             TestContext.AddResultFile(Path.Combine(WorkRoot, $"{env}-{tfm}-{rid}-msbuild.binlog"));
             result.OverallSuccess.Should().Be(true);
 
