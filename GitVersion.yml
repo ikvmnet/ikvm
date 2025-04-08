@@ -12,4 +12,4 @@ branches:
     regex: ^develop$
     tag: dev
     increment: Minor
-    
+     
