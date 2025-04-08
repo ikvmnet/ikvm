@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 
+using IKVM.ByteCode;
 using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Decoding;
 using IKVM.ByteCode.Encoding;
@@ -34,12 +35,12 @@ namespace IKVM.CoreLib.Tests.Modules
         [TestMethod]
         public void CanReadModuleDescriptor()
         {
-            var b = new ClassFileBuilder(new ByteCode.ClassFormatVersion(53, 0), ByteCode.AccessFlag.Module, "module-info", null);
+            var b = new ClassFileBuilder(new ClassFormatVersion(53, 0), AccessFlag.Module, "module-info", null);
             b.Attributes.Module(
                 b.Constants.GetOrAddModule("org.test"),
                 default,
                 b.Constants.GetOrAddUtf8("1.2.3"),
-                static a => { },
+                a => a.Requires(b.Constants.GetOrAddModule("java.base"), ModuleRequiresFlag.Mandated, Utf8ConstantHandle.Nil),
                 static a => { },
                 static a => { },
                 static a => { },

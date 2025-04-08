@@ -9,7 +9,7 @@
         /// </summary>
         /// <param name="spec"></param>
         /// <returns></returns>
-        IDiagnosticChannel? GetChannel(string spec);
+        IDiagnosticChannel? CreateChannel(string spec);
 
     }
 

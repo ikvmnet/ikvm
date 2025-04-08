@@ -1,10 +1,10 @@
 ﻿using FluentAssertions;
 
-using IKVM.Util.Jar;
+using IKVM.CoreLib.Jar;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Util.Jar
+namespace IKVM.CoreLib.Tests.Jar
 {
 
     [TestClass]

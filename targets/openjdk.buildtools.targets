@@ -11,12 +11,12 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Target Name="ResolveJavaToolsJar" Condition=" '$(JavaToolsJarPath)' == '' ">
+    <Target Name="ResolveJavaToolsJar" DependsOnTargets="FindJdk" Condition=" '$(JavaToolsJarPath)' == '' ">
         <PropertyGroup>
-            <JavaToolsJarPath Condition="Exists('$(JAVA_HOME)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\lib\tools.jar'))</JavaToolsJarPath>
+            <JavaToolsJarPath Condition="Exists('$(JdkPath)\lib\tools.jar')">$([System.IO.Path]::GetFullPath('$(JdkPath)\lib\tools.jar'))</JavaToolsJarPath>
         </PropertyGroup>
-        <Message Text="Using tools.jar found in JAVA_HOME at '$(JavaToolsJarPath)'." Importance="high" Condition=" '$(JavaToolsJarPath)' != '' " />
-        <Error Text="Could not locate tools.jar in JAVA_HOME. Ensure JAVA_HOME is set to an appropriate bootstrap JDK." Condition=" '$(JavaToolsJarPath)' == '' " />
+        <Message Text="Using tools.jar found at '$(JavaToolsJarPath)'." Importance="high" Condition=" '$(JavaToolsJarPath)' != '' " />
+        <Error Text="Could not locate tools.jar." Condition=" '$(JavaToolsJarPath)' == '' " />
     </Target>
 
     <PropertyGroup>
