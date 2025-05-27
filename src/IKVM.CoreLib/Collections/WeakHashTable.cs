@@ -16,7 +16,7 @@ namespace IKVM.CoreLib.Collections
     public sealed class WeakHashTable<TKey, TValue> :
         IEnumerable<KeyValuePair<TKey, TValue>>
         where TKey : class
-        where TValue : class
+        where TValue : class?
     {
 
         const int InitialCapacity = 8;
@@ -545,7 +545,7 @@ namespace IKVM.CoreLib.Collections
             {
                 Debug.Assert(key != null); // Key already validated as non-null
 
-                int entryIndex = FindEntry(key, out object? secondary);
+                int entryIndex = FindEntry(key, out TValue? secondary);
                 value = Unsafe.As<TValue>(secondary);
                 return entryIndex != -1;
             }
@@ -555,7 +555,7 @@ namespace IKVM.CoreLib.Collections
             /// Must hold _lock, or be prepared to retry the search while holding _lock.
             /// </summary>
             /// <remarks>This method requires <paramref name="value"/> to be on the stack to be properly tracked.</remarks>
-            internal int FindEntry(TKey key, out object? value)
+            internal int FindEntry(TKey key, out TValue? value)
             {
                 Debug.Assert(key != null);
 
@@ -573,7 +573,7 @@ namespace IKVM.CoreLib.Collections
                     if (_entries[entriesIndex].HashCode == hashCode)
                     {
                         var (target, dependent) = _entries[entriesIndex].Handle.TargetAndDependent;
-                        if (_parent._comparer.Equals((TKey)dependent!, key))
+                        if (_parent._comparer.Equals(dependent!, key))
                         {
                             value = target;
 
@@ -600,8 +600,8 @@ namespace IKVM.CoreLib.Collections
 
                     if (dependent != null)
                     {
-                        key = (TKey)dependent;
-                        value = (TValue?)target;
+                        key = dependent;
+                        value = target;
                         return true;
                     }
                 }
