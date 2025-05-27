@@ -1,0 +1,136 @@
+﻿using System;
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Text;
+
+namespace IKVM.CoreLib.Symbols
+{
+
+    class ArrayTypeSymbol : HasElementSymbol
+    {
+
+        readonly int _rank;
+        readonly ImmutableArray<int> _sizes;
+        readonly ImmutableArray<int> _lowerBounds;
+
+        string? _nameSuffix;
+        ImmutableArray<TypeSymbol> _interfaces;
+        ImmutableArray<MethodSymbol> _methods;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="elementType"></param>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        public ArrayTypeSymbol(SymbolContext context, TypeSymbol elementType, int rank, ImmutableArray<int> sizes, ImmutableArray<int> lowerBounds) :
+            base(context, elementType)
+        {
+            _rank = rank;
+            _sizes = sizes;
+            _lowerBounds = lowerBounds;
+        }
+
+        /// <inheritdoc />
+        protected override string NameSuffix => _nameSuffix ??= ComputeNameSuffix();
+
+        /// <summary>
+        /// Computes the value for <see cref="NameSuffix"/>.
+        /// </summary>
+        /// <returns></returns>
+        string ComputeNameSuffix()
+        {
+            if (_rank == 1)
+            {
+                return "[*]";
+            }
+            else
+            {
+                var b = new ValueStringBuilder(stackalloc char[1 + (_rank - 1) + 1]);
+                b.Append('[');
+                b.Append(',', _rank - 1);
+                b.Append(']');
+                return b.ToString();
+            }
+        }
+
+        /// <inheritdoc />
+        public sealed override TypeAttributes Attributes => TypeAttributes.AutoLayout | TypeAttributes.AnsiClass | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable;
+
+        /// <inheritdoc />
+        public sealed override bool IsArray => true;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? BaseType => Context.ResolveCoreType("System.Array");
+
+        /// <inheritdoc />
+        public sealed override int GetArrayRank()
+        {
+            return _rank;
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces() => ImmutableArray<TypeSymbol>.Empty;
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            if (_methods.IsDefault)
+            {
+                var int32 = Context.ResolveCoreType("System.Int32");
+
+                var ctor1Args = ImmutableArray.CreateBuilder<TypeSymbol>(_rank);
+                var ctor2Args = ImmutableArray.CreateBuilder<TypeSymbol>(_rank * 2);
+                for (int i = 0; i < _rank; i++)
+                {
+                    ctor1Args.Add(int32);
+                    ctor2Args.Add(int32);
+                    ctor2Args.Add(int32);
+                }
+
+                // get and set args start at the same length
+                var argBuilder = ImmutableArray.CreateBuilder<TypeSymbol>(_rank);
+                for (int i = 0; i < _rank; i++)
+                    argBuilder.Add(int32);
+
+                var args = argBuilder.DrainToImmutable();
+                var getArgs = args;
+                var setArgs = args.Add(GetElementType()!); // set args takes a value
+
+                ImmutableInterlocked.InterlockedInitialize(ref _methods,
+                [
+                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor1Args.DrainToImmutable()),
+                    new SyntheticConstructorSymbol(Context, Module, this, MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, ctor2Args.DrainToImmutable()),
+                    new SyntheticMethodSymbol(Context, Module, this, "Set", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, null, setArgs),
+                    new SyntheticMethodSymbol(Context, Module, this, "Address", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, GetElementType()!.MakeByRefType(), getArgs),
+                    new SyntheticMethodSymbol(Context, Module, this, "Get", MethodAttributes.Public, CallingConventions.Standard | CallingConventions.HasThis, GetElementType(), getArgs),
+                ]);
+            }
+
+            return _methods;
+        }
+
+        /// <inheritdoc />
+        internal sealed override MethodImplementationMapping GetMethodImplementations()
+        {
+            return MethodImplementationMapping.CreateEmpty(this);
+        }
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => [];
+
+        /// <inheritdoc />
+        internal sealed override TypeSymbol Specialize(GenericContext context)
+        {
+            if (ContainsGenericParameters == false)
+                return this;
+
+            var elementType = GetElementType() ?? throw new InvalidOperationException();
+            return elementType.Specialize(context).MakeArrayType(GetArrayRank());
+        }
+
+    }
+
+}

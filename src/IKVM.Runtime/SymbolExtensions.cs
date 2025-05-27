@@ -26,7 +26,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 			return ((IkvmReflectionAssemblySymbol)symbol).UnderlyingAssembly;
 #else
-            return ((ReflectionAssemblySymbol)symbol).UnderlyingAssembly;
+            return ((ReflectionAssemblyLoader)symbol).UnderlyingAssembly;
 #endif
         }
 
@@ -38,7 +38,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 			return ((IkvmReflectionTypeSymbol)symbol).UnderlyingType;
 #else
-            return ((ReflectionTypeSymbol)symbol).UnderlyingType;
+            return ((ReflectionTypeLoader)symbol).UnderlyingType;
 #endif
         }
 
@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 			return ((IkvmReflectionMethodSymbol)symbol).UnderlyingMethod;
 #else
-            return ((ReflectionMethodSymbol)symbol).UnderlyingMethod;
+            return ((ReflectionMethodLoader)symbol).UnderlyingMethod;
 #endif
         }
 
@@ -74,7 +74,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 			return ((IkvmReflectionFieldSymbol)symbol).UnderlyingField;
 #else
-            return ((ReflectionFieldSymbol)symbol).UnderlyingField;
+            return ((ReflectionFieldLoader)symbol).UnderlyingField;
 #endif
         }
 
@@ -86,7 +86,7 @@ namespace IKVM.Runtime
 #if IMPORTER || EXPORTER
 			return ((IkvmReflectionPropertySymbol)symbol).UnderlyingProperty;
 #else
-            return ((ReflectionPropertySymbol)symbol).UnderlyingProperty;
+            return ((ReflectionPropertyLoader)symbol).UnderlyingProperty;
 #endif
         }
 

@@ -1,25 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.IO;
 
-using Assembly = IKVM.Reflection.Assembly;
-using AssemblyName = IKVM.Reflection.AssemblyName;
-using Module = IKVM.Reflection.Module;
-using Type = IKVM.Reflection.Type;
+using IKVM.Reflection;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionAssemblySymbol : IkvmReflectionSymbol, IAssemblySymbol
+    class IkvmReflectionAssemblySymbol : AssemblySymbol
     {
 
-        readonly Assembly _underlyingAssembly;
-        readonly ConditionalWeakTable<Module, IkvmReflectionModuleSymbol> _modules = new();
+        internal readonly Assembly _underlyingAssembly;
 
-        global::System.Reflection.AssemblyName? _assemblyName;
-        ImmutableArray<CustomAttributeSymbol> _customAttributes = default;
+        ImmutableArray<AssemblyIdentity> _references;
+        ImmutableArray<ModuleSymbol> _modules;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,112 +27,85 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
-        /// <summary>
-        /// Gets or creates the <see cref="IModuleSymbol"/> cached for the module.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal IkvmReflectionModuleSymbol GetOrCreateModuleSymbol(Module module)
+        /// <inheritdoc />
+        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+
+        /// <inheritdoc />
+        public sealed override AssemblyIdentity Identity => _underlyingAssembly.GetName().Pack();
+
+        /// <inheritdoc />
+        public sealed override MethodSymbol? EntryPoint => Context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
+
+        /// <inheritdoc />
+        public sealed override string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
+
+        /// <inheritdoc />
+        public sealed override string Location => _underlyingAssembly.Location;
+
+        /// <inheritdoc />
+        public sealed override ModuleSymbol ManifestModule => Context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => _underlyingAssembly.__IsMissing;
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<ModuleSymbol> GetModules()
         {
-            Debug.Assert(module.Assembly == _underlyingAssembly);
-            return _modules.GetValue(module, _ => new IkvmReflectionModuleSymbol(Context, _));
-        }
-
-        internal Assembly UnderlyingAssembly => _underlyingAssembly;
-
-        public string? FullName => _underlyingAssembly.FullName;
-
-        public IModuleSymbol ManifestModule => ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
-
-        public IEnumerable<IModuleSymbol> Modules => ResolveModuleSymbols(_underlyingAssembly.Modules);
-
-        public IEnumerable<ITypeSymbol> DefinedTypes => ResolveTypeSymbols(_underlyingAssembly.DefinedTypes);
-
-        public IEnumerable<ITypeSymbol> ExportedTypes => ResolveTypeSymbols(_underlyingAssembly.ExportedTypes);
-
-        public IMethodSymbol? EntryPoint => _underlyingAssembly.EntryPoint is { } m ? ResolveMethodSymbol(m) : null;
-
-        public override bool IsMissing => _underlyingAssembly.__IsMissing;
-
-        public ITypeSymbol[] GetExportedTypes()
-        {
-            return ResolveTypeSymbols(_underlyingAssembly.GetExportedTypes());
-        }
-
-        public IModuleSymbol? GetModule(string name)
-        {
-            return _underlyingAssembly.GetModule(name) is Module m ? GetOrCreateModuleSymbol(m) : null;
-        }
-
-        public ImmutableArray<IModuleSymbol> GetModules()
-        {
-            return ResolveModuleSymbols(_underlyingAssembly.GetModules()).CastArray<IModuleSymbol>();
-        }
-
-        public ImmutableArray<IModuleSymbol> GetModules(bool getResourceModules)
-        {
-            return ResolveModuleSymbols(_underlyingAssembly.GetModules(getResourceModules)).CastArray<IModuleSymbol>();
-        }
-
-        global::System.Reflection.AssemblyName ToName(AssemblyName src)
-        {
-#pragma warning disable SYSLIB0037 // Type or member is obsolete
-            return new global::System.Reflection.AssemblyName()
+            if (_modules == default)
             {
-                Name = src.Name,
-                Version = src.Version,
-                CultureName = src.CultureName,
-                HashAlgorithm = (global::System.Configuration.Assemblies.AssemblyHashAlgorithm)src.HashAlgorithm,
-                Flags = (global::System.Reflection.AssemblyNameFlags)src.Flags,
-                ContentType = (global::System.Reflection.AssemblyContentType)src.ContentType,
-            };
-#pragma warning restore SYSLIB0037 // Type or member is obsolete
+                var l = _underlyingAssembly.GetModules();
+                var b = ImmutableArray.CreateBuilder<ModuleSymbol>(l.Length);
+                foreach (var module in l)
+                    b.Add(new IkvmReflectionModuleSymbol(Context, this, module));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _modules, b.DrainToImmutable());
+            }
+
+            return _modules;
         }
 
-        public global::System.Reflection.AssemblyName GetName()
+        /// <inheritdoc />
+        public sealed override ImmutableArray<AssemblyIdentity> GetReferencedAssemblies()
         {
-            return _assemblyName ??= ToName(_underlyingAssembly.GetName());
+            if (_references == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _references, _underlyingAssembly.GetReferencedAssemblies().Pack());
+
+            return _references;
         }
 
-        public ImmutableArray<global::System.Reflection.AssemblyName> GetReferencedAssemblies()
+        /// <inheritdoc />
+        public sealed override ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
         {
-            var l = _underlyingAssembly.GetReferencedAssemblies().ToImmutableArray();
-            var a = ImmutableArray.CreateBuilder<global::System.Reflection.AssemblyName>(l.Length);
-            for (int i = 0; i < l.Length; i++)
-                a.Add(ToName(l[i]));
+            if (_underlyingAssembly.GetManifestResourceInfo(resourceName) is var r and not null)
+                return new ManifestResourceInfo((System.Reflection.ResourceLocation)r.ResourceLocation, r.FileName, Context.ResolveAssemblySymbol(r.ReferencedAssembly));
 
-            return a.DrainToImmutable();
+            return null;
         }
 
-        public ITypeSymbol? GetType(string name)
+        /// <inheritdoc />
+        public sealed override Stream? GetManifestResourceStream(string name)
         {
-            return _underlyingAssembly.GetType(name) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            return _underlyingAssembly.GetManifestResourceStream(name);
         }
 
-        public ITypeSymbol? GetType(string name, bool throwOnError)
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _underlyingAssembly.GetType(name, throwOnError) is Type t ? Context.GetOrCreateTypeSymbol(t) : null;
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()));
+
+            return _customAttributes;
         }
 
-        public ITypeSymbol[] GetTypes()
+        /// <summary>
+        /// Saves this assembly to disk, specifying the nature of code in the assembly's executables and the target platform.
+        /// </summary>
+        /// <param name="assemblyFile"></param>
+        /// <param name="pekind"></param>
+        /// <param name="imageFileMachine"></param>
+        internal void Save(string assemblyFile, System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
         {
-            return ResolveTypeSymbols(_underlyingAssembly.GetTypes());
-        }
-
-        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes()
-        {
-            return _customAttributes.IsDefault ? _customAttributes = ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()) : _customAttributes;
-        }
-
-        public ImmutableArray<CustomAttributeSymbol> GetCustomAttributes(ITypeSymbol attributeType)
-        {
-            return ResolveCustomAttributes(_underlyingAssembly.__GetCustomAttributes(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false));
-        }
-
-        public bool IsDefined(ITypeSymbol attributeType)
-        {
-            return _underlyingAssembly.IsDefined(((IkvmReflectionTypeSymbol)attributeType).UnderlyingType, false);
+            throw new NotImplementedException();
         }
 
     }

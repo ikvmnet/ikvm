@@ -5,6 +5,17 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="Symbols\Emit\**" />
+      <Compile Remove="Symbols\IkvmReflection\**" />
+      <Compile Remove="Symbols\Reflection\Emit\**" />
+      <EmbeddedResource Remove="Symbols\Emit\**" />
+      <EmbeddedResource Remove="Symbols\IkvmReflection\**" />
+      <EmbeddedResource Remove="Symbols\Reflection\Emit\**" />
+      <None Remove="Symbols\Emit\**" />
+      <None Remove="Symbols\IkvmReflection\**" />
+      <None Remove="Symbols\Reflection\Emit\**" />
+    </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.CoreLib.Tests" />
