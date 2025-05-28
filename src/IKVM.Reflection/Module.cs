@@ -349,17 +349,17 @@ namespace IKVM.Reflection
             {
                 this.genericTypeArguments = genericTypeArguments;
                 this.genericMethodArguments = genericMethodArguments;
-            }
+                }
 
-            public Type GetGenericTypeArgument(int index)
-            {
-                return genericTypeArguments[index];
-            }
+                public Type GetGenericTypeArgument(int index)
+                {
+                    return genericTypeArguments[index];
+                }
 
-            public Type GetGenericMethodArgument(int index)
-            {
-                return genericMethodArguments[index];
-            }
+                public Type GetGenericMethodArgument(int index)
+                {
+                    return genericMethodArguments[index];
+                }
 
         }
 

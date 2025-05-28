@@ -29,10 +29,10 @@ namespace IKVM.Reflection
     public abstract class EventInfo : MemberInfo
 	{
 
-		/// <summary>
-		/// Initializes a new instance.
-		/// </summary>
-		internal EventInfo()
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        protected EventInfo()
 		{
 
 		}
