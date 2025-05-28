@@ -7,9 +7,10 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionAssemblySymbol : AssemblySymbol
+    class IkvmReflectionAssemblyLoader : IAssemblyLoader
     {
 
+        readonly IkvmReflectionSymbolContext _context;
         internal readonly Assembly _underlyingAssembly;
 
         ImmutableArray<AssemblyIdentity> _references;
@@ -21,9 +22,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="underlyingAssembly"></param>
-        public IkvmReflectionAssemblySymbol(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
-            base(context)
+        public IkvmReflectionAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
