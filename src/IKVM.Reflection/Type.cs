@@ -248,6 +248,16 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_VAR || sigElementType == Signature.ELEMENT_TYPE_MVAR; }
         }
 
+        public bool IsGenericMethodParameter
+        {
+            get { return IsGenericParameter && DeclaringMethod is not null; }
+        }
+
+        public bool IsGenericTypeParameter
+        {
+            get { return IsGenericParameter && DeclaringMethod is null; }
+        }
+
         public virtual int GenericParameterPosition
         {
             get { throw new NotSupportedException(); }
