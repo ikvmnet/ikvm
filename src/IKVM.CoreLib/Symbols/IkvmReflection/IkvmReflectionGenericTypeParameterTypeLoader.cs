@@ -29,7 +29,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
 
-            if (underlyingType.IsGenericParameter == false || underlyingType.IsGenericMethodParameter() == true)
+            if (underlyingType.IsGenericParameter == false || underlyingType.IsGenericMethodParameter == true)
                 throw new ArgumentException(nameof(underlyingType));
         }
 
@@ -39,12 +39,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public TypeSymbol GetDeclaringType() => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingType.DeclaringType!)) : _declaringType.Value;
 
-        /// <inheritdoc />
+        /// <inheritdoc />ype.GenericParameterPosition;
+
         public string GetName() => _underlyingType.Name;
 
         /// <inheritdoc />
-        public int GetGenericParameterPosition() => _underlyingType.GenericParameterPosition;
-
         /// <inheritdoc />
         public global::System.Reflection.GenericParameterAttributes GetGenericParameterAttributes() => (global::System.Reflection.GenericParameterAttributes)_underlyingType.GenericParameterAttributes;
 

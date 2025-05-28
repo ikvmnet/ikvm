@@ -31,7 +31,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
 
-            if (underlyingType.IsGenericParameter == false || underlyingType.IsGenericMethodParameter() == false)
+            if (underlyingType.IsGenericParameter == false || underlyingType.IsGenericMethodParameter == false)
                 throw new ArgumentException(nameof(underlyingType));
         }
 
