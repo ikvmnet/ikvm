@@ -50,7 +50,7 @@ foreach (var kvp in DiagnosticFile.Read(Host.ResolvePath(Path.Combine("Diagnosti
         /// <#= desc #>
         /// </summary>
         /// <remarks>
-<#= Util.ToCommentString(kvp.Value.Message ?? "") #>
+<#= Util.ToCommentString(kvp.Value) #>
         /// </remarks>
         public static DiagnosticEvent <#= kvp.Key #>(<#= string.Join(", ", argDecl) #>) => Diagnostic.<#= kvp.Key #>.Event([<#= string.Join(", ", argList) #>], exception, location);
 

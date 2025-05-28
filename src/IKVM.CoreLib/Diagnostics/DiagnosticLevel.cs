@@ -6,6 +6,7 @@
     enum DiagnosticLevel
     {
 
+        Unknown,
         Trace,
         Info,
         Warning,
