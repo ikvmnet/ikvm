@@ -378,7 +378,7 @@ namespace IKVM.Reflection
             {
                 WriteGenericSignature(module, bb, type);
             }
-            else if (type.__IsFunctionPointer)
+            else if (type.IsFunctionPointer)
             {
                 bb.Write(ELEMENT_TYPE_FNPTR);
                 WriteStandAloneMethodSig(module, bb, type.__MethodSignature);

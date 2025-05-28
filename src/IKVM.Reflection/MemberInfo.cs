@@ -43,7 +43,9 @@ namespace IKVM.Reflection
         }
 
         public abstract string Name { get; }
+
         public abstract Type DeclaringType { get; }
+
         public abstract MemberTypes MemberType { get; }
 
         public virtual Type ReflectedType

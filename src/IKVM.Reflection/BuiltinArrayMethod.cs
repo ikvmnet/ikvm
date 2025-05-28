@@ -94,7 +94,7 @@ namespace IKVM.Reflection
                 get { return 0x08000000; }
             }
 
-            internal override Module Module
+            public override Module Module
             {
                 get { return method.Module; }
             }
