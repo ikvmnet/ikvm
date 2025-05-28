@@ -39,13 +39,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public TypeSymbol GetDeclaringType() => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingType.DeclaringType!)) : _declaringType.Value;
 
-        /// <inheritdoc />ype.GenericParameterPosition;
-
+        /// <inheritdoc />
         public string GetName() => _underlyingType.Name;
 
         /// <inheritdoc />
-        /// <inheritdoc />
         public global::System.Reflection.GenericParameterAttributes GetGenericParameterAttributes() => (global::System.Reflection.GenericParameterAttributes)_underlyingType.GenericParameterAttributes;
+
+        /// <inheritdoc />
+        public int GetGenericParameterPosition() => _underlyingType.GenericParameterPosition;
 
         /// <inheritdoc />
         public ImmutableArray<TypeSymbol> GetGenericParameterConstraints()

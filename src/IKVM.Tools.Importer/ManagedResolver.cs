@@ -35,7 +35,7 @@ namespace IKVM.Tools.Importer
     {
 
         readonly StaticCompiler compiler;
-        readonly IkvmReflectionSymbolContext context = new();
+        readonly IkvmReflectionSymbolContext context;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,30 +44,30 @@ namespace IKVM.Tools.Importer
         public ManagedResolver(StaticCompiler compiler)
         {
             this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+            this.context = new IkvmReflectionSymbolContext(compiler.Universe, new IkvmReflectionSymbolOptions());
         }
 
         public AssemblySymbol ResolveBaseAssembly()
         {
-            return compiler.baseAssembly != null ? context.GetOrCreateAssemblySymbol(compiler.baseAssembly) : null;
+            return compiler.baseAssembly != null ? context.ResolveAssemblySymbol(compiler.baseAssembly) : null;
         }
 
         public AssemblySymbol ResolveAssembly(string assemblyName)
         {
-            return compiler.Universe.Load(assemblyName) is { } a ? context.GetOrCreateAssemblySymbol(a) : null;
+            return compiler.Universe.Load(assemblyName) is { } a ? context.ResolveAssemblySymbol(a) : null;
         }
 
         public TypeSymbol ResolveCoreType(string typeName)
         {
-            foreach (var assembly in compiler.Universe.GetAssemblies())
-                if (assembly.GetType(typeName) is Type t)
-                    return context.GetOrCreateTypeSymbol(t);
+            if (compiler.Universe.CoreLib.GetType(typeName) is Type t)
+                return context.ResolveTypeSymbol(t);
 
             return null;
         }
 
         public TypeSymbol ResolveRuntimeType(string typeName)
         {
-            return compiler.GetRuntimeType(typeName) is { } t ? context.GetOrCreateTypeSymbol(t) : null;
+            return compiler.GetRuntimeType(typeName) is { } t ? context.ResolveTypeSymbol(t) : null;
         }
 
     }
