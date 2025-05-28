@@ -46,17 +46,17 @@ namespace IKVM.Tools.Importer
             this.compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
         }
 
-        public IAssemblySymbol ResolveBaseAssembly()
+        public AssemblySymbol ResolveBaseAssembly()
         {
             return compiler.baseAssembly != null ? context.GetOrCreateAssemblySymbol(compiler.baseAssembly) : null;
         }
 
-        public IAssemblySymbol ResolveAssembly(string assemblyName)
+        public AssemblySymbol ResolveAssembly(string assemblyName)
         {
             return compiler.Universe.Load(assemblyName) is { } a ? context.GetOrCreateAssemblySymbol(a) : null;
         }
 
-        public ITypeSymbol ResolveCoreType(string typeName)
+        public TypeSymbol ResolveCoreType(string typeName)
         {
             foreach (var assembly in compiler.Universe.GetAssemblies())
                 if (assembly.GetType(typeName) is Type t)
@@ -65,7 +65,7 @@ namespace IKVM.Tools.Importer
             return null;
         }
 
-        public ITypeSymbol ResolveRuntimeType(string typeName)
+        public TypeSymbol ResolveRuntimeType(string typeName)
         {
             return compiler.GetRuntimeType(typeName) is { } t ? context.GetOrCreateTypeSymbol(t) : null;
         }

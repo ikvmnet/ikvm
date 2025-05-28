@@ -2,7 +2,6 @@
 
 using IKVM.CoreLib.Symbols;
 using IKVM.CoreLib.Symbols.Reflection;
-using IKVM.CoreLib.Symbols.IkvmReflection;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -18,7 +17,7 @@ namespace IKVM.Runtime
     static class SymbolExtensions
     {
 
-        public static Assembly AsReflection(this IAssemblySymbol symbol)
+        public static Assembly AsReflection(this AssemblySymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -30,7 +29,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static Type AsReflection(this ITypeSymbol symbol)
+        public static Type AsReflection(this TypeSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -42,19 +41,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static ConstructorInfo AsReflection(this IConstructorSymbol symbol)
-        {
-            if (symbol == null)
-                return null;
-
-#if IMPORTER || EXPORTER
-			return ((IkvmReflectionConstructorSymbol)symbol).UnderlyingConstructor;
-#else
-            return ((ReflectionConstructorSymbol)symbol).UnderlyingConstructor;
-#endif
-        }
-
-        public static MethodInfo AsReflection(this IMethodSymbol symbol)
+        public static MethodInfo AsReflection(this MethodSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -66,7 +53,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static FieldInfo AsReflection(this IFieldSymbol symbol)
+        public static FieldInfo AsReflection(this FieldSymbol symbol)
         {
             if (symbol == null)
                 return null;
@@ -78,7 +65,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        public static PropertyInfo AsReflection(this IPropertySymbol symbol)
+        public static PropertyInfo AsReflection(this PropertySymbol symbol)
         {
             if (symbol == null)
                 return null;

@@ -7,7 +7,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMissingAssemblySymbol : AssemblySymbol
+    class IkvmReflectionMissingAssemblyLoader : AssemblySymbol
     {
 
         internal readonly Assembly _underlyingAssembly;
@@ -19,11 +19,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="underlyingAssembly"></param>
-        public IkvmReflectionMissingAssemblySymbol(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
+        public IkvmReflectionMissingAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
             base(context)
         {
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
-            _modules = [new IkvmReflectionMissingModuleSymbol(context, this, _underlyingAssembly.ManifestModule)];
+            _modules = [new IkvmReflectionMissingModuleLoader(context, this, _underlyingAssembly.ManifestModule)];
         }
 
         /// <inheritdoc />

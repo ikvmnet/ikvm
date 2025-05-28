@@ -6,7 +6,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionParameterSymbol : DefinitionParameterSymbol
+    class IkvmReflectionParameterLoader : DefinitionParameterSymbol
     {
 
         readonly ParameterInfo _underlyingParameter;
@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="declaringMember"></param>
         /// <param name="underlyingParameter"></param>
-        public IkvmReflectionParameterSymbol(IkvmReflectionSymbolContext context, MemberSymbol declaringMember, ParameterInfo underlyingParameter) :
+        public IkvmReflectionParameterLoader(IkvmReflectionSymbolContext context, MemberSymbol declaringMember, ParameterInfo underlyingParameter) :
             base(context, declaringMember, underlyingParameter.Position)
         {
             _underlyingParameter = underlyingParameter ?? throw new ArgumentNullException(nameof(underlyingParameter));

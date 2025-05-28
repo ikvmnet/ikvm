@@ -11,7 +11,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         readonly IkvmReflectionSymbolContext _context;
-        internal readonly Assembly _underlyingAssembly;
+        readonly Assembly _underlyingAssembly;
 
         ImmutableArray<AssemblyIdentity> _references;
         ImmutableArray<ModuleSymbol> _modules;
@@ -28,36 +28,38 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
         }
 
-        /// <inheritdoc />
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        /// <summary>
+        /// Gets the associated <see cref="Assembly"/>.
+        /// </summary>
+        public Assembly UnderlyingAssembly => _underlyingAssembly;
 
         /// <inheritdoc />
-        public sealed override AssemblyIdentity Identity => _underlyingAssembly.GetName().Pack();
+        public bool GetIsMissing() => false;
 
         /// <inheritdoc />
-        public sealed override MethodSymbol? EntryPoint => Context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
+        public AssemblyIdentity GetIdentity() => _underlyingAssembly.GetName().Pack();
 
         /// <inheritdoc />
-        public sealed override string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
+        public MethodSymbol? GetEntryPoint() => _context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
 
         /// <inheritdoc />
-        public sealed override string Location => _underlyingAssembly.Location;
+        public string GetImageRuntimeVersion() => _underlyingAssembly.ImageRuntimeVersion;
 
         /// <inheritdoc />
-        public sealed override ModuleSymbol ManifestModule => Context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
+        public string GetLocation() => _underlyingAssembly.Location;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => _underlyingAssembly.__IsMissing;
+        public ModuleSymbol GetManifestModule() => _context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<ModuleSymbol> GetModules()
+        public ImmutableArray<ModuleSymbol> GetModules()
         {
             if (_modules == default)
             {
                 var l = _underlyingAssembly.GetModules();
                 var b = ImmutableArray.CreateBuilder<ModuleSymbol>(l.Length);
                 foreach (var module in l)
-                    b.Add(new IkvmReflectionModuleSymbol(Context, this, module));
+                    b.Add(new DefinitionModuleSymbol(_context, new IkvmReflectionModuleLoader(_context, module)));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _modules, b.DrainToImmutable());
             }
@@ -66,7 +68,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<AssemblyIdentity> GetReferencedAssemblies()
+        public ImmutableArray<AssemblyIdentity> GetReferencedAssemblies()
         {
             if (_references == default)
                 ImmutableInterlocked.InterlockedInitialize(ref _references, _underlyingAssembly.GetReferencedAssemblies().Pack());
@@ -75,38 +77,24 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public sealed override ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
         {
-            if (_underlyingAssembly.GetManifestResourceInfo(resourceName) is var r and not null)
-                return new ManifestResourceInfo((System.Reflection.ResourceLocation)r.ResourceLocation, r.FileName, Context.ResolveAssemblySymbol(r.ReferencedAssembly));
-
-            return null;
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public sealed override Stream? GetManifestResourceStream(string name)
+        public Stream? GetManifestResourceStream(string name)
         {
             return _underlyingAssembly.GetManifestResourceStream(name);
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        public ImmutableArray<CustomAttribute> GetCustomAttributes()
         {
             if (_customAttributes == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()));
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingAssembly.GetCustomAttributesData()));
 
             return _customAttributes;
-        }
-
-        /// <summary>
-        /// Saves this assembly to disk, specifying the nature of code in the assembly's executables and the target platform.
-        /// </summary>
-        /// <param name="assemblyFile"></param>
-        /// <param name="pekind"></param>
-        /// <param name="imageFileMachine"></param>
-        internal void Save(string assemblyFile, System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
-        {
-            throw new NotImplementedException();
         }
 
     }

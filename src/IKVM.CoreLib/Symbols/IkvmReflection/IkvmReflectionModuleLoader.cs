@@ -6,7 +6,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionModuleSymbol : ModuleSymbol
+    class IkvmReflectionModuleLoader : ModuleSymbol
     {
 
         internal readonly Module _underlyingModule;
@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="assembly"></param>
         /// <param name="module"></param>
-        public IkvmReflectionModuleSymbol(IkvmReflectionSymbolContext context, IkvmReflectionAssemblySymbol assembly, Module module) :
+        public IkvmReflectionModuleLoader(IkvmReflectionSymbolContext context, IkvmReflectionAssemblyLoader assembly, Module module) :
             base(context, assembly)
         {
             _underlyingModule = module ?? throw new ArgumentNullException(nameof(module));
@@ -56,7 +56,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var l = _underlyingModule.GetFields((BindingFlags)DeclaredOnlyLookup);
                 var b = ImmutableArray.CreateBuilder<FieldSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionFieldSymbol(Context, this, null, l[i]));
+                    b.Add(new IkvmReflectionFieldLoader(Context, this, null, l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _fields, b.DrainToImmutable());
             }
@@ -72,7 +72,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var l = _underlyingModule.GetMethods((BindingFlags)DeclaredOnlyLookup);
                 var b = ImmutableArray.CreateBuilder<MethodSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionMethodSymbol(Context, this, null, l[i]));
+                    b.Add(new IkvmReflectionMethodLoader(Context, this, null, l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _methods, b.DrainToImmutable());
             }
@@ -89,7 +89,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
                     if (l[i].IsNested == false)
-                        b.Add(new IkvmReflectionTypeSymbol(Context, this, l[i]));
+                        b.Add(new IkvmReflectionTypeLoader(Context, this, l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _types, b.DrainToImmutable());
             }

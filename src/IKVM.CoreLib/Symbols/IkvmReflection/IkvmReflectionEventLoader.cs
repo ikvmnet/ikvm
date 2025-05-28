@@ -6,7 +6,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionEventSymbol : EventSymbol
+    class IkvmReflectionEventLoader : EventSymbol
     {
 
         internal readonly EventInfo _underlyingEvent;
@@ -28,7 +28,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="underlyingEvent"></param>
-        public IkvmReflectionEventSymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol declaringType, EventInfo underlyingEvent) :
+        public IkvmReflectionEventLoader(IkvmReflectionSymbolContext context, IkvmReflectionTypeLoader declaringType, EventInfo underlyingEvent) :
             base(context, declaringType)
         {
             _underlyingEvent = underlyingEvent ?? throw new ArgumentNullException(nameof(underlyingEvent));

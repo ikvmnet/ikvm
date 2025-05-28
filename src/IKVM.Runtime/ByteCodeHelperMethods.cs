@@ -111,7 +111,7 @@ namespace IKVM.Runtime
         public ByteCodeHelperMethods(RuntimeContext context)
         {
 #if IMPORTER || EXPORTER
-            var typeofByteCodeHelper = ((IkvmReflectionTypeSymbol)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).UnderlyingType;
+            var typeofByteCodeHelper = ((IkvmReflectionTypeLoader)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).UnderlyingType;
 #else
             var typeofByteCodeHelper = ((ReflectionTypeLoader)context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper")).UnderlyingType;
 #endif

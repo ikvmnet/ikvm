@@ -6,7 +6,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionPropertySymbol : PropertySymbol
+    class IkvmReflectionPropertyLoader : PropertySymbol
     {
 
         internal readonly PropertyInfo _underlyingProperty;
@@ -29,7 +29,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="declaringType"></param>
         /// <param name="underlyingProperty"></param>
-        public IkvmReflectionPropertySymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol declaringType, PropertyInfo underlyingProperty) :
+        public IkvmReflectionPropertyLoader(IkvmReflectionSymbolContext context, IkvmReflectionTypeLoader declaringType, PropertyInfo underlyingProperty) :
             base(context, declaringType)
         {
             _underlyingProperty = underlyingProperty ?? throw new ArgumentNullException(nameof(underlyingProperty));
@@ -103,7 +103,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var l = _underlyingProperty.GetIndexParameters();
                 var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionParameterSymbol(Context, this, l[i]));
+                    b.Add(new IkvmReflectionParameterLoader(Context, this, l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.DrainToImmutable());
             }

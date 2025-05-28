@@ -7,7 +7,7 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionGenericTypeParameterTypeSymbol : GenericTypeParameterTypeSymbol
+    class IkvmReflectionGenericMethodParameterTypeLoader : GenericMethodParameterTypeSymbol
     {
 
         readonly Type _underlyingType;
@@ -21,10 +21,11 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="declaringType"></param>
+        /// <param name="declaringMethod"></param>
+        /// <param name="underlyingType"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionGenericTypeParameterTypeSymbol(IkvmReflectionSymbolContext context, TypeSymbol declaringType, Type underlyingType) :
-            base(context, declaringType)
+        public IkvmReflectionGenericMethodParameterTypeLoader(IkvmReflectionSymbolContext context, MethodSymbol declaringMethod, Type underlyingType) :
+            base(context, declaringMethod)
         {
             _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
         }
@@ -70,19 +71,27 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            if (_optionalCustomModifiers .IsDefault)
+#if NET8_0
+            if (_optionalCustomModifiers.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.__GetOptionalCustomModifiers()));
 
             return _optionalCustomModifiers;
+#else
+            return [];
+#endif
         }
 
         /// <inheritdoc />
         public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
+#if NET8_0
             if (_requiredCustomModifiers.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.__GetRequiredCustomModifiers()));
 
             return _requiredCustomModifiers;
+#else
+            return [];
+#endif
         }
 
     }

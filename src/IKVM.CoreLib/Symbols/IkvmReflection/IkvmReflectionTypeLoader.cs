@@ -8,11 +8,11 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionTypeSymbol : DefinitionTypeSymbol
+    class IkvmReflectionTypeLoader : DefinitionTypeSymbol
     {
 
         internal readonly Type _underlyingType;
-        readonly ConcurrentDictionary<Type, IkvmReflectionGenericMethodParameterTypeSymbol> _genericMethodParamters = new();
+        readonly ConcurrentDictionary<Type, IkvmReflectionGenericMethodParameterTypeLoader> _genericMethodParamters = new();
 
         ImmutableArray<TypeSymbol> _typeArguments;
         ImmutableArray<TypeSymbol> _typeConstraints;
@@ -34,25 +34,25 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="module"></param>
         /// <param name="underlyingType"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionTypeSymbol(IkvmReflectionSymbolContext context, ModuleSymbol module, Type underlyingType) :
+        public IkvmReflectionTypeLoader(IkvmReflectionSymbolContext context, ModuleSymbol module, Type underlyingType) :
             base(context, module)
         {
             _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
         }
 
         /// <summary>
-        /// Gets the <see cref="IkvmReflectionGenericMethodParameterTypeSymbol"/> for the specified type.
+        /// Gets the <see cref="IkvmReflectionGenericMethodParameterTypeLoader"/> for the specified type.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        internal IkvmReflectionGenericMethodParameterTypeSymbol GetOrCreateGenericMethodParameter(Type type)
+        internal IkvmReflectionGenericMethodParameterTypeLoader GetOrCreateGenericMethodParameter(Type type)
         {
-            IkvmReflectionMethodSymbol FindMethod()
+            IkvmReflectionMethodLoader FindMethod()
             {
                 var methods = GetDeclaredMethods();
                 foreach (var method in methods)
-                    if (method is IkvmReflectionMethodSymbol m)
+                    if (method is IkvmReflectionMethodLoader m)
                         if (m._underlyingMethod == type.DeclaringMethod)
                             return m;
 
@@ -60,7 +60,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             }
 
             var method = FindMethod();
-            return _genericMethodParamters.GetOrAdd(type, t => new IkvmReflectionGenericMethodParameterTypeSymbol(Context, method, t));
+            return _genericMethodParamters.GetOrAdd(type, t => new IkvmReflectionGenericMethodParameterTypeLoader(Context, method, t));
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var c = _underlyingType.__GetDeclaredMethods();
                 var b = ImmutableArray.CreateBuilder<MethodSymbol>(c.Length);
                 foreach (var i in c)
-                    b.Add(new IkvmReflectionMethodSymbol(Context, (IkvmReflectionModuleSymbol)Module, this, i));
+                    b.Add(new IkvmReflectionMethodLoader(Context, (IkvmReflectionModuleLoader)Module, this, i));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _methods, b.DrainToImmutable());
             }
@@ -217,7 +217,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var c = _underlyingType.__GetDeclaredProperties();
                 var b = ImmutableArray.CreateBuilder<PropertySymbol>(c.Length);
                 foreach (var i in c)
-                    b.Add(new IkvmReflectionPropertySymbol(Context, this, i));
+                    b.Add(new IkvmReflectionPropertyLoader(Context, this, i));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _properties, b.DrainToImmutable());
             }
@@ -233,7 +233,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var c = _underlyingType.__GetDeclaredEvents();
                 var b = ImmutableArray.CreateBuilder<EventSymbol>(c.Length);
                 foreach (var i in c)
-                    b.Add(new IkvmReflectionEventSymbol(Context, this, i));
+                    b.Add(new IkvmReflectionEventLoader(Context, this, i));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _events, b.DrainToImmutable());
             }

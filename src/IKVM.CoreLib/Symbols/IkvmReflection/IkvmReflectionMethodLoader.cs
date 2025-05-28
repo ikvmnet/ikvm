@@ -7,13 +7,13 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMethodSymbol : DefinitionMethodSymbol
+    class IkvmReflectionMethodLoader : DefinitionMethodSymbol
     {
 
         internal readonly MethodBase _underlyingMethod;
 
         ImmutableArray<TypeSymbol> _genericArguments;
-        IkvmReflectionParameterSymbol? _returnParameter;
+        IkvmReflectionParameterLoader? _returnParameter;
         TypeSymbol? _returnType;
         MethodSymbol? _baseDefinition;
         MethodSymbol? _genericMethodDefinition;
@@ -27,7 +27,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
         /// <param name="underlyingMethod"></param>
-        public IkvmReflectionMethodSymbol(IkvmReflectionSymbolContext context, IkvmReflectionModuleSymbol module, IkvmReflectionTypeSymbol? declaringType, MethodBase underlyingMethod) :
+        public IkvmReflectionMethodLoader(IkvmReflectionSymbolContext context, IkvmReflectionModuleLoader module, IkvmReflectionTypeLoader? declaringType, MethodBase underlyingMethod) :
             base(context, module, declaringType)
         {
             _underlyingMethod = underlyingMethod ?? throw new ArgumentNullException(nameof(underlyingMethod));
@@ -53,7 +53,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             if (_underlyingMethod.IsConstructor)
                 throw new InvalidOperationException();
             if (_returnParameter == null)
-                Interlocked.CompareExchange(ref _returnParameter, new IkvmReflectionParameterSymbol(Context, this, ((MethodInfo)_underlyingMethod).ReturnParameter), null);
+                Interlocked.CompareExchange(ref _returnParameter, new IkvmReflectionParameterLoader(Context, this, ((MethodInfo)_underlyingMethod).ReturnParameter), null);
 
             return _returnParameter;
         }
@@ -102,7 +102,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var l = _underlyingMethod.GetGenericArguments();
                 var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    if (DeclaringType is IkvmReflectionTypeSymbol dt)
+                    if (DeclaringType is IkvmReflectionTypeLoader dt)
                         b.Add(dt.GetOrCreateGenericMethodParameter(l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _genericArguments, b.DrainToImmutable());
@@ -125,7 +125,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 var l = _underlyingMethod.GetParameters();
                 var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
                 for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionParameterSymbol(Context, this, l[i]));
+                    b.Add(new IkvmReflectionParameterLoader(Context, this, l[i]));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.DrainToImmutable());
             }

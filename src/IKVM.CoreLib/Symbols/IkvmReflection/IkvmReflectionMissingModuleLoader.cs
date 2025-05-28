@@ -6,12 +6,12 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMissingModuleSymbol : ModuleSymbol
+    class IkvmReflectionMissingModuleLoader : ModuleSymbol
     {
 
         internal readonly Module _underlyingModule;
 
-        readonly ImmutableArray<IkvmReflectionTypeSymbol>.Builder _types = ImmutableArray.CreateBuilder<IkvmReflectionTypeSymbol>();
+        readonly ImmutableArray<IkvmReflectionTypeLoader>.Builder _types = ImmutableArray.CreateBuilder<IkvmReflectionTypeLoader>();
         ImmutableArray<TypeSymbol> _typesCache;
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="assembly"></param>
         /// <param name="module"></param>
-        public IkvmReflectionMissingModuleSymbol(IkvmReflectionSymbolContext context, IkvmReflectionMissingAssemblySymbol assembly, Module module) :
+        public IkvmReflectionMissingModuleLoader(IkvmReflectionSymbolContext context, IkvmReflectionMissingAssemblyLoader assembly, Module module) :
             base(context, assembly)
         {
             _underlyingModule = module ?? throw new ArgumentNullException(nameof(module));
@@ -92,7 +92,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                     if (s._underlyingType == type)
                         return s;
 
-                var symbol = new IkvmReflectionTypeSymbol(Context, this, type);
+                var symbol = new IkvmReflectionTypeLoader(Context, this, type);
                 _types.Add(symbol);
                 _typesCache = default;
 

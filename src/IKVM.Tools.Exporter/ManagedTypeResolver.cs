@@ -1,7 +1,6 @@
 ﻿using System;
 
 using IKVM.CoreLib.Symbols;
-using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
@@ -31,7 +30,7 @@ namespace IKVM.Tools.Exporter
 		/// Attempts to resolve the base Java assembly.
 		/// </summary>
 		/// <returns></returns>
-		public IAssemblySymbol ResolveBaseAssembly()
+		public AssemblySymbol ResolveBaseAssembly()
 		{
 			return baseAssembly != null ? context.GetOrCreateAssemblySymbol(baseAssembly) : null;
 		}
@@ -41,7 +40,7 @@ namespace IKVM.Tools.Exporter
 		/// </summary>
 		/// <param name="assemblyName"></param>
 		/// <returns></returns>
-		public IAssemblySymbol ResolveAssembly(string assemblyName)
+		public AssemblySymbol ResolveAssembly(string assemblyName)
 		{
 			return compiler.Load(assemblyName) is { } a ? context.GetOrCreateAssemblySymbol(a) : null;
 		}
@@ -51,7 +50,7 @@ namespace IKVM.Tools.Exporter
 		/// </summary>
 		/// <param name="typeName"></param>
 		/// <returns></returns>
-		public ITypeSymbol ResolveCoreType(string typeName)
+		public TypeSymbol ResolveCoreType(string typeName)
 		{
 			foreach (var assembly in compiler.Universe.GetAssemblies())
 				if (assembly.GetType(typeName) is Type t)
@@ -65,7 +64,7 @@ namespace IKVM.Tools.Exporter
 		/// </summary>
 		/// <param name="typeName"></param>
 		/// <returns></returns>
-		public ITypeSymbol ResolveRuntimeType(string typeName)
+		public TypeSymbol ResolveRuntimeType(string typeName)
 		{
 			return compiler.GetRuntimeType(typeName) is { } t ? context.GetOrCreateTypeSymbol(t) : null;
 		}

@@ -6,7 +6,7 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionFieldSymbol : FieldSymbol
+    class IkvmReflectionFieldLoader : FieldSymbol
     {
 
         internal readonly FieldInfo _underlyingField;
@@ -22,7 +22,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// <param name="context"></param>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        public IkvmReflectionFieldSymbol(IkvmReflectionSymbolContext context, ModuleSymbol module, IkvmReflectionTypeSymbol? declaringType, FieldInfo underlyingField) :
+        public IkvmReflectionFieldLoader(IkvmReflectionSymbolContext context, ModuleSymbol module, IkvmReflectionTypeLoader? declaringType, FieldInfo underlyingField) :
             base(context, module, declaringType)
         {
             _underlyingField = underlyingField ?? throw new ArgumentNullException(nameof(underlyingField));
