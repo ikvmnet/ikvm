@@ -607,9 +607,13 @@ namespace IKVM.Runtime
             }
 
 #if IMPORTER || EXPORTER
-            return type.__IsFunctionPointer;
+            return type.IsFunctionPointer;
+#else
+#if NET8_0_OR_GREATER
+            return type.IsFunctionPointer;
 #else
             return false;
+#endif
 #endif
         }
 

@@ -101,12 +101,16 @@ namespace IKVM.Runtime
         internal static bool IsVector(Type type)
         {
 #if IMPORTER || EXPORTER
-            return type.__IsVector;
+            return type.IsSZArray;
+#else
+#if NET
+            return type.IsSZArray;
 #else
             // there's no API to distinguish an array of rank 1 from a vector,
             // so we check if the type name ends in [], which indicates it's a vector
             // (non-vectors will have [*] or [,]).
             return type.IsArray && type.Name.EndsWith("[]");
+#endif
 #endif
         }
 
