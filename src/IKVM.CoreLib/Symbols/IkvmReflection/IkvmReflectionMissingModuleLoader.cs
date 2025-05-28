@@ -10,7 +10,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
     {
 
         readonly IkvmReflectionSymbolContext _context;
-        readonly AssemblySymbol _assembly;
         readonly Module _underlyingModule;
 
         readonly ImmutableArray<TypeSymbol>.Builder _types = ImmutableArray.CreateBuilder<TypeSymbol>();
@@ -20,12 +19,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
         /// <param name="underlyingModule"></param>
-        public IkvmReflectionMissingModuleLoader(IkvmReflectionSymbolContext context, AssemblySymbol assembly, Module underlyingModule)
+        public IkvmReflectionMissingModuleLoader(IkvmReflectionSymbolContext context, Module underlyingModule)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             _underlyingModule = underlyingModule ?? throw new ArgumentNullException(nameof(underlyingModule));
         }
 
@@ -38,7 +35,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public bool GetIsMissing() => true;
 
         /// <inheritdoc />
-        public AssemblySymbol GetAssembly() => _assembly;
+        public AssemblySymbol GetAssembly() => _context.ResolveAssemblySymbol(_underlyingModule.Assembly);
 
         /// <inheritdoc />
         public string GetFullyQualifiedName() => _underlyingModule.FullyQualifiedName;

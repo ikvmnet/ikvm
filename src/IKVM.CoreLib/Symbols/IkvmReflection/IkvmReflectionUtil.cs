@@ -29,8 +29,8 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 assemblyName.CultureName,
                 hasPublicKey ? pk : pkt,
                 hasPublicKey,
-                (System.Reflection.AssemblyContentType)assemblyName.ContentType,
-                (System.Reflection.ProcessorArchitecture)assemblyName.ProcessorArchitecture);
+                (global::System.Reflection.AssemblyContentType)assemblyName.ContentType,
+                (global::System.Reflection.ProcessorArchitecture)assemblyName.ProcessorArchitecture);
         }
 
         /// <summary>

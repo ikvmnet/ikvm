@@ -24,7 +24,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
-            _modules = [new IkvmReflectionMissingModuleLoader(context, this, _underlyingAssembly.ManifestModule)];
+            _modules = [new DefinitionModuleSymbol(_context, new IkvmReflectionMissingModuleLoader(_context, _underlyingAssembly.ManifestModule))];
         }
 
         /// <summary>
