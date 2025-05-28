@@ -7,75 +7,63 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMissingAssemblyLoader : AssemblySymbol
+    class IkvmReflectionMissingAssemblyLoader : IAssemblyLoader
     {
 
-        internal readonly Assembly _underlyingAssembly;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly Assembly _underlyingAssembly;
 
-        readonly ImmutableArray<ModuleSymbol> _modules;
+        ImmutableArray<ModuleSymbol> _modules;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="underlyingAssembly"></param>
-        public IkvmReflectionMissingAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
-            base(context)
+        public IkvmReflectionMissingAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
             _modules = [new IkvmReflectionMissingModuleLoader(context, this, _underlyingAssembly.ManifestModule)];
         }
 
-        /// <inheritdoc />
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        /// <summary>
+        /// Gets the associated <see cref="Assembly"/>.
+        /// </summary>
+        public Assembly UnderlyingAssembly => _underlyingAssembly;
 
         /// <inheritdoc />
-        public sealed override AssemblyIdentity Identity => _underlyingAssembly.GetName().Pack();
+        public bool GetIsMissing() => true;
 
         /// <inheritdoc />
-        public sealed override MethodSymbol? EntryPoint => Context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
+        public AssemblyIdentity GetIdentity() => _underlyingAssembly.GetName().Pack();
 
         /// <inheritdoc />
-        public sealed override string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
+        public MethodSymbol? GetEntryPoint() => _context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
 
         /// <inheritdoc />
-        public sealed override string Location => _underlyingAssembly.Location;
+        public string GetImageRuntimeVersion() => _underlyingAssembly.ImageRuntimeVersion;
 
         /// <inheritdoc />
-        public sealed override ModuleSymbol ManifestModule => Context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
+        public string GetLocation() => _underlyingAssembly.Location;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => true;
+        public ModuleSymbol GetManifestModule() => _context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<ModuleSymbol> GetModules()
-        {
-            return _modules;
-        }
+        public ImmutableArray<ModuleSymbol> GetModules() => _modules;
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<AssemblyIdentity> GetReferencedAssemblies()
-        {
-            return [];
-        }
+        public ImmutableArray<AssemblyIdentity> GetReferencedAssemblies() => [];
 
         /// <inheritdoc />
-        public sealed override ManifestResourceInfo? GetManifestResourceInfo(string resourceName)
-        {
-            return null;
-        }
+        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName) => null;
 
         /// <inheritdoc />
-        public sealed override Stream? GetManifestResourceStream(string name)
-        {
-            return null;
-        }
+        public Stream? GetManifestResourceStream(string name) => _underlyingAssembly.GetManifestResourceStream(name);
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return [];
-        }
+        public ImmutableArray<CustomAttribute> GetCustomAttributes() => [];
 
     }
 

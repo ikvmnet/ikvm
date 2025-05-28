@@ -6,12 +6,14 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMissingModuleLoader : ModuleSymbol
+    class IkvmReflectionMissingModuleLoader : IModuleLoader
     {
 
-        internal readonly Module _underlyingModule;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly AssemblySymbol _assembly;
+        readonly Module _underlyingModule;
 
-        readonly ImmutableArray<IkvmReflectionTypeLoader>.Builder _types = ImmutableArray.CreateBuilder<IkvmReflectionTypeLoader>();
+        readonly ImmutableArray<TypeSymbol>.Builder _types = ImmutableArray.CreateBuilder<TypeSymbol>();
         ImmutableArray<TypeSymbol> _typesCache;
 
         /// <summary>
@@ -19,47 +21,48 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="assembly"></param>
-        /// <param name="module"></param>
-        public IkvmReflectionMissingModuleLoader(IkvmReflectionSymbolContext context, IkvmReflectionMissingAssemblyLoader assembly, Module module) :
-            base(context, assembly)
+        /// <param name="underlyingModule"></param>
+        public IkvmReflectionMissingModuleLoader(IkvmReflectionSymbolContext context, AssemblySymbol assembly, Module underlyingModule)
         {
-            _underlyingModule = module ?? throw new ArgumentNullException(nameof(module));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            _underlyingModule = underlyingModule ?? throw new ArgumentNullException(nameof(underlyingModule));
         }
 
         /// <summary>
-        /// Gets the context that owns this symbol.
+        /// Gets the underlying module.
         /// </summary>
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        public Module UnderlyingModule => _underlyingModule;
 
         /// <inheritdoc />
-        public sealed override string FullyQualifiedName => _underlyingModule.FullyQualifiedName;
+        public bool GetIsMissing() => true;
 
         /// <inheritdoc />
-        public sealed override string Name => _underlyingModule.Name;
+        public AssemblySymbol GetAssembly() => _assembly;
 
         /// <inheritdoc />
-        public sealed override string ScopeName => _underlyingModule.ScopeName;
+        public string GetFullyQualifiedName() => _underlyingModule.FullyQualifiedName;
 
         /// <inheritdoc />
-        public override Guid ModuleVersionId => _underlyingModule.ModuleVersionId;
+        public string GetName() => _underlyingModule.Name;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => true;
+        public string GetScopeName() => _underlyingModule.ScopeName;
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
-        {
-            throw new NotSupportedException();
-        }
+        public Guid GetModuleVersionId() => _underlyingModule.ModuleVersionId;
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
-        {
-            throw new NotSupportedException();
-        }
+        public bool GetIsResource() => _underlyingModule.IsResource();
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredTypes()
+        public ImmutableArray<FieldSymbol> GetFields() => [];
+
+        /// <inheritdoc />
+        public ImmutableArray<MethodSymbol> GetMethods() => [];
+
+        /// <inheritdoc />
+        public ImmutableArray<TypeSymbol> GetTypes()
         {
             if (_typesCache.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _typesCache, _types.ToImmutable().CastArray<TypeSymbol>());
@@ -68,16 +71,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public sealed override bool IsResource()
-        {
-            return _underlyingModule.IsResource();
-        }
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return [];
-        }
+        public ImmutableArray<CustomAttribute> GetCustomAttributes() => [];
 
         /// <summary>
         /// Attachs the missing type to this module.
@@ -88,11 +82,13 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             lock (this)
             {
+                // check if the type already exists
                 foreach (var s in _types)
-                    if (s._underlyingType == type)
-                        return s;
+                    if (s is DefinitionTypeSymbol def && def.Loader is IkvmReflectionTypeLoader loader)
+                        if (loader.UnderlyingType == type)
+                            return s;
 
-                var symbol = new IkvmReflectionTypeLoader(Context, this, type);
+                var symbol = new DefinitionTypeSymbol(_context, new IkvmReflectionTypeLoader(_context, type));
                 _types.Add(symbol);
                 _typesCache = default;
 

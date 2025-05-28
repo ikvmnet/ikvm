@@ -53,19 +53,19 @@ namespace IKVM.CoreLib.Symbols
         /// Gets the fields declared of the module.
         /// </summary>
         /// <returns></returns>
-        ImmutableArray<FieldSymbol> GetDeclaredFields();
+        ImmutableArray<FieldSymbol> GetFields();
 
         /// <summary>
         /// Gets the methods declared on the module.
         /// </summary>
         /// <returns></returns>
-        ImmutableArray<MethodSymbol> GetDeclaredMethods();
+        ImmutableArray<MethodSymbol> GetMethods();
 
         /// <summary>
         /// Gets the types declared on the module.
         /// </summary>
         /// <returns></returns>
-        ImmutableArray<TypeSymbol> GetDeclaredTypes();
+        ImmutableArray<TypeSymbol> GetTypes();
 
         /// <summary>
         /// Gets the types declared on the module.

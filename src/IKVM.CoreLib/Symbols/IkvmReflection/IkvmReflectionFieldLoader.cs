@@ -6,12 +6,16 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionFieldLoader : FieldSymbol
+    class IkvmReflectionFieldLoader : IFieldLoader
     {
 
-        internal readonly FieldInfo _underlyingField;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly FieldInfo _underlyingField;
 
-        TypeSymbol? _fieldType;
+        LazyField<AssemblySymbol> _assembly;
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol?> _declaringType;
+        LazyField<TypeSymbol> _fieldType;
         ImmutableArray<TypeSymbol> _optionalCustomModifiers;
         ImmutableArray<TypeSymbol> _requiredCustomModifiers;
         ImmutableArray<CustomAttribute> _customAttributes;
@@ -20,60 +24,65 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        public IkvmReflectionFieldLoader(IkvmReflectionSymbolContext context, ModuleSymbol module, IkvmReflectionTypeLoader? declaringType, FieldInfo underlyingField) :
-            base(context, module, declaringType)
+        /// <param name="underlyingField"></param>
+        public IkvmReflectionFieldLoader(IkvmReflectionSymbolContext context, FieldInfo underlyingField)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingField = underlyingField ?? throw new ArgumentNullException(nameof(underlyingField));
         }
 
         /// <summary>
-        /// Gets the associated symbol context.
+        /// Gets the underlying field.
         /// </summary>
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        public FieldInfo UnderlyingField => _underlyingField;
 
         /// <inheritdoc />
-        public sealed override System.Reflection.FieldAttributes Attributes => (System.Reflection.FieldAttributes)_underlyingField.Attributes;
+        public bool GetIsMissing() => false;
 
         /// <inheritdoc />
-        public sealed override TypeSymbol FieldType => _fieldType ??= Context.ResolveTypeSymbol(_underlyingField.FieldType);
+        public AssemblySymbol GetAssembly() => _assembly.IsDefault ? _assembly.InterlockedInitialize(_context.ResolveAssemblySymbol(_underlyingField.Module.Assembly)) : _assembly.Value;
 
         /// <inheritdoc />
-        public sealed override string Name => _underlyingField.Name;
+        public ModuleSymbol GetModule() => _module.IsDefault ? _module.InterlockedInitialize(_context.ResolveModuleSymbol(_underlyingField.Module)) : _module.Value;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => _underlyingField.__IsMissing;
+        public TypeSymbol GetDeclaringType() => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingField.DeclaringType)) : _declaringType.Value;
 
         /// <inheritdoc />
-        public sealed override object? GetRawConstantValue()
-        {
-            return _underlyingField.GetRawConstantValue();
-        }
+        public global::System.Reflection.FieldAttributes GetAttributes() => (global::System.Reflection.FieldAttributes)_underlyingField.Attributes;
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        public TypeSymbol GetFieldType() => _fieldType.IsDefault ? _fieldType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingField.FieldType)) : _fieldType.Value;
+
+        /// <inheritdoc />
+        public string GetName() => _underlyingField.Name;
+
+        /// <inheritdoc />
+        public object? GetConstantValue() => _underlyingField.GetRawConstantValue();
+
+        /// <inheritdoc />
+        public ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             if (_optionalCustomModifiers == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingField.GetOptionalCustomModifiers()));
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, _context.ResolveTypeSymbols(_underlyingField.GetOptionalCustomModifiers()));
 
             return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        public ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
             if (_requiredCustomModifiers == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingField.GetRequiredCustomModifiers()));
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, _context.ResolveTypeSymbols(_underlyingField.GetRequiredCustomModifiers()));
 
             return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        public ImmutableArray<CustomAttribute> GetCustomAttributes()
         {
             if (_customAttributes == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingField.GetCustomAttributesData()));
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingField.GetCustomAttributesData()));
 
             return _customAttributes;
         }

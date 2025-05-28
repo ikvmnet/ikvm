@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+using IKVM.CoreLib.Collections;
 using IKVM.CoreLib.IkvmReflection;
-using IKVM.CoreLib.Symbols.Emit;
-using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
@@ -25,7 +23,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
 
         readonly Universe _universe;
         readonly IkvmReflectionSymbolOptions _options;
-        readonly ConcurrentDictionary<string, WeakReference<AssemblySymbol?>> _symbolByName = new();
+        readonly WeakHashTable<string, AssemblySymbol?> _symbolByName = new();
         readonly ConditionalWeakTable<Assembly, AssemblySymbol> _symbolByAssembly = new();
 
         /// <summary>
@@ -53,29 +51,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return ResolveTypeSymbol(_universe.CoreLib.GetType(typeName) ?? throw new InvalidOperationException($"Failed to resolve core type {typeName}"));
         }
 
-        /// <inheritdoc />
-        public sealed override AssemblySymbolBuilder DefineAssembly(AssemblyIdentity identity, ImmutableArray<CustomAttribute> attributes)
-        {
-            if (identity is null)
-                throw new ArgumentNullException(nameof(identity));
-
-            // find or create weak-reference to name
-            var r = _symbolByName.GetOrAdd(identity.FullName, _ => new(null));
-
-            // look the reference to set it up
-            lock (r)
-            {
-                // reference has no target, reset
-                if (r.TryGetTarget(out var s) == false)
-                {
-                    // we were passed a non builder, so generate a symbol and set it to the symbol
-                    // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
-                    r.SetTarget(s = new AssemblySymbolBuilder(this, identity));
-                }
-
-                return (AssemblySymbolBuilder?)s ?? throw new InvalidOperationException();
-            }
-        }
 
         /// <summary>
         /// Gets or creates a <see cref="AssemblySymbol"/> indexed based on the assembly's name.
@@ -86,29 +61,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public AssemblySymbol? ResolveAssemblySymbol(Assembly? assembly)
         {
             if (assembly is null)
-                return null;
+                throw new ArgumentNullException(nameof(assembly));
             if (assembly is AssemblyBuilder)
                 throw new ArgumentException(nameof(assembly));
 
-            // find or create weak-reference to name
-            var r = _symbolByName.GetOrAdd(assembly.FullName, _ => new(null));
-
-            // look the reference to set it up
-            lock (r)
-            {
-                // reference has no target, reset
-                if (r.TryGetTarget(out var s) == false)
+            // lookup by name to avoid duplicate assemblies
+            return _symbolByName.GetOrCreateValue(
+                assembly.FullName ?? throw new InvalidOperationException(),
+                _ =>
                 {
-                    // we were passed a non builder, so generate a symbol and set it to the symbol
-                    // TODO the weakness here is if we pass it the RuntimeAssembly from a non-associated builder
                     if (assembly.__IsMissing == false)
-                        r.SetTarget(s = new IkvmReflectionAssemblyLoader(this, assembly));
+                        return new DefinitionAssemblySymbol(this, new IkvmReflectionAssemblyLoader(this, assembly));
                     else
-                        r.SetTarget(s = new IkvmReflectionMissingAssemblyLoader(this, assembly));
-                }
-
-                return s ?? throw new InvalidOperationException();
-            }
+                        return new DefinitionAssemblySymbol(this, new IkvmReflectionMissingAssemblyLoader(this, assembly));
+                })!;
         }
 
         /// <summary>
@@ -196,7 +162,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             else if (type.IsTypeDefinition() && type.IsNested)
                 return ResolveTypeSymbol(type.DeclaringType).GetNestedType(type.Name, Symbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();
             else if (type.IsTypeDefinition() && type.__IsMissing)
-                return ((IkvmReflectionMissingModuleLoader)ResolveModuleSymbol(type.Module)).ImportMissingType(type) ?? throw new InvalidOperationException();
+                return ((IkvmReflectionMissingModuleLoader)((DefinitionModuleSymbol)ResolveModuleSymbol(type.Module)).Loader).ImportMissingType(type) ?? throw new InvalidOperationException();
             else if (type.IsTypeDefinition())
                 return ResolveModuleSymbol(type.Module).GetType(type.FullName ?? throw new InvalidOperationException(), false) ?? throw new InvalidOperationException();
             else if (type.IsConstructedGenericType)
@@ -209,10 +175,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 return ResolveTypeSymbol(type.GetElementType()!).MakePointerType();
             else if (type.IsByRef)
                 return ResolveTypeSymbol(type.GetElementType()!).MakeByRefType();
-            else if (type.IsGenericParameter && type.DeclaringMethod is MethodInfo dm && dm.DeclaringType is var dt && ResolveTypeSymbol(dt) is IkvmReflectionTypeLoader dts)
-                return dts.GetOrCreateGenericMethodParameter(type);
+            else if (type.IsGenericParameter && type.DeclaringMethod is MethodInfo dm && dm.DeclaringType is var dt && ResolveTypeSymbol(dt) is DefinitionTypeSymbol dts && dts.Loader is IkvmReflectionTypeLoader loader)
+                return loader.GetOrCreateGenericMethodParameter(type);
             else if (type.IsGenericParameter && type.DeclaringType is Type t)
-                return ResolveTypeSymbol(t).GenericArguments[type.GenericParameterPosition];
+                return ResolveTypeSymbol(t).GenericParameters[type.GenericParameterPosition];
             else
                 throw new InvalidOperationException();
         }
@@ -309,9 +275,9 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             else if (method is MethodBuilder)
                 throw new NotSupportedException();
             else if (method.DeclaringType is { } dt)
-                return ResolveTypeSymbol(dt).GetMethod(method.Name, method.GetGenericArguments().Length, Symbol.DeclaredOnlyLookup, (System.Reflection.CallingConventions)method.CallingConvention, ResolveTypeSymbols(method.GetParameterTypes()), default) ?? throw new InvalidOperationException();
+                return ResolveTypeSymbol(dt).GetMethod(method.Name, method.GetGenericArguments().Length, Symbol.DeclaredOnlyLookup, (global::System.Reflection.CallingConventions)method.CallingConvention, ResolveTypeSymbols(method.GetParameterTypes()), default) ?? throw new InvalidOperationException();
             else
-                return ResolveModuleSymbol(method.Module)!.GetMethod(method.Name, Symbol.DeclaredOnlyLookup, (System.Reflection.CallingConventions)method.CallingConvention, ResolveTypeSymbols(method.GetParameterTypes()), default) ?? throw new InvalidOperationException();
+                return ResolveModuleSymbol(method.Module)!.GetMethod(method.Name, Symbol.DeclaredOnlyLookup, (global::System.Reflection.CallingConventions)method.CallingConvention, ResolveTypeSymbols(method.GetParameterTypes()), default) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -492,25 +458,25 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is AssemblySymbolBuilder builder)
-                return ResolveAssembly(builder, state);
-            else if (symbol is IkvmReflectionAssemblyLoader assembly)
-                return assembly._underlyingAssembly;
+            //else if (symbol is AssemblySymbolBuilder builder)
+            //    return ResolveAssembly(builder, state);
+            else if (symbol is DefinitionAssemblySymbol def && def.Loader is IkvmReflectionAssemblyLoader loader)
+                return loader.UnderlyingAssembly;
             else
                 throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="Assembly"/> object for the given <see cref="AssemblySymbol"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        internal Assembly ResolveAssembly(AssemblySymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionAssemblySymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Assembly ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="Assembly"/> object for the given <see cref="AssemblySymbol"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <returns></returns>
+        //internal Assembly ResolveAssembly(AssemblySymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionAssemblySymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Assembly ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="Module"/> object for the given <see cref="ModuleSymbol"/>.
@@ -522,25 +488,25 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is ModuleSymbolBuilder builder)
-                return ResolveModule(builder, state);
-            else if (symbol is IkvmReflectionModuleLoader module)
-                return module._underlyingModule;
+            //else if (symbol is ModuleSymbolBuilder builder)
+            //    return ResolveModule(builder, state);
+            else if (symbol is DefinitionModuleSymbol def && def.Loader is IkvmReflectionModuleLoader loader)
+                return loader.UnderlyingModule;
             else
                 throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Resolves the specified <see cref="ModuleSymbolBuilder"/> to at least the specified state.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        internal Module ResolveModule(ModuleSymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionModuleSymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Module ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Resolves the specified <see cref="ModuleSymbolBuilder"/> to at least the specified state.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <returns></returns>
+        //internal Module ResolveModule(ModuleSymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionModuleSymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Module ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="Type"/> object for the given <see cref="TypeSymbol"/>.
@@ -552,16 +518,16 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is TypeSymbolBuilder builder)
-                return ResolveType(builder, state);
-            else if (symbol is IkvmReflectionTypeLoader type)
-                return type.UnderlyingType;
+            //else if (symbol is TypeSymbolBuilder builder)
+            //    return ResolveType(builder, state);
+            else if (symbol is DefinitionTypeSymbol def && def.Loader is IkvmReflectionTypeLoader loader)
+                return loader.UnderlyingType;
             else if (symbol.IsTypeDefinition && symbol.IsNested)
                 return ResolveType(symbol.DeclaringType!, IkvmReflectionSymbolState.Finished).GetNestedType(symbol.Name, (BindingFlags)Symbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();
             else if (symbol.IsTypeDefinition)
                 return ResolveModule(symbol.Module, IkvmReflectionSymbolState.Finished).GetType(symbol.FullName ?? throw new InvalidOperationException(), false) ?? throw new InvalidOperationException();
             else if (symbol.IsConstructedGenericType)
-                return ResolveType(symbol.GenericTypeDefinition ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Declared).MakeGenericType(ResolveTypes(symbol.GenericArguments, IkvmReflectionSymbolState.Declared));
+                return ResolveType(symbol.GenericTypeDefinition ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Declared).MakeGenericType(ResolveTypes(symbol.GenericParameters, IkvmReflectionSymbolState.Declared));
             else if (symbol.IsSZArray)
                 return ResolveType(symbol.GetElementType()!, IkvmReflectionSymbolState.Declared).MakeArrayType();
             else if (symbol.IsArray)
@@ -596,18 +562,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             return t;
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="TypeBuilder"/> object for the given <see cref="TypeSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        internal Type ResolveType(TypeSymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionTypeSymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Type ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="TypeBuilder"/> object for the given <see cref="TypeSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <param name="state"></param>
+        ///// <returns></returns>
+        //internal Type ResolveType(TypeSymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionTypeSymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Type ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="FieldInfo"/> object for the given <see cref="FieldSymbol"/>.
@@ -620,26 +586,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is FieldSymbolBuilder builder)
-                return ResolveFieldBuilder(builder, state);
-            else if (symbol is IkvmReflectionFieldLoader field)
-                return field._underlyingField;
+            //else if (symbol is FieldSymbolBuilder builder)
+            //    return ResolveFieldBuilder(builder, state);
+            else if (symbol is DefinitionFieldSymbol def && def.Loader is IkvmReflectionFieldLoader loader)
+                return loader.UnderlyingField;
             else
                 return ResolveType(symbol.DeclaringType ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Finished).GetField(symbol.Name, (BindingFlags)TypeSymbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="FieldBuilder"/> object for the given <see cref="FieldSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        FieldInfo ResolveFieldBuilder(FieldSymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionFieldSymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Field ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="FieldBuilder"/> object for the given <see cref="FieldSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <param name="state"></param>
+        ///// <returns></returns>
+        //FieldInfo ResolveFieldBuilder(FieldSymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionFieldSymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Field ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="MethodBase"/> object for the given <see cref="MethodSymbol "/>.
@@ -651,10 +617,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is MethodSymbolBuilder builder)
-                return ResolveMethod(builder, state);
-            else if (symbol is IkvmReflectionMethodLoader method)
-                return method._underlyingMethod;
+            //else if (symbol is MethodSymbolBuilder builder)
+            //    return ResolveMethod(builder, state);
+            else if (symbol is DefinitionMethodSymbol def && def.Loader is IkvmReflectionMethodLoader loader)
+                return loader.UnderlyingMethod;
             else if (symbol.IsConstructor && symbol.IsStatic)
                 return ResolveType(symbol.DeclaringType ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Finished).TypeInitializer;
             else if (symbol.IsConstructor)
@@ -665,18 +631,18 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
                 return ResolveModule(symbol.Module, IkvmReflectionSymbolState.Finished).GetMethod(symbol.Name, (BindingFlags)TypeSymbol.DeclaredOnlyLookup, null, CallingConventions.Any, ResolveTypes(symbol.ParameterTypes, IkvmReflectionSymbolState.Declared), null) ?? throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="MethodBuilder"/> object for the given <see cref="MethodSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        internal MethodInfo ResolveMethod(MethodSymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionMethodSymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Method ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="MethodBuilder"/> object for the given <see cref="MethodSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <param name="state"></param>
+        ///// <returns></returns>
+        //internal MethodInfo ResolveMethod(MethodSymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionMethodSymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Method ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="PropertyInfo"/> object for the given <see cref="PropertySymbol "/>.
@@ -688,26 +654,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is PropertySymbolBuilder builder)
-                return ResolveProperty(builder, state);
-            else if (symbol is IkvmReflectionPropertyLoader property)
-                return property._underlyingProperty;
+            //else if (symbol is PropertySymbolBuilder builder)
+            //    return ResolveProperty(builder, state);
+            else if (symbol is DefinitionPropertySymbol def && def.Loader is IkvmReflectionPropertyLoader loader)
+                return loader.UnderlyingProperty;
             else
                 return ResolveType(symbol.DeclaringType ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Finished).GetProperty(symbol.Name, (BindingFlags)TypeSymbol.DeclaredOnlyLookup, null, ResolveType(symbol.PropertyType, IkvmReflectionSymbolState.Declared), ResolveTypes(symbol.GetIndexParameters().Select(i => i.ParameterType).ToImmutableArray(), IkvmReflectionSymbolState.Declared), null) ?? throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="PropertyBuilder"/> object for the given <see cref="PropertySymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        PropertyInfo ResolveProperty(PropertySymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionPropertySymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Property ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="PropertyBuilder"/> object for the given <see cref="PropertySymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <param name="state"></param>
+        ///// <returns></returns>
+        //PropertyInfo ResolveProperty(PropertySymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionPropertySymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Property ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="EventInfo"/> object for the given <see cref="EventSymbol "/>.
@@ -720,26 +686,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         {
             if (symbol is null)
                 return null;
-            else if (symbol is EventSymbolBuilder builder)
-                return ResolveEventBuilder(builder, state);
-            else if (symbol is IkvmReflectionEventLoader evt)
-                return evt._underlyingEvent;
+            //else if (symbol is EventSymbolBuilder builder)
+            //    return ResolveEventBuilder(builder, state);
+            else if (symbol is DefinitionEventSymbol def && def.Loader is IkvmReflectionEventLoader loader)
+                return loader.UnderlyingEvent;
             else
                 return ResolveType(symbol.DeclaringType ?? throw new InvalidOperationException(), IkvmReflectionSymbolState.Finished).GetEvent(symbol.Name, (BindingFlags)TypeSymbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Obtains the completed <see cref="EventBuilder"/> object for the given <see cref="EventSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        EventInfo ResolveEventBuilder(EventSymbolBuilder builder, IkvmReflectionSymbolState state)
-        {
-            var writer = builder.Writer(b => new IkvmReflectionEventSymbolBuilderWriter(this, b));
-            writer.AdvanceTo(state);
-            return writer.Event ?? throw new InvalidOperationException();
-        }
+        ///// <summary>
+        ///// Obtains the completed <see cref="EventBuilder"/> object for the given <see cref="EventSymbolBuilder"/>. Ensures the phase of the builder is up to the specified phase.
+        ///// </summary>
+        ///// <param name="builder"></param>
+        ///// <param name="state"></param>
+        ///// <returns></returns>
+        //EventInfo ResolveEventBuilder(EventSymbolBuilder builder, IkvmReflectionSymbolState state)
+        //{
+        //    var writer = builder.Writer(b => new IkvmReflectionEventSymbolBuilderWriter(this, b));
+        //    writer.AdvanceTo(state);
+        //    return writer.Event ?? throw new InvalidOperationException();
+        //}
 
         /// <summary>
         /// Obtains the <see cref="EventInfo"/> object for the given <see cref="ParameterSymbol "/>.
@@ -753,28 +719,28 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Saves the entire assembly file.
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="assemblyFile"></param>
-        /// <param name="pekind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void SaveAssembly(AssemblySymbolBuilder assembly, string assemblyFile, System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
-        {
-            ((AssemblyBuilder)ResolveAssembly(assembly, IkvmReflectionSymbolState.Completed)).Save(assemblyFile, (PortableExecutableKinds)pekind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
-        }
+        ///// <summary>
+        ///// Saves the entire assembly file.
+        ///// </summary>
+        ///// <param name="assembly"></param>
+        ///// <param name="assemblyFile"></param>
+        ///// <param name="pekind"></param>
+        ///// <param name="imageFileMachine"></param>
+        //public void SaveAssembly(AssemblySymbolBuilder assembly, string assemblyFile, global::System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
+        //{
+        //    ((AssemblyBuilder)ResolveAssembly(assembly, IkvmReflectionSymbolState.Completed)).Save(assemblyFile, (PortableExecutableKinds)pekind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
+        //}
 
-        /// <summary>
-        /// Saves the specified module.
-        /// </summary>
-        /// <param name="module"></param>
-        /// <param name="pekind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void SaveModule(ModuleSymbolBuilder module, System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
-        {
-            ((ModuleBuilder)ResolveModule(module, IkvmReflectionSymbolState.Completed)).__Save((PortableExecutableKinds)pekind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
-        }
+        ///// <summary>
+        ///// Saves the specified module.
+        ///// </summary>
+        ///// <param name="module"></param>
+        ///// <param name="pekind"></param>
+        ///// <param name="imageFileMachine"></param>
+        //public void SaveModule(ModuleSymbolBuilder module, global::System.Reflection.PortableExecutableKinds pekind, ImageFileMachine imageFileMachine)
+        //{
+        //    ((ModuleBuilder)ResolveModule(module, IkvmReflectionSymbolState.Completed)).__Save((PortableExecutableKinds)pekind, (IKVM.Reflection.ImageFileMachine)imageFileMachine);
+        //}
 
     }
 

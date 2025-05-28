@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Threading;
 
 using IKVM.Reflection;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMethodLoader : DefinitionMethodSymbol
+    class IkvmReflectionMethodLoader : IMethodLoader
     {
 
-        internal readonly MethodBase _underlyingMethod;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly MethodBase _underlyingMethod;
 
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol?> _declaringType;
         ImmutableArray<TypeSymbol> _genericArguments;
-        IkvmReflectionParameterLoader? _returnParameter;
-        TypeSymbol? _returnType;
-        MethodSymbol? _baseDefinition;
-        MethodSymbol? _genericMethodDefinition;
+        LazyField<ParameterSymbol> _returnParameter;
         ImmutableArray<ParameterSymbol> _parameters;
         ImmutableArray<CustomAttribute> _customAttributes;
 
@@ -24,86 +23,51 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
         /// <param name="underlyingMethod"></param>
-        public IkvmReflectionMethodLoader(IkvmReflectionSymbolContext context, IkvmReflectionModuleLoader module, IkvmReflectionTypeLoader? declaringType, MethodBase underlyingMethod) :
-            base(context, module, declaringType)
+        public IkvmReflectionMethodLoader(IkvmReflectionSymbolContext context, MethodBase underlyingMethod)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingMethod = underlyingMethod ?? throw new ArgumentNullException(nameof(underlyingMethod));
         }
 
         /// <summary>
-        /// Gets the context that owns this symbol.
+        /// Gets the underlying method.
         /// </summary>
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        public MethodBase UnderlyingMethod => _underlyingMethod;
 
         /// <inheritdoc />
-        public sealed override string Name => _underlyingMethod.Name;
+        public bool GetIsMissing() => false;
 
         /// <inheritdoc />
-        public sealed override ParameterSymbol ReturnParameter => GetReturnParameter();
-
-        /// <summary>
-        /// Gets the value for <see cref="ReturnParameter"/>;
-        /// </summary>
-        /// <returns></returns>
-        ParameterSymbol GetReturnParameter()
-        {
-            if (_underlyingMethod.IsConstructor)
-                throw new InvalidOperationException();
-            if (_returnParameter == null)
-                Interlocked.CompareExchange(ref _returnParameter, new IkvmReflectionParameterLoader(Context, this, ((MethodInfo)_underlyingMethod).ReturnParameter), null);
-
-            return _returnParameter;
-        }
+        public ModuleSymbol GetModule() => _module.IsDefault ? _module.InterlockedInitialize(_context.ResolveModuleSymbol(_underlyingMethod.Module)) : _module.Value;
 
         /// <inheritdoc />
-        public sealed override System.Reflection.MethodAttributes Attributes => (System.Reflection.MethodAttributes)_underlyingMethod.Attributes;
+        public TypeSymbol? GetDeclaringType() => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingMethod.DeclaringType)) : _declaringType.Value;
 
         /// <inheritdoc />
-        public sealed override System.Reflection.CallingConventions CallingConvention => (System.Reflection.CallingConventions)_underlyingMethod.CallingConvention;
+        public string GetName() => _underlyingMethod.Name;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericMethodDefinition => _underlyingMethod.IsGenericMethodDefinition;
+        public ParameterSymbol GetReturnParameter() => _returnParameter.IsDefault ? _returnParameter.InterlockedInitialize(new DefinitionParameterSymbol(_context, new IkvmReflectionParameterLoader(_context, ((MethodInfo)_underlyingMethod).ReturnParameter))) : _returnParameter.Value;
 
         /// <inheritdoc />
-        public sealed override bool IsConstructedGenericMethod => false;
+        public global::System.Reflection.MethodAttributes GetAttributes() => (global::System.Reflection.MethodAttributes)_underlyingMethod.Attributes;
 
         /// <inheritdoc />
-        public sealed override System.Reflection.MethodImplAttributes MethodImplementationFlags => (System.Reflection.MethodImplAttributes)_underlyingMethod.MethodImplementationFlags;
+        public global::System.Reflection.CallingConventions GetCallingConvention() => (global::System.Reflection.CallingConventions)_underlyingMethod.CallingConvention;
 
         /// <inheritdoc />
-        public sealed override TypeSymbol ReturnType => _returnType ??= _underlyingMethod is MethodInfo m ? Context.ResolveTypeSymbol(m.ReturnType) : Context.ResolveCoreType("System.Void");
+        public global::System.Reflection.MethodImplAttributes GetMethodImplementationFlags() => (global::System.Reflection.MethodImplAttributes)_underlyingMethod.MethodImplementationFlags;
 
         /// <inheritdoc />
-        public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public sealed override bool IsMissing => _underlyingMethod.__IsMissing;
-
-        /// <inheritdoc />
-        public override MethodSymbol? BaseDefinition => _underlyingMethod is MethodInfo m ? (_baseDefinition ??= Context.ResolveMethodSymbol(m.GetBaseDefinition())) : this;
-
-        /// <inheritdoc />
-        public override MethodSymbol? GenericMethodDefinition => _underlyingMethod.IsGenericMethod ? (_genericMethodDefinition ??= Context.ResolveMethodSymbol(((MethodInfo)_underlyingMethod).GetGenericMethodDefinition())) : null;
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GenericArguments => ComputeGenericArguments();
-
-        /// <summary>
-        /// Computes the value of <see cref="GenericArguments"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableArray<TypeSymbol> ComputeGenericArguments()
+        public ImmutableArray<TypeSymbol> GetGenericArguments()
         {
             if (_genericArguments.IsDefault)
             {
                 var l = _underlyingMethod.GetGenericArguments();
                 var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
-                for (int i = 0; i < l.Length; i++)
-                    if (DeclaringType is IkvmReflectionTypeLoader dt)
-                        b.Add(dt.GetOrCreateGenericMethodParameter(l[i]));
+                foreach (var i in l)
+                    b.Add(_context.ResolveTypeSymbol(i));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _genericArguments, b.DrainToImmutable());
             }
@@ -112,20 +76,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<ParameterSymbol> Parameters => ComputeParameters();
-
-        /// <summary>
-        /// Computes the value for <see cref="Parameters"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableArray<ParameterSymbol> ComputeParameters()
+        public ImmutableArray<ParameterSymbol> GetParameters()
         {
             if (_parameters.IsDefault)
             {
                 var l = _underlyingMethod.GetParameters();
                 var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
-                for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionParameterLoader(Context, this, l[i]));
+                foreach (var i in l)
+                    b.Add(new DefinitionParameterSymbol(_context, new IkvmReflectionParameterLoader(_context, i)));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.DrainToImmutable());
             }
@@ -134,10 +92,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        public ImmutableArray<CustomAttribute> GetCustomAttributes()
         {
             if (_customAttributes.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingMethod.GetCustomAttributesData()));
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingMethod.GetCustomAttributesData()));
 
             return _customAttributes;
         }

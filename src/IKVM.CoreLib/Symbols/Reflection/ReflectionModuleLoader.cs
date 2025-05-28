@@ -55,7 +55,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public bool GetIsResource() => _underlyingModule.IsResource();
 
         /// <inheritdoc />
-        public ImmutableArray<FieldSymbol> GetDeclaredFields()
+        public ImmutableArray<FieldSymbol> GetFields()
         {
             if (_fields.IsDefault)
             {
@@ -71,7 +71,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        public ImmutableArray<MethodSymbol> GetMethods()
         {
             if (_methods.IsDefault)
             {
@@ -87,7 +87,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         }
 
         /// <inheritdoc />
-        public ImmutableArray<TypeSymbol> GetDeclaredTypes()
+        public ImmutableArray<TypeSymbol> GetTypes()
         {
             if (_types.IsDefault)
             {

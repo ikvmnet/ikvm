@@ -46,13 +46,13 @@ namespace IKVM.CoreLib.Symbols
         public sealed override Guid ModuleVersionId => _loader.GetModuleVersionId();
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields() => _loader.GetDeclaredFields();
+        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields() => _loader.GetFields();
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods() => _loader.GetDeclaredMethods();
+        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods() => _loader.GetMethods();
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredTypes() => _loader.GetDeclaredTypes();
+        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredTypes() => _loader.GetTypes();
 
         /// <inheritdoc />
         public sealed override bool IsResource() => _loader.GetIsResource();

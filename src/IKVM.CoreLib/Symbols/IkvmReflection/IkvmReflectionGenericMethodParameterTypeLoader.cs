@@ -1,97 +1,96 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Reflection;
+
+using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionGenericMethodParameterTypeLoader : GenericMethodParameterTypeSymbol
+    class IkvmReflectionGenericMethodParameterTypeLoader : IGenericMethodParameterTypeLoader
     {
 
+        readonly IkvmReflectionSymbolContext _context;
         readonly Type _underlyingType;
 
-        ImmutableArray<TypeSymbol> _interfaces;
-        ImmutableArray<CustomAttribute> _customAttributes;
+        LazyField<MethodSymbol> _declaringMethod;
+        ImmutableArray<TypeSymbol> _genericParameterConstraints;
         ImmutableArray<TypeSymbol> _optionalCustomModifiers;
         ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="declaringMethod"></param>
         /// <param name="underlyingType"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmReflectionGenericMethodParameterTypeLoader(IkvmReflectionSymbolContext context, MethodSymbol declaringMethod, Type underlyingType) :
-            base(context, declaringMethod)
+        public IkvmReflectionGenericMethodParameterTypeLoader(IkvmReflectionSymbolContext context, Type underlyingType)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
-        }
 
-        /// <summary>
-        /// Gets the context that owns this symbol.
-        /// </summary>
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
-
-        /// <inheritdoc />
-        public sealed override string Name => _underlyingType.Name;
-
-        /// <inheritdoc />
-        public sealed override string? Namespace => _underlyingType.Namespace;
-
-        /// <inheritdoc />
-        public sealed override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_underlyingType.GenericParameterAttributes;
-
-        /// <inheritdoc />
-        public sealed override int GenericParameterPosition => _underlyingType.GenericParameterPosition;
-
-        /// <inheritdoc />
-        public sealed override TypeSymbol? BaseType => Context.ResolveTypeSymbol(_underlyingType.BaseType);
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
-        {
-            if (_interfaces == null)
-                ImmutableInterlocked.InterlockedInitialize(ref _interfaces, Context.ResolveTypeSymbols(_underlyingType.__GetDeclaredInterfaces()));
-
-            return _interfaces;
+            if (underlyingType.IsGenericParameter == false || underlyingType.IsGenericMethodParameter() == false)
+                throw new ArgumentException(nameof(underlyingType));
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            if (_customAttributes == default)
-                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingType.GetCustomAttributesData()));
+        public bool GetIsMissing() => false;
 
-            return _customAttributes;
+        /// <inheritdoc />
+        public MethodSymbol GetDeclaringMethod() => _declaringMethod.IsDefault ? _declaringMethod.InterlockedInitialize(_context.ResolveMethodSymbol((MethodInfo)_underlyingType.DeclaringMethod!)) : _declaringMethod.Value;
+
+        /// <inheritdoc />
+        public string GetName() => _underlyingType.Name;
+
+        /// <inheritdoc />
+        public int GetGenericParameterPosition() => _underlyingType.GenericParameterPosition;
+
+        /// <inheritdoc />
+        public global::System.Reflection.GenericParameterAttributes GetGenericParameterAttributes() => (global::System.Reflection.GenericParameterAttributes)_underlyingType.GenericParameterAttributes;
+
+        /// <inheritdoc />
+        public ImmutableArray<TypeSymbol> GetGenericParameterConstraints()
+        {
+            if (_genericParameterConstraints.IsDefault)
+            {
+                var l = _underlyingType.GetGenericParameterConstraints();
+                var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                foreach (var i in l)
+                    b.Add(_context.ResolveTypeSymbol(i));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _genericParameterConstraints, b.DrainToImmutable());
+            }
+
+            return _genericParameterConstraints;
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        public ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-#if NET8_0
             if (_optionalCustomModifiers.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.__GetOptionalCustomModifiers()));
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, _context.ResolveTypeSymbols(_underlyingType.__GetOptionalCustomModifiers()));
 
             return _optionalCustomModifiers;
-#else
-            return [];
-#endif
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        public ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-#if NET8_0
             if (_requiredCustomModifiers.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, Context.ResolveTypeSymbols(_underlyingType.__GetRequiredCustomModifiers()));
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, _context.ResolveTypeSymbols(_underlyingType.__GetRequiredCustomModifiers()));
 
             return _requiredCustomModifiers;
-#else
-            return [];
-#endif
+        }
+
+        /// <inheritdoc />
+        public ImmutableArray<CustomAttribute> GetCustomAttributes()
+        {
+            if (_customAttributes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingType.GetCustomAttributesData()));
+
+            return _customAttributes;
         }
 
     }

@@ -6,11 +6,13 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionModuleLoader : ModuleSymbol
+    class IkvmReflectionModuleLoader : IModuleLoader
     {
 
-        internal readonly Module _underlyingModule;
+        readonly IkvmReflectionSymbolContext _context;
+        readonly Module _underlyingModule;
 
+        LazyField<AssemblySymbol> _assembly;
         ImmutableArray<FieldSymbol> _fields;
         ImmutableArray<MethodSymbol> _methods;
         ImmutableArray<TypeSymbol> _types;
@@ -20,43 +22,48 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
-        /// <param name="module"></param>
-        public IkvmReflectionModuleLoader(IkvmReflectionSymbolContext context, IkvmReflectionAssemblyLoader assembly, Module module) :
-            base(context, assembly)
+        /// <param name="underlyingModule"></param>
+        public IkvmReflectionModuleLoader(IkvmReflectionSymbolContext context, Module underlyingModule)
         {
-            _underlyingModule = module ?? throw new ArgumentNullException(nameof(module));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _underlyingModule = underlyingModule ?? throw new ArgumentNullException(nameof(underlyingModule));
         }
 
         /// <summary>
-        /// Gets the context that owns this symbol.
+        /// Gets the underlying module.
         /// </summary>
-        new IkvmReflectionSymbolContext Context => (IkvmReflectionSymbolContext)base.Context;
+        public Module UnderlyingModule => _underlyingModule;
 
         /// <inheritdoc />
-        public sealed override string FullyQualifiedName => _underlyingModule.FullyQualifiedName;
+        public bool GetIsMissing() => false;
 
         /// <inheritdoc />
-        public sealed override string Name => _underlyingModule.Name;
+        public AssemblySymbol GetAssembly() => _assembly.IsDefault ? _assembly.InterlockedInitialize(_context.ResolveAssemblySymbol(_underlyingModule.Assembly)) : _assembly.Value;
 
         /// <inheritdoc />
-        public sealed override string ScopeName => _underlyingModule.ScopeName;
+        public string GetFullyQualifiedName() => _underlyingModule.FullyQualifiedName;
 
         /// <inheritdoc />
-        public override Guid ModuleVersionId => _underlyingModule.ModuleVersionId;
+        public string GetName() => _underlyingModule.Name;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => _underlyingModule.__IsMissing;
+        public string GetScopeName() => _underlyingModule.ScopeName;
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<FieldSymbol> GetDeclaredFields()
+        public Guid GetModuleVersionId() => _underlyingModule.ModuleVersionId;
+
+        /// <inheritdoc />
+        public bool GetIsResource() => _underlyingModule.IsResource();
+
+        /// <inheritdoc />
+        public ImmutableArray<FieldSymbol> GetFields()
         {
             if (_fields.IsDefault)
             {
-                var l = _underlyingModule.GetFields((BindingFlags)DeclaredOnlyLookup);
+                var l = _underlyingModule.GetFields((BindingFlags)Symbol.DeclaredOnlyLookup);
                 var b = ImmutableArray.CreateBuilder<FieldSymbol>(l.Length);
-                for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionFieldLoader(Context, this, null, l[i]));
+                foreach (var i in l)
+                    b.Add(new DefinitionFieldSymbol(_context, new IkvmReflectionFieldLoader(_context, i)));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _fields, b.DrainToImmutable());
             }
@@ -65,14 +72,14 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        public ImmutableArray<MethodSymbol> GetMethods()
         {
             if (_methods.IsDefault)
             {
-                var l = _underlyingModule.GetMethods((BindingFlags)DeclaredOnlyLookup);
+                var l = _underlyingModule.GetMethods((BindingFlags)Symbol.DeclaredOnlyLookup);
                 var b = ImmutableArray.CreateBuilder<MethodSymbol>(l.Length);
-                for (int i = 0; i < l.Length; i++)
-                    b.Add(new IkvmReflectionMethodLoader(Context, this, null, l[i]));
+                foreach (var i in l)
+                    b.Add(new DefinitionMethodSymbol(_context, new IkvmReflectionMethodLoader(_context, i)));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _methods, b.DrainToImmutable());
             }
@@ -81,15 +88,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredTypes()
+        public ImmutableArray<TypeSymbol> GetTypes()
         {
             if (_types.IsDefault)
             {
                 var l = _underlyingModule.GetTypes();
                 var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
-                for (int i = 0; i < l.Length; i++)
-                    if (l[i].IsNested == false)
-                        b.Add(new IkvmReflectionTypeLoader(Context, this, l[i]));
+                foreach (var i in l)
+                    if (i.IsNested == false)
+                        b.Add(new DefinitionTypeSymbol(_context, new IkvmReflectionTypeLoader(_context, i)));
 
                 ImmutableInterlocked.InterlockedInitialize(ref _types, b.DrainToImmutable());
             }
@@ -98,16 +105,10 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         }
 
         /// <inheritdoc />
-        public sealed override bool IsResource()
-        {
-            return _underlyingModule.IsResource();
-        }
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        public ImmutableArray<CustomAttribute> GetCustomAttributes()
         {
             if (_customAttributes.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, Context.ResolveCustomAttributes(_underlyingModule.GetCustomAttributesData()));
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingModule.GetCustomAttributesData()));
 
             return _customAttributes;
         }
