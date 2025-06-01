@@ -19,7 +19,7 @@ namespace IKVM.CoreLib.Runtime
 
 #if NETFRAMEWORK
 
-        static readonly Type DependentHandleType =  typeof(object).Assembly.GetType("System.Runtime.CompilerServices.DependentHandle") ?? throw new Exception();
+        static readonly Type DependentHandleType = typeof(object).Assembly.GetType("System.Runtime.CompilerServices.DependentHandle") ?? throw new Exception();
         static readonly ConstructorInfo DependentHandleCtor = DependentHandleType.GetConstructor([typeof(object), typeof(object)]) ?? throw new Exception();
         static readonly PropertyInfo IsAllocatedProperty = DependentHandleType.GetProperty("IsAllocated") ?? throw new Exception();
         static readonly MethodInfo GetPrimaryMethod = DependentHandleType.GetMethod("GetPrimary") ?? throw new Exception();
@@ -180,9 +180,11 @@ namespace IKVM.CoreLib.Runtime
         public void Dispose()
         {
 #if NET
-            _hnd.Dispose();
+            if (_hnd.IsAllocated)
+                _hnd.Dispose();
 #else
-            FreeFunc(_hnd);
+            if (_hnd is not null)
+                FreeFunc(_hnd);
 #endif
         }
 
