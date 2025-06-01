@@ -18,14 +18,14 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
     {
 
         readonly ReflectionSymbolContext _context;
-        readonly System.Reflection.Emit.ILGenerator _il;
+        readonly global::System.Reflection.Emit.ILGenerator _il;
         readonly bool _resolveComplete;
 
         int _labelsCount;
-        IndexRangeDictionary<System.Reflection.Emit.Label> _labels = new IndexRangeDictionary<System.Reflection.Emit.Label>();
+        IndexRangeDictionary<global::System.Reflection.Emit.Label> _labels = new IndexRangeDictionary<global::System.Reflection.Emit.Label>();
 
         int _localsCount;
-        IndexRangeDictionary<System.Reflection.Emit.LocalBuilder> _locals = new IndexRangeDictionary<System.Reflection.Emit.LocalBuilder>();
+        IndexRangeDictionary<global::System.Reflection.Emit.LocalBuilder> _locals = new IndexRangeDictionary<global::System.Reflection.Emit.LocalBuilder>();
 
         /// <summary>
         /// Initializes a new instance.
@@ -34,7 +34,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="il"></param>
         /// <param name="resolveComplete"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionILGenerationWriter(ReflectionSymbolContext context, System.Reflection.Emit.ILGenerator il, bool resolveComplete = false)
+        public ReflectionILGenerationWriter(ReflectionSymbolContext context, global::System.Reflection.Emit.ILGenerator il, bool resolveComplete = false)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _il = il ?? throw new ArgumentNullException(nameof(il));
@@ -52,7 +52,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             if (type is null)
                 return null;
             else if (_resolveComplete)
-                return _context.ResolveType(type, ReflectionSymbolState.Completed);
+                return _context.ResolveType(type, ReflectionSymbolState.Finished);
             else
                 return _context.ResolveType(type);
         }
@@ -69,7 +69,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             else if (types.IsEmpty)
                 return [];
             else if (_resolveComplete)
-                return _context.ResolveTypes(types, ReflectionSymbolState.Completed);
+                return _context.ResolveTypes(types, ReflectionSymbolState.Finished);
             else
                 return _context.ResolveTypes(types);
         }
@@ -85,7 +85,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             if (field is null)
                 return null;
             else if (_resolveComplete)
-                return _context.ResolveField(field, ReflectionSymbolState.Completed);
+                return _context.ResolveField(field, ReflectionSymbolState.Finished);
             else
                 return _context.ResolveField(field);
         }
@@ -101,7 +101,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             if (method is null)
                 return null;
             else if (_resolveComplete)
-                return _context.ResolveMethod(method, ReflectionSymbolState.Completed);
+                return _context.ResolveMethod(method, ReflectionSymbolState.Finished);
             else
                 return _context.ResolveMethod(method);
         }
@@ -260,7 +260,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <inheritdoc />
         public void Emit(OpCodeValue opcode, ImmutableArray<IILGeneratorWriter.LabelRef> labels)
         {
-            var labels_ = new System.Reflection.Emit.Label[labels.Length];
+            var labels_ = new global::System.Reflection.Emit.Label[labels.Length];
             for (int i = 0; i < labels.Length; i++)
                 labels_[i] = _labels[labels[i].Index];
 

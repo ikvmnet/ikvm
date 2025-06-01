@@ -41,45 +41,48 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)(_builder.DeclaringType ?? throw new InvalidOperationException()), ReflectionSymbolState.Finished);
+            lock (this)
+            {
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)(_builder.DeclaringType ?? throw new InvalidOperationException()), ReflectionSymbolState.Emitted);
 
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
 
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
 
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Completed);
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
 
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
+            }
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != ReflectionSymbolState.Default)
                 throw new InvalidOperationException();
 
             // define event
             if (_parentTypeBuilder is not null)
-                _eventBuilder = _parentTypeBuilder.DefineEvent(_builder.Name, _builder.Attributes, _context.ResolveType(_builder.EventHandlerType, ReflectionSymbolState.Declared));
+                _eventBuilder = _parentTypeBuilder.DefineEvent(_builder.Name, _builder.Attributes, _context.ResolveType(_builder.EventHandlerType, ReflectionSymbolState.Defined));
             else
                 throw new InvalidOperationException();
 
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_eventBuilder == null)
                 throw new InvalidOperationException();
@@ -88,7 +91,7 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             _builder.Freeze();
 
             // parent type must be finished
-            var parentType = (TypeBuilder)_context.ResolveType(_builder.DeclaringType ?? throw new InvalidOperationException(), ReflectionSymbolState.Finished);
+            var parentType = (TypeBuilder)_context.ResolveType(_builder.DeclaringType ?? throw new InvalidOperationException(), ReflectionSymbolState.Emitted);
 
             // parent resolution caused declaration of us
             if (_state != ReflectionSymbolState.Default)
@@ -96,38 +99,38 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
             // set add method
             if (_builder.AddMethod is MethodSymbolBuilder addMethod)
-                _eventBuilder.SetAddOnMethod((MethodBuilder)_context.ResolveMethod(addMethod, ReflectionSymbolState.Declared));
+                _eventBuilder.SetAddOnMethod((MethodBuilder)_context.ResolveMethod(addMethod, ReflectionSymbolState.Defined));
 
             // set remove method
             if (_builder.RemoveMethod is MethodSymbolBuilder removeMethod)
-                _eventBuilder.SetRemoveOnMethod((MethodBuilder)_context.ResolveMethod(removeMethod, ReflectionSymbolState.Declared));
+                _eventBuilder.SetRemoveOnMethod((MethodBuilder)_context.ResolveMethod(removeMethod, ReflectionSymbolState.Defined));
 
             // set raise method
             if (_builder.RaiseMethod is MethodSymbolBuilder raiseMethod)
-                _eventBuilder.SetRemoveOnMethod((MethodBuilder)_context.ResolveMethod(raiseMethod, ReflectionSymbolState.Declared));
+                _eventBuilder.SetRemoveOnMethod((MethodBuilder)_context.ResolveMethod(raiseMethod, ReflectionSymbolState.Defined));
 
             // add other methods
             foreach (var m in _builder.GetOtherMethods())
                 if (m is MethodSymbolBuilder otherMethod)
-                    _eventBuilder.AddOtherMethod((MethodBuilder)_context.ResolveMethod(otherMethod, ReflectionSymbolState.Declared));
+                    _eventBuilder.AddOtherMethod((MethodBuilder)_context.ResolveMethod(otherMethod, ReflectionSymbolState.Defined));
 
             // set custom attributes
             foreach (var customAttribute in _builder.GetDeclaredCustomAttributes())
                 _eventBuilder.SetCustomAttribute(_context.CreateCustomAttributeBuilder(customAttribute));
 
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
         }
 
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
 
             // set state
-            _state = ReflectionSymbolState.Completed;
+            _state = ReflectionSymbolState.Finished;
 
             if (_parentType is not null)
                 _event = _parentType.GetEvent(_builder.Name, TypeSymbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();

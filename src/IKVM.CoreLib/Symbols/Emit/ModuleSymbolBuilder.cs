@@ -9,9 +9,10 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public class ModuleSymbolBuilder : ModuleSymbol, ICustomAttributeBuilder
+    public sealed class ModuleSymbolBuilder : DefinitionModuleSymbol, ICustomAttributeBuilder
     {
 
+        readonly AssemblySymbolBuilder _assembly;
         readonly string _name;
         readonly string _fileName;
 
@@ -42,11 +43,18 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="name"></param>
         /// <param name="fileName"></param>
         internal ModuleSymbolBuilder(SymbolContext context, AssemblySymbolBuilder assembly, string name, string fileName) :
-            base(context, assembly)
+            base(context)
         {
+            _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         }
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override AssemblySymbol Assembly => _assembly;
 
         /// <inheritdoc />
         public sealed override string FullyQualifiedName => throw new NotImplementedException();
@@ -59,9 +67,6 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         /// <inheritdoc />
         public sealed override Guid ModuleVersionId => Guid.Empty;
-
-        /// <inheritdoc />
-        public sealed override bool IsMissing => false;
 
         /// <summary>
         /// Gets the emitted source documents.
@@ -121,7 +126,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -129,8 +135,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("ModuleSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("ModuleSymbolBuilder is frozen.");
         }
 
         /// <summary>

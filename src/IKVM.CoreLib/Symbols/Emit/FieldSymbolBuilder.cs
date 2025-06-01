@@ -6,9 +6,11 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class FieldSymbolBuilder : FieldSymbol, ICustomAttributeBuilder
+    public sealed class FieldSymbolBuilder : DefinitionFieldSymbol, ICustomAttributeBuilder
     {
 
+        readonly ModuleSymbol _declaringModule;
+        readonly TypeSymbolBuilder? _declaringType;
         readonly string _name;
         readonly FieldAttributes _attributes;
         readonly TypeSymbol _fieldType;
@@ -33,8 +35,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="requiredCustomModifiers"></param>
         /// <param name="optionalCustomModifiers"></param>
         internal FieldSymbolBuilder(SymbolContext context, ModuleSymbol declaringModule, TypeSymbolBuilder? declaringType, string name, FieldAttributes attributes, TypeSymbol fieldType, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers) :
-            base(context, declaringModule, declaringType)
+            base(context)
         {
+            _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+            _declaringType = declaringType;
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _attributes = attributes;
             _fieldType = fieldType ?? throw new ArgumentNullException(nameof(fieldType));
@@ -43,19 +47,25 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <inheritdoc />
-        public override FieldAttributes Attributes => _attributes;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override TypeSymbol FieldType => _fieldType;
+        public sealed override ModuleSymbol Module => _declaringModule;
 
         /// <inheritdoc />
-        public override string Name => _name;
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override FieldAttributes Attributes => _attributes;
 
         /// <inheritdoc />
-        public override object? GetRawConstantValue()
+        public sealed override string Name => _name;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol FieldType => _fieldType;
+
+        /// <inheritdoc />
+        public sealed override object? GetRawConstantValue()
         {
             return _constantValue;
         }
@@ -66,19 +76,19 @@ namespace IKVM.CoreLib.Symbols.Emit
         public int? Offset => _offset;
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
             return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
             return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
             return _customAttributes.ToImmutable();
         }
@@ -88,7 +98,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -96,8 +107,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("FieldSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("FieldSymbolBuilder is frozen.");
         }
 
         /// <summary>

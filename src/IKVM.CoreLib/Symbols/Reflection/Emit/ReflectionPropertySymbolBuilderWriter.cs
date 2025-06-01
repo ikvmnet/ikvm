@@ -40,64 +40,67 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
+            lock (this)
+            {
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Emitted);
 
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
 
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
 
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Completed);
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
 
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
+            }
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != ReflectionSymbolState.Default)
                 throw new InvalidOperationException();
 
-            var returnType = _context.ResolveType(_builder.PropertyType, ReflectionSymbolState.Declared);
-            var returnRequiredCustomModifiers = _context.ResolveTypes(_builder.PropertyType.GetRequiredCustomModifiers(), ReflectionSymbolState.Declared);
-            var returnOptionalCustomModifiers = _context.ResolveTypes(_builder.PropertyType.GetOptionalCustomModifiers(), ReflectionSymbolState.Declared);
+            var returnType = _context.ResolveType(_builder.PropertyType, ReflectionSymbolState.Defined);
+            var returnRequiredCustomModifiers = _context.ResolveTypes(_builder.PropertyType.GetRequiredCustomModifiers(), ReflectionSymbolState.Defined);
+            var returnOptionalCustomModifiers = _context.ResolveTypes(_builder.PropertyType.GetOptionalCustomModifiers(), ReflectionSymbolState.Defined);
 
             var parameterTypes = Array.Empty<Type>();
             var parameterRequiredCustomModifiers = Array.Empty<Type[]>();
             var parameterOptionalCustomModifiers = Array.Empty<Type[]>();
             if (_builder.GetIndexParameters().Length > 0)
             {
-                parameterTypes = _context.ResolveTypes(_builder.GetIndexParameters().Select(i => i.ParameterType).ToImmutableArray(), ReflectionSymbolState.Declared);
+                parameterTypes = _context.ResolveTypes(_builder.GetIndexParameters().Select(i => i.ParameterType).ToImmutableArray(), ReflectionSymbolState.Defined);
                 parameterRequiredCustomModifiers = new Type[_builder.GetIndexParameters().Length][];
                 parameterOptionalCustomModifiers = new Type[_builder.GetIndexParameters().Length][];
                 for (int i = 0; i < _builder.GetIndexParameters().Length; i++)
                 {
-                    parameterRequiredCustomModifiers[i] = _context.ResolveTypes(_builder.GetIndexParameters()[i].GetRequiredCustomModifiers(), ReflectionSymbolState.Declared);
-                    parameterOptionalCustomModifiers[i] = _context.ResolveTypes(_builder.GetIndexParameters()[i].GetOptionalCustomModifiers(), ReflectionSymbolState.Declared);
+                    parameterRequiredCustomModifiers[i] = _context.ResolveTypes(_builder.GetIndexParameters()[i].GetRequiredCustomModifiers(), ReflectionSymbolState.Defined);
+                    parameterOptionalCustomModifiers[i] = _context.ResolveTypes(_builder.GetIndexParameters()[i].GetOptionalCustomModifiers(), ReflectionSymbolState.Defined);
                 }
             }
 
             // define property
             if (_parentTypeBuilder is not null)
-                _propertyBuilder = _parentTypeBuilder.DefineProperty(_builder.Name, _builder.Attributes, _builder.CallingConventions, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
+                _propertyBuilder = _parentTypeBuilder.DefineProperty(_builder.Name, _builder.Attributes, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
             else
                 throw new InvalidOperationException();
 
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_propertyBuilder == null)
                 throw new InvalidOperationException();
@@ -108,35 +111,30 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
             // set get method
             if (_builder.GetMethod is MethodSymbolBuilder addMethod)
-                _propertyBuilder.SetGetMethod((MethodBuilder)_context.ResolveMethod(addMethod, ReflectionSymbolState.Declared));
+                _propertyBuilder.SetGetMethod((MethodBuilder)_context.ResolveMethod(addMethod, ReflectionSymbolState.Defined));
 
             // set set method
             if (_builder.SetMethod is MethodSymbolBuilder removeMethod)
-                _propertyBuilder.SetSetMethod((MethodBuilder)_context.ResolveMethod(removeMethod, ReflectionSymbolState.Declared));
-
-            // add accessor methods
-            foreach (var m in _builder.GetAccessors(true))
-                if (m is MethodSymbolBuilder otherMethod)
-                    _propertyBuilder.AddOtherMethod((MethodBuilder)_context.ResolveMethod(otherMethod, ReflectionSymbolState.Declared));
+                _propertyBuilder.SetSetMethod((MethodBuilder)_context.ResolveMethod(removeMethod, ReflectionSymbolState.Defined));
 
             // set custom attributes
             foreach (var customAttribute in _builder.GetDeclaredCustomAttributes())
                 _propertyBuilder.SetCustomAttribute(_context.CreateCustomAttributeBuilder(customAttribute));
 
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
         }
 
         /// <summary>
         /// Executes the export phase.
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
 
             // set state
-            _state = ReflectionSymbolState.Completed;
+            _state = ReflectionSymbolState.Finished;
 
             if (_parentType is not null)
                 _property = _parentType.GetProperty(_builder.Name, TypeSymbol.DeclaredOnlyLookup, null, _context.ResolveType(_builder.PropertyType), _context.ResolveTypes(_builder.GetIndexParameters().Select(i => i.ParameterType).ToImmutableArray()), null) ?? throw new InvalidOperationException();

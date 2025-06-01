@@ -45,63 +45,63 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(IkvmReflectionSymbolState state)
         {
-            if (state >= IkvmReflectionSymbolState.Declared && _state < IkvmReflectionSymbolState.Declared)
+            if (state >= IkvmReflectionSymbolState.Defined && _state < IkvmReflectionSymbolState.Defined)
             {
                 // require parent to be finished; this is reentrant
                 if (_builder.DeclaringType == null)
-                    _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, IkvmReflectionSymbolState.Finished);
+                    _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, IkvmReflectionSymbolState.Emitted);
                 else
-                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, IkvmReflectionSymbolState.Finished);
+                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, IkvmReflectionSymbolState.Emitted);
             }
 
-            if (state >= IkvmReflectionSymbolState.Declared && _state < IkvmReflectionSymbolState.Declared)
-                Declare();
+            if (state >= IkvmReflectionSymbolState.Defined && _state < IkvmReflectionSymbolState.Defined)
+                Define();
+
+            if (state >= IkvmReflectionSymbolState.Emitted && _state < IkvmReflectionSymbolState.Emitted)
+                Emit();
+
+            if (state >= IkvmReflectionSymbolState.Finished && _state < IkvmReflectionSymbolState.Finished)
+            {
+                // require parent to be finished; this is reentrant
+                if (_builder.DeclaringType == null)
+                    _parentModule = _context.ResolveModule(_builder.Module, IkvmReflectionSymbolState.Finished);
+                else
+                    _parentType = _context.ResolveType(_builder.DeclaringType, IkvmReflectionSymbolState.Finished);
+            }
 
             if (state >= IkvmReflectionSymbolState.Finished && _state < IkvmReflectionSymbolState.Finished)
                 Finish();
-
-            if (state >= IkvmReflectionSymbolState.Completed && _state < IkvmReflectionSymbolState.Completed)
-            {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModule = _context.ResolveModule(_builder.Module, IkvmReflectionSymbolState.Completed);
-                else
-                    _parentType = _context.ResolveType(_builder.DeclaringType, IkvmReflectionSymbolState.Completed);
-            }
-
-            if (state >= IkvmReflectionSymbolState.Completed && _state < IkvmReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != IkvmReflectionSymbolState.Default)
                 throw new InvalidOperationException();
 
-            var requiredCustomModifiers = _context.ResolveTypes(_builder.GetRequiredCustomModifiers(), IkvmReflectionSymbolState.Declared);
-            var optionalCustomModifiers = _context.ResolveTypes(_builder.GetOptionalCustomModifiers(), IkvmReflectionSymbolState.Declared);
+            var requiredCustomModifiers = _context.ResolveTypes(_builder.GetRequiredCustomModifiers(), IkvmReflectionSymbolState.Defined);
+            var optionalCustomModifiers = _context.ResolveTypes(_builder.GetOptionalCustomModifiers(), IkvmReflectionSymbolState.Defined);
             var customModifiers = new CustomModifiersBuilder();
             customModifiers.Add(requiredCustomModifiers, optionalCustomModifiers);
 
             if (_parentModuleBuilder is not null)
-                _fieldBuilder = _parentModuleBuilder.__DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, IkvmReflectionSymbolState.Declared), customModifiers.Create(), (IKVM.Reflection.FieldAttributes)_builder.Attributes);
+                _fieldBuilder = _parentModuleBuilder.__DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, IkvmReflectionSymbolState.Defined), customModifiers.Create(), (IKVM.Reflection.FieldAttributes)_builder.Attributes);
             else if (_parentTypeBuilder is not null)
-                _fieldBuilder = _parentTypeBuilder.DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, IkvmReflectionSymbolState.Declared), requiredCustomModifiers, optionalCustomModifiers, (IKVM.Reflection.FieldAttributes)_builder.Attributes);
+                _fieldBuilder = _parentTypeBuilder.DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, IkvmReflectionSymbolState.Defined), requiredCustomModifiers, optionalCustomModifiers, (IKVM.Reflection.FieldAttributes)_builder.Attributes);
             else
                 throw new InvalidOperationException();
 
-            _state = IkvmReflectionSymbolState.Declared;
+            _state = IkvmReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != IkvmReflectionSymbolState.Declared)
+            if (_state != IkvmReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_fieldBuilder is null)
                 throw new InvalidOperationException();
@@ -118,19 +118,19 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             foreach (var customAttribute in _builder.GetDeclaredCustomAttributes())
                 _fieldBuilder.SetCustomAttribute(_context.CreateCustomAttributeBuilder(customAttribute));
 
-            _state = IkvmReflectionSymbolState.Finished;
+            _state = IkvmReflectionSymbolState.Emitted;
         }
 
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
-        void Complete()
+        void Finish()
         {
-            if (_state != IkvmReflectionSymbolState.Finished)
+            if (_state != IkvmReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
 
             // set state
-            _state = IkvmReflectionSymbolState.Completed;
+            _state = IkvmReflectionSymbolState.Finished;
 
             if (_parentModule is not null)
                 _field = _parentModule.GetField(_builder.Name, (BindingFlags)TypeSymbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();

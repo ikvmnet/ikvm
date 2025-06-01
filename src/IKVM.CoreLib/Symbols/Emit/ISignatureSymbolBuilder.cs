@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace IKVM.CoreLib.Symbols.Emit
 {
+
     internal class ISignatureSymbolBuilder
     {
+
     }
+
 }

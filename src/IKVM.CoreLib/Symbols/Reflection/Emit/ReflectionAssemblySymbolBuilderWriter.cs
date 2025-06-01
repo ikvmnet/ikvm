@@ -33,31 +33,34 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         public Assembly? Assembly => _assemblyBuilder;
 
         /// <summary>
-        /// Advances the builder to the given phase.
+        /// Advances the writer to the given phase.
         /// </summary>
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
+            lock (this)
+            {
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
 
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
 
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
+            }
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != ReflectionSymbolState.Default)
                 throw new InvalidOperationException();
 
             // set state
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
 
             // define assembly
             _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(_builder.Identity.ToAssemblyName(), AssemblyBuilderAccess.Run, _context.CreateCustomAttributeBuilders(_builder.GetDeclaredCustomAttributes()));
@@ -66,44 +69,43 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_assemblyBuilder is null)
                 throw new InvalidOperationException();
 
             // lock builder and set state
             _builder.Freeze();
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
 
-            // declare modules
+            // define modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, ReflectionSymbolState.Declared);
-
+                _context.ResolveModule(module, ReflectionSymbolState.Defined);
         }
 
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
             if (_assemblyBuilder is null)
                 throw new InvalidOperationException();
 
             // finish modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, ReflectionSymbolState.Finished);
+                _context.ResolveModule(module, ReflectionSymbolState.Emitted);
 
             // set state
-            _state = ReflectionSymbolState.Completed;
+            _state = ReflectionSymbolState.Finished;
 
             // complete modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, ReflectionSymbolState.Completed);
+                _context.ResolveModule(module, ReflectionSymbolState.Finished);
         }
 
     }

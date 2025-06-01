@@ -12,17 +12,17 @@
         /// <summary>
         /// Initial state of an underlying object. Only basic properties have been initialized.
         /// </summary>
-        Declared,
+        Defined,
 
         /// <summary>
         /// Finished state of an underlying object. A finished symbol has had it's settings and children emitted.
         /// </summary>
-        Finished,
+        Emitted,
 
         /// <summary>
         /// Complete state of an underlying object. A completed symbol has been fully completed.
         /// </summary>
-        Completed,
+        Finished,
 
     }
 

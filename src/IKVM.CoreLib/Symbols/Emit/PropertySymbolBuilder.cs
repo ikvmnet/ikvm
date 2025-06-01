@@ -7,14 +7,14 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class PropertySymbolBuilder : PropertySymbol, ICustomAttributeBuilder
+    public sealed class PropertySymbolBuilder : DefinitionPropertySymbol, ICustomAttributeBuilder
     {
 
         static ImmutableArray<TypeSymbol> GetIndexOrNull(ImmutableArray<ImmutableArray<TypeSymbol>> a, int i) => a.Length >= i ? a[i] : [];
 
+        private readonly TypeSymbol _declaringType;
         readonly string _name;
         readonly PropertyAttributes _attributes;
-        readonly CallingConventions _callingConventions;
         readonly TypeSymbol _propertyType;
         readonly ImmutableArray<TypeSymbol> _requiredCustomModifiers;
         readonly ImmutableArray<TypeSymbol> _optionalCustomModifiers;
@@ -22,7 +22,6 @@ namespace IKVM.CoreLib.Symbols.Emit
 
         MethodSymbolBuilder? _getMethod;
         MethodSymbolBuilder? _setMethod;
-        readonly ImmutableArray<MethodSymbolBuilder>.Builder _accessorMethods = ImmutableArray.CreateBuilder<MethodSymbolBuilder>();
 
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
         object? _constantValue;
@@ -37,128 +36,70 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="declaringType"></param>
         /// <param name="name"></param>
         /// <param name="attributes"></param>
-        /// <param name="callingConvention"></param>
         /// <param name="propertyType"></param>
         /// <param name="requiredCustomModifiers"></param>
         /// <param name="optionalCustomModifiers"></param>
         /// <param name="parameterTypes"></param>
         /// <param name="parameterRequiredCustomModifiers"></param>
         /// <param name="parameterOptionalCustomModifiers"></param>
-        internal PropertySymbolBuilder(SymbolContext context, TypeSymbol declaringType, string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol propertyType, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers) :
-            base(context, declaringType)
+        internal PropertySymbolBuilder(SymbolContext context, TypeSymbol declaringType, string name, PropertyAttributes attributes, TypeSymbol propertyType, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers) :
+            base(context)
         {
+            _declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _attributes = attributes;
             _propertyType = propertyType ?? throw new ArgumentNullException(nameof(propertyType));
-            _callingConventions = callingConvention;
             _requiredCustomModifiers = requiredCustomModifiers;
             _optionalCustomModifiers = optionalCustomModifiers;
             _parameters.AddRange(parameterTypes.Select((i, j) => new ParameterSymbolBuilder(Context, this, i, j, GetIndexOrNull(parameterRequiredCustomModifiers, j), GetIndexOrNull(parameterOptionalCustomModifiers, j))));
         }
 
         /// <inheritdoc />
-        public override string Name => _name;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override PropertyAttributes Attributes => _attributes;
-
-        /// <summary>
-        /// Gets the calling conventions to apply to the property.
-        /// </summary>
-        public CallingConventions CallingConventions => _callingConventions;
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <inheritdoc />
-        public override TypeSymbol PropertyType => _propertyType;
+        public sealed override string Name => _name;
 
         /// <inheritdoc />
-        public override bool CanRead => GetGetMethod(true) != null;
+        public sealed override PropertyAttributes Attributes => _attributes;
 
         /// <inheritdoc />
-        public override bool CanWrite => GetSetMethod(true) != null;
+        public sealed override TypeSymbol PropertyType => _propertyType;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override MethodSymbol? GetMethod => _getMethod;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetGetMethod(bool nonPublic)
-        {
-            if (nonPublic && _getMethod != null && _getMethod.IsPublic == false)
-                return _getMethod;
-            else if (nonPublic == false && _getMethod != null && _getMethod.IsPublic)
-                return _getMethod;
-            else
-                return null;
-        }
+        public sealed override MethodSymbol? SetMethod => _setMethod;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetSetMethod(bool nonPublic)
-        {
-            if (nonPublic && _setMethod != null && _setMethod.IsPublic == false)
-                return _setMethod;
-            else if (nonPublic == false && _setMethod != null && _setMethod.IsPublic)
-                return _setMethod;
-            else
-                return null;
-        }
+        public sealed override TypeSymbol GetModifiedPropertyType() => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public override ImmutableArray<MethodSymbol> GetAccessors(bool nonPublic)
-        {
-            var b = ImmutableArray.CreateBuilder<MethodSymbol>();
-
-            foreach (var i in _accessorMethods)
-            {
-                if (nonPublic && i != null && i.IsPublic == false)
-                    b.Add(i);
-                else if (nonPublic == false && i != null && i.IsPublic)
-                    b.Add(i);
-            }
-
-            return b.ToImmutable();
-        }
+        public sealed override object? GetRawConstantValue() => _constantValue;
 
         /// <inheritdoc />
-        public override TypeSymbol GetModifiedPropertyType()
-        {
-            throw new NotImplementedException();
-        }
+        public sealed override ImmutableArray<ParameterSymbol> GetIndexParameters() => _parameters.ToImmutable().CastArray<ParameterSymbol>();
 
         /// <inheritdoc />
-        public override object? GetRawConstantValue()
-        {
-            return _constantValue;
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers() => _optionalCustomModifiers;
 
         /// <inheritdoc />
-        public override ImmutableArray<ParameterSymbol> GetIndexParameters()
-        {
-            return _parameters.ToImmutable().CastArray<ParameterSymbol>();
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers() => _requiredCustomModifiers;
 
         /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
-        {
-            return _optionalCustomModifiers;
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
-        {
-            return _requiredCustomModifiers;
-        }
-
-        /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return _customAttributes.ToImmutable();
-        }
+        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => _customAttributes.ToImmutable();
 
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -166,8 +107,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
         }
 
         /// <summary>
@@ -198,16 +140,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         {
             ThrowIfFrozen();
             _setMethod = method;
-        }
-
-        /// <summary>
-        /// Adds one of the other methods associated with this property.
-        /// </summary>
-        /// <param name="method"></param>
-        public void AddOtherMethod(MethodSymbolBuilder method)
-        {
-            ThrowIfFrozen();
-            _accessorMethods.Add(method);
         }
 
         /// <inheritdoc />

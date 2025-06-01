@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols
@@ -15,7 +14,7 @@ namespace IKVM.CoreLib.Symbols
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        internal FieldSymbol(SymbolContext context) :
+        protected FieldSymbol(SymbolContext context) :
             base(context)
         {
 

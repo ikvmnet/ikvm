@@ -46,59 +46,62 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
+            lock (this)
             {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Finished);
-                else
-                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                {
+                    // require parent to be finished; this is reentrant
+                    if (_builder.DeclaringType == null)
+                        _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Emitted);
+                    else
+                        _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Emitted);
+                }
+
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
+
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
+
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                {
+                    // require parent to be finished; this is reentrant
+                    if (_builder.DeclaringType == null)
+                        _parentModule = _context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Finished);
+                    else
+                        _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
+                }
+
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
             }
-
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
-
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
-
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-            {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModule = _context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Completed);
-                else
-                    _parentType = _context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Completed);
-            }
-
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             Debug.Assert(_state == ReflectionSymbolState.Default);
 
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
 
-            var returnType = _context.ResolveType(_builder.ReturnType, ReflectionSymbolState.Declared);
-            var returnRequiredCustomModifiers = _context.ResolveTypes(_builder.ReturnParameter.GetRequiredCustomModifiers(), ReflectionSymbolState.Declared);
-            var returnOptionalCustomModifiers = _context.ResolveTypes(_builder.ReturnParameter.GetOptionalCustomModifiers(), ReflectionSymbolState.Declared);
+            var returnType = _context.ResolveType(_builder.ReturnType, ReflectionSymbolState.Defined);
+            var returnRequiredCustomModifiers = _context.ResolveTypes(_builder.ReturnParameter.GetRequiredCustomModifiers(), ReflectionSymbolState.Defined);
+            var returnOptionalCustomModifiers = _context.ResolveTypes(_builder.ReturnParameter.GetOptionalCustomModifiers(), ReflectionSymbolState.Defined);
 
             var parameterTypes = Array.Empty<Type>();
             var parameterRequiredCustomModifiers = Array.Empty<Type[]>();
             var parameterOptionalCustomModifiers = Array.Empty<Type[]>();
             if (_builder.Parameters.Length > 0)
             {
-                parameterTypes = _context.ResolveTypes(_builder.ParameterTypes, ReflectionSymbolState.Declared);
+                parameterTypes = _context.ResolveTypes(_builder.ParameterTypes, ReflectionSymbolState.Defined);
                 parameterRequiredCustomModifiers = new Type[_builder.Parameters.Length][];
                 parameterOptionalCustomModifiers = new Type[_builder.Parameters.Length][];
                 for (int i = 0; i < _builder.Parameters.Length; i++)
                 {
-                    parameterRequiredCustomModifiers[i] = _context.ResolveTypes(_builder.Parameters[i].GetRequiredCustomModifiers(), ReflectionSymbolState.Declared);
-                    parameterOptionalCustomModifiers[i] = _context.ResolveTypes(_builder.Parameters[i].GetOptionalCustomModifiers(), ReflectionSymbolState.Declared);
+                    parameterRequiredCustomModifiers[i] = _context.ResolveTypes(_builder.Parameters[i].GetRequiredCustomModifiers(), ReflectionSymbolState.Defined);
+                    parameterOptionalCustomModifiers[i] = _context.ResolveTypes(_builder.Parameters[i].GetOptionalCustomModifiers(), ReflectionSymbolState.Defined);
                 }
             }
 
@@ -114,23 +117,23 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_methodBuilder == null)
                 throw new InvalidOperationException();
 
             // lock builder and set state
             _builder.Freeze();
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
 
             // define various properties
             _methodBuilder.InitLocals = _builder.InitLocals;
             _methodBuilder.SetImplementationFlags(_builder.MethodImplementationFlags);
 
             // freeze the set of generic parameter builders
-            var genericParameterBuilders = _builder.GenericArguments.CastArray<GenericMethodParameterTypeSymbolBuilder>();
+            var genericParameterBuilders = _builder.GenericParameters.CastArray<GenericMethodParameterTypeSymbolBuilder>();
             for (int i = 0; i < genericParameterBuilders.Length; i++)
                 genericParameterBuilders[i].Freeze();
 
@@ -143,8 +146,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
                 // set properties and constraints
                 realGenericParameter.SetGenericParameterAttributes(genericParameterBuilder.GenericParameterAttributes);
-                realGenericParameter.SetBaseTypeConstraint(_context.ResolveType(genericParameterBuilder.BaseType, ReflectionSymbolState.Declared));
-                realGenericParameter.SetInterfaceConstraints(_context.ResolveTypes(genericParameterBuilder.GetDeclaredInterfaces(), ReflectionSymbolState.Declared));
+                realGenericParameter.SetBaseTypeConstraint(_context.ResolveType(genericParameterBuilder.BaseType, ReflectionSymbolState.Defined));
+                realGenericParameter.SetInterfaceConstraints(_context.ResolveTypes(genericParameterBuilder.GetDeclaredInterfaces(), ReflectionSymbolState.Defined));
 
                 // set custom attributes
                 foreach (var customAttribute in genericParameterBuilder.GetDeclaredCustomAttributes())
@@ -170,21 +173,19 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             }
 
             // emit method body
-            var ilgen = _builder._il;
-            if (ilgen is not null)
-                ilgen.Write(new ReflectionILGenerationWriter(_context, _methodBuilder.GetILGenerator()));
+            _builder._il?.Write(new ReflectionILGenerationWriter(_context, _methodBuilder.GetILGenerator()));
         }
 
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
 
             // set state
-            _state = ReflectionSymbolState.Completed;
+            _state = ReflectionSymbolState.Finished;
 
             if (_parentModule is not null)
                 _method = _parentModule.GetMethod(_builder.Name, TypeSymbol.DeclaredOnlyLookup, null, CallingConventions.Any, _context.ResolveTypes(_builder.ParameterTypes), null) ?? throw new InvalidOperationException();

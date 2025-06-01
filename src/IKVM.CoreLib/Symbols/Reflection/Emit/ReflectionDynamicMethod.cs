@@ -13,7 +13,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
     /// <summary>
     /// Implementation of <see cref="System.Reflection.Emit.DynamicMethod"/>.
     /// </summary>
-    internal class ReflectionDynamicMethod : MethodSymbol
+    internal class ReflectionDynamicMethod : DefinitionMethodSymbol
     {
 
         readonly string _name;
@@ -38,7 +38,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="owner"></param>
         /// <param name="skipVisibility"></param>
         public ReflectionDynamicMethod(ReflectionSymbolContext context, string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, TypeSymbol owner, bool skipVisibility) :
-            base(context, owner.Module, owner)
+            base(context)
         {
             _name = name;
             _attributes = attributes;
@@ -61,7 +61,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
         /// <param name="module"></param>
         /// <param name="skipVisibility"></param>
         public ReflectionDynamicMethod(ReflectionSymbolContext context, string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, ModuleSymbol module, bool skipVisibility) :
-            base(context, module, null)
+            base(context)
         {
             _name = name;
             _attributes = attributes;
@@ -78,16 +78,16 @@ namespace IKVM.CoreLib.Symbols.Reflection
         new ReflectionSymbolContext Context => (ReflectionSymbolContext)base.Context;
 
         /// <inheritdoc />
+        public sealed override ModuleSymbol Module => _owner.Module;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _owner;
+
+        /// <inheritdoc />
         public sealed override MethodAttributes Attributes => _attributes;
 
         /// <inheritdoc />
         public sealed override CallingConventions CallingConvention => _callingConvention;
-
-        /// <inheritdoc />
-        public sealed override bool IsGenericMethodDefinition => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsConstructedGenericMethod => false;
 
         /// <inheritdoc />
         public sealed override MethodImplAttributes MethodImplementationFlags => MethodImplAttributes.IL | MethodImplAttributes.NoInlining;
@@ -96,34 +96,19 @@ namespace IKVM.CoreLib.Symbols.Reflection
         public sealed override ParameterSymbol ReturnParameter => _returnParameter;
 
         /// <inheritdoc />
-        public sealed override TypeSymbol ReturnType => _returnParameter.ParameterType;
-
-        /// <inheritdoc />
-        public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => _returnParameter;
-
-        /// <inheritdoc />
         public sealed override string Name => _name;
 
         /// <inheritdoc />
         public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override MethodSymbol? BaseDefinition => null;
-
-        /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
-
-        /// <inheritdoc />
-        public sealed override MethodSymbol? GenericMethodDefinition => null;
+        public sealed override ImmutableArray<TypeSymbol> GenericParameters => [];
 
         /// <inheritdoc />
         public sealed override ImmutableArray<ParameterSymbol> Parameters => _parameters.CastArray<ParameterSymbol>();
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return ImmutableArray<CustomAttribute>.Empty;
-        }
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => [];
 
         /// <summary>
         /// Gets or sets a value indicating whether the local variables in the method are zero-initialized.
@@ -162,8 +147,7 @@ namespace IKVM.CoreLib.Symbols.Reflection
             var dm = CreateDynamicMethod();
 
             // if we have code staged, emit it into method
-            if (_ilGenerator != null)
-                _ilGenerator.Write(new ReflectionILGenerationWriter(Context, dm.GetILGenerator(), true));
+            _ilGenerator?.Write(new ReflectionILGenerationWriter(Context, dm.GetILGenerator(), true));
 
             return dm;
         }
@@ -177,10 +161,10 @@ namespace IKVM.CoreLib.Symbols.Reflection
         {
             var parameterTypes_ = new Type[_parameters.Length];
             for (int i = 0; i < _parameters.Length; i++)
-                parameterTypes_[i] = Context.ResolveType(_parameters[i].ParameterType, ReflectionSymbolState.Completed);
+                parameterTypes_[i] = Context.ResolveType(_parameters[i].ParameterType, ReflectionSymbolState.Finished);
 
             if (_owner != null)
-                return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveType(_owner, ReflectionSymbolState.Completed), _skipVisibility);
+                return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveType(_owner, ReflectionSymbolState.Finished), _skipVisibility);
             else if (_module != null)
                 return new DynamicMethod(_name, _attributes, _callingConvention, Context.ResolveType(_returnParameter.ParameterType), parameterTypes_, Context.ResolveModule(_module), _skipVisibility);
             else

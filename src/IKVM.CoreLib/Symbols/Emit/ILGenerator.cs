@@ -80,7 +80,7 @@ namespace IKVM.CoreLib.Symbols.Emit
 
 #if NET8_0_OR_GREATER
 
-        [System.Runtime.CompilerServices.InlineArray(BlockSize)]
+        [global::System.Runtime.CompilerServices.InlineArray(BlockSize)]
         struct ILInlineNodeArray
         {
 

@@ -6,9 +6,10 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public class ParameterSymbolBuilder : ParameterSymbol, ICustomAttributeBuilder
+    public sealed class ParameterSymbolBuilder : DefinitionParameterSymbol, ICustomAttributeBuilder
     {
 
+        readonly MemberSymbol _declaringMember;
         readonly TypeSymbol _parameterType;
         readonly int _position;
 
@@ -28,15 +29,26 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         /// <param name="context"></param>
         /// <param name="declaringMember"></param>
+        /// <param name="parameterType"></param>
         /// <param name="position"></param>
-        public ParameterSymbolBuilder(SymbolContext context, MemberSymbol declaringMember, TypeSymbol parameterType, int position, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers) :
-            base(context, declaringMember, position)
+        /// <param name="requiredCustomModifiers"></param>
+        /// <param name="optionalCustomModifiers"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal ParameterSymbolBuilder(SymbolContext context, MemberSymbol declaringMember, TypeSymbol parameterType, int position, ImmutableArray<TypeSymbol> requiredCustomModifiers, ImmutableArray<TypeSymbol> optionalCustomModifiers) :
+            base(context)
         {
+            _declaringMember = declaringMember ?? throw new ArgumentNullException(nameof(declaringMember));
             _parameterType = parameterType ?? throw new ArgumentNullException(nameof(parameterType));
             _position = position;
             _requiredCustomModifiers = requiredCustomModifiers;
             _optionalCustomModifiers = optionalCustomModifiers;
         }
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override MemberSymbol Member => _declaringMember;
 
         /// <inheritdoc />
         public sealed override ParameterAttributes Attributes => _attributes;
@@ -48,38 +60,27 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override string? Name => _name;
 
         /// <inheritdoc />
+        public sealed override int Position => _position;
+
+        /// <inheritdoc />
         public sealed override object? DefaultValue => _defaultValue;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => false;
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers() => _optionalCustomModifiers;
 
         /// <inheritdoc />
-        public sealed override bool ContainsMissing => false;
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers() => _requiredCustomModifiers;
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
-        {
-            return _optionalCustomModifiers;
-        }
-
-        /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
-        {
-            return _requiredCustomModifiers;
-        }
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return _customAttributes.ToImmutable();
-        }
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => _customAttributes.ToImmutable();
 
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -87,8 +88,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("PropertySymbolBuilder is frozen.");
         }
 
         /// <inheritdoc />

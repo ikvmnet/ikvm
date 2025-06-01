@@ -7,7 +7,7 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public class AssemblySymbolBuilder : AssemblySymbol, ICustomAttributeBuilder
+    public sealed class AssemblySymbolBuilder : DefinitionAssemblySymbol, ICustomAttributeBuilder
     {
 
         AssemblyIdentity _identity;
@@ -64,7 +64,7 @@ namespace IKVM.CoreLib.Symbols.Emit
             var manifestModule = (ModuleSymbolBuilder)ManifestModule;
             foreach (var i in manifestModule.GetManifestResources())
                 if (i.Name == resourceName)
-                    return new ManifestResourceInfo(System.Reflection.ResourceLocation.Embedded, null, null);
+                    return new ManifestResourceInfo(global::System.Reflection.ResourceLocation.Embedded, null, null);
 
             return null;
         }
@@ -106,7 +106,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -114,8 +115,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("AssemblySymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("AssemblySymbolBuilder is frozen.");
         }
 
         /// <summary>

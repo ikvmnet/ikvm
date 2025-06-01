@@ -3,6 +3,9 @@
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
+    /// <summary>
+    /// Provides an interface to emit ECMA335 IL.
+    /// </summary>
     interface IILGeneratorWriter
     {
 
@@ -220,7 +223,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="unmanagedCallConv"></param>
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
-        void EmitCalli(OpCodeValue opcode, System.Runtime.InteropServices.CallingConvention unmanagedCallConv, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes);
+        void EmitCalli(OpCodeValue opcode, global::System.Runtime.InteropServices.CallingConvention unmanagedCallConv, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes);
 
         /// <summary>
         /// Puts a Calli instruction onto the Microsoft intermediate language (MSIL) stream, specifying a managed calling convention for the indirect call.
@@ -230,7 +233,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="returnType"></param>
         /// <param name="parameterTypes"></param>
         /// <param name="optionalParameterTypes"></param>
-        void EmitCalli(OpCodeValue opcode, System.Reflection.CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes);
+        void EmitCalli(OpCodeValue opcode, global::System.Reflection.CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes);
 
     }
 

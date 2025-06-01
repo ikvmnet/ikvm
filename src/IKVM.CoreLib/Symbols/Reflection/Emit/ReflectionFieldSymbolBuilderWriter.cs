@@ -43,61 +43,64 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
+            lock (this)
             {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Finished);
-                else
-                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                {
+                    // require parent to be finished; this is reentrant
+                    if (_builder.DeclaringType == null)
+                        _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Emitted);
+                    else
+                        _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Emitted);
+                }
+
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
+
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
+
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                {
+                    // require parent to be finished; this is reentrant
+                    if (_builder.DeclaringType == null)
+                        _parentModule = _context.ResolveModule(_builder.Module, ReflectionSymbolState.Finished);
+                    else
+                        _parentType = _context.ResolveType(_builder.DeclaringType, ReflectionSymbolState.Finished);
+                }
+
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
             }
-
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
-
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
-
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-            {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModule = _context.ResolveModule(_builder.Module, ReflectionSymbolState.Completed);
-                else
-                    _parentType = _context.ResolveType(_builder.DeclaringType, ReflectionSymbolState.Completed);
-            }
-
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != ReflectionSymbolState.Default)
                 throw new InvalidOperationException();
 
-            var requiredCustomModifiers = _context.ResolveTypes(_builder.GetRequiredCustomModifiers(), ReflectionSymbolState.Declared);
-            var optionalCustomModifiers = _context.ResolveTypes(_builder.GetOptionalCustomModifiers(), ReflectionSymbolState.Declared);
+            var requiredCustomModifiers = _context.ResolveTypes(_builder.GetRequiredCustomModifiers(), ReflectionSymbolState.Defined);
+            var optionalCustomModifiers = _context.ResolveTypes(_builder.GetOptionalCustomModifiers(), ReflectionSymbolState.Defined);
 
             if (_parentModuleBuilder is not null)
                 throw new NotSupportedException();
             else if (_parentTypeBuilder is not null)
-                _fieldBuilder = _parentTypeBuilder.DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, ReflectionSymbolState.Declared), requiredCustomModifiers, optionalCustomModifiers, _builder.Attributes);
+                _fieldBuilder = _parentTypeBuilder.DefineField(_builder.Name, _context.ResolveType(_builder.FieldType, ReflectionSymbolState.Defined), requiredCustomModifiers, optionalCustomModifiers, _builder.Attributes);
             else
                 throw new InvalidOperationException();
 
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_fieldBuilder is null)
                 throw new InvalidOperationException();
@@ -114,19 +117,19 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             foreach (var customAttribute in _builder.GetDeclaredCustomAttributes())
                 _fieldBuilder.SetCustomAttribute(_context.CreateCustomAttributeBuilder(customAttribute));
 
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
         }
 
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
 
             // set state
-            _state = ReflectionSymbolState.Completed;
+            _state = ReflectionSymbolState.Finished;
 
             if (_parentModule is not null)
                 _field = _parentModule.GetField(_builder.Name, TypeSymbol.DeclaredOnlyLookup) ?? throw new InvalidOperationException();

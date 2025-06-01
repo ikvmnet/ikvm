@@ -9,12 +9,13 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class TypeSymbolBuilder : TypeSymbol, ICustomAttributeBuilder
+    public sealed class TypeSymbolBuilder : DefinitionTypeSymbol, ICustomAttributeBuilder
     {
 
         readonly string _name;
         readonly string _namespace;
         readonly TypeSymbolBuilder? _declaringType;
+        private readonly ModuleSymbolBuilder _declaringModule;
         readonly TypeAttributes _attributes;
         readonly PackingSize _packingSize;
         readonly int _typeSize;
@@ -56,7 +57,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="declaringType"></param>
         /// <exception cref="ArgumentNullException"></exception>
         internal TypeSymbolBuilder(SymbolContext context, ModuleSymbolBuilder declaringModule, string fullName, TypeAttributes attributes, TypeSymbol? parent, ImmutableArray<TypeSymbol> interfaces, PackingSize packingSize, int typeSize, TypeSymbolBuilder? declaringType) :
-            base(context, declaringModule)
+            base(context)
         {
             if (fullName == null)
                 throw new ArgumentNullException(nameof(fullName));
@@ -75,6 +76,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 _name = fullName[(iLast + 1)..];
             }
 
+            _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _attributes = attributes;
             _parent = parent;
             _interfaces = interfaces.ToBuilder();
@@ -83,19 +85,17 @@ namespace IKVM.CoreLib.Symbols.Emit
             _declaringType = declaringType;
         }
 
-        /// <summary>
-        /// Gets the module builder of the type.
-        /// </summary>
-        new ModuleSymbolBuilder Module => (ModuleSymbolBuilder)base.Module;
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public sealed override TypeAttributes Attributes => _attributes;
+        public sealed override ModuleSymbol Module => _declaringModule;
 
         /// <inheritdoc />
         public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <inheritdoc />
-        public sealed override MethodSymbol? DeclaringMethod => null;
+        public sealed override TypeAttributes Attributes => _attributes;
 
         /// <inheritdoc />
         public sealed override string Name => _name;
@@ -104,67 +104,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override string? Namespace => _namespace;
 
         /// <inheritdoc />
-        public sealed override TypeCode TypeCode => TypeCode.Object;
-
-        /// <inheritdoc />
         public sealed override TypeSymbol? BaseType => _parent;
 
         /// <inheritdoc />
-        public sealed override bool ContainsGenericParameters => _typeParameters.Count > 0;
-
-        /// <inheritdoc />
         public sealed override GenericParameterAttributes GenericParameterAttributes => throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public sealed override int GenericParameterPosition => throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public sealed override bool IsTypeDefinition => true;
-
-        /// <inheritdoc />
-        public sealed override bool IsGenericTypeDefinition => ContainsGenericParameters;
-
-        /// <inheritdoc />
-        public sealed override TypeSymbol GenericTypeDefinition => throw new InvalidOperationException();
-
-        /// <inheritdoc />
-        public sealed override bool IsConstructedGenericType => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsGenericTypeParameter => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsGenericMethodParameter => false;
-
-        /// <inheritdoc />
-        public sealed override bool HasElementType => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsPrimitive => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsSZArray => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsArray => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsEnum => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsPointer => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsFunctionPointer => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsUnmanagedFunctionPointer => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsByRef => false;
-
-        /// <inheritdoc />
-        public sealed override bool IsMissing => false;
 
         /// <summary>
         /// Gets the packing size.
@@ -177,58 +120,16 @@ namespace IKVM.CoreLib.Symbols.Emit
         public int TypeSize => _typeSize;
 
         /// <inheritdoc />
-        public sealed override int GetArrayRank()
+        public sealed override ImmutableArray<TypeSymbol> GenericParameters
         {
-            throw new NotSupportedException();
+            get
+            {
+                if (_typeParametersCache.IsDefault)
+                    ImmutableInterlocked.InterlockedInitialize(ref _typeParametersCache, _typeParameters.ToImmutable().CastArray<TypeSymbol>());
+
+                return _typeParametersCache;
+            }
         }
-
-        /// <inheritdoc />
-        public sealed override TypeSymbol? GetElementType()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public sealed override bool IsEnumDefined(object value)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public sealed override string? GetEnumName(object value)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public sealed override ImmutableArray<string> GetEnumNames()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public sealed override TypeSymbol GetEnumUnderlyingType()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GenericArguments => ComputeGenericArguments();
-
-        /// <summary>
-        /// Computes the value for <see cref="GenericArguments"/>.
-        /// </summary>
-        /// <returns></returns>
-        ImmutableArray<TypeSymbol> ComputeGenericArguments()
-        {
-            if (_typeParametersCache.IsDefault)
-                ImmutableInterlocked.InterlockedInitialize(ref _typeParametersCache, _typeParameters.ToImmutable().CastArray<TypeSymbol>());
-
-            return _typeParametersCache;
-        }
-
-        /// <inheritdoc />
-        public override ImmutableArray<TypeSymbol> GenericParameterConstraints => throw new InvalidOperationException();
 
         /// <inheritdoc />
         internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
@@ -318,23 +219,18 @@ namespace IKVM.CoreLib.Symbols.Emit
         }
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
-        {
-            return ImmutableArray<TypeSymbol>.Empty;
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers() => ImmutableArray<TypeSymbol>.Empty;
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
-        {
-            return ImmutableArray<TypeSymbol>.Empty;
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers() => ImmutableArray<TypeSymbol>.Empty;
 
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -342,8 +238,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("TypeSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("TypeSymbolBuilder is frozen.");
         }
 
         /// <summary>
@@ -692,21 +589,7 @@ namespace IKVM.CoreLib.Symbols.Emit
             if (parameterTypes.IsDefault)
                 throw new ArgumentNullException(nameof(parameterTypes));
 
-            return DefineProperty(name, attributes, default, returnType, [], [], parameterTypes, [], []);
-        }
-
-        /// <summary>
-        /// Adds a new property to the type, with the given name, attributes, calling convention, and property signature.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="returnType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <returns></returns>
-        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableArray<TypeSymbol> parameterTypes)
-        {
-            return DefineProperty(name, attributes, callingConvention, returnType, [], [], parameterTypes, [], []);
+            return DefineProperty(name, attributes, returnType, [], [], parameterTypes, [], []);
         }
 
         /// <summary>
@@ -723,24 +606,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <returns></returns>
         public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, TypeSymbol returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
         {
-            return DefineProperty(name, attributes, default, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
-        }
-
-        /// <summary>
-        /// Adds a new property to the type, with the given name, calling convention, property signature, and custom modifiers.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="returnType"></param>
-        /// <param name="returnRequiredCustomModifiers"></param>
-        /// <param name="returnOptionalCustomModifiers"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="parameterRequiredCustomModifiers"></param>
-        /// <param name="parameterOptionalCustomModifiers"></param>
-        /// <returns></returns>
-        public PropertySymbolBuilder DefineProperty(string name, PropertyAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers)
-        {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
             if (returnRequiredCustomModifiers.IsDefault)
@@ -755,7 +620,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(parameterOptionalCustomModifiers));
 
             ThrowIfFrozen();
-            var b = new PropertySymbolBuilder(Context, this, name, attributes, callingConvention, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
+            var b = new PropertySymbolBuilder(Context, this, name, attributes, returnType, returnRequiredCustomModifiers, returnOptionalCustomModifiers, parameterTypes, parameterRequiredCustomModifiers, parameterOptionalCustomModifiers);
             _properties.Add(b);
             _propertiesCache = default;
             return b;
@@ -796,7 +661,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(interfaces));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, interfaces, PackingSize.Unspecified, -1, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, parent, interfaces, PackingSize.Unspecified, -1, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -817,7 +682,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], packSize, typeSize, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, parent, [], packSize, typeSize, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -837,7 +702,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], packSize, -1, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, parent, [], packSize, -1, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -854,7 +719,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, TypeAttributes.NestedPrivate, null, [], PackingSize.Unspecified, -1, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, TypeAttributes.NestedPrivate, null, [], PackingSize.Unspecified, -1, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -873,7 +738,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], PackingSize.Unspecified, -1, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, parent, [], PackingSize.Unspecified, -1, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -891,7 +756,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, null, [], PackingSize.Unspecified, -1, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, null, [], PackingSize.Unspecified, -1, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -911,7 +776,7 @@ namespace IKVM.CoreLib.Symbols.Emit
                 throw new ArgumentNullException(nameof(name));
 
             ThrowIfFrozen();
-            var b = new TypeSymbolBuilder(Context, Module, name, attributes, parent, [], PackingSize.Unspecified, typeSize, this);
+            var b = new TypeSymbolBuilder(Context, _declaringModule, name, attributes, parent, [], PackingSize.Unspecified, typeSize, this);
             _nestedTypes.Add(b);
             _nestedTypesCache = default;
             return b;
@@ -921,20 +786,6 @@ namespace IKVM.CoreLib.Symbols.Emit
         public void SetCustomAttribute(CustomAttribute attribute)
         {
             _customAttributes.Add(attribute);
-        }
-
-        /// <inheritdoc />
-        internal override TypeSymbol Specialize(GenericContext context)
-        {
-            if (ContainsGenericParameters == false)
-                return this;
-
-            var args = GenericArguments;
-            for (int i = 0; i < args.Length; i++)
-                if (args[i].ContainsGenericParameters)
-                    args = args.SetItem(i, args[i].Specialize(context));
-
-            return MakeGenericType(args);
         }
 
         /// <summary>

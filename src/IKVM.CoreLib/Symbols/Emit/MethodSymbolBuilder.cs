@@ -8,10 +8,13 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class MethodSymbolBuilder : MethodSymbol, ICustomAttributeBuilder
+    public sealed class MethodSymbolBuilder : DefinitionMethodSymbol, ICustomAttributeBuilder
     {
 
         static ImmutableArray<TypeSymbol> GetIndex(ImmutableArray<ImmutableArray<TypeSymbol>> a, int i) => a.Length > i ? a[i] : [];
+
+        readonly ModuleSymbol _declaringModule;
+        readonly TypeSymbolBuilder? _declaringType;
 
         ParameterSymbolBuilder _returnParameter;
         readonly ImmutableArray<ParameterSymbolBuilder>.Builder _parameters = ImmutableArray.CreateBuilder<ParameterSymbolBuilder>();
@@ -45,8 +48,10 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="parameterRequiredCustomModifiers"></param>
         /// <param name="parameterOptionalCustomModifiers"></param>
         internal MethodSymbolBuilder(SymbolContext context, ModuleSymbol declaringModule, TypeSymbolBuilder? declaringType, string name, MethodAttributes attributes, CallingConventions callingConvention, TypeSymbol returnType, ImmutableArray<TypeSymbol> returnRequiredCustomModifiers, ImmutableArray<TypeSymbol> returnOptionalCustomModifiers, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<ImmutableArray<TypeSymbol>> parameterRequiredCustomModifiers, ImmutableArray<ImmutableArray<TypeSymbol>> parameterOptionalCustomModifiers) :
-            base(context, declaringModule, declaringType)
+            base(context)
         {
+            _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+            _declaringType = declaringType;
             _name = name;
             _attributes = attributes;
             _callingConvention = callingConvention;
@@ -54,16 +59,17 @@ namespace IKVM.CoreLib.Symbols.Emit
             _parameters.AddRange(parameterTypes.Select((i, j) => new ParameterSymbolBuilder(Context, this, i, j, GetIndex(parameterRequiredCustomModifiers, j), GetIndex(parameterOptionalCustomModifiers, j))));
         }
 
-        new TypeSymbolBuilder? DeclaringType => (TypeSymbolBuilder?)base.DeclaringType;
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override ModuleSymbol Module => _declaringModule;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <inheritdoc />
         public sealed override ParameterSymbol ReturnParameter => _returnParameter;
-
-        /// <inheritdoc />
-        public sealed override TypeSymbol ReturnType => _returnParameter.ParameterType;
-
-        /// <inheritdoc />
-        public sealed override ICustomAttributeProvider ReturnTypeCustomAttributes => _returnParameter;
 
         /// <inheritdoc />
         public sealed override MethodAttributes Attributes => _attributes;
@@ -81,35 +87,20 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override CallingConventions CallingConvention => _callingConvention;
 
         /// <inheritdoc />
-        public sealed override bool IsGenericMethodDefinition => _typeParameters.Length > 0;
-
-        /// <inheritdoc />
-        public sealed override bool IsConstructedGenericMethod => false;
-
-        /// <inheritdoc />
         public sealed override MethodImplAttributes MethodImplementationFlags => _methodImplFlags;
 
         /// <inheritdoc />
         public sealed override string Name => _name;
 
         /// <inheritdoc />
-        public sealed override bool IsMissing => false;
-
-        /// <inheritdoc />
-        public sealed override MethodSymbol? BaseDefinition => null;
-
-        /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GenericArguments => _typeParameters.CastArray<TypeSymbol>();
-
-        /// <inheritdoc />
-        public sealed override MethodSymbol? GenericMethodDefinition => null;
+        public sealed override ImmutableArray<TypeSymbol> GenericParameters => _typeParameters.CastArray<TypeSymbol>();
 
         /// <inheritdoc />
         public sealed override ImmutableArray<ParameterSymbol> Parameters => ComputeParameters();
 
         ImmutableArray<ParameterSymbol> ComputeParameters()
         {
-            if (_parametersCache == default)
+            if (_parametersCache.IsDefault)
                 ImmutableInterlocked.InterlockedInitialize(ref _parametersCache, _parameters.ToImmutable().CastArray<ParameterSymbol>());
 
             return _parametersCache;
@@ -126,7 +117,8 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -134,8 +126,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("MethodSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("MethodSymbolBuilder is frozen.");
         }
 
         /// <summary>

@@ -273,7 +273,7 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         }
 
         /// <inheritdoc />
-        public void EmitCalli(OpCodeValue opcode, System.Reflection.CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes)
+        public void EmitCalli(OpCodeValue opcode, global::System.Reflection.CallingConventions callingConvention, TypeSymbol? returnType, ImmutableArray<TypeSymbol> parameterTypes, ImmutableArray<TypeSymbol> optionalParameterTypes)
         {
             _il.EmitCalli(opcode.ToOpCode(), (CallingConventions)callingConvention, ResolveType(returnType), ResolveTypes(parameterTypes), ResolveTypes(optionalParameterTypes));
         }

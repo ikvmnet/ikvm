@@ -38,20 +38,20 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(IkvmReflectionSymbolState state)
         {
-            if (state >= IkvmReflectionSymbolState.Declared && _state < IkvmReflectionSymbolState.Declared)
-                Declare();
+            if (state >= IkvmReflectionSymbolState.Defined && _state < IkvmReflectionSymbolState.Defined)
+                Define();
+
+            if (state >= IkvmReflectionSymbolState.Emitted && _state < IkvmReflectionSymbolState.Emitted)
+                Emit();
 
             if (state >= IkvmReflectionSymbolState.Finished && _state < IkvmReflectionSymbolState.Finished)
                 Finish();
-
-            if (state >= IkvmReflectionSymbolState.Completed && _state < IkvmReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the declare phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != IkvmReflectionSymbolState.Default)
                 throw new InvalidOperationException();
@@ -59,26 +59,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             var b = _context.Universe.DefineDynamicAssembly(IkvmReflectionUtil.ToAssemblyName(_builder.Identity), AssemblyBuilderAccess.Save, _context.CreateCustomAttributeBuilders(_builder.GetDeclaredCustomAttributes()));
             _assemblyBuilder = b;
 
-            _state = IkvmReflectionSymbolState.Declared;
+            _state = IkvmReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != IkvmReflectionSymbolState.Declared)
+            if (_state != IkvmReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_assemblyBuilder is null)
                 throw new InvalidOperationException();
 
             // lock builder and set state
             _builder.Freeze();
-            _state = IkvmReflectionSymbolState.Finished;
+            _state = IkvmReflectionSymbolState.Emitted;
 
             // declare modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, IkvmReflectionSymbolState.Declared);
+                _context.ResolveModule(module, IkvmReflectionSymbolState.Defined);
 
         }
 
@@ -86,23 +86,23 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// Executes the complete phase.
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        void Complete()
+        void Finish()
         {
-            if (_state != IkvmReflectionSymbolState.Finished)
+            if (_state != IkvmReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
             if (_assemblyBuilder is null)
                 throw new InvalidOperationException();
 
             // finish modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, IkvmReflectionSymbolState.Finished);
+                _context.ResolveModule(module, IkvmReflectionSymbolState.Emitted);
 
             // set state
-            _state = IkvmReflectionSymbolState.Completed;
+            _state = IkvmReflectionSymbolState.Finished;
 
             // complete modules
             foreach (var module in _builder.GetModules())
-                _context.ResolveModule(module, IkvmReflectionSymbolState.Completed);
+                _context.ResolveModule(module, IkvmReflectionSymbolState.Finished);
         }
 
     }

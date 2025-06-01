@@ -5,15 +5,17 @@ using System.Reflection;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class GenericMethodParameterTypeSymbolBuilder : GenericMethodParameterTypeSymbol, ICustomAttributeBuilder
+    public sealed class GenericMethodParameterTypeSymbolBuilder : DefinitionGenericMethodParameterTypeSymbol, ICustomAttributeBuilder
     {
 
+        readonly MethodSymbolBuilder _declaringMethod;
         readonly string _name;
         GenericParameterAttributes _attributes;
         readonly int _position;
         readonly ImmutableArray<CustomAttribute>.Builder _customAttributes = ImmutableArray.CreateBuilder<CustomAttribute>();
         TypeSymbol? _baseTypeConstraint;
-        ImmutableArray<TypeSymbol> _interfaceConstraints = ImmutableArray<TypeSymbol>.Empty;
+        ImmutableArray<TypeSymbol> _interfaceConstraints = [];
+        ImmutableArray<TypeSymbol> _constraints;
 
         bool _frozen;
 
@@ -23,13 +25,17 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="context"></param>
         /// <param name="declaringMethod"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public GenericMethodParameterTypeSymbolBuilder(SymbolContext context, MethodSymbolBuilder declaringMethod, string name, GenericParameterAttributes attributes, int position) :
-            base(context, declaringMethod)
+        internal GenericMethodParameterTypeSymbolBuilder(SymbolContext context, MethodSymbolBuilder declaringMethod, string name, GenericParameterAttributes attributes, int position) :
+            base(context)
         {
+            _declaringMethod = declaringMethod ?? throw new ArgumentNullException(nameof(declaringMethod));
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _attributes = attributes;
             _position = position;
         }
+
+        /// <inheritdoc />
+        public sealed override MethodSymbol? DeclaringMethod => _declaringMethod;
 
         /// <inheritdoc />
         public sealed override string Name => _name;
@@ -44,38 +50,43 @@ namespace IKVM.CoreLib.Symbols.Emit
         public sealed override int GenericParameterPosition => _position;
 
         /// <inheritdoc />
-        public override TypeSymbol? BaseType => _baseTypeConstraint;
-
-        /// <inheritdoc />
-        internal sealed override ImmutableArray<TypeSymbol> GetDeclaredInterfaces()
+        public sealed override ImmutableArray<TypeSymbol> GenericParameterConstraints
         {
-            return _interfaceConstraints;
+            get
+            {
+                if (_constraints.IsDefault)
+                {
+                    var n = _baseTypeConstraint != null ? 1 : 0;
+                    var l = ImmutableArray.CreateBuilder<TypeSymbol>(n + _interfaceConstraints.Length);
+                    if (_baseTypeConstraint != null)
+                        l.Add(_baseTypeConstraint);
+
+                    foreach (var i in _interfaceConstraints)
+                        l.Add(i);
+
+                    ImmutableInterlocked.InterlockedInitialize(ref _constraints, l.ToImmutable());
+                }
+
+                return _constraints;
+            }
         }
 
         /// <inheritdoc />
-        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return _customAttributes.ToImmutable();
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers() => [];
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
-        {
-            return [];
-        }
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers() => [];
 
         /// <inheritdoc />
-        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
-        {
-            return [];
-        }
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => _customAttributes.ToImmutable();
 
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -83,8 +94,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("GenericMethodParameterTypeSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("GenericMethodParameterTypeSymbolBuilder is frozen.");
         }
 
         /// <summary>
@@ -105,7 +117,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         {
             ThrowIfFrozen();
             _baseTypeConstraint = baseTypeConstraint;
-            ClearGenericParameterConstraints();
+            _constraints = default;
         }
 
         /// <summary>
@@ -116,7 +128,7 @@ namespace IKVM.CoreLib.Symbols.Emit
         {
             ThrowIfFrozen();
             _interfaceConstraints = interfaceConstraints;
-            ClearGenericParameterConstraints();
+            _constraints = default;
         }
 
         /// <inheritdoc />

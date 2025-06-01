@@ -42,26 +42,26 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(IkvmReflectionSymbolState state)
         {
-            if (state >= IkvmReflectionSymbolState.Declared && _state < IkvmReflectionSymbolState.Declared)
-                _parentAssemblyBuilder = (AssemblyBuilder)_context.ResolveAssembly((AssemblySymbolBuilder)_builder.Assembly, IkvmReflectionSymbolState.Finished);
+            if (state >= IkvmReflectionSymbolState.Defined && _state < IkvmReflectionSymbolState.Defined)
+                _parentAssemblyBuilder = (AssemblyBuilder)_context.ResolveAssembly((AssemblySymbolBuilder)_builder.Assembly, IkvmReflectionSymbolState.Emitted);
 
-            if (state >= IkvmReflectionSymbolState.Declared && _state < IkvmReflectionSymbolState.Declared)
-                Declare();
+            if (state >= IkvmReflectionSymbolState.Defined && _state < IkvmReflectionSymbolState.Defined)
+                Define();
+
+            if (state >= IkvmReflectionSymbolState.Emitted && _state < IkvmReflectionSymbolState.Emitted)
+                Emit();
+
+            if (state >= IkvmReflectionSymbolState.Finished && _state < IkvmReflectionSymbolState.Finished)
+                _parentAssembly = _context.ResolveAssembly((AssemblySymbolBuilder)_builder.Assembly, IkvmReflectionSymbolState.Finished);
 
             if (state >= IkvmReflectionSymbolState.Finished && _state < IkvmReflectionSymbolState.Finished)
                 Finish();
-
-            if (state >= IkvmReflectionSymbolState.Completed && _state < IkvmReflectionSymbolState.Completed)
-                _parentAssembly = _context.ResolveAssembly((AssemblySymbolBuilder)_builder.Assembly, IkvmReflectionSymbolState.Completed);
-
-            if (state >= IkvmReflectionSymbolState.Completed && _state < IkvmReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != IkvmReflectionSymbolState.Default)
                 throw new InvalidOperationException();
@@ -72,22 +72,22 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             else
                 throw new InvalidOperationException();
 
-            _state = IkvmReflectionSymbolState.Declared;
+            _state = IkvmReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Executes the finish phase.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != IkvmReflectionSymbolState.Declared)
+            if (_state != IkvmReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_moduleBuilder == null)
                 throw new InvalidOperationException();
 
             // lock builder and set state
             _builder.Freeze();
-            _state = IkvmReflectionSymbolState.Finished;
+            _state = IkvmReflectionSymbolState.Emitted;
 
             // set properties
             _moduleBuilder.__ImageBase = _builder.ImageBase;
@@ -96,15 +96,15 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
 
             // declare global fields
             foreach (var field in _builder.GetDeclaredFields())
-                _context.ResolveField(field, IkvmReflectionSymbolState.Declared);
+                _context.ResolveField(field, IkvmReflectionSymbolState.Defined);
 
             // declare global methods
             foreach (var method in _builder.GetDeclaredMethods())
-                _context.ResolveMethod(method, IkvmReflectionSymbolState.Declared);
+                _context.ResolveMethod(method, IkvmReflectionSymbolState.Defined);
 
             // declare global types
             foreach (var type in _builder.GetDeclaredTypes())
-                _context.ResolveType(type, IkvmReflectionSymbolState.Declared);
+                _context.ResolveType(type, IkvmReflectionSymbolState.Defined);
 
             // define resources
             foreach (var resource in _builder.GetManifestResources())
@@ -122,12 +122,28 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
         /// <summary>
         /// Executes the complete phase.
         /// </summary>
-        void Complete()
+        void Finish()
         {
-            if (_state != IkvmReflectionSymbolState.Finished)
+            if (_state != IkvmReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
             if (_moduleBuilder == null)
                 throw new InvalidOperationException();
+
+            // finish global fields
+            foreach (var field in _builder.GetDeclaredFields())
+                _context.ResolveField(field, IkvmReflectionSymbolState.Emitted);
+
+            // finish global methods
+            foreach (var method in _builder.GetDeclaredMethods())
+                _context.ResolveMethod(method, IkvmReflectionSymbolState.Emitted);
+
+            // finish global types
+            foreach (var type in _builder.GetDeclaredTypes())
+                _context.ResolveType(type, IkvmReflectionSymbolState.Emitted);
+
+            // create the global functions
+            _moduleBuilder.CreateGlobalFunctions();
+            _state = IkvmReflectionSymbolState.Finished;
 
             // finish global fields
             foreach (var field in _builder.GetDeclaredFields())
@@ -140,22 +156,6 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection.Emit
             // finish global types
             foreach (var type in _builder.GetDeclaredTypes())
                 _context.ResolveType(type, IkvmReflectionSymbolState.Finished);
-
-            // create the global functions
-            _moduleBuilder.CreateGlobalFunctions();
-            _state = IkvmReflectionSymbolState.Completed;
-
-            // finish global fields
-            foreach (var field in _builder.GetDeclaredFields())
-                _context.ResolveField(field, IkvmReflectionSymbolState.Completed);
-
-            // finish global methods
-            foreach (var method in _builder.GetDeclaredMethods())
-                _context.ResolveMethod(method, IkvmReflectionSymbolState.Completed);
-
-            // finish global types
-            foreach (var type in _builder.GetDeclaredTypes())
-                _context.ResolveType(type, IkvmReflectionSymbolState.Completed);
         }
 
     }

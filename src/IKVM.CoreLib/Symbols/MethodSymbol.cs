@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Text;
 
 namespace IKVM.CoreLib.Symbols

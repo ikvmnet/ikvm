@@ -7,24 +7,25 @@ using IKVM.Reflection;
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionMissingAssemblyLoader : IAssemblyLoader
+    sealed class IkvmReflectionMissingAssemblyLoader : DefinitionAssemblySymbol
     {
 
         readonly IkvmReflectionSymbolContext _context;
         readonly Assembly _underlyingAssembly;
 
-        ImmutableArray<ModuleSymbol> _modules;
+        readonly ImmutableArray<ModuleSymbol> _modules;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="underlyingAssembly"></param>
-        public IkvmReflectionMissingAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly)
+        public IkvmReflectionMissingAssemblyLoader(IkvmReflectionSymbolContext context, Assembly underlyingAssembly) :
+            base(context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingAssembly = underlyingAssembly ?? throw new ArgumentNullException(nameof(underlyingAssembly));
-            _modules = [new DefinitionModuleSymbol(_context, new IkvmReflectionMissingModuleLoader(_context, _underlyingAssembly.ManifestModule))];
+            _modules = [new IkvmReflectionMissingModuleSymbol(_context, _underlyingAssembly.ManifestModule)];
         }
 
         /// <summary>
@@ -33,37 +34,37 @@ namespace IKVM.CoreLib.Symbols.IkvmReflection
         public Assembly UnderlyingAssembly => _underlyingAssembly;
 
         /// <inheritdoc />
-        public bool GetIsMissing() => true;
+        public sealed override bool IsMissing => true;
 
         /// <inheritdoc />
-        public AssemblyIdentity GetIdentity() => _underlyingAssembly.GetName().Pack();
+        public sealed override AssemblyIdentity Identity => _underlyingAssembly.GetName().Pack();
 
         /// <inheritdoc />
-        public MethodSymbol? GetEntryPoint() => _context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
+        public sealed override MethodSymbol? EntryPoint => _context.ResolveMethodSymbol(_underlyingAssembly.EntryPoint);
 
         /// <inheritdoc />
-        public string GetImageRuntimeVersion() => _underlyingAssembly.ImageRuntimeVersion;
+        public sealed override string ImageRuntimeVersion => _underlyingAssembly.ImageRuntimeVersion;
 
         /// <inheritdoc />
-        public string GetLocation() => _underlyingAssembly.Location;
+        public sealed override string Location => _underlyingAssembly.Location;
 
         /// <inheritdoc />
-        public ModuleSymbol GetManifestModule() => _context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
+        public sealed override ModuleSymbol ManifestModule => _context.ResolveModuleSymbol(_underlyingAssembly.ManifestModule);
 
         /// <inheritdoc />
-        public ImmutableArray<ModuleSymbol> GetModules() => _modules;
+        public sealed override ImmutableArray<ModuleSymbol> GetModules() => _modules;
 
         /// <inheritdoc />
-        public ImmutableArray<AssemblyIdentity> GetReferencedAssemblies() => [];
+        public sealed override ImmutableArray<AssemblyIdentity> GetReferencedAssemblies() => [];
 
         /// <inheritdoc />
-        public ManifestResourceInfo? GetManifestResourceInfo(string resourceName) => null;
+        public sealed override ManifestResourceInfo? GetManifestResourceInfo(string resourceName) => null;
 
         /// <inheritdoc />
-        public Stream? GetManifestResourceStream(string name) => _underlyingAssembly.GetManifestResourceStream(name);
+        public sealed override Stream? GetManifestResourceStream(string name) => _underlyingAssembly.GetManifestResourceStream(name);
 
         /// <inheritdoc />
-        public ImmutableArray<CustomAttribute> GetCustomAttributes() => [];
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => [];
 
     }
 

@@ -44,29 +44,32 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// <param name="state"></param>
         public void AdvanceTo(ReflectionSymbolState state)
         {
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
+            lock (this)
             {
-                // require parent to be finished; this is reentrant
-                if (_builder.DeclaringType == null)
-                    _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Finished);
-                else
-                    _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Finished);
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                {
+                    // require parent to be finished; this is reentrant
+                    if (_builder.DeclaringType == null)
+                        _parentModuleBuilder = (ModuleBuilder)_context.ResolveModule((ModuleSymbolBuilder)_builder.Module, ReflectionSymbolState.Emitted);
+                    else
+                        _parentTypeBuilder = (TypeBuilder)_context.ResolveType((TypeSymbolBuilder)_builder.DeclaringType, ReflectionSymbolState.Emitted);
+                }
+
+                if (state >= ReflectionSymbolState.Defined && _state < ReflectionSymbolState.Defined)
+                    Define();
+
+                if (state >= ReflectionSymbolState.Emitted && _state < ReflectionSymbolState.Emitted)
+                    Emit();
+
+                if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
+                    Finish();
             }
-
-            if (state >= ReflectionSymbolState.Declared && _state < ReflectionSymbolState.Declared)
-                Declare();
-
-            if (state >= ReflectionSymbolState.Finished && _state < ReflectionSymbolState.Finished)
-                Finish();
-
-            if (state >= ReflectionSymbolState.Completed && _state < ReflectionSymbolState.Completed)
-                Complete();
         }
 
         /// <summary>
         /// Executes the Declare phase, which declares the real builder and sets basic properties.
         /// </summary>
-        void Declare()
+        void Define()
         {
             if (_state != ReflectionSymbolState.Default)
                 throw new InvalidOperationException();
@@ -78,32 +81,32 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             else
                 throw new InvalidOperationException();
 
-            _state = ReflectionSymbolState.Declared;
+            _state = ReflectionSymbolState.Defined;
         }
 
         /// <summary>
         /// Advances to the Emitted phase by emitting the declarations.
         /// </summary>
-        void Finish()
+        void Emit()
         {
-            if (_state != ReflectionSymbolState.Declared)
+            if (_state != ReflectionSymbolState.Defined)
                 throw new InvalidOperationException();
             if (_typeBuilder == null)
                 throw new InvalidOperationException();
 
             // freeze builder and set state
             _builder.Freeze();
-            _state = ReflectionSymbolState.Finished;
+            _state = ReflectionSymbolState.Emitted;
 
             // declare nested types: this is done first because other things may depend on them, such as the parent type
             foreach (var type in _builder.GetDeclaredNestedTypes())
-                _context.ResolveType(type, ReflectionSymbolState.Declared);
+                _context.ResolveType(type, ReflectionSymbolState.Defined);
 
             // define various properties
-            _typeBuilder.SetParent(_context.ResolveType(_builder.BaseType, ReflectionSymbolState.Declared));
+            _typeBuilder.SetParent(_context.ResolveType(_builder.BaseType, ReflectionSymbolState.Defined));
 
             // freeze the set of generic parameter builders
-            var genericParameterBuilders = _builder.GenericArguments.CastArray<GenericTypeParameterTypeSymbolBuilder>();
+            var genericParameterBuilders = _builder.GenericParameters.CastArray<GenericTypeParameterTypeSymbolBuilder>();
             for (int i = 0; i < genericParameterBuilders.Length; i++)
                 genericParameterBuilders[i].Freeze();
 
@@ -116,8 +119,8 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
 
                 // set properties and constraints
                 realGenericParameter.SetGenericParameterAttributes(genericParameterBuilder.GenericParameterAttributes);
-                realGenericParameter.SetBaseTypeConstraint(_context.ResolveType(genericParameterBuilder.BaseType, ReflectionSymbolState.Declared));
-                realGenericParameter.SetInterfaceConstraints(_context.ResolveTypes(genericParameterBuilder.GetDeclaredInterfaces(), ReflectionSymbolState.Declared));
+                realGenericParameter.SetBaseTypeConstraint(_context.ResolveType(genericParameterBuilder.BaseType, ReflectionSymbolState.Defined));
+                realGenericParameter.SetInterfaceConstraints(_context.ResolveTypes(genericParameterBuilder.GetDeclaredInterfaces(), ReflectionSymbolState.Defined));
 
                 // set custom attributes
                 foreach (var customAttribute in genericParameterBuilder.GetDeclaredCustomAttributes())
@@ -127,23 +130,23 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             // define interfaces
             var interfaces = _builder.GetDeclaredInterfaces();
             for (int i = 0; i < interfaces.Length; i++)
-                _typeBuilder.AddInterfaceImplementation(_context.ResolveType(interfaces[i], ReflectionSymbolState.Declared));
+                _typeBuilder.AddInterfaceImplementation(_context.ResolveType(interfaces[i], ReflectionSymbolState.Defined));
 
             // declare fields
             foreach (var field in _builder.GetDeclaredFields())
-                _context.ResolveField(field, ReflectionSymbolState.Declared);
+                _context.ResolveField(field, ReflectionSymbolState.Defined);
 
             // declare methods
             foreach (var method in _builder.GetDeclaredMethods())
-                _context.ResolveMethod(method, ReflectionSymbolState.Declared);
+                _context.ResolveMethod(method, ReflectionSymbolState.Defined);
 
             // declare properties
             foreach (var property in _builder.GetDeclaredProperties())
-                _context.ResolveProperty(property, ReflectionSymbolState.Declared);
+                _context.ResolveProperty(property, ReflectionSymbolState.Defined);
 
             // declare events
             foreach (var evt in _builder.GetDeclaredEvents())
-                _context.ResolveEvent(evt, ReflectionSymbolState.Declared);
+                _context.ResolveEvent(evt, ReflectionSymbolState.Defined);
 
             // set custom attributes
             foreach (var customAttribute in _builder.GetDeclaredCustomAttributes())
@@ -154,12 +157,36 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
         /// Executes the complete phase.
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        void Complete()
+        void Finish()
         {
-            if (_state != ReflectionSymbolState.Finished)
+            if (_state != ReflectionSymbolState.Emitted)
                 throw new InvalidOperationException();
             if (_typeBuilder == null)
                 throw new InvalidOperationException();
+
+            // complete nested types
+            foreach (var type in _builder.GetDeclaredNestedTypes())
+                _context.ResolveType(type, ReflectionSymbolState.Emitted);
+
+            // complete fields
+            foreach (var field in _builder.GetDeclaredFields())
+                _context.ResolveField(field, ReflectionSymbolState.Emitted);
+
+            // complete methods
+            foreach (var method in _builder.GetDeclaredMethods())
+                _context.ResolveMethod(method, ReflectionSymbolState.Emitted);
+
+            // complete properties
+            foreach (var property in _builder.GetDeclaredProperties())
+                _context.ResolveProperty(property, ReflectionSymbolState.Emitted);
+
+            // complete events
+            foreach (var evt in _builder.GetDeclaredEvents())
+                _context.ResolveEvent(evt, ReflectionSymbolState.Emitted);
+
+            // bake type and set state
+            _type = _typeBuilder.CreateType();
+            _state = ReflectionSymbolState.Finished;
 
             // complete nested types
             foreach (var type in _builder.GetDeclaredNestedTypes())
@@ -180,30 +207,6 @@ namespace IKVM.CoreLib.Symbols.Reflection.Emit
             // complete events
             foreach (var evt in _builder.GetDeclaredEvents())
                 _context.ResolveEvent(evt, ReflectionSymbolState.Finished);
-
-            // bake type and set state
-            _type = _typeBuilder.CreateType();
-            _state = ReflectionSymbolState.Completed;
-
-            // complete nested types
-            foreach (var type in _builder.GetDeclaredNestedTypes())
-                _context.ResolveType(type, ReflectionSymbolState.Completed);
-
-            // complete fields
-            foreach (var field in _builder.GetDeclaredFields())
-                _context.ResolveField(field, ReflectionSymbolState.Completed);
-
-            // complete methods
-            foreach (var method in _builder.GetDeclaredMethods())
-                _context.ResolveMethod(method, ReflectionSymbolState.Completed);
-
-            // complete properties
-            foreach (var property in _builder.GetDeclaredProperties())
-                _context.ResolveProperty(property, ReflectionSymbolState.Completed);
-
-            // complete events
-            foreach (var evt in _builder.GetDeclaredEvents())
-                _context.ResolveEvent(evt, ReflectionSymbolState.Completed);
         }
 
     }

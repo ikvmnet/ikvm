@@ -6,9 +6,10 @@ using System.Threading;
 namespace IKVM.CoreLib.Symbols.Emit
 {
 
-    public sealed class EventSymbolBuilder : EventSymbol, ICustomAttributeBuilder
+    public sealed class EventSymbolBuilder : DefinitionEventSymbol, ICustomAttributeBuilder
     {
 
+        readonly TypeSymbol _declaringType;
         readonly string _name;
         readonly EventAttributes _attributes;
         readonly TypeSymbol _eventType;
@@ -31,86 +32,51 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// <param name="attributes"></param>
         /// <param name="eventType"></param>
         internal EventSymbolBuilder(SymbolContext context, TypeSymbolBuilder declaringType, string name, EventAttributes attributes, TypeSymbol eventType) :
-            base(context, declaringType)
+            base(context)
         {
+            _declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _attributes = attributes;
             _eventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
         }
 
         /// <inheritdoc />
-        public override EventAttributes Attributes => _attributes;
+        public sealed override TypeSymbol? DeclaringType => _declaringType;
 
         /// <inheritdoc />
-        public override TypeSymbol? EventHandlerType => _eventType;
+        public sealed override EventAttributes Attributes => _attributes;
 
         /// <inheritdoc />
-        public override string Name => _name;
+        public sealed override TypeSymbol? EventHandlerType => _eventType;
 
         /// <inheritdoc />
-        public override bool IsMissing => false;
+        public sealed override string Name => _name;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetAddMethod(bool nonPublic)
-        {
-            if (nonPublic && _addMethod != null && _addMethod.IsPublic == false)
-                return _addMethod;
-            else if (nonPublic == false && _addMethod != null && _addMethod.IsPublic)
-                return _addMethod;
-            else
-                return null;
-        }
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetRaiseMethod(bool nonPublic)
-        {
-            if (nonPublic && _raiseMethod != null && _raiseMethod.IsPublic == false)
-                return _raiseMethod;
-            else if (nonPublic == false && _raiseMethod != null && _raiseMethod.IsPublic)
-                return _raiseMethod;
-            else
-                return null;
-        }
+        public sealed override MethodSymbol? AddMethod => _addMethod;
 
         /// <inheritdoc />
-        public override MethodSymbol? GetRemoveMethod(bool nonPublic)
-        {
-            if (nonPublic && _removeMethod != null && _removeMethod.IsPublic == false)
-                return _removeMethod;
-            else if (nonPublic == false && _removeMethod != null && _removeMethod.IsPublic)
-                return _removeMethod;
-            else
-                return null;
-        }
+        public sealed override MethodSymbol? RaiseMethod => _raiseMethod;
 
         /// <inheritdoc />
-        public override ImmutableArray<MethodSymbol> GetOtherMethods(bool nonPublic)
-        {
-            var b = ImmutableArray.CreateBuilder<MethodSymbol>(_otherMethods.Count);
-
-            foreach (var i in _otherMethods)
-            {
-                if (nonPublic && i != null && i.IsPublic == false)
-                    b.Add(i);
-                else if (nonPublic == false && i != null && i.IsPublic)
-                    b.Add(i);
-            }
-
-            return b.DrainToImmutable();
-        }
+        public sealed override MethodSymbol? RemoveMethod => _removeMethod;
 
         /// <inheritdoc />
-        internal override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
-        {
-            return _customAttributes.ToImmutable();
-        }
+        public sealed override ImmutableArray<MethodSymbol> OtherMethods => _otherMethods.ToImmutable().CastArray<MethodSymbol>();
+
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes() => _customAttributes.ToImmutable();
 
         /// <summary>
         /// Freezes the type builder.
         /// </summary>
         internal void Freeze()
         {
-            _frozen = true;
+            lock (this)
+                _frozen = true;
         }
 
         /// <summary>
@@ -118,8 +84,9 @@ namespace IKVM.CoreLib.Symbols.Emit
         /// </summary>
         void ThrowIfFrozen()
         {
-            if (_frozen)
-                throw new InvalidOperationException("EventSymbolBuilder is frozen.");
+            lock (this)
+                if (_frozen)
+                    throw new InvalidOperationException("EventSymbolBuilder is frozen.");
         }
 
         /// <summary>
