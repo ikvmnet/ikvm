@@ -2275,7 +2275,7 @@ namespace IKVM.Tools.Importer
                 for (int i = 0; i < map.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveCoreType(map[i].Source).AsReflection());
+                    ilgen.Emit(OpCodes.Ldtoken, rcontext.Resolver.ResolveType(map[i].Source).AsReflection());
                     ilgen.Emit(OpCodes.Call, rcontext.CompilerFactory.GetTypeFromHandleMethod);
                     ilgen.Emit(OpCodes.Ceq);
                     var label = ilgen.DefineLabel();
@@ -2856,8 +2856,8 @@ namespace IKVM.Tools.Importer
 
             if (options.bootstrap == false)
             {
-                allReferencesAreStrongNamed &= IsSigned(context.Resolver.ResolveBaseAssembly().AsReflection());
-                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.ResolveBaseAssembly().AsReflection()));
+                allReferencesAreStrongNamed &= IsSigned(context.Resolver.GetBaseAssembly().AsReflection());
+                loader.AddReference(context.AssemblyClassLoaderFactory.FromAssembly(context.Resolver.GetBaseAssembly().AsReflection()));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -2873,7 +2873,7 @@ namespace IKVM.Tools.Importer
             if (options.bootstrap == false)
             {
                 loader.fakeTypes = context.FakeTypes;
-                loader.fakeTypes.Load(context.Resolver.ResolveBaseAssembly().AsReflection());
+                loader.fakeTypes.Load(context.Resolver.GetBaseAssembly().AsReflection());
             }
 
             return 0;
@@ -3098,9 +3098,9 @@ namespace IKVM.Tools.Importer
                     moduleInitBuilders.Add((mb, il) =>
                     {
                         il.Emit(OpCodes.Ldtoken, mb);
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName) }).AsReflection());
-                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).GetProperty("Module").GetGetMethod().AsReflection());
-                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule").AsReflection());
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MethodBase).FullName).AsReflection().GetMethod("GetMethodFromHandle", new[] { Context.Resolver.ResolveCoreType(typeof(RuntimeMethodHandle).FullName).AsReflection() }));
+                        il.Emit(OpCodes.Callvirt, Context.Resolver.ResolveCoreType(typeof(System.Reflection.MemberInfo).FullName).AsReflection().GetProperty("Module").GetGetMethod());
+                        il.Emit(OpCodes.Call, Context.Resolver.ResolveRuntimeType("IKVM.Runtime.ByteCodeHelper").AsReflection().GetMethod("InitializeModule"));
                     });
                 }
             }

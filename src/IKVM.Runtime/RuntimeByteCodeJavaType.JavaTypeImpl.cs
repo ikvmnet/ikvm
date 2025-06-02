@@ -1090,7 +1090,7 @@ namespace IKVM.Runtime
                 }
                 if (fld.IsTransient)
                 {
-                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
+                    var transientAttrib = new CustomAttributeBuilder((ConstructorInfo)wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
                     field.SetCustomAttribute(transientAttrib);
                 }
 #if IMPORTER
@@ -1491,7 +1491,7 @@ namespace IKVM.Runtime
                                                 }
                                             }
 
-                                            attributeUsageAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]).AsReflection(), [targets]);
+                                            attributeUsageAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(AttributeUsageAttribute).FullName).GetConstructor([context.Resolver.ResolveCoreType(typeof(AttributeTargets).FullName)]).AsReflection(), [targets]);
                                         }
                                     }
                                 }

@@ -1,14 +1,20 @@
 ﻿using System;
 
 using IKVM.CoreLib.Symbols;
-using IKVM.CoreLib.Symbols.Reflection;
+using IKVM.CoreLib.Symbols.Emit;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
+using IKVM.CoreLib.Symbols.IkvmReflection;
+using IKVM.CoreLib.Symbols.IkvmReflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
+
+using IKVM.CoreLib.Symbols.Reflection;
+using IKVM.CoreLib.Symbols.Reflection.Emit;
 #endif
 
 namespace IKVM.Runtime
@@ -23,9 +29,21 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionAssemblySymbol)symbol).UnderlyingAssembly;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveAssembly(symbol);
 #else
-            return ((ReflectionAssemblyLoader)symbol).UnderlyingAssembly;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveAssembly(symbol);
+#endif
+        }
+
+        public static Module AsReflection(this ModuleSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveModule(symbol);
+#else
+            return ((ReflectionSymbolContext)symbol.Context).ResolveModule(symbol);
 #endif
         }
 
@@ -35,46 +53,99 @@ namespace IKVM.Runtime
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionTypeSymbol)symbol).UnderlyingType;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveType(symbol);
 #else
-            return ((ReflectionTypeSymbol)symbol).UnderlyingType;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveType(symbol);
 #endif
         }
 
-        public static MethodInfo AsReflection(this MethodSymbol symbol)
+        public static Type[] GetUnderlyingTypes(this TypeSymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new Type[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = AsReflection(symbols[i]);
+
+            return a;
+        }
+
+        public static MethodBase AsReflection(this MethodSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionMethodSymbol)symbol).UnderlyingMethod;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveMethod(symbol);
 #else
-            return ((ReflectionMethodSymbol)symbol).UnderlyingMethod;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveMethod(symbol);
 #endif
         }
 
+        public static ParameterInfo AsReflection(this ParameterSymbol symbol)
+        {
+            if (symbol == null)
+                return null;
+
+#if IMPORTER || EXPORTER
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveParameter(symbol);
+#else
+            return ((ReflectionSymbolContext)symbol.Context).ResolveParameter(symbol);
+#endif
+        }
+
+        /// <summary>
+        /// Gets the underlying <see cref="FieldInfo"/> of the specified symbol.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
         public static FieldInfo AsReflection(this FieldSymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionFieldSymbol)symbol).UnderlyingField;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveField(symbol);
 #else
-            return ((ReflectionFieldSymbol)symbol).UnderlyingField;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveField(symbol);
 #endif
         }
 
-        public static PropertyInfo AsReflection(this PropertySymbol symbol)
+        public static FieldInfo[] GetUnderlyingFields(this FieldSymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new FieldInfo[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = AsReflection(symbols[i]);
+
+            return a;
+        }
+
+        public static PropertyInfo GetUnderlyingProperty(this PropertySymbol symbol)
         {
             if (symbol == null)
                 return null;
 
 #if IMPORTER || EXPORTER
-			return ((IkvmReflectionPropertySymbol)symbol).UnderlyingProperty;
+            return ((IkvmReflectionSymbolContext)symbol.Context).ResolveProperty(symbol);
 #else
-            return ((ReflectionPropertySymbol)symbol).UnderlyingProperty;
+            return ((ReflectionSymbolContext)symbol.Context).ResolveProperty(symbol);
 #endif
+        }
+
+        public static PropertyInfo[] GetUnderlyingProperties(this PropertySymbol[] symbols)
+        {
+            if (symbols == null)
+                return null;
+
+            var a = new PropertyInfo[symbols.Length];
+            for (int i = 0; i < symbols.Length; i++)
+                a[i] = GetUnderlyingProperty(symbols[i]);
+
+            return a;
         }
 
     }

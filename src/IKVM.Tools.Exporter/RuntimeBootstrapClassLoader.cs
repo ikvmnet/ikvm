@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.Reflection;
 using IKVM.Runtime;
 
 namespace IKVM.Tools.Exporter
@@ -45,7 +46,7 @@ namespace IKVM.Tools.Exporter
             SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IComparable).FullName).AsReflection(), new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
 
             var autoCloseable = new RuntimeStubJavaType(context, Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
-            autoCloseable.SetMethods(new[] { new RuntimeSimpleCallJavaMethod(autoCloseable, "close", "()V", Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).GetMethod("Dispose").AsReflection(), context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
+            autoCloseable.SetMethods(new[] { new RuntimeSimpleCallJavaMethod(autoCloseable, "close", "()V", (MethodInfo)Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).GetMethod("Dispose").AsReflection(), context.PrimitiveJavaTypeFactory.VOID, Array.Empty<RuntimeJavaType>(), Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
             SetRemappedType(Context.Resolver.ResolveCoreType(typeof(IDisposable).FullName).AsReflection(), autoCloseable);
 
             RegisterInitiatingLoader(new RuntimeStubJavaType(context, Modifiers.Public, "java.lang.Enum", javaLangObject, false));

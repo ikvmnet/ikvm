@@ -42,7 +42,7 @@ namespace IKVM.Runtime
             readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
 
             readonly ReflectionSymbolContext _context = new();
-            readonly IAssemblySymbol[] _coreAssemblies;
+            readonly AssemblySymbol[] _coreAssemblies;
             readonly ConcurrentDictionary<string, TypeSymbol> _typeCache = new();
 
             /// <summary>
@@ -54,13 +54,13 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveAssembly(string assemblyName)
+            public AssemblySymbol ResolveAssembly(string assemblyName)
             {
                 return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveBaseAssembly()
+            public AssemblySymbol ResolveBaseAssembly()
             {
                 return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
             }

@@ -320,7 +320,7 @@ namespace IKVM.Runtime
 			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			if (attr.Type != null)
 			{
-				var t = context.Resolver.ResolveCoreType(attr.Type).AsReflection();
+				var t = context.Resolver.ResolveType(attr.Type).AsReflection();
 				var ci = t.GetConstructor(argTypes);
 				if (ci == null)
 					throw new InvalidOperationException($"Constructor missing: {attr.Type}::<init>{attr.Sig}");
@@ -441,7 +441,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(MethodBuilder mb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
 
 			mb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -450,7 +450,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
 			}
 
 			tb.SetCustomAttribute(deprecatedAttribute);
@@ -459,7 +459,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(FieldBuilder fb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
 
 			fb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -468,7 +468,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
 			}
 			pb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -925,7 +925,7 @@ namespace IKVM.Runtime
 
 		internal void SetParamArrayAttribute(ParameterBuilder pb)
 		{
-			paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), []);
+			paramArrayAttribute ??= new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), []);
 			pb.SetCustomAttribute(paramArrayAttribute);
 		}
 
