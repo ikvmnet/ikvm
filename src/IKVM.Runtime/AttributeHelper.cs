@@ -402,8 +402,8 @@ namespace IKVM.Runtime
 		{
 			if (editorBrowsableNever == null)
 			{
-				var typeofEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName).AsReflection();
-				var typeofEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName).AsReflection();
+				var typeofEditorBrowsableAttribute = context.Resolver.ResolveSystemType(typeof(EditorBrowsableAttribute).FullName).AsReflection();
+				var typeofEditorBrowsableState = context.Resolver.ResolveSystemType(typeof(EditorBrowsableState).FullName).AsReflection();
 				var ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName, CallingConventions.Standard | CallingConventions.HasThis, null, default, new Type[] { typeofEditorBrowsableState }, null);
 				editorBrowsableNever = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
 			}
@@ -419,7 +419,7 @@ namespace IKVM.Runtime
 
 		internal void SetCompilerGenerated(MethodBuilder mb)
 		{
-			compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).AsReflection().GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+			compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).AsReflection().GetConstructor(Type.EmptyTypes), Array.Empty<object>());
 			mb.SetCustomAttribute(compilerGeneratedAttribute);
 		}
 
@@ -702,7 +702,7 @@ namespace IKVM.Runtime
             }
 
             var parameters = mb.GetParameters();
-            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
+            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveSystemType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
                 modifiers |= Modifiers.VarArgs;
 
             return new ExModifiers(modifiers, false);
