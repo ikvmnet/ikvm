@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
@@ -97,6 +98,9 @@ namespace IKVM.Java.Externs.java.lang
         /// <summary>
         /// Implements the native method 'arraycopy'.
         /// </summary>
+        /// <remarks>
+        /// This method exists as a performance optimization to prevent JNI.
+        /// </remarks>
         /// <param name="src"></param>
         /// <param name="srcPos"></param>
         /// <param name="dest"></param>
@@ -105,6 +109,19 @@ namespace IKVM.Java.Externs.java.lang
         public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
         {
             ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
+        }
+
+        /// <summary>
+        /// Implements the native method 'identityHashCode'.
+        /// </summary>
+        /// <remarks>
+        /// This method exists as a performance optimization to prevent JNI.
+        /// </remarks>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        public static int identityHashCode(object x)
+        {
+            return RuntimeHelpers.GetHashCode(x);
         }
 
         /// <summary>
