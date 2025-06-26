@@ -226,7 +226,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static global::java.lang.Class DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
@@ -237,7 +237,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicCast(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
@@ -252,7 +252,7 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static bool DynamicInstanceOf(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
@@ -482,7 +482,7 @@ namespace IKVM.Runtime
             return 0;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static long f2l(float f)
         {
             if (f > long.MinValue && f < long.MaxValue)
@@ -500,7 +500,7 @@ namespace IKVM.Runtime
             return 0;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static int d2i(double d)
         {
             if (d > int.MinValue && d < int.MaxValue)
@@ -518,7 +518,7 @@ namespace IKVM.Runtime
             return 0;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static long d2l(double d)
         {
             if (d > long.MinValue && d < long.MaxValue)
@@ -548,7 +548,9 @@ namespace IKVM.Runtime
         [DebuggerStepThrough]
         public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // If the two arrays are the same, we can use the fast path, but we're also required to do so,
             // to get the required memmove semantics.
             if (src == dest)
@@ -573,12 +575,10 @@ namespace IKVM.Runtime
             }
             else
             {
-                object[] src1 = src as object[];
-                object[] dst1 = dest as object[];
-                if (src1 != null && dst1 != null)
+                if (src is object[] src1 && dest is object[] dst1)
                 {
                     // for small copies, don't bother comparing the types as this is relatively expensive
-                    if (len > 50 && src.GetType() == dest.GetType())
+                    if (len > 100 && src.GetType() == dest.GetType())
                     {
                         arraycopy_fast(src1, srcStart, dst1, destStart, len);
                         return;
@@ -591,11 +591,11 @@ namespace IKVM.Runtime
                             // they automatically get converted to the Java equivalents anyway.
                             dst1[destStart++] = src1[srcStart++];
                         }
+
                         return;
                     }
                 }
-                else if (src.GetType() != dest.GetType() &&
-                        (IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
+                else if (src.GetType() != dest.GetType() && (IsPrimitiveArrayType(src.GetType()) || IsPrimitiveArrayType(dest.GetType())))
                 {
                     // we don't want to allow copying a primitive into an object array!
                     throw new global::java.lang.ArrayStoreException();
@@ -613,7 +613,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
-#endif // !FIRST_PASS
+#endif
         }
 
         private static bool IsPrimitiveArrayType(Type type)
@@ -625,10 +625,12 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy_fast(Array src, int srcStart, Array dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 Array.Copy(src, srcStart, dest, destStart, len);
@@ -644,10 +646,12 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy_primitive_8(Array src, int srcStart, Array dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 checked
@@ -668,13 +672,15 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy_primitive_4(Array src, int srcStart, Array dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 checked
@@ -695,13 +701,15 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy_primitive_2(Array src, int srcStart, Array dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 checked
@@ -722,13 +730,15 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy_primitive_1(Array src, int srcStart, Array dest, int destStart, int len)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 Buffer.BlockCopy(src, srcStart, dest, destStart, len);
@@ -746,13 +756,15 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
         [HideFromJava]
         public static void VerboseCastFailure(RuntimeTypeHandle typeHandle, object obj)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             Type t1 = obj.GetType();
             Type t2 = Type.GetTypeFromHandle(typeHandle);
             string msg;
@@ -775,7 +787,7 @@ namespace IKVM.Runtime
                 msg = String.Format("Object of type \"{0}\" cannot be cast to \"{1}\"", t1.AssemblyQualifiedName, t2.AssemblyQualifiedName);
             }
             throw new global::java.lang.ClassCastException(msg);
-#endif // !FIRST_PASS
+#endif
         }
 
         /// <summary>
