@@ -145,6 +145,7 @@ public class AddNoInliningAnnotation : Task
             <RmiCompilerExec Condition=" '$(RmiCompilerPath)' != '' ">"$(RmiCompilerPath)" $(RmiCompilerArgs)</RmiCompilerExec>
         </PropertyGroup>
         <Message Text="Using rmic executable found in JAVA_HOME at '$(RmiCompilerPath)'." Importance="high" Condition=" '$(RmiCompilerPath)' != '' " />
+        <Error Text="Could not find rmic executable." Condition=" '$(RmiCompilerPath)' == '' " />
     </Target>
 
     <PropertyGroup>
