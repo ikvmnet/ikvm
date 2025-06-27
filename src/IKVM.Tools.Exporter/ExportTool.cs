@@ -60,7 +60,7 @@ namespace IKVM.Tools.Exporter
             services.AddSingleton(options);
             services.AddSingleton(diagnostics);
             services.AddSingleton<ExportImpl>();
-            services.AddSingleton<ManagedTypeResolver>();
+            services.AddSingleton<ExportRuntimeSymbolResolver>();
             services.AddSingleton<StaticCompiler>();
             using var provider = services.BuildServiceProvider();
             var exporter = provider.GetRequiredService<ExportImpl>();

@@ -3,13 +3,24 @@
 namespace IKVM.CoreLib.Symbols
 {
 
-    readonly struct InterfaceMapping
+    public readonly struct InterfaceMapping(TypeSymbol InterfaceType, ImmutableArray<MethodSymbol> InterfaceMethods, TypeSymbol TargetType, ImmutableArray<MethodSymbol> TargetMethods)
     {
 
-        public readonly ImmutableArray<IMethodSymbol> InterfaceMethods;
-        public readonly ITypeSymbol InterfaceType;
-        public readonly ImmutableArray<IMethodSymbol> TargetMethods;
-        public readonly ITypeSymbol TargetType;
+        /// <summary>
+        /// Creates a new empty instance.
+        /// </summary>
+        /// <param name="interfaceType"></param>
+        /// <param name="targetType"></param>
+        /// <returns></returns>
+        public static InterfaceMapping CreateEmpty(TypeSymbol interfaceType, TypeSymbol targetType)
+        {
+            return new InterfaceMapping(interfaceType, ImmutableArray<MethodSymbol>.Empty, targetType, ImmutableArray<MethodSymbol>.Empty);
+        }
+
+        public readonly TypeSymbol InterfaceType = InterfaceType;
+        public readonly ImmutableArray<MethodSymbol> InterfaceMethods = InterfaceMethods;
+        public readonly TypeSymbol TargetType = TargetType;
+        public readonly ImmutableArray<MethodSymbol> TargetMethods = TargetMethods;
 
     }
 

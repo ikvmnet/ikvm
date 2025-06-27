@@ -4,6 +4,7 @@ using System.Text;
 
 using IKVM.CoreLib.Buffers;
 using IKVM.CoreLib.Diagnostics;
+using IKVM.Text;
 
 namespace IKVM.Tools.Core.Diagnostics
 {

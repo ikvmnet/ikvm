@@ -43,10 +43,7 @@ namespace IKVM.CoreLib.Text
         /// <param name="text"></param>
         public void Write(string text)
         {
-            var l = _encoding.GetBytes(text, _span);
-            _span = _span.Slice(l);
-            _bytesWritten += l;
-            _charsWritten += text.Length;
+            Write(text.AsSpan());
         }
 
         /// <summary>

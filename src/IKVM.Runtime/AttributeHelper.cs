@@ -320,7 +320,7 @@ namespace IKVM.Runtime
 			GetAttributeArgsAndTypes(loader, attr, out argTypes, out args);
 			if (attr.Type != null)
 			{
-				var t = context.Resolver.ResolveCoreType(attr.Type).AsReflection();
+				var t = context.Resolver.ResolveType(attr.Type).AsReflection();
 				var ci = t.GetConstructor(argTypes);
 				if (ci == null)
 					throw new InvalidOperationException($"Constructor missing: {attr.Type}::<init>{attr.Sig}");
@@ -402,8 +402,8 @@ namespace IKVM.Runtime
 		{
 			if (editorBrowsableNever == null)
 			{
-				var typeofEditorBrowsableAttribute = context.Resolver.ResolveCoreType(typeof(EditorBrowsableAttribute).FullName).AsReflection();
-				var typeofEditorBrowsableState = context.Resolver.ResolveCoreType(typeof(EditorBrowsableState).FullName).AsReflection();
+				var typeofEditorBrowsableAttribute = context.Resolver.ResolveSystemType(typeof(EditorBrowsableAttribute).FullName).AsReflection();
+				var typeofEditorBrowsableState = context.Resolver.ResolveSystemType(typeof(EditorBrowsableState).FullName).AsReflection();
 				var ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName, CallingConventions.Standard | CallingConventions.HasThis, null, default, new Type[] { typeofEditorBrowsableState }, null);
 				editorBrowsableNever = CustomAttributeBuilder.__FromBlob(ctor, new byte[] { 01, 00, 01, 00, 00, 00, 00, 00 });
 			}
@@ -419,7 +419,7 @@ namespace IKVM.Runtime
 
 		internal void SetCompilerGenerated(MethodBuilder mb)
 		{
-			compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(CompilerGeneratedAttribute).FullName).AsReflection().GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+			compilerGeneratedAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveSystemType(typeof(CompilerGeneratedAttribute).FullName).AsReflection().GetConstructor(Type.EmptyTypes), Array.Empty<object>());
 			mb.SetCustomAttribute(compilerGeneratedAttribute);
 		}
 
@@ -441,7 +441,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(MethodBuilder mb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
 
 			mb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -450,7 +450,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
 			}
 
 			tb.SetCustomAttribute(deprecatedAttribute);
@@ -459,7 +459,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(FieldBuilder fb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
 
 			fb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -468,7 +468,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
 			}
 			pb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -702,7 +702,7 @@ namespace IKVM.Runtime
             }
 
             var parameters = mb.GetParameters();
-            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
+            if (parameters.Length > 0 && parameters[parameters.Length - 1].IsDefined(context.Resolver.ResolveSystemType(typeof(ParamArrayAttribute).FullName).AsReflection(), false))
                 modifiers |= Modifiers.VarArgs;
 
             return new ExModifiers(modifiers, false);
@@ -925,7 +925,7 @@ namespace IKVM.Runtime
 
 		internal void SetParamArrayAttribute(ParameterBuilder pb)
 		{
-			paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), []);
+			paramArrayAttribute ??= new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), []);
 			pb.SetCustomAttribute(paramArrayAttribute);
 		}
 
