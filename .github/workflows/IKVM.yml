@@ -542,6 +542,10 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
+    - name: Install Visual C++ Runtime
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: choco install vcredist-all -y
     - name: Start XVFB (Linux)
       if: runner.os == 'Linux'
       run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
