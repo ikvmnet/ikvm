@@ -624,7 +624,7 @@ namespace IKVM.Runtime
                         ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                     }
 #else
-					ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
 #endif
                 }
 

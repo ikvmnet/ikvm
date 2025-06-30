@@ -7,7 +7,7 @@ using System.Text;
 
 using IKVM.ByteCode;
 using IKVM.ByteCode.Decoding;
-using IKVM.CoreLib.System;
+using IKVM.CoreLib.Collections;
 
 namespace IKVM.CoreLib.Modules
 {
