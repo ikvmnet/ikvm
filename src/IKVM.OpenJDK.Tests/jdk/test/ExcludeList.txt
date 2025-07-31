@@ -163,6 +163,7 @@ com/sun/jdi/sde/MangleStepTest.java                                             
 com/sun/jdi/sde/MangleTest.java                                                                                         generic-all
 com/sun/jdi/sde/SourceDebugExtensionTest.java                                                                           generic-all
 com/sun/jdi/sde/TemperatureTableTest.java                                                                               generic-all
+com/sun/jdi/sde/ProcessAttachTest.java                                                                                  generic-all
 com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.java                                           generic-all
 com/sun/jndi/cosnaming/IiopUrlIPv6.java                                                                                 generic-all
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                                                                           generic-all
@@ -4129,6 +4130,7 @@ security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.
 security/infra/java/security/cert/CertPathValidator/certification/CertignaCA.java                                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/DigicertCSRootG5.java                                 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/EmSignRootG2CA.java                                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/SectigoCSRootCAs.java                                 generic-all
 
 # Hotspot uses special detection to ensure native stack doesn't grow too far, which we can't do
 java/nio/channels/Selector/StackOverflowTest.java                                                                       generic-all
