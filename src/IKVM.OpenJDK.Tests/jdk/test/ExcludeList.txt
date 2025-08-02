@@ -4105,6 +4105,7 @@ security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca2g3                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca3g3                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sectigotlsroote46                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sectigotlsrootr46                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrooteccca                           generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootevrsaca                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootrsaca                           generic-all
