@@ -110,7 +110,7 @@ com/sun/jdi/PopAndStepTest.java                                                 
 com/sun/jdi/PopAsynchronousTest.java                                                                                    generic-all
 com/sun/jdi/PopSynchronousTest.java                                                                                     generic-all
 com/sun/jdi/PrivateTransportTest.sh                                                                                     generic-all
-com/sun/jdi/ProcessAttachTest.sh                                                                                        generic-all
+com/sun/jdi/ProcessAttachTest.java                                                                                      generic-all
 com/sun/jdi/Redefine-g.sh                                                                                               generic-all
 com/sun/jdi/RedefineAbstractClass.sh                                                                                    generic-all
 com/sun/jdi/RedefineAnnotation.sh                                                                                       generic-all
@@ -163,6 +163,7 @@ com/sun/jdi/sde/MangleStepTest.java                                             
 com/sun/jdi/sde/MangleTest.java                                                                                         generic-all
 com/sun/jdi/sde/SourceDebugExtensionTest.java                                                                           generic-all
 com/sun/jdi/sde/TemperatureTableTest.java                                                                               generic-all
+com/sun/jdi/sde/ProcessAttachTest.java                                                                                  generic-all
 com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.java                                           generic-all
 com/sun/jndi/cosnaming/IiopUrlIPv6.java                                                                                 generic-all
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                                                                           generic-all
@@ -4103,6 +4104,8 @@ security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca1g3                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca2g3                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#quovadisrootca3g3                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sectigotlsroote46                      generic-all
+security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sectigotlsrootr46                      generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrooteccca                           generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootevrsaca                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#sslrootrsaca                           generic-all
@@ -4129,6 +4132,7 @@ security/infra/java/security/cert/CertPathValidator/certification/TeliaSoneraCA.
 security/infra/java/security/cert/CertPathValidator/certification/CertignaCA.java                                       generic-all
 security/infra/java/security/cert/CertPathValidator/certification/DigicertCSRootG5.java                                 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/EmSignRootG2CA.java                                   generic-all
+security/infra/java/security/cert/CertPathValidator/certification/SectigoCSRootCAs.java                                 generic-all
 
 # Hotspot uses special detection to ensure native stack doesn't grow too far, which we can't do
 java/nio/channels/Selector/StackOverflowTest.java                                                                       generic-all
@@ -4593,7 +4597,7 @@ java/awt/Modal/ToBack/ToBackModeless6Test.java                                  
 java/awt/Modal/ToBack/ToBackNonModal1Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackNonModal2Test.java                                                                          macosx-all,windows-all
 java/awt/Modal/ToBack/ToBackNonModal3Test.java                                                                          generic-all
-java/awt/Modal/ToBack/ToBackNonModal4Test.java                                                                          macosx-all,windows-all
+java/awt/Modal/ToBack/ToBackNonModal4Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackNonModal5Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackNonModal6Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackTKModal1Test.java                                                                           generic-all
