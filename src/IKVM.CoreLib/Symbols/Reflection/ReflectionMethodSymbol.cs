@@ -1,139 +1,109 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Reflection;
-using System.Threading;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionMethodSymbol : ReflectionMethodBaseSymbol, IMethodSymbol
+    sealed class ReflectionMethodSymbol : DefinitionMethodSymbol
     {
 
-        readonly MethodInfo _underlyingMethod;
+        readonly ReflectionSymbolContext _context;
+        readonly MethodBase _underlyingMethod;
 
-        Type[]? _genericParametersSource;
-        ReflectionTypeSymbol?[]? _genericParameters;
-        List<(Type[] Arguments, ReflectionMethodSymbol Symbol)>? _genericTypes;
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol?> _declaringType;
+        ImmutableArray<TypeSymbol> _genericArguments;
+        LazyField<ParameterSymbol> _returnParameter;
+        ImmutableArray<ParameterSymbol> _parameters;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="module"></param>
-        /// <param name="type"></param>
         /// <param name="underlyingMethod"></param>
-        public ReflectionMethodSymbol(ReflectionSymbolContext context, ReflectionModuleSymbol module, ReflectionTypeSymbol? type, MethodInfo underlyingMethod) :
-            base(context, module, type, underlyingMethod)
+        public ReflectionMethodSymbol(ReflectionSymbolContext context, MethodBase underlyingMethod) :
+            base(context)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingMethod = underlyingMethod ?? throw new ArgumentNullException(nameof(underlyingMethod));
         }
 
         /// <summary>
-        /// Gets or creates the <see cref="ReflectionTypeSymbol"/> cached for the generic parameter type.
+        /// Gets the underlying method.
         /// </summary>
-        /// <param name="genericParameterType"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionTypeSymbol GetOrCreateGenericParameterSymbol(Type genericParameterType)
+        public MethodBase UnderlyingMethod => _underlyingMethod;
+
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
+
+        /// <inheritdoc />
+        public sealed override ModuleSymbol Module => _module.IsDefault ? _module.InterlockedInitialize(_context.ResolveModuleSymbol(_underlyingMethod.Module)) : _module.Value;
+
+        /// <inheritdoc />
+        public sealed override TypeSymbol? DeclaringType => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingMethod.DeclaringType)) : _declaringType.Value;
+
+        /// <inheritdoc />
+        public sealed override string Name => _underlyingMethod.Name;
+
+        /// <inheritdoc />
+        public sealed override ParameterSymbol ReturnParameter => _returnParameter.IsDefault ? _returnParameter.InterlockedInitialize(new ReflectionParameterSymbol(_context, ((MethodInfo)_underlyingMethod).ReturnParameter)) : _returnParameter.Value;
+
+        /// <inheritdoc />
+        public sealed override MethodAttributes Attributes => _underlyingMethod.Attributes;
+
+        /// <inheritdoc />
+        public sealed override CallingConventions CallingConvention => _underlyingMethod.CallingConvention;
+
+        /// <inheritdoc />
+        public sealed override MethodImplAttributes MethodImplementationFlags => _underlyingMethod.MethodImplementationFlags;
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GenericParameters
         {
-            if (genericParameterType is null)
-                throw new ArgumentNullException(nameof(genericParameterType));
-
-            Debug.Assert(genericParameterType.DeclaringMethod == _underlyingMethod);
-
-            // initialize tables
-            _genericParametersSource ??= _underlyingMethod.GetGenericArguments();
-            _genericParameters ??= new ReflectionTypeSymbol?[_genericParametersSource.Length];
-
-            // position of the parameter in the list
-            var idx = genericParameterType.GenericParameterPosition;
-
-            // check that our list is long enough to contain the entire table
-            if (_genericParameters.Length < idx)
-                throw new IndexOutOfRangeException();
-
-            // if not yet created, create, allow multiple instances, but only one is eventually inserted
-            ref var rec = ref _genericParameters[idx];
-            if (rec == null)
-                Interlocked.CompareExchange(ref rec, new ReflectionTypeSymbol(Context, ContainingModule, genericParameterType), null);
-
-            // this should never happen
-            if (rec is not ReflectionTypeSymbol sym)
-                throw new InvalidOperationException();
-
-            return sym;
-        }
-
-        /// <summary>
-        /// Gets or creates the <see cref="ReflectionMethodSymbol"/> cached for the generic parameter type.
-        /// </summary>
-        /// <param name="genericMethodArguments"></param>
-        /// <returns></returns>
-        /// <exception cref="IndexOutOfRangeException"></exception>
-        internal ReflectionMethodSymbol GetOrCreateGenericTypeSymbol(Type[] genericMethodArguments)
-        {
-            if (genericMethodArguments is null)
-                throw new ArgumentNullException(nameof(genericMethodArguments));
-
-            if (_underlyingMethod.IsGenericMethodDefinition == false)
-                throw new InvalidOperationException();
-
-            // initialize the available parameters
-            if (_genericParametersSource == null)
-                Interlocked.CompareExchange(ref _genericParametersSource, _underlyingMethod.GetGenericArguments(), null);
-            if (_genericParametersSource.Length != genericMethodArguments.Length)
-                throw new InvalidOperationException();
-
-            // initialize generic type map, and lock on it since we're potentially adding items
-            if (_genericTypes == null)
-                Interlocked.CompareExchange(ref _genericTypes, [], null);
-
-            lock (_genericTypes)
+            get
             {
-                // find existing entry
-                foreach (var i in _genericTypes)
-                    if (i.Arguments.SequenceEqual(genericMethodArguments))
-                        return i.Symbol;
+                if (_genericArguments.IsDefault)
+                {
+                    var l = _underlyingMethod.GetGenericArguments();
+                    var b = ImmutableArray.CreateBuilder<TypeSymbol>(l.Length);
+                    foreach (var i in l)
+                        b.Add(_context.ResolveTypeSymbol(i));
 
-                // generate new symbol
-                var sym = new ReflectionMethodSymbol(Context, ContainingModule, ContainingType, _underlyingMethod.MakeGenericMethod(genericMethodArguments));
-                _genericTypes.Add((genericMethodArguments, sym));
-                return sym;
+                    ImmutableInterlocked.InterlockedInitialize(ref _genericArguments, b.DrainToImmutable());
+                }
+
+                return _genericArguments;
             }
         }
 
-        /// <summary>
-        /// Gets the underlying <see cref="MethodBase"/> wrapped by this symbol.
-        /// </summary>
-        internal MethodInfo UnderlyingMethod => _underlyingMethod;
-
         /// <inheritdoc />
-        public IParameterSymbol ReturnParameter => ResolveParameterSymbol(_underlyingMethod.ReturnParameter);
-
-        /// <inheritdoc />
-        public ITypeSymbol ReturnType => ResolveTypeSymbol(_underlyingMethod.ReturnType);
-
-        /// <inheritdoc />
-        public ICustomAttributeSymbolProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
-
-        /// <inheritdoc />
-        public IMethodSymbol GetBaseDefinition()
+        public sealed override ImmutableArray<ParameterSymbol> Parameters
         {
-            return ResolveMethodSymbol(_underlyingMethod.GetBaseDefinition());
+            get
+            {
+                if (_parameters.IsDefault)
+                {
+                    var l = _underlyingMethod.GetParameters();
+                    var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
+                    foreach (var i in l)
+                        b.Add(new ReflectionParameterSymbol(_context, i));
+
+                    ImmutableInterlocked.InterlockedInitialize(ref _parameters, b.DrainToImmutable());
+                }
+
+                return _parameters;
+            }
         }
 
         /// <inheritdoc />
-        public IMethodSymbol GetGenericMethodDefinition()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return ResolveMethodSymbol(_underlyingMethod.GetGenericMethodDefinition());
-        }
+            if (_customAttributes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingMethod.GetCustomAttributesData()));
 
-        /// <inheritdoc />
-        public IMethodSymbol MakeGenericMethod(params ITypeSymbol[] typeArguments)
-        {
-            return ResolveMethodSymbol(_underlyingMethod.MakeGenericMethod(UnpackTypeSymbols(typeArguments)));
+            return _customAttributes;
         }
 
     }

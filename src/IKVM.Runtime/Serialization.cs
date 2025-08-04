@@ -59,9 +59,9 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        CustomAttributeBuilder SerializableAttribute => serializableAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]).AsReflection(), []);
+        CustomAttributeBuilder SerializableAttribute => serializableAttribute ??= new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]).AsReflection(), []);
 
-        CustomAttributeBuilder SecurityCriticalAttribute => securityCriticalAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]).AsReflection(), []);
+        CustomAttributeBuilder SecurityCriticalAttribute => securityCriticalAttribute ??= new CustomAttributeBuilder((ConstructorInfo)context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]).AsReflection(), []);
 
         RuntimeJavaType TypeOfISerializable => typeOfISerializable ??= context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(ISerializable).FullName).AsReflection());
 
@@ -176,7 +176,7 @@ namespace IKVM.Runtime
             var getObjectData = tb.DefineMethod(name, attr, null, new Type[] { context.Resolver.ResolveCoreType(typeof(SerializationInfo).FullName).AsReflection(), context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName).AsReflection() });
             getObjectData.SetCustomAttribute(SecurityCriticalAttribute);
             context.AttributeHelper.HideFromJava(getObjectData);
-            tb.DefineMethodOverride(getObjectData, context.Resolver.ResolveCoreType(typeof(ISerializable).FullName).GetMethod("GetObjectData").AsReflection());
+            tb.DefineMethodOverride(getObjectData, (MethodInfo)context.Resolver.ResolveCoreType(typeof(ISerializable).FullName).GetMethod("GetObjectData").AsReflection());
             CodeEmitter ilgen = context.CodeEmitterFactory.Create(getObjectData);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ldarg_1);
@@ -227,7 +227,7 @@ namespace IKVM.Runtime
                 var getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, wrapper.Context.Types.Object, new Type[] { wrapper.Context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName).AsReflection() });
                 getRealObject.SetCustomAttribute(SecurityCriticalAttribute);
                 wrapper.Context.AttributeHelper.HideFromJava(getRealObject);
-                tb.DefineMethodOverride(getRealObject, wrapper.Context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).GetMethod("GetRealObject").AsReflection());
+                tb.DefineMethodOverride(getRealObject, (MethodInfo)wrapper.Context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).GetMethod("GetRealObject").AsReflection());
                 var ilgen = context.CodeEmitterFactory.Create(getRealObject);
                 mw.Link();
                 if (!wrapper.IsFinal)
@@ -252,11 +252,10 @@ namespace IKVM.Runtime
 
         void RemoveReadResolve(TypeBuilder tb)
         {
-            tb.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).AsReflection());
             MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, context.Types.Object, [context.Resolver.ResolveCoreType(typeof(StreamingContext).FullName).AsReflection()]);
             getRealObject.SetCustomAttribute(SecurityCriticalAttribute);
-            context.AttributeHelper.HideFromJava(getRealObject);
-            tb.DefineMethodOverride(getRealObject, context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).GetMethod("GetRealObject").AsReflection());
+            tb.AddInterfaceImplementation(context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).AsReflection());
+            tb.DefineMethodOverride(getRealObject, (MethodInfo)context.Resolver.ResolveCoreType(typeof(IObjectReference).FullName).GetMethod("GetRealObject").AsReflection());
             CodeEmitter ilgen = context.CodeEmitterFactory.Create(getRealObject);
             ilgen.Emit(OpCodes.Ldarg_0);
             ilgen.Emit(OpCodes.Ret);

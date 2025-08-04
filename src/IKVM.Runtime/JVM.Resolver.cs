@@ -42,8 +42,8 @@ namespace IKVM.Runtime
             readonly static Assembly[] coreAssemblies = GetCoreAssemblies().Distinct().ToArray();
 
             readonly ReflectionSymbolContext _context = new();
-            readonly IAssemblySymbol[] _coreAssemblies;
-            readonly ConcurrentDictionary<string, ITypeSymbol> _typeCache = new();
+            readonly AssemblySymbol[] _coreAssemblies;
+            readonly ConcurrentDictionary<string, TypeSymbol> _typeCache = new();
 
             /// <summary>
             /// Initializes a new instance.
@@ -54,35 +54,35 @@ namespace IKVM.Runtime
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveAssembly(string assemblyName)
+            public AssemblySymbol ResolveAssembly(string assemblyName)
             {
                 return Assembly.Load(assemblyName) is { } a ? _context.GetOrCreateAssemblySymbol(a) : null;
             }
 
             /// <inheritdoc />
-            public IAssemblySymbol ResolveBaseAssembly()
+            public AssemblySymbol ResolveBaseAssembly()
             {
                 return _context.GetOrCreateAssemblySymbol(typeof(java.lang.Object).Assembly);
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveCoreType(string typeName)
+            public TypeSymbol ResolveCoreType(string typeName)
             {
                 return _typeCache.GetOrAdd(typeName, ResolveCoreTypeImpl);
             }
 
-            ITypeSymbol ResolveCoreTypeImpl(string typeName)
+            TypeSymbol ResolveCoreTypeImpl(string typeName)
             {
                 // loop over core assemblies searching for type
                 foreach (var assembly in _coreAssemblies)
-                    if (assembly.GetType(typeName) is ITypeSymbol t)
+                    if (assembly.GetType(typeName) is TypeSymbol t)
                         return t;
 
                 return null;
             }
 
             /// <inheritdoc />
-            public ITypeSymbol ResolveRuntimeType(string typeName)
+            public TypeSymbol ResolveRuntimeType(string typeName)
             {
                 return typeof(Resolver).Assembly.GetType(typeName) is { } t ? _context.GetOrCreateTypeSymbol(t) : null;
             }

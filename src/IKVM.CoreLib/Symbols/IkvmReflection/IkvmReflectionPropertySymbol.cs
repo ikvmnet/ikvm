@@ -1,116 +1,120 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 using IKVM.Reflection;
-
-using PropertyInfo = IKVM.Reflection.PropertyInfo;
 
 namespace IKVM.CoreLib.Symbols.IkvmReflection
 {
 
-    class IkvmReflectionPropertySymbol : IkvmReflectionMemberSymbol, IPropertySymbol
+    class IkvmReflectionPropertySymbol : DefinitionPropertySymbol
     {
 
+        readonly IkvmReflectionSymbolContext _context;
         readonly PropertyInfo _underlyingProperty;
+
+        LazyField<AssemblySymbol> _assembly;
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol?> _declaringType;
+        LazyField<TypeSymbol?> _propertyType;
+        LazyField<MethodSymbol?> _getMethod;
+        LazyField<MethodSymbol?> _setMethod;
+        ImmutableArray<MethodSymbol> _accessors;
+        ImmutableArray<ParameterSymbol> _indexParameters;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
         /// <param name="underlyingProperty"></param>
-        public IkvmReflectionPropertySymbol(IkvmReflectionSymbolContext context, IkvmReflectionTypeSymbol type, PropertyInfo underlyingProperty) :
-            base(context, type.ContainingModule, type, underlyingProperty)
+        public IkvmReflectionPropertySymbol(IkvmReflectionSymbolContext context, PropertyInfo underlyingProperty) :
+            base(context)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingProperty = underlyingProperty ?? throw new ArgumentNullException(nameof(underlyingProperty));
         }
 
+        /// <summary>
+        /// Gets the underlying property.
+        /// </summary>
         public PropertyInfo UnderlyingProperty => _underlyingProperty;
 
         /// <inheritdoc />
-        public global::System.Reflection.PropertyAttributes Attributes => (global::System.Reflection.PropertyAttributes)_underlyingProperty.Attributes;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public ITypeSymbol PropertyType => ResolveTypeSymbol(_underlyingProperty.PropertyType);
+        public sealed override TypeSymbol DeclaringType => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingProperty.DeclaringType)) : _declaringType.Value;
 
         /// <inheritdoc />
-        public bool CanRead => _underlyingProperty.CanRead;
+        public sealed override global::System.Reflection.PropertyAttributes Attributes => (global::System.Reflection.PropertyAttributes)_underlyingProperty.Attributes;
 
         /// <inheritdoc />
-        public bool CanWrite => _underlyingProperty.CanWrite;
+        public sealed override string Name => _underlyingProperty.Name;
 
         /// <inheritdoc />
-        public bool IsSpecialName => _underlyingProperty.IsSpecialName;
+        public sealed override TypeSymbol PropertyType => _propertyType.IsDefault ? _propertyType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingProperty.PropertyType)) : _propertyType.Value;
 
         /// <inheritdoc />
-        public IMethodSymbol? GetMethod => _underlyingProperty.GetMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public sealed override MethodSymbol? GetMethod => _getMethod.IsDefault ? _getMethod.InterlockedInitialize(_context.ResolveMethodSymbol(_underlyingProperty.GetMethod)) : _getMethod.Value;
 
         /// <inheritdoc />
-        public IMethodSymbol? SetMethod => _underlyingProperty.SetMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public sealed override MethodSymbol? SetMethod => _setMethod.IsDefault ? _setMethod.InterlockedInitialize(_context.ResolveMethodSymbol(_underlyingProperty.SetMethod)) : _setMethod.Value;
 
         /// <inheritdoc />
-        public object? GetRawConstantValue()
+        public sealed override ImmutableArray<ParameterSymbol> GetIndexParameters()
+        {
+            if (_indexParameters.IsDefault)
+            {
+                var l = _underlyingProperty.GetIndexParameters();
+                var b = ImmutableArray.CreateBuilder<ParameterSymbol>(l.Length);
+                foreach (var i in l)
+                    b.Add(new IkvmReflectionParameterSymbol(_context, i));
+
+                ImmutableInterlocked.InterlockedInitialize(ref _indexParameters, b.DrainToImmutable());
+            }
+
+            return _indexParameters;
+        }
+
+        /// <inheritdoc />
+        public sealed override object? GetRawConstantValue()
         {
             return _underlyingProperty.GetRawConstantValue();
         }
 
         /// <inheritdoc />
-        public IParameterSymbol[] GetIndexParameters()
-        {
-            return ResolveParameterSymbols(_underlyingProperty.GetIndexParameters());
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol GetModifiedPropertyType()
+        public sealed override TypeSymbol GetModifiedPropertyType()
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetAccessors()
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            return ResolveMethodSymbols(_underlyingProperty.GetAccessors());
+            if (_optionalCustomModifiers.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, _context.ResolveTypeSymbols(_underlyingProperty.GetOptionalCustomModifiers()));
+
+            return _optionalCustomModifiers;
         }
 
         /// <inheritdoc />
-        public IMethodSymbol[] GetAccessors(bool nonPublic)
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            throw new NotImplementedException();
+            if (_requiredCustomModifiers.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, _context.ResolveTypeSymbols(_underlyingProperty.GetRequiredCustomModifiers()));
+
+            return _requiredCustomModifiers;
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetGetMethod()
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _underlyingProperty.GetGetMethod() is MethodInfo m ? ResolveMethodSymbol(m) : null;
-        }
+            if (_customAttributes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingProperty.GetCustomAttributesData()));
 
-        /// <inheritdoc />
-        public IMethodSymbol? GetGetMethod(bool nonPublic)
-        {
-            return _underlyingProperty.GetGetMethod(nonPublic) is MethodInfo m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetSetMethod()
-        {
-            return _underlyingProperty.GetSetMethod() is MethodInfo m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetSetMethod(bool nonPublic)
-        {
-            return _underlyingProperty.GetSetMethod(nonPublic) is MethodInfo m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetOptionalCustomModifiers()
-        {
-            return ResolveTypeSymbols(_underlyingProperty.GetOptionalCustomModifiers());
-        }
-
-        /// <inheritdoc />
-        public ITypeSymbol[] GetRequiredCustomModifiers()
-        {
-            return ResolveTypeSymbols(_underlyingProperty.GetRequiredCustomModifiers());
+            return _customAttributes;
         }
 
     }

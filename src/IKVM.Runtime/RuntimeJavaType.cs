@@ -1631,7 +1631,7 @@ namespace IKVM.Runtime
         // return the constructor used for automagic .NET serialization
         internal virtual MethodBase GetSerializationConstructor()
         {
-            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, [context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName).AsReflection(), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName).AsReflection()], null);
+            return TypeAsBaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, (Type[])[context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.SerializationInfo).FullName).AsReflection(), context.Resolver.ResolveCoreType(typeof(System.Runtime.Serialization.StreamingContext).FullName).AsReflection()], null);
         }
 
         internal virtual MethodBase GetBaseSerializationConstructor()

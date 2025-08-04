@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
 using IKVM.CoreLib.Diagnostics;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 using IKVM.Runtime;
 using IKVM.Tools.Importer;
@@ -77,6 +78,7 @@ namespace IKVM.Tools.Exporter
 
             // build universe and resolver against universe and references
             var universe = new Universe(coreLibName);
+            var symbols = new IkvmReflectionSymbolContext(universe, new IkvmReflectionSymbolOptions(false));
             var assemblyResolver = new AssemblyResolver();
             assemblyResolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
             assemblyResolver.Init(universe, options.NoStdLib, references, libpaths);
@@ -144,7 +146,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, null), true, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, true), true, compiler);
                     context.ClassLoaderFactory.SetBootstrapClassLoader(new RuntimeBootstrapClassLoader(context));
                 }
                 else
@@ -171,7 +173,7 @@ namespace IKVM.Tools.Exporter
                     }
 
                     compiler = new StaticCompiler(universe, assemblyResolver, runtimeAssembly);
-                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ManagedTypeResolver(compiler, baseAssembly), false, compiler);
+                    context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, new ExportRuntimeSymbolResolver(diagnostics, universe, symbols, true), false, compiler);
                 }
 
                 if (context.AttributeHelper.IsJavaModule(assembly.ManifestModule))
