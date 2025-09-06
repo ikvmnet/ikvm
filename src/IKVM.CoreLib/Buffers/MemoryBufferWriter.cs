@@ -105,7 +105,7 @@ namespace IKVM.CoreLib.Buffers
         /// </summary>
         /// <param name="sizeHint">The minimum number of items to ensure space for in <see cref="_memory"/>.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ValidateSizeHint(int sizeHint)
+        void ValidateSizeHint(int sizeHint)
         {
             if (sizeHint < 0)
             {
