@@ -177,17 +177,13 @@ namespace IKVM.CoreLib.Buffers
         void CheckBuffer(int sizeHint)
         {
             if (sizeHint < 0)
-                throw new ArgumentException(nameof(sizeHint));
+                throw new ArgumentException("SizeHint must be greater than or equal to zero.", nameof(sizeHint));
 
             if (sizeHint == 0)
-            {
                 sizeHint = 1;
-            }
 
             if (sizeHint > FreeCapacity)
-            {
                 throw new InvalidOperationException("Buffer size is lower than requested.");
-            }
 
             Debug.Assert(FreeCapacity > 0 && FreeCapacity >= sizeHint);
         }
