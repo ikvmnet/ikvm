@@ -29,7 +29,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <param name="writer"></param>
         public static void Write(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer)
         {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
+            var buffer = MemoryPool<byte>.Shared.Rent(65535);
 
             try
             {
@@ -55,7 +55,7 @@ namespace IKVM.CoreLib.Diagnostics
         /// <param name="writer"></param>
         public static async ValueTask WriteAsync(int id, DiagnosticLevel level, string message, object?[] args, Exception? exception, DiagnosticLocation location, TextWriter writer, CancellationToken cancellationToken)
         {
-            var buffer = MemoryPool<byte>.Shared.Rent(8192);
+            var buffer = MemoryPool<byte>.Shared.Rent(65535);
 
             try
             {
@@ -95,7 +95,7 @@ namespace IKVM.CoreLib.Diagnostics
                 // if we're not writing UTF8, stage to a temporary buffer
                 if (encoding is not UTF8Encoding)
                 {
-                    mem = MemoryPool<byte>.Shared.Rent(8192);
+                    mem = MemoryPool<byte>.Shared.Rent(65535);
                     buf = new MemoryBufferWriter<byte>(mem.Memory);
                 }
 

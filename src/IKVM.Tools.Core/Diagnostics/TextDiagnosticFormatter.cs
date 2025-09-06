@@ -28,7 +28,7 @@ namespace IKVM.Tools.Core.Diagnostics
         protected override void WriteImpl(in DiagnosticEvent @event, IDiagnosticChannel channel)
         {
             var encoding = channel.Encoding ?? Encoding.UTF8;
-            using var buffer = MemoryPool<byte>.Shared.Rent(8192);
+            using var buffer = MemoryPool<byte>.Shared.Rent(65535);
             var writer = new MemoryBufferWriter<byte>(buffer.Memory);
             TextDiagnosticFormat.Write(@event.Diagnostic.Id, @event.Diagnostic.Level, @event.Diagnostic.Message, @event.Args, @event.Exception, @event.Location, ref writer, encoding);
             WriteLine(writer, encoding);
