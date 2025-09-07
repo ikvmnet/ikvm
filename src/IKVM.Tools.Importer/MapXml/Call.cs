@@ -102,7 +102,7 @@ namespace IKVM.Tools.Importer.MapXml
                 Debug.Assert(Class == null && Type != null);
 
                 var argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                var ci = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection().GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+                var ci = context.ClassLoader.Context.Resolver.ResolveType(Type).AsReflection().GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
                 if (ci == null)
                 {
                     throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
@@ -195,12 +195,10 @@ namespace IKVM.Tools.Importer.MapXml
                         string[] types = Sig.Split(';');
                         argTypes = new Type[types.Length];
                         for (int i = 0; i < types.Length; i++)
-                        {
-                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveCoreType(types[i]).AsReflection();
-                        }
+                            argTypes[i] = context.ClassLoader.Context.Resolver.ResolveType(types[i]).AsReflection();
                     }
 
-                    var ti = context.ClassLoader.Context.Resolver.ResolveCoreType(Type).AsReflection();
+                    var ti = context.ClassLoader.Context.Resolver.ResolveType(Type).AsReflection();
                     if (ti == null)
                     {
                         throw new InvalidOperationException("Missing type: " + Type);

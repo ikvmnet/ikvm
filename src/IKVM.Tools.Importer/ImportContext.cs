@@ -31,7 +31,7 @@ using System.Threading;
 
 using IKVM.ByteCode;
 using IKVM.CoreLib.Diagnostics;
-using IKVM.CoreLib.Symbols;
+using IKVM.CoreLib.Symbols.IkvmReflection;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using IKVM.Runtime;
@@ -128,6 +128,11 @@ namespace IKVM.Tools.Importer
 
                     throw;
                 }
+                catch (DiagnosticEventException e)
+                {
+                    // for now we translate this to FatalCompilerError
+                    throw new FatalCompilerErrorException(e.Event);
+                }
             }
             catch (FatalCompilerErrorException x)
             {
@@ -184,22 +189,27 @@ namespace IKVM.Tools.Importer
             var rootTarget = new ImportState();
             var services = new ServiceCollection();
             services.AddToolsDiagnostics();
+            services.AddSingleton(options);
             services.AddSingleton(p => GetDiagnostics(p, rootTarget, options.Log));
-            services.AddSingleton<ISymbolResolver, ManagedResolver>();
+            services.AddSingleton(p => new IkvmReflectionSymbolOptions(p.GetRequiredService<ImportOptions>().Debug != ImportDebug.None));
+            services.AddSingleton<IkvmReflectionSymbolContext>();
+            services.AddSingleton(p => new Lazy<IkvmReflectionSymbolContext>(() => p.GetRequiredService<IkvmReflectionSymbolContext>()));
+            services.AddSingleton<IRuntimeSymbolResolver, ImportRuntimeSymbolResolver>();
             services.AddSingleton<StaticCompiler>();
+            services.AddSingleton<Universe>(p => p.GetRequiredService<StaticCompiler>().Universe);
             using var provider = services.BuildServiceProvider();
 
             var diagnostics = provider.GetRequiredService<IDiagnosticHandler>();
             var compiler = provider.GetRequiredService<StaticCompiler>();
             var targets = new List<ImportState>();
-            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<ISymbolResolver>(), options.Bootstrap, compiler);
+            var context = new RuntimeContext(new RuntimeContextOptions(), diagnostics, provider.GetRequiredService<IRuntimeSymbolResolver>(), options.Bootstrap, compiler);
 
             compiler.rootTarget = rootTarget;
             var importer = new ImportContext();
             importer.ParseCommandLine(context, compiler, diagnostics, options, targets, rootTarget);
             compiler.Init(nonDeterministicOutput, rootTarget.debugMode, libpaths);
             resolver.Warning += (warning, message, parameters) => loader_Warning(compiler, diagnostics, warning, message, parameters);
-            resolver.Init(compiler.Universe, nostdlib, rootTarget.unresolvedReferences, libpaths);
+            resolver.Init(provider.GetRequiredService<Universe>(), nostdlib, rootTarget.unresolvedReferences, libpaths);
             ResolveReferences(compiler, diagnostics, targets);
             ResolveStrongNameKeys(targets);
 

@@ -1,91 +1,87 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionFieldSymbol : ReflectionMemberSymbol, IFieldSymbol
+    sealed class ReflectionFieldSymbol : DefinitionFieldSymbol
     {
 
+        readonly ReflectionSymbolContext _context;
         readonly FieldInfo _underlyingField;
+
+        LazyField<AssemblySymbol> _assembly;
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol?> _declaringType;
+        LazyField<TypeSymbol> _fieldType;
+        ImmutableArray<TypeSymbol> _optionalCustomModifiers;
+        ImmutableArray<TypeSymbol> _requiredCustomModifiers;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
         /// <param name="underlyingField"></param>
-        public ReflectionFieldSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, FieldInfo underlyingField) :
-            base(context, type.ContainingModule, type, underlyingField)
+        public ReflectionFieldSymbol(ReflectionSymbolContext context, FieldInfo underlyingField) :
+            base(context)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingField = underlyingField ?? throw new ArgumentNullException(nameof(underlyingField));
         }
 
         /// <summary>
-        /// Gets the underlying <see cref="FieldInfo"/> wrapped by this symbol.
+        /// Gets the underlying field.
         /// </summary>
-        internal FieldInfo UnderlyingField => _underlyingField;
+        public FieldInfo UnderlyingField => _underlyingField;
 
-        /// <inheritdoc/>
-        public FieldAttributes Attributes => _underlyingField.Attributes;
+        /// <inheritdoc />
+        public sealed override bool IsMissing => false;
 
-        /// <inheritdoc/>
-        public ITypeSymbol FieldType => ResolveTypeSymbol(_underlyingField.FieldType);
+        /// <inheritdoc />
+        public sealed override ModuleSymbol Module => _module.IsDefault ? _module.InterlockedInitialize(_context.ResolveModuleSymbol(_underlyingField.Module)) : _module.Value;
 
-        /// <inheritdoc/>
-        public bool IsSpecialName => _underlyingField.IsSpecialName;
+        /// <inheritdoc />
+        public sealed override TypeSymbol DeclaringType => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingField.DeclaringType)) : _declaringType.Value;
 
-        /// <inheritdoc/>
-        public bool IsAssembly => _underlyingField.IsAssembly;
+        /// <inheritdoc />
+        public sealed override FieldAttributes Attributes => _underlyingField.Attributes;
 
-        /// <inheritdoc/>
-        public bool IsFamily => _underlyingField.IsFamily;
+        /// <inheritdoc />
+        public sealed override TypeSymbol FieldType => _fieldType.IsDefault ? _fieldType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingField.FieldType)) : _fieldType.Value;
 
-        /// <inheritdoc/>
-        public bool IsFamilyAndAssembly => _underlyingField.IsFamilyAndAssembly;
+        /// <inheritdoc />
+        public sealed override string Name => _underlyingField.Name;
 
-        /// <inheritdoc/>
-        public bool IsFamilyOrAssembly => _underlyingField.IsFamilyOrAssembly;
+        /// <inheritdoc />
+        public sealed override object? GetRawConstantValue() => _underlyingField.GetRawConstantValue();
 
-        /// <inheritdoc/>
-        public bool IsInitOnly => _underlyingField.IsInitOnly;
-
-        /// <inheritdoc/>
-        public bool IsLiteral => _underlyingField.IsLiteral;
-
-#pragma warning disable SYSLIB0050 // Type or member is obsolete
-        /// <inheritdoc/>
-        public bool IsNotSerialized => _underlyingField.IsNotSerialized;
-#pragma warning restore SYSLIB0050 // Type or member is obsolete
-
-        /// <inheritdoc/>
-        public bool IsPinvokeImpl => _underlyingField.IsPinvokeImpl;
-
-        /// <inheritdoc/>
-        public bool IsPrivate => _underlyingField.IsPrivate;
-
-        /// <inheritdoc/>
-        public bool IsPublic => _underlyingField.IsPublic;
-
-        /// <inheritdoc/>
-        public bool IsStatic => _underlyingField.IsStatic;
-
-        /// <inheritdoc/>
-        public ITypeSymbol[] GetOptionalCustomModifiers()
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetOptionalCustomModifiers()
         {
-            return ResolveTypeSymbols(_underlyingField.GetOptionalCustomModifiers());
+            if (_optionalCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _optionalCustomModifiers, _context.ResolveTypeSymbols(_underlyingField.GetOptionalCustomModifiers()));
+
+            return _optionalCustomModifiers;
         }
 
-        /// <inheritdoc/>
-        public ITypeSymbol[] GetRequiredCustomModifiers()
+        /// <inheritdoc />
+        public sealed override ImmutableArray<TypeSymbol> GetRequiredCustomModifiers()
         {
-            return ResolveTypeSymbols(_underlyingField.GetRequiredCustomModifiers());
+            if (_requiredCustomModifiers == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _requiredCustomModifiers, _context.ResolveTypeSymbols(_underlyingField.GetRequiredCustomModifiers()));
+
+            return _requiredCustomModifiers;
         }
 
-        /// <inheritdoc/>
-        public object? GetRawConstantValue()
+        /// <inheritdoc />
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _underlyingField.GetRawConstantValue();
+            if (_customAttributes == default)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingField.GetCustomAttributesData()));
+
+            return _customAttributes;
         }
 
     }

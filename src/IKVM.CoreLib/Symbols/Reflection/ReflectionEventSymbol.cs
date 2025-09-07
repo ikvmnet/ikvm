@@ -1,95 +1,86 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace IKVM.CoreLib.Symbols.Reflection
 {
 
-    class ReflectionEventSymbol : ReflectionMemberSymbol, IEventSymbol
+    sealed class ReflectionEventSymbol : DefinitionEventSymbol
     {
 
+        readonly ReflectionSymbolContext _context;
         readonly EventInfo _underlyingEvent;
+
+        LazyField<AssemblySymbol> _assembly;
+        LazyField<ModuleSymbol> _module;
+        LazyField<TypeSymbol> _declaringType;
+        LazyField<TypeSymbol> _eventHandlerType;
+        LazyField<MethodSymbol> _addMethod;
+        LazyField<MethodSymbol> _removeMethod;
+        LazyField<MethodSymbol> _raiseMethod;
+        ImmutableArray<MethodSymbol> _otherMethods;
+        ImmutableArray<CustomAttribute> _customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
         /// <param name="underlyingEvent"></param>
-        public ReflectionEventSymbol(ReflectionSymbolContext context, ReflectionTypeSymbol type, EventInfo underlyingEvent) :
-            base(context, type.ContainingModule, type, underlyingEvent)
+        public ReflectionEventSymbol(ReflectionSymbolContext context, EventInfo underlyingEvent) :
+            base(context)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _underlyingEvent = underlyingEvent ?? throw new ArgumentNullException(nameof(underlyingEvent));
         }
 
         /// <summary>
-        /// Gets the underlying <see cref="EventInfo"/> wrapped by this symbol.
+        /// Gets the underlying event.
         /// </summary>
-        internal EventInfo UnderlyingEvent => _underlyingEvent;
+        public EventInfo UnderlyingEvent => _underlyingEvent;
 
         /// <inheritdoc />
-        public EventAttributes Attributes => _underlyingEvent.Attributes;
+        public sealed override bool IsMissing => false;
 
         /// <inheritdoc />
-        public ITypeSymbol? EventHandlerType => _underlyingEvent.EventHandlerType is { } m ? ResolveTypeSymbol(m) : null;
+        public sealed override TypeSymbol DeclaringType => _declaringType.IsDefault ? _declaringType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingEvent.DeclaringType)) : _declaringType.Value;
 
         /// <inheritdoc />
-        public bool IsSpecialName => _underlyingEvent.IsSpecialName;
+        public sealed override EventAttributes Attributes => _underlyingEvent.Attributes;
 
         /// <inheritdoc />
-        public IMethodSymbol? AddMethod => _underlyingEvent.AddMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public sealed override TypeSymbol EventHandlerType => _eventHandlerType.IsDefault ? _eventHandlerType.InterlockedInitialize(_context.ResolveTypeSymbol(_underlyingEvent.EventHandlerType)) : _eventHandlerType.Value;
 
         /// <inheritdoc />
-        public IMethodSymbol? RemoveMethod => _underlyingEvent.RemoveMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public sealed override string Name => _underlyingEvent.Name;
 
         /// <inheritdoc />
-        public IMethodSymbol? RaiseMethod => _underlyingEvent.RaiseMethod is { } m ? ResolveMethodSymbol(m) : null;
+        public sealed override MethodSymbol? AddMethod => _addMethod.IsDefault ? _addMethod.InterlockedInitialize(_context.ResolveMethodSymbol(_underlyingEvent.AddMethod)) : _addMethod.Value;
 
         /// <inheritdoc />
-        public IMethodSymbol? GetAddMethod()
+        public sealed override MethodSymbol? RemoveMethod => _removeMethod.IsDefault ? _removeMethod.InterlockedInitialize(_context.ResolveMethodSymbol(_underlyingEvent.RemoveMethod)) : _removeMethod.Value;
+
+        /// <inheritdoc />
+        public sealed override MethodSymbol? RaiseMethod => _raiseMethod.IsDefault ? _raiseMethod.InterlockedInitialize(_context.ResolveMethodSymbol(_underlyingEvent.RaiseMethod)) : _raiseMethod.Value;
+
+        /// <inheritdoc />
+        public sealed override ImmutableArray<MethodSymbol> OtherMethods
         {
-            return _underlyingEvent.GetAddMethod() is { } m ? ResolveMethodSymbol(m) : null;
+            get
+            {
+                if (_otherMethods.IsDefault)
+                    ImmutableInterlocked.InterlockedInitialize(ref _otherMethods, _context.ResolveMethodSymbols(_underlyingEvent.GetOtherMethods(true)));
+
+                return _otherMethods;
+            }
         }
 
         /// <inheritdoc />
-        public IMethodSymbol? GetAddMethod(bool nonPublic)
+        internal sealed override ImmutableArray<CustomAttribute> GetDeclaredCustomAttributes()
         {
-            return _underlyingEvent.GetAddMethod(nonPublic) is { } m ? ResolveMethodSymbol(m) : null;
-        }
+            if (_customAttributes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _customAttributes, _context.ResolveCustomAttributes(_underlyingEvent.GetCustomAttributesData()));
 
-        /// <inheritdoc />
-        public IMethodSymbol? GetRemoveMethod()
-        {
-            return _underlyingEvent.GetRemoveMethod() is { } m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRemoveMethod(bool nonPublic)
-        {
-            return _underlyingEvent.GetRemoveMethod(nonPublic) is { } m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRaiseMethod()
-        {
-            return _underlyingEvent.GetRaiseMethod() is { } m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol? GetRaiseMethod(bool nonPublic)
-        {
-            return _underlyingEvent.GetRaiseMethod(nonPublic) is { } m ? ResolveMethodSymbol(m) : null;
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetOtherMethods()
-        {
-            return ResolveMethodSymbols(_underlyingEvent.GetOtherMethods());
-        }
-
-        /// <inheritdoc />
-        public IMethodSymbol[] GetOtherMethods(bool nonPublic)
-        {
-            return ResolveMethodSymbols(_underlyingEvent.GetOtherMethods(nonPublic));
+            return _customAttributes;
         }
 
     }

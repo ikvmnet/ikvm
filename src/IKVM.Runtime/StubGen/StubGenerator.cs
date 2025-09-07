@@ -222,7 +222,7 @@ namespace IKVM.Runtime.StubGen
         /// <param name="type"></param>
         void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type)
         {
-            if (type.TypeAsBaseType.IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false))
+            if (type.TypeAsBaseType.IsDefined((Type)context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false))
                 builder.Attributes.Deprecated();
         }
 
@@ -541,6 +541,7 @@ namespace IKVM.Runtime.StubGen
         void AddDeprecatedAttribute(ClassFileBuilder builder, RuntimeJavaType type, RuntimeJavaField field, AttributeTableBuilder attributes)
         {
             // .NET ObsoleteAttribute translates to Deprecated attribute
+
             if (field.GetField() != null && field.GetField().IsDefined(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).AsReflection(), false))
                 attributes.Deprecated();
         }

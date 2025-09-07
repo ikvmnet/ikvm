@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using IKVM.CoreLib.System;
+using IKVM.CoreLib.Collections;
 
 namespace IKVM.CoreLib.Modules
 {

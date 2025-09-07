@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.CoreLib.Buffers;
+using IKVM.Text;
 
 namespace IKVM.CoreLib.Diagnostics
 {
