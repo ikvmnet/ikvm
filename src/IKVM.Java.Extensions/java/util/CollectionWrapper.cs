@@ -44,10 +44,7 @@ namespace java.util
         }
 
         /// <inheritdoc />
-        public bool Remove(T item)
-        {
-            return _collection.remove(item);
-        }
+        public bool Remove(T item) => _collection.remove(item);
 
     }
 

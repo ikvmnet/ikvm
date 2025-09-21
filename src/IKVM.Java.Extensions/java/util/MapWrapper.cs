@@ -20,7 +20,7 @@ namespace java.util
         /// <exception cref="ArgumentNullException"></exception>
         public MapWrapper(Map map)
         {
-            this._map = map ?? throw new ArgumentNullException(nameof(map));
+            _map = map ?? throw new ArgumentNullException(nameof(map));
         }
 
         /// <inheritdoc />
