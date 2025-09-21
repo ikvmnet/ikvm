@@ -13,7 +13,7 @@ namespace java.lang
     class IterableWrapper<T> : IEnumerable<T>
     {
 
-        readonly Iterable iterable;
+        readonly Iterable _iterable;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,7 +22,7 @@ namespace java.lang
         /// <exception cref="ArgumentNullException"></exception>
         public IterableWrapper(Iterable iterable)
         {
-            this.iterable = iterable ?? throw new ArgumentNullException(nameof(iterable));
+            _iterable = iterable ?? throw new ArgumentNullException(nameof(iterable));
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace java.lang
         /// <returns></returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return new IteratorWrapper<T>(iterable.iterator());
+            return new IteratorWrapper<T>(_iterable.iterator());
         }
 
         IEnumerator IEnumerable.GetEnumerator()
