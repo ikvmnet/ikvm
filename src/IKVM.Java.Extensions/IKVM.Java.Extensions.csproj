@@ -5,10 +5,10 @@
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
-		<Nullable>true</Nullable>
+		<Nullable>enable</Nullable>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Description>Various extensions for working against Java types.</Description>
+		<Description>Various extensions for bridging the gap between .NET and Java.</Description>
     </PropertyGroup>
 
 	<ItemGroup>

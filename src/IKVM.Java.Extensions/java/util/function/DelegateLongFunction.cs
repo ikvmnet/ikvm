@@ -10,7 +10,7 @@ namespace java.util.function
     public class DelegateLongFunction<TResult> : LongFunction
     {
 
-        readonly Func<long, TResult> func;
+        readonly Func<long, TResult> _func;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,12 +19,12 @@ namespace java.util.function
         /// <exception cref="ArgumentNullException"></exception>
         public DelegateLongFunction(Func<long, TResult> func)
         {
-            this.func = func ?? throw new ArgumentNullException(nameof(func));
+            _func = func ?? throw new ArgumentNullException(nameof(func));
         }
 
-        public object apply(long t)
+        public object? apply(long t)
         {
-            return func(t);
+            return _func(t);
         }
 
     }

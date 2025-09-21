@@ -11,7 +11,7 @@ namespace java.util.function
     public class DelegateConsumer<T> : Consumer
     {
 
-        readonly Action<T> action;
+        readonly Action<T> _action;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,12 +20,12 @@ namespace java.util.function
         /// <exception cref="ArgumentNullException"></exception>
         public DelegateConsumer(Action<T> action)
         {
-            this.action = action ?? throw new ArgumentNullException(nameof(action));
+            _action = action ?? throw new ArgumentNullException(nameof(action));
         }
 
         public void accept(object t)
         {
-            action((T)t);
+            _action((T)t);
         }
 
         public Consumer andThen(Consumer other)

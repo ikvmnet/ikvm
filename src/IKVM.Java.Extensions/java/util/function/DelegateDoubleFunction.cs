@@ -10,7 +10,7 @@ namespace java.util.function
     public class DelegateDoubleFunction<TResult> : DoubleFunction
     {
 
-        readonly Func<double, TResult> func;
+        readonly Func<double, TResult> _func;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,12 +19,12 @@ namespace java.util.function
         /// <exception cref="ArgumentNullException"></exception>
         public DelegateDoubleFunction(Func<double, TResult> func)
         {
-            this.func = func ?? throw new ArgumentNullException(nameof(func));
+            _func = func ?? throw new ArgumentNullException(nameof(func));
         }
 
-        public object apply(double t)
+        public object? apply(double t)
         {
-            return func(t);
+            return _func(t);
         }
 
     }

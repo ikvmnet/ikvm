@@ -10,7 +10,7 @@ namespace java.util.function
     public class DelegateIntFunction<TResult> : IntFunction
     {
 
-        readonly Func<int, TResult> func;
+        readonly Func<int, TResult> _func;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,12 +19,12 @@ namespace java.util.function
         /// <exception cref="ArgumentNullException"></exception>
         public DelegateIntFunction(Func<int, TResult> func)
         {
-            this.func = func ?? throw new ArgumentNullException(nameof(func));
+            _func = func ?? throw new ArgumentNullException(nameof(func));
         }
 
-        public object apply(int t)
+        public object? apply(int t)
         {
-            return func(t);
+            return _func(t);
         }
 
     }

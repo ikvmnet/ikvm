@@ -8,9 +8,9 @@ namespace java.util
     class EnumerationWrapper<T> : IEnumerator<T>
     {
 
-        readonly Enumeration enumeration;
-        T current;
-        int position = -1;
+        readonly Enumeration _enumeration;
+        T? _current;
+        int _position = -1;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,18 +19,18 @@ namespace java.util
         /// <exception cref="ArgumentNullException"></exception>
         public EnumerationWrapper(Enumeration enumeration)
         {
-            this.enumeration = enumeration ?? throw new ArgumentNullException(nameof(enumeration));
+            _enumeration = enumeration ?? throw new ArgumentNullException(nameof(enumeration));
         }
 
         /// <summary>
         /// Gets the current element.
         /// </summary>
-        public T Current => position > -1 ? current : throw new InvalidOperationException();
+        public T Current => _position > -1 ? _current! : throw new InvalidOperationException();
 
         /// <summary>
         /// Gets the current element.
         /// </summary>
-        object IEnumerator.Current => current;
+        object? IEnumerator.Current => _current;
 
         /// <summary>
         /// Moves to the next instance.
@@ -39,10 +39,10 @@ namespace java.util
         /// <exception cref="NotImplementedException"></exception>
         public bool MoveNext()
         {
-            if (enumeration.hasMoreElements())
+            if (_enumeration.hasMoreElements())
             {
-                current = (T)enumeration.nextElement();
-                position++;
+                _current = (T)_enumeration.nextElement();
+                _position++;
                 return true;
             }
 

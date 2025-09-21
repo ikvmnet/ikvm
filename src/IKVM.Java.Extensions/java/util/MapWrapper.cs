@@ -11,7 +11,7 @@ namespace java.util
     class MapWrapper<TKey, TValue> : IDictionary<TKey, TValue>
     {
 
-        readonly Map map;
+        readonly Map _map;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,78 +20,94 @@ namespace java.util
         /// <exception cref="ArgumentNullException"></exception>
         public MapWrapper(Map map)
         {
-            this.map = map ?? throw new ArgumentNullException(nameof(map));
+            this._map = map ?? throw new ArgumentNullException(nameof(map));
         }
 
+        /// <inheritdoc />
         public TValue this[TKey key]
         {
-            get => (TValue)map.get(key);
-            set => map.put(key, value);
+            get => (TValue)_map.get(key);
+            set => _map.put(key, value);
         }
 
-        public ICollection<TKey> Keys => map.keySet().AsCollection<TKey>();
+        /// <inheritdoc />
+        public ICollection<TKey> Keys => _map.keySet().AsCollection<TKey>();
 
-        public ICollection<TValue> Values => map.values().AsCollection<TValue>();
+        /// <inheritdoc />
+        public ICollection<TValue> Values => _map.values().AsCollection<TValue>();
 
-        public int Count => map.size();
+        /// <inheritdoc />
+        public int Count => _map.size();
 
+        /// <inheritdoc />
         public bool IsReadOnly => false;
 
-        public void Add(TKey key, TValue value) => map.put(key, value);
+        /// <inheritdoc />
+        public void Add(TKey key, TValue value) => _map.put(key, value);
 
-        public void Add(KeyValuePair<TKey, TValue> item) => map.put(item.Key, item.Value);
+        /// <inheritdoc />
+        public void Add(KeyValuePair<TKey, TValue> item) => _map.put(item.Key, item.Value);
 
-        public void Clear() => map.clear();
+        /// <inheritdoc />
+        public void Clear() => _map.clear();
 
+        /// <inheritdoc />
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return map.containsKey(item.Key) && map.get(item.Key).Equals(item.Value);
+            return _map.containsKey(item.Key) && _map.get(item.Key).Equals(item.Value);
         }
 
+        /// <inheritdoc />
         public bool ContainsKey(TKey key)
         {
-            return map.containsKey(key);
+            return _map.containsKey(key);
         }
 
+        /// <inheritdoc />
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
             foreach (var entry in this)
                 array[arrayIndex++] = entry;
         }
 
+        /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return map.entrySet().AsEnumerable<Map.Entry>().Select(i => new KeyValuePair<TKey, TValue>((TKey)i.getKey(), (TValue)i.getValue())).GetEnumerator();
+            return _map.entrySet().AsEnumerable<Map.Entry>().Select(i => new KeyValuePair<TKey, TValue>((TKey)i.getKey(), (TValue)i.getValue())).GetEnumerator();
         }
 
+        /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            if (map.containsKey(key))
+            if (_map.containsKey(key))
             {
-                map.remove(key);
+                _map.remove(key);
                 return true;
             }
 
             return false;
         }
 
+        /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            return map.remove(item.Key, item.Value);
+            return _map.remove(item.Key, item.Value);
         }
 
+        /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value)
         {
-            if (map.containsKey(key))
+            if (_map.containsKey(key))
             {
-                value = (TValue) map.get(key);
+                value = (TValue) _map.get(key);
                 return true;
             }
 
-            value = default;
+            value = default!;
             return false;
         }
 
+        /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();

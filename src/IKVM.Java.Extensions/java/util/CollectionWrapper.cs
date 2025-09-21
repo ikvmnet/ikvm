@@ -9,7 +9,7 @@ namespace java.util
     class CollectionWrapper<T> : IterableWrapper<T>, ICollection<T>
     {
 
-        readonly Collection collection;
+        internal readonly Collection _collection;
 
         /// <summary>
         /// Initializes a new instance.
@@ -18,28 +18,35 @@ namespace java.util
         /// <exception cref="ArgumentNullException"></exception>
         public CollectionWrapper(Collection collection) : base(collection)
         {
-            this.collection = collection ?? throw new ArgumentNullException(nameof(collection));
+            _collection = collection ?? throw new ArgumentNullException(nameof(collection));
         }
 
-        public int Count => collection.size();
+        /// <inheritdoc />
+        public int Count => _collection.size();
 
+        /// <inheritdoc />
         public bool IsReadOnly => false;
 
-        public void Add(T item) => collection.add(item);
+        /// <inheritdoc />
+        public void Add(T item) => _collection.add(item);
 
-        public void Clear() => collection.clear();
+        /// <inheritdoc />
+        public void Clear() => _collection.clear();
 
-        public bool Contains(T item) => collection.contains(item);
+        /// <inheritdoc />
+        public bool Contains(T item) => _collection.contains(item);
 
+        /// <inheritdoc />
         public void CopyTo(T[] array, int arrayIndex)
         {
             foreach (var entry in this)
                 array[arrayIndex++] = entry;
         }
 
+        /// <inheritdoc />
         public bool Remove(T item)
         {
-            return collection.remove(item);
+            return _collection.remove(item);
         }
 
     }
