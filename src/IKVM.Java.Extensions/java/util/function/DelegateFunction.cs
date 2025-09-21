@@ -3,6 +3,11 @@
 namespace java.util.function
 {
 
+    /// <summary>
+    /// Implementation of <see cref="Function"/> that forwards to a <see cref="Func{T, TResult}"/>.
+    /// </summary>
+    /// <typeparam name="TArg"></typeparam>
+    /// <typeparam name="TResult"></typeparam>
     public class DelegateFunction<TArg, TResult> : Function
     {
 
@@ -31,6 +36,38 @@ namespace java.util.function
         public object apply(object t)
         {
             return func((TArg)t);
+        }
+
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="Function"/> that forwards to a <see cref="Func{T, TResult}"/>.
+    /// </summary>
+    /// <typeparam name="TArg"></typeparam>
+    /// <typeparam name="TResult"></typeparam>
+    public class DelegateFunction<TArg1, TArg2, TResult> : BiFunction
+    {
+
+        readonly Func<TArg1, TArg2, TResult> func;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="func"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DelegateFunction(Func<TArg1, TArg2, TResult> func)
+        {
+            this.func = func ?? throw new ArgumentNullException(nameof(func));
+        }
+
+        public BiFunction andThen(Function after)
+        {
+            return BiFunction.__DefaultMethods.andThen(this, after);
+        }
+
+        public object apply(object t1, object t2)
+        {
+            return func((TArg1)t1, (TArg2)t2);
         }
 
     }
