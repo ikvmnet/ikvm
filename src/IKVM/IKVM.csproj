@@ -10,6 +10,7 @@
         <NoWarn>NU5118</NoWarn>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <PackIkvmJava>true</PackIkvmJava>
+	    <PackIkvmLibs>true</PackIkvmLibs>
     </PropertyGroup>
 
     <ItemGroup>
