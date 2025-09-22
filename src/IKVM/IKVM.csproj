@@ -11,6 +11,7 @@
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <PackIkvmJava>true</PackIkvmJava>
 	    <PackIkvmLibs>true</PackIkvmLibs>
+	    <PackIkvmDlls>true</PackIkvmDlls>
     </PropertyGroup>
 
     <ItemGroup>

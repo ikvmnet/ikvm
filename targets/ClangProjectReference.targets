@@ -77,7 +77,8 @@
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <CopyToOutputDirectory Condition=" '$(RuntimeIdentifier)' != '' And '$(RuntimeIdentifier)' != '%(_ClangProjectReferenceExecutableItems.TargetIdentifier)' ">Never</CopyToOutputDirectory>
                 <PackagePath>runtimes\%(_ClangProjectReferenceExecutableItems.TargetIdentifier)\native\%(_ClangProjectReferenceExecutableItems.Filename)%(_ClangProjectReferenceExecutableItems.Extension)</PackagePath>
-                <Pack Condition=" '%(_ClangProjectReferenceExecutableItems.Pack)' == '' ">true</Pack>
+				<Pack>true</Pack>
+                <Pack Condition=" '%(_ClangProjectReferenceExecutableItems.Pack)' != '' ">%(_ClangProjectReferenceExecutableItems.Pack)</Pack>
             </_ClangProjectReferenceOutputItems>
         </ItemGroup>
         <CreateItem Include="@(_ClangProjectReferenceOutputItems)" AdditionalMetadata="%(_ClangProjectReferenceOutputItems.AdditionalItemMetadata)">
