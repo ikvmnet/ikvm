@@ -7,7 +7,7 @@ namespace java.util
     class ListWrapper<T> : CollectionWrapper<T>, IList<T>
     {
 
-        readonly List list;
+        readonly List _list;
 
         /// <summary>
         /// Initializes a new instance.
@@ -17,19 +17,24 @@ namespace java.util
         public ListWrapper(List list) :
             base(list)
         {
-            this.list = list ?? throw new ArgumentNullException(nameof(list));
+            _list = list ?? throw new ArgumentNullException(nameof(list));
         }
 
+        /// <inheritdoc />
         public T this[int index] 
         {
-            get => (T)list.get(index);
-            set => list.set(index, value); }
+            get => (T)_list.get(index);
+            set => _list.set(index, value);
+        }
 
-        public int IndexOf(T item) => list.indexOf(item);
+        /// <inheritdoc />
+        public int IndexOf(T item) => _list.indexOf(item);
 
-        public void Insert(int index, T item) => list.add(index, item);
+        /// <inheritdoc />
+        public void Insert(int index, T item) => _list.add(index, item);
 
-        public void RemoveAt(int index) => list.remove(index);
+        /// <inheritdoc />
+        public void RemoveAt(int index) => _list.remove(index);
 
     }
 

@@ -11,19 +11,19 @@ namespace java.util.function
     /// Wraps a <see cref="Stream"/> to produce an <see cref="IEnumerable{T}"/>.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    class StreamWrapper<T> : IEnumerable<T>
+    struct StreamWrapper<T> : IEnumerable<T>
     {
 
-        readonly Stream stream;
+        readonly Stream _stream;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="stream"></param>
-        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public StreamWrapper(Stream stream)
         {
-            this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
+            this._stream = stream ?? throw new ArgumentNullException(nameof(stream));
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace java.util.function
         /// <returns></returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return stream.iterator().AsEnumerator<T>();
+            return _stream.iterator().AsEnumerator<T>();
         }
 
         /// <summary>

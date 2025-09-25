@@ -23,6 +23,7 @@
 */
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Runtime.JNI
 {
@@ -46,8 +47,8 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         internal static JNIEnvContext Current
         {
-            get => current;
-            set => current = value;
+            [MethodImpl(MethodImplOptions.NoOptimization)] get => current;
+            [MethodImpl(MethodImplOptions.NoOptimization)] set => current = value;
         }
 
         internal const int JNI_OK = 0;

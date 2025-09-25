@@ -10,7 +10,7 @@ namespace java.util.function
     public class DelegatePredicate<TArg> : Predicate
     {
 
-        readonly Func<TArg, bool> func;
+        readonly Func<TArg, bool> _func;
 
         /// <summary>
         /// Initializes a new instance.
@@ -18,7 +18,7 @@ namespace java.util.function
         /// <param name="func"></param>
         public DelegatePredicate(Func<TArg, bool> func)
         {
-            this.func = func ?? throw new ArgumentNullException(nameof(func));
+            _func = func ?? throw new ArgumentNullException(nameof(func));
         }
 
         public Predicate and(Predicate other)
@@ -38,7 +38,7 @@ namespace java.util.function
 
         public bool test(object t)
         {
-            return func((TArg)t);
+            return _func((TArg)t);
         }
 
     }

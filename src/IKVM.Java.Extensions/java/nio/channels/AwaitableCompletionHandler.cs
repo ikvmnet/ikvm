@@ -41,18 +41,18 @@ namespace java.nio.channels
     public class AwaitableCompletionHandler<V, A> : CompletionHandler
     {
 
-        readonly TaskCompletionSource<V> source = new TaskCompletionSource<V>();
-        A attachment;
+        readonly TaskCompletionSource<V> _source = new TaskCompletionSource<V>();
+        A? _attachment;
 
         /// <summary>
         /// Gets the attachment which is set after the handler completes.
         /// </summary>
-        public A Attachment => attachment;
+        public A? Attachment => _attachment;
 
         /// <summary>
         /// Gets the task that can be awaited.
         /// </summary>
-        public Task<V> Task => source.Task;
+        public Task<V> Task => _source.Task;
 
         /// <summary>
         /// Gets an awaiter used to await this completion handler.
@@ -66,8 +66,8 @@ namespace java.nio.channels
         /// <param name="attachment"></param>
         void CompletionHandler.completed(object result, object attachment)
         {
-            this.attachment = (A)attachment;
-            source.SetResult((V)result);
+            _attachment = (A)attachment;
+            _source.SetResult((V)result);
         }
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace java.nio.channels
         /// <param name="attachment"></param>
         void CompletionHandler.failed(Exception exc, object attachment)
         {
-            this.attachment = (A)attachment;
-            source.SetException(exc);
+            _attachment = (A)attachment;
+            _source.SetException(exc);
         }
 
     }

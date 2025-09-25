@@ -156,6 +156,9 @@
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.osx-arm64\IKVM.Image.JDK.runtime.osx-arm64.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+		<PackageProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj">
+			<PackageTargetPath>.</PackageTargetPath>
+		</PackageProjectReference>
     </ItemGroup>
 
 </Project>

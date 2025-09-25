@@ -18,6 +18,8 @@
             </_ReferencedClangProjectReference>
             <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
                 <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
+				<Pack>false</Pack>
+				<Pack Condition=" '$(PackIkvmDlls)' == 'true' ">$(PackIkvmDlls)</Pack>
             </ClangProjectReference>
         </ItemGroup>
     </Target>

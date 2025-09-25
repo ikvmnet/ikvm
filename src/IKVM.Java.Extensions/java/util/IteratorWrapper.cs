@@ -8,9 +8,9 @@ namespace java.util
     class IteratorWrapper<T> : IEnumerator<T>
     {
 
-        readonly Iterator iterator;
-        T current;
-        int position = -1;
+        readonly Iterator _iterator;
+        T? _current;
+        int _position = -1;
 
         /// <summary>
         /// Initializes a new instance.
@@ -19,18 +19,18 @@ namespace java.util
         /// <exception cref="ArgumentNullException"></exception>
         public IteratorWrapper(Iterator iterator)
         {
-            this.iterator = iterator ?? throw new ArgumentNullException(nameof(iterator));
+            _iterator = iterator ?? throw new ArgumentNullException(nameof(iterator));
         }
 
         /// <summary>
         /// Gets the current element.
         /// </summary>
-        public T Current => position > -1 ? current : throw new InvalidOperationException();
+        public T Current => _position > -1 ? _current! : throw new InvalidOperationException();
 
         /// <summary>
         /// Gets the current element.
         /// </summary>
-        object IEnumerator.Current => current;
+        object? IEnumerator.Current => _current;
 
         /// <summary>
         /// Moves to the next instance.
@@ -38,10 +38,10 @@ namespace java.util
         /// <returns></returns>
         public bool MoveNext()
         {
-            if (iterator.hasNext())
+            if (_iterator.hasNext())
             {
-                current = (T)iterator.next();
-                position++;
+                _current = (T)_iterator.next();
+                _position++;
                 return true;
             }
 
