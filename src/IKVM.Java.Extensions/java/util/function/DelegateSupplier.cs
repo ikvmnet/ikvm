@@ -4,10 +4,9 @@ namespace java.util.function
 {
 
     /// <summary>
-    /// Implementation of <see cref="Supplier"/> that forwards to a <see cref="Func{TResult}"/>.
+    /// Implementation of <see cref="Supplier"/> that forwards to a <see cref="Func{T}"/>.
     /// </summary>
-    /// <typeparam name="TArg"></typeparam>
-    /// <typeparam name="TResult"></typeparam>
+    /// <typeparam name="T"></typeparam>
     public class DelegateSupplier<T> : Supplier
     {
 
