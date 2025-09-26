@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("stind_i4")]
-    public sealed class Stind_i4 : Simple
+    internal sealed class Stind_i4 : Simple
     {
 
         /// <summary>

@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("throw")]
-    public sealed class Throw : Simple
+    internal sealed class Throw : Simple
     {
 
         /// <summary>

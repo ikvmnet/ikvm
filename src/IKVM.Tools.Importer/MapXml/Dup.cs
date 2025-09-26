@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("dup")]
-    public sealed class Dup : Simple
+    internal sealed class Dup : Simple
     {
 
         /// <summary>

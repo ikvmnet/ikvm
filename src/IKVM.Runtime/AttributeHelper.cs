@@ -441,7 +441,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(MethodBuilder mb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 
 			mb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -450,7 +450,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), []);
+				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 			}
 
 			tb.SetCustomAttribute(deprecatedAttribute);
@@ -459,7 +459,7 @@ namespace IKVM.Runtime
 		internal void SetDeprecatedAttribute(FieldBuilder fb)
 		{
 			if (deprecatedAttribute == null)
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 
 			fb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -468,7 +468,7 @@ namespace IKVM.Runtime
 		{
 			if (deprecatedAttribute == null)
 			{
-				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), new object[0]);
+				deprecatedAttribute = new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ObsoleteAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 			}
 			pb.SetCustomAttribute(deprecatedAttribute);
 		}
@@ -925,7 +925,7 @@ namespace IKVM.Runtime
 
 		internal void SetParamArrayAttribute(ParameterBuilder pb)
 		{
-			paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), []);
+			paramArrayAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(ParamArrayAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 			pb.SetCustomAttribute(paramArrayAttribute);
 		}
 

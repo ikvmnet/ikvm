@@ -34,7 +34,7 @@ namespace IKVM.Attributes
     /// Marks an assembly such that it's types are considered to be loaded by the specified class loader type.
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly)]
-	public sealed class CustomAssemblyClassLoaderAttribute : Attribute
+	internal sealed class CustomAssemblyClassLoaderAttribute : Attribute
 	{
 
 		readonly Type type;

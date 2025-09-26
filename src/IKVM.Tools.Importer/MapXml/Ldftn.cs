@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldftn")]
-    public sealed class Ldftn : Call
+    internal sealed class Ldftn : Call
     {
 
         /// <summary>

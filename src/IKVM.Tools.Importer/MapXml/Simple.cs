@@ -30,7 +30,7 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public abstract class Simple : Instruction
+    internal abstract class Simple : Instruction
     {
 
         /// <summary>

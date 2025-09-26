@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ret")]
-    public sealed class Ret : Simple
+    internal sealed class Ret : Simple
     {
 
         /// <summary>

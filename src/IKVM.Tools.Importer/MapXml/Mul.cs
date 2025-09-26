@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("mul")]
-    public sealed class Mul : Simple
+    internal sealed class Mul : Simple
     {
 
         /// <summary>

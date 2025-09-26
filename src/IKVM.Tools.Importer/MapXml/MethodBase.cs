@@ -31,7 +31,7 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public abstract class MethodBase : MapXmlElement
+    internal abstract class MethodBase : MapXmlElement
     {
 
         /// <summary>

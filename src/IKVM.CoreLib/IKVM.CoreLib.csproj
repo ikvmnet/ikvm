@@ -18,6 +18,7 @@
         <InternalsVisibleTo Include="IKVM.Tools.Tests" />
         <InternalsVisibleTo Include="IKVM.MSBuild.Tasks" />
         <InternalsVisibleTo Include="IKVM.Util" />
+        <InternalsVisibleTo Include="IKVM.Reflection.Tests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -38,8 +39,12 @@
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <Reference Include="System.Security" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.3" />
     </ItemGroup>
 
     <ItemGroup>

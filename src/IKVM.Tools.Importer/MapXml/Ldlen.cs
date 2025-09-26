@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldlen")]
-    public sealed class Ldlen : Simple
+    internal sealed class Ldlen : Simple
     {
 
         /// <summary>

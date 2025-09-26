@@ -31,7 +31,7 @@ namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
-    public sealed class RemappedTypeAttribute : Attribute
+    internal sealed class RemappedTypeAttribute : Attribute
     {
 
         private Type type;

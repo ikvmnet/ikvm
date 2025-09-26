@@ -37,7 +37,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("call")]
-    public class Call : Instruction
+    internal class Call : Instruction
     {
 
         /// <summary>

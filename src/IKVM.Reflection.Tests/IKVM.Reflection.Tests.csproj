@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+        <ProjectReference Include="..\IKVM.CoreLib\IKVM.CoreLib.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
     </ItemGroup>
 

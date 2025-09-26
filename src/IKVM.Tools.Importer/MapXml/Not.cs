@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("not")]
-    public sealed class Not : Simple
+    internal sealed class Not : Simple
     {
 
         /// <summary>

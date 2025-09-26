@@ -29,7 +29,7 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class ClassInitializer : MethodBase
+    internal sealed class ClassInitializer : MethodBase
     {
 
         /// <summary>

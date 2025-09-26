@@ -30,7 +30,7 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public abstract class MethodConstructorBase : MethodBase
+    internal abstract class MethodConstructorBase : MethodBase
     {
 
         public static void Load(MethodConstructorBase o, XElement element)

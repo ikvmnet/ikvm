@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldarg_2")]
-    public sealed class LdArg_2 : Simple
+    internal sealed class LdArg_2 : Simple
     {
 
         /// <summary>

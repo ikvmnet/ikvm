@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("sub")]
-    public sealed class Sub : Simple
+    internal sealed class Sub : Simple
     {
 
         /// <summary>

@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("xor")]
-    public sealed class Xor : Simple
+    internal sealed class Xor : Simple
     {
 
         /// <summary>

@@ -31,7 +31,7 @@ namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-	public sealed class RemappedClassAttribute : Attribute
+    internal sealed class RemappedClassAttribute : Attribute
 	{
 
 		private string name;

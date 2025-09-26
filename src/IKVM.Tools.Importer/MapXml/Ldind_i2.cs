@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldind_i2")]
-    public sealed class Ldind_i2 : Simple
+    internal sealed class Ldind_i2 : Simple
     {
 
         /// <summary>

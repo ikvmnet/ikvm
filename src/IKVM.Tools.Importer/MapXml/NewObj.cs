@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("newobj")]
-    public sealed class NewObj : Call
+    internal sealed class NewObj : Call
     {
 
         /// <summary>

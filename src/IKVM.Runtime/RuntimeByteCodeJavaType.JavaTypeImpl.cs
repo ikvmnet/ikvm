@@ -1090,7 +1090,7 @@ namespace IKVM.Runtime
                 }
                 if (fld.IsTransient)
                 {
-                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), []);
+                    var transientAttrib = new CustomAttributeBuilder(wrapper.Context.Resolver.ResolveCoreType(typeof(NonSerializedAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
                     field.SetCustomAttribute(transientAttrib);
                 }
 #if IMPORTER

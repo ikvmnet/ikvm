@@ -59,9 +59,9 @@ namespace IKVM.Runtime
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        CustomAttributeBuilder SerializableAttribute => serializableAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]).AsReflection(), []);
+        CustomAttributeBuilder SerializableAttribute => serializableAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SerializableAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 
-        CustomAttributeBuilder SecurityCriticalAttribute => securityCriticalAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]).AsReflection(), []);
+        CustomAttributeBuilder SecurityCriticalAttribute => securityCriticalAttribute ??= new CustomAttributeBuilder(context.Resolver.ResolveCoreType(typeof(SecurityCriticalAttribute).FullName).GetConstructor([]).AsReflection(), Array.Empty<object>());
 
         RuntimeJavaType TypeOfISerializable => typeOfISerializable ??= context.ClassLoaderFactory.GetJavaTypeFromType(context.Resolver.ResolveCoreType(typeof(ISerializable).FullName).AsReflection());
 

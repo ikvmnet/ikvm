@@ -28,7 +28,7 @@ using System.Xml.Linq;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Implements : MapXmlElement
+    internal sealed class Implements : MapXmlElement
     {
 
         /// <summary>

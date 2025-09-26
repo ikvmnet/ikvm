@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("callvirt")]
-    public sealed class Callvirt : Call
+    internal sealed class Callvirt : Call
     {
 
         /// <summary>

@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("volatile")]
-    public sealed class Volatile : Simple
+    internal sealed class Volatile : Simple
     {
 
         /// <summary>

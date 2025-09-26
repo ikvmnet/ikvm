@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("conv_i8")]
-    public sealed class Conv_I8 : Simple
+    internal sealed class Conv_I8 : Simple
     {
 
         /// <summary>

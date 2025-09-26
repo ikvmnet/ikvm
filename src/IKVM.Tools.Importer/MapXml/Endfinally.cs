@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("endfinally")]
-    public sealed class Endfinally : Simple
+    internal sealed class Endfinally : Simple
     {
 
         /// <summary>

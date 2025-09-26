@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("cpblk")]
-    public sealed class Cpblk : Simple
+    internal sealed class Cpblk : Simple
     {
 
         /// <summary>

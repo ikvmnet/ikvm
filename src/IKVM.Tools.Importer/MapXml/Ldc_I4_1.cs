@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldc_i4_1")]
-    public sealed class Ldc_I4_1 : Simple
+    internal sealed class Ldc_I4_1 : Simple
     {
 
         /// <summary>

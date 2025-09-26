@@ -29,7 +29,7 @@ using IKVM.Runtime;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Constructor : MethodConstructorBase
+    internal sealed class Constructor : MethodConstructorBase
     {
 
         /// <summary>

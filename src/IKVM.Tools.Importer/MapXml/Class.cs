@@ -4,7 +4,7 @@ using System.Xml.Linq;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public class Class : MapXmlElement
+    internal class Class : MapXmlElement
     {
 
         /// <summary>

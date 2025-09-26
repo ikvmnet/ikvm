@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldvirtftn")]
-    public sealed class Ldvirtftn : Call
+    internal sealed class Ldvirtftn : Call
     {
 
         /// <summary>

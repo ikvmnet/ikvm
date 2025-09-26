@@ -33,7 +33,7 @@ namespace IKVM.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
-	public sealed class ThrowsAttribute : Attribute
+    internal sealed class ThrowsAttribute : Attribute
 	{
 
 		internal string[] classes;

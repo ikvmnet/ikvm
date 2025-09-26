@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ceq")]
-    public sealed class Ceq : Simple
+    internal sealed class Ceq : Simple
     {
 
         /// <summary>

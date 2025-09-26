@@ -30,7 +30,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("ldnull")]
-    public sealed class Ldnull : Simple
+    internal sealed class Ldnull : Simple
     {
 
         /// <summary>

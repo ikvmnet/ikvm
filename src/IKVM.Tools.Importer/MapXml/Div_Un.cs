@@ -31,7 +31,7 @@ namespace IKVM.Tools.Importer.MapXml
 {
 
     [Instruction("div_un")]
-    public sealed class Div_Un : Simple
+    internal sealed class Div_Un : Simple
     {
 
         /// <summary>
