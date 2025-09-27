@@ -24,7 +24,7 @@
 namespace IKVM.Reflection
 {
 
-    public readonly struct ParameterModifier
+    internal readonly struct ParameterModifier
     {
 
         readonly bool[] values;

@@ -24,7 +24,7 @@
 
 namespace IKVM.Reflection.Emit
 {
-    public readonly record struct SignatureToken(int Token)
+    internal readonly record struct SignatureToken(int Token)
     {
 
         public static readonly SignatureToken Empty;

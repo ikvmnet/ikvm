@@ -17,7 +17,7 @@ namespace IKVM.Reflection.Emit
     /// stream. Labels are created by using <see cref="ILGenerator.DefineLabel"/> and their position is set
     /// by using <see cref="ILGenerator.MarkLabel"/>.
     /// </remarks>
-    public readonly struct Label : IEquatable<Label>
+    internal readonly struct Label : IEquatable<Label>
     {
         internal readonly int m_label;
 

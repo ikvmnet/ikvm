@@ -8,7 +8,7 @@ using IKVM.ByteCode;
 namespace IKVM.CoreLib.Modules
 {
 
-    public readonly partial struct ModuleDescriptor
+    internal readonly partial struct ModuleDescriptor
     {
 
         /// <summary>

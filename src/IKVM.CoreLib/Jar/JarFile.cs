@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Jar
     /// <summary>
     /// Provides some utility methods for working with JAR files.
     /// </summary>
-    public class JarFile : IDisposable
+    internal class JarFile : IDisposable
     {
 
         const string META_INF = "META-INF/";

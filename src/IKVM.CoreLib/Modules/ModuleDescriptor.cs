@@ -15,7 +15,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// A module descriptor describes a named module and defines methods to obtain each of its components.
     /// </summary>
-    public readonly partial struct ModuleDescriptor : IComparable<ModuleDescriptor>
+    internal readonly partial struct ModuleDescriptor : IComparable<ModuleDescriptor>
     {
 
         public static bool operator ==(ModuleDescriptor x, ModuleDescriptor y) => x.Equals(y);

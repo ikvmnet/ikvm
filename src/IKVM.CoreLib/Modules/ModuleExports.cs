@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// A package exported by a module, may be qualified or unqualified.
     /// </summary>
-    public readonly struct ModuleExports : IComparable<ModuleExports>
+    internal readonly struct ModuleExports : IComparable<ModuleExports>
     {
 
         readonly ModuleExportsFlag _modifiers;

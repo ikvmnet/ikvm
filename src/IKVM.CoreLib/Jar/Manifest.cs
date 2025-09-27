@@ -10,7 +10,7 @@ namespace IKVM.CoreLib.Jar
     /// Manifest Attributes as well as per-entry Attributes. For information on the Manifest format, please see the
     /// Manifest format specification.
     /// </summary>
-    public class Manifest
+    internal class Manifest
     {
 
         static readonly char[] ManifestNameValueSeparatorChars = [':'];

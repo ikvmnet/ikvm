@@ -25,7 +25,7 @@
 namespace IKVM.Reflection.Emit
 {
 
-    public readonly struct RelativeVirtualAddress
+    internal readonly struct RelativeVirtualAddress
     {
 
         public static RelativeVirtualAddress operator +(RelativeVirtualAddress rva, int offset)

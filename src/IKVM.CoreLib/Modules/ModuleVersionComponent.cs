@@ -6,7 +6,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// Describes a component of a module version.
     /// </summary>
-    public readonly struct ModuleVersionComponent : IComparable<ModuleVersionComponent>
+    internal readonly struct ModuleVersionComponent : IComparable<ModuleVersionComponent>
     {
 
         public static bool operator ==(ModuleVersionComponent x, ModuleVersionComponent y) => x.Equals(y);

@@ -11,7 +11,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// A service that a module provides one or more implementations of.
     /// </summary>
-    public readonly struct ModuleProvides : IComparable<ModuleProvides>
+    internal readonly struct ModuleProvides : IComparable<ModuleProvides>
     {
 
         readonly string _service;

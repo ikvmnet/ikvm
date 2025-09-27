@@ -9,7 +9,7 @@ namespace IKVM.CoreLib.Jar
     /// <summary>
     /// Describes an entry in a <see cref="JarFile"/>.
     /// </summary>
-    public readonly struct JarFileEntry
+    internal readonly struct JarFileEntry
     {
 
         readonly JarFile _jar;

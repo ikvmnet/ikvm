@@ -8,7 +8,7 @@ namespace IKVM.Reflection.Diagnostics
     /// <summary>
     /// Extensions to <see cref="ISymbolWriter"/> that provides additional capability for IKVM.
     /// </summary>
-    public interface IMetadataSymbolWriter : ISymbolWriter
+    internal interface IMetadataSymbolWriter : ISymbolWriter
     {
 
         /// <summary>

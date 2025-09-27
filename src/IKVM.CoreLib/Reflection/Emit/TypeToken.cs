@@ -25,7 +25,7 @@
 namespace IKVM.Reflection.Emit
 {
 
-    public readonly record struct TypeToken(int Token)
+    internal readonly record struct TypeToken(int Token)
 	{
 
 		public static readonly TypeToken Empty;

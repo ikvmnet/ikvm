@@ -12,7 +12,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// A package opened by a module, may be qualified or unqualified.
     /// </summary>
-    public readonly struct ModuleOpens : IComparable<ModuleOpens>
+    internal readonly struct ModuleOpens : IComparable<ModuleOpens>
     {
 
         readonly ModuleOpensFlag _modifiers;

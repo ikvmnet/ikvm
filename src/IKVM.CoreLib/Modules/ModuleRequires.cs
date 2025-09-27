@@ -8,7 +8,7 @@ namespace IKVM.CoreLib.Modules
     /// <summary>
     /// A dependence upon a module.
     /// </summary>
-    public readonly struct ModuleRequires : IComparable<ModuleRequires>
+    internal readonly struct ModuleRequires : IComparable<ModuleRequires>
     {
 
         readonly ModuleRequiresFlag _modifiers;
