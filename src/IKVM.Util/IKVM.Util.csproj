@@ -5,6 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.MSBuild.Tasks" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="System.IO.Compression" Version="4.3.0" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
