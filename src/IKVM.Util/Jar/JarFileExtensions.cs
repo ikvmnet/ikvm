@@ -12,7 +12,7 @@ namespace IKVM.Util.Jar
     /// <summary>
     /// Various extension methods for the <see cref="JarFile"/> class.
     /// </summary>
-    public static class JarFileExtensions
+    internal static class JarFileExtensions
     {
 
         /// <summary>

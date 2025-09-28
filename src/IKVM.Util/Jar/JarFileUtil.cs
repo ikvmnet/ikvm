@@ -11,7 +11,7 @@ namespace IKVM.Util.Jar
     /// <summary>
     /// Provides utilities for working with JAR files.
     /// </summary>
-    public static class JarFileUtil
+    internal static class JarFileUtil
     {
 
         /// <summary>
