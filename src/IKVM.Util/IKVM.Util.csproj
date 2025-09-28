@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.MSBuild.Tasks" />
+        <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
 
     <ItemGroup>
