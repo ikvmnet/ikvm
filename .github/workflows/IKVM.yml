@@ -144,9 +144,6 @@ jobs:
         versionSpec: 6.x
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v4
-      with:
-        useConfigFile: true
-        configFilePath: GitVersion.yml
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
@@ -719,8 +716,6 @@ jobs:
     - name: Execute GitVersion
       id: GitVersion
       uses: gittools/actions/gitversion/execute@v4
-      with:
-        useConfigFile: true
     - name: Download NuGet Packages
       uses: actions/download-artifact@v4
       with:
