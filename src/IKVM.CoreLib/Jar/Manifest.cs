@@ -29,19 +29,27 @@ namespace IKVM.CoreLib.Jar
             // read the remaining sections
             while (ReadSection(reader) is { } section)
             {
-                if (section.TryGetValue("Name", out var name))
+                if (_mainAttributes is null)
                 {
                     section = section.Remove("Name");
-                    attributes[name] = section;
+                    _mainAttributes = section;
                 }
                 else
                 {
-                    _mainAttributes = section;
+                    if (section.TryGetValue("Name", out var name))
+                    {
+                        section = section.Remove("Name");
+                        attributes[name] = section;
+                    }
+                    else
+                    {
+                        throw new FormatException("Non-main manifest section missing Name attribute.");
+                    }
                 }
             }
 
             if (_mainAttributes is null)
-                throw new Exception("Could not find main manifest section.");
+                throw new FormatException("Could not find main manifest section.");
 
             // finalize non-main sections
             _attributes = attributes.ToImmutable();
