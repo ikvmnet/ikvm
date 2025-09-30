@@ -139,11 +139,11 @@ jobs:
         version: latest
         locked: false
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
       with:
         useConfigFile: true
         configFilePath: GitVersion.yml
@@ -713,12 +713,12 @@ jobs:
       with:
         dotnet-version: 9.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
       id: GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
       with:
         useConfigFile: true
     - name: Download NuGet Packages
