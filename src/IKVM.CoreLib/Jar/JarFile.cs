@@ -137,7 +137,7 @@ namespace IKVM.CoreLib.Jar
         Manifest? GetOrReadManifest()
         {
             if (_manifest is null)
-                Interlocked.CompareExchange(ref _manifest, GetManifest(), null);
+                Interlocked.CompareExchange(ref _manifest, ReadManifest(), null);
 
             return _manifest;
         }
@@ -146,7 +146,7 @@ namespace IKVM.CoreLib.Jar
         /// Gets the jar file manifest, or null if none.
         /// </summary>
         /// <returns></returns>
-        Manifest? GetManifest()
+        Manifest? ReadManifest()
         {
             // find the manifest in the archive
             var e = _archive.GetEntry(MANIFEST_NAME);
