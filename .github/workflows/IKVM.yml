@@ -714,7 +714,6 @@ jobs:
       with:
         versionSpec: 6.x
     - name: Execute GitVersion
-      id: GitVersion
       uses: gittools/actions/gitversion/execute@v4
     - name: Download NuGet Packages
       uses: actions/download-artifact@v4
