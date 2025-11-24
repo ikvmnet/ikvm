@@ -54,7 +54,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj " />
+        <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libjvm\libjvm.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libverify\libverify.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libiava\libiava.clangproj" />
         <IkvmClangProjectReference Include="$(MSBuildThisFileDirectory)..\libnet\libnet.clangproj" />

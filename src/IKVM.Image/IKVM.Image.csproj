@@ -26,6 +26,7 @@
         <ProjectReference Include="..\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-x64;'))" />
         <ProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))" />
         <ProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.browser-wasm\IKVM.Image.runtime.browser-wasm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';browser-wasm;'))" />
     </ItemGroup>
 
     <ItemGroup>

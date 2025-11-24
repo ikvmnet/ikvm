@@ -1,0 +1,17 @@
+﻿<Project>
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM Runtime Image</Description>
+        <IncludeSymbols>false</IncludeSymbols>
+        <ImageRuntimeIdentifier>browser-wasm</ImageRuntimeIdentifier>
+        <SupportedImageTargetFrameworks>net8.0</SupportedImageTargetFrameworks>
+    </PropertyGroup>
+
+    <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Image\IKVM.Image.runtime.targets" />
+</Project>
+

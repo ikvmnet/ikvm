@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.2.32505.173
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11217.181 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime", "src\IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
 EndProject
@@ -329,6 +329,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Image.runtime.android-arm", "src\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj", "{72994D7F-A9A8-45F9-A74B-0718DD192943}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Image.runtime.android-x64", "src\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.csproj", "{BE63E873-381D-423D-93F6-F3B25AEF4C57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Image.runtime.browser-wasm", "src\IKVM.Image.runtime.browser-wasm\IKVM.Image.runtime.browser-wasm.csproj", "{FCE772F4-53EC-B76F-70C4-2A1C7C1A83E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -916,6 +918,10 @@ Global
 		{BE63E873-381D-423D-93F6-F3B25AEF4C57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE63E873-381D-423D-93F6-F3B25AEF4C57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE63E873-381D-423D-93F6-F3B25AEF4C57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCE772F4-53EC-B76F-70C4-2A1C7C1A83E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCE772F4-53EC-B76F-70C4-2A1C7C1A83E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCE772F4-53EC-B76F-70C4-2A1C7C1A83E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCE772F4-53EC-B76F-70C4-2A1C7C1A83E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

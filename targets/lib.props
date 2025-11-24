@@ -29,6 +29,7 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-x64' ">x86_64-linux-android</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm' ">arm-linux-androideabi</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'android-arm64' ">aarch64-linux-android</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">wasm32-unknown-emscripten</TargetTriple>
     </PropertyGroup>
 
     <ItemGroup>
