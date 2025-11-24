@@ -395,7 +395,8 @@ jobs:
         
         $tfm = @(
           "net472",
-          "net8.0"
+          "net8.0",
+          "net10.0"
         )
 
         if ($env:FULL_TEST -eq "true") {
@@ -449,6 +450,10 @@ jobs:
           },
           @{
             "run" = "IKVM.MSBuild.Tests"
+            "tfm" = "net8.0"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
             "sys" = "linux-x64"
           },
           @{
@@ -474,18 +479,27 @@ jobs:
           @{
             "run" = "IKVM.NET.Sdk.Tests"
             "tfm" = "net7.0"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net8.0"
           }
         )
 
         $include = @(
           @{
             "run" = "IKVM.Tests"
-            "tfm" = "net8.0"
+            "tfm" = "net10.0"
             "sys" = "win-x86"
           },
           @{
             "run" = "IKVM.Tests"
-            "tfm" = "net8.0"
+            "tfm" = "net10.0"
+            "sys" = "osx-arm64"
+          },
+          @{
+            "run" = "IKVM.Tests"
+            "tfm" = "net10.0"
             "sys" = "osx-arm64"
           }
         )

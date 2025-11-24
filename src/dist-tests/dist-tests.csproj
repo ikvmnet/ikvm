@@ -10,12 +10,15 @@
         <TestTarget Include="IKVM.Reflection.Tests|net472" ProjectName="IKVM.Reflection.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Reflection.Tests|net6.0" ProjectName="IKVM.Reflection.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Reflection.Tests|net8.0" ProjectName="IKVM.Reflection.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.Reflection.Tests|net10.0" ProjectName="IKVM.Reflection.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.CoreLib.Tests|net472" ProjectName="IKVM.CoreLib.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.CoreLib.Tests|net6.0" ProjectName="IKVM.CoreLib.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.CoreLib.Tests|net8.0" ProjectName="IKVM.CoreLib.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.CoreLib.Tests|net10.0" ProjectName="IKVM.CoreLib.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.Java.Tests|net472" ProjectName="IKVM.Java.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Java.Tests|net6.0" ProjectName="IKVM.Java.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Java.Tests|net8.0" ProjectName="IKVM.Java.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.Java.Tests|net10.0" ProjectName="IKVM.Java.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.Tests|net472" ProjectName="IKVM.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tests|net7.0" ProjectName="IKVM.Tests" TargetFramework="net7.0" />
@@ -38,14 +41,17 @@
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net7.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net7.0" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net8.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net10.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.MSBuild.Tests|net10.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.NET.Sdk.Tests|net10.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net472" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net8.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net10.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net10.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net472" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net472" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net6.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net8.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net8.0" />
+        <TestTarget Include="IKVM.OpenJDK.Tests|net10.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net10.0" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->
