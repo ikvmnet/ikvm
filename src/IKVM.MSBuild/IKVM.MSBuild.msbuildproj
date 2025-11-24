@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0;net10.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM MSBuild Targets</Description>
@@ -31,6 +31,13 @@
             <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">tasks</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
             <PublishPackagePath>tasks\net6.0</PublishPackagePath>
+            <Pack>true</Pack>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net10.0' ">tasks</PublishTargetPath>
+            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net10.0' ">PreserveNewest</CopyToOutputDirectory>
+            <PublishPackagePath>tasks\net10.0</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>

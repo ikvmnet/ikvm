@@ -1,6 +1,6 @@
 ﻿<Project Sdk="MSTest.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net7.0;net8.0;net10.0</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
@@ -95,6 +95,19 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\win-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\win-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
@@ -105,6 +118,19 @@
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmstub\net8.0\win-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\win-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\win-arm64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 
@@ -131,6 +157,19 @@
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmstub\net8.0\linux-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\linux-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\linux-x64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
         
@@ -161,6 +200,19 @@
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\linux-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\linux-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmc\net8.0\linux-arm64</PublishTargetPath>
@@ -170,6 +222,19 @@
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmstub\net8.0\linux-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\linux-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\linux-arm64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 
@@ -199,6 +264,19 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\osx-x64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
@@ -222,6 +300,19 @@
             <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
             <PublishTargetPath>ikvmstub\net8.0\osx-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmc\net10.0\osx-arm64</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))">
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <PublishTargetPath>ikvmstub\net10.0\osx-arm64</PublishTargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
 

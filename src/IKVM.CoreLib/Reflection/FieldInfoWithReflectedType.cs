@@ -47,7 +47,7 @@ namespace IKVM.Reflection
 
         public override FieldAttributes Attributes
         {
-            get { return field.Attributes; }
+            get { return @field.Attributes; }
         }
 
         public override bool __TryGetFieldOffset(out int offset)
@@ -62,7 +62,7 @@ namespace IKVM.Reflection
 
         internal override FieldSignature FieldSignature
         {
-            get { return field.FieldSignature; }
+            get { return @field.FieldSignature; }
         }
 
         public override FieldInfo __GetFieldOnTypeDefinition()
@@ -82,12 +82,12 @@ namespace IKVM.Reflection
 
         public override bool __IsMissing
         {
-            get { return field.__IsMissing; }
+            get { return @field.__IsMissing; }
         }
 
         public override Type DeclaringType
         {
-            get { return field.DeclaringType; }
+            get { return @field.DeclaringType; }
         }
 
         public override Type ReflectedType
@@ -110,22 +110,22 @@ namespace IKVM.Reflection
 
         public override int MetadataToken
         {
-            get { return field.MetadataToken; }
+            get { return @field.MetadataToken; }
         }
 
         public override Module Module
         {
-            get { return field.Module; }
+            get { return @field.Module; }
         }
 
         public override string Name
         {
-            get { return field.Name; }
+            get { return @field.Name; }
         }
 
         public override string ToString()
         {
-            return field.ToString();
+            return @field.ToString();
         }
 
         internal override int GetCurrentToken()
@@ -135,7 +135,7 @@ namespace IKVM.Reflection
 
         internal override bool IsBaked
         {
-            get { return field.IsBaked; }
+            get { return @field.IsBaked; }
         }
 
     }

@@ -30,6 +30,11 @@ namespace IKVM.Tests.Java.ikvm.runtime
         [TestInitialize]
         public async Task TestInitialize()
         {
+#if NET10_0
+            var ikvmTool = "net10.0";
+            var ikvmLibs = Path.Combine(TESTBASE, "lib", "net10.0");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net10.0", ".NETCore", "10.0");
+#endif
 #if NET8_0
             var ikvmTool = "net8.0";
             var ikvmLibs = Path.Combine(TESTBASE, "lib", "net8.0");
