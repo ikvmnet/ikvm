@@ -921,23 +921,40 @@ class Thread implements Runnable {
         }
     }
 
+    /**
+     * Creates and starts a underlying CLR Thread object using the managed System.Threading.Thread object. This allows setting of the ApartmentState.
+     */
+    private void createManagedThread(cli.System.Threading.ThreadStart threadStart, int stackSize, cli.System.Threading.ApartmentState apartmentState) {
+        nativeThread = new cli.System.Threading.Thread(threadStart, stackSize);
+        nativeThread.set_Name(getName());
+        nativeThread.set_IsBackground(daemon);
+        nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
+        nativeThread.SetApartmentState(apartmentState);
+
+        threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
+        nativeThread.Start();
+    }
+    
+    private static native cli.System.Threading.Thread createWindowsThread0(cli.System.Threading.ThreadStart threadStart, int stackSize, String name, boolean isBackground, cli.System.Threading.ThreadPriority priority);
+    
+    /**
+     * Creates and starts a underlying CLR Thread object using the Windows CreateThread API. This allows us to create
+     a thread upon which CoInitialize has not been invoked. This ensures that at a later point CoInitialize can be
+     invoked in JNI code for various Java UI toolkits which do so.
+     */
+    private void createWindowsThread(cli.System.Threading.ThreadStart threadStart, int stackSize) {
+        nativeThread = createWindowsThread0(threadStart, stackSize, getName(), daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
+    }
+
     private void start0() {
+        threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
+
         cli.System.Threading.ThreadStart threadStart = new cli.System.Threading.ThreadStart(new cli.System.Threading.ThreadStart.Method() {
             @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
             public void Invoke() {
                 threadProc();
             }
         });
-        if (stackSize <= 0) {
-            nativeThread = new cli.System.Threading.Thread(threadStart);
-        }
-        else {
-            int maxStackSize = (int)Math.min(Math.max(128 * 1024, stackSize), Integer.MAX_VALUE);
-            nativeThread = new cli.System.Threading.Thread(threadStart, maxStackSize);
-        }
-        nativeThread.set_Name(getName());
-        nativeThread.set_IsBackground(daemon);
-        nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
         
         String apartment = AccessController.doPrivileged(
             new PrivilegedAction<String>() {
@@ -947,14 +964,23 @@ class Thread implements Runnable {
             }
         );
 
-        if ("mta".equals(apartment)) {
-            nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
+        int maxStackSize = 0;
+        if (stackSize > 0) {
+            maxStackSize = (int)Math.min(Math.max(128 * 1024, stackSize), Integer.MAX_VALUE);
         }
-        else if ("sta".equals(apartment)) {
-            nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
+
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
+            if ("mta".equals(apartment)) {
+                createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
+            } else if ("sta".equals(apartment)) {
+                createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
+            } else {
+                createWindowsThread(threadStart, maxStackSize);
+            }
+        } else {
+            createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.Unknown));
         }
-        threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
-        nativeThread.Start();
+
         if (!daemon) {
             cli.System.Threading.Interlocked.Increment(nonDaemonCount);
         }
@@ -2360,8 +2386,7 @@ class Thread implements Runnable {
 
             if (obj instanceof WeakClassKey) {
                 Object referent = get();
-                return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                return (referent != null) && (referent == ((WeakClassKey)obj).get());
             } else {
                 return false;
             }
@@ -2396,8 +2421,8 @@ class Thread implements Runnable {
             try {
                 if (false) throw new cli.System.Threading.ThreadStateException();
                 nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
-            }
-            catch (cli.System.Threading.ThreadStateException e) {
+            } catch (cli.System.Threading.ThreadStateException e) {
+                
             }
         }
     }
@@ -2409,6 +2434,7 @@ class Thread implements Runnable {
                 x = null;
             }
         }
+
         if (x != null) {
             // NOTE we allow ThreadDeath (and its subclasses) to be thrown on every thread, but any
             // other exception is ignored, except if we're throwing it on the current Thread. This
@@ -2422,28 +2448,27 @@ class Thread implements Runnable {
             // exceptions from Java.
             if (this == current) {
                 sun.misc.Unsafe.getUnsafe().throwException(x);
-            }
-            else if (x instanceof ThreadDeath) {
+            } else if (x instanceof ThreadDeath) {
                 cli.System.Threading.Thread nativeThread = this.nativeThread;
                 if (nativeThread == null) {
                     return;
                 }
+
                 try {
                     if (false) throw new cli.System.Threading.ThreadStateException();
                     nativeThread.Abort(x);
-                }
-                catch (cli.System.Threading.ThreadStateException e) {
+                } catch (cli.System.Threading.ThreadStateException e) {
                     // .NET 2.0 throws a ThreadStateException if the target thread is currently suspended
                     // (but it does record the Abort request)
                 }
+
                 try {
                     if (false) throw new cli.System.Threading.ThreadStateException();
                     int suspend = cli.System.Threading.ThreadState.Suspended | cli.System.Threading.ThreadState.SuspendRequested;
                     while ((nativeThread.get_ThreadState().Value & suspend) != 0) {
                         nativeThread.Resume();
                     }
-                }
-                catch (cli.System.Threading.ThreadStateException e) {
+                } catch (cli.System.Threading.ThreadStateException e) {
                     
                 }
             }
@@ -2457,8 +2482,7 @@ class Thread implements Runnable {
             if (nativeThread != null) {
                 nativeThread.Suspend();
             }
-        }
-        catch (cli.System.Threading.ThreadStateException e) {
+        } catch (cli.System.Threading.ThreadStateException e) {
             
         }
     }
@@ -2470,8 +2494,7 @@ class Thread implements Runnable {
             if (nativeThread != null) {
                 nativeThread.Resume();
             }
-        }
-        catch (cli.System.Threading.ThreadStateException e) {
+        } catch (cli.System.Threading.ThreadStateException e) {
             
         }
     }
@@ -2512,13 +2535,13 @@ class Thread implements Runnable {
     @cli.IKVM.Attributes.HideFromJavaAttribute.Annotation
     void threadProc() {
         current = this;
+
         try {
             // the body of the try block is in another method to allow the (limited) try/finally optimizer
             // to properly recognize the try/finally block, because we want to make sure that die()
             // runs in a finally block to prevent it from being asynchronously aborted.
             threadProc2();
-        }
-        finally {
+        } finally {
             die();
         }
     }
@@ -2528,12 +2551,10 @@ class Thread implements Runnable {
         try {
             setRunningAndCheckStillborn();
             run();
-        }
-        catch (Throwable x) {
+        } catch (Throwable x) {
             try {
                 getUncaughtExceptionHandler().uncaughtException(this, x);
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 
             }
         }
@@ -2564,25 +2585,23 @@ class Thread implements Runnable {
         if (timeout < 0) {
             throw new IllegalArgumentException("timeout value is negative");
         }
+
         Thread t = currentThread();
         t.enterInterruptableWait(timeout != 0);
         try {
             if (false) throw new cli.System.Threading.ThreadInterruptedException();
             if (timeout == 0 || timeout > 922337203685476L) {
                 cli.System.Threading.Monitor.Wait(o);
-            }
-            else {
+            } else {
                 // We wait a maximum of Integer.MAX_VALUE milliseconds, because that is the maximum that Monitor.Wait will wait.
                 // Note that the Object.wait() specification allows for spurious wakeups, so this isn't a problem. Trying to
                 // emulate a longer wait with multiple Monitor.Wait() calls is not allowed, because that would mean that
                 // we acquire and release the synchronization lock multiple times during the wait.
                 cli.System.Threading.Monitor.Wait(o, (int)Math.min(timeout, Integer.MAX_VALUE));
             }
-        }
-        catch (cli.System.Threading.ThreadInterruptedException e) {
+        } catch (cli.System.Threading.ThreadInterruptedException e) {
             
-        }
-        finally {
+        } finally {
             t.leaveInterruptableWait();
         }
     }
