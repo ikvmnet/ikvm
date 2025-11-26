@@ -2420,7 +2420,7 @@ class Thread implements Runnable {
         if (nativeThread != null) {
             try {
                 if (false) throw new cli.System.Threading.ThreadStateException();
-                nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
+                nativeThread.GetThread().set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(newPriority)));
             } catch (cli.System.Threading.ThreadStateException e) {
                 
             }
