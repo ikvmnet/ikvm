@@ -537,12 +537,6 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work`n"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp`n"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet`n"
-    - name: Install winget
-      if: runner.os == 'Windows'
-      uses: Cyberboss/install-winget@v1
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        wget_release_id: latest
     # - name: Install ProcDump
     #   if: runner.os == 'Windows'
     #   shell: pwsh
