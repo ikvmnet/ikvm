@@ -43,6 +43,9 @@ import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
+import cli.IKVM.Runtime.Util.Java.Lang.ThreadHolder;
+import cli.IKVM.Runtime.Util.Java.Lang.ManagedThreadHolder;
+import cli.IKVM.Runtime.Util.Java.Lang.WindowsThreadHolder;
 
 /**
  * A <i>thread</i> is a thread of execution in a program. The Java
@@ -168,7 +171,7 @@ class Thread implements Runnable {
     @cli.System.ThreadStaticAttribute.Annotation
     private static Cleanup cleanup;
     private final Object lock = new Object();
-    private cli.System.Threading.Thread nativeThread;
+    private ThreadHolder nativeThread;
     private Throwable stillborn;
     private boolean running;    // used only for coordination with stop0(), is never set to false
     private volatile boolean interruptPending;
@@ -549,7 +552,7 @@ class Thread implements Runnable {
     Thread(ThreadGroup g) {
         this.running = true;
         cli.System.Threading.Thread thread = cli.System.Threading.Thread.get_CurrentThread();
-        nativeThread = thread;
+        nativeThread = new ManagedThreadHolder(thread);
         String name = thread.get_Name();
         if (name == null) {
             name = "Thread-" + nextThreadNum();
@@ -921,31 +924,6 @@ class Thread implements Runnable {
         }
     }
 
-    /**
-     * Creates and starts a underlying CLR Thread object using the managed System.Threading.Thread object. This allows setting of the ApartmentState.
-     */
-    private void createManagedThread(cli.System.Threading.ThreadStart threadStart, int stackSize, cli.System.Threading.ApartmentState apartmentState) {
-        nativeThread = new cli.System.Threading.Thread(threadStart, stackSize);
-        nativeThread.set_Name(getName());
-        nativeThread.set_IsBackground(daemon);
-        nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
-        nativeThread.SetApartmentState(apartmentState);
-
-        threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
-        nativeThread.Start();
-    }
-    
-    private static native cli.System.Threading.Thread createWindowsThread0(cli.System.Threading.ThreadStart threadStart, int stackSize, String name, boolean isBackground, cli.System.Threading.ThreadPriority priority);
-    
-    /**
-     * Creates and starts a underlying CLR Thread object using the Windows CreateThread API. This allows us to create
-     a thread upon which CoInitialize has not been invoked. This ensures that at a later point CoInitialize can be
-     invoked in JNI code for various Java UI toolkits which do so.
-     */
-    private void createWindowsThread(cli.System.Threading.ThreadStart threadStart, int stackSize) {
-        nativeThread = createWindowsThread0(threadStart, stackSize, getName(), daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
-    }
-
     private void start0() {
         threadStatus = 0x0005; // JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_RUNNABLE
 
@@ -971,14 +949,14 @@ class Thread implements Runnable {
 
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             if ("mta".equals(apartment)) {
-                createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
+                nativeThread = ManagedThreadHolder.Start(threadStart, maxStackSize, name, daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)), cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
             } else if ("sta".equals(apartment)) {
-                createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
+                nativeThread = ManagedThreadHolder.Start(threadStart, maxStackSize, name, daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)), cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.STA));
             } else {
-                createWindowsThread(threadStart, maxStackSize);
+                nativeThread = WindowsThreadHolder.Start(threadStart, maxStackSize, name, daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
             }
         } else {
-            createManagedThread(threadStart, maxStackSize, cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.Unknown));
+            nativeThread = ManagedThreadHolder.Start(threadStart, maxStackSize, name, daemon, cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)), cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.Unknown));
         }
 
         if (!daemon) {
@@ -2184,7 +2162,7 @@ class Thread implements Runnable {
         if (nativeThread == null) {
             return State.TERMINATED;
         }
-        if ((nativeThread.get_ThreadState().Value & cli.System.Threading.ThreadState.WaitSleepJoin) != 0) {
+        if ((nativeThread.GetThread().get_ThreadState().Value & cli.System.Threading.ThreadState.WaitSleepJoin) != 0) {
             return State.BLOCKED;
         }
         return State.RUNNABLE;
@@ -2449,7 +2427,7 @@ class Thread implements Runnable {
             if (this == current) {
                 sun.misc.Unsafe.getUnsafe().throwException(x);
             } else if (x instanceof ThreadDeath) {
-                cli.System.Threading.Thread nativeThread = this.nativeThread;
+                cli.System.Threading.Thread nativeThread = this.nativeThread.GetThread();
                 if (nativeThread == null) {
                     return;
                 }
@@ -2617,4 +2595,5 @@ class Thread implements Runnable {
             }
         }
     }
+
 }

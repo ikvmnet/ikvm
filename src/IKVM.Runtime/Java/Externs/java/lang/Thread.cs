@@ -28,14 +28,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Util.Java.Security;
-
-using java.lang;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -91,29 +91,6 @@ namespace IKVM.Java.Externs.java.lang
             if (ThreadAccessor.GetCurrent() == null)
                 ThreadAccessor.Init(threadGroup ?? JVM.MainThreadGroup);
 #endif
-        }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        unsafe static extern uint CreateThread(uint* lpThreadAttributes, nuint dwStackSize, ThreadStart lpStartAddress, uint* lpParameter, uint dwCreationFlags, out uint lpThreadId);
-
-        /// <summary>
-        /// Starts a Windows thread using CreateThread.
-        /// </summary>
-        /// <param name="threadStart"></param>
-        /// <param name="stackSize"></param>
-        /// <returns></returns>
-        public static unsafe global::System.Threading.Thread createWindowsThread0(ThreadStart threadStart, int stackSize, string name, bool isBackground, ThreadPriority priority)
-        {
-            global::System.Threading.Thread t = null;
-            var wh = new ManualResetEvent(false);
-
-            uint i = 0;
-            var dwHandle = CreateThread(null, 0, () => { t = global::System.Threading.Thread.CurrentThread; wh.Set(); threadStart(); }, &i, 0, out _);
-            if (dwHandle == 0)
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            wh.WaitOne();
-            return t;
         }
 
         /// <summary>
