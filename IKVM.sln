@@ -138,21 +138,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tests", "src\dist-test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tools", "src\dist-tools\dist-tools.csproj", "{04344989-84DC-4D21-BC9F-C4A23D251568}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools", "src\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj", "{005AD593-ADEC-4646-80F9-4E866B7D8533}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools", "src\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.msbuildproj", "{005AD593-ADEC-4646-80F9-4E866B7D8533}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win-x64", "src\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.csproj", "{04D3450A-9443-48C4-9BF0-4ADC8C5E35C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win-x64", "src\IKVM.MSBuild.Tools.runtime.win-x64\IKVM.MSBuild.Tools.runtime.win-x64.msbuildproj", "{04D3450A-9443-48C4-9BF0-4ADC8C5E35C5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.msbuildproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.osx-x64", "src\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj", "{E690EC25-3A73-408F-93B8-36990B2A9D0E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.osx-x64", "src\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.msbuildproj", "{E690EC25-3A73-408F-93B8-36990B2A9D0E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm64", "src\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj", "{DF09A175-C790-434D-9810-A6BBB3EEC548}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm64", "src\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj", "{2D787827-44DA-406C-8DAC-34CE61D658B0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm64", "src\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj", "{5D5A51AC-95FE-42DE-BEBE-560109003C1D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm64", "src\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.msbuildproj", "{5D5A51AC-95FE-42DE-BEBE-560109003C1D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm", "src\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj", "{9AE06A6D-1335-482C-8ABF-2FE1BADF5AD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm", "src\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.msbuildproj", "{9AE06A6D-1335-482C-8ABF-2FE1BADF5AD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm", "src\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj", "{437506E7-B124-4808-8AE7-8864AC9EA36A}"
 EndProject
@@ -216,7 +216,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.osx-
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.osx-arm64", "src\IKVM.Image.JRE.runtime.osx-arm64\IKVM.Image.JRE.runtime.osx-arm64.csproj", "{678E91EB-2BE7-4FB5-9D50-870418C6A708}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.osx-arm64", "src\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.csproj", "{8884C0BE-52D7-414B-B6B4-5E92656D94BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.osx-arm64", "src\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.msbuildproj", "{8884C0BE-52D7-414B-B6B4-5E92656D94BB}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnio", "src\libnio\libnio.clangproj", "{65D283A5-61F4-4E99-AB7D-51C27DAE7A70}"
 EndProject
@@ -254,7 +254,7 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmanagement", "src\libman
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{53319A2F-AC22-4040-8DF9-77587FDC9910}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win-arm64", "src\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.csproj", "{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win-arm64", "src\IKVM.MSBuild.Tools.runtime.win-arm64\IKVM.MSBuild.Tools.runtime.win-arm64.msbuildproj", "{ABB1BDE9-4CDF-434C-823D-D90E74034BA5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win-arm64", "src\IKVM.Image.JDK.runtime.win-arm64\IKVM.Image.JDK.runtime.win-arm64.csproj", "{D0DAB716-6BAB-40A3-989F-17FFB318E80A}"
 EndProject
