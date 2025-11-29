@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20240614.1"
+  NATIVE_SDK_VERSION: "20251124.1"
 
 jobs:
   build-jtreg:
@@ -134,7 +134,7 @@ jobs:
     - name: Install LLVM and Clang
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y clang-18 llvm-18 && \
+        sudo apt-get install -y clang-20 llvm-20 && \
         echo "PATH=/usr/lib/llvm-18/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
@@ -193,6 +193,8 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true \
           /p:CreateHardLinksForPublishFilesIfPossible=true \
           /p:ContinuousIntegrationBuild=true \
+          /p:ClangToolExe="/usr/bin/clang-20" \
+          /p:LlvmArToolExe="/usr/bin/llvm-ar-20" \
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
@@ -553,14 +555,19 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work`n"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp`n"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet`n"
-    - name: Install ProcDump
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
+    # - name: Install ProcDump
+    #   if: runner.os == 'Windows'
+    #   shell: pwsh
+    #   run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Install Visual C++ Runtime
       if: runner.os == 'Windows'
       shell: pwsh
       run: choco install vcredist-all -y
+    - name: Install Mono
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y mono-runtime mono-devel
     - name: Start XVFB (Linux)
       if: runner.os == 'Linux'
       run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
@@ -630,7 +637,7 @@ jobs:
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y libasound2 xvfb
+      run: sudo apt-get update && sudo apt-get install -y libasound2t64 xvfb
     - name: Get Test Name
       uses: actions/github-script@v7
       id: test-name
@@ -677,10 +684,10 @@ jobs:
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
-                "--blame",
-                "--blame-hang",
-                "--blame-hang-timeout", "120m",
-                "--blame-hang-dump-type", "full",
+                # "--blame",
+                # "--blame-hang",
+                # "--blame-hang-timeout", "120m",
+                # "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
@@ -691,9 +698,9 @@ jobs:
                 $argl += @("-a", "x86")
             }
 
-            if ($sys -ne "linux-arm64") {
-                $argl += @("--blame-crash")
-            }
+            # if ($sys -ne "linux-arm64") {
+            #     $argl += @("--blame-crash")
+            # }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {

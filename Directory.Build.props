@@ -68,7 +68,7 @@
 
     <PropertyGroup Label="Build Info">
         <LangVersion Condition=" '$(LangVersion)' == '' ">12.0</LangVersion>
-        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023</NoWarn>
+        <NoWarn>$(NoWarn);1591;1573;CS8002;NU5100;NU5118;NU5128;MSB3245;NETSDK1023;NETSDK1138</NoWarn>
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
