@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM JDK Runtime Image</Description>
+        <IncludeSymbols>false</IncludeSymbols>
+        <DisableCopyToOutputDirectory>true</DisableCopyToOutputDirectory>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.win-x64\IKVM.Image.JDK.runtime.win-x64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';win-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.win-x86\IKVM.Image.JDK.runtime.win-x86.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';win-x86;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.win-arm64\IKVM.Image.JDK.runtime.win-arm64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';win-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-x64\IKVM.Image.JDK.runtime.linux-musl-x64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-musl-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-arm\IKVM.Image.JDK.runtime.linux-musl-arm.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-musl-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-arm64\IKVM.Image.JDK.runtime.linux-musl-arm64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.osx-x64\IKVM.Image.JDK.runtime.osx-x64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';osx-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.osx-arm64\IKVM.Image.JDK.runtime.osx-arm64.msbuildproj" Condition="$(_EnabledImageBinRuntimes.Contains(';osx-arm64;'))" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+</Project>

@@ -25,9 +25,9 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
-        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
-        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
-        <ProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>

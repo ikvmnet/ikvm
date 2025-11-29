@@ -25,12 +25,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
     </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">

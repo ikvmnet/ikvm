@@ -2,7 +2,7 @@
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
@@ -12,20 +12,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Image.runtime.win-x64\IKVM.Image.runtime.win-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.win-x86\IKVM.Image.runtime.win-x86.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-x64\IKVM.Image.runtime.linux-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm\IKVM.Image.runtime.linux-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm64\IKVM.Image.runtime.linux-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-x64\IKVM.Image.runtime.linux-musl-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm\IKVM.Image.runtime.linux-musl-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-x64;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))" />
-        <ProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.csproj" ReferenceOutputAssembly="true" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x64\IKVM.Image.runtime.win-x64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.win-x86\IKVM.Image.runtime.win-x86.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';win-x86;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.win-arm64\IKVM.Image.runtime.win-arm64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';win-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-x64\IKVM.Image.runtime.linux-x64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm\IKVM.Image.runtime.linux-arm.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-arm64\IKVM.Image.runtime.linux-arm64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-x64\IKVM.Image.runtime.linux-musl-x64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm\IKVM.Image.runtime.linux-musl-arm.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.linux-musl-arm64\IKVM.Image.runtime.linux-musl-arm64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-x64\IKVM.Image.runtime.osx-x64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.osx-arm64\IKVM.Image.runtime.osx-arm64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';osx-arm64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.android-x64\IKVM.Image.runtime.android-x64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';android-x64;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.android-arm\IKVM.Image.runtime.android-arm.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm;'))" />
+        <ProjectReference Include="..\IKVM.Image.runtime.android-arm64\IKVM.Image.runtime.android-arm64.msbuildproj" Condition="$(_EnabledImageRuntimes.Contains(';android-arm64;'))" />
     </ItemGroup>
 
     <ItemGroup>

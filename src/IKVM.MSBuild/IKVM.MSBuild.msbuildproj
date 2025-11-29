@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets">
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM MSBuild Targets</Description>
@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj" ReferenceOutputAssembly="true" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,24 +21,18 @@
     <ItemGroup>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net472' ">tasks</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net472' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>tasks\net472</PublishPackagePath>
-            <Pack>true</Pack>
+            <PublishTargetPath>tasks\net472</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net6.0' ">tasks</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net6.0' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>tasks\net6.0</PublishPackagePath>
-            <Pack>true</Pack>
+            <PublishTargetPath>tasks\net6.0</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
             <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
-            <PublishTargetPath Condition=" '$(TargetFramework)' == 'net10.0' ">tasks</PublishTargetPath>
-            <CopyToOutputDirectory Condition=" '$(TargetFramework)' == 'net10.0' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>tasks\net10.0</PublishPackagePath>
-            <Pack>true</Pack>
+            <PublishTargetPath>tasks\net10.0</PublishTargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </PublishProjectReference>
     </ItemGroup>
 
