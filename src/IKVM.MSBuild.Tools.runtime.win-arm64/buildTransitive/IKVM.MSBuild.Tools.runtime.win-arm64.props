@@ -5,9 +5,9 @@
 
     <ItemGroup>
         <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net472\win-arm64\" TargetFramework="net472" RuntimeIdentifier="win-arm64" />
-        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net8.0\win-arm64\" TargetFramework="net8.0" RuntimeIdentifier="win-arm64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\ikvmc\net10.0\win-arm64\" TargetFramework="net10.0" RuntimeIdentifier="win-arm64" />
         <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net472\win-arm64\" TargetFramework="net472" RuntimeIdentifier="win-arm64" />
-        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net8.0\win-arm64\" TargetFramework="net8.0" RuntimeIdentifier="win-arm64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\ikvmstub\net10.0\win-arm64\" TargetFramework="net10.0" RuntimeIdentifier="win-arm64" />
     </ItemGroup>
 
 </Project>
