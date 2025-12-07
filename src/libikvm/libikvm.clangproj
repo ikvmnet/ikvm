@@ -15,6 +15,9 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <Dependencies Include="c" />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="**\*.c" />
         <Compile Include="**\*.cpp" />

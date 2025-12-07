@@ -37,6 +37,7 @@
         <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetIdentifier.EndsWith('-x86'))" />
         <PreprocessorDefinitions Include="_ARM_;arm" Condition="$(TargetIdentifier.EndsWith('-arm'))" />
         <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetIdentifier.EndsWith('-arm64'))" />
+        <PreprocessorDefinitions Include="__EMSCRIPTEN__" Condition=" '$(TargetIdentifier)' == 'browser-wasm' " />
         <AdditionalCompileOptions Include="-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined" />
     </ItemGroup>
 
@@ -115,6 +116,12 @@
         <LibraryDirectories Include="$(LinuxSdkDir)\lib" />
     </ItemGroup>
 
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <SystemRootDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot" />
+        <SystemIncludeDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\include" />
+        <LibraryDirectories Include="$(EMSDK)\upstream\emscripten\cache\sysroot\lib" />
+    </ItemGroup>
+
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetIdentifier.StartsWith('osx-'))">
         <IncludeSystemRootDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx" />
         <LibraryDirectories Include="$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\osx\usr\lib" />
@@ -166,6 +173,15 @@
 
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('android-'))">
         <PreprocessorDefinitions Include="ANDROID;__ANDROID__" />
+    </ItemGroup>
+
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <PositionIndependentCode>true</PositionIndependentCode>
+    </PropertyGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <AdditionalLinkOptions Include="-nostdlib" />
+        <AdditionalLinkOptions Include="-Wl,--no-entry" />
     </ItemGroup>
 
 </Project>

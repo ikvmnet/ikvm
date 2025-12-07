@@ -44,8 +44,19 @@
         <PositionIndependentCode>true</PositionIndependentCode>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
+        <OpenJdkTargetCpuOsArch>arm</OpenJdkTargetCpuOsArch>
+        <PositionIndependentCode>true</PositionIndependentCode>
+    </PropertyGroup>
+
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-')) Or $(TargetIdentifier.StartsWith('android-'))">
         <ProjectReference Include="..\IKVM.Java.runtime.linux\IKVM.Java.runtime.linux.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
+        <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetIdentifier)' == 'browser-wasm' ">
+        <ProjectReference Include="..\IKVM.Java.runtime.browser\IKVM.Java.runtime.browser.ikvmproj" Properties="TargetFramework=net8.0" GlobalPropertiesToRemove="TargetIdentifier" />
         <PreprocessorDefinitions Include="_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE" />
     </ItemGroup>
 

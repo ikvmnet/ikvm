@@ -46,6 +46,13 @@
             <OutputItemType>IkvmJavaItem</OutputItemType>
             <IkvmJavaRuntimeIdentifier>osx</IkvmJavaRuntimeIdentifier>
         </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java.runtime.browser\IKVM.Java.runtime.browser.ikvmproj" Condition="$(_EnabledRuntimes.Contains(';browser-')) And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <PrivateAssets>all</PrivateAssets>
+            <OutputItemType>IkvmJavaItem</OutputItemType>
+            <IkvmJavaRuntimeIdentifier>browser</IkvmJavaRuntimeIdentifier>
+        </ProjectReference>
     </ItemGroup>
 
     <Target Name="GetIkvmLibsTfmSpecificContent" DependsOnTargets="ResolveProjectReferences" Condition=" '$(PackIkvmLibs)' == 'true' ">
@@ -71,6 +78,9 @@
             <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
                 <PackagePath>runtimes\osx\lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
             </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem)" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+                <PackagePath>runtimes\browser\lib\$(TargetFramework)\%(IkvmLibsItem.Filename)%(IkvmLibsItem.Extension)</PackagePath>
+            </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
 
@@ -87,6 +97,9 @@
             </TfmSpecificPackageFile>
             <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
                 <PackagePath>runtimes\osx\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</PackagePath>
+            </TfmSpecificPackageFile>
+            <TfmSpecificPackageFile Include="@(IkvmLibsItem->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) And Exists('%(IkvmLibsItem.RootDir)%(IkvmLibsItem.Directory)%(IkvmLibsItem.Filename).pdb')">
+                <PackagePath>runtimes\browser\lib\$(TargetFramework)\%(IkvmLibsItem.Filename).pdb</PackagePath>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>

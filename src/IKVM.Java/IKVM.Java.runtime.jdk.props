@@ -138,7 +138,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\windows\classes\sun\tools\jdi\**\*.java" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' ">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'osx' Or '$(IkvmJavaRuntimeIdentifier)' == 'browser' ">
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\solaris\classes\**\*.java" PackagePath="" />
@@ -182,6 +182,20 @@
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\GnomeFileTypeDetector.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\util\locale\provider\HostLocaleProviderAdapterImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)jdk\src\macosx\classes\**\*.java" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'browser' ">
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\java\swing\plaf\gtk\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\nio\sctp\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\UnixLoginModule.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\UnixSystem.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTLoginModule.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\com\sun\security\auth\module\NTSystem.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\share\classes\sun\nio\ch\sctp\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\UNIXToolkit.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\awt\X11\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\ch\sctp\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)jdk\src\solaris\classes\sun\nio\fs\GnomeFileTypeDetector.java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' != 'linux' ">
@@ -364,7 +378,7 @@
         <JdkCompilePropertiesFile Include="$(OpenJdkDir)jdk\src\windows\classes\sun\awt\windows\**\awtLocalization*_zh_TW.properties" PackagePath="sun\awt\windows\%(RecursiveDir)" ClassName="$([System.String]::Copy('%(Filename)').Replace('_zh_TW', '_zh_HK'))" SuperName="ListResourceBundle" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' ">
+    <ItemGroup Condition=" '$(IkvmJavaRuntimeIdentifier)' == 'linux' Or '$(IkvmJavaRuntimeIdentifier)' == 'browser' ">
 
     </ItemGroup>
 

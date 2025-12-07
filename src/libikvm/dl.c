@@ -10,13 +10,13 @@
 #include <windows.h>
 #endif
 
-#if defined LINUX | MACOSX
+#if defined LINUX | MACOSX | __EMSCRIPTEN__
 #include <pthread.h>
 #include <errno.h>
 #include <dlfcn.h>
 #endif
 
-#if defined LINUX | MACOSX
+#if defined LINUX | MACOSX | __EMSCRIPTEN__
 static pthread_mutex_t dl_mutex;
 #endif
 
