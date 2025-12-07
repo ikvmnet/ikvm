@@ -32,19 +32,19 @@
             <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net8.0\linux-arm64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net10.0\linux-arm64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net8.0\linux-arm64</PublishPackagePath>
+            <PublishPackagePath>ikvmc\net10.0\linux-arm64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net8.0\linux-arm64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net10.0\linux-arm64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net8.0\linux-arm64</PublishPackagePath>
+            <PublishPackagePath>ikvmstub\net10.0\linux-arm64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>

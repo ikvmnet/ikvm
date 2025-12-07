@@ -116,11 +116,6 @@ namespace IKVM.Reflection.Tests
             tempPath = null;
             tempLoad = null;
 
-            // no reference assemblies for NetFX on Unix
-            if (framework.TargetFrameworkIdentifier == ".NETFramework")
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-                    return false;
-
             // set up temporary directory
             tempPath = Path.Combine(Path.GetTempPath(), typeof(ModuleWriterTests).Namespace, typeof(ModuleWriterTests).Name, Guid.NewGuid().ToString());
             if (Directory.Exists(tempPath))

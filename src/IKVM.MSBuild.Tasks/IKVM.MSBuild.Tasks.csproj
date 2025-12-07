@@ -16,7 +16,6 @@
         <PackageReference Include="Microsoft.Build" Version="17.3.2" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.3.2" PrivateAssets="All" />
         <PackageReference Include="System.Reflection.Metadata" Version="8.0.1" />
-        <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" GeneratePathProperty="true" />
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
     </ItemGroup>
 
@@ -29,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_Platforms)\runtime.json" LogicalName="runtime.json" Link="runtime.json" />
+        <EmbeddedResource Include="$(RuntimeIdentifierGraphPath)" LogicalName="runtime.json" Link="runtime.json" />
     </ItemGroup>
 
     <ItemGroup>

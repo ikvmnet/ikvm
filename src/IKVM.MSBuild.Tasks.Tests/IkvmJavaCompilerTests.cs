@@ -61,7 +61,7 @@ namespace IKVM.MSBuild.Tasks.Tests
 
             var t = new IkvmJavaCompiler();
             t.BuildEngine = engine.Object;
-            t.Sources = new[] { new TaskItem(Path.Combine(Path.GetDirectoryName(typeof(IkvmJavaCompilerTests).Assembly.Location), "IkvmJavaCompilerTests.java")) };
+            t.Sources = [new TaskItem(Path.Combine(Path.GetDirectoryName(typeof(IkvmJavaCompilerTests).Assembly.Location), "IkvmJavaCompilerTests.java"))];
             t.Destination = classesDir;
             t.HeaderDestination = headersDir;
             t.Execute().Should().BeTrue();

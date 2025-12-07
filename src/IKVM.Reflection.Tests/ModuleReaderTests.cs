@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
@@ -24,11 +23,6 @@ namespace IKVM.Reflection.Tests
         {
             universe = null;
             resolver = null;
-
-            // no reference assemblies for NetFX on Unix
-            if (framework.TargetFrameworkIdentifier == ".NETFramework")
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-                    return false;
 
             // initialize primary classes
             universe = new Universe(DotNetSdkUtil.GetCoreLibName(framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion));

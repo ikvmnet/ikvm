@@ -10,17 +10,17 @@
         <ToolTarget Include="net472|win-x64" TargetFramework="net472" RuntimeIdentifier="win-x64" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
         <ToolTarget Include="net472|win-x86" TargetFramework="net472" RuntimeIdentifier="win-x86" Condition="$(_EnabledToolRuntimes.Contains(';win-x86;'))" />
         <ToolTarget Include="net472|win-arm64" TargetFramework="net472" RuntimeIdentifier="win-arm64" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))" />
-        <ToolTarget Include="net8.0|win-x64" TargetFramework="net8.0" RuntimeIdentifier="win-x64" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
-        <ToolTarget Include="net8.0|win-x86" TargetFramework="net8.0" RuntimeIdentifier="win-x86" Condition="$(_EnabledToolRuntimes.Contains(';win-x86;'))" />
-        <ToolTarget Include="net8.0|win-arm64" TargetFramework="net8.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))" />
-        <ToolTarget Include="net8.0|linux-x64" TargetFramework="net8.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))" />
-        <ToolTarget Include="net8.0|linux-arm" TargetFramework="net8.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm;'))" />
-        <ToolTarget Include="net8.0|linux-arm64" TargetFramework="net8.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm64;'))" />
-        <ToolTarget Include="net8.0|linux-musl-x64" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-x64;'))" />
-        <ToolTarget Include="net8.0|linux-musl-arm" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm;'))" />
-        <ToolTarget Include="net8.0|linux-musl-arm64" TargetFramework="net8.0" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm64;'))" />
-        <ToolTarget Include="net8.0|osx-x64" TargetFramework="net8.0" RuntimeIdentifier="osx-x64" Condition="$(_EnabledToolRuntimes.Contains(';osx-x64;'))" />
-        <ToolTarget Include="net8.0|osx-arm64" TargetFramework="net8.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledToolRuntimes.Contains(';osx-arm64;'))" />
+        <ToolTarget Include="net10.0|win-x64" TargetFramework="net10.0" RuntimeIdentifier="win-x64" Condition="$(_EnabledToolRuntimes.Contains(';win-x64;'))" />
+        <ToolTarget Include="net10.0|win-x86" TargetFramework="net10.0" RuntimeIdentifier="win-x86" Condition="$(_EnabledToolRuntimes.Contains(';win-x86;'))" />
+        <ToolTarget Include="net10.0|win-arm64" TargetFramework="net10.0" RuntimeIdentifier="win-arm64" Condition="$(_EnabledToolRuntimes.Contains(';win-arm64;'))" />
+        <ToolTarget Include="net10.0|linux-x64" TargetFramework="net10.0" RuntimeIdentifier="linux-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-x64;'))" />
+        <ToolTarget Include="net10.0|linux-arm" TargetFramework="net10.0" RuntimeIdentifier="linux-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm;'))" />
+        <ToolTarget Include="net10.0|linux-arm64" TargetFramework="net10.0" RuntimeIdentifier="linux-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-arm64;'))" />
+        <ToolTarget Include="net10.0|linux-musl-x64" TargetFramework="net10.0" RuntimeIdentifier="linux-musl-x64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-x64;'))" />
+        <ToolTarget Include="net10.0|linux-musl-arm" TargetFramework="net10.0" RuntimeIdentifier="linux-musl-arm" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm;'))" />
+        <ToolTarget Include="net10.0|linux-musl-arm64" TargetFramework="net10.0" RuntimeIdentifier="linux-musl-arm64" Condition="$(_EnabledToolRuntimes.Contains(';linux-musl-arm64;'))" />
+        <ToolTarget Include="net10.0|osx-x64" TargetFramework="net10.0" RuntimeIdentifier="osx-x64" Condition="$(_EnabledToolRuntimes.Contains(';osx-x64;'))" />
+        <ToolTarget Include="net10.0|osx-arm64" TargetFramework="net10.0" RuntimeIdentifier="osx-arm64" Condition="$(_EnabledToolRuntimes.Contains(';osx-arm64;'))" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->

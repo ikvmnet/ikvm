@@ -44,7 +44,8 @@ namespace IKVM.Tests.Util
         {
             if (targetFrameworkIdentifier == ".NETFramework")
                 return "mscorlib";
-            if (targetFrameworkIdentifier == ".NETCore")
+
+            if (targetFrameworkIdentifier == ".NET")
                 return "System.Runtime";
 
             throw new InvalidOperationException();
@@ -70,7 +71,7 @@ namespace IKVM.Tests.Util
                 return l;
             }
 
-            if (targetFrameworkIdentifier == ".NETCore")
+            if (targetFrameworkIdentifier == ".NET")
             {
                 return GetCorePathToReferenceAssemblies(tfm, targetFrameworkVersion);
             }
@@ -113,7 +114,7 @@ namespace IKVM.Tests.Util
                 throw new InvalidOperationException();
 
             // find all ref assemblies
-            return new[] { Path.GetFullPath(refsDir) };
+            return [Path.GetFullPath(refsDir)];
         }
 
     }

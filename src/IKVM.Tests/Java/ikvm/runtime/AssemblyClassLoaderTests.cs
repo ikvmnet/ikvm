@@ -30,20 +30,25 @@ namespace IKVM.Tests.Java.ikvm.runtime
         [TestInitialize]
         public async Task TestInitialize()
         {
-#if NET8_0
-            var ikvmTool = "net8.0";
+#if NET10_0
+            var ikvmTool = "net10.0";
             var ikvmLibs = Path.Combine(TESTBASE, "lib", "net8.0");
-            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net8.0", ".NETCore", "8.0");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net10.0", ".NET", "10.0");
+#endif
+#if NET8_0
+            var ikvmTool = "net10.0";
+            var ikvmLibs = Path.Combine(TESTBASE, "lib", "net8.0");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net8.0", ".NET", "8.0");
 #endif
 #if NET7_0
-            var ikvmTool = "net8.0";
+            var ikvmTool = "net10.0";
             var ikvmLibs = Path.Combine(TESTBASE, "lib", "net6.0");
-            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net7.0", ".NETCore", "7.0");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net7.0", ".NET", "7.0");
 #endif
 #if NET6_0       
-            var ikvmTool = "net8.0";
+            var ikvmTool = "net10.0";
             var ikvmLibs = Path.Combine(TESTBASE, "lib", "net6.0");
-            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net6.0", ".NETCore", "6.0");
+            var libPaths = DotNetSdkUtil.GetPathToReferenceAssemblies("net6.0", ".NET", "6.0");
 #endif
 #if NET472
             var ikvmTool = "net472";

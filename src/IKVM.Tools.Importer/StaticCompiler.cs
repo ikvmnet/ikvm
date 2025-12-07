@@ -114,7 +114,7 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
-        /// Returns <c>true</c> if the given assembly is a core library.
+        /// Returns the assembly name if the given assembly is a core library.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
@@ -123,15 +123,30 @@ namespace IKVM.Tools.Importer
             if (File.Exists(path) == false)
                 return null;
 
-            using var st = File.OpenRead(path);
-            using var pe = new PEReader(st);
-            var mr = pe.GetMetadataReader();
+            try
+            {
+                using var st = File.OpenRead(path);
+                using var pe = new PEReader(st);
+                var mr = pe.GetMetadataReader();
 
-            foreach (var handle in mr.TypeDefinitions)
-                if (IsSystemObject(mr, handle))
-                    return mr.GetString(mr.GetAssemblyDefinition().Name);
+                foreach (var handle in mr.TypeDefinitions)
+                    if (IsSystemObject(mr, handle))
+                        return mr.GetString(mr.GetAssemblyDefinition().Name);
 
-            return null;
+                return null;
+            }
+            catch (System.BadImageFormatException)
+            {
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
         }
 
         /// <summary>

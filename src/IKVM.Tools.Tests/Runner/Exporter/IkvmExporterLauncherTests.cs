@@ -26,17 +26,17 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         [DataTestMethod]
         [DataRow("net472", "net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net472", "net472", "net481", ".NETFramework", "4.8.1")]
-        [DataRow("net472", "net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net8.0", "net472", "net472", ".NETFramework", "4.7.2")]
-        [DataRow("net8.0", "net472", "net481", ".NETFramework", "4.8.1")]
-        [DataRow("net8.0", "net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net8.0", "net6.0", "net7.0", ".NETCore", "7.0")]
-        [DataRow("net8.0", "net6.0", "net8.0", ".NETCore", "8.0")]
-        [DataRow("net8.0", "net8.0", "net8.0", ".NETCore", "8.0")]
+        [DataRow("net472", "net6.0", "net6.0", ".NET", "6.0")]
+        [DataRow("net10.0", "net472", "net472", ".NETFramework", "4.7.2")]
+        [DataRow("net10.0", "net472", "net481", ".NETFramework", "4.8.1")]
+        [DataRow("net10.0", "net6.0", "net6.0", ".NET", "6.0")]
+        [DataRow("net10.0", "net6.0", "net7.0", ".NET", "7.0")]
+        [DataRow("net10.0", "net6.0", "net8.0", ".NET", "8.0")]
+        [DataRow("net10.0", "net8.0", "net8.0", ".NET", "8.0")]
         public async System.Threading.Tasks.Task CanExportDll(string toolFramework, string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
             var ikvmLibs = Path.Combine(TESTBASE, "lib", ikvmFramework);
-            var refsPath = DotNetSdkUtil.GetPathToReferenceAssemblies(targetFramework, targetFrameworkIdentifier, targetFrameworkVersion) ;
+            var refsPath = DotNetSdkUtil.GetPathToReferenceAssemblies(targetFramework, targetFrameworkIdentifier, targetFrameworkVersion);
 
             var a = Path.Combine(TESTBASE, "helloworld", ikvmFramework, "HelloWorldDotNet.dll");
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), Path.ChangeExtension(a, ".jar"));

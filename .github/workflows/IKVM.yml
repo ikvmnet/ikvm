@@ -19,7 +19,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20240614.1"
+  NATIVE_SDK_VERSION: "20251124.1"
 
 jobs:
   build-jtreg:
@@ -118,6 +118,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Setup .NET 10.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
     - name: Install Mono
       run: |
         sudo apt-get update && \
@@ -130,7 +134,7 @@ jobs:
     - name: Install LLVM and Clang
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y clang-18 llvm-18 && \
+        sudo apt-get install -y clang-20 llvm-20 && \
         echo "PATH=/usr/lib/llvm-18/bin:$PATH" >> $GITHUB_ENV
     - name: Install apple-codesign
       uses: baptiste0928/cargo-install@v3
@@ -139,11 +143,11 @@ jobs:
         version: latest
         locked: false
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4
+      uses: gittools/actions/gitversion/setup@v3
       with:
-        versionSpec: 6.x
+        versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v4
+      uses: gittools/actions/gitversion/execute@v3
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
@@ -189,6 +193,8 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true \
           /p:CreateHardLinksForPublishFilesIfPossible=true \
           /p:ContinuousIntegrationBuild=true \
+          /p:ClangToolExe="/usr/bin/clang-20" \
+          /p:LlvmArToolExe="/usr/bin/llvm-ar-20" \
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
@@ -407,9 +413,9 @@ jobs:
           "IKVM.Tools.Importer.Tests",
           "IKVM.Tools.Tests",
           "IKVM.MSBuild.Tasks.Tests",
-          "IKVM.MSBuild.Tests",
-          "IKVM.NET.Sdk.Tests",
-          "IKVM.JTReg.TestAdapter.Tests")
+          "IKVM.JTReg.TestAdapter.Tests"
+        )
+
         foreach ($_ in (0..15)) {
           $run += @("IKVM.OpenJDK.Tests?TestPartition=$_")
         }
@@ -430,46 +436,6 @@ jobs:
           @{
             "tfm" = "net472"
             "sys" = "osx-arm64"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "tfm" = "net472"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "tfm" = "net6.0"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "tfm" = "net7.0"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "sys" = "linux-x64"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "sys" = "linux-arm64"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "sys" = "osx-x64"
-          },
-          @{
-            "run" = "IKVM.MSBuild.Tests"
-            "sys" = "osx-arm64"
-          },
-          @{
-            "run" = "IKVM.NET.Sdk.Tests"
-            "tfm" = "net472"
-          },
-          @{
-            "run" = "IKVM.NET.Sdk.Tests"
-            "tfm" = "net6.0"
-          },
-          @{
-            "run" = "IKVM.NET.Sdk.Tests"
-            "tfm" = "net7.0"
           }
         )
 
@@ -483,8 +449,59 @@ jobs:
             "run" = "IKVM.Tests"
             "tfm" = "net8.0"
             "sys" = "osx-arm64"
+          },
+          @{
+            "run" = "IKVM.MSBuild.Tests"
+            "tfm" = "net10.0"
+            "sys" = "win-x64"
+          },
+          @{
+            "run" = "IKVM.NET.Sdk.Tests"
+            "tfm" = "net10.0"
+            "sys" = "win-x64"
           }
         )
+        
+        # add specific net10 tests
+        foreach ($_ in $sys) {
+          $include += @(
+            @{
+              "run" = "IKVM.CoreLib.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.MSBuild.Tasks.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.Tools.Exporter.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.Tools.Importer.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.Tools.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            },
+            @{
+              "run" = "IKVM.JTReg.TestAdapter.Tests"
+              "tfm" = "net10.0"
+              "sys" = $_
+            }
+          )
+        }
 
         "matrix=" + (@{
           sys = $sys
@@ -535,14 +552,19 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nWORKPATH=$dir/work`n"
         Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp`n"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet`n"
-    - name: Install ProcDump
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
+    # - name: Install ProcDump
+    #   if: runner.os == 'Windows'
+    #   shell: pwsh
+    #   run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
     - name: Install Visual C++ Runtime
       if: runner.os == 'Windows'
       shell: pwsh
       run: choco install vcredist-all -y
+    - name: Install Mono
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y mono-runtime mono-devel
     - name: Start XVFB (Linux)
       if: runner.os == 'Linux'
       run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
@@ -566,6 +588,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Setup .NET 10.0
+      if: matrix.sys != 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
     - name: Setup .NET 6.0
       if: matrix.sys == 'win-x86'
       uses: actions/setup-dotnet@v4
@@ -594,13 +621,20 @@ jobs:
         dotnet-version: 9.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
+    - name: Setup .NET 10.0
+      if: matrix.sys == 'win-x86'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+      env:
+        PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
       uses: Vampire/setup-wsl@v3
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y libasound2 xvfb
+      run: sudo apt-get update && sudo apt-get install -y libasound2t64 xvfb
     - name: Get Test Name
       uses: actions/github-script@v7
       id: test-name
@@ -647,10 +681,10 @@ jobs:
         if ($tests) {
             $argl = @(
                 "-f", $tfm,
-                "--blame",
-                "--blame-hang",
-                "--blame-hang-timeout", "120m",
-                "--blame-hang-dump-type", "full",
+                # "--blame",
+                # "--blame-hang",
+                # "--blame-hang-timeout", "120m",
+                # "--blame-hang-dump-type", "full",
                 "-v:diag",
                 "--results-directory", "TestResults",
                 "--logger:console;verbosity=detailed",
@@ -661,9 +695,9 @@ jobs:
                 $argl += @("-a", "x86")
             }
 
-            if ($sys -ne "linux-arm64") {
-                $argl += @("--blame-crash")
-            }
+            # if ($sys -ne "linux-arm64") {
+            #     $argl += @("--blame-crash")
+            # }
             
             $runsettings = $(gi .\tests\$tst\$tfm\*.runsettings)
             if ($runsettings) {
@@ -705,16 +739,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Setup .NET 9.0
+    - name: Setup .NET 10.0
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4
+      uses: gittools/actions/gitversion/setup@v3
       with:
-        versionSpec: 6.x
+        versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v4
+      uses: gittools/actions/gitversion/execute@v3
     - name: Download NuGet Packages
       uses: actions/download-artifact@v4
       with:

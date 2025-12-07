@@ -35,7 +35,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             t.ToolVersion = toolVersion;
             t.ToolFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
-            t.References = new[] { new TaskItem(typeof(object).Assembly.Location) };
+            t.References = [new TaskItem(typeof(object).Assembly.Location)];
             t.CacheDir = Path.Combine(Path.GetTempPath(), "ikvm", "cache", "1");
             t.StageDir = Path.Combine(Path.GetTempPath(), "ikvm", "stage", "1");
             return t;
@@ -124,7 +124,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0011");
         }
@@ -141,7 +141,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0012");
         }
@@ -158,7 +158,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0013");
         }
@@ -176,7 +176,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "invalid");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0003");
         }
@@ -191,7 +191,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@"missing");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0011");
             errors.Should().Contain(x => x.Code == "IKVMSDK0012");
@@ -213,7 +213,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "invalid");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0007");
         }
@@ -232,7 +232,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "helloworld", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "missing.java");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Validate(IkvmReferenceItem.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0009");
         }
@@ -258,7 +258,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Execute().Should().BeTrue();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
@@ -269,7 +269,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t = BuildTestTask("net8.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Execute().Should().BeTrue();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
@@ -280,7 +280,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t.Items = new[] { i1 };
+            t.Items = [i1];
             t.Execute().Should().BeTrue();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
             i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
@@ -291,12 +291,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -309,12 +309,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net8.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net8.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -327,12 +327,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net472", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -345,17 +345,17 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net472", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var t3 = BuildTestTask("net8.0", "0.0.0");
             var i3 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t3.Items = new[] { i3 };
+            t3.Items = [i3];
             t3.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -374,12 +374,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.1");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -392,12 +392,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld1", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.0");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld2", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -410,12 +410,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t1 = BuildTestTask("net6.0", "0.0.0");
             var i1 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t1.Items = new[] { i1 };
+            t1.Items = [i1];
             t1.Execute().Should().BeTrue();
 
             var t2 = BuildTestTask("net6.0", "0.0.1");
             var i2 = BuildItem(HELLOWORLD1_JAR, "helloworld", "0.0.0.0");
-            t2.Items = new[] { i2 };
+            t2.Items = [i2];
             t2.Execute().Should().BeTrue();
 
             var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
@@ -442,7 +442,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i3.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld3");
             i3.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
             i3.SetMetadata(IkvmReferenceItemMetadata.References, "helloworld2");
-            t.Items = new[] { i2, i3, i1 };
+            t.Items = [i2, i3, i1];
             t.Execute().Should().BeTrue();
             t.Items[0].Should().Be(i1);
             t.Items[1].Should().Be(i2);

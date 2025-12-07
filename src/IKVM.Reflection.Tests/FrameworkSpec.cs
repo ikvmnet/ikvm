@@ -19,8 +19,8 @@ namespace IKVM.Reflection.Tests
         {
             yield return new object[] { new FrameworkSpec("net472", ".NETFramework", "4.7.2") };
             yield return new object[] { new FrameworkSpec("net481", ".NETFramework", "4.8.1") };
-            yield return new object[] { new FrameworkSpec("net6.0", ".NETCore", "6.0") };
-            yield return new object[] { new FrameworkSpec("net8.0", ".NETCore", "8.0") };
+            yield return new object[] { new FrameworkSpec("net6.0", ".NET", "6.0") };
+            yield return new object[] { new FrameworkSpec("net8.0", ".NET", "8.0") };
         }
 
     }

@@ -3,12 +3,13 @@ assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{WeightedPreReleaseNum
 major-version-bump-message: '\+semver:\s?(major)'
 minor-version-bump-message: '\+semver:\s?(minor)'
 patch-version-bump-message: '\+semver:\s?(patch)'
+tag-prefix: null
 branches:
   main:
     regex: ^main$
-    label: pre
+    tag: pre
     increment: Patch
   develop:
     regex: ^develop$
-    label: dev
+    tag: dev
     increment: Minor

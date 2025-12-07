@@ -32,19 +32,19 @@
             <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net8.0\osx-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmc\net10.0\osx-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmc\net8.0\osx-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmc\net10.0\osx-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
-            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net8.0\osx-x64</PublishTargetPath>
+            <PublishTargetPath Condition=" '$(TargetFramework)' != '' ">ikvmstub\net10.0\osx-x64</PublishTargetPath>
             <CopyToOutputDirectory Condition=" '$(TargetFramework)' != '' ">PreserveNewest</CopyToOutputDirectory>
-            <PublishPackagePath>ikvmstub\net8.0\osx-x64</PublishPackagePath>
+            <PublishPackagePath>ikvmstub\net10.0\osx-x64</PublishPackagePath>
             <Pack>true</Pack>
         </PublishProjectReference>
     </ItemGroup>

@@ -22,13 +22,13 @@ namespace IKVM.Tests.JNI
             // compile the java test code on the fly
             var source = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
             var unit = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", source);
-            var compiler = new InMemoryCompiler(new[] { unit });
+            var compiler = new InMemoryCompiler([unit]);
             compiler.Compile();
 
             // create an isntance of the JniTests class
             var clazz = compiler.GetClass("ikvm.tests.jni.JniTests");
             var ctor = clazz.getConstructor();
-            test = ctor.newInstance(System.Array.Empty<object>());
+            test = ctor.newInstance([]);
         }
 
         [TestMethod]

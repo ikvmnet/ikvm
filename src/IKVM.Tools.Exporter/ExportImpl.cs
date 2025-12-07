@@ -247,7 +247,7 @@ namespace IKVM.Tools.Exporter
         }
 
         /// <summary>
-        /// Returns <c>true</c> if the given assembly is a core library.
+        /// Returns the assembly name if the given assembly is a core library.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>

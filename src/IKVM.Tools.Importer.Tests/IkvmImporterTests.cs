@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,15 +23,14 @@ namespace IKVM.Tools.Importer.Tests
         [DataTestMethod]
         [DataRow("net472", "net472", ".NETFramework", "4.7.2")]
         [DataRow("net472", "net481", ".NETFramework", "4.8.1")]
-        [DataRow("net6.0", "net6.0", ".NETCore", "6.0")]
-        [DataRow("net6.0", "net7.0", ".NETCore", "7.0")]
-        [DataRow("net6.0", "net8.0", ".NETCore", "8.0")]
-        [DataRow("net8.0", "net8.0", ".NETCore", "8.0")]
+        [DataRow("net6.0", "net6.0", ".NET", "6.0")]
+        [DataRow("net6.0", "net7.0", ".NET", "7.0")]
+        [DataRow("net6.0", "net8.0", ".NET", "8.0")]
+        [DataRow("net6.0", "net10.0", ".NET", "10.0")]
+        [DataRow("net8.0", "net8.0", ".NET", "8.0")]
+        [DataRow("net8.0", "net10.0", ".NET", "10.0")]
         public async Task CanImportSimpleTest(string ikvmFramework, string targetFramework, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
-            if (targetFrameworkIdentifier == ".NETFramework" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-                return;
-
             var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmImporterTests.java")).ReadToEnd();
             var f = new InMemoryCodeUnit("ikvm.tools.importer.tests.IkvmImporterTests", s);
             var c = new InMemoryCompiler([f]);

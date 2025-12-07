@@ -22,15 +22,12 @@ namespace IKVM.MSBuild.Tasks.Tests
         [DataTestMethod]
         [DataRow("net472", ".NETFramework", "4.7.2")]
         [DataRow("net48", ".NETFramework", "4.8")]
-        [DataRow("net6.0", ".NETCore", "6.0")]
-        [DataRow("net7.0", ".NETCore", "7.0")]
+        [DataRow("net6.0", ".NET", "6.0")]
+        [DataRow("net7.0", ".NET", "7.0")]
+        [DataRow("net8.0", ".NET", "8.0")]
+        [DataRow("net10.0", ".NET", "10.0")]
         public void CanPrepare(string tfm, string targetFrameworkIdentifier, string targetFrameworkVersion)
         {
-            // no reference assemblies for NetFX on Unix
-            if (tfm == "net472" || tfm == "net48")
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
-                    return;
-
             var engine = new Mock<IBuildEngine7>();
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));

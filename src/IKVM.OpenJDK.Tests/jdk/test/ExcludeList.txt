@@ -1420,6 +1420,8 @@ java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                          
 java/net/ServerSocket/ThreadStop.java                                                                                   generic-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
 java/net/Socket/asyncClose/Race.java                                                                                    generic-all
+java/net/Socket/B8312065.sh                                                                                             generic-all
+java/net/Socket/B8312065.java                                                                                           generic-all
 java/net/Socks/SocksV4Test.java                                                                                         linux-all
 java/net/URLClassLoader/B5077773.sh                                                                                     generic-all
 java/net/URLClassLoader/closetest/CloseTest.java                                                                        generic-all
@@ -4067,10 +4069,6 @@ jdk/jfr/tool/TestSummary.java                                                   
 security/infra/java/security/cert/CertPathValidator/certification/AmazonCA.java                                         generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java                                        generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#actalisauthenticationrootca            generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustcommercialca                generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustnetworkingca                generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustpremiumca                   generic-all
-security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#affirmtrustpremiumeccca                generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca1                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca2                          generic-all
 security/infra/java/security/cert/CertPathValidator/certification/CAInterop.java#amazonrootca3                          generic-all
