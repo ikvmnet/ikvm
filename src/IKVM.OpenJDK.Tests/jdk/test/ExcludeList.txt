@@ -2351,6 +2351,7 @@ javax/swing/AbstractButton/6711682/bug6711682.java                              
 javax/swing/AbstractButton/AnimatedIcon/AnimatedIcon.java                                                               generic-all
 javax/swing/AncestorNotifier/7193219/bug7193219.java                                                                    generic-all
 javax/swing/DataTransfer/6456844/bug6456844.java                                                                        generic-all
+javax/swing/DefaultButtonModel/DefaultButtonModelCrashTest.java                                                         generic-all
 javax/swing/DataTransfer/8059739/bug8059739.java                                                                        generic-all
 javax/swing/GroupLayout/6613904/bug6613904.java                                                                         generic-all
 javax/swing/GroupLayout/7071166/bug7071166.java                                                                         generic-all
