@@ -2439,6 +2439,7 @@ javax/swing/JFileChooser/8062561/bug8062561.java                                
 javax/swing/JFileChooser/8080628/bug8080628.java                                                                        generic-all
 javax/swing/JFileChooser/FileChooserListenerLeak.java                                                                   generic-all
 javax/swing/JFileChooser/FileFilterDescription/FileFilterDescription.java                                               generic-all
+javax/swing/JFileChooser/FileSystemView/Win32FolderSort.java                                                            generic-all
 javax/swing/JFormattedTextField/Test6462562.java                                                                        generic-all
 javax/swing/JFrame/4962534/bug4962534.html                                                                              generic-all
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
@@ -2801,6 +2802,7 @@ jdk/lambda/vm/InterfaceAccessFlagsTest.java                                     
 jdk/lambda/vm/StrictfpDefault.java                                                                                      generic-all
 jdk/net/Sockets/Test.java                                                                                               generic-all
 jdk/tools/launcher/JliLaunchTest.sh                                                                                     generic-all
+lib/property/CheckWindowsProperty.java                                                                                  generic-all
 lib/security/CheckBlacklistedCerts.java                                                                                 generic-all
 lib/security/java.policy/Ext_AllPolicy.sh                                                                               generic-all
 lib/testlibrary/AssertsTest.java                                                                                        generic-all
