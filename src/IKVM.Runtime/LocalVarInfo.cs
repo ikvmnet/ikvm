@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright (C) 2002-2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -94,7 +94,7 @@ namespace IKVM.Runtime
                         var v1 = locals[i];
                         var v2 = locals[j];
 
-                        if (v1.name != null && v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc)
+                        if (v1.name != null && v1.name == v2.name && v1.start_pc == v2.start_pc && v1.end_pc == v2.end_pc && v1.local == v2.local) // FIX: Kotlin’s constructor parameters for nested/anonymous classes often share the same LVT name, prevent merging distinct slots (e.g., two "$receiver" params in kotlin)
                         {
                             // we can only merge if the resulting type is valid (this protects against incorrect
                             // LVT data, but is also needed for constructors, where the uninitialized this is a different
