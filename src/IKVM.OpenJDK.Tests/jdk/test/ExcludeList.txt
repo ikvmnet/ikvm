@@ -4283,6 +4283,7 @@ java/awt/Focus/Headless/HeadlessContainerOrderFocusTraversalPolicy.java         
 java/awt/Focus/Headless/HeadlessDefaultFocusTraversalPolicy.java                                                        macosx-all
 java/awt/Focus/Headless/HeadlessDefaultKeyboardFocusManager.java                                                        macosx-all
 java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.html                                             macosx-all
+java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.java                                             generic-all
 java/awt/Focus/ModalExcludedWindowClickTest/ModalExcludedWindowClickTest.html                                           macosx-all
 java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.html                                       linux-all,macosx-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.html                                           macosx-all
