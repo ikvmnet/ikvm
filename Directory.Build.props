@@ -24,7 +24,7 @@
         <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
         <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
         <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>472</OpenJdkUpdateVersion>
+        <OpenJdkUpdateVersion>492</OpenJdkUpdateVersion>
         <OpenJdkBuildNumber>b08</OpenJdkBuildNumber>
         <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
         <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
