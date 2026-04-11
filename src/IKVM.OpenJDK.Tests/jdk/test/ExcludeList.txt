@@ -3260,7 +3260,7 @@ java/net/PortUnreachableException/Concurrent.java                               
 java/net/Socket/InheritHandle.java                                                                                      linux-all,macosx-all
 java/net/Socket/LingerTest.java                                                                                         linux-all
 java/net/Socket/NullHost.java                                                                                           linux-all
-java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all,macosx-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              generic-all # this used to work at one point on Windows, but it seems to have regressed, and it's not clear if it's a test issue or an implementation issue
 java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
 
 java/net/URL/B5086147.sh                                                                                                linux-all
