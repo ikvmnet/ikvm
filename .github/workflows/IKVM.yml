@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Cache OpenJDK Test Harness Build
@@ -94,7 +94,7 @@ jobs:
       with:
         swap-size-gb: 8
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         submodules: recursive
@@ -129,14 +129,14 @@ jobs:
         sudo apt-get install -y clang-20 llvm-20 && \
         echo "PATH=/usr/lib/llvm-20/bin:$PATH" >> $GITHUB_ENV
     - name: Cache NuGet Packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/.nuget/packages
         key: nuget--${{ runner.os }}--${{ hashFiles('**/*.csproj', '**/*.ikvmproj', '**/*.msbuildproj', '**/global.json', '**/nuget.config') }}
         restore-keys: |
           nuget--${{ runner.os }}--
     - name: Cache cargo
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/registry
@@ -205,7 +205,7 @@ jobs:
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: msbuild.binlog
         path: msbuild.binlog
@@ -213,7 +213,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/nuget.tar.gz nuget
       working-directory: dist
     - name: Upload NuGet Packages
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: nuget
         path: /tmp/nuget.tar.gz
@@ -223,7 +223,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tools
         path: /tmp/tools.tar.gz
@@ -233,7 +233,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/jre.tar.gz jre
       working-directory: dist
     - name: Upload JRE
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: jre
         path: /tmp/jre.tar.gz
@@ -243,7 +243,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/jdk.tar.gz jdk
       working-directory: dist
     - name: Upload JDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: jdk
         path: /tmp/jdk.tar.gz
@@ -253,7 +253,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Reflection.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Reflection.Tests
         path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
@@ -263,7 +263,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.CoreLib.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.CoreLib.Tests
         path: /tmp/tests--IKVM.CoreLib.Tests.tar.gz
@@ -273,7 +273,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Tests
         path: /tmp/tests--IKVM.Tests.tar.gz
@@ -283,7 +283,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Java.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Java.Tests
         path: /tmp/tests--IKVM.Java.Tests.tar.gz
@@ -293,7 +293,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Tools.Tests
         path: /tmp/tests--IKVM.Tools.Tests.tar.gz
@@ -303,7 +303,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Tools.Exporter.Tests
         path: /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
@@ -313,7 +313,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.Tools.Importer.Tests
         path: /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
@@ -323,7 +323,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.MSBuild.Tasks.Tests
         path: /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
@@ -333,7 +333,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.MSBuild.Tests
         path: /tmp/tests--IKVM.MSBuild.Tests.tar.gz
@@ -343,7 +343,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.NET.Sdk.Tests
         path: /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
@@ -353,7 +353,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.JTReg.TestAdapter.Tests
         path: /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
@@ -363,7 +363,7 @@ jobs:
       run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: tests--IKVM.OpenJDK.Tests
         path: /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
@@ -372,7 +372,7 @@ jobs:
     - name: Package Documentation
       run: cd doc && zip /tmp/doc.zip *
     - name: Upload Documentation
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: doc
         path: /tmp/doc.zip
@@ -727,7 +727,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
@@ -743,7 +743,7 @@ jobs:
         swap-storage: false
         large-packages: false
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Setup .NET 10.0
