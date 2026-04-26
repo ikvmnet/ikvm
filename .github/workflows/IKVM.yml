@@ -532,7 +532,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $dir="C:\w"
+        $dir="D:\w"
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
