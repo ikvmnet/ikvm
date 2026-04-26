@@ -203,7 +203,7 @@ jobs:
         name: msbuild.binlog
         path: msbuild.binlog
     - name: Package NuGet Packages
-      run: tar czvf /tmp/nuget.tar.gz nuget
+      run: tar c --use-compress-program='gzip -1' -f /tmp/nuget.tar.gz nuget
       working-directory: dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v4
@@ -213,7 +213,7 @@ jobs:
     - name: Delete NuGet Packages
       run: rm /tmp/nuget.tar.gz
     - name: Package Tools
-      run: tar czvf /tmp/tools.tar.gz tools
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v4
@@ -223,7 +223,7 @@ jobs:
     - name: Delete Tools
       run: rm /tmp/tools.tar.gz
     - name: Package JRE
-      run: tar czvf /tmp/jre.tar.gz jre
+      run: tar c --use-compress-program='gzip -1' -f /tmp/jre.tar.gz jre
       working-directory: dist
     - name: Upload JRE
       uses: actions/upload-artifact@v4
@@ -233,7 +233,7 @@ jobs:
     - name: Delete JRE
       run: rm /tmp/jre.tar.gz
     - name: Package JDK
-      run: tar czvf /tmp/jdk.tar.gz jdk
+      run: tar c --use-compress-program='gzip -1' -f /tmp/jdk.tar.gz jdk
       working-directory: dist
     - name: Upload JDK
       uses: actions/upload-artifact@v4
@@ -243,7 +243,7 @@ jobs:
     - name: Delete JDK
       run: rm /tmp/jdk.tar.gz
     - name: Package Tests (IKVM.Reflection.Tests)
-      run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Reflection.Tests)
       uses: actions/upload-artifact@v4
@@ -253,7 +253,7 @@ jobs:
     - name: Delete Tests (IKVM.Reflection.Tests)
       run: rm /tmp/tests--IKVM.Reflection.Tests.tar.gz
     - name: Package Tests (IKVM.CoreLib.Tests)
-      run: tar czvf /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.CoreLib.Tests)
       uses: actions/upload-artifact@v4
@@ -263,7 +263,7 @@ jobs:
     - name: Delete Tests (IKVM.CoreLib.Tests)
       run: rm /tmp/tests--IKVM.CoreLib.Tests.tar.gz
     - name: Package Tests (IKVM.Tests)
-      run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tests)
       uses: actions/upload-artifact@v4
@@ -273,7 +273,7 @@ jobs:
     - name: Delete Tests (IKVM.Tests)
       run: rm /tmp/tests--IKVM.Tests.tar.gz
     - name: Package Tests (IKVM.Java.Tests)
-      run: tar czvf /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Java.Tests)
       uses: actions/upload-artifact@v4
@@ -283,7 +283,7 @@ jobs:
     - name: Delete Tests (IKVM.Java.Tests)
       run: rm /tmp/tests--IKVM.Java.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Tests)
-      run: tar czvf /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Tests)
       uses: actions/upload-artifact@v4
@@ -293,7 +293,7 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Tests)
       run: rm /tmp/tests--IKVM.Tools.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Exporter.Tests)
-      run: tar czvf /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
       uses: actions/upload-artifact@v4
@@ -303,7 +303,7 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Exporter.Tests)
       run: rm /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
     - name: Package Tests (IKVM.Tools.Importer.Tests)
-      run: tar czvf /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
       uses: actions/upload-artifact@v4
@@ -313,7 +313,7 @@ jobs:
     - name: Delete Tests (IKVM.Tools.Importer.Tests)
       run: rm /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tasks.Tests)
-      run: tar czvf /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
       uses: actions/upload-artifact@v4
@@ -323,7 +323,7 @@ jobs:
     - name: Delete Tests (IKVM.MSBuild.Tasks.Tests)
       run: rm /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
     - name: Package Tests (IKVM.MSBuild.Tests)
-      run: tar czvf /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
       uses: actions/upload-artifact@v4
@@ -333,7 +333,7 @@ jobs:
     - name: Delete Tests (IKVM.MSBuild.Tests)
       run: rm /tmp/tests--IKVM.MSBuild.Tests.tar.gz
     - name: Package Tests (IKVM.NET.Sdk.Tests)
-      run: tar czvf /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
       uses: actions/upload-artifact@v4
@@ -343,7 +343,7 @@ jobs:
     - name: Delete Tests (IKVM.NET.Sdk.Tests)
       run: rm /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
     - name: Package Tests (IKVM.JTReg.TestAdapter.Tests)
-      run: tar czvf /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
       uses: actions/upload-artifact@v4
@@ -353,7 +353,7 @@ jobs:
     - name: Delete Tests (IKVM.JTReg.TestAdapter.Tests)
       run: rm /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
     - name: Package Tests (IKVM.OpenJDK.Tests)
-      run: tar czvf /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
+      run: tar c --use-compress-program='gzip -1' -f /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
       uses: actions/upload-artifact@v4
