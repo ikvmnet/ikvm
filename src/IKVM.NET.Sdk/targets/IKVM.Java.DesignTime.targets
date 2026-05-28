@@ -14,11 +14,11 @@
 
     <PropertyGroup>
         <TemplateLanguage Condition=" '$(TemplateLanguage)' == '' ">Java</TemplateLanguage>
-        <DefineJavaItemSchemas>false</DefineJavaItemSchemas>
+        <DefineJavaItemSchemas>true</DefineJavaItemSchemas>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectCapability Include="Java;Managed;ClassDesigner;SharedProjectReferences;ProjectPropertiesEditor;" />
+        <ProjectCapability Include="IKVM;Java;Managed;ClassDesigner;SharedProjectReferences;ProjectPropertiesEditor;" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(DefineCommonManagedItemSchemas)' == 'true' ">
