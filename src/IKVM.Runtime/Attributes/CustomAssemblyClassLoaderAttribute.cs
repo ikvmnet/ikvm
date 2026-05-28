@@ -43,7 +43,11 @@ namespace IKVM.Attributes
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
-		public CustomAssemblyClassLoaderAttribute(Type type)
+#if IMPORTER || EXPORTER
+        internal CustomAssemblyClassLoaderAttribute(Type type)
+#else
+        public CustomAssemblyClassLoaderAttribute(Type type)
+#endif
 		{
 			this.type = type ?? throw new ArgumentNullException(nameof(type));
 		}
@@ -51,7 +55,11 @@ namespace IKVM.Attributes
         /// <summary>
         /// Gets the type of the class loader.
         /// </summary>
+#if IMPORTER || EXPORTER
+        internal Type Type => type;
+#else
         public Type Type => type;
+#endif
 
     }
 
