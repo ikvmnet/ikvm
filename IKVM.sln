@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.6.11822.322 stable
+VisualStudioVersion = 18.6.11822.322
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime", "src\IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
 EndProject
@@ -168,11 +168,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer.Tests", "src\IKVM.Tools.Importer.Tests\IKVM.Tools.Importer.Tests.csproj", "{6C942D7C-654A-4CBE-B3A9-887A37D2FA4C}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunec", "src\libsunec\libsunec.clangproj", "{0714956B-BCE5-43DB-87A6-B58B57E0765B}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libsunec", "src\libsunec\libsunec.clangproj", "{0714956B-BCE5-43DB-87A6-B58B57E0765B}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunmscapi", "src\libsunmscapi\libsunmscapi.clangproj", "{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libsunmscapi", "src\libsunmscapi\libsunmscapi.clangproj", "{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm-tests", "src\libikvm-tests\libikvm-tests.clangproj", "{E1F10A75-CB47-46A0-86CF-7A6492921878}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libikvm-tests", "src\libikvm-tests\libikvm-tests.clangproj", "{E1F10A75-CB47-46A0-86CF-7A6492921878}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.csproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
 EndProject
@@ -190,9 +190,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linu
 EndProject
 Project("{DAEA77DE-8320-43BA-BA7C-EF5C12478AB5}") = "xjc", "src\xjc\xjc.ikvmproj", "{C35B9502-AC9F-4490-9480-6EAB4FD94AAA}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjvm", "src\libjvm\libjvm.clangproj", "{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjvm", "src\libjvm\libjvm.clangproj", "{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A2815-ABCA-442F-BE92-CD2802F3EA0A}"
 	ProjectSection(SolutionItems) = preProject
@@ -208,9 +208,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A
 		targets\openjdk.lib.targets = targets\openjdk.lib.targets
 	EndProjectSection
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfdlibm", "src\libfdlibm\libfdlibm.clangproj", "{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libfdlibm", "src\libfdlibm\libfdlibm.clangproj", "{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libverify", "src\libverify\libverify.clangproj", "{61AD88EF-3D77-4BBE-94F9-6506428263D7}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libverify", "src\libverify\libverify.clangproj", "{61AD88EF-3D77-4BBE-94F9-6506428263D7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.osx-arm64", "src\IKVM.Image.JDK.runtime.osx-arm64\IKVM.Image.JDK.runtime.osx-arm64.csproj", "{00CAB001-8FA0-466F-803B-8897E8F3D7C7}"
 EndProject
@@ -218,7 +218,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.osx-
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.osx-arm64", "src\IKVM.MSBuild.Tools.runtime.osx-arm64\IKVM.MSBuild.Tools.runtime.osx-arm64.csproj", "{8884C0BE-52D7-414B-B6B4-5E92656D94BB}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libnio", "src\libnio\libnio.clangproj", "{65D283A5-61F4-4E99-AB7D-51C27DAE7A70}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libnio", "src\libnio\libnio.clangproj", "{65D283A5-61F4-4E99-AB7D-51C27DAE7A70}"
 EndProject
 Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libnet", "src\libnet\libnet.clangproj", "{9A35E758-5859-4749-AA85-C788A30173BE}"
 EndProject
@@ -246,11 +246,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-x64"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.runtime.win-x86", "src\IKVM.Image.runtime.win-x86\IKVM.Image.runtime.win-x86.csproj", "{9932A047-DCBC-4649-8EA0-8F14996C8C28}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt", "src\libawt\libawt.clangproj", "{93B43F23-23B1-4968-951E-DC9A447D6F0E}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libawt", "src\libawt\libawt.clangproj", "{93B43F23-23B1-4968-951E-DC9A447D6F0E}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosx", "src\libosx\libosx.clangproj", "{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libosx", "src\libosx\libosx.clangproj", "{55F3F094-CE8E-4734-B14E-7DD5DFE7E4F3}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmanagement", "src\libmanagement\libmanagement.clangproj", "{9CE0434D-A6B9-4708-850C-CA83E26851B2}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libmanagement", "src\libmanagement\libmanagement.clangproj", "{9CE0434D-A6B9-4708-850C-CA83E26851B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ConsoleApp", "src\IKVM.ConsoleApp\IKVM.ConsoleApp.csproj", "{53319A2F-AC22-4040-8DF9-77587FDC9910}"
 EndProject
@@ -266,53 +266,53 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection.Tests", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests.Util", "src\IKVM.Java.Tests.Util\IKVM.Java.Tests.Util.csproj", "{00AFE142-5F4F-48DD-90C1-20CC0512C43C}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsound", "src\libjsound\libjsound.clangproj", "{403E0642-B6ED-464E-8694-2E467CDA2C02}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjsound", "src\libjsound\libjsound.clangproj", "{403E0642-B6ED-464E-8694-2E467CDA2C02}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundalsa", "src\libjsoundalsa\libjsoundalsa.clangproj", "{555CDB6E-84CE-4FE8-8945-47553C4D0A51}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjsoundalsa", "src\libjsoundalsa\libjsoundalsa.clangproj", "{555CDB6E-84CE-4FE8-8945-47553C4D0A51}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjsoundds", "src\libjsoundds\libjsoundds.clangproj", "{30B763A2-A59A-4CE8-B11E-DD49527480CB}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjsoundds", "src\libjsoundds\libjsoundds.clangproj", "{30B763A2-A59A-4CE8-B11E-DD49527480CB}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxapp", "src\libosxapp\libosxapp.clangproj", "{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libosxapp", "src\libosxapp\libosxapp.clangproj", "{0E068B20-9C99-45C5-8D94-A1FF9EDD6739}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt_xawt", "src\libawt_xawt\libawt_xawt.clangproj", "{B3B01872-0000-4364-A0F2-A927F1658970}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libawt_xawt", "src\libawt_xawt\libawt_xawt.clangproj", "{B3B01872-0000-4364-A0F2-A927F1658970}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "liblcms", "src\liblcms\liblcms.clangproj", "{CF5AFCF8-D5DB-4EB5-94CC-1EEF1A3BFF39}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "liblcms", "src\liblcms\liblcms.clangproj", "{CF5AFCF8-D5DB-4EB5-94CC-1EEF1A3BFF39}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjpeg", "src\libjpeg\libjpeg.clangproj", "{DE89413E-2628-486C-AAD1-793B9F08C8F2}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjpeg", "src\libjpeg\libjpeg.clangproj", "{DE89413E-2628-486C-AAD1-793B9F08C8F2}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt_headless", "src\libawt_headless\libawt_headless.clangproj", "{53B55EC4-70FB-4B4B-822C-7BD8C3511DA9}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libawt_headless", "src\libawt_headless\libawt_headless.clangproj", "{53B55EC4-70FB-4B4B-822C-7BD8C3511DA9}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfontmanager", "src\libfontmanager\libfontmanager.clangproj", "{58889BEF-043A-4401-996F-50326F3B78CB}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libfontmanager", "src\libfontmanager\libfontmanager.clangproj", "{58889BEF-043A-4401-996F-50326F3B78CB}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjawt", "src\libjawt\libjawt.clangproj", "{E289C57E-B65F-42C4-A84D-43E27CF4D34F}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjawt", "src\libjawt\libjawt.clangproj", "{E289C57E-B65F-42C4-A84D-43E27CF4D34F}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libawt_lwawt", "src\libawt_lwawt\libawt_lwawt.clangproj", "{C79B5885-5B41-4D49-A147-D717C96536FF}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libawt_lwawt", "src\libawt_lwawt\libawt_lwawt.clangproj", "{C79B5885-5B41-4D49-A147-D717C96536FF}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libosxui", "src\libosxui\libosxui.clangproj", "{24739C0F-EB5F-41DF-83B3-AF6DD219C67E}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libosxui", "src\libosxui\libosxui.clangproj", "{24739C0F-EB5F-41DF-83B3-AF6DD219C67E}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libmlib_image", "src\libmlib_image\libmlib_image.clangproj", "{06C1705E-0D51-42A2-A987-BF7BCFD294F1}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libmlib_image", "src\libmlib_image\libmlib_image.clangproj", "{06C1705E-0D51-42A2-A987-BF7BCFD294F1}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfreetype", "src\libfreetype\libfreetype.clangproj", "{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libfreetype", "src\libfreetype\libfreetype.clangproj", "{B57CFB23-3EC1-4501-ACAC-8B963FFEB7DB}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsctp", "src\libsctp\libsctp.clangproj", "{D6D8258D-456A-4C72-ABA1-1CABC37D471F}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libsctp", "src\libsctp\libsctp.clangproj", "{D6D8258D-456A-4C72-ABA1-1CABC37D471F}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjaas", "src\libjaas\libjaas.clangproj", "{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjaas", "src\libjaas\libjaas.clangproj", "{2D69F3E3-D750-479B-975A-D8DE7FA3F7EE}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjnf", "src\libjnf\libjnf.clangproj", "{606E173D-798D-4463-8EFD-0AD750831DD3}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libjnf", "src\libjnf\libjnf.clangproj", "{606E173D-798D-4463-8EFD-0AD750831DD3}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libkrb5", "src\libkrb5\libkrb5.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libkrb5", "src\libkrb5\libkrb5.clangproj", "{78A745D7-706A-4B33-9D21-0EB7B5144C42}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libzip", "src\libzip\libzip.clangproj", "{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libzip", "src\libzip\libzip.clangproj", "{B2CC2E2C-A153-40E7-B573-C56D4B88FD91}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-jdk", "src\dist-jdk\dist-jdk.csproj", "{05E7A63C-D6FC-4AC9-A8C5-F3A4C7FEB090}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-jre", "src\dist-jre\dist-jre.csproj", "{B4C83452-7979-4102-A205-7FD2EE914AEF}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2gss", "src\libj2gss\libj2gss.clangproj", "{723F8D26-F3CB-430D-B142-4AB89DBF1298}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libj2gss", "src\libj2gss\libj2gss.clangproj", "{723F8D26-F3CB-430D-B142-4AB89DBF1298}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsspi_bridge", "src\libsspi_bridge\libsspi_bridge.clangproj", "{461D3F93-30AD-481E-B3D3-476A3CE2BF7B}"
+Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libsspi_bridge", "src\libsspi_bridge\libsspi_bridge.clangproj", "{461D3F93-30AD-481E-B3D3-476A3CE2BF7B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.CoreLib", "src\IKVM.CoreLib\IKVM.CoreLib.csproj", "{C6556982-85B8-4E58-A693-1239D4823BD7}"
 EndProject
@@ -978,7 +978,7 @@ Global
 		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0} = {D5F8AA01-D969-49B0-A11E-EC6238F57A58}
 		{011FF139-A9E6-4F10-BBC8-28BC1A38D966} = {D5F8AA01-D969-49B0-A11E-EC6238F57A58}
 		{FD39DA19-C81E-4752-B308-43594CC201BB} = {D5F8AA01-D969-49B0-A11E-EC6238F57A58}
-		{F8B6B3D8-006C-4D8F-8883-EB48D9EB417F} = {D5F8AA01-D969-49B0-A11E-EC6238F57A58}
+		{F8B6B3D8-006C-4D8F-8883-EB48D9EB417F} = {90150B24-0F40-41BB-95EF-D95F50BF06BE}
 		{6C106109-0131-4413-8D41-348256EADC7E} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
 		{5BBD66DA-83E0-4FCA-967E-75A87C21E89A} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
 		{04344989-84DC-4D21-BC9F-C4A23D251568} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
