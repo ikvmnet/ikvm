@@ -2,9 +2,6 @@
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(AlternateCommonProps)' == ''"/>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>0E068B20-9C99-45C5-8D94-A1FF9EDD6739</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>osxapp</TargetName>
         <OutputType>dll</OutputType>

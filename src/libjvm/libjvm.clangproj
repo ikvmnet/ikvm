@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>fe90ddcb-06f3-4470-a9a7-7640b04ea9e4</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>jvm</TargetName>
         <OutputType>dll</OutputType>

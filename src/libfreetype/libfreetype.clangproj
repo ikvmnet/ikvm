@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>b57cfb23-3ec1-4501-acac-8b963ffeb7db</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>freetype</TargetName>
         <OutputType>dll</OutputType>

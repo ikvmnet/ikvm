@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>461d3f93-30ad-481e-b3d3-476a3ce2bf7b</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>sspi_bridge</TargetName>
         <OutputType>dll</OutputType>

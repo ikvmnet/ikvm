@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>65d283a5-61f4-4e99-ab7d-51c27dae7a70</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>nio</TargetName>
         <OutputType>dll</OutputType>

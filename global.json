@@ -6,6 +6,6 @@
     "msbuild-sdks": {
         "MSTest.Sdk": "3.8.2",
         "Microsoft.Build.NoTargets": "3.7.56",
-        "IKVM.Clang.Sdk": "0.2.19"
+        "IKVM.Clang.Sdk": "1.0.0"
     }
 }
