@@ -60,8 +60,8 @@
         <AdditionalLinkOptions Include="-Wl,-rpath,@loader_path%2f.." />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="**\*.c" LanguageStandard="c99" />
-        <Compile Include="**\*.cpp" LanguageStandard="c++11" />
+        <Compile Update="**\*.c" LanguageStandard="c99" />
+        <Compile Update="**\*.cpp" LanguageStandard="c++11" />
     </ItemGroup>
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">

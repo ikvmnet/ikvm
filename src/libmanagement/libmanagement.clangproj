@@ -12,7 +12,6 @@
     <ItemGroup>
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\management" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\management" />
-        <Compile Include="*.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="psapi" />

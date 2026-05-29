@@ -12,10 +12,6 @@
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('linux-'))">
         <Dependencies Include="c" />
     </ItemGroup>
-    <ItemGroup>
-        <Compile Include="**\*.c" />
-        <Compile Include="**\*.cpp" />
-    </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />
 </Project>

@@ -28,7 +28,6 @@
         <IncludeDirectories Include="$(IntermediateOutputPath)\gensrc" />
         <Header Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.h" />
         <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\sun\osxapp\*.m" Language="objective-c" />
-        <Compile Include="**\*.c" />
     </ItemGroup>
 
     <Target Name="FindJdk">

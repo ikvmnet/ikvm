@@ -13,7 +13,7 @@
         <PreprocessorDefinitions Include="MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" LanguageStandard="c++11" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" LanguageStandard="c99" />
-        <Compile Include="**\*.c" LanguageStandard="c99" />
+        <Compile Update="**\*.c" LanguageStandard="c99" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
         <Dependencies Include="shlwapi" />
