@@ -29,6 +29,14 @@
         <Static Condition=" '$(Static)' == '' ">false</Static>
     </PropertyGroup>
 
+    <!-- Prompt Visual Studio to install the IKVM extension when this SDK is in use -->
+    <ItemGroup>
+        <VsixDependency Include="IKVM.VisualStudio.8bf8ccd4-363a-4a23-a857-b038314c2c9e">
+            <DisplayName>IKVM Extension for Visual Studio</DisplayName>
+            <MoreInfoUrl>https://marketplace.visualstudio.com/items?itemName=ikvm.ikvm</MoreInfoUrl>
+        </VsixDependency>
+    </ItemGroup>
+
     <!-- language specific functionality -->
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.props" />
     <Import Project="$(LanguageProps)" Condition="Exists('$(LanguageProps)')" />
