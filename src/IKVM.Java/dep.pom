@@ -8,7 +8,7 @@
     </properties>
 	<repositories>
 		<repository>
-			<id>ikvm</id>
+			<id>ikvmnet</id>
 			<url>https://maven.pkg.github.com/ikvmnet/*</url>
 		</repository>
 	</repositories>

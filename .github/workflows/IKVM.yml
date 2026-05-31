@@ -169,7 +169,7 @@ jobs:
     - name: Configure Maven for GitHub Packages
       uses: whelk-io/maven-settings-xml-action@v22
       with:
-        servers: '[{ "id": "github", "username": "${{ github.actor }}", "password": "${{ secrets.GITHUB_TOKEN }}" }]'
+        servers: '[{ "id": "ikvmnet", "username": "${{ github.actor }}", "password": "${{ secrets.GITHUB_TOKEN }}" }]'
         repositories: '[{ "id": "ikvmnet", "url": "https://maven.pkg.github.com/ikvmnet/*" }]'
     - name: Add NuGet Source (GitHub)
       shell: pwsh
