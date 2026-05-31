@@ -63,6 +63,9 @@ jobs:
     - build-jtreg
     timeout-minutes: 720
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
     env:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -163,6 +166,11 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - name: Configure Maven for GitHub Packages
+      uses: whelk-io/maven-settings-xml-action@v22
+      with:
+        servers: '[{ "id": "github", "username": "${{ github.actor }}", "password": "${{ secrets.GITHUB_TOKEN }}" }]'
+        repositories: '[{ "id": "ikvmnet", "url": "https://maven.pkg.github.com/ikvmnet/*" }]'
     - name: Add NuGet Source (GitHub)
       shell: pwsh
       run: dotnet nuget add source --username USERNAME --password $env:GITHUB_TOKEN --store-password-in-clear-text --name ikvm $env:GITHUB_REPOS

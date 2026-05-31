@@ -77,13 +77,16 @@
             Debug="$(_JavaCompilerDebug)"
             NoWarn="true"
             Classpath="@(Classpath)"
+			BootClasspath="@(BootClasspath)"
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
             Encoding="$(Encoding)"
             Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
             HeaderDestination="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))"
             Verbose="true"
-            Sources="@(Compile)" />
+            Sources="@(Compile)"
+            Processors="@(JavaCompilerProcessors)"
+            Plugins="@(JavaCompilerPlugins)" />
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>

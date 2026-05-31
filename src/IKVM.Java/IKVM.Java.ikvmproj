@@ -22,6 +22,7 @@
     <ItemGroup>
         <None Include="SocketOptionRegistry.java" />
         <None Include="map.xml" />
+		<None Include="dep.pom" />
         <None Include="*.props" />
         <None Include="*.targets" />
     </ItemGroup>
@@ -29,6 +30,29 @@
     <ItemGroup>
         <Compile Include="SocketOptionRegistry.java" />
     </ItemGroup>
+
+	<Target Name="DownloadMavenArtifacts" Inputs="dep.pom" Outputs="$(IntermediateOutputPath)maven\.stamp">
+		<ItemGroup>
+			<_Existing Include="$(IntermediateOutputPath)maven\**\*" />
+		</ItemGroup>
+		
+		<Delete Files="@(_Existing)" />
+		<Exec Command="mvn org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies -f dep.pom -DoutputDirectory=$(IntermediateOutputPath)maven" />
+		<Touch Files="$(IntermediateOutputPath)maven\.stamp" AlwaysCreate="true" ForceTouch="true" />
+		
+		<ItemGroup>
+			<FileWrites Include="$(IntermediateOutputPath)maven\**\*" />
+		</ItemGroup>
+	</Target>
+    
+    <Target Name="ConfigureJavaPlugins" BeforeTargets="CompileJava;_CompileJavaResponseFile" DependsOnTargets="DownloadMavenArtifacts">
+		<ItemGroup>
+			<_Jars Remove="@(_Jars)" />
+			<_Jars Include="$(IntermediateOutputPath)maven\*.jar" />
+			<Classpath Include="@(_Jars->'%(FullPath)')" />
+			<JavaCompilerPlugins Include="JavaRef ignorePackage=ikvm.runtime" />
+		</ItemGroup>
+    </Target>
 
     <Target Name="ConvertRefAssembly">
         <ItemGroup>

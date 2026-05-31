@@ -8,6 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="System.Memory" Version="4.5.5" GeneratePathProperty="true" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
     </ItemGroup>
 
