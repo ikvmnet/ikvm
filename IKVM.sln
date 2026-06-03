@@ -174,7 +174,7 @@ Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libsunmscapi", "src\libsunm
 EndProject
 Project("{C16F8DA6-AF2B-48DF-A3C0-8B93BDB1BB12}") = "libikvm-tests", "src\libikvm-tests\libikvm-tests.clangproj", "{E1F10A75-CB47-46A0-86CF-7A6492921878}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.csproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.ikvmproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-musl-arm", "src\IKVM.Image.JDK.runtime.linux-musl-arm\IKVM.Image.JDK.runtime.linux-musl-arm.csproj", "{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}"
 EndProject
