@@ -16,6 +16,7 @@
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\cmm\lcms" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d" />
         <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\awt\debug" />
+		<AdditionalCompileOptions Include="-Wno-incompatible-pointer-types" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\java2d\cmm\lcms\**\*.c" />
     </ItemGroup>
     <ItemGroup Condition="$(TargetIdentifier.StartsWith('win-'))">
