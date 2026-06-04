@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
+		<PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
