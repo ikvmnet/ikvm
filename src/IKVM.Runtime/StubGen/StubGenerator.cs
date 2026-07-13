@@ -965,7 +965,7 @@ namespace IKVM.Runtime.StubGen
                     {
                         e.Annotation(builder.Constants.GetOrAddUtf8(DecodeTypeName((string)v[1])), e2 =>
                         {
-                            for (int i = 2; i < v.Length; i++)
+                            for (int i = 2; i < v.Length; i += 2)
                                 e2.Element(builder.Constants.GetOrAddUtf8((string)v[i]), e3 => EncodeElementValue(builder, ref e3, v[i + 1]));
                         });
                     });
