@@ -666,6 +666,22 @@ jobs:
       shell: pwsh
       run: ri tests--${{ steps.test-name.outputs.result }}.tar.gz
       working-directory: ${{ env.WORKPATH }}
+    # TEMPORARY DIAGNOSTIC: identify what requests System.Collections.Immutable 10.0.0.0
+    # in the net472 importer tests. Remove once the binding failure is understood.
+    - name: Enable Assembly Binding Log (Windows)
+      if: runner.os == 'Windows' && contains(matrix.run, 'IKVM.Tools.Importer.Tests')
+      shell: pwsh
+      run: |
+        $dir = "$env:WORKPATH\fusion"
+        mkdir $dir -Force | Out-Null
+        $key = "HKLM:\SOFTWARE\Microsoft\Fusion"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name "EnableLog" -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $key -Name "LogFailures" -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $key -Name "LogResourceBinds" -Value 0 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $key -Name "LogPath" -Value "$dir\" -PropertyType String -Force | Out-Null
+        Add-Content $env:GITHUB_ENV "`nFUSIONLOG=$dir`n"
+        "Assembly bind failure logging enabled at $dir"
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
@@ -722,6 +738,23 @@ jobs:
             dotnet test @argl $tests[0].FullName
         }
       working-directory: ${{ env.WORKPATH }}
+    # TEMPORARY DIAGNOSTIC: see "Enable Assembly Binding Log (Windows)" above.
+    - name: Dump Assembly Binding Log (Windows)
+      if: always() && runner.os == 'Windows' && contains(matrix.run, 'IKVM.Tools.Importer.Tests')
+      shell: pwsh
+      run: |
+        if (-not (Test-Path $env:FUSIONLOG)) { "No fusion log directory."; exit 0 }
+        $logs = Get-ChildItem $env:FUSIONLOG -Recurse -Filter "*.HTM" -ErrorAction SilentlyContinue
+        "Found $($logs.Count) bind failure log(s)."
+        $hits = $logs | Where-Object { (Get-Content $_.FullName -Raw) -match "System\.Collections\.Immutable" }
+        "Of those, $($hits.Count) mention System.Collections.Immutable."
+        foreach ($h in $hits | Select-Object -First 10) {
+            "".PadRight(78, '=')
+            "FILE: $($h.FullName)"
+            # strip HTML tags so the bind detail is readable in the job log
+            ((Get-Content $h.FullName -Raw) -replace '<[^>]+>', '') -split "`n" |
+                Where-Object { $_.Trim() } | ForEach-Object { $_.Trim() }
+        }
     - name: Archive Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
