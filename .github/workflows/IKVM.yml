@@ -536,11 +536,46 @@ jobs:
         dotnet: false
         swap-storage: false
         large-packages: false
+    - name: Free Disk Space (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Continue'
+        function Show-Free($when) {
+          Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
+            "{0}: {1} {2:N1} GB free of {3:N1} GB" -f $when, $_.DeviceID, ($_.FreeSpace/1GB), ($_.Size/1GB)
+          }
+        }
+        Show-Free "before"
+        # Toolchains preinstalled on the image that this job never uses. The build
+        # itself happens on Linux; these runners only restore packages and run tests.
+        $cache = if ($env:RUNNER_TOOL_CACHE) { $env:RUNNER_TOOL_CACHE } else { "C:\hostedtoolcache\windows" }
+        $stale = @(
+          "$cache\CodeQL",
+          "$cache\Ruby",
+          "$cache\PyPy",
+          "$cache\go",
+          "C:\Android",
+          "C:\Program Files (x86)\Android",
+          "C:\Program Files\MongoDB",
+          "C:\Program Files\MySQL",
+          "C:\Program Files\PostgreSQL",
+          "C:\Program Files\Amazon",
+          "C:\Program Files\Microsoft SDKs\Azure",
+          "C:\SeleniumWebDrivers"
+        )
+        foreach ($p in $stale) {
+          if (Test-Path -LiteralPath $p) {
+            Remove-Item -LiteralPath $p -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $p) { "could not fully remove $p" } else { "removed $p" }
+          }
+        }
+        Show-Free "after"
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $dir="D:\w"
+        $dir="${{ runner.temp }}\w"
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
