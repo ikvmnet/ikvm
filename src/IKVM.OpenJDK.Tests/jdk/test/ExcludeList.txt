@@ -338,6 +338,7 @@ java/awt/Focus/InputVerifierTest3/InputVerifierTest3.java                       
 java/awt/Focus/KeyEventForBadFocusOwnerTest/KeyEventForBadFocusOwnerTest.java                                           generic-all
 java/awt/Focus/ModalBlockedStealsFocusTest/ModalBlockedStealsFocusTest.html                                             generic-all
 java/awt/Focus/ModalDialogActivationTest/ModalDialogActivationTest.java                                                 generic-all
+java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.java                                             generic-all
 java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java                                   generic-all
 java/awt/Focus/NonFocusableResizableTooSmall/NonFocusableResizableTooSmall.java                                         generic-all
 java/awt/Focus/NonFocusableWindowTest/NoEventsTest.java                                                                 generic-all
@@ -4835,7 +4836,7 @@ javax/swing/JTree/6578666/bug6578666.java                                       
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucent.java                                                macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java                                          macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentGradient.java                                        generic-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           macosx-all,windows-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java                                              macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java                                  macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java                       macosx-all,windows-all
