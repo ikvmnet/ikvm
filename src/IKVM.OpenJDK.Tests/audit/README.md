@@ -99,6 +99,32 @@ Get-ChildItem TestResults -Recurse -Filter *.jtr |
 Between this and the shell tests, the rule for local runs is simply: act on
 passes, never on failures.
 
+## Graphical tests take over the desktop
+
+`java/awt`, `javax/swing`, `java/beans`, `sun/java2d` and `javax/imageio` open
+real windows, grab focus and move the pointer. On a developer machine that
+makes the desktop unusable for as long as the batch runs, which for 110
+entries is tens of minutes.
+
+Do not run those areas on a machine someone is using. They are fine in CI,
+where nobody is looking at the screen, and that is where they belong.
+
+The areas that can be swept locally without taking the display over:
+
+| Area | Remaining |
+|---|---|
+| `sun/security` | 149 |
+| `java/nio` | 70 |
+| `sun/tools` | 54 |
+| `security/infra` | 54 |
+| `java/net` | 51 |
+| `jdk/lambda` | 49 |
+| `java/security` | 49 |
+| `java/rmi` | 28 |
+
+Plus what is left of `java/lang`, `java/util` and `com/sun` once their
+structural blocks are set aside.
+
 ## RMI tests leave processes behind
 
 Some `java/rmi` tests start activation daemons that outlive the run. A stray
