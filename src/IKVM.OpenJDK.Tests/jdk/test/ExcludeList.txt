@@ -1655,45 +1655,17 @@ java/util/ServiceLoader/basic.sh                                                
 java/util/TimeZone/CLDRDisplayNamesTest.java                                                                            generic-all
 java/util/TimeZone/OldIDMappingTest.sh                                                                                  generic-all
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh                                                                       generic-all
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java                                                                   generic-all
-java/util/concurrent/locks/ReentrantReadWriteLock/Bug6571733.java                                                       generic-all
-java/util/concurrent/locks/ReentrantReadWriteLock/Count.java                                                            generic-all
-java/util/concurrent/locks/ReentrantReadWriteLock/MapLoops.java                                                         generic-all
-java/util/function/BiFunction/BiFunctionTest.java                                                                       generic-all
-java/util/function/BinaryOperator/BasicTest.java                                                                        generic-all
-java/util/jar/Attributes/Name.java                                                                                      generic-all
-java/util/jar/Attributes/PutAndPutAll.java                                                                              generic-all
-java/util/jar/Manifest/CreateManifest.java                                                                              generic-all
-java/util/logging/CheckZombieLockTest.java                                                                              generic-all
-java/util/logging/DrainFindDeadlockTest.java                                                                            generic-all
-java/util/logging/FileHandlerPath.java                                                                                  generic-all
-java/util/logging/LocalizedLevelName.java                                                                               generic-all
-java/util/logging/LogManagerAppContextDeadlock.java                                                                     generic-all
-java/util/logging/Logger/getGlobal/TestGetGlobal.java                                                                   generic-all
-java/util/logging/Logger/getGlobal/TestGetGlobalByName.java                                                             generic-all
-java/util/logging/Logger/getGlobal/TestGetGlobalConcurrent.java                                                         generic-all
-java/util/logging/Logger/logrb/TestLogrbResourceBundle.java                                                             generic-all
-java/util/logging/Logger/setResourceBundle/TestSetResourceBundle.java                                                   generic-all
-java/util/logging/LoggerSubclass.java                                                                                   generic-all
-java/util/logging/LoggerSupplierAPIsTest.java                                                                           generic-all
-java/util/logging/LoggingDeadlock.java                                                                                  generic-all
-java/util/logging/LoggingDeadlock2.java                                                                                 generic-all
-java/util/logging/TestGetLoggerNPE.java                                                                                 generic-all
 java/util/logging/TestLogConfigurationDeadLock.java                                                                     generic-all
 java/util/logging/TestLogConfigurationDeadLockWithConf.java                                                             generic-all
 java/util/logging/TestLoggerBundleSync.java                                                                             generic-all
 java/util/logging/TestLoggerWeakRefLeak.java                                                                            generic-all
-java/util/logging/TestLoggingWithMainAppContext.java                                                                    generic-all
-java/util/logging/TestMainAppContext.java                                                                               generic-all
-java/util/logging/XMLFormatterDate.java                                                                                 generic-all
-java/util/logging/bundlesearch/ResourceBundleSearchTest.java                                                            generic-all
 java/util/prefs/CheckUserPrefsStorage.sh                                                                                generic-all
 java/util/prefs/PrefsSpi.sh                                                                                             generic-all
-java/util/prefs/SerializeExceptions.java                                                                                generic-all
 java/util/regex/PatternStreamTest.java                                                                                  generic-all
-java/util/regex/RegExTest.java                                                                                          generic-all
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java                                                 generic-all
-java/util/stream/TestDoubleSumAverage.java                                                                              generic-all
+# The 59 java/util/stream entries below are TestNG tests that put testng.jar
+# on the boot classpath. The launcher rejects that: 'Unrecognized option:
+# -Xbootclasspath/a'. Same cause as CustomizedLambdaFormTest further down.
 java/util/stream/boottest/java/util/stream/DoubleNodeTest.java                                                          generic-all
 java/util/stream/boottest/java/util/stream/FlagOpTest.java                                                              generic-all
 java/util/stream/boottest/java/util/stream/IntNodeTest.java                                                             generic-all
@@ -1753,6 +1725,7 @@ java/util/stream/test/org/openjdk/tests/java/util/stream/StreamSpliteratorTest.j
 java/util/stream/test/org/openjdk/tests/java/util/stream/TabulatorsTest.java                                            generic-all
 java/util/stream/test/org/openjdk/tests/java/util/stream/TeeOpTest.java                                                 generic-all
 java/util/stream/test/org/openjdk/tests/java/util/stream/ToArrayOpTest.java                                             generic-all
+
 java/util/zip/InterruptibleZip.java                                                                                     generic-all
 java/util/zip/TestZipError.java                                                                                         generic-all
 java/util/zip/ZipFile/DeleteTempJar.java                                                                                generic-all
