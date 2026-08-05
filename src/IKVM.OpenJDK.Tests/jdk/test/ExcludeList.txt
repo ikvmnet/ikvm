@@ -1283,6 +1283,7 @@ java/util/ServiceLoader/basic.sh                                                
 java/util/TimeZone/CLDRDisplayNamesTest.java                                                                            generic-all
 java/util/TimeZone/OldIDMappingTest.sh                                                                                  generic-all
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh                                                                       generic-all
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java                                                                   generic-all
 java/util/logging/TestLogConfigurationDeadLock.java                                                                     generic-all
 java/util/logging/TestLogConfigurationDeadLockWithConf.java                                                             generic-all
 java/util/logging/TestLoggerBundleSync.java                                                                             generic-all
