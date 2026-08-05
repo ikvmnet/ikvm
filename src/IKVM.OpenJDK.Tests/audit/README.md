@@ -99,6 +99,21 @@ Get-ChildItem TestResults -Recurse -Filter *.jtr |
 Between this and the shell tests, the rule for local runs is simply: act on
 passes, never on failures.
 
+## RMI tests leave processes behind
+
+Some `java/rmi` tests start activation daemons that outlive the run. A stray
+`java.exe` under the test tree then holds a log file open, and the next
+batch's `rm -rf TestResults` fails with "Device or resource busy". If that
+`rm` is chained with `&&` the whole run silently does not happen.
+
+Check for leftovers before starting a batch:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
+    Where-Object { $_.ExecutablePath -like '*IKVM.OpenJDK.Tests*' }
+```
+
+
 | Kind | Count | Auditable locally |
 |---|---|---|
 | `.java` | 4293 | yes |
