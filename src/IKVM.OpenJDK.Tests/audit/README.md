@@ -58,9 +58,33 @@ dotnet test -f net8.0 --settings ../bin/Release/net8.0/Audit.runsettings `
 
 Then walk `Skip` forward by `Take` and repeat.
 
-## Early sample
+## Shell tests do not survive a local run
 
-Four entries from `java/lang` were run as a smoke test of the harness:
+Results for `.sh` entries from a developer machine are not trustworthy. The
+tests run under WSL and are handed `TESTJAVA` pointing at the Windows image,
+so they try to exec `ikvm/win-x64/bin/java` from inside Linux and die:
+
+```
+/mnt/d/.../NarrowNamesTest.sh: 37: /mnt/d/.../ikvm/win-x64/bin/java: not found
+```
+
+That is the harness, not IKVM. An exit code of 127 anywhere in the results
+usually means the same thing. CI sets WSL up properly, so these have to be
+measured there.
+
+A local pass is still a pass — the risk is only false failures — so `.sh`
+entries should be left alone until CI numbers exist for them.
+
+| Kind | Count | Auditable locally |
+|---|---|---|
+| `.java` | 4293 | yes |
+| `.sh` | 340 | no, needs CI |
+| `.html` | 66 | needs a display |
+| `.java#testcase` | 47 | yes, all CA path tests |
+
+## Results so far
+
+`java/lang`, four entries, smoke test of the harness:
 
 | Test | Result |
 |---|---|
@@ -69,9 +93,19 @@ Four entries from `java/lang` were run as a smoke test of the harness:
 | `java/lang/ClassLoader/Assert.java` | passes |
 | `java/lang/Class/getEnclosingClass/EnclosingClassTest.java` | fails |
 
-Three of four are stale. That is far too small a sample to extrapolate from,
-and `java/lang` is likely healthier than the AWT and Swing areas, but it does
-suggest the list is worth going through.
+`java/util`, first 60 entries: **54 pass, 6 fail**. Of the six, three are `.sh`
+tests and `Formatter/Basic` exited 127, so those four are unmeasured rather
+than failing. Two look real:
+
+| Test | Failure |
+|---|---|
+| `java/util/Arrays/TimSortStackSize2.java` | unexpected exit, code 1 |
+| `java/util/Calendar/CldrFormatNamesTest.java` | `RuntimeException: test failed` |
+
+So 57 of 64 measured entries describe problems that no longer exist. Two
+areas is not a basis for predicting the other four thousand, and `java/lang`
+and `java/util` are both likely healthier than the AWT and Swing areas that
+make up half the list. But it does say the list is worth going through.
 
 ## Duplicate entries
 

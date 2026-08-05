@@ -23,6 +23,10 @@ param(
     [Parameter(Mandatory = $true)] [string] $TestRoot,
     # Suite to audit.
     [ValidateSet('jdk', 'langtools', 'nashorn')] [string] $Suite = 'jdk',
+    # Restrict to entries whose test path starts with this, e.g. 'java/util'.
+    # Areas differ enormously in cost and in how likely they are to be stale, so
+    # it is usually worth working through one at a time rather than by offset.
+    [string] $Prefix,
     [int] $Skip = 0,
     [int] $Take = 200
 )
@@ -43,6 +47,8 @@ $entries = Get-Content $excludeList |
     Where-Object { $_.Trim() -and -not $_.TrimStart().StartsWith('#') } |
     ForEach-Object { ($_ -split '\s+')[0] } |
     Select-Object -Unique
+
+if ($Prefix) { $entries = $entries | Where-Object { $_.StartsWith($Prefix) } }
 
 $batch = $entries | Select-Object -Skip $Skip -First $Take
 if (-not $batch) { throw "empty batch: only $($entries.Count) entries, skipped $Skip" }
