@@ -1,0 +1,25 @@
+﻿<!--
+    Settings for auditing the exclude lists. Drops IKVM's own ExcludeList.txt so
+    that excluded tests run again, and restricts the run to the tests named in
+    AuditList.txt.
+
+    ExcludeListFile and IncludeListFile REPLACE the adapter defaults rather than
+    adding to them. ProblemList.txt is kept because that is OpenJDK's own list
+    from the submodule, which we do not maintain and are not auditing.
+
+    Both names resolve relative to EACH suite root, so every suite needs an
+    AuditList.txt. An empty one matches no tests, which is how the suites that
+    are not being audited are held back. Without that file a suite runs its
+    entire set with no exclusions at all.
+-->
+<RunSettings>
+    <RunConfiguration>
+        <DisableAppDomain>True</DisableAppDomain>
+    </RunConfiguration>
+    <JTRegConfiguration>
+        <PartitionCount>1</PartitionCount>
+        <TimeoutFactor>4</TimeoutFactor>
+        <ExcludeListFile>ProblemList.txt</ExcludeListFile>
+        <IncludeListFile>AuditList.txt</IncludeListFile>
+    </JTRegConfiguration>
+</RunSettings>
