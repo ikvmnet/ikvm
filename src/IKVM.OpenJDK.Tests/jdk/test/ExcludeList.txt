@@ -2,20 +2,13 @@ com/apple/eawt/DefaultMenuBar/DefaultMenuBarTest.java                           
 com/oracle/net/sanity.sh                                                                                                generic-all
 com/sun/awt/SecurityWarning/CustomSecurityManager.java                                                                  generic-all
 com/sun/awt/SecurityWarning/GetSizeShouldNotReturnZero.java                                                             generic-all
-com/sun/awt/Translucency/WindowOpacity.java                                                                             generic-all
 com/sun/corba/5036554/TestCorbaBug.sh                                                                                   generic-all
 com/sun/corba/cachedSocket/7056731.sh                                                                                   generic-all
-com/sun/crypto/provider/Cipher/RSA/TestOAEPPadding.java                                                                 generic-all
-com/sun/crypto/provider/Cipher/RSA/TestOAEPParameterSpec.java                                                           generic-all
-com/sun/crypto/provider/Cipher/RSA/TestOAEPWithParams.java                                                              generic-all
-com/sun/crypto/provider/KeyFactory/TestProviderLeak.java                                                                generic-all
-com/sun/java/swing/plaf/gtk/4928019/bug4928019.java                                                                     generic-all
-com/sun/java/swing/plaf/gtk/Test6635110.java                                                                            generic-all
-com/sun/java/swing/plaf/gtk/Test6963870.java                                                                            generic-all
 com/sun/java/swing/plaf/windows/8016551/bug8016551.java                                                                 generic-all
-com/sun/java/swing/plaf/windows/Test6824600.java                                                                        generic-all
 com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
-com/sun/java/swing/plaf/windows/WindowsRadioButtonUI/7089914/bug7089914.java                                            generic-all
+# The 146 com/sun/jdi entries below do not run at all: the Java Debug
+# Interface is absent from the runtime image, so they fail to compile with
+# 'package com.sun.jdi does not exist'.
 com/sun/jdi/AcceptTimeout.java                                                                                          generic-all
 com/sun/jdi/AccessSpecifierTest.java                                                                                    generic-all
 com/sun/jdi/AfterThreadDeathTest.java                                                                                   generic-all
@@ -162,6 +155,7 @@ com/sun/jdi/sde/MangleStepTest.java                                             
 com/sun/jdi/sde/MangleTest.java                                                                                         generic-all
 com/sun/jdi/sde/SourceDebugExtensionTest.java                                                                           generic-all
 com/sun/jdi/sde/TemperatureTableTest.java                                                                               generic-all
+
 com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.java                                           generic-all
 com/sun/jndi/cosnaming/IiopUrlIPv6.java                                                                                 generic-all
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                                                                           generic-all
