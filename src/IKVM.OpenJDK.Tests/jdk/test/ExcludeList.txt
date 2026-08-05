@@ -1169,14 +1169,11 @@ java/io/Serializable/unresolvableObjectStreamClass/UnresolvableObjectStreamClass
 java/io/Serializable/userRWObjError/UserRWObjError.java                                                                 generic-all
 java/io/pathNames/GeneralWin32.java                                                                                     generic-all
 java/io/pathNames/win32/RenameDelete.java                                                                               generic-all
-java/lang/CharSequence/DefaultTest.java                                                                                 generic-all
-java/lang/Character/CheckProp.java                                                                                      generic-all
 java/lang/Character/CheckScript.java                                                                                    generic-all
 java/lang/Class/forName/NonJavaNames.sh                                                                                 generic-all
 java/lang/Class/forName/arrayClass/ExceedMaxDim.java                                                                    generic-all
 java/lang/Class/getEnclosingClass/EnclosingClassTest.java                                                               generic-all
 java/lang/Class/getEnclosingClass/T4992170.java                                                                         generic-all
-java/lang/ClassLoader/Assert.java                                                                                       generic-all
 java/lang/ClassLoader/GetDotResource.java                                                                               generic-all
 java/lang/ClassLoader/deadlock/GetResource.java                                                                         generic-all
 java/lang/ClassLoader/deadlock/TestCrossDelegate.sh                                                                     generic-all
