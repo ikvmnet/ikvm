@@ -75,6 +75,30 @@ measured there.
 A local pass is still a pass — the risk is only false failures — so `.sh`
 entries should be left alone until CI numbers exist for them.
 
+## javac also dies under local concurrency
+
+The other way a local run invents failures:
+
+```
+Error. unexpected exit code from javac: -1073741502
+```
+
+That is `0xC0000142`, `STATUS_DLL_INIT_FAILED` — the process never started,
+so the test never ran. It appears under the concurrency jtreg uses by default
+and has nothing to do with IKVM. One `java/rmi` batch of 100 produced 18 of
+them.
+
+Worth grepping the jtr files for before reading any failure list:
+
+```powershell
+Get-ChildItem TestResults -Recurse -Filter *.jtr |
+    Select-String "unexpected exit code from javac: -107374" |
+    Select-Object -ExpandProperty Path -Unique
+```
+
+Between this and the shell tests, the rule for local runs is simply: act on
+passes, never on failures.
+
 | Kind | Count | Auditable locally |
 |---|---|---|
 | `.java` | 4293 | yes |
@@ -129,6 +153,30 @@ covering the group beneath it, instead of 58 unexplained lines.
 
 The remaining 17 are scattered, nine of them under `java/lang/annotation`,
 and have not been looked at individually yet.
+
+### Everything measured so far
+
+| Area | Measured | Passed | Kept |
+|---|---|---|---|
+| `java/lang` | 100 | 32 | 66 |
+| `java/util` (three batches) | 260 | 165 | 95 |
+| `java/io`, `nio`, `net`, `security`, `math` | 98 | 85 | 13 |
+| `java/rmi`, `java/text` | 100 | 73 | 27 |
+
+The pass rate runs from 32% to 90% depending on the area, which is the whole
+argument for measuring rather than estimating. The two areas that came out
+worst, `java/lang` and `java/rmi`, did so for reasons that are not really
+about staleness: `java/lang` is dominated by the `instrument` package that
+does not exist, and 18 of the `java/rmi` failures were the javac startup
+crash above rather than test results.
+
+### Causes found so far
+
+| Cause | Entries | How it shows |
+|---|---|---|
+| `java.lang.instrument` absent | 58 | `package java.lang.instrument does not exist` at compile |
+| `-Xbootclasspath/a` unimplemented | 59 | `Unrecognized option: -Xbootclasspath/a` |
+| CLDR vs COMPAT locale data | 3 so far | display names differ from what the test expects |
 
 ## Duplicate entries
 
