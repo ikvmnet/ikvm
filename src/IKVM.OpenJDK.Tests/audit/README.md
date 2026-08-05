@@ -102,10 +102,33 @@ than failing. Two look real:
 | `java/util/Arrays/TimSortStackSize2.java` | unexpected exit, code 1 |
 | `java/util/Calendar/CldrFormatNamesTest.java` | `RuntimeException: test failed` |
 
-So 57 of 64 measured entries describe problems that no longer exist. Two
-areas is not a basis for predicting the other four thousand, and `java/lang`
-and `java/util` are both likely healthier than the AWT and Swing areas that
-make up half the list. But it does say the list is worth going through.
+`java/lang`, first 100 entries: **32 pass, 66 fail**. Eleven of the failures
+are `.sh` and so unmeasured, leaving 55 real failures.
+
+Nothing here extrapolates. `java/util` came out 90% stale and `java/lang`
+33%, from adjacent areas of the same file. Every area has to be measured.
+
+### Why the java/lang failures fail
+
+Thirty-eight of the 55, better than two thirds, are `java/lang/instrument`,
+and they all fail the same way, at compilation rather than at run time:
+
+```
+ATransformerManagementTestCase.java:26: error: package java.lang.instrument does not exist
+```
+
+The runtime image does not ship `java.lang.instrument`, so the agent and
+transformer tests cannot compile, never mind run. That is structural and not
+going to change on its own. 58 entries in the list are under
+`java/lang/instrument`, out of 162 such tests in the tree, so the exclusion
+is not even complete — the rest presumably fail the same way and were never
+added.
+
+This is the shape the finished list should have: one comment naming a cause,
+covering the group beneath it, instead of 58 unexplained lines.
+
+The remaining 17 are scattered, nine of them under `java/lang/annotation`,
+and have not been looked at individually yet.
 
 ## Duplicate entries
 
