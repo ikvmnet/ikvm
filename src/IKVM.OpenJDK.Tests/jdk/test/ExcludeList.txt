@@ -1217,8 +1217,9 @@ java/lang/annotation/loaderLeak/Main.java                                       
 java/lang/annotation/typeAnnotations/BadCPIndex.java                                                                    generic-all
 java/lang/annotation/typeAnnotations/GetAnnotatedReceiverType.java                                                      generic-all
 java/lang/annotation/typeAnnotations/TestExecutableGetAnnotatedType.java                                                generic-all
-# java.lang.instrument is not present in the runtime image, so every test
-# under it fails to compile: 'package java.lang.instrument does not exist'
+# The 58 java/lang/instrument entries below do not run at all: the package is
+# absent from the runtime image, so they fail to compile with
+# 'package java.lang.instrument does not exist'.
 java/lang/instrument/AddTransformerTest.java                                                                            generic-all
 java/lang/instrument/AppendToBootstrapClassPathTest.java                                                                generic-all
 java/lang/instrument/AppendToClassPathTest.java                                                                         generic-all
@@ -1277,6 +1278,7 @@ java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh               
 java/lang/instrument/appendToClassLoaderSearch/CircularityErrorTest.sh                                                  generic-all
 java/lang/instrument/appendToClassLoaderSearch/ClassUnloadTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/run_tests.sh                                                             generic-all
+
 java/lang/invoke/6987555/Test6987555.java                                                                               generic-all
 java/lang/invoke/6991596/Test6991596.java                                                                               generic-all
 java/lang/invoke/6998541/Test6998541.java                                                                               generic-all
