@@ -3076,6 +3076,15 @@ sun/security/ssl/EngineArgs/DebugReportsOneExtraByte.sh                         
 sun/security/ssl/SSLEngineImpl/SSLEngineDeadlock.java                                                                   generic-all
 sun/security/ssl/SSLSocketImpl/NotifyHandshakeTest.sh                                                                   generic-all
 sun/security/ssl/Stapling/StatusResponseManager.sh                                                                      generic-all
+# The PreferredKey.java entry immediately below is excluded because its test
+# data expired, not because of anything in IKVM. The RSA certificate in
+# javax/net/ssl/etc/keystore ran out on 2026-05-16, so chooseClientAlias picks
+# the still-valid DSA key over the expired RSA one and the test's assertion
+# fails. Verified by running the same calls on a stock JDK 8, which returns DSA
+# too. Partition 7 passed on 2026-04-26 and has failed on every run since.
+# Remove this once upstream regenerates the keystore.
+sun/security/ssl/X509KeyManager/PreferredKey.java                                                                       generic-all
+
 sun/security/ssl/internal/TestRun.sh                                                                                    generic-all
 sun/security/ssl/sanity/pluggability/CheckSSLContextExport.java                                                         generic-all
 sun/security/ssl/templates/SSLEngineTemplate.java                                                                       generic-all
