@@ -1,15 +1,15 @@
-mode: ContinuousDeployment
+mode: ContinuousDelivery
 assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{WeightedPreReleaseNumber ?? 0}'
 major-version-bump-message: '\+semver:\s?(major)'
 minor-version-bump-message: '\+semver:\s?(minor)'
 patch-version-bump-message: '\+semver:\s?(patch)'
-tag-prefix: null
+tag-prefix: '[vV]?'
 branches:
   main:
     regex: ^main$
-    tag: pre
+    label: pre
     increment: Patch
   develop:
     regex: ^develop$
-    tag: dev
+    label: dev
     increment: Minor

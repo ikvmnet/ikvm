@@ -146,11 +146,11 @@ jobs:
         version: latest
         locked: false
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
-        versionSpec: 5.x
+        versionSpec: 6.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
@@ -752,11 +752,11 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
-        versionSpec: 5.x
+        versionSpec: 6.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
     - name: Download NuGet Packages
       uses: actions/download-artifact@v4
       with:
