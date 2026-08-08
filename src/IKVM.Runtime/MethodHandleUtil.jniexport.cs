@@ -633,20 +633,32 @@ namespace IKVM.Runtime
             return type._invokeExactDelegateType;
         }
 
-        internal T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle mh)
-            where T : class, Delegate
+        /// <summary>
+        /// Gets the canonical delegate that invokes the given method handle exactly. The type of the returned delegate
+        /// is the <see cref="MH"/> or <see cref="MHV"/> instantiation that corresponds to the handle's method type, as
+        /// returned by <see cref="GetDelegateTypeForInvokeExact"/>.
+        /// </summary>
+        /// <param name="mh"></param>
+        /// <returns></returns>
+        internal Delegate GetDelegateForInvokeExact(global::java.lang.invoke.MethodHandle mh)
         {
             var type = mh.type();
             if (mh._invokeExactDelegate == null)
             {
                 type._invokeExactDynamicMethod ??= DynamicMethodBuilder.CreateInvokeExact(context, type);
                 mh._invokeExactDelegate = type._invokeExactDynamicMethod.CreateDelegate(GetDelegateTypeForInvokeExact(type), mh);
-                var del = mh._invokeExactDelegate as T;
-                if (del != null)
-                    return del;
             }
 
-            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(typeof(T)), type);
+            return (Delegate)mh._invokeExactDelegate;
+        }
+
+        internal T GetDelegateForInvokeExact<T>(global::java.lang.invoke.MethodHandle mh)
+            where T : class, Delegate
+        {
+            if (GetDelegateForInvokeExact(mh) is T del)
+                return del;
+
+            throw java.lang.invoke.Invokers.newWrongMethodTypeException(GetDelegateMethodType(typeof(T)), mh.type());
         }
 
         /// <summary>
