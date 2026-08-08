@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         submodules: recursive
     - name: Cache OpenJDK Test Harness Build
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ext/jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('ext/jtreg/**') }}-8
@@ -53,7 +53,7 @@ jobs:
       run: zip -r /tmp/jtreg-build.zip build
       working-directory: ext/jtreg
     - name: Upload OpenJDK Test Harness
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: jtreg-build
         path: /tmp/jtreg-build.zip
@@ -88,7 +88,7 @@ jobs:
         sudo apt-get clean && \
         sudo rm -rf /usr/share/swift
     - name: Free Disk Space
-      uses: jlumbroso/free-disk-space@main
+      uses: jlumbroso/free-disk-space@v1.3.1
       with:
         android: false
         swap-storage: false
@@ -97,7 +97,7 @@ jobs:
       with:
         swap-size-gb: 8
     - name: Checkout Source
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
         submodules: recursive
@@ -106,23 +106,23 @@ jobs:
         sudo apt-get update && \
         sudo apt-get install -y powershell
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 7.0.x
     - name: Setup .NET 8.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 8.0.x
     - name: Setup .NET 9.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 9.0.x
     - name: Setup .NET 10.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
     - name: Install Mono
@@ -152,14 +152,14 @@ jobs:
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v3
     - name: Download JTReg Build
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: jtreg-build
         path: /tmp
     - name: Restore JTReg Build
       run: mkdir -p ext/jtreg && cd ext/jtreg && unzip /tmp/jtreg-build.zip && rm /tmp/jtreg-build.zip
     - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1.9
+      uses: robinraju/release-downloader@v1.13
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
@@ -206,7 +206,7 @@ jobs:
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: msbuild.binlog
         path: msbuild.binlog
@@ -214,7 +214,7 @@ jobs:
       run: tar czvf /tmp/nuget.tar.gz nuget
       working-directory: dist
     - name: Upload NuGet Packages
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: nuget
         path: /tmp/nuget.tar.gz
@@ -224,7 +224,7 @@ jobs:
       run: tar czvf /tmp/tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tools
         path: /tmp/tools.tar.gz
@@ -234,7 +234,7 @@ jobs:
       run: tar czvf /tmp/jre.tar.gz jre
       working-directory: dist
     - name: Upload JRE
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: jre
         path: /tmp/jre.tar.gz
@@ -244,7 +244,7 @@ jobs:
       run: tar czvf /tmp/jdk.tar.gz jdk
       working-directory: dist
     - name: Upload JDK
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: jdk
         path: /tmp/jdk.tar.gz
@@ -254,7 +254,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Reflection.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Reflection.Tests
         path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
@@ -264,7 +264,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.CoreLib.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.CoreLib.Tests
         path: /tmp/tests--IKVM.CoreLib.Tests.tar.gz
@@ -274,7 +274,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Tests
         path: /tmp/tests--IKVM.Tests.tar.gz
@@ -284,7 +284,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Java.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Java.Tests
         path: /tmp/tests--IKVM.Java.Tests.tar.gz
@@ -294,7 +294,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Tools.Tests
         path: /tmp/tests--IKVM.Tools.Tests.tar.gz
@@ -304,7 +304,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Tools.Exporter.Tests
         path: /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
@@ -314,7 +314,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.Tools.Importer.Tests
         path: /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
@@ -324,7 +324,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.MSBuild.Tasks.Tests
         path: /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
@@ -334,7 +334,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.MSBuild.Tests
         path: /tmp/tests--IKVM.MSBuild.Tests.tar.gz
@@ -344,7 +344,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.NET.Sdk.Tests
         path: /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
@@ -354,7 +354,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.JTReg.TestAdapter.Tests
         path: /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
@@ -364,7 +364,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: tests--IKVM.OpenJDK.Tests
         path: /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
@@ -373,7 +373,7 @@ jobs:
     - name: Package Documentation
       run: cd doc && zip /tmp/doc.zip *
     - name: Upload Documentation
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: doc
         path: /tmp/doc.zip
@@ -531,7 +531,7 @@ jobs:
     steps:
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
-      uses: jlumbroso/free-disk-space@main
+      uses: jlumbroso/free-disk-space@v1.3.1
       with:
         dotnet: false
         swap-storage: false
@@ -578,73 +578,73 @@ jobs:
       run: /usr/bin/Xvfb :99 & disown; echo DISPLAY=:99 >> $GITHUB_ENV
     - name: Setup .NET 6.0
       if: matrix.sys != 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 6.0.x
     - name: Setup .NET 7.0
       if: matrix.sys != 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 7.0.x
     - name: Setup .NET 8.0
       if: matrix.sys != 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 8.0.x
     - name: Setup .NET 9.0
       if: matrix.sys != 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 9.0.x
     - name: Setup .NET 10.0
       if: matrix.sys != 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
     - name: Setup .NET 6.0
       if: matrix.sys == 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 6.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup .NET 7.0
       if: matrix.sys == 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 7.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup .NET 8.0
       if: matrix.sys == 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 8.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup .NET 9.0
       if: matrix.sys == 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 9.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup .NET 10.0
       if: matrix.sys == 'win-x86'
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
       env:
         PROCESSOR_ARCHITECTURE: x86
     - name: Setup WSL
       if: runner.os == 'Windows'
-      uses: Vampire/setup-wsl@v3
+      uses: Vampire/setup-wsl@v7
     - name: Setup Linux
       if: runner.os == 'Linux'
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y libasound2t64 xvfb
     - name: Get Test Name
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       id: test-name
       env:
         MATRIX_RUN: '${{ matrix.run }}'
@@ -655,7 +655,7 @@ jobs:
           return tst;
         result-encoding: string
     - name: Download Tests
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: tests--${{ steps.test-name.outputs.result }}
         path: ${{ env.WORKPATH }}
@@ -728,7 +728,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
@@ -739,16 +739,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Free Disk Space (Linux)
-      uses: jlumbroso/free-disk-space@main
+      uses: jlumbroso/free-disk-space@v1.3.1
       with:
         swap-storage: false
         large-packages: false
     - name: Checkout Source
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: Setup .NET 10.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.0.x
     - name: Install GitVersion
@@ -758,7 +758,7 @@ jobs:
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v3
     - name: Download NuGet Packages
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: nuget
         path: dist
@@ -766,7 +766,7 @@ jobs:
       run: tar xzvf nuget.tar.gz
       working-directory: dist
     - name: Download Tools
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: tools
         path: dist
@@ -777,7 +777,7 @@ jobs:
       shell: pwsh
       run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download JRE
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: jre
         path: dist
@@ -788,7 +788,7 @@ jobs:
       shell: pwsh
       run: cd dist && gi jre/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "jre/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-jre-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-jre-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download JDK
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: jdk
         path: dist
@@ -799,13 +799,13 @@ jobs:
       shell: pwsh
       run: cd dist && gi jdk/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "jdk/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-jdk-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-jdk-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download Documentation
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: doc
         path: dist
     - name: Create Release
       if: github.ref_type == 'tag'
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.21.0
       with:
         tag: ${{ github.ref_name }}
         allowUpdates: true
