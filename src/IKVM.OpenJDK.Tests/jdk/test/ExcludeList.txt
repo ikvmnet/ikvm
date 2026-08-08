@@ -281,6 +281,7 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java                         
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java                                         generic-all
 java/awt/Focus/KeyEventForBadFocusOwnerTest/KeyEventForBadFocusOwnerTest.java                                           generic-all
 java/awt/Focus/ModalBlockedStealsFocusTest/ModalBlockedStealsFocusTest.html                                             generic-all
+java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.java                                             generic-all
 java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java                                   generic-all
 java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java                                                        generic-all
 java/awt/Focus/OwnedWindowFocusIMECrashTest/OwnedWindowFocusIMECrashTest.java                                           generic-all
@@ -395,6 +396,7 @@ java/awt/InputMethods/InputMethodsTest/InputMethodsTest.java                    
 java/awt/Insets/CombinedTestApp1.java                                                                                   generic-all
 java/awt/JAWT/JAWT.sh                                                                                                   generic-all
 java/awt/JAWT/MyCanvas.java                                                                                             generic-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.java  generic-all
 java/awt/KeyboardFocusmanager/DefaultPolicyChange/DefaultPolicyChange_AWT.java                                          generic-all
 java/awt/KeyboardFocusmanager/DefaultPolicyChange/DefaultPolicyChange_Swing.java                                        generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.html                                    generic-all
@@ -689,7 +691,7 @@ java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_4.java       
 java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       macosx-all
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
 java/awt/event/OtherEvents/UngrabID/UngrabID.java                                                                       generic-all
-java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       linux-all,macosx-all
+java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       generic-all
 java/awt/event/TextEvent/TextEventSequenceTest/TextEventSequenceTest.java                                               generic-all
 java/awt/font/FontNames/LocaleFamilyNames.java                                                                          generic-all
 java/awt/font/GlyphVector/VisualBounds.java                                                                             generic-all
@@ -1923,6 +1925,7 @@ javax/swing/text/AbstractDocument/8030118/Test8030118.java                      
 javax/swing/text/CSSBorder/6796710/bug6796710.java                                                                      generic-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java                                                                   generic-all
 javax/swing/text/DefaultCaret/7083457/bug7083457.java                                                                   generic-all
+javax/swing/text/DefaultCaret/bug4203175.java                                                                           generic-all
 javax/swing/text/DefaultEditorKit/4278839/bug4278839.java                                                               generic-all
 javax/swing/text/DefaultHighlighter/6771184/bug6771184.java                                                             generic-all
 javax/swing/text/DefaultStyledDocument/6636983/bug6636983.java                                                          generic-all
@@ -2083,6 +2086,7 @@ sun/net/InetAddress/nameservice/dns/cname.sh                                    
 sun/net/ftp/MarkResetTest.sh                                                                                            generic-all
 sun/net/www/http/HttpClient/B8025710.java                                                                               generic-all
 sun/net/www/http/HttpClient/RetryPost.sh                                                                                generic-all
+sun/net/www/http/KeepAliveCache/KeepAliveProperty.java                                                                  generic-all
 sun/net/www/http/RequestMethodCheck/RequestMethodEquality.java                                                          generic-all
 sun/net/www/protocol/file/DirPermissionDenied.sh                                                                        generic-all
 sun/net/www/protocol/jar/B5105410.sh                                                                                    generic-all
@@ -2303,7 +2307,7 @@ java/net/PortUnreachableException/Concurrent.java                               
 java/net/Socket/InheritHandle.java                                                                                      linux-all,macosx-all
 java/net/Socket/LingerTest.java                                                                                         linux-all
 java/net/Socket/NullHost.java                                                                                           linux-all
-java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all,macosx-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              generic-all
 java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
 
 java/net/URL/B5086147.sh                                                                                                linux-all
@@ -3215,7 +3219,7 @@ java/awt/Choice/GetSizeTest/GetSizeTest.java                                    
 java/awt/Choice/GrabLockTest/GrabLockTest.java                                                                          macosx-all
 java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html                                                                          macosx-all,windows-all
-java/awt/Choice/ResizeAutoClosesChoice/ResizeAutoClosesChoice.java                                                      macosx-all
+java/awt/Choice/ResizeAutoClosesChoice/ResizeAutoClosesChoice.java                                                      generic-all
 java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html                                                        generic-all
 java/awt/Choice/UnfocusableCB_ERR/UnfocusableCB_ERR.java                                                                macosx-all
 java/awt/Component/CompEventOnHiddenComponent/CompEventOnHiddenComponent.java                                           macosx-all
@@ -3634,7 +3638,7 @@ java/awt/Modal/ToFront/DialogToFrontAppModalTest.java                           
 java/awt/Modal/ToFront/DialogToFrontDocModalTest.java                                                                   generic-all
 java/awt/Modal/ToFront/DialogToFrontModalTest.java                                                                      generic-all
 java/awt/Modal/ToFront/DialogToFrontModeless1Test.java                                                                  generic-all
-java/awt/Modal/ToFront/DialogToFrontNonModalTest.java                                                                   linux-all,macosx-all
+java/awt/Modal/ToFront/DialogToFrontNonModalTest.java                                                                   generic-all
 java/awt/Modal/ToFront/DialogToFrontTKModalTest.java                                                                    generic-all
 java/awt/Modal/ToFront/FrameToFrontAppModal1Test.java                                                                   generic-all
 java/awt/Modal/ToFront/FrameToFrontAppModal2Test.java                                                                   macosx-all,windows-all
@@ -3857,8 +3861,8 @@ javax/swing/JToolTip/4644444/bug4644444.html                                    
 javax/swing/JTree/6578666/bug6578666.java                                                                               generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucent.java                                                macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java                                          macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentGradient.java                                        macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           macosx-all,windows-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentGradient.java                                        generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java                                              macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java                                  macosx-all,windows-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java                       macosx-all,windows-all
