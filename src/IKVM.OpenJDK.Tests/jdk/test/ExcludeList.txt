@@ -271,6 +271,7 @@ java/awt/Focus/ChoiceFocus/ChoiceFocus.java                                     
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java                                                         generic-all
 java/awt/Focus/CloseDialogActivateOwnerTest/CloseDialogActivateOwnerTest.java                                           generic-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java                               generic-all
+java/awt/Focus/ContainerFocusAutoTransferTest/ContainerFocusAutoTransferTest.java                                       generic-all
 java/awt/Focus/DeiconifiedFrameLoosesFocus/DeiconifiedFrameLoosesFocus.html                                             generic-all
 java/awt/Focus/FocusEmbeddedFrameTest/FocusEmbeddedFrameTest.java                                                       generic-all
 java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java                                                       generic-all
@@ -3219,6 +3220,7 @@ java/awt/Choice/GetSizeTest/GetSizeTest.java                                    
 java/awt/Choice/GrabLockTest/GrabLockTest.java                                                                          macosx-all
 java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html                                                                          macosx-all,windows-all
+java/awt/Choice/RemoveAllShrinkTest/RemoveAllShrinkTest.java                                                            generic-all
 java/awt/Choice/ResizeAutoClosesChoice/ResizeAutoClosesChoice.java                                                      generic-all
 java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html                                                        generic-all
 java/awt/Choice/UnfocusableCB_ERR/UnfocusableCB_ERR.java                                                                macosx-all
