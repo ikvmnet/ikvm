@@ -4,6 +4,7 @@ com/sun/awt/SecurityWarning/CustomSecurityManager.java                          
 com/sun/awt/SecurityWarning/GetSizeShouldNotReturnZero.java                                                             generic-all
 com/sun/corba/5036554/TestCorbaBug.sh                                                                                   generic-all
 com/sun/corba/cachedSocket/7056731.sh                                                                                   generic-all
+com/sun/java/swing/plaf/gtk/4928019/bug4928019.java                                                                     generic-all
 com/sun/java/swing/plaf/windows/8016551/bug8016551.java                                                                 generic-all
 com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
 # The 146 com/sun/jdi entries below do not run at all: the Java Debug
@@ -268,6 +269,7 @@ java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java            
 java/awt/Focus/AutoRequestFocusTest/TestHelper.java                                                                     generic-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java                                                                             generic-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java                                                         generic-all
+java/awt/Focus/CloseDialogActivateOwnerTest/CloseDialogActivateOwnerTest.java                                           generic-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java                               generic-all
 java/awt/Focus/DeiconifiedFrameLoosesFocus/DeiconifiedFrameLoosesFocus.html                                             generic-all
 java/awt/Focus/FocusEmbeddedFrameTest/FocusEmbeddedFrameTest.java                                                       generic-all
@@ -275,6 +277,7 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java               
 java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
 java/awt/Focus/FocusTraversalPolicy/InitialFTP_AWT.java                                                                 generic-all
 java/awt/Focus/FocusTraversalPolicy/InitialFTP_Swing.java                                                               generic-all
+java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java                                                                 generic-all
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java                                         generic-all
 java/awt/Focus/KeyEventForBadFocusOwnerTest/KeyEventForBadFocusOwnerTest.java                                           generic-all
 java/awt/Focus/ModalBlockedStealsFocusTest/ModalBlockedStealsFocusTest.html                                             generic-all
@@ -282,6 +285,7 @@ java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest
 java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java                                                        generic-all
 java/awt/Focus/OwnedWindowFocusIMECrashTest/OwnedWindowFocusIMECrashTest.java                                           generic-all
 java/awt/Focus/ResetMostRecentFocusOwnerTest/ResetMostRecentFocusOwnerTest.java                                         generic-all
+java/awt/Focus/RollbackFocusFromAnotherWindowTest/RollbackFocusFromAnotherWindowTest.java                               generic-all
 java/awt/Focus/ShowFrameCheckForegroundTest/ShowFrameCheckForegroundTest.java                                           generic-all
 java/awt/Focus/SimpleWindowActivationTest/SimpleWindowActivationTest.java                                               generic-all
 java/awt/Focus/ToFrontFocusTest/ToFrontFocus.html                                                                       generic-all
@@ -1626,6 +1630,7 @@ javax/swing/JColorChooser/Test7194184.java                                      
 javax/swing/JComboBox/4743225/bug4743225.java                                                                           generic-all
 javax/swing/JComboBox/6236162/bug6236162.java                                                                           generic-all
 javax/swing/JComboBox/6607130/bug6607130.java                                                                           generic-all
+javax/swing/JComboBox/7195179/Test7195179.java                                                                          generic-all
 javax/swing/JComboBox/8032878/bug8032878.java                                                                           generic-all
 javax/swing/JComboBox/8033069/bug8033069NoScrollBar.java                                                                generic-all
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java                                                                  generic-all
@@ -2510,6 +2515,7 @@ java/net/ipv6tests/TcpTest.java                                                 
 java/net/ipv6tests/UdpTest.java                                                                                         macosx-all
 java/nio/MappedByteBuffer/Basic.java                                                                                    macosx-all
 java/nio/MappedByteBuffer/Force.java                                                                                    macosx-all
+java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all,macosx-all
 java/nio/channels/AsynchronousSocketChannel/Basic.java                                                                  macosx-all
 java/nio/channels/DatagramChannel/AdaptDatagramSocket.java                                                              macosx-all
 java/nio/channels/DatagramChannel/BasicMulticastTests.java                                                              macosx-all
@@ -2607,6 +2613,7 @@ com/sun/crypto/provider/Cipher/PBE/TestCipherPBE.java                           
 com/sun/crypto/provider/Cipher/PBE/TestCipherPBECons.java                                                               generic-all
 com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java                                        generic-all
 com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java                                     generic-all
+com/sun/crypto/provider/KeyFactory/TestProviderLeak.java                                                                generic-all
 
 ## JDK8u152-b16, new broken tests
 
@@ -3824,6 +3831,7 @@ javax/swing/JComboBox/6406264/bug6406264.java                                   
 javax/swing/JComboBox/6559152/bug6559152.java                                                                           generic-all
 javax/swing/JComboBox/8072767/bug8072767.java                                                                           generic-all
 javax/swing/JFrame/8255880/RepaintOnFrameIconifiedStateChangeTest.java                                                  generic-all
+javax/swing/JFrame/AlwaysOnTop/AlwaysOnTopImeTest.java                                                                  generic-all
 javax/swing/JList/6510999/bug6510999.java                                                                               generic-all
 javax/swing/JMenu/4417601/bug4417601.java                                                                               generic-all
 javax/swing/JMenu/6359669/bug6359669.java                                                                               generic-all
