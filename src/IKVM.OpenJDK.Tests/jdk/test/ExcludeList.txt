@@ -3899,7 +3899,7 @@ java/awt/Modal/OnTop/OnTopTKModal5Test.java                                     
 java/awt/Modal/OnTop/OnTopTKModal6Test.java                                                                             generic-all
 java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java                                                                   macosx-all
 java/awt/Modal/ToBack/ToBackAppModal1Test.java                                                                          generic-all
-java/awt/Modal/ToBack/ToBackAppModal2Test.java                                                                          macosx-all,windows-all
+java/awt/Modal/ToBack/ToBackAppModal2Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackAppModal3Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackAppModal4Test.java                                                                          generic-all
 java/awt/Modal/ToBack/ToBackAppModal5Test.java                                                                          generic-all
