@@ -736,7 +736,7 @@ java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java       
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_2.html                                               generic-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_3.html                                               generic-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_4.java                                               generic-all
-java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       macosx-all
+java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       generic-all
 java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
 java/awt/event/OtherEvents/UngrabID/UngrabID.java                                                                       generic-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java                                                       generic-all
@@ -3509,6 +3509,7 @@ java/awt/applet/Applet/HeadlessApplet.java                                      
 java/awt/Choice/DragMouseOutAndRelease/DragMouseOutAndRelease.java                                                      macosx-all
 java/awt/Choice/GetSizeTest/GetSizeTest.java                                                                            macosx-all
 java/awt/Choice/GrabLockTest/GrabLockTest.java                                                                          macosx-all
+java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.java                                            generic-all
 java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html                                                                          macosx-all,windows-all
 java/awt/Choice/RemoveAllShrinkTest/RemoveAllShrinkTest.java                                                            generic-all
@@ -4057,7 +4058,7 @@ java/awt/Window/HandleWindowDestroyTest/HandleWindowDestroyTest.html            
 java/awt/Window/setLocRelativeTo/SetLocationRelativeToTest.java                                                         macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShape.java                                                               linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java                                                       linux-all,macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            macosx-all,windows-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            generic-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java                                           macosx-all,windows-all
 java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java                                                      macosx-all,windows-all
 java/awt/Window/ShapedAndTranslucentWindows/TranslucentWindowClick.java                                                 macosx-all,windows-all
