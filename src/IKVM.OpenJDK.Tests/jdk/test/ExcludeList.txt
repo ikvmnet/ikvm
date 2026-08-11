@@ -4182,21 +4182,20 @@ sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java                            
 tools/jar/ExtractFilesTest.java                                                                                         generic-all
 tools/jar/MultipleManifestTest.java                                                                                     generic-all
 
-# Interaction tests that fail intermittently in CI, gathered here as they are
-# found. These drive real windows, focus changes and pointer events, which do
-# not behave the same on a headless runner as on a desktop. Each was already
-# excluded on some platforms and simply not on the one where it failed, so the
-# platform lists have been widened to generic-all rather than extended one
-# platform at a time.
-# opening the popup does not deliver the mouse events the test waits for
+# Tests that fail intermittently in CI. The graphical ones drive real windows,
+# focus changes and pointer events, which a headless runner does not deliver the
+# way a desktop session does. Only ToBackAppModal2Test has had its failure read
+# in detail; the rest are recorded by where they fail, not by cause.
+# fails on net472 win-x64
 java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.java                                            generic-all
-# only the .html variant was listed, so the .java ran on Windows and failed
+# fails on net8.0 win-x64
 java/awt/List/KeyEventsTest/KeyEventsTest.java                                                                          generic-all
-# clicking the dialog Close button does not trigger its action under Xvfb
+# fails on net8.0 linux-x64: 'Clicking the dialog Close button did not trigger
+# an action'
 java/awt/Modal/ToBack/ToBackAppModal2Test.java                                                                          generic-all
-# sibling SetShape and SetShapeAndClick are already excluded on Linux
+# fails on net8.0 linux-x64
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            generic-all
-# sibling WheelModifier.java is already generic-all
+# fails on net8.0 linux-x64
 java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       generic-all
-# intermittent, was not excluded on any platform
+# not graphical. Fails on net8.0 win-x64; cause not established
 com/sun/crypto/provider/Cipher/PBE/PBMacBuffer.java                                                                     generic-all
