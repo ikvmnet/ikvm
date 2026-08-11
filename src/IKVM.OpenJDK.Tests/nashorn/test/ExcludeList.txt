@@ -1,0 +1,1 @@
+src/jdk/nashorn/internal/runtime/test/LexicalBindingTest.java                                                           generic-all

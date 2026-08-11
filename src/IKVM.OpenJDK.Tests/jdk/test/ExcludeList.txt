@@ -456,6 +456,7 @@ java/awt/LightweightDispatcher/LWDispatcherMemoryLeakTest.java                  
 java/awt/List/ActionAfterRemove/ActionAfterRemove.java                                                                  generic-all
 java/awt/List/EmptyListEventTest/EmptyListEventTest.java                                                                generic-all
 java/awt/List/FirstItemRemoveTest/FirstItemRemoveTest.html                                                              generic-all
+java/awt/List/KeyEventsTest/KeyEventsTest.java                                                                          generic-all
 java/awt/List/ListFlickers/ListFlickers.java                                                                            generic-all
 java/awt/List/ListGarbageCollectionTest/AwtListGarbageCollectionTest.java                                               generic-all
 java/awt/List/ListPeer/R2303044ListSelection.java                                                                       generic-all
@@ -2902,6 +2903,7 @@ sun/rmi/server/UnicastServerRef/FilterUSRTest.java                              
 javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
 com/sun/crypto/provider/Cipher/Blowfish/TestCipherBlowfish.java                                                         generic-all
 com/sun/crypto/provider/Cipher/PBE/PBESameBuffer/PBESameBuffer.java                                                     generic-all
+com/sun/crypto/provider/Cipher/PBE/PBMacBuffer.java                                                                     generic-all
 com/sun/crypto/provider/Cipher/PBE/TestCipherKeyWrapperPBEKey.java                                                      generic-all
 com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithDefaultProvider.java                                       generic-all
 com/sun/crypto/provider/Cipher/PBE/TestCipherPBE.java                                                                   generic-all
