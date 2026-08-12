@@ -614,12 +614,6 @@ java/awt/Window/OwnedWindowsLeak/OwnedWindowsLeak.java                          
 java/awt/Window/OwnedWindowsSerialization/OwnedWindowsSerialization.java                                                generic-all
 java/awt/Window/PropertyChangeListenerLockSerialization/PropertyChangeListenerLockSerialization.java                    generic-all
 java/awt/Window/SetBackgroundNPE/SetBackgroundNPE.java                                                                  generic-all
-java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java                                                           generic-all
-java/awt/Window/ShapedAndTranslucentWindows/Shaped.java                                                                 generic-all
-java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java                                                            generic-all
-java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java                                                      generic-all
-java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java                                                       generic-all
-java/awt/Window/ShapedAndTranslucentWindows/Translucent.java                                                            macosx-all
 java/awt/Window/TopLevelLocation/TopLevelLocation.java                                                                  generic-all
 java/awt/Window/TranslucentJAppletTest/TranslucentJAppletTest.java                                                      generic-all
 java/awt/Window/TranslucentShapedFrameTest/TSFrame.java                                                                 generic-all
@@ -4050,11 +4044,6 @@ java/awt/Window/FullWindowContentTest/FullWindowContentTest.java                
 java/awt/Window/GetWindowsTest/GetWindowsTest.java                                                                      macosx-all
 java/awt/Window/HandleWindowDestroyTest/HandleWindowDestroyTest.html                                                    macosx-all
 java/awt/Window/setLocRelativeTo/SetLocationRelativeToTest.java                                                         macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/SetShape.java                                                               linux-all,macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java                                                       linux-all,macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java                                           macosx-all,windows-all
-java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java                                                      macosx-all,windows-all
-java/awt/Window/ShapedAndTranslucentWindows/TranslucentWindowClick.java                                                 macosx-all,windows-all
 javax/accessibility/6192422/bug6192422.java                                                                             macosx-all
 javax/swing/Headless/HeadlessAbstractSpinnerModel.java                                                                  macosx-all
 javax/swing/Headless/HeadlessBox_Filler.java                                                                            macosx-all
@@ -4158,14 +4147,6 @@ javax/swing/JTabbedPane/4666224/bug4666224.html                                 
 javax/swing/JToolBar/4529206/bug4529206.java                                                                            generic-all
 javax/swing/JToolTip/4644444/bug4644444.html                                                                            macosx-all
 javax/swing/JTree/6578666/bug6578666.java                                                                               generic-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentGradient.java                                        generic-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           generic-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java                                              macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java                                  macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java                       macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java                                               macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentPerPixelTranslucentGradient.java                             macosx-all,windows-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentWindowClickSwing.java                                        macosx-all,windows-all
 javax/swing/Popup/6514582/bug6514582.java                                                                               macosx-all
 javax/swing/reliability/TaskUndJFrameProperties.java                                                                    macosx-all,windows-all
 javax/swing/reliability/TaskZoomJFrameChangeState.java                                                                  linux-all,macosx-all
@@ -4189,8 +4170,6 @@ java/awt/List/KeyEventsTest/KeyEventsTest.java                                  
 # an action'
 java/awt/Modal/ToBack/ToBackAppModal2Test.java                                                                          generic-all
 # fails on net8.0 linux-x64
-java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            generic-all
-# fails on net8.0 linux-x64
 java/awt/event/MouseWheelEvent/WheelModifier/MouseWheelOnBackgroundComponent.java                                       generic-all
 # not graphical. Fails on net8.0 win-x64; cause not established
 com/sun/crypto/provider/Cipher/PBE/PBMacBuffer.java                                                                     generic-all
@@ -4210,9 +4189,33 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless3Test.java       
 java/awt/Robot/RobotWheelTest/RobotWheelTest.java                                                                       generic-all
 # fails on net472 win-x64
 javax/net/ssl/SSLSocket/Tls13PacketSize.java                                                                            generic-all
-# fails on net8.0 linux-x64
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucent.java                                                generic-all
-# fails on net8.0 linux-x64
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java                                          generic-all
 # fails on net8.0 win-x64
 javax/xml/jaxp/common/8144593/ValidationWarningsTest.java                                                               generic-all
+
+# The window shaping and translucency tests. These check that a window's shape
+# and per-pixel alpha are honoured, and that clicks land on or miss the shaped
+# region, none of which a headless runner reproduces faithfully. They were
+# already excluded in a patchwork of platform lists, and the ones failing were
+# in each case the platform a given entry happened to omit.
+java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java                                                           generic-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShape.java                                                               generic-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java                                                       generic-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java                                            generic-all
+java/awt/Window/ShapedAndTranslucentWindows/Shaped.java                                                                 generic-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java                                                            generic-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java                                                      generic-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java                                           generic-all
+java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java                                                       generic-all
+java/awt/Window/ShapedAndTranslucentWindows/Translucent.java                                                            generic-all
+java/awt/Window/ShapedAndTranslucentWindows/TranslucentChoice.java                                                      generic-all
+java/awt/Window/ShapedAndTranslucentWindows/TranslucentWindowClick.java                                                 generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucent.java                                                generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java                                          generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentGradient.java                                        generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java                                           generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java                                              generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java                                  generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java                       generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java                                               generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentPerPixelTranslucentGradient.java                             generic-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentWindowClickSwing.java                                        generic-all
