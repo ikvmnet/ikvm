@@ -4191,6 +4191,9 @@ java/awt/Robot/RobotWheelTest/RobotWheelTest.java                               
 javax/net/ssl/SSLSocket/Tls13PacketSize.java                                                                            generic-all
 # fails on net8.0 win-x64
 javax/xml/jaxp/common/8144593/ValidationWarningsTest.java                                                               generic-all
+# hangs on net8.0 linux-x64, killed by the 32 minute timeout; there is no
+# audio device on the runner
+javax/sound/midi/Sequencer/Looping.java                                                                                 generic-all
 
 # The window shaping and translucency tests. These check that a window's shape
 # and per-pixel alpha are honoured, and that clicks land on or miss the shaped
