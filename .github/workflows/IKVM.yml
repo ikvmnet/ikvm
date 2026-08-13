@@ -534,30 +534,22 @@ jobs:
       shell: pwsh
       run: |
         # The PKCS11 provider loads native libraries built against the older MSVC
-        # runtimes; without these its tests fail across every Windows partition.
-        # Fetched from Microsoft rather than the chocolatey community feed, which
-        # has taken out whole runs when unavailable.
-        $ErrorActionPreference = 'Stop'
-        # the pre-2012 installers predate the /install /quiet switches
-        $redists = @(
-            @{ Url = 'https://download.microsoft.com/download/1/1/1/1116b75a-9ec3-481a-a3c8-1777b5381140/vcredist_x64.exe'; Args = @('/q'); Name = '2008 SP1' },
-            @{ Url = 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe'; Args = @('/q','/norestart'); Name = '2010 SP1' },
-            @{ Url = 'https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe'; Args = @('/install','/quiet','/norestart'); Name = '2012 U4' },
-            @{ Url = 'https://aka.ms/highdpimfc2013x64enu'; Args = @('/install','/quiet','/norestart'); Name = '2013' },
-            @{ Url = 'https://aka.ms/vs/17/release/vc_redist.x64.exe'; Args = @('/install','/quiet','/norestart'); Name = '2015-2022' }
-        )
-        foreach ($r in $redists) {
-            $f = Join-Path $env:TEMP ([guid]::NewGuid().ToString() + '.exe')
-            for ($try = 1; $try -le 3; $try++) {
-                try { Invoke-WebRequest -Uri $r.Url -OutFile $f -UseBasicParsing -TimeoutSec 180; break }
-                catch { if ($try -eq 3) { throw "download of $($r.Name) failed: $_" }; Start-Sleep -Seconds (10 * $try) }
-            }
-            $p = Start-Process -FilePath $f -ArgumentList $r.Args -Wait -PassThru
-            # 1638 is 'a newer version is already installed', 3010 is 'reboot required'
-            if ($p.ExitCode -notin 0, 1638, 3010) { throw "$($r.Name) install failed with $($p.ExitCode)" }
-            "installed $($r.Name) (exit $($p.ExitCode))"
-            Remove-Item $f -Force -ErrorAction SilentlyContinue
+        # runtimes. Without them its tests fail across every Windows partition, so
+        # this step is required rather than incidental.
+        #
+        # community.chocolatey.org has taken out whole runs when unavailable, and
+        # Microsoft's direct download links for the pre-2012 redistributables have
+        # moved, so retry here rather than depend on either being reliable first
+        # time.
+        $ErrorActionPreference = 'Continue'
+        $installed = $false
+        for ($try = 1; $try -le 5; $try++) {
+            choco install vcredist-all -y --no-progress --ignore-checksums
+            if ($LASTEXITCODE -in 0, 1641, 3010) { $installed = $true; break }
+            Write-Host "attempt $try failed with $LASTEXITCODE, retrying"
+            Start-Sleep -Seconds (15 * $try)
         }
+        if (-not $installed) { throw 'could not install the Visual C++ runtimes' }
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
       uses: jlumbroso/free-disk-space@main
