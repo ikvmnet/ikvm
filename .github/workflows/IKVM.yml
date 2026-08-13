@@ -529,6 +529,27 @@ jobs:
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"win-x86":["windows-2025-vs2026"],"win-x64":["windows-2025-vs2026"],"linux-x64":["ubuntu-24.04"],"linux-arm64":["ubuntu-24.04-arm"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
+    - name: Install Visual C++ Runtime
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # The PKCS11 provider loads native libraries built against the older MSVC
+        # runtimes. Without them its tests fail across every Windows partition, so
+        # this step is required rather than incidental.
+        #
+        # community.chocolatey.org has taken out whole runs when unavailable, and
+        # Microsoft's direct download links for the pre-2012 redistributables have
+        # moved, so retry here rather than depend on either being reliable first
+        # time.
+        $ErrorActionPreference = 'Continue'
+        $installed = $false
+        for ($try = 1; $try -le 5; $try++) {
+            choco install vcredist-all -y --no-progress --ignore-checksums
+            if ($LASTEXITCODE -in 0, 1641, 3010) { $installed = $true; break }
+            Write-Host "attempt $try failed with $LASTEXITCODE, retrying"
+            Start-Sleep -Seconds (15 * $try)
+        }
+        if (-not $installed) { throw 'could not install the Visual C++ runtimes' }
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
       uses: jlumbroso/free-disk-space@main
@@ -564,10 +585,6 @@ jobs:
     #   if: runner.os == 'Windows'
     #   shell: pwsh
     #   run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
-    - name: Install Visual C++ Runtime
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: choco install vcredist-all -y
     - name: Install Mono
       if: runner.os == 'Linux'
       run: |
