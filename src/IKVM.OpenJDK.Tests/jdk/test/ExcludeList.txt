@@ -2607,7 +2607,6 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                 
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
 java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all,macosx-all
 java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all,macosx-all
-java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all,macosx-all
 java/nio/channels/FileChannel/Release.java                                                                              linux-all,macosx-all
 java/nio/channels/FileChannel/TryLock.java                                                                              linux-all,macosx-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
@@ -3594,7 +3593,6 @@ java/awt/EventQueue/PushPopDeadlock2/PushPopTest.java                           
 java/awt/EventQueue/SecondaryLoopTest/SecondaryLoopTest.java                                                            generic-all
 java/awt/FileDialog/ISCthrownByFileListTest/ISCthrownByFileListTest.java                                                linux-all,macosx-all
 java/awt/Focus/6378278/InputVerifierTest.java                                                                           generic-all
-java/awt/Focus/6401036/InputVerifierTest2.java                                                                          macosx-all
 java/awt/Focus/ChildWindowFocusTest/ChildWindowFocusTest.html                                                           generic-all
 java/awt/Focus/DisposedWindow/DisposeDialogNotActivateOwnerTest/DisposeDialogNotActivateOwnerTest.html                  linux-all,macosx-all
 java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.html                                                             macosx-all
@@ -4224,3 +4222,75 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslu
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java                                               generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentPerPixelTranslucentGradient.java                             generic-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentWindowClickSwing.java                                        generic-all
+
+# Tests whose .html sibling is excluded but whose .java was not. Both files
+# exist and jtreg runs the .java, so these have been running unexcluded all
+# along. Four surfaced as CI failures one at a time before the pattern was
+# noticed. Each inherits the platform list already recorded for its .html.
+java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java                                                      generic-all
+java/awt/Choice/PopupPosTest/PopupPosTest.java                                                                          macosx-all,windows-all
+java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.java                                                        generic-all
+java/awt/Component/F10TopToplevel/F10TopToplevel.java                                                                   generic-all
+java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.java                                                         generic-all
+java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java                                                          generic-all
+java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest.java                                                       generic-all
+java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java                                                      generic-all
+java/awt/Focus/ChildWindowFocusTest/ChildWindowFocusTest.java                                                           generic-all
+java/awt/Focus/DeiconifiedFrameLoosesFocus/DeiconifiedFrameLoosesFocus.java                                             generic-all
+java/awt/Focus/DisposedWindow/DisposeDialogNotActivateOwnerTest/DisposeDialogNotActivateOwnerTest.java                  linux-all,macosx-all
+java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.java                                                             macosx-all
+java/awt/Focus/ModalBlockedStealsFocusTest/ModalBlockedStealsFocusTest.java                                             generic-all
+java/awt/Focus/ModalExcludedWindowClickTest/ModalExcludedWindowClickTest.java                                           macosx-all
+java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.java                                       linux-all,macosx-all
+java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java                                           macosx-all
+java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java                                                                       generic-all
+java/awt/Focus/WindowInitialFocusTest/WindowInitialFocusTest.java                                                       generic-all
+java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java                                           macosx-all
+java/awt/FontClass/CreateFont/bigfont.java                                                                              generic-all
+java/awt/Frame/DisposeStressTest/DisposeStressTest.java                                                                 generic-all
+java/awt/Frame/NonEDT_GUI_DeadlockTest/NonEDT_GUI_Deadlock.java                                                         macosx-all
+java/awt/GridBagLayout/GridBagLayoutIpadXYTest/GridBagLayoutIpadXYTest.java                                             generic-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.java                      macosx-all
+java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java                                    generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedTest.java                                generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java                                            generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/TestDialogTypeAhead.java                                                        generic-all
+java/awt/List/FirstItemRemoveTest/FirstItemRemoveTest.java                                                              generic-all
+java/awt/List/FocusEmptyListTest/FocusEmptyListTest.java                                                                macosx-all
+java/awt/Mouse/ExtraMouseClick/ExtraMouseClick.java                                                                     generic-all
+java/awt/Mouse/TitleBarDoubleClick/TitleBarDoubleClick.java                                                             generic-all
+java/awt/Multiscreen/WindowGCChangeTest/WindowGCChangeTest.java                                                         generic-all
+java/awt/Window/HandleWindowDestroyTest/HandleWindowDestroyTest.java                                                    macosx-all
+java/awt/datatransfer/DragUnicodeBetweenJVMTest/DragUnicodeBetweenJVMTest.java                                          generic-all
+java/awt/datatransfer/MissedHtmlAndRtfBug/MissedHtmlAndRtfBug.java                                                      macosx-all,windows-all
+java/awt/dnd/DragInterceptorAppletTest/DragInterceptorAppletTest.java                                                   generic-all
+java/awt/dnd/FileListBetweenJVMsTest/FileListBetweenJVMsTest.java                                                       generic-all
+java/awt/dnd/ImageDecoratedDnDInOut/ImageDecoratedDnDInOut.java                                                         generic-all
+java/awt/dnd/ImageDecoratedDnDNegative/ImageDecoratedDnDNegative.java                                                   generic-all
+java/awt/dnd/InterJVMGetDropSuccessTest/InterJVMGetDropSuccessTest.java                                                 generic-all
+java/awt/dnd/NoFormatsCrashTest/NoFormatsCrashTest.java                                                                 generic-all
+java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java                                                         generic-all
+java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java                                     generic-all
+java/awt/event/ComponentEvent/MovedResizedTardyEventTest/MovedResizedTardyEventTest.java                                macosx-all
+java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java                                                                         generic-all
+java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java                      generic-all
+java/awt/event/MouseEvent/MenuDragMouseEventAbsoluteCoordsTest/MenuDragMouseEventAbsoluteCoordsTest.java                generic-all
+java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.java                                                            generic-all
+java/awt/event/MouseEvent/MouseWheelEventAbsoluteCoordsTest/MouseWheelEventAbsoluteCoordsTest.java                      generic-all
+java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java                                                                  generic-all
+java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_2.java                                               generic-all
+java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_3.java                                               generic-all
+java/awt/grab/MenuDragEvents/MenuDragEvents.java                                                                        macosx-all,windows-all
+java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java                                              macosx-all
+java/awt/print/PageFormat/SetOrient.java                                                                                macosx-all
+java/awt/print/PrinterJob/PrinterDialogsModalityTest/PrinterDialogsModalityTest.java                                    macosx-all,windows-all
+javax/swing/JFrame/4962534/bug4962534.java                                                                              generic-all
+javax/swing/JTabbedPane/4666224/bug4666224.java                                                                         macosx-all
+javax/swing/JToolTip/4644444/bug4644444.java                                                                            macosx-all
+sun/java2d/cmm/ColorConvertOp/ConstructorsNullTest/ConstructorsNullTest.java                                            generic-all
+
+# Seen failing in CI, each already excluded on other platforms.
+# fails on net472 win-x64
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     generic-all
+# fails on net8.0 linux-x64
+java/awt/Focus/6401036/InputVerifierTest2.java                                                                          generic-all
