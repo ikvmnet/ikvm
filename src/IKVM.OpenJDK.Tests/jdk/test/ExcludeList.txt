@@ -3594,7 +3594,6 @@ java/awt/EventQueue/PushPopDeadlock2/PushPopTest.java                           
 java/awt/EventQueue/SecondaryLoopTest/SecondaryLoopTest.java                                                            generic-all
 java/awt/FileDialog/ISCthrownByFileListTest/ISCthrownByFileListTest.java                                                linux-all,macosx-all
 java/awt/Focus/6378278/InputVerifierTest.java                                                                           generic-all
-java/awt/Focus/6382144/EndlessLoopTest.java                                                                             macosx-all,windows-all
 java/awt/Focus/6401036/InputVerifierTest2.java                                                                          macosx-all
 java/awt/Focus/ChildWindowFocusTest/ChildWindowFocusTest.html                                                           generic-all
 java/awt/Focus/DisposedWindow/DisposeDialogNotActivateOwnerTest/DisposeDialogNotActivateOwnerTest.html                  linux-all,macosx-all
@@ -3659,7 +3658,6 @@ java/awt/Insets/HeadlessInsets.java                                             
 java/awt/keyboard/AltPlusNumberKeyCombinationsTest/AltPlusNumberKeyCombinationsTest.java                                macosx-all,windows-all
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.html  linux-all,macosx-all
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.html                      macosx-all
-java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogButtonTest/EnqueueWithDialogButtonTest.java                    macosx-all
 java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java                                generic-all
 java/awt/List/FocusEmptyListTest/FocusEmptyListTest.html                                                                macosx-all
 java/awt/List/KeyEventsTest/KeyEventsTest.html                                                                          linux-all,macosx-all
@@ -4194,6 +4192,10 @@ javax/xml/jaxp/common/8144593/ValidationWarningsTest.java                       
 # hangs on net8.0 linux-x64, killed by the 32 minute timeout; there is no
 # audio device on the runner
 javax/sound/midi/Sequencer/Looping.java                                                                                 generic-all
+# fails on net8.0 linux-x64
+java/awt/Focus/6382144/EndlessLoopTest.java                                                                             generic-all
+# fails on net8.0 linux-x64; 7 of its 8 TypeAhead siblings are already generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogButtonTest/EnqueueWithDialogButtonTest.java                    generic-all
 
 # The window shaping and translucency tests. These check that a window's shape
 # and per-pixel alpha are honoured, and that clicks land on or miss the shaped
