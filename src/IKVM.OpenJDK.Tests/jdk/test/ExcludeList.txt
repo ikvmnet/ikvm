@@ -3500,7 +3500,7 @@ java/awt/applet/Applet/HeadlessApplet.java                                      
 java/awt/Choice/DragMouseOutAndRelease/DragMouseOutAndRelease.java                                                      macosx-all
 java/awt/Choice/GetSizeTest/GetSizeTest.java                                                                            macosx-all
 java/awt/Choice/GrabLockTest/GrabLockTest.java                                                                          macosx-all
-java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            macosx-all
+java/awt/Choice/PopdownGeneratesMouseEvents/PopdownGeneratesMouseEvents.html                                            generic-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html                                                                          macosx-all,windows-all
 java/awt/Choice/RemoveAllShrinkTest/RemoveAllShrinkTest.java                                                            generic-all
 java/awt/Choice/ResizeAutoClosesChoice/ResizeAutoClosesChoice.java                                                      generic-all
@@ -3599,7 +3599,7 @@ java/awt/Focus/FocusSubRequestTest/FocusSubRequestTest.html                     
 java/awt/Focus/Headless/HeadlessContainerOrderFocusTraversalPolicy.java                                                 macosx-all
 java/awt/Focus/Headless/HeadlessDefaultFocusTraversalPolicy.java                                                        macosx-all
 java/awt/Focus/Headless/HeadlessDefaultKeyboardFocusManager.java                                                        macosx-all
-java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.html                                             macosx-all
+java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.html                                             generic-all
 java/awt/Focus/ModalExcludedWindowClickTest/ModalExcludedWindowClickTest.html                                           macosx-all
 java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.html                                       linux-all,macosx-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.html                                           macosx-all
@@ -3654,11 +3654,11 @@ java/awt/image/Headless/HeadlessRGBImageFilter.java                             
 java/awt/image/VolatileImage/BitmaskVolatileImage.java                                                                  linux-all,macosx-all
 java/awt/Insets/HeadlessInsets.java                                                                                     macosx-all
 java/awt/keyboard/AltPlusNumberKeyCombinationsTest/AltPlusNumberKeyCombinationsTest.java                                macosx-all,windows-all
-java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.html  linux-all,macosx-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.html  generic-all
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.html                      macosx-all
 java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogTest/EnqueueWithDialogTest.java                                generic-all
 java/awt/List/FocusEmptyListTest/FocusEmptyListTest.html                                                                macosx-all
-java/awt/List/KeyEventsTest/KeyEventsTest.html                                                                          linux-all,macosx-all
+java/awt/List/KeyEventsTest/KeyEventsTest.html                                                                          generic-all
 java/awt/Menu/Headless/HeadlessMenu.java                                                                                macosx-all
 java/awt/Menu/Headless/HeadlessMenuItem.java                                                                            macosx-all
 java/awt/Menu/Headless/HeadlessMenuShortcut.java                                                                        macosx-all
