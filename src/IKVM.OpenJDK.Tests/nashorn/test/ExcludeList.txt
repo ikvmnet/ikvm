@@ -1,0 +1,3 @@
+# Fails intermittently on net8.0 linux-x64. Its TestNG run reports
+# 'failures: 1' without naming a consistent case.
+src/jdk/nashorn/internal/runtime/test/LexicalBindingTest.java                                                           generic-all
