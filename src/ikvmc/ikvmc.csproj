@@ -7,6 +7,10 @@
         <SelfContained>true</SelfContained>
     </PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+	</ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Tools.Importer\IKVM.Tools.Importer.csproj" />
     </ItemGroup>

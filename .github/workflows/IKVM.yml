@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Cache OpenJDK Test Harness Build
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ext/jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('ext/jtreg/**') }}-8
@@ -53,7 +53,7 @@ jobs:
       run: zip -r /tmp/jtreg-build.zip build
       working-directory: ext/jtreg
     - name: Upload OpenJDK Test Harness
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: jtreg-build
         path: /tmp/jtreg-build.zip
@@ -63,6 +63,9 @@ jobs:
     - build-jtreg
     timeout-minutes: 720
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
     env:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -94,7 +97,7 @@ jobs:
       with:
         swap-size-gb: 8
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         submodules: recursive
@@ -143,11 +146,11 @@ jobs:
         version: latest
         locked: false
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
-        versionSpec: 5.x
+        versionSpec: 6.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
     - name: Download JTReg Build
       uses: actions/download-artifact@v4
       with:
@@ -163,6 +166,11 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - name: Configure Maven for GitHub Packages
+      uses: whelk-io/maven-settings-xml-action@v22
+      with:
+        servers: '[{ "id": "ikvmnet", "username": "${{ github.actor }}", "password": "${{ secrets.GITHUB_TOKEN }}" }]'
+        repositories: '[{ "id": "ikvmnet", "url": "https://maven.pkg.github.com/ikvmnet/*" }]'
     - name: Add NuGet Source (GitHub)
       shell: pwsh
       run: dotnet nuget add source --username USERNAME --password $env:GITHUB_TOKEN --store-password-in-clear-text --name ikvm $env:GITHUB_REPOS
@@ -198,7 +206,7 @@ jobs:
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: msbuild.binlog
         path: msbuild.binlog
@@ -206,7 +214,7 @@ jobs:
       run: tar czvf /tmp/nuget.tar.gz nuget
       working-directory: dist
     - name: Upload NuGet Packages
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: nuget
         path: /tmp/nuget.tar.gz
@@ -216,7 +224,7 @@ jobs:
       run: tar czvf /tmp/tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tools
         path: /tmp/tools.tar.gz
@@ -226,7 +234,7 @@ jobs:
       run: tar czvf /tmp/jre.tar.gz jre
       working-directory: dist
     - name: Upload JRE
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: jre
         path: /tmp/jre.tar.gz
@@ -236,7 +244,7 @@ jobs:
       run: tar czvf /tmp/jdk.tar.gz jdk
       working-directory: dist
     - name: Upload JDK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: jdk
         path: /tmp/jdk.tar.gz
@@ -246,7 +254,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Reflection.Tests.tar.gz tests/IKVM.Reflection.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Reflection.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Reflection.Tests
         path: /tmp/tests--IKVM.Reflection.Tests.tar.gz
@@ -256,7 +264,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.CoreLib.Tests.tar.gz tests/IKVM.CoreLib.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.CoreLib.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.CoreLib.Tests
         path: /tmp/tests--IKVM.CoreLib.Tests.tar.gz
@@ -266,7 +274,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tests.tar.gz tests/IKVM.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Tests
         path: /tmp/tests--IKVM.Tests.tar.gz
@@ -276,7 +284,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Java.Tests.tar.gz tests/IKVM.Java.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Java.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Java.Tests
         path: /tmp/tests--IKVM.Java.Tests.tar.gz
@@ -286,7 +294,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Tests.tar.gz tests/IKVM.Tools.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Tools.Tests
         path: /tmp/tests--IKVM.Tools.Tests.tar.gz
@@ -296,7 +304,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz tests/IKVM.Tools.Exporter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Exporter.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Tools.Exporter.Tests
         path: /tmp/tests--IKVM.Tools.Exporter.Tests.tar.gz
@@ -306,7 +314,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz tests/IKVM.Tools.Importer.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.Tools.Importer.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.Tools.Importer.Tests
         path: /tmp/tests--IKVM.Tools.Importer.Tests.tar.gz
@@ -316,7 +324,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz tests/IKVM.MSBuild.Tasks.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tasks.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.MSBuild.Tasks.Tests
         path: /tmp/tests--IKVM.MSBuild.Tasks.Tests.tar.gz
@@ -326,7 +334,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.MSBuild.Tests.tar.gz tests/IKVM.MSBuild.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.MSBuild.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.MSBuild.Tests
         path: /tmp/tests--IKVM.MSBuild.Tests.tar.gz
@@ -336,7 +344,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz tests/IKVM.NET.Sdk.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.NET.Sdk.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.NET.Sdk.Tests
         path: /tmp/tests--IKVM.NET.Sdk.Tests.tar.gz
@@ -346,7 +354,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz tests/IKVM.JTReg.TestAdapter.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.JTReg.TestAdapter.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.JTReg.TestAdapter.Tests
         path: /tmp/tests--IKVM.JTReg.TestAdapter.Tests.tar.gz
@@ -356,7 +364,7 @@ jobs:
       run: tar czvf /tmp/tests--IKVM.OpenJDK.Tests.tar.gz tests/IKVM.OpenJDK.Tests
       working-directory: dist
     - name: Upload Tests (IKVM.OpenJDK.Tests)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tests--IKVM.OpenJDK.Tests
         path: /tmp/tests--IKVM.OpenJDK.Tests.tar.gz
@@ -365,7 +373,7 @@ jobs:
     - name: Package Documentation
       run: cd doc && zip /tmp/doc.zip *
     - name: Upload Documentation
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: doc
         path: /tmp/doc.zip
@@ -519,8 +527,29 @@ jobs:
       matrix: ${{ fromJSON(needs.test-vars.outputs.matrix) }}
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"win-x86":["windows-2022"],"win-x64":["windows-2022"],"linux-x64":["ubuntu-24.04"],"linux-arm64":["ubuntu-24.04-arm"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"win-x86":["windows-2025-vs2026"],"win-x64":["windows-2025-vs2026"],"linux-x64":["ubuntu-24.04"],"linux-arm64":["ubuntu-24.04-arm"],"osx-x64":["macos-13"],"osx-arm64":["macos-14"]}')[matrix.sys] }}
     steps:
+    - name: Install Visual C++ Runtime
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # The PKCS11 provider loads native libraries built against the older MSVC
+        # runtimes. Without them its tests fail across every Windows partition, so
+        # this step is required rather than incidental.
+        #
+        # community.chocolatey.org has taken out whole runs when unavailable, and
+        # Microsoft's direct download links for the pre-2012 redistributables have
+        # moved, so retry here rather than depend on either being reliable first
+        # time.
+        $ErrorActionPreference = 'Continue'
+        $installed = $false
+        for ($try = 1; $try -le 5; $try++) {
+            choco install vcredist-all -y --no-progress --ignore-checksums
+            if ($LASTEXITCODE -in 0, 1641, 3010) { $installed = $true; break }
+            Write-Host "attempt $try failed with $LASTEXITCODE, retrying"
+            Start-Sleep -Seconds (15 * $try)
+        }
+        if (-not $installed) { throw 'could not install the Visual C++ runtimes' }
     - name: Free Disk Space (Linux)
       if: runner.os == 'Linux'
       uses: jlumbroso/free-disk-space@main
@@ -532,7 +561,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $dir="C:\w"
+        $dir="${{ runner.temp }}\w"
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
@@ -556,10 +585,6 @@ jobs:
     #   if: runner.os == 'Windows'
     #   shell: pwsh
     #   run: choco install procdump -y; Add-Content $env:GITHUB_PATH "$env:ProgramData\chocolatey\bin\"
-    - name: Install Visual C++ Runtime
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: choco install vcredist-all -y
     - name: Install Mono
       if: runner.os == 'Linux'
       run: |
@@ -720,7 +745,7 @@ jobs:
       working-directory: ${{ env.WORKPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
@@ -736,7 +761,7 @@ jobs:
         swap-storage: false
         large-packages: false
     - name: Checkout Source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Setup .NET 10.0
@@ -744,11 +769,11 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v3
+      uses: gittools/actions/gitversion/setup@v4
       with:
-        versionSpec: 5.x
+        versionSpec: 6.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v3
+      uses: gittools/actions/gitversion/execute@v4
     - name: Download NuGet Packages
       uses: actions/download-artifact@v4
       with:

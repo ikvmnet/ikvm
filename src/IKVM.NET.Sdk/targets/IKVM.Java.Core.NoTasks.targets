@@ -169,6 +169,10 @@ Value = b.ToString();
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsClasspath" />
         </IkvmSortItemGroup>
 
+		<IkvmSortItemGroup Items="@(BootClasspath)">
+			<Output TaskParameter="Items" ItemName="_JavaCompilerArgsBootClasspath" />
+		</IkvmSortItemGroup>
+
         <IkvmSortItemGroup Items="@(Compile)">
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsCompile" />
         </IkvmSortItemGroup>
@@ -180,10 +184,10 @@ Value = b.ToString();
             <_JavaCompilerArgs Include="-encoding $(Encoding)" Condition=" '$(Encoding)' != '' " />
             <_JavaCompilerArgs Include="-parameters" />
             <_JavaCompilerArgs Include="-cp" />
-            <_JavaCompilerArgs Include="null" Condition=" '$(Bootstrap)' == 'true' " />
-            <_JavaCompilerArgs Include="@(_JavaCompilerArgsClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '$(Bootstrap)' != 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
-            <_JavaCompilerArgs Include="-bootclasspath" Condition=" '$(Bootstrap)' == 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
-            <_JavaCompilerArgs Include="@(_JavaCompilerArgsClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '$(Bootstrap)' == 'true' And '@(_JavaCompilerArgsClasspath)' != '' " />
+            <_JavaCompilerArgs Include="null" Condition=" '@(_JavaCompilerArgsClasspath)' == '' " />
+            <_JavaCompilerArgs Include="@(_JavaCompilerArgsClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '@(_JavaCompilerArgsClasspath)' != '' " />
+            <_JavaCompilerArgs Include="-bootclasspath" Condition=" '@(_JavaCompilerArgsBootClasspath)' != '' " />
+            <_JavaCompilerArgs Include="@(_JavaCompilerArgsBootClasspath, '$([System.IO.Path]::PathSeparator)')" Condition=" '@(_JavaCompilerArgsBootClasspath)' != '' " />
             <_JavaCompilerArgs Include="-source" />
             <_JavaCompilerArgs Include="$(LangVersion)" />
             <_JavaCompilerArgs Include="-target" />
@@ -192,6 +196,9 @@ Value = b.ToString();
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
             <_JavaCompilerArgs Include="-h" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(HeaderOutputPath)'))" />
+			<_JavaCompilerArgs Include="-processors" Condition=" '@(JavaCompilerProcessors)' != '' " />
+			<_JavaCompilerArgs Include="$(JavaCompilerProcessors, ',')" Condition=" '@(JavaCompilerProcessors)' != '' " />
+			<_JavaCompilerArgs Include="@(JavaCompilerPlugins->'&quot;-Xplugin:%(Identity)&quot;')" Condition=" '@(JavaCompilerPlugins)' != '' " />
             <_JavaCompilerArgs Include="@(_JavaCompilerArgsCompile->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
@@ -205,7 +212,7 @@ Value = b.ToString();
     </PropertyGroup>
 
     <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
-    <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles" Inputs="$(MSBuildThisFileFullPath);$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="_CompileJavaResponseFile;_ResolveClasspathFiles;_ResolveBootClasspathFiles" Inputs="$(MSBuildThisFileFullPath);$(_CompileJavaResponseFile);@(Compile);@(ClasspathFiles);@(BootClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
         <!-- Store initial time. Files that remain older than this will be removed. -->

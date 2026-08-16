@@ -76,6 +76,12 @@ namespace IKVM.MSBuild.Tasks
         public ITaskItem[] Classpath { get; set; }
 
         /// <summary>
+        /// Boot classpath for compiler.
+        /// </summary>
+        [Required]
+        public ITaskItem[] BootClasspath { get; set; }
+
+        /// <summary>
         /// Source files to compile.
         /// </summary>
         [Required]
@@ -123,6 +129,16 @@ namespace IKVM.MSBuild.Tasks
         public string Encoding { get; set; }
 
         /// <summary>
+        /// Annotation processors.
+        /// </summary>
+        public ITaskItem[] Processors { get; set; }
+
+        /// <summary>
+        /// List of javac plugins to activate via -Xplugin:.
+        /// </summary>
+        public ITaskItem[] Plugins { get; set; }
+
+        /// <summary>
         /// Executes the Java compiler.
         /// </summary>
         /// <returns></returns>
@@ -130,6 +146,11 @@ namespace IKVM.MSBuild.Tasks
         {
             if (Classpath != null)
                 foreach (var i in Classpath)
+                    if (i.ItemSpec != null)
+                        i.ItemSpec = System.IO.Path.GetFullPath(i.ItemSpec);
+
+            if (BootClasspath != null)
+                foreach (var i in BootClasspath)
                     if (i.ItemSpec != null)
                         i.ItemSpec = System.IO.Path.GetFullPath(i.ItemSpec);
 
@@ -254,6 +275,20 @@ namespace IKVM.MSBuild.Tasks
                     Log.LogWarning("Unsupported option '-target'. Ignoring.");
             }
 
+            // apply plugins
+            if (Plugins != null)
+            {
+                foreach (var plugin in Plugins)
+                    options.add($"-Xplugin:\"{plugin.ItemSpec}\"");
+            }
+
+            // apply processors
+            if (Processors != null)
+            {
+                foreach (var processor in Processors)
+                    options.add($"-processor:{string.Join(",", processor.ItemSpec)}");
+            }
+
             javacArgLog.AddRange(options.AsEnumerable<string>());
 
             // apply classpath
@@ -266,6 +301,18 @@ namespace IKVM.MSBuild.Tasks
                 fileManager.setLocation(StandardLocation.CLASS_PATH, cp);
                 javacArgLog.Add("-cp");
                 javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.CLASS_PATH).AsEnumerable<File>().Select(i => i.getPath()))}\"");
+            }
+
+            // apply classpath
+            if (BootClasspath != null && BootClasspath.Length > 0)
+            {
+                var cp = new ArrayList();
+                foreach (var i in BootClasspath)
+                    cp.add(new File(i.ItemSpec));
+
+                fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, cp);
+                javacArgLog.Add("-bootclasspath");
+                javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.PLATFORM_CLASS_PATH).AsEnumerable<File>().Select(i => i.getPath()))}\"");
             }
 
             // emit log about command

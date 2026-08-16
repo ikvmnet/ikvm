@@ -19,11 +19,20 @@
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
          code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
     -->
-    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
+    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences" Condition=" '$(Bootstrap)' != 'true' ">
         <ItemGroup>
             <Classpath Include="%(ReferencePathWithRefAssemblies.JavaClasspath)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
         </ItemGroup>
     </Target>
+
+	<!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
+         code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
+    -->
+	<Target Name="GetReferenceBootClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences" Condition=" '$(Bootstrap)' == 'true' ">
+		<ItemGroup>
+			<BootClasspath Include="%(ReferencePathWithRefAssemblies.JavaClasspath)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
+		</ItemGroup>
+	</Target>
 
     <!-- Makes the generated header files available to Clang project types. -->
     <Target Name="GetOutputItem" Returns="@(GetOutputItem)">
@@ -136,20 +145,29 @@ Files = files.ToArray();
         </ClasspathToClasspathFiles>
     </Target>
 
+    <!-- Classpath can contain both files and directories. We transform it to files so Inputs can recognize it. -->
+    <Target Name="_ResolveBootClasspathFiles" DependsOnTargets="GetReferenceBootClasspath;ExportReferences">
+        <ClasspathToClasspathFiles Items="@(BootClasspath)">
+            <Output TaskParameter="Files" ItemName="BootClasspathFiles" />
+        </ClasspathToClasspathFiles>
+    </Target>
+
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
-    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles;_ResolveBootClasspathFiles" Inputs="@(Compile);@(ClasspathFiles);@(BootClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
-            $(CompileJavaDependsOn)
-            GenerateAssemblyInfo;
-            GetReferenceClasspath;
-            ExportReferences;
-            _ResolveClasspathFiles;
-            _CompileJava;
-        </CompileJavaDependsOn>
+			$(CompileJavaDependsOn)
+			GenerateAssemblyInfo;
+			GetReferenceClasspath;
+			GetReferenceBootClasspath;
+			ExportReferences;
+			_ResolveClasspathFiles;
+			_ResolveBootClasspathFiles;
+			_CompileJava;
+		</CompileJavaDependsOn>
     </PropertyGroup>
 
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">

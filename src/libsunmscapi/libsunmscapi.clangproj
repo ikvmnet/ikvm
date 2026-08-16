@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>1658e7ac-0fc7-4527-a7cf-9e0ff752b368</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>sunmscapi</TargetName>
         <OutputType>dll</OutputType>

@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>4941997b-acd9-4a29-88c3-36ceb5ed9c6d</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>fdlibm</TargetName>
         <OutputType>lib</OutputType>

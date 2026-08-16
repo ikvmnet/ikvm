@@ -1,9 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>30B763A2-A59A-4CE8-B11E-DD49527480CB</ProjectGuid>
-    </PropertyGroup>
     <PropertyGroup>
         <TargetName>jsoundds</TargetName>
         <OutputType>dll</OutputType>

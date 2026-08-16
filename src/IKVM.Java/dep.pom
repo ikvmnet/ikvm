@@ -1,0 +1,22 @@
+﻿<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ikvm.maven</groupId>
+    <artifactId>dep</artifactId>
+    <version>1</version>
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+	<repositories>
+		<repository>
+			<id>ikvmnet</id>
+			<url>https://maven.pkg.github.com/ikvmnet/*</url>
+		</repository>
+	</repositories>
+    <dependencies>
+        <dependency>
+            <groupId>org.ikvm</groupId>
+            <artifactId>java-ref-plugin</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+</project>
