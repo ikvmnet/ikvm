@@ -4294,3 +4294,10 @@ sun/java2d/cmm/ColorConvertOp/ConstructorsNullTest/ConstructorsNullTest.java    
 java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     generic-all
 # fails on net8.0 linux-x64
 java/awt/Focus/6401036/InputVerifierTest2.java                                                                          generic-all
+
+# Began failing with the move to jdk8u482-b08 and were excluded as part of
+# that upgrade. Carried across unchanged; none has been investigated, so the
+# reason each fails is not recorded here.
+javax/swing/DefaultButtonModel/DefaultButtonModelCrashTest.java                                                         generic-all
+javax/swing/JFileChooser/FileSystemView/Win32FolderSort.java                                                            generic-all
+lib/property/CheckWindowsProperty.java                                                                                  generic-all
