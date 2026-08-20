@@ -185,6 +185,46 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 return wrapper.TypeAsBaseType;
         }
 
+        /// <summary>
+        /// Creates a delegate of the given type that invokes the given method handle. The handle is adapted to the
+        /// signature of the delegate's Invoke method, which performs any conversions required (boxing, primitive
+        /// widening, ghost wrapping, receiver binding); an incompatible handle results in a
+        /// <see cref="global::java.lang.invoke.WrongMethodTypeException"/>.
+        /// </summary>
+        /// <param name="delegateType"></param>
+        /// <param name="methodHandle"></param>
+        /// <returns></returns>
+        public static Delegate getDelegateFromMethodHandle(Type delegateType, global::java.lang.invoke.MethodHandle methodHandle)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (delegateType == null)
+                throw new global::java.lang.NullPointerException("delegateType");
+            if (methodHandle == null)
+                throw new global::java.lang.NullPointerException("methodHandle");
+
+            var invoke = delegateType.BaseType == typeof(MulticastDelegate) ? delegateType.GetMethod("Invoke") : null;
+            if (invoke == null)
+                throw new global::java.lang.IllegalArgumentException(delegateType.FullName + " is not a delegate type.");
+
+            foreach (var parameter in invoke.GetParameters())
+                if (parameter.ParameterType.IsByRef || parameter.ParameterType.IsPointer)
+                    throw new global::java.lang.IllegalArgumentException(delegateType.FullName + " has a by-ref or pointer parameter.");
+
+            // adapt the handle to the delegate's own signature; this is what performs the conversions, and is also
+            // what rejects a handle that cannot be called through this delegate
+            var methodType = JVM.Context.MethodHandleUtil.GetDelegateMethodType(delegateType);
+            methodHandle = methodHandle.asType(methodType).asFixedArity();
+
+            // the adapted handle is materialized as its canonical MH/MHV delegate, which by construction has exactly
+            // the signature of the requested delegate; binding its Invoke as the target closes over it
+            var inner = JVM.Context.MethodHandleUtil.GetDelegateForInvokeExact(methodHandle);
+            return Delegate.CreateDelegate(delegateType, inner, inner.GetType().GetMethod("Invoke"), false) ??
+                throw new global::java.lang.IllegalArgumentException("Cannot create a " + delegateType.FullName + " for a method handle of type " + methodType + ".");
+#endif
+        }
+
         [HideFromJava]
         public static Exception mapException(Exception e)
         {
