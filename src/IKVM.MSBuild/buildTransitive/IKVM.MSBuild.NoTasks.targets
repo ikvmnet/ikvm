@@ -14,6 +14,7 @@
         <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
         <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
         <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
+        <___IkvmWriteExportsFileCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmWriteExportsFile.cs'))'))</___IkvmWriteExportsFileCs>
     </PropertyGroup>
 
     <ItemGroup>
@@ -64,6 +65,20 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
 $([MSBuild]::Unescape('$(___IkvmAsyncTaskCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
 $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmWriteExportsFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Reference Include="@(___PkgSystem_Collections_Immutable)" />
+            <Reference Include="@(___PkgSystem_Reflection_Metadata)" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+#define NETSTANDARD_2_0
+
+$([MSBuild]::Unescape('$(___IkvmWriteExportsFileCs)'))
             ]]>
             </Code>
         </Task>
