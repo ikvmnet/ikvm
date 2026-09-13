@@ -148,14 +148,51 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
-        public void Should_write_empty_file_for_no_references()
+        public void Should_not_write_file_for_no_references()
         {
             var output = GetTempPath();
 
             var t = BuildTestTask(output);
             t.Execute().Should().BeTrue();
 
-            ReadExports(output).Should().BeEmpty();
+            t.ExportsFile.Should().BeEmpty();
+            File.Exists(output).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void Should_not_write_file_when_no_reference_resolves()
+        {
+            var output = GetTempPath();
+
+            var t = BuildTestTask(output, Path.Combine(Path.GetTempPath(), "ikvm", "tests", Guid.NewGuid().ToString("n") + ".dll"));
+            t.Execute().Should().BeTrue();
+
+            t.ExportsFile.Should().BeEmpty();
+            File.Exists(output).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void Should_remove_stale_file_when_no_reference_resolves()
+        {
+            var output = GetTempPath();
+
+            BuildTestTask(output, typeof(IkvmWriteExportsFileTests).Assembly.Location).Execute().Should().BeTrue();
+            File.Exists(output).Should().BeTrue();
+
+            BuildTestTask(output).Execute().Should().BeTrue();
+            File.Exists(output).Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void Should_return_written_file()
+        {
+            var output = GetTempPath();
+
+            var t = BuildTestTask(output, typeof(IkvmWriteExportsFileTests).Assembly.Location);
+            t.Execute().Should().BeTrue();
+
+            t.ExportsFile.Should().ContainSingle();
+            t.ExportsFile[0].ItemSpec.Should().Be(output);
         }
 
         [TestMethod]

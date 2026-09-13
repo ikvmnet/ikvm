@@ -185,10 +185,12 @@
     <Target Name="GenerateIkvmAssemblyExports" BeforeTargets="PrepareResources" DependsOnTargets="GetIkvmReferenceItems;CompileIkvmReferences" Condition=" '$(IkvmGenerateAssemblyExports)' == 'true' And '$(Language)' != 'Java' And '@(IkvmReferenceItem)' != '' ">
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IkvmAssemblyExportsFile)'))" />
 
-        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Reverse="true" Output="$(IkvmAssemblyExportsFile)" />
+        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Reverse="true" Output="$(IkvmAssemblyExportsFile)">
+            <Output TaskParameter="ExportsFile" ItemName="_IkvmAssemblyExportsFile" />
+        </IkvmWriteExportsFile>
 
         <ItemGroup>
-            <EmbeddedResource Include="$(IkvmAssemblyExportsFile)" LogicalName="ikvm.exports" Visible="false" />
+            <EmbeddedResource Include="@(_IkvmAssemblyExportsFile)" LogicalName="ikvm.exports" Visible="false" />
             <FileWrites Include="$(IkvmAssemblyExportsFile)" />
         </ItemGroup>
     </Target>

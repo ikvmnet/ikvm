@@ -44,6 +44,12 @@
         public string Output { get; set; }
 
         /// <summary>
+        /// The file that was written, or an empty set when none of the references named an assembly to export.
+        /// </summary>
+        [Output]
+        public ITaskItem[] ExportsFile { get; set; }
+
+        /// <summary>
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
@@ -65,8 +71,39 @@
                     names.Add(name);
             }
 
+            // an assembly that exports nothing is better off with no resource at all: the runtime then reads its
+            // assembly references, which is what it would have done before the build started writing one
+            if (names.Count == 0)
+            {
+                Log.LogMessage(MessageImportance.Low, "No assemblies to export, not writing '{0}'.", Output);
+                Delete(Output);
+                ExportsFile = Array.Empty<ITaskItem>();
+                return true;
+            }
+
             WriteIfDifferent(Output, GetExports(names));
+            ExportsFile = new ITaskItem[] { new TaskItem(Output) };
             return true;
+        }
+
+        /// <summary>
+        /// Deletes the file at the given path, if it exists.
+        /// </summary>
+        /// <param name="path"></param>
+        void Delete(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception e)
+            {
+                Log.LogMessage(MessageImportance.Low, "Could not remove stale exports file '{0}': {1}", path, e.Message);
+            }
         }
 
         /// <summary>
