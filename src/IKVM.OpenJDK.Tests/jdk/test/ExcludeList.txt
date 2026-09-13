@@ -3617,7 +3617,7 @@ java/awt/Focus/ModalDialogInitialFocusTest/ModalDialogInitialFocusTest.html     
 java/awt/Focus/ModalExcludedWindowClickTest/ModalExcludedWindowClickTest.html                                           macosx-all
 java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.html                                       linux-all,macosx-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.html                                           macosx-all
-java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.html                                           macosx-all
+java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.html                                           macosx-all,windows-all
 java/awt/font/GlyphVector/TestLayoutFlags.java                                                                          macosx-all
 java/awt/font/Underline/UnderlineTest.java                                                                              macosx-all
 java/awt/FontClass/HeadlessFont.java                                                                                    macosx-all
@@ -4259,7 +4259,7 @@ java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.jav
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java                                           macosx-all
 java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java                                                                       generic-all
 java/awt/Focus/WindowInitialFocusTest/WindowInitialFocusTest.java                                                       generic-all
-java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java                                           macosx-all
+java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java                                           macosx-all,windows-all
 java/awt/FontClass/CreateFont/bigfont.java                                                                              generic-all
 java/awt/Frame/DisposeStressTest/DisposeStressTest.java                                                                 generic-all
 java/awt/Frame/NonEDT_GUI_DeadlockTest/NonEDT_GUI_Deadlock.java                                                         macosx-all
@@ -4315,3 +4315,24 @@ java/awt/Focus/6401036/InputVerifierTest2.java                                  
 javax/swing/DefaultButtonModel/DefaultButtonModelCrashTest.java                                                         generic-all
 javax/swing/JFileChooser/FileSystemView/Win32FolderSort.java                                                            generic-all
 lib/property/CheckWindowsProperty.java                                                                                  generic-all
+
+# SetFullScreenTest arrived with jdk8u504-b01; it does not exist in 8u482. It
+# goes full screen, then asks Robot for the colour of the centre pixel and
+# expects the red frame it just showed. On the runner it reads 12,12,12, the
+# desktop background, 300ms after waitForIdle. Every other test in
+# java/awt/FullScreen is already excluded for the same reason: a runner with no
+# interactive desktop session does not put a window on screen the way a real
+# one does. It failed on net472 win-x64 and passed elsewhere in the same run,
+# so it is intermittent rather than broken, but it is intermittent for the
+# reason its whole directory is excluded.
+java/awt/FullScreen/SetFullScreenTest.java                                                                              generic-all
+
+# VerifyCACerts checks every root in the shipped cacerts bundle and errors on
+# any that expires within 90 days. "entrustevca [jdk]" expires 2026-11-27
+# 20:53:42 UTC, so the check began failing at 2026-08-29 20:53:42 UTC and fails
+# on every run from then on, on all platforms at once. It is not intermittent:
+# a run of partition 13 that finished before that instant passed and the next
+# one failed. The real fix is upstream refreshing the bundle, which jdk8u does
+# periodically; drop this entry when the next update removes or replaces that
+# root, rather than leaving it excluded indefinitely.
+sun/security/lib/cacerts/VerifyCACerts.java                                                                             generic-all

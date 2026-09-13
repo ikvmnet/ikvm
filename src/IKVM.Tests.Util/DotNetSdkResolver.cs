@@ -15,9 +15,33 @@ namespace IKVM.Tests.Util
     public static class DotNetSdkResolver
     {
 
+        /// <summary>
+        /// Cache of previously resolved base paths, keyed by the 'dotnet' executable they were resolved from. The
+        /// installed SDK cannot change while the test run is in progress, and the callers are test initializers that
+        /// ask for the same path over and over, so the 'dotnet --info' process is only worth running once.
+        /// </summary>
+        static readonly Dictionary<string, string> cache = new Dictionary<string, string>();
+
         public static string ResolvePath(string dotnetExePath)
         {
-            var output = GetInfo(dotnetExePath ?? "dotnet");
+            var key = dotnetExePath ?? "dotnet";
+
+            // the lock also keeps concurrent tests from spawning 'dotnet --info' at the same time, which is part of
+            // what made the call slow enough to time out on a loaded machine in the first place
+            lock (cache)
+            {
+                if (cache.TryGetValue(key, out var cached))
+                    return cached;
+
+                var path = ResolvePathCore(key);
+                cache[key] = path;
+                return path;
+            }
+        }
+
+        static string ResolvePathCore(string dotnetExePath)
+        {
+            var output = GetInfo(dotnetExePath);
             if (output == null || output.Count == 0)
                 return null;
 
@@ -47,12 +71,15 @@ namespace IKVM.Tests.Util
                 ["MSBuildExtensionsPath"] = null,
             };
 
+            // 'dotnet --info' enumerates every installed SDK and runtime, and CI runners have several of each and are
+            // busy running tests besides. A short budget here does not fail the call, it kills the process and throws
+            // OperationCanceledException out of whichever test initializer happened to ask, so give it room.
             var info = new List<string>();
             var task = (Cli.Wrap(dotnetExePath)
                 .WithArguments("--info")
                 .WithEnvironmentVariables(envv)
                 | info.Add)
-                .ExecuteAsync(new CancellationTokenSource(2000).Token);
+                .ExecuteAsync(new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token);
             task.GetAwaiter().GetResult();
 
             return info;

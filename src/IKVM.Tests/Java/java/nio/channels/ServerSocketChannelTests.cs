@@ -66,15 +66,18 @@ namespace IKVM.Tests.Java.java.nio.channels
             var cancellationTokenSource = new CancellationTokenSource();
             var receive = ByteBuffer.allocate(sizeof(int) * 4);
 
+            // bind on the test thread rather than inside the server task: port 0 asks the OS for a
+            // free port instead of claiming a fixed one that something else on the machine may hold,
+            // and returning from bind establishes the listen backlog, so the client below can connect
+            // immediately instead of sleeping and hoping the task got there first
+            using var server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(0));
+            server.configureBlocking(true);
+            var port = server.socket().getLocalPort();
+
             // server receives messages until cancelled
             var serverTask = Task.Run(() =>
             {
-                // initialize server
-                using var server = ServerSocketChannel.open();
-                var serverAddr = new InetSocketAddress(42341);
-                server.bind(serverAddr);
-                server.configureBlocking(true);
-
                 // accept the first socket
                 var c = server.accept();
 
@@ -83,9 +86,8 @@ namespace IKVM.Tests.Java.java.nio.channels
                     continue;
             });
 
-            // wait a second and write some messages to the server
-            await Task.Delay(1000);
-            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", 42341)))
+            // write some messages to the server
+            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", port)))
             {
                 foreach (var i in new[] { 1, 2, 3, 4 })
                 {
@@ -120,18 +122,18 @@ namespace IKVM.Tests.Java.java.nio.channels
         {
             var cancellationTokenSource = new CancellationTokenSource();
             var receive = ByteBuffer.allocate(sizeof(int) * 4);
-            int port = 0;
+
+            // bind on the test thread rather than inside the server task. The port was previously
+            // read back from a field the task assigned, a second after starting it, so a task that
+            // had not been scheduled yet left the client connecting to port 0
+            using var server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(0));
+            server.configureBlocking(false);
+            var port = server.socket().getLocalPort();
 
             // server receives messages until cancelled
             var serverTask = Task.Run(() =>
             {
-                // initialize server
-                using var server = ServerSocketChannel.open();
-                var serverAddr = new InetSocketAddress(port);
-                server.bind(serverAddr);
-                server.configureBlocking(false);
-                port = server.socket().getLocalPort();
-
                 // begin selector
                 var selector = Selector.open();
                 var serverKey = server.register(selector, server.validOps(), null);
