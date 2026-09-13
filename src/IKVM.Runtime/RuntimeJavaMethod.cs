@@ -26,7 +26,6 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 
-using System.Linq;
 using IKVM.CoreLib.Diagnostics;
 using System.Threading;
 
@@ -483,40 +482,13 @@ namespace IKVM.Runtime
             if (mb != null)
             {
 #if NETFRAMEWORK
-                method = mb.Module.ResolveMethod(mb.GetToken().Token);
+                var token = mb.GetToken().Token;
 #else
-                // though ResolveMethod exists, Core 3.1 does not provide a stable way to obtain the resulting metadata token
-                // instead we have to scan the methods for the one that matches the signature using the runtime type instances
-                // FIXME .NET 6
-
-                var parameters = GetParameters();
-                var typeLength = parameters.Length;
-                if (HasCallerID)
-                    typeLength++;
-
-                var types = new Type[typeLength];
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    parameters[i].Finish();
-                    types[i] = parameters[i].TypeAsSignatureType;
-                }
-
-                if (HasCallerID)
-                    types[typeLength - 1] = DeclaringType.Context.JavaBase.TypeOfIkvmInternalCallerID.TypeAsSignatureType;
-
-                if (ReturnType != null)
-                    ReturnType.Finish();
-
-                var flags = BindingFlags.DeclaredOnly;
-                flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                MethodBase resolved = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
-                if (resolved == null)
-                    resolved = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
-                if (resolved == null)
-                    throw new InternalException("Could not resolve method against runtime type.");
-                method = resolved;
+                // the declaring type has been baked by the time we get here, so the builder holds the final MethodDef
+                // token of the emitted method, and ModuleBuilder forwards ResolveMethod to the underlying runtime module
+                var token = mb.MetadataToken;
 #endif
+                method = mb.Module.ResolveMethod(token) ?? throw new InternalException("Could not resolve method against runtime type.");
             }
 #endif
         }
