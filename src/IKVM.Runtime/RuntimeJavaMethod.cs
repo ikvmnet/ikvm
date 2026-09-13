@@ -510,7 +510,7 @@ namespace IKVM.Runtime
                 var flags = BindingFlags.DeclaredOnly;
                 flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                 flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                var resolved = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
+                MethodBase resolved = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
                 if (resolved == null)
                     resolved = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
                 if (resolved == null)
