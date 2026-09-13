@@ -510,11 +510,12 @@ namespace IKVM.Runtime
                 var flags = BindingFlags.DeclaredOnly;
                 flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                 flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                method = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
-                if (method == null)
-                    method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
-                if (method == null)
+                var resolved = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
+                if (resolved == null)
+                    resolved = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
+                if (resolved == null)
                     throw new InternalException("Could not resolve method against runtime type.");
+                method = resolved;
 #endif
             }
 #endif
