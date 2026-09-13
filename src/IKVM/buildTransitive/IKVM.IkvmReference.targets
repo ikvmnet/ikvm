@@ -172,6 +172,10 @@
     the declared set without pulling in the rest of the resolved reference graph.
 
     Java projects are excluded: their assembly is produced by the IKVM importer, which writes the resource itself.
+
+    IkvmReferenceItem arrives in build order, dependencies ahead of the items that pulled them in. A lookup wants
+    the opposite: the items the project declared should answer before the tree beneath them, the way the nearest
+    declaration wins a Maven class path. Writing the exports in reverse restores that order.
     -->
     <PropertyGroup>
         <IkvmGenerateAssemblyExports Condition=" '$(IkvmGenerateAssemblyExports)' == '' ">true</IkvmGenerateAssemblyExports>
@@ -181,7 +185,7 @@
     <Target Name="GenerateIkvmAssemblyExports" BeforeTargets="PrepareResources" DependsOnTargets="GetIkvmReferenceItems;CompileIkvmReferences" Condition=" '$(IkvmGenerateAssemblyExports)' == 'true' And '$(Language)' != 'Java' And '@(IkvmReferenceItem)' != '' ">
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IkvmAssemblyExportsFile)'))" />
 
-        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Output="$(IkvmAssemblyExportsFile)" />
+        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Reverse="true" Output="$(IkvmAssemblyExportsFile)" />
 
         <ItemGroup>
             <EmbeddedResource Include="$(IkvmAssemblyExportsFile)" LogicalName="ikvm.exports" Visible="false" />

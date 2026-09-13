@@ -106,6 +106,22 @@ namespace IKVM.MSBuild.Tasks.Tests
         }
 
         [TestMethod]
+        public void Should_reverse_reference_order_when_asked()
+        {
+            var output = GetTempPath();
+            var a = typeof(IkvmWriteExportsFileTests).Assembly;
+            var b = typeof(IkvmWriteExportsFile).Assembly;
+
+            var t = BuildTestTask(output, a.Location, b.Location);
+            t.Reverse = true;
+            t.Execute().Should().BeTrue();
+
+            var exports = ReadExports(output);
+            exports[0].Key.Should().Be(b.GetName().FullName);
+            exports[1].Key.Should().Be(a.GetName().FullName);
+        }
+
+        [TestMethod]
         public void Should_skip_duplicate_reference()
         {
             var output = GetTempPath();

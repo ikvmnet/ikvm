@@ -4,6 +4,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Reflection.Metadata;
     using System.Reflection.PortableExecutable;
     using System.Text;
@@ -25,10 +26,16 @@
     {
 
         /// <summary>
-        /// Assemblies to name as wildcard exports, in the order they should be delegated to.
+        /// Assemblies to name as wildcard exports.
         /// </summary>
         [Required]
         public ITaskItem[] References { get; set; }
+
+        /// <summary>
+        /// Whether to write the references in the reverse of the order they are given in. A lookup walks the
+        /// exports in the order they are written.
+        /// </summary>
+        public bool Reverse { get; set; }
 
         /// <summary>
         /// Path of the file to write.
@@ -50,7 +57,8 @@
             var names = new List<string>(References.Length);
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var reference in References)
+            var references = Reverse ? Enumerable.Reverse(References) : References;
+            foreach (var reference in references)
             {
                 var name = GetAssemblyFullName(reference.ItemSpec);
                 if (name != null && seen.Add(name))
