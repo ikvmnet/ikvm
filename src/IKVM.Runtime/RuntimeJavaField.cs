@@ -447,13 +447,13 @@ namespace IKVM.Runtime
             if (fb != null)
             {
 #if NETFRAMEWORK
-                field = fb.DeclaringType.Module.ResolveField(fb.GetToken().Token);
+                var token = fb.GetToken().Token;
 #else
-                BindingFlags flags = BindingFlags.DeclaredOnly;
-                flags |= fb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= fb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                field = DeclaringType.TypeAsTBD.GetField(fb.Name, flags);
+                // the declaring type has been baked by the time we get here, so the builder holds the final FieldDef
+                // token of the emitted field, and ModuleBuilder forwards ResolveField to the underlying runtime module
+                var token = fb.MetadataToken;
 #endif
+                field = fb.DeclaringType.Module.ResolveField(token) ?? throw new InternalException("Could not resolve field against runtime type.");
             }
         }
 
