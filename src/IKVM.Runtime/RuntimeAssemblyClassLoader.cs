@@ -532,7 +532,7 @@ namespace IKVM.Runtime
                             }
                         }
 
-                        references ??= wildcardExports.ToArray();
+                        references ??= MergeWithReferencedAssemblies(wildcardExports);
                     }
                     else
                     {
@@ -545,6 +545,31 @@ namespace IKVM.Runtime
                     Interlocked.Exchange(ref delegates, new RuntimeAssemblyClassLoader[references.Length]);
                 }
             }
+        }
+
+        /// <summary>
+        /// Combines the set of assemblies exported by the assembly with the set of assemblies it holds a reference
+        /// to. The importer records every assembly given to it in the 'ikvm.exports' resource, whether or not a
+        /// reference to that assembly was ultimately emitted. Other compilers do not; and an assembly that carries
+        /// the resource by other means can still hold references the resource makes no mention of. Both sets need
+        /// to be delegated to.
+        /// </summary>
+        /// <param name="exports"></param>
+        /// <returns></returns>
+        string[] MergeWithReferencedAssemblies(List<string> exports)
+        {
+            if (exports is null)
+                throw new ArgumentNullException(nameof(exports));
+
+            var l = new List<string>(exports);
+            var h = new HashSet<string>(exports, StringComparer.OrdinalIgnoreCase);
+
+            // exports are consulted first: they carry the order the assembly was compiled against
+            foreach (var refName in assemblyLoader.Assembly.GetReferencedAssemblies())
+                if (h.Add(refName.FullName))
+                    l.Add(refName.FullName);
+
+            return l.ToArray();
         }
 
         void LazyInitExports()

@@ -165,6 +165,36 @@
 
     </Target>
 
+    <!--
+    A compiler only emits a reference to an assembly whose types it actually uses, so an IkvmReference the project
+    declares but only reaches by name at runtime leaves no trace in the output assembly, and the assembly class
+    loader has no way to delegate to it. Embedding an 'ikvm.exports' resource naming each IkvmReference restores
+    the declared set without pulling in the rest of the resolved reference graph.
+
+    Java projects are excluded: their assembly is produced by the IKVM importer, which writes the resource itself.
+
+    IkvmReferenceItem arrives in build order, dependencies ahead of the items that pulled them in. A lookup wants
+    the opposite: the items the project declared should answer before the tree beneath them, the way the nearest
+    declaration wins a Maven class path. Writing the exports in reverse restores that order.
+    -->
+    <PropertyGroup>
+        <IkvmGenerateAssemblyExports Condition=" '$(IkvmGenerateAssemblyExports)' == '' ">true</IkvmGenerateAssemblyExports>
+        <IkvmAssemblyExportsFile Condition=" '$(IkvmAssemblyExportsFile)' == '' ">$(IntermediateOutputPath)ikvm.exports</IkvmAssemblyExportsFile>
+    </PropertyGroup>
+
+    <Target Name="GenerateIkvmAssemblyExports" BeforeTargets="PrepareResources" DependsOnTargets="GetIkvmReferenceItems;CompileIkvmReferences" Condition=" '$(IkvmGenerateAssemblyExports)' == 'true' And '$(Language)' != 'Java' And '@(IkvmReferenceItem)' != '' ">
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IkvmAssemblyExportsFile)'))" />
+
+        <IkvmWriteExportsFile References="@(IkvmReferenceItem->'%(CachePath)')" Reverse="true" Output="$(IkvmAssemblyExportsFile)">
+            <Output TaskParameter="ExportsFile" ItemName="_IkvmAssemblyExportsFile" />
+        </IkvmWriteExportsFile>
+
+        <ItemGroup>
+            <EmbeddedResource Include="@(_IkvmAssemblyExportsFile)" LogicalName="ikvm.exports" Visible="false" />
+            <FileWrites Include="$(IkvmAssemblyExportsFile)" />
+        </ItemGroup>
+    </Target>
+
     <!-- Include Task or NoTask implementation of targets. -->
     <Import Project="IKVM.IkvmReference.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
     <Import Project="IKVM.IkvmReference.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
