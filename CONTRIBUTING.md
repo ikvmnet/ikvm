@@ -21,13 +21,13 @@ Prerequisites for building the project:
  Once the prerequisites are in place, to build IKVM from the command line you will use the following commands:
 
  ```
- dotnet restore IKVM.sln
+ dotnet restore IKVM.slnx
  msbuild IKVM.dist.msbuildproj
  ```
 
 ## Project
 
-+ IKVM.sln
++ IKVM.slnx
   Main solution file for the project.
 + IKVM.dist.msbuildproj
   MSBuild project file that builds the output artifacts, including the NuGet packages.

@@ -1,0 +1,184 @@
+<Solution>
+  <Folder Name="/dist/">
+    <Project Path="src/dist-jdk/dist-jdk.csproj" />
+    <Project Path="src/dist-jre/dist-jre.csproj" />
+    <Project Path="src/dist-nuget/dist-nuget.csproj" />
+    <Project Path="src/dist-tests/dist-tests.csproj" />
+    <Project Path="src/dist-tools/dist-tools.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".github/workflows/IKVM.yml" />
+    <File Path=".gitignore" />
+    <File Path=".gitmodules" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="GitVersion.yml" />
+    <File Path="global.json" />
+    <File Path="IKVM.deps.targets" />
+    <File Path="IKVM.dist.msbuildproj" />
+    <File Path="IKVM.libs.targets" />
+    <File Path="IKVM.refs.targets" />
+    <File Path="jtreg.props" />
+    <File Path="LICENSE.md" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/targets/">
+    <File Path="targets/ClangOSXCodeSign.targets" />
+    <File Path="targets/ClangProjectReference.targets" />
+    <File Path="targets/DisableCopyToOutputDirectory.include" />
+    <File Path="targets/DisableCopyToOutputDirectory.targets" />
+    <File Path="targets/DotNetOSXCodeSign.targets" />
+    <File Path="targets/lib.props" />
+    <File Path="targets/lib.targets" />
+    <File Path="targets/openjdk.buildtools.targets" />
+    <File Path="targets/openjdk.lib.props" />
+    <File Path="targets/openjdk.lib.targets" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/IKVM.Benchmarks.Java/IKVM.Benchmarks.Java.csproj" />
+    <Project Path="src/IKVM.Benchmarks/IKVM.Benchmarks.csproj" />
+    <Project Path="src/IKVM.ConsoleApp/IKVM.ConsoleApp.csproj" />
+    <Project Path="src/IKVM.CoreLib.Tests/IKVM.CoreLib.Tests.csproj" />
+    <Project Path="src/IKVM.CoreLib/IKVM.CoreLib.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-arm/IKVM.Image.JDK.runtime.linux-arm.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-arm64/IKVM.Image.JDK.runtime.linux-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-musl-arm/IKVM.Image.JDK.runtime.linux-musl-arm.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-musl-arm64/IKVM.Image.JDK.runtime.linux-musl-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-musl-x64/IKVM.Image.JDK.runtime.linux-musl-x64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.linux-x64/IKVM.Image.JDK.runtime.linux-x64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.osx-arm64/IKVM.Image.JDK.runtime.osx-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.osx-x64/IKVM.Image.JDK.runtime.osx-x64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.win-arm64/IKVM.Image.JDK.runtime.win-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.win-x64/IKVM.Image.JDK.runtime.win-x64.csproj" />
+    <Project Path="src/IKVM.Image.JDK.runtime.win-x86/IKVM.Image.JDK.runtime.win-x86.csproj" />
+    <Project Path="src/IKVM.Image.JDK/IKVM.Image.JDK.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-arm/IKVM.Image.JRE.runtime.linux-arm.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-arm64/IKVM.Image.JRE.runtime.linux-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-musl-arm/IKVM.Image.JRE.runtime.linux-musl-arm.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-musl-arm64/IKVM.Image.JRE.runtime.linux-musl-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-musl-x64/IKVM.Image.JRE.runtime.linux-musl-x64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.linux-x64/IKVM.Image.JRE.runtime.linux-x64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.osx-arm64/IKVM.Image.JRE.runtime.osx-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.osx-x64/IKVM.Image.JRE.runtime.osx-x64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.win-arm64/IKVM.Image.JRE.runtime.win-arm64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.win-x64/IKVM.Image.JRE.runtime.win-x64.csproj" />
+    <Project Path="src/IKVM.Image.JRE.runtime.win-x86/IKVM.Image.JRE.runtime.win-x86.csproj" />
+    <Project Path="src/IKVM.Image.JRE/IKVM.Image.JRE.csproj" />
+    <Project Path="src/IKVM.Image.runtime.android-arm/IKVM.Image.runtime.android-arm.csproj" />
+    <Project Path="src/IKVM.Image.runtime.android-arm64/IKVM.Image.runtime.android-arm64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.android-x64/IKVM.Image.runtime.android-x64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-arm/IKVM.Image.runtime.linux-arm.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-arm64/IKVM.Image.runtime.linux-arm64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-musl-arm/IKVM.Image.runtime.linux-musl-arm.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-musl-arm64/IKVM.Image.runtime.linux-musl-arm64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-musl-x64/IKVM.Image.runtime.linux-musl-x64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.linux-x64/IKVM.Image.runtime.linux-x64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.osx-arm64/IKVM.Image.runtime.osx-arm64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.osx-x64/IKVM.Image.runtime.osx-x64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.win-arm64/IKVM.Image.runtime.win-arm64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.win-x64/IKVM.Image.runtime.win-x64.csproj" />
+    <Project Path="src/IKVM.Image.runtime.win-x86/IKVM.Image.runtime.win-x86.csproj" />
+    <Project Path="src/IKVM.Image/IKVM.Image.csproj" />
+    <Project Path="src/IKVM.Java-ref/IKVM.Java-ref.csproj" />
+    <Project Path="src/IKVM.Java.Extensions/IKVM.Java.Extensions.csproj" />
+    <Project Path="src/IKVM.Java.runtime.linux/IKVM.Java.runtime.linux.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/IKVM.Java.runtime.osx/IKVM.Java.runtime.osx.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/IKVM.Java.runtime.win/IKVM.Java.runtime.win.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/IKVM.Java.Tests.Util/IKVM.Java.Tests.Util.csproj" />
+    <Project Path="src/IKVM.Java.Tests/IKVM.Java.Tests.ikvmproj" Type="C#" />
+    <Project Path="src/IKVM.Java/IKVM.Java.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/IKVM.JTReg.TestAdapter.Core/IKVM.JTReg.TestAdapter.Core.csproj" />
+    <Project Path="src/IKVM.JTReg.TestAdapter.Tests/IKVM.JTReg.TestAdapter.Tests.csproj" />
+    <Project Path="src/IKVM.JTReg.TestAdapter/IKVM.JTReg.TestAdapter.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tasks.Tests/IKVM.MSBuild.Tasks.Tests.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tasks/IKVM.MSBuild.Tasks.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tests/IKVM.MSBuild.Tests.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.linux-arm/IKVM.MSBuild.Tools.runtime.linux-arm.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.linux-arm64/IKVM.MSBuild.Tools.runtime.linux-arm64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.linux-x64/IKVM.MSBuild.Tools.runtime.linux-x64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.osx-arm64/IKVM.MSBuild.Tools.runtime.osx-arm64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.osx-x64/IKVM.MSBuild.Tools.runtime.osx-x64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.win-arm64/IKVM.MSBuild.Tools.runtime.win-arm64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools.runtime.win-x64/IKVM.MSBuild.Tools.runtime.win-x64.csproj" />
+    <Project Path="src/IKVM.MSBuild.Tools/IKVM.MSBuild.Tools.csproj" />
+    <Project Path="src/IKVM.MSBuild/IKVM.MSBuild.msbuildproj" Type="C#" />
+    <Project Path="src/IKVM.NET.Sdk.Tests/IKVM.NET.Sdk.Tests.csproj" />
+    <Project Path="src/IKVM.NET.Sdk/IKVM.NET.Sdk.msbuildproj" Type="C#" />
+    <Project Path="src/IKVM.OpenJDK.Tests/IKVM.OpenJDK.Tests.csproj" />
+    <Project Path="src/IKVM.Reflection.Tests/IKVM.Reflection.Tests.csproj" />
+    <Project Path="src/IKVM.Runtime-ref/IKVM.Runtime-ref.csproj" />
+    <Project Path="src/IKVM.Runtime/IKVM.Runtime.csproj" />
+    <Project Path="src/IKVM.Tests.Util/IKVM.Tests.Util.csproj" />
+    <Project Path="src/IKVM.Tests/IKVM.Tests.csproj" />
+    <Project Path="src/IKVM.Tools.Core/IKVM.Tools.Core.csproj" />
+    <Project Path="src/IKVM.Tools.Exporter.Tests/IKVM.Tools.Exporter.Tests.csproj" />
+    <Project Path="src/IKVM.Tools.Exporter/IKVM.Tools.Exporter.csproj" />
+    <Project Path="src/IKVM.Tools.Importer.Tests/IKVM.Tools.Importer.Tests.csproj" />
+    <Project Path="src/IKVM.Tools.Importer/IKVM.Tools.Importer.csproj" />
+    <Project Path="src/IKVM.Tools.Runner/IKVM.Tools.Runner.csproj" />
+    <Project Path="src/IKVM.Tools.Tests/IKVM.Tools.Tests.csproj" />
+    <Project Path="src/IKVM.Util/IKVM.Util.csproj" />
+    <Project Path="src/IKVM/IKVM.csproj" />
+    <Project Path="src/ikvmc/ikvmc.csproj" />
+    <Project Path="src/ikvmstub/ikvmstub.csproj" />
+    <Project Path="src/jar/jar.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/jarsigner/jarsigner.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/java/java.csproj" />
+    <Project Path="src/javac-ref/javac-ref.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/javac/javac.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/javadoc/javadoc.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/javah/javah.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/javap/javap.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/jdeps/jdeps.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/keytool/keytool.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/native2ascii/native2ascii.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/orbd/orbd.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/policytool/policytool.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/rmic/rmic.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/schemagen/schemagen.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/wsgen/wsgen.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/wsimport/wsimport.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+    <Project Path="src/xjc/xjc.ikvmproj" Type="daea77de-8320-43ba-ba7c-ef5c12478ab5" />
+  </Folder>
+  <Folder Name="/src/lib/">
+    <Project Path="src/libawt/libawt.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libawt_headless/libawt_headless.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libawt_lwawt/libawt_lwawt.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libawt_xawt/libawt_xawt.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libfdlibm/libfdlibm.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libfontmanager/libfontmanager.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libfreetype/libfreetype.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libiava/libiava.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libikvm-tests/libikvm-tests.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libikvm/libikvm.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libj2gss/libj2gss.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libj2pkcs11/libj2pkcs11.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjaas/libjaas.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjawt/libjawt.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjnf/libjnf.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjpeg/libjpeg.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjsound/libjsound.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjsoundalsa/libjsoundalsa.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjsoundds/libjsoundds.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libjvm/libjvm.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libkrb5/libkrb5.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/liblcms/liblcms.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libmanagement/libmanagement.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libmlib_image/libmlib_image.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libnet/libnet.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libnio/libnio.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libosx/libosx.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libosxapp/libosxapp.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libosxui/libosxui.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libsctp/libsctp.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libsspi_bridge/libsspi_bridge.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libsunec/libsunec.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libsunmscapi/libsunmscapi.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libunpack/libunpack.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libverify/libverify.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+    <Project Path="src/libzip/libzip.clangproj" Type="c16f8da6-af2b-48df-a3c0-8b93bdb1bb12" />
+  </Folder>
+</Solution>
