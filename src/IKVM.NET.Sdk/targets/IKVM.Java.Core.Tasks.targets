@@ -56,7 +56,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="$(MSBuildAllProjects);@(CustomAdditionalCompileInputs);@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
         <!-- Store initial time. Files that remain older than this will be removed. -->
@@ -106,7 +106,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava;_WriteExcludeFile" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile);$(_ExcludeFilePath)" Outputs="@(IntermediateAssembly)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava;_WriteExcludeFile" Inputs="$(MSBuildAllProjects);@(CustomAdditionalCompileInputs);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile);$(_ExcludeFilePath)" Outputs="@(IntermediateAssembly)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
