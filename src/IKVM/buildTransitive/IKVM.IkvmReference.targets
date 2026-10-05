@@ -195,6 +195,42 @@
         </ItemGroup>
     </Target>
 
+    <!-- Property pages for IkvmReference items in Visual Studio -->
+    <ItemGroup>
+        <PropertyPageSchema Include="$(MSBuildThisFileDirectory)IkvmReference.xaml">
+            <Context>Project;BrowseObject</Context>
+        </PropertyPageSchema>
+        <PropertyPageSchema Include="$(MSBuildThisFileDirectory)ResolvedIkvmReference.xaml">
+            <Context>ProjectSubscriptionService;BrowseObject</Context>
+        </PropertyPageSchema>
+    </ItemGroup>
+
+    <!-- Describes IkvmReference items for Visual Studio without compiling them. Never fails: each item reports whether it resolves. -->
+    <Target Name="ResolveIkvmReferencesDesignTime" Returns="@(_IkvmReferenceDesignTimeItem)">
+        <IkvmReferenceItemDescribe Items="@(IkvmReference)" Condition=" '@(IkvmReference)' != '' ">
+            <Output TaskParameter="DescribedItems" ItemName="_IkvmReferenceDesignTimeItem" />
+        </IkvmReferenceItemDescribe>
+    </Target>
+
+    <!-- Describes the paths in $(IkvmReferenceCandidates) as IkvmReference items would be described, without adding them to the project. -->
+    <Target Name="DescribeIkvmReferenceCandidates" Returns="@(_IkvmReferenceCandidateItem)">
+        <ItemGroup>
+            <_IkvmReferenceCandidate Include="$(IkvmReferenceCandidates)" />
+        </ItemGroup>
+        <IkvmReferenceItemDescribe Items="@(_IkvmReferenceCandidate)" Condition=" '@(_IkvmReferenceCandidate)' != '' ">
+            <Output TaskParameter="DescribedItems" ItemName="_IkvmReferenceCandidateItem" />
+        </IkvmReferenceItemDescribe>
+    </Target>
+
+    <!-- Prompt Visual Studio to install the IKVM extension when the project uses IkvmReference -->
+    <ItemGroup Condition=" '@(IkvmReference)' != '' ">
+        <VsixDependency Remove="IKVM.VisualStudio.8bf8ccd4-363a-4a23-a857-b038314c2c9e" />
+        <VsixDependency Include="IKVM.VisualStudio.8bf8ccd4-363a-4a23-a857-b038314c2c9e">
+            <DisplayName>IKVM Extension for Visual Studio</DisplayName>
+            <MoreInfoUrl>https://marketplace.visualstudio.com/items?itemName=ikvm.ikvm</MoreInfoUrl>
+        </VsixDependency>
+    </ItemGroup>
+
     <!-- Include Task or NoTask implementation of targets. -->
     <Import Project="IKVM.IkvmReference.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
     <Import Project="IKVM.IkvmReference.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>

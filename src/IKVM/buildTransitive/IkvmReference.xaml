@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Rule Name="IkvmReference" DisplayName="Java Reference" Description="Java Reference Properties" PageTemplate="generic" xmlns="http://schemas.microsoft.com/build/2009/properties">
+    <Rule.DataSource>
+        <DataSource HasConfigurationCondition="False" ItemType="IkvmReference" Persistence="ProjectFile" SourceOfDefaultValue="AfterContext" />
+    </Rule.DataSource>
+
+    <Rule.Categories>
+        <Category Name="Assembly" DisplayName="Assembly" />
+        <Category Name="Java" DisplayName="Java" />
+        <Category Name="Compilation" DisplayName="Compilation" />
+        <Category Name="Signing" DisplayName="Signing" />
+        <Category Name="Reference" DisplayName="Reference" />
+    </Rule.Categories>
+
+    <StringProperty Name="AssemblyName" DisplayName="Assembly Name" Category="Assembly" Description="Name of the generated assembly, without the .dll extension. Leave empty to derive it from the Automatic-Module-Name of the JAR or its file name." />
+
+    <StringProperty Name="AssemblyVersion" DisplayName="Assembly Version" Category="Assembly" Description="Version of the generated assembly. Leave empty to derive it from the JAR." />
+
+    <StringProperty Name="AssemblyFileVersion" DisplayName="Assembly File Version" Category="Assembly" Description="File version of the generated assembly. Defaults to the assembly version." />
+
+    <BoolProperty Name="DisableAutoAssemblyName" DisplayName="Disable Auto Assembly Name" Category="Assembly" Description="Disables deriving the assembly name from the JAR." />
+
+    <BoolProperty Name="DisableAutoAssemblyVersion" DisplayName="Disable Auto Assembly Version" Category="Assembly" Description="Disables deriving the assembly version from the JAR." />
+
+    <StringProperty Name="FallbackAssemblyName" DisplayName="Fallback Assembly Name" Category="Assembly" Description="Assembly name used when none is specified and none can be derived." />
+
+    <StringProperty Name="FallbackAssemblyVersion" DisplayName="Fallback Assembly Version" Category="Assembly" Description="Assembly version used when none is specified and none can be derived." />
+
+    <StringListProperty Name="Compile" DisplayName="Classes" Category="Java" Description="Class path entries (JAR files or class directories) to compile into the assembly. Defaults to the item itself when it is a JAR or directory. Globs are supported." />
+
+    <StringListProperty Name="Sources" DisplayName="Sources" Category="Java" Description="Java source files or archives used for documentation." />
+
+    <StringListProperty Name="References" DisplayName="References" Category="Java" Description="Other IkvmReference items this one depends on, by their Include value." />
+
+    <StringProperty Name="ClassLoader" DisplayName="Class Loader" Category="Java" Description="Fully qualified name of a ClassLoader implementation to use as the delegation parent." />
+
+    <EnumProperty Name="Debug" DisplayName="Debug Symbols" Category="Compilation" Description="How debug symbols are generated. Defaults to the project DebugType.">
+        <EnumValue Name="" DisplayName="(project default)" />
+        <EnumValue Name="none" DisplayName="None" />
+        <EnumValue Name="full" DisplayName="Full" />
+        <EnumValue Name="portable" DisplayName="Portable" />
+        <EnumValue Name="embedded" DisplayName="Embedded" />
+    </EnumProperty>
+
+    <BoolProperty Name="Optimize" DisplayName="Optimize" Category="Compilation" Description="Whether the generated assembly is optimized. Defaults to the project Optimize setting." />
+
+    <BoolProperty Name="Static" DisplayName="Static" Category="Compilation" Description="Whether the assembly is compiled in static mode." />
+
+    <StringProperty Name="KeyFile" DisplayName="Key File" Category="Signing" Description="Strong name key file used to sign the generated assembly. Defaults to the project IkvmKeyFile." />
+
+    <BoolProperty Name="DelaySign" DisplayName="Delay Sign" Category="Signing" Description="Reserves space for a signature to be added later. Requires Key File." />
+
+    <StringListProperty Name="Aliases" DisplayName="Aliases" Category="Reference" Description="A comma-delimited list of extern aliases for the generated assembly." Separator="," />
+
+    <BoolProperty Name="Private" DisplayName="Copy Local" Category="Reference" Description="Whether the generated assembly is copied to the output directory." />
+
+    <BoolProperty Name="ReferenceOutputAssembly" DisplayName="Reference Output Assembly" Category="Reference" Description="Whether the generated assembly is referenced by the project." />
+
+</Rule>
