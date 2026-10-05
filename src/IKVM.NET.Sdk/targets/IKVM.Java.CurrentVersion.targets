@@ -22,7 +22,7 @@
 
     <ItemGroup Condition=" '$(DefineJavaItemSchemas)' != 'false' ">
         <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Java.ProjectItemsSchema.xaml;"/>
-        <ProjectCapability Include="CSharp;Java;Managed"/>
+        <ProjectCapability Include="Java;Managed"/>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(DefineCommonCapabilities)' == 'true' ">
