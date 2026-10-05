@@ -24,13 +24,15 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_describe_jar()
         {
-            var t = BuildTestTask(new TaskItem(HELLOWORLD1_JAR));
+            // item specs are compared as the item holds them: MSBuild normalizes separators on Linux and macOS
+            var item = new TaskItem(HELLOWORLD1_JAR);
+            var t = BuildTestTask(item);
             t.Execute().Should().BeTrue();
             t.DescribedItems.Should().HaveCount(1);
 
             var i = t.DescribedItems[0];
-            i.ItemSpec.Should().Be(HELLOWORLD1_JAR);
-            i.GetMetadata(IkvmReferenceItemDescribe.OriginalItemSpecMetadataName).Should().Be(HELLOWORLD1_JAR);
+            i.ItemSpec.Should().Be(item.ItemSpec);
+            i.GetMetadata(IkvmReferenceItemDescribe.OriginalItemSpecMetadataName).Should().Be(item.ItemSpec);
             i.GetMetadata(IkvmReferenceItemMetadata.AssemblyName).Should().Be("helloworld");
             i.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion).Should().Be("2.0.0.0");
             i.GetMetadata(IkvmReferenceItemMetadata.Compile).Should().Contain("helloworld-2.0.jar");
@@ -56,12 +58,13 @@ namespace IKVM.MSBuild.Tasks.Tests
         [TestMethod]
         public void Should_report_missing_jar_without_failing()
         {
-            var t = BuildTestTask(new TaskItem(@".\missing\missing.jar"), new TaskItem(HELLOWORLD1_JAR));
+            var item = new TaskItem(@".\missing\missing.jar");
+            var t = BuildTestTask(item, new TaskItem(HELLOWORLD1_JAR));
             t.Execute().Should().BeTrue();
             t.DescribedItems.Should().HaveCount(2);
 
             var missing = t.DescribedItems[0];
-            missing.ItemSpec.Should().Be(@".\missing\missing.jar");
+            missing.ItemSpec.Should().Be(item.ItemSpec);
             missing.GetMetadata(IkvmReferenceItemDescribe.IsResolvedMetadataName).Should().Be("false");
             missing.GetMetadata(IkvmReferenceItemDescribe.DiagnosticMetadataName).Should().NotBeEmpty();
 
