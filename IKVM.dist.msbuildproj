@@ -3,7 +3,7 @@
         <DistDir Condition="'$(DistDir)' == ''">$(DISTDIR)</DistDir>
         <DistDir Condition="'$(DistDir)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'dist'))</DistDir>
         <DistDir>$([System.IO.Path]::GetFullPath('$(DistDir)'))</DistDir>
-        <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
+        <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.slnx'))</SolutionFile>
         <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">Any CPU</Platform>
     </PropertyGroup>
