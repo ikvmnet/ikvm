@@ -652,80 +652,64 @@
         {
             var valid = true;
 
-            if (string.IsNullOrWhiteSpace(item.AssemblyName))
+            foreach (var diagnostic in GetDiagnostics(item))
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyName", item.ItemSpec);
+                Log.LogErrorWithCodeFromResources(diagnostic.Resource, diagnostic.Args);
                 valid = false;
             }
+
+            return valid;
+        }
+
+        /// <summary>
+        /// Gets the problems that keep the item from being built.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        internal static List<IkvmReferenceItemDiagnostic> GetDiagnostics(IkvmReferenceItem item)
+        {
+            var diagnostics = new List<IkvmReferenceItemDiagnostic>();
+
+            if (string.IsNullOrWhiteSpace(item.AssemblyName))
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyName", item.ItemSpec));
 
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyVersion", item.ItemSpec);
-                valid = false;
-            }
-            else
-            {
-                if (Version.TryParse(item.AssemblyVersion, out _) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
-                    valid = false;
-                }
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyVersion", item.ItemSpec));
+            else if (Version.TryParse(item.AssemblyVersion, out _) == false)
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion));
 
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyFileVersion", item.ItemSpec);
-                valid = false;
-            }
-            else
-            {
-                if (Version.TryParse(item.AssemblyFileVersion, out _) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyFileVersion", item.ItemSpec, item.AssemblyFileVersion);
-                    valid = false;
-                }
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingAssemblyFileVersion", item.ItemSpec));
+            else if (Version.TryParse(item.AssemblyFileVersion, out _) == false)
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyFileVersion", item.ItemSpec, item.AssemblyFileVersion));
 
             if (item.Compile.Count == 0)
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmRequiresCompile", item.ItemSpec);
-                valid = false;
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmRequiresCompile", item.ItemSpec));
             }
             else
             {
                 foreach (var compile in item.Compile)
                 {
                     if (Path.GetExtension(compile) is not ".jar" and not ".class")
-                    {
-                        Log.LogErrorWithCodeFromResources("Error.IkvmInvalidCompile", item.ItemSpec, compile);
-                        valid = false;
-                    }
+                        diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidCompile", item.ItemSpec, compile));
 
                     if (File.Exists(compile) == false)
-                    {
-                        Log.LogErrorWithCodeFromResources("Error.IkvmMissingCompile", item.ItemSpec, compile);
-                        valid = false;
-                    }
+                        diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingCompile", item.ItemSpec, compile));
                 }
             }
 
             foreach (var source in item.Sources)
             {
                 if (Path.GetExtension(source) is not ".java" && Path.GetExtension(source) is not ".jar")
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidSources", item.ItemSpec, source);
-                    valid = false;
-                }
+                    diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidSources", item.ItemSpec, source));
                 else if (File.Exists(source) == false)
-                {
-                    Log.LogErrorWithCodeFromResources("Error.IkvmMissingSources", item.ItemSpec, source);
-                    valid = false;
-                }
+                    diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingSources", item.ItemSpec, source));
             }
 
             // bail out early, no need to add more if these are already broken
-            if (valid == false)
-                return false;
+            if (diagnostics.Count > 0)
+                return diagnostics;
 
             try
             {
@@ -733,23 +717,16 @@
             }
             catch (Exception)
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion);
-                valid = false;
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion));
             }
 
             if (string.IsNullOrWhiteSpace(item.KeyFile) == false && File.Exists(item.KeyFile) == false)
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile);
-                valid = false;
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile));
 
             if (item.DelaySign && string.IsNullOrWhiteSpace(item.KeyFile))
-            {
-                Log.LogErrorWithCodeFromResources("Error.IkvmDelaySignRequiresKey", item.ItemSpec);
-                valid = false;
-            }
+                diagnostics.Add(new IkvmReferenceItemDiagnostic("Error.IkvmDelaySignRequiresKey", item.ItemSpec));
 
-            return valid;
+            return diagnostics;
         }
 
         /// <summary>

@@ -2,8 +2,6 @@ namespace IKVM.MSBuild.Tasks
 {
 
     using System;
-    using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
 
     using Microsoft.Build.Framework;
@@ -20,6 +18,15 @@ namespace IKVM.MSBuild.Tasks
         public const string IsResolvedMetadataName = "IkvmIsResolved";
         public const string DiagnosticMetadataName = "IkvmDiagnostic";
         public const string OriginalItemSpecMetadataName = "OriginalItemSpec";
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public IkvmReferenceItemDescribe() :
+            base(Resources.SR.ResourceManager, "IKVM:")
+        {
+
+        }
 
         /// <summary>
         /// <see cref="IkvmReferenceItem"/> items to describe.
@@ -48,7 +55,7 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>
-        internal static ITaskItem Describe(ITaskItem source)
+        internal ITaskItem Describe(ITaskItem source)
         {
             var result = new TaskItem(source.ItemSpec);
             source.CopyMetadataTo(result);
@@ -69,9 +76,10 @@ namespace IKVM.MSBuild.Tasks
                 result.SetMetadata(IkvmReferenceItemMetadata.Compile, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, item.Compile));
                 result.SetMetadata(IkvmReferenceItemMetadata.Sources, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, item.Sources));
 
-                var diagnostic = GetDiagnostic(source.ItemSpec, item);
-                result.SetMetadata(IsResolvedMetadataName, diagnostic == null ? "true" : "false");
-                result.SetMetadata(DiagnosticMetadataName, diagnostic ?? "");
+                // the problems a build would report, worded as it would report them
+                var diagnostics = IkvmReferenceItemPrepare.GetDiagnostics(item);
+                result.SetMetadata(IsResolvedMetadataName, diagnostics.Count == 0 ? "true" : "false");
+                result.SetMetadata(DiagnosticMetadataName, string.Join(Environment.NewLine, diagnostics.Select(i => Log.FormatResourceString(i.Resource, i.Args))));
             }
             catch (Exception e)
             {
@@ -80,34 +88,6 @@ namespace IKVM.MSBuild.Tasks
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Gets a message describing why the item cannot be built, or <c>null</c> if it can be.
-        /// </summary>
-        /// <param name="itemSpec"></param>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        static string GetDiagnostic(string itemSpec, IkvmReferenceItem item)
-        {
-            if (item.Compile.Count == 0)
-                return $"'{itemSpec}' was not found, and no Compile paths are specified.";
-
-            foreach (var compile in item.Compile)
-                if (File.Exists(compile) == false && Directory.Exists(compile) == false)
-                    return $"Compile path '{compile}' was not found.";
-
-            foreach (var source in item.Sources)
-                if (File.Exists(source) == false && Directory.Exists(source) == false)
-                    return $"Sources path '{source}' was not found.";
-
-            if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                return "No assembly name could be determined. Set AssemblyName or FallbackAssemblyName.";
-
-            if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                return "No assembly version could be determined. Set AssemblyVersion or FallbackAssemblyVersion.";
-
-            return null;
         }
 
     }

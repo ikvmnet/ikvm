@@ -81,7 +81,8 @@ namespace IKVM.MSBuild.Tasks.Tests
 
             var i = t.DescribedItems[0];
             i.GetMetadata(IkvmReferenceItemDescribe.IsResolvedMetadataName).Should().Be("false");
-            i.GetMetadata(IkvmReferenceItemDescribe.DiagnosticMetadataName).Should().Contain("classes.jar");
+            // as a build reports it: missing paths are dropped while expanding Compile, which leaves it empty
+            i.GetMetadata(IkvmReferenceItemDescribe.DiagnosticMetadataName).Should().Contain("IKVMSDK0010");
         }
 
         [TestMethod]
