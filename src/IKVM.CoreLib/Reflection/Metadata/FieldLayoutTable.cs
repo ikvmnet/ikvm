@@ -60,7 +60,7 @@ namespace IKVM.Reflection.Metadata
         {
             for (int i = 0; i < rowCount; i++)
                 module.Metadata.AddFieldLayout(
-                    (FieldDefinitionHandle)MetadataTokens.EntityHandle(records[i].Field),
+                    MetadataTokens.FieldDefinitionHandle(records[i].Field),
                     records[i].Offset);
         }
 

@@ -22,6 +22,29 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 #endif
 
     /// <summary>
+    /// What a rendering covers.
+    /// </summary>
+#if IKVM_REFLECTION
+    enum DumpScope
+#else
+    public enum DumpScope
+#endif
+    {
+
+        /// <summary>
+        /// Everything the renderer covers.
+        /// </summary>
+        Full,
+
+        /// <summary>
+        /// Only what the IKVM.Reflection builders can emit, since IKVM never emits the rest: no events, parameter
+        /// default values, custom attributes on generic parameters, interface constraints or function pointers.
+        /// </summary>
+        Emittable,
+
+    }
+
+    /// <summary>
     /// Renders the reflection view of an assembly as deterministic text. This source is compiled twice: once against
     /// System.Reflection, to record what the real runtime reports, and once against IKVM.Reflection, so the two can be
     /// compared line for line.
@@ -65,10 +88,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         /// Renders the given assembly.
         /// </summary>
         /// <param name="assembly"></param>
+        /// <param name="scope"></param>
         /// <returns></returns>
-        public static string Dump(Assembly assembly)
+        public static string Dump(Assembly assembly, DumpScope scope = DumpScope.Full)
         {
-            var w = new Writer();
+            var w = new Writer(scope);
             w.Line("assembly " + assembly.GetName().Name + " " + assembly.GetName().Version);
             using (w.Indent())
             {
@@ -114,17 +138,18 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             foreach (var i in type.GetConstructors(DeclaredOnly).Select(i => (Key: MethodKey(i), Value: i)).OrderBy(i => i.Key, StringComparer.Ordinal))
                 Method(w, i.Value);
 
-            foreach (var i in type.GetMethods(DeclaredOnly).Select(i => (Key: MethodKey(i), Value: i)).OrderBy(i => i.Key, StringComparer.Ordinal))
+            foreach (var i in type.GetMethods(DeclaredOnly).Select(i => (Key: MethodKey(i), Value: i)).Where(i => w.Includes(i.Key)).OrderBy(i => i.Key, StringComparer.Ordinal))
                 Method(w, i.Value);
 
             foreach (var i in type.GetProperties(DeclaredOnly).Select(i => (Key: i.Name + "(" + string.Join(",", i.GetIndexParameters().Select(p => TypeName(p.ParameterType))) + ")", Value: i)).OrderBy(i => i.Key, StringComparer.Ordinal))
                 Property(w, i.Value);
 
-            foreach (var i in type.GetEvents(DeclaredOnly).OrderBy(i => i.Name, StringComparer.Ordinal))
-                Event(w, i);
+            if (w.Scope == DumpScope.Full)
+                foreach (var i in type.GetEvents(DeclaredOnly).OrderBy(i => i.Name, StringComparer.Ordinal))
+                    Event(w, i);
 
             // what the public flattened lookup sees, limited to members declared in this assembly
-            foreach (var i in type.GetMembers(PublicFlattened).Where(i => i.DeclaringType != null && i.DeclaringType.Assembly == type.Assembly).Select(i => i.MemberType + " " + TypeName(i.DeclaringType) + "::" + MemberKey(i)).OrderBy(i => i, StringComparer.Ordinal))
+            foreach (var i in type.GetMembers(PublicFlattened).Where(i => i.DeclaringType != null && i.DeclaringType.Assembly == type.Assembly && (w.Scope == DumpScope.Full || i is not EventInfo)).Select(i => i.MemberType + " " + TypeName(i.DeclaringType) + "::" + MemberKey(i)).Where(w.Includes).OrderBy(i => i, StringComparer.Ordinal))
                 w.Line("visible " + i);
         }
 
@@ -137,9 +162,10 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 
                 w.Line("genericparameter " + p.GenericParameterPosition + " " + p.Name + " " + Hex(p.GenericParameterAttributes));
                 using var _ = w.Indent();
-                foreach (var c in p.GetGenericParameterConstraints().Select(TypeName).OrderBy(i => i, StringComparer.Ordinal))
+                foreach (var c in p.GetGenericParameterConstraints().Where(i => w.Scope == DumpScope.Full || i.IsInterface == false).Select(TypeName).OrderBy(i => i, StringComparer.Ordinal))
                     w.Line("constraint " + c);
-                CustomAttributes(w, () => p.GetCustomAttributesData());
+                if (w.Scope == DumpScope.Full)
+                    CustomAttributes(w, () => p.GetCustomAttributesData());
             }
         }
 
@@ -184,10 +210,10 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         {
             w.Line(label + (parameter.Position >= 0 ? " " + (parameter.Name ?? "<null>") : "") + " : " + TypeName(parameter.ParameterType));
             using var _ = w.Indent();
-            w.Line("attributes " + Hex(parameter.Attributes));
+            w.Line("attributes " + Hex(w.Scope == DumpScope.Full ? parameter.Attributes : parameter.Attributes & ~ParameterAttributes.HasDefault));
             Modifiers(w, parameter.GetRequiredCustomModifiers(), parameter.GetOptionalCustomModifiers());
             // older runtimes report a default for parameters without a metadata row; IKVM does not rely on that
-            if (parameter.Position >= 0 && (parameter.MetadataToken & 0xFFFFFF) != 0 && parameter.HasDefaultValue)
+            if (w.Scope == DumpScope.Full && parameter.Position >= 0 && (parameter.MetadataToken & 0xFFFFFF) != 0 && parameter.HasDefaultValue)
                 w.Line("default " + Value(parameter.RawDefaultValue));
             CustomAttributes(w, () => parameter.GetCustomAttributesData());
         }
@@ -402,11 +428,18 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 
         static string Flag(bool value, string name) => value ? " " + name : "";
 
-        sealed class Writer
+        sealed class Writer(DumpScope scope)
         {
 
             readonly StringBuilder builder = new();
             int depth;
+
+            public DumpScope Scope => scope;
+
+            /// <summary>
+            /// Gets whether a member with the given rendered signature is in scope.
+            /// </summary>
+            public bool Includes(string signature) => scope == DumpScope.Full || signature.Contains("fnptr") == false;
 
             public void Line(string text) => builder.Append(' ', depth * 2).Append(text).Append('\n');
 
