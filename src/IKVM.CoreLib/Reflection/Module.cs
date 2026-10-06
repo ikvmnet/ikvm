@@ -142,6 +142,10 @@ namespace IKVM.Reflection
 
         public Type GetType(string className, bool throwOnError, bool ignoreCase)
         {
+            // the importer asks every referenced assembly about each class name, so most lookups are of plain names that fail
+            if (throwOnError == false && ignoreCase == false && TryFindPlainType(className, out var plain))
+                return plain;
+
             var parser = TypeNameParser.Parse(className, throwOnError);
             if (parser.Error)
                 return null;
@@ -160,6 +164,56 @@ namespace IKVM.Reflection
                 throw new MissingModuleException((MissingModule)this);
 
             return parser.Expand(type, this, throwOnError, className, false, ignoreCase);
+        }
+
+        /// <summary>
+        /// Looks up a name without escapes, assembly name, generic arguments, modifiers or white space, giving the same
+        /// answer as the parser would. Returns <c>false</c> for any other name, and for a found type with nested parts,
+        /// to leave those to the parser.
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        bool TryFindPlainType(string className, out Type type)
+        {
+            type = null;
+
+            var end = -1;
+            for (int i = 0; i < className.Length; i++)
+            {
+                var c = className[i];
+                if (c == '+')
+                {
+                    // an empty part is a parse error, which returns null without the missing module check below
+                    if (i == 0 || i == className.Length - 1 || className[i - 1] == '+')
+                        return false;
+
+                    if (end == -1)
+                        end = i;
+                }
+                else if (c is '\\' or ',' or '[' or ']' or '*' or '&' || char.IsWhiteSpace(c))
+                {
+                    return false;
+                }
+            }
+
+            if (className.Length == 0)
+                return false;
+
+            type = FindType(TypeName.Split(end == -1 ? className : className.Substring(0, end)));
+            if (type == null)
+            {
+                if (__IsMissing)
+                    throw new MissingModuleException((MissingModule)this);
+
+                return true;
+            }
+
+            if (end == -1)
+                return true;
+
+            type = null;
+            return false;
         }
 
         public Type[] GetTypes()
