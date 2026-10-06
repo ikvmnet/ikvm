@@ -36,7 +36,7 @@ namespace IKVM.Reflection.Tests
             this.targetFrameworkVersion = targetFrameworkVersion ?? throw new ArgumentNullException(nameof(targetFrameworkVersion));
             this.dirs = dirs ?? [];
 
-            universe.AssemblyResolve += (s, a) => Load(a.Name);
+            universe.AssemblyResolve += (s, a) => Load(new System.Reflection.AssemblyName(a.Name).Name!);
         }
 
         /// <summary>

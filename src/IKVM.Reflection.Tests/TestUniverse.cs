@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -82,7 +82,16 @@ namespace IKVM.Reflection.Tests
         /// <param name="tfm"></param>
         /// <param name="searchPaths"></param>
         /// <returns></returns>
-        public static TestUniverse Create(string tfm, IEnumerable<string>? searchPaths = null) => new(FrameworkSpec.Get(tfm), searchPaths);
+        public static TestUniverse Create(string tfm, IEnumerable<string>? searchPaths = null) => new(FrameworkSpec.Get(tfm), UniverseOptions.None, searchPaths);
+
+        /// <summary>
+        /// Creates a new instance for the specified target framework, configured the way the IKVM importer configures its
+        /// universe.
+        /// </summary>
+        /// <param name="tfm"></param>
+        /// <param name="searchPaths"></param>
+        /// <returns></returns>
+        public static TestUniverse CreateLikeImporter(string tfm, IEnumerable<string>? searchPaths = null) => new(FrameworkSpec.Get(tfm), UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers, searchPaths);
 
         readonly FrameworkSpec framework;
         readonly Universe universe;
@@ -96,11 +105,12 @@ namespace IKVM.Reflection.Tests
         /// Initializes a new instance.
         /// </summary>
         /// <param name="framework"></param>
+        /// <param name="options"></param>
         /// <param name="searchPaths"></param>
-        TestUniverse(FrameworkSpec framework, IEnumerable<string>? searchPaths)
+        TestUniverse(FrameworkSpec framework, UniverseOptions options, IEnumerable<string>? searchPaths)
         {
             this.framework = framework;
-            universe = new Universe(DotNetSdkUtil.GetCoreLibName(framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion));
+            universe = new Universe(options, DotNetSdkUtil.GetCoreLibName(framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion));
             resolver = new TestAssemblyResolver(universe, framework.Tfm, framework.TargetFrameworkIdentifier, framework.TargetFrameworkVersion, searchPaths);
             tempPath = Path.Combine(Path.GetTempPath(), "IKVM.Reflection.Tests", Guid.NewGuid().ToString());
         }
