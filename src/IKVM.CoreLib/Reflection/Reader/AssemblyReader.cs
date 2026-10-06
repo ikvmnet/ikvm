@@ -49,7 +49,7 @@ namespace IKVM.Reflection.Reader
         {
             this.location = location;
             this.manifestModule = manifestModule;
-            externalModules = new Module[manifestModule.FileTable.records.Length];
+            externalModules = new Module[manifestModule.FileCount];
         }
 
         public override string Location
@@ -59,17 +59,15 @@ namespace IKVM.Reflection.Reader
 
         public override AssemblyName GetName()
         {
-            return GetNameImpl(ref manifestModule.AssemblyTable.records[0]);
-        }
+            var definition = manifestModule.Metadata.GetAssemblyDefinition();
+            var flags = (int)definition.Flags;
 
-        AssemblyName GetNameImpl(ref AssemblyTable.Record rec)
-        {
             var name = new AssemblyName();
-            name.Name = manifestModule.GetString(rec.Name);
-            name.Version = new Version(rec.MajorVersion, rec.MinorVersion, rec.BuildNumber, rec.RevisionNumber);
-            name.SetPublicKey(rec.PublicKey.IsNil == false ? manifestModule.GetBlobCopy(rec.PublicKey) : Array.Empty<byte>());
-            name.CultureName = rec.Culture.IsNil == false ? manifestModule.GetString(rec.Culture) : "";
-            name.HashAlgorithm = (AssemblyHashAlgorithm)rec.HashAlgId;
+            name.Name = manifestModule.GetString(definition.Name);
+            name.Version = definition.Version;
+            name.SetPublicKey(definition.PublicKey.IsNil == false ? manifestModule.GetBlobCopy(definition.PublicKey) : Array.Empty<byte>());
+            name.CultureName = definition.Culture.IsNil == false ? manifestModule.GetString(definition.Culture) : "";
+            name.HashAlgorithm = (AssemblyHashAlgorithm)(int)definition.HashAlgorithm;
             name.CodeBase = CodeBase;
 
             manifestModule.GetPEKind(out var peKind, out var machine);
@@ -80,7 +78,7 @@ namespace IKVM.Reflection.Reader
                     // FXBUG we copy the .NET bug that Preferred32Bit implies x86
                     if ((peKind & (PortableExecutableKinds.Required32Bit | PortableExecutableKinds.Preferred32Bit)) != 0)
                         name.ProcessorArchitecture = ProcessorArchitecture.X86;
-                    else if ((rec.Flags & 0x70) == 0x70)
+                    else if ((flags & 0x70) == 0x70)
                         name.ProcessorArchitecture = ProcessorArchitecture.None; // it's a reference assembly
                     else
                         name.ProcessorArchitecture = ProcessorArchitecture.MSIL;
@@ -99,7 +97,7 @@ namespace IKVM.Reflection.Reader
                     break;
             }
 
-            name.RawFlags = (AssemblyNameFlags)rec.Flags;
+            name.RawFlags = (AssemblyNameFlags)flags;
             return name;
         }
 
@@ -119,7 +117,7 @@ namespace IKVM.Reflection.Reader
         {
             var type = manifestModule.FindType(typeName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+                if (manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindType(typeName);
 
             return type;
@@ -129,7 +127,7 @@ namespace IKVM.Reflection.Reader
         {
             var type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
             for (int i = 0; type == null && i < externalModules.Length; i++)
-                if ((manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+                if (manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindTypeIgnoreCase(lowerCaseName);
 
             return type;
@@ -169,9 +167,9 @@ namespace IKVM.Reflection.Reader
             {
                 List<Module> list = new List<Module>();
                 list.Add(manifestModule);
-                for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
+                for (int i = 0; i < manifestModule.FileCount; i++)
                 {
-                    if (getResourceModules || (manifestModule.FileTable.records[i].Flags & ContainsNoMetaData) == 0)
+                    if (getResourceModules || manifestModule.FileContainsMetadata(i))
                     {
                         list.Add(GetModule(i));
                     }
@@ -194,8 +192,8 @@ namespace IKVM.Reflection.Reader
 
         int GetModuleIndex(string name)
         {
-            for (int i = 0; i < manifestModule.FileTable.records.Length; i++)
-                if (name.Equals(manifestModule.GetString(manifestModule.FileTable.records[i].Name), StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < manifestModule.FileCount; i++)
+                if (name.Equals(manifestModule.GetFileName(i), StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
@@ -206,13 +204,13 @@ namespace IKVM.Reflection.Reader
             if (externalModules[index] != null)
                 return externalModules[index];
 
-            return LoadModule(index, null, manifestModule.GetString(manifestModule.FileTable.records[index].Name));
+            return LoadModule(index, null, manifestModule.GetFileName(index));
         }
 
         private Module LoadModule(int index, byte[] rawModule, string name)
         {
             var location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
-            if ((manifestModule.FileTable.records[index].Flags & ContainsNoMetaData) != 0)
+            if (manifestModule.FileContainsMetadata(index) == false)
             {
                 return externalModules[index] = new ResourceModule(manifestModule, index, location);
             }
@@ -269,7 +267,7 @@ namespace IKVM.Reflection.Reader
 
         internal string Name
         {
-            get { return manifestModule.GetString(manifestModule.AssemblyTable.records[0].Name); }
+            get { return manifestModule.GetString(manifestModule.Metadata.GetAssemblyDefinition().Name); }
         }
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)

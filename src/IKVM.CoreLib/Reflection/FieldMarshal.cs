@@ -59,10 +59,17 @@ namespace IKVM.Reflection
             if (module is ModuleBuilder builder)
                 return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, new ByteReader(nativeType, 0, nativeType.Length), out fm);
 
-            foreach (var i in module.FieldMarshalTable.Filter(token))
-                return Decode(module, module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType), out fm);
+            if (module is not ModuleReader reader || (token & 0xFFFFFF) == 0)
+                return false;
 
-            return false;
+            var descriptor = (token >> 24) switch
+            {
+                FieldTable.Index => reader.Metadata.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                ParamTable.Index => reader.Metadata.GetParameter(MetadataTokens.ParameterHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                _ => default,
+            };
+
+            return descriptor.IsNil == false && Decode(module, module.GetBlobReader(descriptor), out fm);
         }
 
         static bool Decode(Module module, ByteReader blob, out FieldMarshal fm)

@@ -342,12 +342,17 @@ namespace IKVM.Reflection
             if (this is Emit.ModuleBuilder builder)
                 return builder.TryGetImplMap(token, out mappingFlags, out importName, out importScope);
 
-            foreach (int i in ImplMapTable.Filter(token))
+            // only methods are imported in practice; System.Reflection.Metadata has no API for imported fields
+            if (this is ModuleReader reader && (token >> 24) == MethodDefTable.Index && (token & 0xFFFFFF) != 0)
             {
-                mappingFlags = (ImplMapFlags)(ushort)ImplMapTable.records[i].MappingFlags;
-                importName = GetString(ImplMapTable.records[i].ImportName);
-                importScope = GetString(ModuleRefTable.records[(ImplMapTable.records[i].ImportScope & 0xFFFFFF) - 1]);
-                return true;
+                var import = reader.Metadata.GetMethodDefinition(System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDefinitionHandle(token & 0xFFFFFF)).GetImport();
+                if (import.Module.IsNil == false)
+                {
+                    mappingFlags = (ImplMapFlags)(ushort)import.Attributes;
+                    importName = GetString(import.Name);
+                    importScope = GetString(reader.Metadata.GetModuleReference(import.Module).Name);
+                    return true;
+                }
             }
 
             mappingFlags = 0;

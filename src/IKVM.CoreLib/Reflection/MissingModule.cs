@@ -68,7 +68,7 @@ namespace IKVM.Reflection
                 if (index == -1)
                     throw new MissingModuleException(this);
 
-                return assembly.ManifestModule.GetString(assembly.ManifestModule.FileTable.records[index].Name);
+                return ((Reader.ModuleReader)assembly.ManifestModule).GetFileName(index);
             }
         }
 

@@ -23,6 +23,8 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 using IKVM.Reflection.Emit;
@@ -41,7 +43,7 @@ namespace IKVM.Reflection
 		 * There are several states a CustomAttributeData object can be in:
 		 * 
 		 * 1) Unresolved Custom Attribute
-		 *    - customAttributeIndex >= 0
+		 *    - customAttribute is not nil
 		 *    - declSecurityIndex == -1
 		 *    - declSecurityBlob == null
 		 *    - lazyConstructor = null
@@ -49,7 +51,7 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments = null
 		 * 
 		 * 2) Resolved Custom Attribute
-		 *    - customAttributeIndex >= 0
+		 *    - customAttribute is not nil
 		 *    - declSecurityIndex == -1
 		 *    - declSecurityBlob == null
 		 *    - lazyConstructor != null
@@ -57,7 +59,7 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments != null
 		 *    
 		 * 3) Pre-resolved Custom Attribute
-		 *    - customAttributeIndex = -1
+		 *    - customAttribute is nil
 		 *    - declSecurityIndex == -1
 		 *    - declSecurityBlob == null
 		 *    - lazyConstructor != null
@@ -65,7 +67,7 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments != null
 		 *    
 		 * 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
-		 *    - customAttributeIndex = -1
+		 *    - customAttribute is nil
 		 *    - declSecurityIndex == -1
 		 *    - declSecurityBlob == null
 		 *    - lazyConstructor != null
@@ -73,7 +75,7 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments != null
 		 *    
 		 * 5) Unresolved declarative security
-		 *    - customAttributeIndex = -1
+		 *    - customAttribute is nil
 		 *    - declSecurityIndex >= 0
 		 *    - declSecurityBlob != null
 		 *    - lazyConstructor != null
@@ -81,7 +83,7 @@ namespace IKVM.Reflection
 		 *    - lazyNamedArguments == null
 		 * 
 		 * 6) Resolved declarative security
-		 *    - customAttributeIndex = -1
+		 *    - customAttribute is nil
 		 *    - declSecurityIndex >= 0
 		 *    - declSecurityBlob == null
 		 *    - lazyConstructor != null
@@ -91,7 +93,7 @@ namespace IKVM.Reflection
 		 */
 
         readonly Module module;
-        readonly int customAttributeIndex;
+        readonly CustomAttributeHandle customAttribute;
         readonly int declSecurityIndex;
         readonly byte[] declSecurityBlob;
 
@@ -104,10 +106,10 @@ namespace IKVM.Reflection
         /// </summary>
         /// <param name="module"></param>
         /// <param name="index"></param>
-        internal CustomAttributeData(Module module, int index)
+        internal CustomAttributeData(ModuleReader module, CustomAttributeHandle handle)
         {
             this.module = module ?? throw new ArgumentNullException(nameof(module));
-            this.customAttributeIndex = index;
+            this.customAttribute = handle;
             this.declSecurityIndex = -1;
         }
 
@@ -145,7 +147,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
             this.module = module ?? throw new ArgumentNullException(nameof(module));
-            this.customAttributeIndex = -1;
             this.declSecurityIndex = -1;
             this.lazyConstructor = constructor;
 
@@ -166,7 +167,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, ByteReader br)
         {
             this.module = asm.ManifestModule;
-            this.customAttributeIndex = -1;
             this.declSecurityIndex = -1;
             this.lazyConstructor = constructor;
             if (br.Length == 0)
@@ -274,7 +274,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob, int index)
         {
             this.module = asm.ManifestModule;
-            this.customAttributeIndex = -1;
             this.declSecurityIndex = index;
             this.lazyConstructor = constructor;
 
@@ -485,7 +484,7 @@ namespace IKVM.Reflection
             get
             {
                 if (lazyConstructor == null)
-                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(module.CustomAttributeTable.records[customAttributeIndex].Constructor);
+                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(MetadataTokens.GetToken(((ModuleReader)module).Metadata.GetCustomAttribute(customAttribute).Constructor));
 
                 return lazyConstructor;
             }
@@ -508,7 +507,7 @@ namespace IKVM.Reflection
             {
                 if (lazyNamedArguments == null)
                 {
-                    if (customAttributeIndex >= 0)
+                    if (customAttribute.IsNil == false)
                     {
                         // 1) Unresolved Custom Attribute
                         LazyParseArguments(true);
@@ -528,7 +527,7 @@ namespace IKVM.Reflection
 
         void LazyParseArguments(bool requireNameArguments)
         {
-            var br = module.GetBlobReader(module.CustomAttributeTable.records[customAttributeIndex].Value);
+            var br = module.GetBlobReader(((ModuleReader)module).Metadata.GetCustomAttribute(customAttribute).Value);
             if (br.Length == 0)
             {
                 // it's legal to have an empty blob
@@ -702,20 +701,15 @@ namespace IKVM.Reflection
             if (module is ModuleBuilder builder)
                 return builder.GetCustomAttributes(list, token, attributeType);
 
-            foreach (var i in module.CustomAttributeTable.Filter(token))
+            if (module is not ModuleReader reader || (token & 0xFFFFFF) == 0)
+                return list;
+
+            foreach (var h in reader.Metadata.GetCustomAttributes(MetadataTokens.EntityHandle(token)))
             {
-                if (attributeType == null)
+                if (attributeType == null || attributeType.IsAssignableFrom(module.ResolveMethod(MetadataTokens.GetToken(reader.Metadata.GetCustomAttribute(h).Constructor)).DeclaringType))
                 {
                     list ??= new List<CustomAttributeData>();
-                    list.Add(new CustomAttributeData(module, i));
-                }
-                else
-                {
-                    if (attributeType.IsAssignableFrom(module.ResolveMethod(module.CustomAttributeTable.records[i].Constructor).DeclaringType))
-                    {
-                        list ??= new List<CustomAttributeData>();
-                        list.Add(new CustomAttributeData(module, i));
-                    }
+                    list.Add(new CustomAttributeData(reader, h));
                 }
             }
 
