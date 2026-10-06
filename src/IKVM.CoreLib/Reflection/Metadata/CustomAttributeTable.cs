@@ -60,37 +60,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddCustomAttribute(
-                    MetadataTokens.EntityHandle(records[i].Parent),
-                    MetadataTokens.EntityHandle(records[i].Constructor),
-                    records[i].Value);
-
-                Debug.Assert(h == MetadataTokens.CustomAttributeHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            var genericParamFixup = moduleBuilder.GenericParamTable.GetIndexFixup();
-
-            for (int i = 0; i < rowCount; i++)
-            {
-                moduleBuilder.FixupPseudoToken(ref records[i].Constructor);
-                moduleBuilder.FixupPseudoToken(ref records[i].Parent);
-                if (MetadataTokens.EntityHandle(records[i].Parent).Kind == HandleKind.GenericParameter)
-                    records[i].Parent = (GenericParamTable.Index << 24) + genericParamFixup[(records[i].Parent & 0xFFFFFF) - 1] + 1;
-
-                // TODO if we ever add support for custom attributes on DeclSecurity or GenericParamConstraint
-                // we need to fix them up here (because they are sorted tables, like GenericParam)
-            }
-
-            Sort();
-        }
-
         internal static int EncodeHasCustomAttribute(int token) => (token >> 24) switch
         {
             MethodDefTable.Index => (token & 0xFFFFFF) << 5 | 0,

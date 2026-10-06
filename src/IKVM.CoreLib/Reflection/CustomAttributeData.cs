@@ -699,6 +699,9 @@ namespace IKVM.Reflection
 
         internal static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
         {
+            if (module is ModuleBuilder builder)
+                return builder.GetCustomAttributes(list, token, attributeType);
+
             foreach (var i in module.CustomAttributeTable.Filter(token))
             {
                 if (attributeType == null)

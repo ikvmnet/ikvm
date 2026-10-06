@@ -300,7 +300,6 @@ namespace IKVM.Reflection.Writer
             module.FieldMarshalTable.Fixup(module);
             module.DeclSecurityTable.Fixup(module);
             module.GenericParamTable.Fixup(module);
-            module.CustomAttributeTable.Fixup(module);
             module.FieldLayoutTable.Fixup(module);
             module.FieldRVATable.Fixup(module);
             module.ImplMapTable.Fixup(module);

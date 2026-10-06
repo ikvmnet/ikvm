@@ -113,6 +113,20 @@ namespace IKVM.Reflection.Emit
 
         }
 
+        /// <summary>
+        /// A custom attribute set on this module. The parent and constructor can be pseudo tokens until the module is
+        /// written.
+        /// </summary>
+        struct CustomAttributeRow
+        {
+
+            internal int Parent;
+            internal int Constructor;
+            internal BlobHandle Value;
+            internal CustomAttributeBuilder Builder;
+
+        }
+
         readonly struct MemberRefKey : IEquatable<MemberRefKey>
         {
 
@@ -212,6 +226,7 @@ namespace IKVM.Reflection.Emit
         internal readonly Dictionary<StringHandle, string> strings = new();
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
+        readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
         bool saved;
 
         /// <summary>
@@ -495,11 +510,45 @@ namespace IKVM.Reflection.Emit
 
         internal void SetCustomAttribute(int token, CustomAttributeBuilder customBuilder)
         {
-            var rec = new CustomAttributeTable.Record();
-            rec.Parent = token;
-            rec.Constructor = GetConstructorToken(customBuilder.Constructor).Token;
-            rec.Value = customBuilder.WriteBlob(this);
-            CustomAttributeTable.AddRecord(rec);
+            customAttributes.Add(new CustomAttributeRow()
+            {
+                Parent = token,
+                Constructor = GetConstructorToken(customBuilder.Constructor).Token,
+                Value = customBuilder.WriteBlob(this),
+                Builder = customBuilder,
+            });
+        }
+
+        /// <summary>
+        /// Adds the custom attributes set on the given token that are assignable to <paramref name="attributeType"/>, or
+        /// all of them if it is <c>null</c>.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="token"></param>
+        /// <param name="attributeType"></param>
+        /// <returns></returns>
+        internal List<CustomAttributeData> GetCustomAttributes(List<CustomAttributeData> list, int token, Type attributeType)
+        {
+            foreach (var row in customAttributes)
+                if (row.Parent == token && (attributeType == null || attributeType.IsAssignableFrom(row.Builder.Constructor.DeclaringType)))
+                    (list ??= new List<CustomAttributeData>()).Add(row.Builder.ToData(asm));
+
+            return list;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the custom attributes and adds them to the metadata, which sorts them.
+        /// </summary>
+        void WriteCustomAttributes()
+        {
+            for (int i = 0; i < customAttributes.Count; i++)
+            {
+                var row = customAttributes[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                row.Constructor = ResolvePseudoToken(row.Constructor);
+                customAttributes[i] = row;
+                metadata.AddCustomAttribute(MetadataTokens.EntityHandle(row.Parent), MetadataTokens.EntityHandle(row.Constructor), row.Value);
+            }
         }
 
         public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
@@ -836,6 +885,8 @@ namespace IKVM.Reflection.Emit
             foreach (var table in GetTables())
                 if (table != null)
                     table.Write(this);
+
+            WriteCustomAttributes();
         }
 
         internal override void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule)

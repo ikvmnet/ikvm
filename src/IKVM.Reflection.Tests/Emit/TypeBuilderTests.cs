@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Linq;
+using System;
 
 using FluentAssertions;
 
@@ -95,6 +96,45 @@ namespace IKVM.Reflection.Tests.Emit
             t.IsClass.Should().BeTrue();
             t.GetInterfaces().Should().Contain(i);
             t.GetMethod("Method").Should().NotBeNull().And.Return(u.LoadContextType("System.Object"));
+        }
+
+        /// <summary>
+        /// Custom attributes set on builders can be read back from the created type, before and after saving.
+        /// </summary>
+        /// <param name="tfm"></param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanReadBackCustomAttributes(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+            var obsolete = u.Import(typeof(System.ObsoleteAttribute)).GetConstructor([u.Import(typeof(string))]);
+            CustomAttributeBuilder Attribute(string message) => new(obsolete, [message]);
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type", TypeAttributes.Public);
+            type.SetCustomAttribute(Attribute("type"));
+            var field = type.DefineField("field", u.Import(typeof(int)), FieldAttributes.Public);
+            field.SetCustomAttribute(Attribute("field"));
+            var method = type.DefineMethod("Method", MethodAttributes.Public, u.Import(typeof(void)), [u.Import(typeof(int))]);
+            method.SetCustomAttribute(Attribute("method"));
+            method.DefineParameter(1, ParameterAttributes.None, "value").SetCustomAttribute(Attribute("parameter"));
+            method.GetILGenerator().Emit(OpCodes.Ret);
+            var created = type.CreateType();
+
+            void Check()
+            {
+                static string Message(System.Collections.Generic.IList<CustomAttributeData> data) => (string)data.Single(i => i.AttributeType.Name == "ObsoleteAttribute").ConstructorArguments[0].Value!;
+                Message(created.GetCustomAttributesData()).Should().Be("type");
+                Message(created.GetField("field")!.GetCustomAttributesData()).Should().Be("field");
+                var m = created.GetMethod("Method")!;
+                Message(m.GetCustomAttributesData()).Should().Be("method");
+                Message(m.GetParameters()[0].GetCustomAttributesData()).Should().Be("parameter");
+            }
+
+            Check();
+            assembly.Save("Test.dll");
+            Check();
         }
 
         /// <summary>
