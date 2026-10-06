@@ -63,6 +63,11 @@ namespace IKVM.Tools.Importer
         }
 
         /// <summary>
+        /// Gets whether the compiler should produce deterministic output.
+        /// </summary>
+        internal bool Deterministic { get; private set; }
+
+        /// <summary>
         /// Initializes the universe.
         /// </summary>
         /// <param name="nonDeterministicOutput"></param>
@@ -71,6 +76,8 @@ namespace IKVM.Tools.Importer
         /// <exception cref="Exception"></exception>
         internal void Init(bool nonDeterministicOutput, DebugMode debug, IList<string> libpaths)
         {
+            Deterministic = nonDeterministicOutput == false;
+
             var options = UniverseOptions.ResolveMissingMembers | UniverseOptions.EnableFunctionPointers;
             if (nonDeterministicOutput == false)
                 options |= UniverseOptions.DeterministicOutput;
