@@ -36,8 +36,6 @@ namespace IKVM.Reflection
         Type[] typeArgs;
         int token;
         int flags;
-        bool cyclicTypeForwarder;
-        bool cyclicTypeSpec;
 
         /// <summary>
         /// Initializes a new instance.
@@ -125,12 +123,7 @@ namespace IKVM.Reflection
                     case TypeFlags.NotValueType:
                         return false;
                     default:
-                        if (module.Universe.ResolveMissingTypeIsValueType(this))
-                            typeFlags |= TypeFlags.ValueType;
-                        else
-                            typeFlags |= TypeFlags.NotValueType;
-
-                        return (typeFlags & TypeFlags.ValueType) != 0;
+                        throw new MissingMemberException(this);
                 }
             }
         }
@@ -224,18 +217,6 @@ namespace IKVM.Reflection
         {
             this.token = token;
             this.flags = flags;
-            return this;
-        }
-
-        internal override Type SetCyclicTypeForwarder()
-        {
-            this.cyclicTypeForwarder = true;
-            return this;
-        }
-
-        internal override Type SetCyclicTypeSpec()
-        {
-            this.cyclicTypeSpec = true;
             return this;
         }
 

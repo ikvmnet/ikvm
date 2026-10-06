@@ -115,22 +115,6 @@ namespace IKVM.Reflection.Writer
             root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].data = ByteBuffer.Wrap(manifest);
         }
 
-        /// <summary>
-        /// Imports the resources from the specified Win32 resource file.
-        /// </summary>
-        /// <param name="buf"></param>
-        internal void ImportWin32ResourceFile(byte[] buf)
-        {
-            var br = new ByteReader(buf, 0, buf.Length);
-            while (br.Length >= 32)
-            {
-                br.Align(4);
-                var hdr = new RESOURCEHEADER(br);
-                if (hdr.DataSize != 0)
-                    root[hdr.TYPE][hdr.NAME][new OrdinalOrName(hdr.LanguageId)].data = ByteBuffer.Wrap(br.ReadBytes(hdr.DataSize));
-            }
-        }
-
         /// <inheritdoc />
         protected override void Serialize(BlobBuilder builder, SectionLocation location)
         {

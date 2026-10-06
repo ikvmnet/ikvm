@@ -72,8 +72,6 @@ namespace IKVM.Reflection
         bool resolveMissingMembers;
         readonly bool enableFunctionPointers;
         readonly bool useNativeFusion;
-        readonly bool returnPseudoCustomAttributes;
-        readonly bool automaticallyProvideDefaultConstructor;
         HashAlgorithmName pdbChecksumAlgorithm = HashAlgorithmName.SHA256;
         readonly UniverseOptions options;
         Func<ModuleBuilder, ISymbolWriter> symbolWriterFactory;
@@ -122,10 +120,9 @@ namespace IKVM.Reflection
         Type typeof_System_Reflection_AssemblyInformationalVersionAttribute;
         Type typeof_System_Reflection_AssemblyFileVersionAttribute;
         Type typeof_System_Security_Permissions_CodeAccessSecurityAttribute;
-        Type typeof_System_Security_Permissions_PermissionSetAttribute;
+
         Type typeof_System_Security_Permissions_SecurityAction;
         List<ResolveEventHandler> resolvers = new List<ResolveEventHandler>();
-        Predicate<Type> missingTypeIsValueType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -146,9 +143,7 @@ namespace IKVM.Reflection
             this.options = options;
             this.coreLibName = coreLibName ?? DefaultCoreLibName;
             enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
-            useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
-            returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
-            automaticallyProvideDefaultConstructor = (options & UniverseOptions.DontProvideAutomaticDefaultConstructor) == 0;
+            useNativeFusion = GetUseNativeFusion();
             resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
         }
 
@@ -330,8 +325,6 @@ namespace IKVM.Reflection
 
         internal Type System_Security_Permissions_CodeAccessSecurityAttribute => typeof_System_Security_Permissions_CodeAccessSecurityAttribute ??= ImportCoreLibType("System.Security.Permissions", "CodeAccessSecurityAttribute");
 
-        internal Type System_Security_Permissions_PermissionSetAttribute => typeof_System_Security_Permissions_PermissionSetAttribute ??= ImportCoreLibType("System.Security.Permissions", "PermissionSetAttribute");
-
         internal Type System_Security_Permissions_SecurityAction => typeof_System_Security_Permissions_SecurityAction ??= ImportCoreLibType("System.Security.Permissions", "SecurityAction");
 
         /// <summary>
@@ -453,8 +446,7 @@ namespace IKVM.Reflection
             {
                 fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 module = OpenRawModule(fs, path);
-                if (MetadataOnly == false)
-                    fs = null;
+                fs = null;
             }
             finally
             {
@@ -518,7 +510,7 @@ namespace IKVM.Reflection
 
         Assembly GetLoadedAssembly(string refname)
         {
-            if (!assembliesByName.TryGetValue(refname, out var asm) && (options & UniverseOptions.DisableDefaultAssembliesLookup) == 0)
+            if (!assembliesByName.TryGetValue(refname, out var asm))
             {
                 var simpleName = GetSimpleAssemblyName(refname);
                 for (int i = 0; i < assemblies.Count; i++)
@@ -873,22 +865,6 @@ namespace IKVM.Reflection
         }
 
         public event ResolvedMissingMemberHandler ResolvedMissingMember;
-
-        internal bool ResolveMissingTypeIsValueType(MissingType missingType)
-        {
-            if (missingTypeIsValueType != null)
-                return missingTypeIsValueType(missingType);
-
-            throw new MissingMemberException(missingType);
-        }
-
-        internal bool ReturnPseudoCustomAttributes => returnPseudoCustomAttributes;
-
-        internal bool AutomaticallyProvideDefaultConstructor => automaticallyProvideDefaultConstructor;
-
-        internal bool MetadataOnly => (options & UniverseOptions.MetadataOnly) != 0;
-
-        internal bool DecodeVersionInfoAttributeBlobs => (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0;
 
         /// <summary>
         /// Returns <c>true</c> if the module builders should produce deterministic images.

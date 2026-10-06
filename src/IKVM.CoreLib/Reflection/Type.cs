@@ -1825,16 +1825,6 @@ namespace IKVM.Reflection
             return this;
         }
 
-        internal virtual Type SetCyclicTypeForwarder()
-        {
-            return this;
-        }
-
-        internal virtual Type SetCyclicTypeSpec()
-        {
-            return this;
-        }
-
         protected void MarkKnownType(string typeNamespace, string typeName)
         {
             // we assume that mscorlib won't have nested types with these names,

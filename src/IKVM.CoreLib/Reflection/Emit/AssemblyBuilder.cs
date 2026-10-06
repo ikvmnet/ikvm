@@ -54,7 +54,6 @@ namespace IKVM.Reflection.Emit
         VersionInfo versionInfo;
         byte[] win32icon;
         byte[] win32manifest;
-        byte[] win32resources;
         string imageRuntimeVersion;
         internal int mdStreamVersion = 0x20000;
         Module pseudoManifestModule;
@@ -62,7 +61,6 @@ namespace IKVM.Reflection.Emit
         readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
         readonly List<Module> addedModules = new List<Module>();
         readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-        readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
         readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
 
         readonly struct TypeForwarder
@@ -90,7 +88,6 @@ namespace IKVM.Reflection.Emit
             internal string Name;
             internal string FileName;
             internal ResourceAttributes Attributes;
-            internal ResourceWriter Writer;
 
         }
 
@@ -273,7 +270,7 @@ namespace IKVM.Reflection.Emit
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.SetIsSaved();
-                moduleBuilder.PopulatePropertyAndEventTables();
+                moduleBuilder.PopulatePropertyTables();
 
                 // is this the default manifest module?
                 if (manifestModule == null && string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
@@ -318,7 +315,7 @@ namespace IKVM.Reflection.Emit
                 foreach (var cab in customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
-                    if (cab.HasBlob == false || Universe.DecodeVersionInfoAttributeBlobs)
+                    if (cab.HasBlob == false)
                         versionInfo.SetAttribute(this, cab);
                 }
 
@@ -335,14 +332,10 @@ namespace IKVM.Reflection.Emit
             if (win32manifest != null)
                 nativeResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 
-            if (win32resources != null)
-                nativeResources.ImportWin32ResourceFile(win32resources);
-
             // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
             foreach (var cab in customAttributes)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
 
-            manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
             foreach (var fwd in typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
@@ -350,12 +343,6 @@ namespace IKVM.Reflection.Emit
             // add resource files for assembly to manifest module
             foreach (var resfile in resourceFiles)
             {
-                if (resfile.Writer != null)
-                {
-                    resfile.Writer.Generate();
-                    resfile.Writer.Close();
-                }
-
                 var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
                 var rec = new ManifestResourceTable.Record();
                 rec.Offset = 0;
@@ -427,7 +414,7 @@ namespace IKVM.Reflection.Emit
 
         public void DefineVersionInfoResource()
         {
-            if (versionInfo != null || win32resources != null)
+            if (versionInfo != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             versionInfo = new VersionInfo();
@@ -435,7 +422,7 @@ namespace IKVM.Reflection.Emit
 
         public void __DefineIconResource(byte[] iconFile)
         {
-            if (win32icon != null || win32resources != null)
+            if (win32icon != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             win32icon = (byte[])iconFile.Clone();
@@ -443,7 +430,7 @@ namespace IKVM.Reflection.Emit
 
         public void __DefineManifestResource(byte[] manifest)
         {
-            if (win32manifest != null || win32resources != null)
+            if (win32manifest != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             win32manifest = (byte[])manifest.Clone();
@@ -562,11 +549,6 @@ namespace IKVM.Reflection.Emit
                     list.Add(cab.ToData(this));
 
             return list;
-        }
-
-        internal bool IsWindowsRuntime
-        {
-            get { return (flags & (AssemblyNameFlags)0x200) != 0; }
         }
 
     }

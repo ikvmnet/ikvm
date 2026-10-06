@@ -26,65 +26,34 @@ using System;
 namespace IKVM.Reflection
 {
 
-    /*
-	 * UniverseOptions:
-	 *
-	 *   None
-	 *		Default behavior, most compatible with System.Reflection[.Emit]
-	 *
-	 *   EnableFunctionPointers
-	 *		Normally function pointers in signatures are replaced by System.IntPtr
-	 *		(for compatibility with System.Reflection), when this option is enabled
-	 *		they are represented as first class types (Type.__IsFunctionPointer will
-	 *		return true for them).
-	 *
-	 *   DisableFusion
-	 *      Don't use native Fusion API to resolve assembly names.
-	 *
-	 *   DisablePseudoCustomAttributeRetrieval
-	 *      Set this option to disable the generaton of pseudo-custom attributes
-	 *      when querying custom attributes.
-	 *
-	 *   DontProvideAutomaticDefaultConstructor
-	 *      Normally TypeBuilder, like System.Reflection.Emit, will provide a default
-	 *      constructor for types that meet the requirements. By enabling this
-	 *      option this behavior is disabled.
-	 *
-	 *   MetadataOnly
-	 *      By default, when a module is read in, the stream is kept open to satisfy
-	 *      subsequent lazy loading. In MetadataOnly mode only the metadata is read in
-	 *      and after that the stream is closed immediately. Subsequent lazy loading
-	 *      attempts will fail with an InvalidOperationException.
-	 *      APIs that are not available is MetadataOnly mode are:
-	 *      - Module.ResolveString()
-	 *      - Module.GetSignerCertificate()
-	 *      - Module.GetManifestResourceStream()
-	 *      - Module.__ReadDataFromRVA()
-	 *      - MethodBase.GetMethodBody()
-	 *      - FieldInfo.__GetDataFromRVA()
-	 *
-	 *   DeterministicOutput
-	 *      The generated output file will depend only on the input. In other words,
-	 *      the PE file header time stamp will be set to zero and the module version
-	 *      id will be based on a SHA1 of the contents, instead of a random guid.
-	 *      This option can not be used in combination with PDB file generation.
-	 */
-
+    /// <summary>
+    /// Options that configure a <see cref="Universe"/>.
+    /// </summary>
     [Flags]
     internal enum UniverseOptions
     {
 
+        /// <summary>
+        /// Default behavior, most compatible with System.Reflection.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Represents function pointers in signatures as first class types (<see cref="Type.IsFunctionPointer"/>)
+        /// instead of replacing them by System.IntPtr.
+        /// </summary>
         EnableFunctionPointers = 1,
-        DisableFusion = 2,
-        DisablePseudoCustomAttributeRetrieval = 4,
-        DontProvideAutomaticDefaultConstructor = 8,
-        MetadataOnly = 16,
+
+        /// <summary>
+        /// Resolves references to missing assemblies, types and members to placeholders instead of throwing.
+        /// </summary>
         ResolveMissingMembers = 32,
-        DisableWindowsRuntimeProjection = 64,
-        DecodeVersionInfoAttributeBlobs = 128,
+
+        /// <summary>
+        /// Makes the output depend only on the input: the PE time stamp is zero and the module version id is derived
+        /// from the content.
+        /// </summary>
         DeterministicOutput = 256,
-        DisableDefaultAssembliesLookup = 512,
 
     }
 

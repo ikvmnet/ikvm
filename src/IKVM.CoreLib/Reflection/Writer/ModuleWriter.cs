@@ -294,7 +294,6 @@ namespace IKVM.Reflection.Writer
             module.MethodImplTable.Fixup(module);
             module.MethodSemanticsTable.Fixup(module);
             module.InterfaceImplTable.Fixup(module);
-            module.ResolveInterfaceImplPseudoTokens();
             module.MemberRefTable.Fixup(module);
             module.ConstantTable.Fixup(module);
             module.FieldMarshalTable.Fixup(module);

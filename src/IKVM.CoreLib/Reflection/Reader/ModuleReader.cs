@@ -57,7 +57,7 @@ namespace IKVM.Reflection.Reader
                 if (type == MarkerType.LazyResolveInProgress)
                 {
                     var typeName = module.GetTypeName(module.ExportedTypeTable.records[index].TypeNamespace, module.ExportedTypeTable.records[index].TypeName);
-                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
+                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName);
                 }
                 else if (type == null)
                 {
@@ -106,7 +106,7 @@ namespace IKVM.Reflection.Reader
         internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped) :
             base(universe)
         {
-            this.stream = universe != null && universe.MetadataOnly ? null : stream;
+            this.stream = stream;
             this.location = location;
             Read(stream, mapped);
 
@@ -240,7 +240,7 @@ namespace IKVM.Reflection.Reader
 
         internal Stream GetStream()
         {
-            return stream ?? throw new InvalidOperationException("Operation not available when UniverseOptions.MetadataOnly is enabled.");
+            return stream;
         }
 
         internal override void GetTypesImpl(List<Type> list)
@@ -452,7 +452,6 @@ namespace IKVM.Reflection.Reader
                     {
                         return Universe
                             .GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
-                            .SetCyclicTypeSpec()
                             .SetMetadataTokenForMissing(metadataToken, 0);
                     }
 

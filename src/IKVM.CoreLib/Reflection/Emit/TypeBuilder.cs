@@ -48,10 +48,8 @@ namespace IKVM.Reflection.Emit
         readonly List<MethodBuilder> methods = new List<MethodBuilder>();
         readonly List<FieldBuilder> fields = new List<FieldBuilder>();
         List<PropertyBuilder> properties;
-        List<EventBuilder> events;
         TypeAttributes attribs;
         GenericTypeParameterBuilder[] gtpb;
-        List<CustomAttributeBuilder> declarativeSecurity;
         List<Type> interfaces;
         int size;
         short packingSize;
@@ -127,7 +125,7 @@ namespace IKVM.Reflection.Emit
             var rec = new MethodImplTable.Record();
             rec.Class = token;
             rec.MethodBody = this.ModuleBuilder.GetMethodToken(methodInfoBody).Token;
-            rec.MethodDeclaration = this.ModuleBuilder.GetMethodTokenWinRT(methodInfoDeclaration);
+            rec.MethodDeclaration = ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token;
             ModuleBuilder.MethodImplTable.AddRecord(rec);
         }
 
@@ -363,11 +361,9 @@ namespace IKVM.Reflection.Emit
                 mb.Bake();
             }
 
-            if (!hasConstructor && !IsModulePseudoType && !IsInterface && !IsValueType && !(IsAbstract && IsSealed) && Universe.AutomaticallyProvideDefaultConstructor)
+            if (!hasConstructor && !IsModulePseudoType && !IsInterface && !IsValueType && !(IsAbstract && IsSealed))
                 ((MethodBuilder)DefineDefaultConstructor(MethodAttributes.Public).GetMethodInfo()).Bake();
 
-            if (declarativeSecurity != null)
-                ModuleBuilder.AddDeclarativeSecurity(token, declarativeSecurity);
 
             if (!IsModulePseudoType)
             {
@@ -395,7 +391,7 @@ namespace IKVM.Reflection.Emit
             return CreateTypeInfo();
         }
 
-        internal void PopulatePropertyAndEventTables()
+        internal void PopulatePropertyTable()
         {
             if (properties != null)
             {
@@ -405,16 +401,6 @@ namespace IKVM.Reflection.Emit
                 ModuleBuilder.PropertyMapTable.AddRecord(rec);
                 foreach (var pb in properties)
                     pb.Bake();
-            }
-
-            if (events != null)
-            {
-                var rec = new EventMapTable.Record();
-                rec.Parent = token;
-                rec.EventList = MetadataTokens.GetToken(MetadataTokens.EventDefinitionHandle(ModuleBuilder.EventTable.RowCount + 1));
-                ModuleBuilder.EventMapTable.AddRecord(rec);
-                foreach (var eb in events)
-                    eb.Bake();
             }
         }
 
@@ -642,7 +628,7 @@ namespace IKVM.Reflection.Emit
 
         public override EventInfo[] __GetDeclaredEvents()
         {
-            return Util.ToArray(events, Array.Empty<EventInfo>());
+            return [];
         }
 
         public override PropertyInfo[] __GetDeclaredProperties()

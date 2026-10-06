@@ -55,7 +55,6 @@ namespace IKVM.Reflection.Emit
         List<ParameterBuilder> parameters;
         ILGenerator m_ilGenerator;
         GenericTypeParameterBuilder[] gtpb;
-        List<CustomAttributeBuilder> declarativeSecurity;
         MethodSignature methodSignature;
         CallingConventions callingConvention;
         bool initLocals = true;
@@ -553,8 +552,6 @@ namespace IKVM.Reflection.Emit
                 SetMethodBody(m_ilGenerator.BakeByteArray(), m_ilGenerator.GetMaxStackSize(), m_ilGenerator.m_localSignature.GetSignature(), GetExceptions(m_ilGenerator.GetExceptions()), m_ilGenerator.GetTokenFixups());
             }
 
-            if (declarativeSecurity != null)
-                ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
         }
 
         /// <summary>

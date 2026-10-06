@@ -290,12 +290,6 @@ namespace IKVM.Reflection.Writer
             pos += bb.Length;
         }
 
-        internal void Clear()
-        {
-            pos = 0;
-            __length = 0;
-        }
-
         internal void Align(int alignment)
         {
             if (pos + alignment > buffer.Length)

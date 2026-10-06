@@ -113,15 +113,6 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        struct InterfaceImplCustomAttribute
-        {
-
-            internal int type;
-            internal int interfaceType;
-            internal int pseudoToken;
-
-        }
-
         readonly struct MemberRefKey : IEquatable<MemberRefKey>
         {
 
@@ -221,7 +212,6 @@ namespace IKVM.Reflection.Emit
 
         internal readonly Dictionary<StringHandle, string> strings = new();
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
-        List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         bool saved;
 
@@ -350,13 +340,13 @@ namespace IKVM.Reflection.Emit
             this.symbolWriter = writer;
         }
 
-        internal void PopulatePropertyAndEventTables()
+        internal void PopulatePropertyTables()
         {
             // LAMESPEC the PropertyMap and EventMap tables are not required to be sorted by the CLI spec,
             // but .NET sorts them and Mono requires them to be sorted, so we have to populate the
             // tables in the right order
             foreach (var type in types)
-                type.PopulatePropertyAndEventTables();
+                type.PopulatePropertyTable();
         }
 
         internal void WriteTypeDefTable()
@@ -510,71 +500,9 @@ namespace IKVM.Reflection.Emit
         {
             var rec = new CustomAttributeTable.Record();
             rec.Parent = token;
-            rec.Constructor = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
+            rec.Constructor = GetConstructorToken(customBuilder.Constructor).Token;
             rec.Value = customBuilder.WriteBlob(this);
             CustomAttributeTable.AddRecord(rec);
-        }
-
-        void AddDeclSecurityRecord(int token, int action, BlobHandle blob)
-        {
-            var rec = new DeclSecurityTable.Record();
-            rec.Action = (short)action;
-            rec.Parent = token;
-            rec.PermissionSet = blob;
-            DeclSecurityTable.AddRecord(rec);
-        }
-
-        internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
-        {
-            var ordered = new Dictionary<int, List<CustomAttributeBuilder>>();
-            foreach (var cab in declarativeSecurity)
-            {
-                int action;
-                // check for HostProtectionAttribute without SecurityAction
-                if (cab.ConstructorArgumentCount == 0)
-                {
-                    action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
-                }
-                else
-                {
-                    action = (int)cab.GetConstructorArgument(0);
-                }
-
-                if (cab.IsLegacyDeclSecurity)
-                {
-                    AddDeclSecurityRecord(token, action, cab.WriteLegacyDeclSecurityBlob(this));
-                    continue;
-                }
-
-                if (!ordered.TryGetValue(action, out var list))
-                {
-                    list = new List<CustomAttributeBuilder>();
-                    ordered.Add(action, list);
-                }
-
-                list.Add(cab);
-            }
-
-            foreach (KeyValuePair<int, List<CustomAttributeBuilder>> kv in ordered)
-                AddDeclSecurityRecord(token, kv.Key, WriteDeclSecurityBlob(kv.Value));
-        }
-
-        BlobHandle WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
-        {
-            var namedArgs = new ByteBuffer(100);
-            var bb = new ByteBuffer(list.Count * 100);
-            bb.Write((byte)'.');
-            bb.WriteCompressedUInt(list.Count);
-            foreach (var cab in list)
-            {
-                bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
-                namedArgs.Clear();
-                cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
-                bb.WriteCompressedUInt(namedArgs.Length);
-                bb.Write(namedArgs);
-            }
-
-            return GetOrAddBlob(bb.ToArray());
         }
 
         public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
@@ -635,7 +563,7 @@ namespace IKVM.Reflection.Emit
 
         public TypeToken GetTypeToken(Type type)
         {
-            if (type.Module == this && !asm.IsWindowsRuntime)
+            if (type.Module == this)
                 return new TypeToken(type.GetModuleBuilderToken());
             else
                 return new TypeToken(ImportType(type));
@@ -722,11 +650,6 @@ namespace IKVM.Reflection.Emit
                 return new MethodToken(method.ImportTo(this));
             else
                 return GetMethodToken(method);
-        }
-
-        internal int GetMethodTokenWinRT(MethodInfo method)
-        {
-            return asm.IsWindowsRuntime ? method.ImportTo(this) : GetMethodToken(method).Token;
         }
 
         public MethodToken GetConstructorToken(ConstructorInfo constructor)
@@ -1249,7 +1172,7 @@ namespace IKVM.Reflection.Emit
                 throw new ArgumentException("PDB stream must support write.", nameof(pdbStream));
 
             SetIsSaved();
-            PopulatePropertyAndEventTables();
+            PopulatePropertyTables();
 
             var attributes = asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)
@@ -1303,24 +1226,6 @@ namespace IKVM.Reflection.Emit
             file.Name = GetOrAddString(name);
             file.HashValue = GetOrAddBlob(hash);
             return MetadataTokens.GetToken(MetadataTokens.AssemblyFileHandle(FileTable.AddRecord(file)));
-        }
-
-        internal void ResolveInterfaceImplPseudoTokens()
-        {
-            if (interfaceImplCustomAttributes != null)
-            {
-                foreach (var rec in interfaceImplCustomAttributes)
-                {
-                    for (int i = 0; i < InterfaceImplTable.records.Length; i++)
-                    {
-                        if (InterfaceImplTable.records[i].Class == rec.type && InterfaceImplTable.records[i].Interface == rec.interfaceType)
-                        {
-                            RegisterTokenFixup(rec.pseudoToken, MetadataTokens.GetToken(MetadataTokens.InterfaceImplementationHandle(i + 1)));
-                            break;
-                        }
-                    }
-                }
-            }
         }
 
         internal void FixupPseudoToken(ref int token)

@@ -35,7 +35,6 @@ namespace IKVM.Reflection.Emit
     internal sealed class CustomAttributeBuilder
     {
 
-        internal static readonly ConstructorInfo LegacyPermissionSet = new ConstructorBuilder(null);
         readonly ConstructorInfo con;
         readonly byte[] blob;
         readonly object[] constructorArgs;
@@ -519,11 +518,6 @@ namespace IKVM.Reflection.Emit
             return constructorArgs[pos];
         }
 
-        internal int ConstructorArgumentCount
-        {
-            get { return constructorArgs == null ? 0 : constructorArgs.Length; }
-        }
-
         internal T? GetFieldValue<T>(string name) where T : struct
         {
             var val = GetFieldValue(name);
@@ -563,46 +557,6 @@ namespace IKVM.Reflection.Emit
                 }
             }
             return null;
-        }
-
-        internal bool IsLegacyDeclSecurity
-        {
-            get
-            {
-                return ReferenceEquals(con, LegacyPermissionSet)
-                    || (con.DeclaringType == con.Module.Universe.System_Security_Permissions_PermissionSetAttribute
-                        && blob == null
-                        && (namedFields == null || namedFields.Length == 0)
-                        && namedProperties != null
-                        && namedProperties.Length == 1
-                        && namedProperties[0].Name == "XML"
-                        && propertyValues[0] is string);
-            }
-        }
-
-        internal BlobHandle WriteLegacyDeclSecurityBlob(ModuleBuilder moduleBuilder)
-        {
-            if (blob != null)
-            {
-                return moduleBuilder.GetOrAddBlob(blob);
-            }
-            else
-            {
-                return moduleBuilder.GetOrAddBlob(Encoding.Unicode.GetBytes((string)propertyValues[0]));
-            }
-        }
-
-        internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
-        {
-            if (blob != null)
-            {
-                bb.Write(blob);
-            }
-            else
-            {
-                var bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
-                bw.WriteNamedArguments(true);
-            }
         }
 
         internal CustomAttributeData ToData(Assembly asm)
