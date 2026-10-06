@@ -433,7 +433,7 @@ namespace IKVM.Reflection
             else
             {
                 var callingConvention = sig.CallingConvention;
-                var flags = 0;
+                byte flags = 0;
                 if ((callingConvention & CallingConventions.HasThis) != 0)
                     flags |= HASTHIS;
                 if ((callingConvention & CallingConventions.ExplicitThis) != 0)
