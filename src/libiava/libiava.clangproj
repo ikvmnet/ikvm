@@ -36,6 +36,7 @@
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common" />
         <LibJavaDirs Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\util" />
         <LibJavaExclude Include="check_code.c;check_format.c;jspawnhelper.c" />
+        <AdditionalCompileOptions Include="-Wno-incompatible-pointer-types" />
     </ItemGroup>
     <ItemGroup>
         <!-- IKVM specific excludes -->
