@@ -39,7 +39,6 @@ namespace IKVM.Reflection
         protected NonPEModule(Universe universe) :
             base(universe)
         {
-
         }
 
         protected virtual Exception InvalidOperationException()
@@ -67,42 +66,7 @@ namespace IKVM.Reflection
             throw InvalidOperationException();
         }
 
-        public sealed override AssemblyName[] __GetReferencedAssemblies()
-        {
-            throw NotSupportedException();
-        }
-
-        public sealed override string[] __GetReferencedModules()
-        {
-            throw NotSupportedException();
-        }
-
-        public override Type[] __GetReferencedTypes()
-        {
-            throw NotSupportedException();
-        }
-
         public override Type[] __GetExportedTypes()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override ulong GetImageBaseImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override ulong GetStackReserveImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected sealed override uint GetFileAlignmentImpl()
-        {
-            throw NotSupportedException();
-        }
-
-        protected override DllCharacteristics GetDllCharacteristicsImpl()
         {
             throw NotSupportedException();
         }
@@ -128,11 +92,6 @@ namespace IKVM.Reflection
         }
 
         public sealed override string ResolveString(int metadataToken)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
         {
             throw ArgumentOutOfRangeException();
         }

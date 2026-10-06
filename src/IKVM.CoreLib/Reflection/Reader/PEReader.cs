@@ -71,12 +71,6 @@ namespace IKVM.Reflection.Reader
 			return headers.OptionalHeader.DataDirectory[14].VirtualAddress;
 		}
 
-		internal void GetDataDirectoryEntry(int index, out int rva, out int length)
-		{
-			rva = (int)headers.OptionalHeader.DataDirectory[index].VirtualAddress;
-			length = (int)headers.OptionalHeader.DataDirectory[index].Size;
-		}
-
 		internal long RvaToFileOffset(DWORD rva)
 		{
 			if (mapped)
@@ -87,31 +81,6 @@ namespace IKVM.Reflection.Reader
 					return sections[i].PointerToRawData + rva - sections[i].VirtualAddress;
 
 			throw new BadImageFormatException();
-		}
-
-		internal bool GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
-		{
-			for (int i = 0; i < sections.Length; i++)
-			{
-                if (rva >= sections[i].VirtualAddress && rva < sections[i].VirtualAddress + sections[i].VirtualSize)
-				{
-					name = sections[i].Name;
-					characteristics = (int)sections[i].Characteristics;
-					virtualAddress = (int)sections[i].VirtualAddress;
-					virtualSize = (int)sections[i].VirtualSize;
-					pointerToRawData = (int)sections[i].PointerToRawData;
-					sizeOfRawData = (int)sections[i].SizeOfRawData;
-					return true;
-				}
-			}
-
-			name = null;
-			characteristics = 0;
-			virtualAddress = 0;
-			virtualSize = 0;
-			pointerToRawData = 0;
-			sizeOfRawData = 0;
-			return false;
 		}
 
 	}

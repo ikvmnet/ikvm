@@ -92,7 +92,6 @@ namespace IKVM.Reflection
 
             void IDisposable.Dispose()
             {
-
             }
 
         }
@@ -100,39 +99,6 @@ namespace IKVM.Reflection
         static Type Initial => MarkerType.ModOpt; // note that FromReqOpt assumes that Initial == ModOpt
 
         readonly Type[] types;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="list"></param>
-        internal CustomModifiers(List<CustomModifiersBuilder.Item> list)
-        {
-            var required = Initial == MarkerType.ModReq;
-
-            var count = list.Count;
-            foreach (var item in list)
-            {
-                if (item.required != required)
-                {
-                    required = item.required;
-                    count++;
-                }
-            }
-
-            types = new Type[count];
-            required = Initial == MarkerType.ModReq;
-            int index = 0;
-            foreach (var item in list)
-            {
-                if (item.required != required)
-                {
-                    required = item.required;
-                    types[index++] = required ? MarkerType.ModReq : MarkerType.ModOpt;
-                }
-
-                types[index++] = item.type;
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -315,25 +281,6 @@ namespace IKVM.Reflection
         static bool IsCustomModifier(byte b)
         {
             return b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
-        }
-
-        internal static CustomModifiers Combine(CustomModifiers mods1, CustomModifiers mods2)
-        {
-            if (mods1.IsEmpty)
-            {
-                return mods2;
-            }
-            else if (mods2.IsEmpty)
-            {
-                return mods1;
-            }
-            else
-            {
-                var combo = new Type[mods1.types.Length + mods2.types.Length];
-                Array.Copy(mods1.types, combo, mods1.types.Length);
-                Array.Copy(mods2.types, 0, combo, mods1.types.Length, mods2.types.Length);
-                return new CustomModifiers(combo);
-            }
         }
 
     }

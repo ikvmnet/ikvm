@@ -247,26 +247,9 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override Module LoadModule(string moduleName, byte[] rawModule)
-        {
-            int index = GetModuleIndex(moduleName);
-            if (index == -1)
-                throw new ArgumentException();
-
-            if (externalModules[index] != null)
-                return externalModules[index];
-
-            return LoadModule(index, rawModule, null);
-        }
-
         public override MethodInfo EntryPoint
         {
             get { return manifestModule.GetEntryPoint(); }
-        }
-
-        public override string[] GetManifestResourceNames()
-        {
-            return manifestModule.GetManifestResourceNames();
         }
 
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
@@ -282,11 +265,6 @@ namespace IKVM.Reflection.Reader
         public override AssemblyName[] GetReferencedAssemblies()
         {
             return manifestModule.__GetReferencedAssemblies();
-        }
-
-        protected override AssemblyNameFlags GetAssemblyFlags()
-        {
-            return (AssemblyNameFlags)manifestModule.AssemblyTable.records[0].Flags;
         }
 
         internal string Name

@@ -195,11 +195,6 @@ namespace IKVM.Reflection
             throw new MissingMemberException(this);
         }
 
-        public override bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            throw new MissingMemberException(this);
-        }
-
         public override bool IsGenericType
         {
             get { throw new MissingMemberException(this); }
@@ -247,22 +242,6 @@ namespace IKVM.Reflection
         internal override bool IsBaked
         {
             get { throw new MissingMemberException(this); }
-        }
-
-        public override bool __IsTypeForwarder
-        {
-            // CorTypeAttr.tdForwarder
-            get { return (flags & 0x00200000) != 0; }
-        }
-
-        public override bool __IsCyclicTypeForwarder
-        {
-            get { return cyclicTypeForwarder; }
-        }
-
-        public override bool __IsCyclicTypeSpec
-        {
-            get { return cyclicTypeSpec; }
         }
 
     }

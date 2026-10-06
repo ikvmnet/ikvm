@@ -77,16 +77,6 @@ namespace IKVM.Reflection.Diagnostics
             public Guid Language => language;
 
             /// <summary>
-            /// Gets the vendor of the document.
-            /// </summary>
-            public Guid LanguageVendor => languageVendor;
-
-            /// <summary>
-            /// Gets the document type.
-            /// </summary>
-            public Guid DocumentType => documentType;
-
-            /// <summary>
             /// Gets the checksum algorithm ID.
             /// </summary>
             public Guid AlgorithmId => algorithmId;
@@ -95,11 +85,6 @@ namespace IKVM.Reflection.Diagnostics
             /// Gets the checksum.
             /// </summary>
             public byte[] Checksum => checksum;
-
-            /// <summary>
-            /// Gets the source.
-            /// </summary>
-            public byte[] Source => source;
 
         }
 
@@ -142,44 +127,9 @@ namespace IKVM.Reflection.Diagnostics
             }
 
             /// <summary>
-            /// Gets the attributes of the variable.
-            /// </summary>
-            public System.Reflection.FieldAttributes Attributes => attributes;
-
-            /// <summary>
-            /// Gets the encoded signature of the local variable.
-            /// </summary>
-            public byte[] Signature => signature;
-
-            /// <summary>
-            /// Gets the address kind
-            /// </summary>
-            public SymAddressKind AddressKind => addrKind;
-
-            /// <summary>
             /// Gets the first address.
             /// </summary>
             public int Address1 => addr1;
-
-            /// <summary>
-            /// Gets the second address.
-            /// </summary>
-            public int Address2 => addr2;
-
-            /// <summary>
-            /// Gets the third address.
-            /// </summary>
-            public int Address3 => addr3;
-
-            /// <summary>
-            /// Gets the start offset in IL of the variable.
-            /// </summary>
-            public int StartOffset => startOffset;
-
-            /// <summary>
-            /// Gets the end offset in IL of the variable.
-            /// </summary>
-            public int EndOffset => endOffset;
 
         }
 
@@ -495,7 +445,6 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual void Close()
         {
-
         }
 
         /// <inheritdoc />

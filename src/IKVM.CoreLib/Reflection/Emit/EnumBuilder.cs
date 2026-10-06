@@ -30,18 +30,6 @@ namespace IKVM.Reflection.Emit
         readonly TypeBuilder typeBuilder;
         readonly FieldBuilder fieldBuilder;
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="typeBuilder"></param>
-        /// <param name="fieldBuilder"></param>
-        internal EnumBuilder(TypeBuilder typeBuilder, FieldBuilder fieldBuilder) :
-            base(typeBuilder)
-        {
-            this.typeBuilder = typeBuilder;
-            this.fieldBuilder = fieldBuilder;
-        }
-
         internal override TypeName TypeName
         {
             get { return typeBuilder.TypeName; }
@@ -70,43 +58,6 @@ namespace IKVM.Reflection.Emit
         public override Module Module
         {
             get { return typeBuilder.Module; }
-        }
-
-        public FieldBuilder DefineLiteral(string literalName, object literalValue)
-        {
-            FieldBuilder fb = typeBuilder.DefineField(literalName, typeBuilder, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal);
-            fb.SetConstant(literalValue);
-            return fb;
-        }
-
-        public Type CreateType()
-        {
-            return typeBuilder.CreateType();
-        }
-
-        public TypeInfo CreateTypeInfo()
-        {
-            return typeBuilder.CreateTypeInfo();
-        }
-
-        public TypeToken TypeToken
-        {
-            get { return typeBuilder.TypeToken; }
-        }
-
-        public FieldBuilder UnderlyingField
-        {
-            get { return fieldBuilder; }
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            typeBuilder.SetCustomAttribute(con, binaryAttribute);
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            typeBuilder.SetCustomAttribute(customBuilder);
         }
 
         public override Type GetEnumUnderlyingType()

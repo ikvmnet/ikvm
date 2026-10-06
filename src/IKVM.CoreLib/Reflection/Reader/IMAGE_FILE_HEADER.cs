@@ -32,15 +32,6 @@ namespace IKVM.Reflection.Reader
     sealed class IMAGE_FILE_HEADER
 	{
 
-		public const WORD IMAGE_FILE_MACHINE_I386 = 0x014c;
-		public const WORD IMAGE_FILE_MACHINE_IA64 = 0x0200;
-		public const WORD IMAGE_FILE_MACHINE_AMD64 = 0x8664;
-
-		public const WORD IMAGE_FILE_32BIT_MACHINE = 0x0100;
-		public const WORD IMAGE_FILE_EXECUTABLE_IMAGE = 0x0002;
-		public const WORD IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020;
-		public const WORD IMAGE_FILE_DLL = 0x2000;
-
 		public WORD Machine;
 		public WORD NumberOfSections;
 		public DWORD TimeDateStamp;

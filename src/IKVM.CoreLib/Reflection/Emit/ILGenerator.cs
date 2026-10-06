@@ -77,18 +77,8 @@ namespace IKVM.Reflection.Emit
         // with different stack depths target the same label.
         private long m_depthAdjustment;
 
-        internal int CurrExcStackCount => m_currExcStackCount;
-
-        internal __ExceptionInfo[]? CurrExcStack => m_currExcStack;
-
-        #endregion
-
-        #region Constructor
-        // package private constructor. This code path is used when client create
-        // ILGenerator through MethodBuilder.
-        internal ILGenerator(MethodBuilder methodBuilder) : this(methodBuilder, 64)
-        {
-        }
+#endregion
+#region Constructor
 
         internal ILGenerator(MethodBuilder methodBuilder, int size)
         {
@@ -652,40 +642,6 @@ namespace IKVM.Reflection.Emit
             PutInteger4(tk);
         }
 
-        public void Emit(OpCode opcode, SignatureHelper signature)
-        {
-            if (signature is null)
-                throw new ArgumentNullException(nameof(signature));
-
-            int stackchange = 0;
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
-            int sig = modBuilder.GetSignatureToken(signature).Token;
-
-            int tempVal = sig;
-
-            EnsureCapacity(7);
-            InternalEmit(opcode);
-
-            // The only IL instruction that has VarPop behaviour, that takes a
-            // Signature token as a parameter is calli.  Pop the parameters and
-            // the native function pointer.  To be conservative, do not pop the
-            // this pointer since this information is not easily derived from
-            // SignatureHelper.
-            if (opcode.StackBehaviourPop == StackBehaviour.Varpop)
-            {
-                Debug.Assert(opcode.Equals(OpCodes.Calli),
-                                "Unexpected opcode encountered for StackBehaviour VarPop.");
-                // Pop the arguments..
-                stackchange -= signature.ArgumentCount;
-                // Pop native function pointer off the stack.
-                stackchange--;
-                UpdateStackSize(opcode, stackchange);
-            }
-
-            RecordTokenFixup();
-            PutInteger4(tempVal);
-        }
-
         public void Emit(OpCode opcode, ConstructorInfo con)
         {
             if (con is null)
@@ -937,26 +893,9 @@ namespace IKVM.Reflection.Emit
                 m_ILStream[m_length++] = (byte)tempVal;
             }
         }
-        #endregion
 
-        #region Exceptions
-
-        public virtual void ThrowException(Type excType)
-        {
-            if (excType is null)
-                throw new ArgumentNullException(nameof(excType));
-
-            // TODO figure out how to load type here
-            //if (!excType.IsSubclassOf( typeof(Exception)) && excType != typeof(Exception))
-            //throw new ArgumentException(nameof(excType));
-
-            var con = excType.GetConstructor(Type.EmptyTypes);
-            if (con == null)
-                throw new ArgumentException(nameof(excType));
-
-            Emit(OpCodes.Newobj, con);
-            Emit(OpCodes.Throw);
-        }
+#endregion
+#region Exceptions
 
         public Label BeginExceptionBlock()
         {
@@ -1040,23 +979,6 @@ namespace IKVM.Reflection.Emit
             MarkLabel(label);
 
             current.Done(m_length);
-        }
-
-        public void BeginExceptFilterBlock()
-        {
-            // Begins an exception filter block.  Emits a branch instruction to the end of the current exception block.
-
-            if (m_currExcStackCount == 0)
-                throw new NotSupportedException("Not currently in an exception block.");
-
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
-
-            Emit(OpCodes.Leave, current.GetEndLabel());
-
-            current.MarkFilterAddr(m_length);
-
-            // Stack depth for "filter" starts at one.
-            m_curDepth = 1;
         }
 
         public void BeginCatchBlock(Type? exceptionType)
@@ -1257,29 +1179,6 @@ namespace IKVM.Reflection.Emit
             return new LocalBuilder(m_methodBuilder, localType, m_localCount++, pinned);
         }
 
-        public void UsingNamespace(string usingNamespace)
-        {
-            // Specifying the namespace to be used in evaluating locals and watches
-            // for the current active lexical scope.
-
-            if (string.IsNullOrEmpty(usingNamespace))
-                throw new ArgumentException(nameof(usingNamespace));
-
-            if (m_methodBuilder is not MethodBuilder methodBuilder)
-                throw new NotSupportedException();
-
-            int index = ((ILGenerator)methodBuilder.GetILGenerator()).m_ScopeTree.GetCurrentActiveScopeIndex();
-            if (index == -1)
-            {
-                methodBuilder.m_localSymInfo ??= new();
-                methodBuilder.m_localSymInfo!.AddUsingNamespace(usingNamespace);
-            }
-            else
-            {
-                m_ScopeTree.AddUsingNamespaceToCurrentScope(usingNamespace);
-            }
-        }
-
         public void BeginScope()
         {
             m_ScopeTree.AddScopeInfo(ScopeAction.Open, m_length);
@@ -1334,7 +1233,6 @@ namespace IKVM.Reflection.Emit
         internal const int Filter = 0x0001;  // COR_ILEXCEPTION_CLAUSE_FILTER
         internal const int Finally = 0x0002;  // COR_ILEXCEPTION_CLAUSE_FINALLY
         internal const int Fault = 0x0004;  // COR_ILEXCEPTION_CLAUSE_FAULT
-        internal const int PreserveStack = 0x0004;  // COR_ILEXCEPTION_CLAUSE_PRESERVESTACK
 
         internal const int State_Try = 0;
         internal const int State_Filter = 1;
@@ -1425,12 +1323,6 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal void MarkFilterAddr(int filterAddr)
-        {
-            m_currentState = State_Filter;
-            MarkHelper(filterAddr, filterAddr, null, Filter);
-        }
-
         internal void MarkFaultAddr(int faultAddr)
         {
             m_currentState = State_Fault;
@@ -1517,11 +1409,6 @@ namespace IKVM.Reflection.Emit
         internal void SetFinallyEndLabel(Label lbl)
         {
             m_finallyEndLabel = lbl;
-        }
-
-        internal Label GetFinallyEndLabel()
-        {
-            return m_finallyEndLabel;
         }
 
         // Specifies whether exc is an inner exception for "this".  The way
@@ -1618,13 +1505,6 @@ namespace IKVM.Reflection.Emit
             m_localSymInfos[i]!.AddLocalSymInfo(strName, signature, slot, startOffset, endOffset);
         }
 
-        internal void AddUsingNamespaceToCurrentScope(string strNamespace)
-        {
-            int i = GetCurrentActiveScopeIndex();
-            m_localSymInfos[i] ??= new LocalSymInfo();
-            m_localSymInfos[i]!.AddUsingNamespace(strNamespace);
-        }
-
         internal void AddScopeInfo(ScopeAction sa, int iOffset)
         {
             if (sa == ScopeAction.Close && m_iOpenScopeCount <= 0)
@@ -1700,7 +1580,6 @@ namespace IKVM.Reflection.Emit
         internal const int InitialSize = 16;
         internal LocalSymInfo?[] m_localSymInfos = null!;            // keep track debugging local information
     }
-
 
     /***************************
     *
@@ -1793,7 +1672,6 @@ namespace IKVM.Reflection.Emit
         private const int InitialSize = 16;
         private int m_iLastFound;
     }
-
 
     /***************************
     *

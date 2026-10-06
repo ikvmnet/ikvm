@@ -121,7 +121,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments) :
             this(module, constructor, WrapConstructorArgs(args, constructor.MethodSignature), namedArguments)
         {
-
         }
 
         static List<CustomAttributeTypedArgument> WrapConstructorArgs(object[] args, MethodSignature sig)
@@ -261,39 +260,6 @@ namespace IKVM.Reflection
                 }
 
                 sb.Append(arg.Value);
-            }
-        }
-
-        internal static void ReadDeclarativeSecurity(Module module, int index, List<CustomAttributeData> list)
-        {
-            var asm = module.Assembly;
-            var action = module.DeclSecurityTable.records[index].Action;
-            var br = module.GetBlobReader(module.DeclSecurityTable.records[index].PermissionSet);
-            if (br.PeekByte() == '.')
-            {
-                br.ReadByte();
-                var count = br.ReadCompressedUInt();
-                for (int j = 0; j < count; j++)
-                {
-                    var type = ReadType(module, br);
-                    var constructor = type.GetPseudoCustomAttributeConstructor(module.Universe.System_Security_Permissions_SecurityAction);
-                    // LAMESPEC there is an additional length here (probably of the named argument list)
-                    var blob = br.ReadBytes(br.ReadCompressedUInt());
-                    list.Add(new CustomAttributeData(asm, constructor, action, blob, index));
-                }
-            }
-            else
-            {
-                // .NET 1.x format (xml)
-                var buf = new char[br.Length / 2];
-                for (int i = 0; i < buf.Length; i++)
-                    buf[i] = br.ReadChar();
-
-                var xml = new string(buf);
-                var ctor = module.Universe.System_Security_Permissions_PermissionSetAttribute.GetPseudoCustomAttributeConstructor(module.Universe.System_Security_Permissions_SecurityAction);
-                var args = new List<CustomAttributeNamedArgument>();
-                args.Add(new CustomAttributeNamedArgument(GetProperty(null, module.Universe.System_Security_Permissions_PermissionSetAttribute, "XML", module.Universe.System_String), new CustomAttributeTypedArgument(module.Universe.System_String, xml)));
-                list.Add(new CustomAttributeData(asm.ManifestModule, ctor, new object[] { action }, args));
             }
         }
 
@@ -507,44 +473,6 @@ namespace IKVM.Reflection
                 type = org;
 
             return type.Module.Universe.GetMissingPropertyOrThrow(context, type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
-        }
-
-        [Obsolete("Use AttributeType property instead.")]
-        internal bool __TryReadTypeName(out string ns, out string name)
-        {
-            if (Constructor.DeclaringType.IsNested)
-            {
-                ns = null;
-                name = null;
-                return false;
-            }
-
-            var typeName = AttributeType.TypeName;
-            ns = typeName.Namespace;
-            name = typeName.Name;
-            return true;
-        }
-
-        public byte[] __GetBlob()
-        {
-            if (declSecurityBlob != null)
-                return (byte[])declSecurityBlob.Clone();
-            else if (customAttributeIndex == -1)
-                return __ToBuilder().GetBlob(module.Assembly);
-            else
-                return ((ModuleReader)module).GetBlobCopy(module.CustomAttributeTable.records[customAttributeIndex].Value);
-        }
-
-        public int __Parent
-        {
-            get
-            {
-                return customAttributeIndex >= 0
-                    ? module.CustomAttributeTable.records[customAttributeIndex].Parent
-                    : declSecurityIndex >= 0
-                        ? module.DeclSecurityTable.records[declSecurityIndex].Parent
-                        : 0;
-            }
         }
 
         public Type AttributeType
@@ -803,40 +731,6 @@ namespace IKVM.Reflection
             return list;
         }
 
-        public static IList<CustomAttributeData> __GetCustomAttributes(Type type, Type interfaceType, Type attributeType, bool inherit)
-        {
-            var module = type.Module;
-            foreach (int i in module.InterfaceImplTable.Filter(type.MetadataToken))
-                if (module.ResolveType(module.InterfaceImplTable.records[i].Interface, type) == interfaceType)
-                    return GetCustomAttributesImpl(null, module, (InterfaceImplTable.Index << 24) | (i + 1), attributeType) ?? EmptyList;
-
-            return EmptyList;
-        }
-
-        public static IList<CustomAttributeData> __GetDeclarativeSecurity(Assembly assembly)
-        {
-            if (assembly.__IsMissing)
-                throw new MissingAssemblyException((MissingAssembly)assembly);
-
-            return assembly.ManifestModule.GetDeclarativeSecurity(0x20000001);
-        }
-
-        public static IList<CustomAttributeData> __GetDeclarativeSecurity(Type type)
-        {
-            if ((type.Attributes & TypeAttributes.HasSecurity) != 0)
-                return type.Module.GetDeclarativeSecurity(type.MetadataToken);
-            else
-                return EmptyList;
-        }
-
-        public static IList<CustomAttributeData> __GetDeclarativeSecurity(MethodBase method)
-        {
-            if ((method.Attributes & MethodAttributes.HasSecurity) != 0)
-                return method.Module.GetDeclarativeSecurity(method.MetadataToken);
-            else
-                return EmptyList;
-        }
-
         private static bool IsInheritableAttribute(Type attribute)
         {
             var attributeUsageAttribute = attribute.Module.Universe.System_AttributeUsageAttribute;
@@ -853,7 +747,6 @@ namespace IKVM.Reflection
         {
             if (module.Universe.System_Runtime_InteropServices_DllImportAttribute == null)
                 return null;
-
 
             var charSet = (flags & ImplMapFlags.CharSetMask) switch
             {

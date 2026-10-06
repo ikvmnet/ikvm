@@ -107,11 +107,6 @@ namespace IKVM.Reflection
             return match;
         }
 
-        public virtual MethodInfo[] __GetMethodImpls()
-        {
-            throw new NotSupportedException();
-        }
-
         public bool __TryGetImplMap(out ImplMapFlags mappingFlags, out string importName, out string importScope)
         {
             return Module.__TryGetImplMap(GetCurrentToken(), out mappingFlags, out importName, out importScope);
@@ -137,15 +132,6 @@ namespace IKVM.Reflection
             throw new InvalidOperationException();
         }
 
-        internal virtual int GetGenericMethodArgumentCount()
-        {
-            throw new InvalidOperationException();
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return this;
-        }
 
         Type IGenericBinder.BindTypeParameter(Type type)
         {
@@ -160,14 +146,6 @@ namespace IKVM.Reflection
         internal override MethodBase BindTypeParameters(Type type)
         {
             return new GenericMethodInstance(this.DeclaringType.BindTypeParameters(type), this, null);
-        }
-
-        // This method is used by ILGenerator and exists to allow ArrayMethod to override it,
-        // because ArrayMethod doesn't have a working MethodAttributes property, so it needs
-        // to base the result of this on the CallingConvention.
-        internal virtual bool HasThis
-        {
-            get { return !IsStatic; }
         }
 
         internal sealed override MemberInfo SetReflectedType(Type type)

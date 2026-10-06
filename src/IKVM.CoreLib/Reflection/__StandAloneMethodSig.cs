@@ -132,11 +132,6 @@ namespace IKVM.Reflection
             }
         }
 
-        internal int ParameterCount
-        {
-            get { return parameterTypes.Length + optionalParameterTypes.Length; }
-        }
-
     }
 
 }

@@ -91,19 +91,6 @@ namespace IKVM.Reflection.Emit
             accessors.Add(acc);
         }
 
-        public void AddOtherMethod(MethodBuilder mdBuilder)
-        {
-            Accessor acc;
-            acc.Semantics = MethodSemanticsTable.Other;
-            acc.Method = mdBuilder;
-            accessors.Add(acc);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-        }
-
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             if (customBuilder.KnownCA == KnownCA.SpecialNameAttribute)
@@ -180,15 +167,6 @@ namespace IKVM.Reflection.Emit
         public override Module Module
         {
             get { return typeBuilder.Module; }
-        }
-
-        public void SetConstant(object defaultValue)
-        {
-            if (lazyPseudoToken == 0)
-                lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
-
-            attributes |= PropertyAttributes.HasDefault;
-            typeBuilder.ModuleBuilder.AddConstant(lazyPseudoToken, defaultValue);
         }
 
         internal void Bake()

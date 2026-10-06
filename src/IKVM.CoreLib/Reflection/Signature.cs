@@ -262,36 +262,6 @@ namespace IKVM.Reflection
             }
         }
 
-        internal static void ReadLocalVarSig(ModuleReader module, ByteReader br, IGenericContext context, List<LocalVariableInfo> list)
-        {
-            if (br.Length < 2 || br.ReadByte() != LOCAL_SIG)
-                throw new BadImageFormatException("Invalid local variable signature");
-
-            var count = br.ReadCompressedUInt();
-            for (int i = 0; i < count; i++)
-            {
-                if (br.PeekByte() == ELEMENT_TYPE_TYPEDBYREF)
-                {
-                    br.ReadByte();
-                    list.Add(new LocalVariableInfo(i, module.Universe.System_TypedReference, false));
-                }
-                else
-                {
-                    var mods1 = CustomModifiers.Read(module, br, context);
-                    var pinned = false;
-                    if (br.PeekByte() == ELEMENT_TYPE_PINNED)
-                    {
-                        br.ReadByte();
-                        pinned = true;
-                    }
-
-                    var mods2 = CustomModifiers.Read(module, br, context);
-                    var type = ReadTypeOrByRef(module, br, context);
-                    list.Add(new LocalVariableInfo(i, type, pinned, mods2));
-                }
-            }
-        }
-
         static Type ReadTypeOrByRef(ModuleReader module, ByteReader br, IGenericContext context)
         {
             if (br.PeekByte() == ELEMENT_TYPE_BYREF)
@@ -510,37 +480,6 @@ namespace IKVM.Reflection
             bb.WriteCompressedUInt(genArgs.Length);
             foreach (var arg in genArgs)
                 WriteType(module, bb, arg);
-        }
-
-        // this reads just the optional parameter types, from a MethodRefSig
-        internal static Type[] ReadOptionalParameterTypes(ModuleReader module, ByteReader br, IGenericContext context, out CustomModifiers[] customModifiers)
-        {
-            br.ReadByte();
-            var paramCount = br.ReadCompressedUInt();
-            CustomModifiers.Skip(br);
-            ReadRetType(module, br, context);
-            for (int i = 0; i < paramCount; i++)
-            {
-                if (br.PeekByte() == SENTINEL)
-                {
-                    br.ReadByte();
-                    var types = new Type[paramCount - i];
-                    customModifiers = new CustomModifiers[types.Length];
-                    for (int j = 0; j < types.Length; j++)
-                    {
-                        customModifiers[j] = CustomModifiers.Read(module, br, context);
-                        types[j] = ReadType(module, br, context);
-                    }
-
-                    return types;
-                }
-
-                CustomModifiers.Skip(br);
-                ReadType(module, br, context);
-            }
-
-            customModifiers = Array.Empty<CustomModifiers>();
-            return Type.EmptyTypes;
         }
 
         protected static Type[] BindTypeParameters(IGenericBinder binder, Type[] types)

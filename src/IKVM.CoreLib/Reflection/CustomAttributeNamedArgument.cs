@@ -76,10 +76,7 @@ namespace IKVM.Reflection
             return arg1.member.Equals(arg2.member) && arg1.value == arg2.value;
         }
 
-        public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-        {
-            return !(arg1 == arg2);
-        }
+        public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) => !(arg1 == arg2);
 
     }
 

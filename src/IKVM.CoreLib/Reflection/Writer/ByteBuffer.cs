@@ -39,11 +39,6 @@ namespace IKVM.Reflection.Writer
             return new ByteBuffer(buf, buf.Length);
         }
 
-        internal static ByteBuffer Wrap(byte[] buf, int length)
-        {
-            return new ByteBuffer(buf, length);
-        }
-
         byte[] buffer;
         int pos;
         int __length;   // __length is only valid if > pos, otherwise pos is the current length
@@ -129,18 +124,6 @@ namespace IKVM.Reflection.Writer
                 + (buffer[pos + 1] << 8)
                 + (buffer[pos + 2] << 16)
                 + (buffer[pos + 3] << 24);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <remarks>
-        /// This does not advance the position.
-        /// </remarks>
-        /// <returns></returns>
-        internal byte GetByteAtCurrentPosition()
-        {
-            return buffer[pos];
         }
 
         /// <summary>
@@ -307,54 +290,6 @@ namespace IKVM.Reflection.Writer
             pos += bb.Length;
         }
 
-        /// <summary>
-        /// Writes the specified blob builder blobs to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="blobs"></param>
-        internal void Write(BlobBuilder blobBuilder)
-        {
-            Write(blobBuilder.GetBlobs());
-        }
-
-        /// <summary>
-        /// Writes the specified blobs to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="blobs"></param>
-        internal void Write(IEnumerable<Blob> blobs)
-        {
-            foreach (var blob in blobs)
-                Write(blob.GetBytes());
-        }
-
-        /// <summary>
-        /// Writes the specified array segment to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="bytes"></param>
-        internal void Write(ArraySegment<byte> bytes)
-        {
-            Write(bytes.AsSpan());
-        }
-
-        /// <summary>
-        /// Writes the specified span to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="span"></param>
-        internal void Write(ReadOnlySpan<byte> span)
-        {
-            // grow the internal buffer
-            if (pos + span.Length > buffer.Length)
-                Grow(span.Length);
-
-            // copy the span to the newly allocated space
-            span.CopyTo(buffer.AsSpan().Slice(pos, span.Length));
-            pos += span.Length;
-        }
-
-        internal void WriteTo(System.IO.Stream stream)
-        {
-            stream.Write(buffer, 0, this.Length);
-        }
-
         internal void Clear()
         {
             pos = 0;
@@ -394,28 +329,6 @@ namespace IKVM.Reflection.Writer
             var buf = new byte[len];
             Buffer.BlockCopy(buffer, 0, buf, 0, len);
             return buf;
-        }
-
-        internal bool Match(int pos, ByteBuffer bb2, int pos2, int len)
-        {
-            for (int i = 0; i < len; i++)
-                if (buffer[pos + i] != bb2.buffer[pos2 + i])
-                    return false;
-
-            return true;
-        }
-
-        internal int Hash()
-        {
-            int hash = 0;
-            int len = Length;
-            for (int i = 0; i < len; i++)
-            {
-                hash *= 37;
-                hash ^= buffer[i];
-            }
-
-            return hash;
         }
 
     }

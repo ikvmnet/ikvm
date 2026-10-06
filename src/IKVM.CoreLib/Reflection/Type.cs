@@ -173,18 +173,6 @@ namespace IKVM.Reflection
             return new CustomModifiers();
         }
 
-        [Obsolete("Please use __GetCustomModifiers() instead.")]
-        public Type[] __GetRequiredCustomModifiers()
-        {
-            return __GetCustomModifiers().GetRequired();
-        }
-
-        [Obsolete("Please use __GetCustomModifiers() instead.")]
-        public Type[] __GetOptionalCustomModifiers()
-        {
-            return __GetCustomModifiers().GetOptional();
-        }
-
         public virtual __StandAloneMethodSig __MethodSignature
         {
             get { throw new InvalidOperationException(); }
@@ -220,11 +208,6 @@ namespace IKVM.Reflection
             get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
         }
 
-        public bool IsUnmanagedFunctionPointer
-        {
-            get { throw new NotSupportedException(); }
-        }
-
         public bool IsValueType
         {
             get
@@ -246,16 +229,6 @@ namespace IKVM.Reflection
         public bool IsGenericParameter
         {
             get { return sigElementType == Signature.ELEMENT_TYPE_VAR || sigElementType == Signature.ELEMENT_TYPE_MVAR; }
-        }
-
-        public bool IsGenericMethodParameter
-        {
-            get { return IsGenericParameter && DeclaringMethod is not null; }
-        }
-
-        public bool IsGenericTypeParameter
-        {
-            get { return IsGenericParameter && DeclaringMethod is null; }
         }
 
         public virtual int GenericParameterPosition
@@ -359,66 +332,9 @@ namespace IKVM.Reflection
             return Array.Empty<CustomModifiers>();
         }
 
-        [Obsolete("Please use __GetGenericArgumentsCustomModifiers() instead")]
-        public Type[][] __GetGenericArgumentsRequiredCustomModifiers()
-        {
-            var customModifiers = __GetGenericArgumentsCustomModifiers();
-            var array = new Type[customModifiers.Length][];
-            for (int i = 0; i < array.Length; i++)
-                array[i] = customModifiers[i].GetRequired();
-
-            return array;
-        }
-
-        [Obsolete("Please use __GetGenericArgumentsCustomModifiers() instead")]
-        public Type[][] __GetGenericArgumentsOptionalCustomModifiers()
-        {
-            var customModifiers = __GetGenericArgumentsCustomModifiers();
-            var array = new Type[customModifiers.Length][];
-            for (int i = 0; i < array.Length; i++)
-                array[i] = customModifiers[i].GetOptional();
-
-            return array;
-        }
-
         public virtual Type GetGenericTypeDefinition()
         {
             throw new InvalidOperationException();
-        }
-
-        public StructLayoutAttribute StructLayoutAttribute
-        {
-            get
-            {
-                var layout = (Attributes & TypeAttributes.LayoutMask) switch
-                {
-                    TypeAttributes.AutoLayout => new StructLayoutAttribute(LayoutKind.Auto),
-                    TypeAttributes.SequentialLayout => new StructLayoutAttribute(LayoutKind.Sequential),
-                    TypeAttributes.ExplicitLayout => new StructLayoutAttribute(LayoutKind.Explicit),
-                    _ => throw new BadImageFormatException(),
-                };
-
-                layout.CharSet = (Attributes & TypeAttributes.StringFormatMask) switch
-                {
-                    TypeAttributes.AnsiClass => CharSet.Ansi,
-                    TypeAttributes.UnicodeClass => CharSet.Unicode,
-                    TypeAttributes.AutoClass => CharSet.Auto,
-                    _ => CharSet.None,
-                };
-
-                // compatibility with System.Reflection
-                if (!__GetLayout(out layout.Pack, out layout.Size))
-                    layout.Pack = 8;
-
-                return layout;
-            }
-        }
-
-        public virtual bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            packingSize = 0;
-            typeSize = 0;
-            return false;
         }
 
         public virtual bool IsGenericType
@@ -453,11 +369,6 @@ namespace IKVM.Reflection
         }
 
         public virtual Type[] GetGenericParameterConstraints()
-        {
-            throw new InvalidOperationException();
-        }
-
-        public virtual CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
         {
             throw new InvalidOperationException();
         }
@@ -561,21 +472,6 @@ namespace IKVM.Reflection
                     return true;
 
             return false;
-        }
-
-        public Array GetEnumValues()
-        {
-            if (!IsEnum)
-                throw new ArgumentException();
-
-            var l = __GetDeclaredFields();
-            var a = new object[l.Length];
-
-            for (int i = 0; i < l.Length; i++)
-                if (l[i].IsLiteral)
-                    a[i] = l[i];
-
-            return a;
         }
 
         public override string ToString()
@@ -1192,16 +1088,6 @@ namespace IKVM.Reflection
             return found;
         }
 
-        public Type[] FindInterfaces(TypeFilter filter, object filterCriteria)
-        {
-            var list = new List<Type>();
-            foreach (var type in GetInterfaces())
-                if (filter(type, filterCriteria))
-                    list.Add(type);
-
-            return list.ToArray();
-        }
-
         public ConstructorInfo TypeInitializer
         {
             get { return GetConstructor(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null); }
@@ -1345,44 +1231,9 @@ namespace IKVM.Reflection
             get { return CheckVisibility(TypeAttributes.NotPublic); }
         }
 
-        public bool IsImport
-        {
-            get { return (Attributes & TypeAttributes.Import) != 0; }
-        }
-
-        public bool IsCOMObject
-        {
-            get { return IsClass && IsImport; }
-        }
-
-        public bool IsContextful
-        {
-            get { return IsSubclassOf(this.Module.Universe.System_ContextBoundObject); }
-        }
-
-        public bool IsMarshalByRef
-        {
-            get { return IsSubclassOf(this.Module.Universe.System_MarshalByRefObject); }
-        }
-
         public virtual bool IsVisible
         {
             get { return IsPublic || (IsNestedPublic && this.DeclaringType.IsVisible); }
-        }
-
-        public bool IsAnsiClass
-        {
-            get { return (Attributes & TypeAttributes.StringFormatMask) == TypeAttributes.AnsiClass; }
-        }
-
-        public bool IsUnicodeClass
-        {
-            get { return (Attributes & TypeAttributes.StringFormatMask) == TypeAttributes.UnicodeClass; }
-        }
-
-        public bool IsAutoClass
-        {
-            get { return (Attributes & TypeAttributes.StringFormatMask) == TypeAttributes.AutoClass; }
         }
 
         public bool IsAutoLayout
@@ -1398,11 +1249,6 @@ namespace IKVM.Reflection
         public bool IsExplicitLayout
         {
             get { return (Attributes & TypeAttributes.LayoutMask) == TypeAttributes.ExplicitLayout; }
-        }
-
-        public bool IsSpecialName
-        {
-            get { return (Attributes & TypeAttributes.SpecialName) != 0; }
         }
 
         /// <summary>
@@ -1476,12 +1322,6 @@ namespace IKVM.Reflection
             return ArrayType.Make(this, customModifiers);
         }
 
-        [Obsolete("Please use __MakeArrayType(CustomModifiers) instead.")]
-        public Type __MakeArrayType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __MakeArrayType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
-        }
-
         public Type MakeArrayType(int rank)
         {
             return __MakeArrayType(rank, new CustomModifiers());
@@ -1492,21 +1332,9 @@ namespace IKVM.Reflection
             return MultiArrayType.Make(this, rank, Array.Empty<int>(), new int[rank], customModifiers);
         }
 
-        [Obsolete("Please use __MakeArrayType(int, CustomModifiers) instead.")]
-        public Type __MakeArrayType(int rank, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __MakeArrayType(rank, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
-        }
-
         public Type __MakeArrayType(int rank, int[] sizes, int[] lobounds, CustomModifiers customModifiers)
         {
             return MultiArrayType.Make(this, rank, sizes ?? Array.Empty<int>(), lobounds ?? Array.Empty<int>(), customModifiers);
-        }
-
-        [Obsolete("Please use __MakeArrayType(int, int[], int[], CustomModifiers) instead.")]
-        public Type __MakeArrayType(int rank, int[] sizes, int[] lobounds, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __MakeArrayType(rank, sizes, lobounds, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
         }
 
         public Type MakeByRefType()
@@ -1519,12 +1347,6 @@ namespace IKVM.Reflection
             return ByRefType.Make(this, customModifiers);
         }
 
-        [Obsolete("Please use __MakeByRefType(CustomModifiers) instead.")]
-        public Type __MakeByRefType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __MakeByRefType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
-        }
-
         public Type MakePointerType()
         {
             return PointerType.Make(this, new CustomModifiers());
@@ -1533,12 +1355,6 @@ namespace IKVM.Reflection
         public Type __MakePointerType(CustomModifiers customModifiers)
         {
             return PointerType.Make(this, customModifiers);
-        }
-
-        [Obsolete("Please use __MakeByRefType(CustomModifiers) instead.")]
-        public Type __MakePointerType(Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __MakePointerType(CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
         }
 
         public Type MakeGenericType(params Type[] typeArguments)
@@ -1553,23 +1369,6 @@ namespace IKVM.Reflection
                 throw new InvalidOperationException();
             }
             return GenericTypeInstance.Make(this, Util.Copy(typeArguments), customModifiers == null ? null : (CustomModifiers[])customModifiers.Clone());
-        }
-
-        [Obsolete("Please use __MakeGenericType(Type[], CustomModifiers[]) instead.")]
-        public Type __MakeGenericType(Type[] typeArguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
-        {
-            if (!this.__IsMissing && !this.IsGenericTypeDefinition)
-                throw new InvalidOperationException();
-
-            CustomModifiers[] mods = null;
-            if (requiredCustomModifiers != null || optionalCustomModifiers != null)
-            {
-                mods = new CustomModifiers[typeArguments.Length];
-                for (int i = 0; i < mods.Length; i++)
-                    mods[i] = CustomModifiers.FromReqOpt(Util.NullSafeElementAt(requiredCustomModifiers, i), Util.NullSafeElementAt(optionalCustomModifiers, i));
-            }
-
-            return GenericTypeInstance.Make(this, Util.Copy(typeArguments), mods);
         }
 
         public static System.Type __GetSystemType(TypeCode typeCode)
@@ -2021,29 +1820,6 @@ namespace IKVM.Reflection
             return method;
         }
 
-        [Obsolete("Please use __CreateMissingMethod(string, CallingConventions, Type, CustomModifiers, Type[], CustomModifiers[]) instead")]
-        public MethodBase __CreateMissingMethod(string name, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-        {
-            return CreateMissingMethod(name, callingConvention, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, parameterTypes.Length));
-        }
-
-        public FieldInfo __CreateMissingField(string name, Type fieldType, CustomModifiers customModifiers)
-        {
-            return new MissingField(this, name, FieldSignature.Create(fieldType, customModifiers));
-        }
-
-        [Obsolete("Please use __CreateMissingField(string, Type, CustomModifiers) instead")]
-        public FieldInfo __CreateMissingField(string name, Type fieldType, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            return __CreateMissingField(name, fieldType, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
-        }
-
-        public PropertyInfo __CreateMissingProperty(string name, CallingConventions callingConvention, Type propertyType, CustomModifiers propertyTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            var sig = PropertySignature.Create(callingConvention, propertyType, parameterTypes, PackedCustomModifiers.CreateFromExternal(propertyTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes)));
-            return new MissingProperty(this, name, sig);
-        }
-
         internal virtual Type SetMetadataTokenForMissing(int token, int flags)
         {
             return this;
@@ -2150,21 +1926,6 @@ namespace IKVM.Reflection
         public TypeInfo GetTypeInfo()
         {
             return this as TypeInfo ?? throw new MissingMemberException(this);
-        }
-
-        public virtual bool __IsTypeForwarder
-        {
-            get { return false; }
-        }
-
-        public virtual bool __IsCyclicTypeForwarder
-        {
-            get { return false; }
-        }
-
-        public virtual bool __IsCyclicTypeSpec
-        {
-            get { return false; }
         }
 
     }

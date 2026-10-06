@@ -39,7 +39,6 @@ namespace IKVM.Reflection
         /// </summary>
         internal MemberInfo()
         {
-
         }
 
         public abstract string Name { get; }
@@ -47,11 +46,6 @@ namespace IKVM.Reflection
         public abstract Type DeclaringType { get; }
 
         public abstract MemberTypes MemberType { get; }
-
-        public virtual Type ReflectedType
-        {
-            get { return DeclaringType; }
-        }
 
         internal abstract MemberInfo SetReflectedType(Type type);
 
@@ -83,11 +77,6 @@ namespace IKVM.Reflection
         public IList<CustomAttributeData> GetCustomAttributesData()
         {
             return CustomAttributeData.GetCustomAttributes(this);
-        }
-
-        public IEnumerable<CustomAttributeData> CustomAttributes
-        {
-            get { return GetCustomAttributesData(); }
         }
 
         public static bool operator ==(MemberInfo m1, MemberInfo m2)

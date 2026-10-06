@@ -50,76 +50,6 @@ namespace IKVM.Reflection.Emit
         readonly List<Accessor> accessors = new List<Accessor>();
         int lazyPseudoToken;
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="typeBuilder"></param>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="eventtype"></param>
-        internal EventBuilder(TypeBuilder typeBuilder, string name, EventAttributes attributes, Type eventtype)
-        {
-            this.typeBuilder = typeBuilder;
-            this.name = name;
-            this.attributes = attributes;
-            this.eventType = typeBuilder.ModuleBuilder.GetTypeTokenForMemberRef(eventtype);
-        }
-
-        public void SetAddOnMethod(MethodBuilder mdBuilder)
-        {
-            addOnMethod = mdBuilder;
-            var acc = new Accessor();
-            acc.Semantics = MethodSemanticsTable.AddOn;
-            acc.Method = mdBuilder;
-            accessors.Add(acc);
-        }
-
-        public void SetRemoveOnMethod(MethodBuilder mdBuilder)
-        {
-            removeOnMethod = mdBuilder;
-            var acc = new Accessor();
-            acc.Semantics = MethodSemanticsTable.RemoveOn;
-            acc.Method = mdBuilder;
-            accessors.Add(acc);
-        }
-
-        public void SetRaiseMethod(MethodBuilder mdBuilder)
-        {
-            fireMethod = mdBuilder;
-            var acc = new Accessor();
-            acc.Semantics = MethodSemanticsTable.Fire;
-            acc.Method = mdBuilder;
-            accessors.Add(acc);
-        }
-
-        public void AddOtherMethod(MethodBuilder mdBuilder)
-        {
-            var acc = new Accessor();
-            acc.Semantics = MethodSemanticsTable.Other;
-            acc.Method = mdBuilder;
-            accessors.Add(acc);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            if (customBuilder.KnownCA == KnownCA.SpecialNameAttribute)
-            {
-                attributes |= EventAttributes.SpecialName;
-            }
-            else
-            {
-                if (lazyPseudoToken == 0)
-                    lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
-
-                typeBuilder.ModuleBuilder.SetCustomAttribute(lazyPseudoToken, customBuilder);
-            }
-        }
-
         public override EventAttributes Attributes
         {
             get { return attributes; }
@@ -150,16 +80,6 @@ namespace IKVM.Reflection.Emit
             return list.ToArray();
         }
 
-        public override MethodInfo[] __GetMethods()
-        {
-            List<MethodInfo> list = new List<MethodInfo>();
-            foreach (Accessor acc in accessors)
-            {
-                list.Add(acc.Method);
-            }
-            return list.ToArray();
-        }
-
         public override Type DeclaringType
         {
             get { return typeBuilder; }
@@ -173,14 +93,6 @@ namespace IKVM.Reflection.Emit
         public override Module Module
         {
             get { return typeBuilder.ModuleBuilder; }
-        }
-
-        public EventToken GetEventToken()
-        {
-            if (lazyPseudoToken == 0)
-                lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
-
-            return new EventToken(lazyPseudoToken);
         }
 
         public override Type EventHandlerType

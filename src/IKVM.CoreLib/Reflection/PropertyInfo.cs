@@ -35,7 +35,6 @@ namespace IKVM.Reflection
         /// </summary>
         internal PropertyInfo()
         {
-
         }
 
         public sealed override MemberTypes MemberType => MemberTypes.Property;
@@ -181,11 +180,6 @@ namespace IKVM.Reflection
         public MethodInfo[] GetAccessors()
         {
             return GetAccessors(false);
-        }
-
-        public CallingConventions __CallingConvention
-        {
-            get { return this.PropertySignature.CallingConvention; }
         }
 
         internal virtual PropertyInfo BindTypeParameters(Type type)

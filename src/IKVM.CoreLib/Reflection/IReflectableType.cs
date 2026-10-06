@@ -26,9 +26,6 @@ namespace IKVM.Reflection
 
     internal interface IReflectableType
 	{
-
-		TypeInfo GetTypeInfo();
-
 	}
 
 }

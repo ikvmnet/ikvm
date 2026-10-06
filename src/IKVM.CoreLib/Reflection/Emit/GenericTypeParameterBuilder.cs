@@ -51,7 +51,6 @@ namespace IKVM.Reflection.Emit
         internal GenericTypeParameterBuilder(string name, TypeBuilder type, int position) :
             this(name, type, null, position, Signature.ELEMENT_TYPE_VAR)
         {
-
         }
 
         /// <summary>
@@ -63,7 +62,6 @@ namespace IKVM.Reflection.Emit
         internal GenericTypeParameterBuilder(string name, MethodBuilder method, int position) :
             this(name, null, method, position, Signature.ELEMENT_TYPE_MVAR)
         {
-
         }
 
         /// <summary>
@@ -164,11 +162,6 @@ namespace IKVM.Reflection.Emit
             throw new NotImplementedException();
         }
 
-        public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
-        {
-            throw new NotImplementedException();
-        }
-
         public override GenericParameterAttributes GenericParameterAttributes
         {
             get
@@ -204,29 +197,11 @@ namespace IKVM.Reflection.Emit
             AddConstraint(baseTypeConstraint);
         }
 
-        public void SetInterfaceConstraints(params Type[] interfaceConstraints)
-        {
-            foreach (Type type in interfaceConstraints)
-            {
-                AddConstraint(type);
-            }
-        }
-
         public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
         {
             this.attr = genericParameterAttributes;
             // for now we'll back patch the table
             this.ModuleBuilder.GenericParamTable.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            this.ModuleBuilder.SetCustomAttribute((GenericParamTable.Index << 24) | paramPseudoIndex, customBuilder);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         public override int MetadataToken

@@ -110,26 +110,6 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
-        public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
-        {
-            var context = (this.DeclaringMethod as IGenericContext) ?? DeclaringType;
-            var list = new List<CustomModifiers>();
-            foreach (var i in module.GenericParamConstraint.Filter(MetadataToken))
-            {
-                var mods = new CustomModifiers();
-                var metadataToken = module.GenericParamConstraint.records[i].Constraint;
-                if ((metadataToken >> 24) == TypeSpecTable.Index)
-                {
-                    var index = (metadataToken & 0xFFFFFF) - 1;
-                    mods = CustomModifiers.Read(module, module.GetBlobReader(module.TypeSpecTable.records[index]), context);
-                }
-
-                list.Add(mods);
-            }
-
-            return list.ToArray();
-        }
-
         public override GenericParameterAttributes GenericParameterAttributes
         {
             get { return (GenericParameterAttributes)module.GenericParamTable.records[index].Flags; }

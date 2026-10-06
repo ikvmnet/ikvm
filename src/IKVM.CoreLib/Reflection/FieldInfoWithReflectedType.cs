@@ -65,11 +65,6 @@ namespace IKVM.Reflection
             get { return field.FieldSignature; }
         }
 
-        public override FieldInfo __GetFieldOnTypeDefinition()
-        {
-            return field.__GetFieldOnTypeDefinition();
-        }
-
         internal override int ImportTo(Emit.ModuleBuilder module)
         {
             return field.ImportTo(module);
@@ -88,11 +83,6 @@ namespace IKVM.Reflection
         public override Type DeclaringType
         {
             get { return field.DeclaringType; }
-        }
-
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
         }
 
         public override bool Equals(object obj)

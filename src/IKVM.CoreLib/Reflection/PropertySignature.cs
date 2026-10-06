@@ -135,11 +135,6 @@ namespace IKVM.Reflection
             return customModifiers.GetParameterCustomModifiers(parameter);
         }
 
-        internal CallingConventions CallingConvention
-        {
-            get { return callingConvention; }
-        }
-
         internal bool MatchParameterTypes(Type[] types)
         {
             return Util.ArrayEquals(types, parameterTypes);

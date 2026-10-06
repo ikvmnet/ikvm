@@ -33,13 +33,6 @@ namespace IKVM.Reflection.Reader
     class SectionHeader
 	{
 
-		public const DWORD IMAGE_SCN_CNT_CODE = 0x00000020;
-		public const DWORD IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040;
-		public const DWORD IMAGE_SCN_MEM_DISCARDABLE = 0x02000000;
-		public const DWORD IMAGE_SCN_MEM_EXECUTE = 0x20000000;
-		public const DWORD IMAGE_SCN_MEM_READ = 0x40000000;
-		public const DWORD IMAGE_SCN_MEM_WRITE = 0x80000000;
-
 		public string Name;		// 8 byte UTF8 encoded 0-padded
 		public DWORD VirtualSize;
 		public DWORD VirtualAddress;

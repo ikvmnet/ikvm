@@ -55,21 +55,6 @@ namespace IKVM.Reflection
             get { return isManifestModule; }
         }
 
-        public Guid ModuleVersionId
-        {
-            get { return module.ModuleVersionId; }
-        }
-
-        public string ImageRuntimeVersion
-        {
-            get { return module.__ImageRuntimeVersion; }
-        }
-
-        public int MDStreamVersion
-        {
-            get { return module.MDStreamVersion; }
-        }
-
         void CheckManifestModule()
         {
             if (!IsManifestModule)
@@ -100,16 +85,6 @@ namespace IKVM.Reflection
 
             imported = true;
             return (AssemblyReader)module.Assembly;
-        }
-
-        internal Module ToModule(Assembly assembly)
-        {
-            if (module.Assembly != null)
-                throw new InvalidOperationException();
-
-            imported = true;
-            module.SetAssembly(assembly);
-            return module;
         }
 
     }

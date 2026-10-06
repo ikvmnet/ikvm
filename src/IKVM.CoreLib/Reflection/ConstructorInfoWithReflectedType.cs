@@ -55,19 +55,9 @@ namespace IKVM.Reflection
             return reflectedType.GetHashCode() ^ ctor.GetHashCode();
         }
 
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
-        }
-
         internal override MethodInfo GetMethodInfo()
         {
             return ctor.GetMethodInfo();
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return ctor.GetMethodOnTypeDefinition();
         }
 
     }

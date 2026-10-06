@@ -64,26 +64,6 @@ namespace IKVM.Reflection
             this.keyPairArray = (byte[])keyPairArray.Clone();
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="keyPairFile"></param>
-        public StrongNameKeyPair(FileStream keyPairFile) :
-            this(ReadAllBytes(keyPairFile))
-        {
-
-        }
-
-        static byte[] ReadAllBytes(FileStream keyPairFile)
-        {
-            if (keyPairFile == null)
-                throw new ArgumentNullException("keyPairFile");
-
-            var buf = new byte[keyPairFile.Length - keyPairFile.Position];
-            keyPairFile.Read(buf, 0, buf.Length);
-            return buf;
-        }
-
         public byte[] PublicKey
         {
             get

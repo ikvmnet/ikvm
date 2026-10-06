@@ -59,24 +59,10 @@ namespace IKVM.Reflection.Emit
         /// Initializes a new instance.
         /// </summary>
         /// <param name="con"></param>
-        /// <param name="securityAction"></param>
-        /// <param name="blob"></param>
-        private CustomAttributeBuilder(ConstructorInfo con, int securityAction, byte[] blob)
-        {
-            this.con = con;
-            this.blob = blob;
-            this.constructorArgs = new object[] { securityAction };
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="con"></param>
         /// <param name="constructorArgs"></param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs) :
             this(con, constructorArgs, null, null, null, null)
         {
-
         }
 
         /// <summary>
@@ -89,7 +75,6 @@ namespace IKVM.Reflection.Emit
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, FieldInfo[] namedFields, object[] fieldValues) :
             this(con, constructorArgs, null, null, namedFields, fieldValues)
         {
-
         }
 
         /// <summary>
@@ -102,7 +87,6 @@ namespace IKVM.Reflection.Emit
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues) :
             this(con, constructorArgs, namedProperties, propertyValues, null, null)
         {
-
         }
 
         /// <summary>
@@ -127,11 +111,6 @@ namespace IKVM.Reflection.Emit
         public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob)
         {
             return new CustomAttributeBuilder(con, blob);
-        }
-
-        public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, int securityAction, byte[] blob)
-        {
-            return new CustomAttributeBuilder(con, securityAction, blob);
         }
 
         public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value)
@@ -703,14 +682,6 @@ namespace IKVM.Reflection.Emit
             {
                 return ToData(asm).__ToBuilder();
             }
-        }
-
-        internal byte[] GetBlob(Assembly asm)
-        {
-            var bb = new ByteBuffer(100);
-            var bw = new BlobWriter(asm, this, bb);
-            bw.WriteCustomAttributeBlob();
-            return bb.ToArray();
         }
 
         internal KnownCA KnownCA

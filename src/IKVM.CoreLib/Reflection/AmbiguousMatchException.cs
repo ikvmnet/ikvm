@@ -33,21 +33,6 @@ namespace IKVM.Reflection
 		{
 		}
 
-		public AmbiguousMatchException(string message)
-			: base(message)
-		{
-		}
-
-		public AmbiguousMatchException(string message, Exception inner)
-			: base(message, inner)
-		{
-		}
-
-		private AmbiguousMatchException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-			: base(info, context)
-		{
-		}
-
 	}
 
 }

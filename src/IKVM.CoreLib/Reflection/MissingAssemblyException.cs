@@ -43,21 +43,6 @@ namespace IKVM.Reflection
             this.assembly = assembly;
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) : base(info, context)
-        {
-
-        }
-
-        public Assembly Assembly
-        {
-            get { return assembly; }
-        }
-
     }
 
 }

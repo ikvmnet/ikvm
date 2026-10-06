@@ -86,11 +86,6 @@ namespace IKVM.Reflection.Reader
             return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
         }
 
-        public override MethodInfo[] __GetMethods()
-        {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, true, -1);
-        }
-
         public override Type EventHandlerType
         {
             get { return module.ResolveType(module.EventTable.records[index].EventType, declaringType); }

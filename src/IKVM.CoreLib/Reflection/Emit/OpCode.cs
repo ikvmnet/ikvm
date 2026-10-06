@@ -21,7 +21,6 @@ namespace IKVM.Reflection.Emit
         internal const int FlowControlMask = 0x0F;
 
         internal const int OpCodeTypeShift = 9;                 // 00000000000000000000XXX000000000
-        internal const int OpCodeTypeMask = 0x07;
 
         internal const int StackBehaviourPopShift = 12;         // 000000000000000XXXXX000000000000
         internal const int StackBehaviourPushShift = 17;        // 0000000000XXXXX00000000000000000
@@ -54,8 +53,6 @@ namespace IKVM.Reflection.Emit
         public OperandType OperandType => (OperandType)(m_flags & OperandTypeMask);
 
         public FlowControl FlowControl => (FlowControl)((m_flags >> FlowControlShift) & FlowControlMask);
-
-        public OpCodeType OpCodeType => (OpCodeType)((m_flags >> OpCodeTypeShift) & OpCodeTypeMask);
 
         public StackBehaviour StackBehaviourPop => (StackBehaviour)((m_flags >> StackBehaviourPopShift) & StackBehaviourMask);
 

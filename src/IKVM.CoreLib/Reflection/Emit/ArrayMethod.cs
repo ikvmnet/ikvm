@@ -56,16 +56,6 @@ namespace IKVM.Reflection.Emit
             this.parameterTypes = Util.Copy(parameterTypes);
         }
 
-        public override MethodBody GetMethodBody()
-        {
-            throw new InvalidOperationException();
-        }
-
-        public override int __MethodRVA
-        {
-            get { throw new InvalidOperationException(); }
-        }
-
         public override MethodImplAttributes GetMethodImplementationFlags()
         {
             throw new NotSupportedException();
@@ -138,11 +128,6 @@ namespace IKVM.Reflection.Emit
         public override Type ReturnType
         {
             get { return returnType; }
-        }
-
-        internal override bool HasThis
-        {
-            get { return (callingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
         }
 
         internal override int GetCurrentToken()

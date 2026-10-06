@@ -34,7 +34,6 @@ namespace IKVM.Reflection
         /// </summary>
         internal FieldInfo()
         {
-
         }
 
         public sealed override MemberTypes MemberType
@@ -126,11 +125,6 @@ namespace IKVM.Reflection
         public bool IsPinvokeImpl
         {
             get { return (Attributes & FieldAttributes.PinvokeImpl) != 0; }
-        }
-
-        public virtual FieldInfo __GetFieldOnTypeDefinition()
-        {
-            return this;
         }
 
         public abstract bool __TryGetFieldOffset(out int offset);

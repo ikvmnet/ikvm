@@ -32,7 +32,6 @@ namespace IKVM.Reflection
         readonly int index;
         readonly Type type;
         readonly bool pinned;
-        readonly CustomModifiers customModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -47,24 +46,6 @@ namespace IKVM.Reflection
             this.pinned = pinned;
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="type"></param>
-        /// <param name="pinned"></param>
-        /// <param name="customModifiers"></param>
-        internal LocalVariableInfo(int index, Type type, bool pinned, CustomModifiers customModifiers) :
-            this(index, type, pinned)
-        {
-            this.customModifiers = customModifiers;
-        }
-
-        public bool IsPinned
-        {
-            get { return pinned; }
-        }
-
         public int LocalIndex
         {
             get { return index; }
@@ -73,11 +54,6 @@ namespace IKVM.Reflection
         public Type LocalType
         {
             get { return type; }
-        }
-
-        public CustomModifiers __GetCustomModifiers()
-        {
-            return customModifiers;
         }
 
         public override string ToString()

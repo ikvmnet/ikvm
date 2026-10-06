@@ -61,11 +61,6 @@ namespace IKVM.Reflection
             return array;
         }
 
-        internal static T[] ToArray<T>(IEnumerable<T> values)
-        {
-            return values == null ? Array.Empty<T>() : new List<T>(values).ToArray();
-        }
-
         // note that an empty array matches a null reference
         internal static bool ArrayEquals(Type[] t1, Type[] t2)
         {

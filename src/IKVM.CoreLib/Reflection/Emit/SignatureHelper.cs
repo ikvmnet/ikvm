@@ -48,12 +48,6 @@ namespace IKVM.Reflection.Emit
             internal Lazy(byte type) :
                 base(type)
             {
-
-            }
-
-            internal override Type ReturnType
-            {
-                get { return args[0]; }
             }
 
             public override byte[] GetSignature()
@@ -114,11 +108,6 @@ namespace IKVM.Reflection.Emit
                     bb.Write((byte)0); // space for parameterCount
             }
 
-            internal override Type ReturnType
-            {
-                get { return returnType; }
-            }
-
             public override byte[] GetSignature()
             {
                 return GetSignature(null).ToArray();
@@ -166,21 +155,6 @@ namespace IKVM.Reflection.Emit
             this.type = type;
         }
 
-        internal bool HasThis
-        {
-            get { return (type & Signature.HASTHIS) != 0; }
-        }
-
-        internal abstract Type ReturnType
-        {
-            get;
-        }
-
-        internal int ArgumentCount 
-        {
-            get { return argumentCount; }
-        }
-
         private static SignatureHelper Create(Module mod, byte type, Type returnType)
         {
             return mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
@@ -191,51 +165,9 @@ namespace IKVM.Reflection.Emit
             return Create(mod, Signature.FIELD, null);
         }
 
-        public static SignatureHelper GetLocalVarSigHelper()
-        {
-            return new Lazy(Signature.LOCAL_SIG);
-        }
-
         public static SignatureHelper GetLocalVarSigHelper(Module mod)
         {
             return Create(mod, Signature.LOCAL_SIG, null);
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] parameterTypes)
-        {
-            var sig = Create(mod, Signature.PROPERTY, returnType);
-            sig.AddArgument(returnType);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, null, null);
-            return sig;
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            return GetPropertySigHelper(mod, CallingConventions.Standard, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            var type = Signature.PROPERTY;
-            if ((callingConvention & CallingConventions.HasThis) != 0)
-                type |= Signature.HASTHIS;
-
-            var sig = Create(mod, type, returnType);
-            sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-            return sig;
-        }
-
-        public static SignatureHelper GetMethodSigHelper(CallingConvention unmanagedCallingConvention, Type returnType)
-        {
-            return GetMethodSigHelper(null, unmanagedCallingConvention, returnType);
-        }
-
-        public static SignatureHelper GetMethodSigHelper(CallingConventions callingConvention, Type returnType)
-        {
-            return GetMethodSigHelper(null, callingConvention, returnType);
         }
 
         public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
@@ -274,15 +206,6 @@ namespace IKVM.Reflection.Emit
             return sig;
         }
 
-        public static SignatureHelper GetMethodSigHelper(Module mod, Type returnType, Type[] parameterTypes)
-        {
-            var sig = Create(mod, 0, returnType);
-            sig.AddArgument(returnType);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, null, null);
-            return sig;
-        }
-
         public abstract byte[] GetSignature();
 
         internal abstract ByteBuffer GetSignature(ModuleBuilder module);
@@ -297,11 +220,6 @@ namespace IKVM.Reflection.Emit
         public void AddArgument(Type argument, bool pinned)
         {
             __AddArgument(argument, pinned, new CustomModifiers());
-        }
-
-        public void AddArgument(Type argument, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            __AddArgument(argument, false, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
         }
 
         public abstract void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers);

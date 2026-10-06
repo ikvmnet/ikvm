@@ -88,11 +88,6 @@ namespace IKVM.Reflection.Emit
             return (offset = this.offset) != -1;
         }
 
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-        }
-
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             switch (customBuilder.KnownCA)
@@ -144,11 +139,6 @@ namespace IKVM.Reflection.Emit
         public override Module Module
         {
             get { return type.Module; }
-        }
-
-        public FieldToken GetToken()
-        {
-            return new FieldToken(pseudoToken);
         }
 
         internal void WriteFieldRecords()

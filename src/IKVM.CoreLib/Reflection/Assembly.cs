@@ -54,19 +54,6 @@ namespace IKVM.Reflection
             return FullName;
         }
 
-        public event ModuleResolveEventHandler ModuleResolve
-        {
-            add
-            {
-                resolvers ??= new List<ModuleResolveEventHandler>();
-                resolvers.Add(value);
-            }
-            remove
-            {
-                resolvers.Remove(value);
-            }
-        }
-
         public abstract Type[] GetTypes();
 
         public abstract AssemblyName GetName();
@@ -80,37 +67,8 @@ namespace IKVM.Reflection
         public abstract Module[] GetModules(bool getResourceModules);
         public abstract Module[] GetLoadedModules(bool getResourceModules);
         public abstract Module GetModule(string name);
-        public abstract string[] GetManifestResourceNames();
         public abstract ManifestResourceInfo GetManifestResourceInfo(string resourceName);
         public abstract System.IO.Stream GetManifestResourceStream(string name);
-
-        public virtual System.IO.Stream GetManifestResourceStream(Type type, string name)
-        {
-            var sb = new StringBuilder();
-            if (type == null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
-            else
-            {
-                string? nameSpace = type.Namespace;
-                if (nameSpace != null)
-                {
-                    sb.Append(nameSpace);
-                    if (name != null)
-                    {
-                        sb.Append(System.Type.Delimiter);
-                    }
-                }
-            }
-
-            if (name != null)
-            {
-                sb.Append(name);
-            }
-
-            return GetManifestResourceStream(sb.ToString());
-        }
 
         internal abstract Type FindType(TypeName name);
         internal abstract Type FindTypeIgnoreCase(TypeName lowerCaseName);
@@ -141,11 +99,6 @@ namespace IKVM.Reflection
         public Module[] GetLoadedModules()
         {
             return GetLoadedModules(true);
-        }
-
-        public AssemblyName GetName(bool copiedName)
-        {
-            return GetName();
         }
 
         public bool ReflectionOnly
@@ -213,16 +166,6 @@ namespace IKVM.Reflection
             return parser.Expand(type, this.ManifestModule, throwOnError, name, false, ignoreCase);
         }
 
-        public virtual Module LoadModule(string moduleName, byte[] rawModule)
-        {
-            throw new NotSupportedException();
-        }
-
-        public Module LoadModule(string moduleName, byte[] rawModule, byte[] rawSymbolStore)
-        {
-            return LoadModule(moduleName, rawModule);
-        }
-
         public bool IsDefined(Type attributeType, bool inherit)
         {
             return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
@@ -238,21 +181,6 @@ namespace IKVM.Reflection
             return CustomAttributeData.GetCustomAttributes(this);
         }
 
-        public IEnumerable<CustomAttributeData> CustomAttributes
-        {
-            get { return GetCustomAttributesData(); }
-        }
-
-        public static string CreateQualifiedName(string assemblyName, string typeName)
-        {
-            return typeName + ", " + assemblyName;
-        }
-
-        public static Assembly GetAssembly(Type type)
-        {
-            return type.Assembly;
-        }
-
         public string CodeBase
         {
             get
@@ -265,16 +193,7 @@ namespace IKVM.Reflection
             }
         }
 
-        public virtual bool IsDynamic => false;
-
         public virtual bool __IsMissing => false;
-
-        public AssemblyNameFlags __AssemblyFlags => GetAssemblyFlags();
-
-        protected virtual AssemblyNameFlags GetAssemblyFlags()
-        {
-            return GetName().Flags;
-        }
 
         internal abstract IList<CustomAttributeData> GetCustomAttributesData(Type attributeType);
 

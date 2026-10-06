@@ -34,7 +34,6 @@ namespace IKVM.Reflection.Emit
         internal BakedType(TypeBuilder typeBuilder) :
             base(typeBuilder)
         {
-
         }
 
         public override string AssemblyQualifiedName
@@ -106,11 +105,6 @@ namespace IKVM.Reflection.Emit
         public override Type DeclaringType
         {
             get { return underlyingType.DeclaringType; }
-        }
-
-        public override bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            return underlyingType.__GetLayout(out packingSize, out typeSize);
         }
 
         public override Type[] GetGenericArguments()

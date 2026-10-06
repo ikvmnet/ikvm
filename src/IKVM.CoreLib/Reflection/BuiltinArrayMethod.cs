@@ -113,7 +113,6 @@ namespace IKVM.Reflection
         internal BuiltinArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes) :
             base(module, arrayClass, methodName, callingConvention, returnType, parameterTypes)
         {
-
         }
 
         public override MethodAttributes Attributes
@@ -129,11 +128,6 @@ namespace IKVM.Reflection
         public override int MetadataToken
         {
             get { return 0x06000000; }
-        }
-
-        public override MethodBody GetMethodBody()
-        {
-            return null;
         }
 
         public override ParameterInfo[] GetParameters()

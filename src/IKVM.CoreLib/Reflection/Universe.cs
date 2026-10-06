@@ -80,7 +80,6 @@ namespace IKVM.Reflection
         Type typeof_System_Object;
         Type typeof_System_ValueType;
         Type typeof_System_MulticastDelegate;
-        Type typeof_System_Enum;
         Type typeof_System_Void;
         Type typeof_System_Boolean;
         Type typeof_System_Char;
@@ -104,10 +103,6 @@ namespace IKVM.Reflection
         Type typeof_System_DBNull;
         Type typeof_System_Decimal;
         Type typeof_System_AttributeUsageAttribute;
-        Type typeof_System_ContextBoundObject;
-        Type typeof_System_MarshalByRefObject;
-        Type typeof_System_Console;
-        Type typeof_System_IO_TextWriter;
         Type typeof_System_Runtime_InteropServices_DllImportAttribute;
         Type typeof_System_Runtime_InteropServices_FieldOffsetAttribute;
         Type typeof_System_Runtime_InteropServices_MarshalAsAttribute;
@@ -139,7 +134,6 @@ namespace IKVM.Reflection
         public Universe(string coreLibName = null) :
             this(UniverseOptions.None, coreLibName)
         {
-
         }
 
         /// <summary>
@@ -165,15 +159,6 @@ namespace IKVM.Reflection
         public void SetSymbolWriterFactory(Func<ModuleBuilder, ISymbolWriter> factory)
         {
             this.symbolWriterFactory = factory;
-        }
-
-        /// <summary>
-        /// Sets the algorithm to use when calculating PDB checksums.
-        /// </summary>
-        /// <param name="pdbChecksumAlgorithm"></param>
-        public void SetPdbChecksumAlgorithm(HashAlgorithmName pdbChecksumAlgorithm)
-        {
-            this.pdbChecksumAlgorithm = pdbChecksumAlgorithm;
         }
 
         /// <summary>
@@ -261,8 +246,6 @@ namespace IKVM.Reflection
 
         internal Type System_MulticastDelegate => typeof_System_MulticastDelegate ??= ImportCoreLibType("System", "MulticastDelegate");
 
-        internal Type System_Enum => typeof_System_Enum ??= ResolvePrimitive("Enum");
-
         internal Type System_Void => typeof_System_Void ??= ResolvePrimitive("Void");
 
         internal Type System_Boolean => typeof_System_Boolean ??= ResolvePrimitive("Boolean");
@@ -308,14 +291,6 @@ namespace IKVM.Reflection
         internal Type System_Decimal => typeof_System_Decimal ??= ImportCoreLibType("System", "Decimal");
 
         internal Type System_AttributeUsageAttribute => typeof_System_AttributeUsageAttribute ??= ImportCoreLibType("System", "AttributeUsageAttribute");
-
-        internal Type System_ContextBoundObject => typeof_System_ContextBoundObject ??= ImportCoreLibType("System", "ContextBoundObject");
-
-        internal Type System_MarshalByRefObject => typeof_System_MarshalByRefObject ??= ImportCoreLibType("System", "MarshalByRefObject");
-
-        internal Type System_Console => typeof_System_Console ??= ImportCoreLibType("System", "Console");
-
-        internal Type System_IO_TextWriter => typeof_System_IO_TextWriter ??= ImportCoreLibType("System.IO", "TextWriter");
 
         internal Type System_Runtime_InteropServices_DllImportAttribute => typeof_System_Runtime_InteropServices_DllImportAttribute ??= ImportInteropType("DllImportAttribute");
 
@@ -494,11 +469,6 @@ namespace IKVM.Reflection
             return OpenRawModule(stream, location, false);
         }
 
-        public RawModule OpenMappedRawModule(Stream stream, string location)
-        {
-            return OpenRawModule(stream, location, true);
-        }
-
         RawModule OpenRawModule(Stream stream, string location, bool mapped)
         {
             if (!stream.CanRead || !stream.CanSeek || stream.Position != 0)
@@ -628,32 +598,11 @@ namespace IKVM.Reflection
             return null;
         }
 
-        public Type GetType(string assemblyQualifiedTypeName)
-        {
-            // to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
-            // import that assembly and pass it as the context, but implicitly importing is considered evil
-            return GetType(null, assemblyQualifiedTypeName, false, false);
-        }
-
         public Type GetType(string assemblyQualifiedTypeName, bool throwOnError)
         {
             // to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
             // import that assembly and pass it as the context, but implicitly importing is considered evil
             return GetType(null, assemblyQualifiedTypeName, throwOnError, false);
-        }
-
-        public Type GetType(string assemblyQualifiedTypeName, bool throwOnError, bool ignoreCase)
-        {
-            // to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
-            // import that assembly and pass it as the context, but implicitly importing is considered evil
-            return GetType(null, assemblyQualifiedTypeName, throwOnError, ignoreCase);
-        }
-
-        // note that context is slightly different from the calling assembly (System.Type.GetType),
-        // because context is passed to the AssemblyResolve event as the RequestingAssembly
-        public Type GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError)
-        {
-            return GetType(context, assemblyQualifiedTypeName, throwOnError, false);
         }
 
         // note that context is slightly different from the calling assembly (System.Type.GetType),
@@ -738,37 +687,9 @@ namespace IKVM.Reflection
                 : Fusion.CompareAssemblyIdentityPure(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
-        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
-        {
-            return new AssemblyBuilder(this, name, null, null);
-        }
-
-        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
-        {
-            return new AssemblyBuilder(this, name, null, assemblyAttributes);
-        }
-
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
         {
             return new AssemblyBuilder(this, name, dir, null);
-        }
-
-        [Obsolete]
-        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
-        {
-            var ab = new AssemblyBuilder(this, name, dir, null);
-            AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
-            AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
-            AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);
-            return ab;
-        }
-
-        private static void AddLegacyPermissionSet(AssemblyBuilder ab, PermissionSet permissionSet, System.Security.Permissions.SecurityAction action)
-        {
-            if (permissionSet != null)
-            {
-                ab.__AddDeclarativeSecurity(CustomAttributeBuilder.__FromBlob(CustomAttributeBuilder.LegacyPermissionSet, (int)action, Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
-            }
         }
 
         internal void RegisterDynamicAssembly(AssemblyBuilder asm)
@@ -819,12 +740,6 @@ namespace IKVM.Reflection
                 assembliesByName.Add(name, asm);
             }
             return asm;
-        }
-
-        [Obsolete("Please set UniverseOptions.ResolveMissingMembers instead.")]
-        public void EnableMissingMemberResolution()
-        {
-            resolveMissingMembers = true;
         }
 
         internal bool MissingMemberResolution
@@ -957,34 +872,7 @@ namespace IKVM.Reflection
             return canon;
         }
 
-        public Type MakeFunctionPointer(__StandAloneMethodSig sig)
-        {
-            return FunctionPointerType.Make(this, sig);
-        }
-
-        public __StandAloneMethodSig MakeStandAloneMethodSig(System.Runtime.InteropServices.CallingConvention callingConvention, Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            return new __StandAloneMethodSig(true, callingConvention, 0, returnType ?? this.System_Void, Util.Copy(parameterTypes), Type.EmptyTypes,
-                PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes)));
-        }
-
-        public __StandAloneMethodSig MakeStandAloneMethodSig(CallingConventions callingConvention, Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, Type[] optionalParameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            return new __StandAloneMethodSig(false, 0, callingConvention, returnType ?? this.System_Void, Util.Copy(parameterTypes), Util.Copy(optionalParameterTypes),
-                PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes) + Util.NullSafeLength(optionalParameterTypes)));
-        }
-
         public event ResolvedMissingMemberHandler ResolvedMissingMember;
-
-        public event Predicate<Type> MissingTypeIsValueType
-        {
-            add => missingTypeIsValueType = missingTypeIsValueType == null ? value : throw new InvalidOperationException("Only a single MissingTypeIsValueType handler can be registered.");
-            remove
-            {
-                if (value.Equals(missingTypeIsValueType))
-                    missingTypeIsValueType = null;
-            }
-        }
 
         internal bool ResolveMissingTypeIsValueType(MissingType missingType)
         {
@@ -999,8 +887,6 @@ namespace IKVM.Reflection
         internal bool AutomaticallyProvideDefaultConstructor => automaticallyProvideDefaultConstructor;
 
         internal bool MetadataOnly => (options & UniverseOptions.MetadataOnly) != 0;
-
-        internal bool WindowsRuntimeProjection => (options & UniverseOptions.DisableWindowsRuntimeProjection) == 0;
 
         internal bool DecodeVersionInfoAttributeBlobs => (options & UniverseOptions.DecodeVersionInfoAttributeBlobs) != 0;
 

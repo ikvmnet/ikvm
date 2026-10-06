@@ -34,7 +34,6 @@ namespace IKVM.Reflection
         /// </summary>
         public ParameterInfo()
         {
-
         }
 
         public sealed override bool Equals(object obj)
@@ -184,10 +183,6 @@ namespace IKVM.Reflection
             return CustomAttributeData.GetCustomAttributes(this);
         }
 
-        public IEnumerable<CustomAttributeData> CustomAttributes
-        {
-            get { return GetCustomAttributesData(); }
-        }
     }
 
     sealed class ParameterInfoWrapper : ParameterInfo

@@ -43,17 +43,6 @@ namespace IKVM.Reflection
             this.member = member;
         }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
-            base(info, context)
-        {
-
-        }
-
         public MemberInfo MemberInfo
         {
             get { return member; }
