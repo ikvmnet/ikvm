@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Resources;
@@ -256,6 +257,7 @@ namespace IKVM.Reflection.Emit
         readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
         readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
         int nextPseudoToken = -1;
+        int genericParameterCount;
         readonly List<int> resolvedTokens = new List<int>();
         ISymbolWriter symbolWriter;
 
@@ -430,6 +432,47 @@ namespace IKVM.Reflection.Emit
         internal int AllocPseudoToken()
         {
             return nextPseudoToken--;
+        }
+
+        /// <summary>
+        /// Allocates the provisional index a generic parameter reports as its token until the module is written.
+        /// </summary>
+        /// <returns></returns>
+        internal int AllocGenericParameterIndex()
+        {
+            return ++genericParameterCount;
+        }
+
+        /// <summary>
+        /// Writes the tables that describe the structure of the types: layouts, interface implementations, method
+        /// overrides, nesting, field layouts, generic parameters and their constraints, all of which the metadata
+        /// requires to be added in sorted order.
+        /// </summary>
+        void WriteTypeStructure()
+        {
+            foreach (var type in types)
+                type.WriteStructure();
+
+            // generic parameters are sorted by their owner, a TypeOrMethodDef coded index, and then by number
+            var parameters = new List<GenericTypeParameterBuilder>();
+            foreach (var type in types)
+                type.CollectGenericParameters(parameters);
+
+            var keys = new Dictionary<GenericTypeParameterBuilder, int>(parameters.Count);
+            foreach (var p in parameters)
+                keys[p] = GenericParamTable.EncodeOwner(ResolvePseudoToken(p.OwnerToken));
+
+            var sorted = parameters.OrderBy(p => keys[p]).ThenBy(p => p.Position).ToList();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var p = sorted[i];
+                p.SetRow(i + 1);
+                metadata.AddGenericParameter(MetadataTokens.EntityHandle(ResolvePseudoToken(p.OwnerToken)), (System.Reflection.GenericParameterAttributes)p.GenericParameterAttributesValue, GetOrAddString(p.Name), p.Position);
+            }
+
+            for (int i = 0; i < sorted.Count; i++)
+                foreach (var constraint in sorted[i].Constraints)
+                    metadata.AddGenericParameterConstraint(MetadataTokens.GenericParameterHandle(i + 1), MetadataTokens.EntityHandle(constraint));
         }
 
         public TypeBuilder DefineType(string name)
@@ -925,6 +968,7 @@ namespace IKVM.Reflection.Emit
                 if (table != null)
                     table.Write(this);
 
+            WriteTypeStructure();
             WriteMemberData();
             WriteCustomAttributes();
         }

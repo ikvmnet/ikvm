@@ -51,6 +51,9 @@ namespace IKVM.Reflection.Emit
         TypeAttributes attribs;
         GenericTypeParameterBuilder[] gtpb;
         List<Type> interfaces;
+        List<int> interfaceTokens;
+        List<TypeBuilder> nestedTypes;
+        List<(int Body, int Declaration)> methodImpls;
         int size;
         short packingSize;
         bool hasLayout;
@@ -122,11 +125,7 @@ namespace IKVM.Reflection.Emit
 
         public void DefineMethodOverride(MethodInfo methodInfoBody, MethodInfo methodInfoDeclaration)
         {
-            var rec = new MethodImplTable.Record();
-            rec.Class = token;
-            rec.MethodBody = this.ModuleBuilder.GetMethodToken(methodInfoBody).Token;
-            rec.MethodDeclaration = ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token;
-            ModuleBuilder.MethodImplTable.AddRecord(rec);
+            (methodImpls ??= new List<(int, int)>()).Add((ModuleBuilder.GetMethodToken(methodInfoBody).Token, ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token));
         }
 
         public FieldBuilder DefineField(string name, Type fieldType, FieldAttributes attribs)
@@ -213,10 +212,7 @@ namespace IKVM.Reflection.Emit
         {
             typeFlags |= TypeFlags.HasNestedTypes;
             var typeBuilder = ModuleBuilder.DefineType(this, ns, name);
-            var rec = new NestedClassTable.Record();
-            rec.NestedClass = typeBuilder.MetadataToken;
-            rec.EnclosingClass = MetadataToken;
-            ModuleBuilder.NestedClassTable.AddRecord(rec);
+            (nestedTypes ??= new List<TypeBuilder>()).Add(typeBuilder);
             return typeBuilder;
         }
 
@@ -345,14 +341,6 @@ namespace IKVM.Reflection.Emit
                 throw new NotImplementedException();
 
             typeFlags |= TypeFlags.Baked;
-            if (hasLayout)
-            {
-                var rec = new ClassLayoutTable.Record();
-                rec.PackingSize = packingSize;
-                rec.ClassSize = size;
-                rec.Parent = token;
-                ModuleBuilder.ClassLayoutTable.AddRecord(rec);
-            }
 
             var hasConstructor = false;
             foreach (var mb in methods)
@@ -374,13 +362,9 @@ namespace IKVM.Reflection.Emit
 
             if (interfaces != null)
             {
+                interfaceTokens = new List<int>(interfaces.Count);
                 foreach (var interfaceType in interfaces)
-                {
-                    var rec = new InterfaceImplTable.Record();
-                    rec.Class = token;
-                    rec.Interface = ModuleBuilder.GetTypeToken(interfaceType).Token;
-                    ModuleBuilder.InterfaceImplTable.AddRecord(rec);
-                }
+                    interfaceTokens.Add(ModuleBuilder.GetTypeToken(interfaceType).Token);
             }
 
             return new BakedType(this);
@@ -533,6 +517,48 @@ namespace IKVM.Reflection.Emit
             methodList += methods.Count;
         }
 
+        /// <summary>
+        /// Writes the layout, interface implementations, method overrides and enclosing type of this type. Called for
+        /// each type in TypeDef order, which keeps these tables sorted as the metadata requires.
+        /// </summary>
+        internal void WriteStructure()
+        {
+            var metadata = ModuleBuilder.Metadata;
+            var handle = MetadataTokens.TypeDefinitionHandle(token);
+
+            if (hasLayout)
+                metadata.AddTypeLayout(handle, (ushort)packingSize, (uint)size);
+
+            if (interfaceTokens != null)
+                foreach (var interfaceToken in interfaceTokens)
+                    metadata.AddInterfaceImplementation(handle, MetadataTokens.EntityHandle(interfaceToken));
+
+            if (methodImpls != null)
+                foreach (var (body, declaration) in methodImpls)
+                    metadata.AddMethodImplementation(handle, MetadataTokens.EntityHandle(ModuleBuilder.ResolvePseudoToken(body)), MetadataTokens.EntityHandle(ModuleBuilder.ResolvePseudoToken(declaration)));
+
+            if (owner is TypeBuilder enclosing)
+                metadata.AddNestedType(handle, MetadataTokens.TypeDefinitionHandle(enclosing.token));
+
+            foreach (var field in fields)
+                if (field.__TryGetFieldOffset(out var offset))
+                    metadata.AddFieldLayout((FieldDefinitionHandle)MetadataTokens.EntityHandle(ModuleBuilder.ResolvePseudoToken(field.GetCurrentToken())), offset);
+        }
+
+        /// <summary>
+        /// Adds the generic parameters of this type and its methods.
+        /// </summary>
+        /// <param name="list"></param>
+        internal void CollectGenericParameters(List<GenericTypeParameterBuilder> list)
+        {
+            if (gtpb != null)
+                list.AddRange(gtpb);
+
+            foreach (var method in methods)
+                if (method.GenericParameters != null)
+                    list.AddRange(method.GenericParameters);
+        }
+
         internal void WriteMethodDefRecords(ref int paramList)
         {
             foreach (var mb in methods)
@@ -606,19 +632,7 @@ namespace IKVM.Reflection.Emit
 
         public override Type[] __GetDeclaredTypes()
         {
-            if (HasNestedTypes)
-            {
-                var types = new List<Type>();
-                var classes = ModuleBuilder.NestedClassTable.GetNestedClasses(token);
-                foreach (var nestedClass in classes)
-                    types.Add(ModuleBuilder.ResolveType(nestedClass));
-
-                return types.ToArray();
-            }
-            else
-            {
-                return Type.EmptyTypes;
-            }
+            return nestedTypes != null ? nestedTypes.ToArray() : Type.EmptyTypes;
         }
 
         public override FieldInfo[] __GetDeclaredFields()

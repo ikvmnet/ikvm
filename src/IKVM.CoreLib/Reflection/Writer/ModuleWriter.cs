@@ -292,18 +292,13 @@ namespace IKVM.Reflection.Writer
 
             // fixup content in tables
             module.TypeRefTable.Fixup(module);
-            module.MethodImplTable.Fixup(module);
             module.MethodSemanticsTable.Fixup(module);
-            module.InterfaceImplTable.Fixup(module);
             module.MemberRefTable.Fixup(module);
             module.DeclSecurityTable.Fixup(module);
-            module.GenericParamTable.Fixup(module);
-            module.FieldLayoutTable.Fixup(module);
             module.FieldRVATable.Fixup(module);
             module.ExportedTypeTable.Fixup(module);
             module.ManifestResourceTable.Fixup(module);
             module.MethodSpecTable.Fixup(module);
-            module.GenericParamConstraint.Fixup(module);
 
             // close the symbol writer which may cause entries in the module table
             module.GetSymWriter()?.Close();

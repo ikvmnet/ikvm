@@ -57,17 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            Sort();
-
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddTypeLayout(
-                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
-                    (ushort)records[i].PackingSize,
-                    (uint)records[i].ClassSize);
-        }
-
     }
 
 }

@@ -151,14 +151,6 @@ namespace IKVM.Reflection.Emit
 
         internal void FixupToken(int token)
         {
-            if (offset > -1)
-            {
-                var rec = new FieldLayoutTable.Record();
-                rec.Offset = offset;
-                rec.Field = pseudoToken;
-                type.ModuleBuilder.FieldLayoutTable.AddRecord(rec);
-            }
-
             type.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
         }
 

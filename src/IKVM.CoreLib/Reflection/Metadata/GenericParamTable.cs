@@ -73,51 +73,12 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddGenericParameter(
-                    MetadataTokens.EntityHandle(records[i].Owner),
-                    (System.Reflection.GenericParameterAttributes)records[i].Flags,
-                    records[i].Name,
-                    records[i].Number);
-
-                Debug.Assert(h == MetadataTokens.GenericParameterHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                moduleBuilder.FixupPseudoToken(ref records[i].Owner);
-                records[i].UnsortedIndex = i;
-            }
-
-            Sort();
-        }
-
         internal static int EncodeOwner(int token) => (token >> 24) switch
         {
             TypeDefTable.Index => (token & 0xFFFFFF) << 1 | 0,
             MethodDefTable.Index => (token & 0xFFFFFF) << 1 | 1,
             _ => throw new InvalidOperationException(),
         };
-
-        internal void PatchAttribute(int token, GenericParameterAttributes genericParameterAttributes)
-        {
-            records[(token & 0xFFFFFF) - 1].Flags = (short)genericParameterAttributes;
-        }
-
-        internal int[] GetIndexFixup()
-        {
-            var array = new int[rowCount];
-            for (int i = 0; i < rowCount; i++)
-                array[records[i].UnsortedIndex] = i;
-
-            return array;
-        }
 
         internal int FindFirstByOwner(int token)
         {

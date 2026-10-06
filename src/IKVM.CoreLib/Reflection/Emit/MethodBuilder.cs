@@ -301,6 +301,11 @@ namespace IKVM.Reflection.Emit
             this.customModifiers = customModifiers;
         }
 
+        /// <summary>
+        /// Gets the generic parameters defined on the method, or <c>null</c>.
+        /// </summary>
+        internal GenericTypeParameterBuilder[] GenericParameters => gtpb;
+
         public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
         {
             CheckSig();

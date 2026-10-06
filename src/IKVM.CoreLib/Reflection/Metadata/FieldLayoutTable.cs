@@ -56,22 +56,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddFieldLayout(
-                    MetadataTokens.FieldDefinitionHandle(records[i].Field),
-                    records[i].Offset);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                records[i].Field = moduleBuilder.ResolvePseudoToken(records[i].Field) & 0xFFFFFF;
-
-            Sort();
-        }
-
     }
 
 }
