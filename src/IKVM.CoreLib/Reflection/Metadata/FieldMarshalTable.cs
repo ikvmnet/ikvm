@@ -57,22 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddMarshallingDescriptor(
-                    MetadataTokens.EntityHandle(records[i].Parent),
-                    records[i].NativeType);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                records[i].Parent = moduleBuilder.ResolvePseudoToken(records[i].Parent);
-
-            Sort();
-        }
-
         internal static int EncodeHasFieldMarshal(int token)
         {
             return (token >> 24) switch

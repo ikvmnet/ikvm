@@ -109,7 +109,7 @@ namespace IKVM.Reflection.Emit
         public override object GetRawConstantValue()
         {
             if (lazyPseudoToken != 0)
-                return typeBuilder.ModuleBuilder.ConstantTable.GetRawConstantValue(typeBuilder.ModuleBuilder, lazyPseudoToken);
+                return typeBuilder.ModuleBuilder.GetConstant(lazyPseudoToken);
 
             throw new InvalidOperationException();
         }

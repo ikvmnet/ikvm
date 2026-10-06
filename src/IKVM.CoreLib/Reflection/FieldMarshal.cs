@@ -56,78 +56,81 @@ namespace IKVM.Reflection
         {
             fm = new FieldMarshal();
 
+            if (module is ModuleBuilder builder)
+                return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, module.GetBlobReader(nativeType), out fm);
+
             foreach (var i in module.FieldMarshalTable.Filter(token))
-            {
-                var blob = module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType);
-
-                fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
-                switch (fm.UnmanagedType)
-                {
-                    case UnmanagedType.LPArray:
-                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
-                        if (fm.ArraySubType == NATIVE_TYPE_MAX)
-                            fm.ArraySubType = null;
-
-                        if (blob.Length != 0)
-                        {
-                            fm.SizeParamIndex = (short)blob.ReadCompressedUInt();
-                            if (blob.Length != 0)
-                            {
-                                fm.SizeConst = blob.ReadCompressedUInt();
-                                if (blob.Length != 0 && blob.ReadCompressedUInt() == 0)
-                                    fm.SizeParamIndex = null;
-                            }
-                        }
-                        break;
-                    case UnmanagedType.SafeArray:
-                        if (blob.Length != 0)
-                        {
-                            fm.SafeArraySubType = (VarEnum)blob.ReadCompressedUInt();
-                            if (blob.Length != 0)
-                                fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
-                        }
-                        break;
-                    case UnmanagedType.ByValArray:
-                        fm.SizeConst = blob.ReadCompressedUInt();
-                        if (blob.Length != 0)
-                            fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType.ByValTStr:
-                        fm.SizeConst = blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType.Interface:
-                    case UnmanagedType.IDispatch:
-                    case UnmanagedType.IUnknown:
-                        if (blob.Length != 0)
-                            fm.IidParameterIndex = blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType_CustomMarshaler:
-                        {
-                            blob.ReadCompressedUInt();
-                            blob.ReadCompressedUInt();
-                            fm.MarshalType = ReadString(blob);
-                            fm.MarshalCookie = ReadString(blob);
-
-                            var parser = TypeNameParser.Parse(fm.MarshalType, false);
-                            if (!parser.Error)
-                                fm.MarshalTypeRef = parser.GetType(module.Universe, module, false, fm.MarshalType, false, false);
-                            break;
-                        }
-                }
-
-                return true;
-            }
+                return Decode(module, module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType), out fm);
 
             return false;
+        }
+
+        static bool Decode(Module module, ByteReader blob, out FieldMarshal fm)
+        {
+            fm = new FieldMarshal();
+
+            fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
+            switch (fm.UnmanagedType)
+            {
+                case UnmanagedType.LPArray:
+                    fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    if (fm.ArraySubType == NATIVE_TYPE_MAX)
+                        fm.ArraySubType = null;
+
+                    if (blob.Length != 0)
+                    {
+                        fm.SizeParamIndex = (short)blob.ReadCompressedUInt();
+                        if (blob.Length != 0)
+                        {
+                            fm.SizeConst = blob.ReadCompressedUInt();
+                            if (blob.Length != 0 && blob.ReadCompressedUInt() == 0)
+                                fm.SizeParamIndex = null;
+                        }
+                    }
+                    break;
+                case UnmanagedType.SafeArray:
+                    if (blob.Length != 0)
+                    {
+                        fm.SafeArraySubType = (VarEnum)blob.ReadCompressedUInt();
+                        if (blob.Length != 0)
+                            fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
+                    }
+                    break;
+                case UnmanagedType.ByValArray:
+                    fm.SizeConst = blob.ReadCompressedUInt();
+                    if (blob.Length != 0)
+                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType.ByValTStr:
+                    fm.SizeConst = blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType.Interface:
+                case UnmanagedType.IDispatch:
+                case UnmanagedType.IUnknown:
+                    if (blob.Length != 0)
+                        fm.IidParameterIndex = blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType_CustomMarshaler:
+                    {
+                        blob.ReadCompressedUInt();
+                        blob.ReadCompressedUInt();
+                        fm.MarshalType = ReadString(blob);
+                        fm.MarshalCookie = ReadString(blob);
+
+                        var parser = TypeNameParser.Parse(fm.MarshalType, false);
+                        if (!parser.Error)
+                            fm.MarshalTypeRef = parser.GetType(module.Universe, module, false, fm.MarshalType, false, false);
+                        break;
+                    }
+            }
+
+            return true;
         }
 
         internal static void SetMarshalAsAttribute(ModuleBuilder module, int token, CustomAttributeBuilder attribute)
         {
             attribute = attribute.DecodeBlob(module.Assembly);
-            var rec = new FieldMarshalTable.Record();
-            rec.Parent = token;
-            rec.NativeType = WriteMarshallingDescriptor(module, attribute);
-            module.FieldMarshalTable.AddRecord(rec);
+            module.AddFieldMarshal(token, WriteMarshallingDescriptor(module, attribute));
         }
 
         static BlobHandle WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)

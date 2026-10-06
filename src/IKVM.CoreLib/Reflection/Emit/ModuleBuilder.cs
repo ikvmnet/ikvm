@@ -127,6 +127,42 @@ namespace IKVM.Reflection.Emit
 
         }
 
+        /// <summary>
+        /// A constant of a field, parameter or property. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct ConstantRow
+        {
+
+            internal int Parent;
+            internal object Value;
+
+        }
+
+        /// <summary>
+        /// A marshalling descriptor of a field or parameter. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct FieldMarshalRow
+        {
+
+            internal int Parent;
+            internal BlobHandle NativeType;
+
+        }
+
+        /// <summary>
+        /// The P/Invoke import of a method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct ImplMapRow
+        {
+
+            internal int Method;
+            internal ImplMapFlags Flags;
+            internal string ImportName;
+            internal string ImportScope;
+            internal ModuleReferenceHandle ImportScopeHandle;
+
+        }
+
         readonly struct MemberRefKey : IEquatable<MemberRefKey>
         {
 
@@ -227,6 +263,9 @@ namespace IKVM.Reflection.Emit
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
+        readonly List<ConstantRow> constants = new List<ConstantRow>();
+        readonly List<FieldMarshalRow> fieldMarshals = new List<FieldMarshalRow>();
+        readonly List<ImplMapRow> implMaps = new List<ImplMapRow>();
         bool saved;
 
         /// <summary>
@@ -886,6 +925,7 @@ namespace IKVM.Reflection.Emit
                 if (table != null)
                     table.Write(this);
 
+            WriteMemberData();
             WriteCustomAttributes();
         }
 
@@ -925,97 +965,142 @@ namespace IKVM.Reflection.Emit
             return type.IsPublic || ((type.IsNestedFamily || type.IsNestedFamORAssem || type.IsNestedPublic) && IsVisible(type.DeclaringType));
         }
 
-        internal void AddConstant(int parentToken, object defaultValue)
+        /// <summary>
+        /// Records the constant value of a field, parameter or property.
+        /// </summary>
+        /// <param name="parentToken"></param>
+        /// <param name="value"></param>
+        /// <exception cref="ArgumentException">The value is not of a type a constant can have.</exception>
+        internal void AddConstant(int parentToken, object value)
         {
-            var rec = new ConstantTable.Record();
-            rec.Parent = parentToken;
-            var val = new ByteBuffer(16);
-            if (defaultValue == null)
+            // metadata has no DateTime constants; like .NET, store the ticks
+            if (value is DateTime dateTime)
+                value = dateTime.Ticks;
+            else if (value is not (null or bool or char or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or string))
+                throw new ArgumentException("Unsupported constant type.", nameof(value));
+
+            constants.Add(new ConstantRow() { Parent = parentToken, Value = value });
+        }
+
+        /// <summary>
+        /// Gets the constant value recorded for the given token.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">No constant was recorded.</exception>
+        internal object GetConstant(int token)
+        {
+            foreach (var row in constants)
+                if (row.Parent == token)
+                    return row.Value;
+
+            throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Records the marshalling descriptor of a field or parameter.
+        /// </summary>
+        /// <param name="parentToken"></param>
+        /// <param name="nativeType"></param>
+        internal void AddFieldMarshal(int parentToken, BlobHandle nativeType)
+        {
+            fieldMarshals.Add(new FieldMarshalRow() { Parent = parentToken, NativeType = nativeType });
+        }
+
+        /// <summary>
+        /// Gets the marshalling descriptor recorded for the given token.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="nativeType"></param>
+        /// <returns></returns>
+        internal bool TryGetFieldMarshal(int token, out BlobHandle nativeType)
+        {
+            foreach (var row in fieldMarshals)
             {
-                rec.Type = Signature.ELEMENT_TYPE_CLASS;
-                val.Write((int)0);
-            }
-            else if (defaultValue is bool boolValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_BOOLEAN;
-                val.Write(boolValue ? (byte)1 : (byte)0);
-            }
-            else if (defaultValue is char charValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_CHAR;
-                val.Write(charValue);
-            }
-            else if (defaultValue is sbyte sbyteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I1;
-                val.Write(sbyteValue);
-            }
-            else if (defaultValue is byte byteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U1;
-                val.Write(byteValue);
-            }
-            else if (defaultValue is short shortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I2;
-                val.Write(shortValue);
-            }
-            else if (defaultValue is ushort ushortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U2;
-                val.Write(ushortValue);
-            }
-            else if (defaultValue is int intValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I4;
-                val.Write(intValue);
-            }
-            else if (defaultValue is uint uintValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U4;
-                val.Write(uintValue);
-            }
-            else if (defaultValue is long longValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(longValue);
-            }
-            else if (defaultValue is ulong ulongValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U8;
-                val.Write(ulongValue);
-            }
-            else if (defaultValue is float floatValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R4;
-                val.Write(floatValue);
-            }
-            else if (defaultValue is double doubleValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R8;
-                val.Write(doubleValue);
-            }
-            else if (defaultValue is string stringValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_STRING;
-                foreach (var c in stringValue)
-                    val.Write(c);
-            }
-            else if (defaultValue is DateTime dateTimeValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(dateTimeValue.Ticks);
-            }
-            else
-            {
-                throw new ArgumentException();
+                if (row.Parent == token)
+                {
+                    nativeType = row.NativeType;
+                    return true;
+                }
             }
 
-            // encode index into blobs, as well as pass along value, since SRME does not have an AddConstant override that takes a handle
-            // final blob should be deduplicated, leading to the same index value on write
-            rec.Offset = GetOrAddBlob(val.ToArray());
-            rec.Value = defaultValue;
-            ConstantTable.AddRecord(rec);
+            nativeType = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Records the P/Invoke import of a method.
+        /// </summary>
+        /// <param name="methodToken"></param>
+        /// <param name="flags"></param>
+        /// <param name="importName"></param>
+        /// <param name="importScope"></param>
+        internal void AddImplMap(int methodToken, ImplMapFlags flags, string importName, string importScope)
+        {
+            implMaps.Add(new ImplMapRow()
+            {
+                Method = methodToken,
+                Flags = flags,
+                ImportName = importName,
+                ImportScope = importScope,
+                ImportScopeHandle = MetadataTokens.ModuleReferenceHandle(ModuleRefTable.FindOrAddRecord(importScope == null ? default : GetOrAddString(importScope))),
+            });
+        }
+
+        /// <summary>
+        /// Gets the P/Invoke import recorded for the given method token.
+        /// </summary>
+        internal bool TryGetImplMap(int token, out ImplMapFlags flags, out string importName, out string importScope)
+        {
+            foreach (var row in implMaps)
+            {
+                if (row.Method == token)
+                {
+                    flags = row.Flags;
+                    importName = row.ImportName;
+                    importScope = row.ImportScope;
+                    return true;
+                }
+            }
+
+            flags = 0;
+            importName = null;
+            importScope = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the constants, marshalling descriptors and P/Invoke imports and adds them to the
+        /// metadata. The metadata sorts the Constant and FieldMarshal tables, but requires ImplMap to be added in order.
+        /// </summary>
+        void WriteMemberData()
+        {
+            for (int i = 0; i < constants.Count; i++)
+            {
+                var row = constants[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                constants[i] = row;
+                metadata.AddConstant(MetadataTokens.EntityHandle(row.Parent), row.Value);
+            }
+
+            for (int i = 0; i < fieldMarshals.Count; i++)
+            {
+                var row = fieldMarshals[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                fieldMarshals[i] = row;
+                metadata.AddMarshallingDescriptor(MetadataTokens.EntityHandle(row.Parent), row.NativeType);
+            }
+
+            for (int i = 0; i < implMaps.Count; i++)
+            {
+                var row = implMaps[i];
+                row.Method = ResolvePseudoToken(row.Method);
+                implMaps[i] = row;
+            }
+
+            implMaps.Sort((x, y) => x.Method.CompareTo(y.Method));
+            foreach (var row in implMaps)
+                metadata.AddMethodImport((MethodDefinitionHandle)MetadataTokens.EntityHandle(row.Method), (System.Reflection.MethodImportAttributes)row.Flags, GetOrAddString(row.ImportName), row.ImportScopeHandle);
         }
 
         ModuleBuilder ITypeOwner.ModuleBuilder

@@ -60,24 +60,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddMethodImport(
-                    (MethodDefinitionHandle)MetadataTokens.EntityHandle(records[i].MemberForwarded),
-                    (System.Reflection.MethodImportAttributes)records[i].MappingFlags,
-                    records[i].ImportName,
-                    (ModuleReferenceHandle)MetadataTokens.EntityHandle(records[i].ImportScope));
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].MemberForwarded);
-
-            Sort();
-        }
-
     }
 
 }

@@ -195,12 +195,7 @@ namespace IKVM.Reflection.Emit
             if (setLastError.HasValue && setLastError.Value)
                 flags |= SupportsLastError;
 
-            var rec = new ImplMapTable.Record();
-            rec.MappingFlags = flags;
-            rec.MemberForwarded = pseudoToken;
-            rec.ImportName = ModuleBuilder.GetOrAddString(entryName ?? name);
-            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRefTable.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
-            ModuleBuilder.ImplMapTable.AddRecord(rec);
+            ModuleBuilder.AddImplMap(pseudoToken, (ImplMapFlags)(ushort)flags, entryName ?? name, dllName);
         }
 
         void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
@@ -426,7 +421,7 @@ namespace IKVM.Reflection.Emit
                 {
                     var pb = ParameterBuilder;
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.HasDefault) != 0)
-                        return method.ModuleBuilder.ConstantTable.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
+                        return method.ModuleBuilder.GetConstant(pb.PseudoToken);
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
                         return Missing.Value;
 

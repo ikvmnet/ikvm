@@ -32,6 +32,41 @@ namespace IKVM.Reflection.Tests.Emit
             f.GetRawConstantValue().Should().Be(128);
         }
 
+        /// <summary>
+        /// The constant and marshalling descriptor of a field builder can be read back from the created type, before and
+        /// after saving.
+        /// </summary>
+        /// <param name="tfm"></param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanReadBackConstantAndMarshal(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+            var marshalAs = u.Import(typeof(System.Runtime.InteropServices.MarshalAsAttribute));
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Test", TypeAttributes.Public);
+            type.DefineField("constant", u.Import(typeof(string)), FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Literal).SetConstant("value");
+            type.DefineField("marshalled", u.Import(typeof(string)), FieldAttributes.Public).SetCustomAttribute(new CustomAttributeBuilder(marshalAs.GetConstructor([u.Import(typeof(System.Runtime.InteropServices.UnmanagedType))]), [System.Runtime.InteropServices.UnmanagedType.LPWStr]));
+            var created = type.CreateType();
+
+            void Check()
+            {
+                created.GetField("constant")!.GetRawConstantValue().Should().Be("value");
+                created.GetField("marshalled")!.__TryGetFieldMarshal(out var marshal).Should().BeTrue();
+                marshal.UnmanagedType.Should().Be(System.Runtime.InteropServices.UnmanagedType.LPWStr);
+                created.GetField("constant")!.__TryGetFieldMarshal(out _).Should().BeFalse();
+            }
+
+            Check();
+            assembly.Save("Test.dll");
+            Check();
+
+            var t = u.VerifyAndLoad("Test.dll").GetType("Test")!;
+            t.GetField("constant")!.GetRawConstantValue().Should().Be("value");
+        }
+
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSetOffset(string tfm)

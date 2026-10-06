@@ -296,13 +296,10 @@ namespace IKVM.Reflection.Writer
             module.MethodSemanticsTable.Fixup(module);
             module.InterfaceImplTable.Fixup(module);
             module.MemberRefTable.Fixup(module);
-            module.ConstantTable.Fixup(module);
-            module.FieldMarshalTable.Fixup(module);
             module.DeclSecurityTable.Fixup(module);
             module.GenericParamTable.Fixup(module);
             module.FieldLayoutTable.Fixup(module);
             module.FieldRVATable.Fixup(module);
-            module.ImplMapTable.Fixup(module);
             module.ExportedTypeTable.Fixup(module);
             module.ManifestResourceTable.Fixup(module);
             module.MethodSpecTable.Fixup(module);

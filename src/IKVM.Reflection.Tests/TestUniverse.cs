@@ -156,11 +156,18 @@ namespace IKVM.Reflection.Tests
         public MetadataLoadContext LoadContext => loadContext ??= new MetadataLoadContext(new LoadContextResolver(resolver), universe.CoreLibName);
 
         /// <summary>
-        /// Imports the given runtime type into the universe.
+        /// Imports the given runtime type into the universe. Types the .NET reference assemblies define outside the core
+        /// library, such as the interop attributes, are looked up in their reference assembly.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public Type Import(System.Type type) => universe.Import(type);
+        public Type Import(System.Type type)
+        {
+            if (framework.TargetFrameworkIdentifier == ".NET" && type.Namespace == "System.Runtime.InteropServices" && universe.Load(universe.CoreLibName).GetType(type.FullName!) == null)
+                return universe.Load("System.Runtime.InteropServices").GetType(type.FullName!, true)!;
+
+            return universe.Import(type);
+        }
 
         /// <summary>
         /// Gets the type with the given full name from the core library of the <see cref="LoadContext"/>.

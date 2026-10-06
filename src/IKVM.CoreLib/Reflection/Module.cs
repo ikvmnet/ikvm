@@ -339,6 +339,9 @@ namespace IKVM.Reflection
 
         public bool __TryGetImplMap(int token, out ImplMapFlags mappingFlags, out string importName, out string importScope)
         {
+            if (this is Emit.ModuleBuilder builder)
+                return builder.TryGetImplMap(token, out mappingFlags, out importName, out importScope);
+
             foreach (int i in ImplMapTable.Filter(token))
             {
                 mappingFlags = (ImplMapFlags)(ushort)ImplMapTable.records[i].MappingFlags;

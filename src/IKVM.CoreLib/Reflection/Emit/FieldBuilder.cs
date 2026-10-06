@@ -80,7 +80,7 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            return type.Module.ConstantTable.GetRawConstantValue(type.Module, GetCurrentToken());
+            return type.ModuleBuilder.GetConstant(GetCurrentToken());
         }
 
         public override bool __TryGetFieldOffset(out int offset)
