@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -230,9 +231,9 @@ namespace IKVM.Reflection.Emit
         {
             if (typeToken == 0)
             {
-                var spec = new ByteBuffer(5);
+                var spec = new BlobBuilder(5);
                 Signature.WriteTypeSpec(ModuleBuilder, spec, this);
-                typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec.ToArray()));
+                typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec));
             }
             return typeToken;
         }

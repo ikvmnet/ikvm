@@ -800,9 +800,9 @@ namespace IKVM.Reflection.Emit
             {
                 if (memberRefTypeTokens.TryGetValue(type, out var token) == false)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = AddTypeSpec(GetOrAddBlob(spec.ToArray()));
+                    token = AddTypeSpec(GetOrAddBlob(spec));
                     memberRefTypeTokens.Add(type, token);
                 }
                 return token;
@@ -850,13 +850,13 @@ namespace IKVM.Reflection.Emit
 
         public MethodToken __GetMethodToken(MethodInfo method, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
-            var sig = new ByteBuffer(16);
+            var sig = new BlobBuilder(16);
             method.MethodSignature.WriteMethodRef(this, sig, optionalParameterTypes, customModifiers);
 
             var row = new MemberRefRow();
             row.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
             row.Name = GetOrAddString(method.Name);
-            row.Signature = GetOrAddBlob(sig.ToArray());
+            row.Signature = GetOrAddBlob(sig);
 
             var key = (row.Class, row.Name, row.Signature);
             if (memberRefTokens.TryGetValue(key, out var token) == false)
@@ -891,9 +891,9 @@ namespace IKVM.Reflection.Emit
                 var row = new MemberRefRow();
                 row.Class = GetTypeTokenForMemberRef(declaringType);
                 row.Name = GetOrAddString(name);
-                var bb = new ByteBuffer(16);
+                var bb = new BlobBuilder(16);
                 sig.Write(this, bb);
-                row.Signature = GetOrAddBlob(bb.ToArray());
+                row.Signature = GetOrAddBlob(bb);
                 token = AddMemberRef(row);
                 importedMemberRefs.Add(key, token);
             }
@@ -916,9 +916,9 @@ namespace IKVM.Reflection.Emit
                 else
                     row.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
 
-                var spec = new ByteBuffer(10);
+                var spec = new BlobBuilder(10);
                 Signature.WriteMethodSpec(this, spec, genericParameters);
-                row.Instantiation = GetOrAddBlob(spec.ToArray());
+                row.Instantiation = GetOrAddBlob(spec);
 
                 var rowKey = (row.Method, row.Instantiation);
                 if (methodSpecTokens.TryGetValue(rowKey, out token) == false)
@@ -940,9 +940,9 @@ namespace IKVM.Reflection.Emit
             {
                 if (type.HasElementType || type.IsConstructedGenericType || type.IsFunctionPointer)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = AddTypeSpec(GetOrAddBlob(spec.ToArray()));
+                    token = AddTypeSpec(GetOrAddBlob(spec));
                 }
                 else
                 {
@@ -1428,7 +1428,7 @@ namespace IKVM.Reflection.Emit
 
         public SignatureToken GetSignatureToken(SignatureHelper sigHelper)
         {
-            return new SignatureToken(MetadataTokens.GetToken(GetStandAloneSignature(GetOrAddBlob(sigHelper.GetSignature(this).ToArray()))));
+            return new SignatureToken(MetadataTokens.GetToken(GetStandAloneSignature(GetOrAddBlob(sigHelper.GetSignature(this)))));
         }
 
         internal override Type GetModuleType()
@@ -1438,9 +1438,9 @@ namespace IKVM.Reflection.Emit
 
         internal BlobHandle GetSignatureBlobIndex(Signature sig)
         {
-            var bb = new ByteBuffer(16);
+            var bb = new BlobBuilder(16);
             sig.Write(this, bb);
-            return GetOrAddBlob(bb.ToArray());
+            return GetOrAddBlob(bb);
         }
 
         // non-standard API

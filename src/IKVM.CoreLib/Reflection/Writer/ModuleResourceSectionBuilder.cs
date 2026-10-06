@@ -71,9 +71,9 @@ namespace IKVM.Reflection.Writer
                 throw new ArgumentException("The supplied byte array is not a valid .ico file.");
 
             var group = new ByteBuffer(6 + 14 * idCount);
-            group.Write(idReserved);
-            group.Write(idType);
-            group.Write(idCount);
+            group.WriteUInt16(idReserved);
+            group.WriteUInt16(idType);
+            group.WriteUInt16(idCount);
             for (int i = 0; i < idCount; i++)
             {
                 var bWidth = br.ReadByte();
@@ -88,14 +88,14 @@ namespace IKVM.Reflection.Writer
                 // we start the icon IDs at 2
                 var id = (ushort)(2 + i);
 
-                group.Write(bWidth);
-                group.Write(bHeight);
-                group.Write(bColorCount);
-                group.Write(bReserved);
-                group.Write(wPlanes);
-                group.Write(wBitCount);
-                group.Write(dwBytesInRes);
-                group.Write(id);
+                group.WriteByte(bWidth);
+                group.WriteByte(bHeight);
+                group.WriteByte(bColorCount);
+                group.WriteByte(bReserved);
+                group.WriteUInt16(wPlanes);
+                group.WriteUInt16(wBitCount);
+                group.WriteUInt32(dwBytesInRes);
+                group.WriteUInt16(id);
 
                 var icon = new byte[dwBytesInRes];
                 Buffer.BlockCopy(iconFile, (int)dwImageOffset, icon, 0, icon.Length);
@@ -125,7 +125,7 @@ namespace IKVM.Reflection.Writer
             foreach (int offset in linkOffsets)
             {
                 bb.Position = offset;
-                bb.Write(bb.GetInt32AtCurrentPosition() + (int)location.RelativeVirtualAddress);
+                bb.WriteInt32(bb.GetInt32AtCurrentPosition() + (int)location.RelativeVirtualAddress);
             }
 
             builder.WriteBytes(bb.ToArray());

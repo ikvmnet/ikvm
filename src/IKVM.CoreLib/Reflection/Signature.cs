@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Metadata;
@@ -82,7 +83,7 @@ namespace IKVM.Reflection
         internal const byte ELEMENT_TYPE_CMOD_OPT = 0x20;
         internal const byte ELEMENT_TYPE_PINNED = 0x45;
 
-        internal abstract void Write(ModuleBuilder module, ByteBuffer bb);
+        internal abstract void Write(ModuleBuilder module, BlobBuilder bb);
 
         static Type ReadGenericInst(ModuleReader module, ByteReader br, IGenericContext context)
         {
@@ -306,28 +307,28 @@ namespace IKVM.Reflection
             }
         }
 
-        protected static void WriteType(ModuleBuilder module, ByteBuffer bb, Type type)
+        protected static void WriteType(ModuleBuilder module, BlobBuilder bb, Type type)
         {
             while (type.HasElementType)
             {
                 byte sigElementType = type.SigElementType;
-                bb.Write(sigElementType);
+                bb.WriteByte(sigElementType);
                 if (sigElementType == ELEMENT_TYPE_ARRAY)
                 {
                     // LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for arrays, but the verifier allows it and ildasm also supports it
                     WriteCustomModifiers(module, bb, type.__GetCustomModifiers());
                     WriteType(module, bb, type.GetElementType());
-                    bb.WriteCompressedUInt(type.GetArrayRank());
+                    bb.WriteCompressedInteger(type.GetArrayRank());
 
                     var sizes = type.__GetArraySizes();
-                    bb.WriteCompressedUInt(sizes.Length);
+                    bb.WriteCompressedInteger(sizes.Length);
                     for (int i = 0; i < sizes.Length; i++)
-                        bb.WriteCompressedUInt(sizes[i]);
+                        bb.WriteCompressedInteger(sizes[i]);
 
                     var lobounds = type.__GetArrayLowerBounds();
-                    bb.WriteCompressedUInt(lobounds.Length);
+                    bb.WriteCompressedInteger(lobounds.Length);
                     for (int i = 0; i < lobounds.Length; i++)
-                        bb.WriteCompressedInt(lobounds[i]);
+                        bb.WriteCompressedSignedInteger(lobounds[i]);
 
                     return;
                 }
@@ -337,12 +338,12 @@ namespace IKVM.Reflection
 
             if (type.__IsBuiltIn)
             {
-                bb.Write(type.SigElementType);
+                bb.WriteByte(type.SigElementType);
             }
             else if (type.IsGenericParameter)
             {
-                bb.Write(type.SigElementType);
-                bb.WriteCompressedUInt(type.GenericParameterPosition);
+                bb.WriteByte(type.SigElementType);
+                bb.WriteCompressedInteger(type.GenericParameterPosition);
             }
             else if (!type.__IsMissing && type.IsGenericType)
             {
@@ -350,35 +351,35 @@ namespace IKVM.Reflection
             }
             else if (type.IsFunctionPointer)
             {
-                bb.Write(ELEMENT_TYPE_FNPTR);
+                bb.WriteByte(ELEMENT_TYPE_FNPTR);
                 WriteStandAloneMethodSig(module, bb, type.__MethodSignature);
             }
             else
             {
                 if (type.IsValueType)
-                    bb.Write(ELEMENT_TYPE_VALUETYPE);
+                    bb.WriteByte(ELEMENT_TYPE_VALUETYPE);
                 else
-                    bb.Write(ELEMENT_TYPE_CLASS);
+                    bb.WriteByte(ELEMENT_TYPE_CLASS);
 
                 bb.WriteTypeDefOrRefEncoded(module.GetTypeToken(type).Token);
             }
         }
 
-        static void WriteGenericSignature(ModuleBuilder module, ByteBuffer bb, Type type)
+        static void WriteGenericSignature(ModuleBuilder module, BlobBuilder bb, Type type)
         {
             var typeArguments = type.GetGenericArguments();
             var customModifiers = type.__GetGenericArgumentsCustomModifiers();
             if (!type.IsGenericTypeDefinition)
                 type = type.GetGenericTypeDefinition();
 
-            bb.Write(ELEMENT_TYPE_GENERICINST);
+            bb.WriteByte(ELEMENT_TYPE_GENERICINST);
             if (type.IsValueType)
-                bb.Write(ELEMENT_TYPE_VALUETYPE);
+                bb.WriteByte(ELEMENT_TYPE_VALUETYPE);
             else
-                bb.Write(ELEMENT_TYPE_CLASS);
+                bb.WriteByte(ELEMENT_TYPE_CLASS);
 
             bb.WriteTypeDefOrRefEncoded(module.GetTypeToken(type).Token);
-            bb.WriteCompressedUInt(typeArguments.Length);
+            bb.WriteCompressedInteger(typeArguments.Length);
             for (var i = 0; i < typeArguments.Length; i++)
             {
                 WriteCustomModifiers(module, bb, customModifiers[i]);
@@ -386,11 +387,11 @@ namespace IKVM.Reflection
             }
         }
 
-        protected static void WriteCustomModifiers(ModuleBuilder module, ByteBuffer bb, CustomModifiers modifiers)
+        protected static void WriteCustomModifiers(ModuleBuilder module, BlobBuilder bb, CustomModifiers modifiers)
         {
             foreach (var entry in modifiers)
             {
-                bb.Write(entry.IsRequired ? ELEMENT_TYPE_CMOD_REQD : ELEMENT_TYPE_CMOD_OPT);
+                bb.WriteByte(entry.IsRequired ? ELEMENT_TYPE_CMOD_REQD : ELEMENT_TYPE_CMOD_OPT);
                 bb.WriteTypeDefOrRefEncoded(module.GetTypeTokenForMemberRef(entry.Type));
             }
         }
@@ -407,24 +408,24 @@ namespace IKVM.Reflection
             };
         }
 
-        internal static void WriteStandAloneMethodSig(ModuleBuilder module, ByteBuffer bb, __StandAloneMethodSig sig)
+        internal static void WriteStandAloneMethodSig(ModuleBuilder module, BlobBuilder bb, __StandAloneMethodSig sig)
         {
             if (sig.IsUnmanaged)
             {
                 switch (sig.UnmanagedCallingConvention)
                 {
                     case CallingConvention.Cdecl:
-                        bb.Write((byte)0x01);   // C
+                        bb.WriteByte((byte)0x01);   // C
                         break;
                     case CallingConvention.StdCall:
                     case CallingConvention.Winapi:
-                        bb.Write((byte)0x02);   // STDCALL
+                        bb.WriteByte((byte)0x02);   // STDCALL
                         break;
                     case CallingConvention.ThisCall:
-                        bb.Write((byte)0x03);   // THISCALL
+                        bb.WriteByte((byte)0x03);   // THISCALL
                         break;
                     case CallingConvention.FastCall:
-                        bb.Write((byte)0x04);   // FASTCALL
+                        bb.WriteByte((byte)0x04);   // FASTCALL
                         break;
                     default:
                         throw new ArgumentOutOfRangeException("callingConvention");
@@ -441,12 +442,12 @@ namespace IKVM.Reflection
                 if ((callingConvention & CallingConventions.VarArgs) != 0)
                     flags |= VARARG;
 
-                bb.Write(flags);
+                bb.WriteByte(flags);
             }
 
             var parameterTypes = sig.ParameterTypes;
             var optionalParameterTypes = sig.OptionalParameterTypes;
-            bb.WriteCompressedUInt(parameterTypes.Length + optionalParameterTypes.Length);
+            bb.WriteCompressedInteger(parameterTypes.Length + optionalParameterTypes.Length);
             WriteCustomModifiers(module, bb, sig.GetReturnTypeCustomModifiers());
             WriteType(module, bb, sig.ReturnType);
 
@@ -460,7 +461,7 @@ namespace IKVM.Reflection
             // note that optional parameters are only allowed for managed signatures (but we don't enforce that)
             if (optionalParameterTypes.Length > 0)
             {
-                bb.Write(SENTINEL);
+                bb.WriteByte(SENTINEL);
                 foreach (var t in optionalParameterTypes)
                 {
                     WriteCustomModifiers(module, bb, sig.GetParameterCustomModifiers(index++));
@@ -469,15 +470,15 @@ namespace IKVM.Reflection
             }
         }
 
-        internal static void WriteTypeSpec(ModuleBuilder module, ByteBuffer bb, Type type)
+        internal static void WriteTypeSpec(ModuleBuilder module, BlobBuilder bb, Type type)
         {
             WriteType(module, bb, type);
         }
 
-        internal static void WriteMethodSpec(ModuleBuilder module, ByteBuffer bb, Type[] genArgs)
+        internal static void WriteMethodSpec(ModuleBuilder module, BlobBuilder bb, Type[] genArgs)
         {
-            bb.Write(GENERICINST);
-            bb.WriteCompressedUInt(genArgs.Length);
+            bb.WriteByte(GENERICINST);
+            bb.WriteCompressedInteger(genArgs.Length);
             foreach (var arg in genArgs)
                 WriteType(module, bb, arg);
         }
@@ -494,18 +495,18 @@ namespace IKVM.Reflection
             return expanded;
         }
 
-        internal static void WriteSignatureHelper(ModuleBuilder module, ByteBuffer bb, byte flags, ushort paramCount, List<Type> args)
+        internal static void WriteSignatureHelper(ModuleBuilder module, BlobBuilder bb, byte flags, ushort paramCount, List<Type> args)
         {
-            bb.Write(flags);
+            bb.WriteByte(flags);
             if (flags != FIELD)
-                bb.WriteCompressedUInt(paramCount);
+                bb.WriteCompressedInteger(paramCount);
 
             foreach (var type in args)
             {
                 if (type == null)
-                    bb.Write(ELEMENT_TYPE_VOID);
+                    bb.WriteByte(ELEMENT_TYPE_VOID);
                 else if (type is MarkerType)
-                    bb.Write(type.SigElementType);
+                    bb.WriteByte(type.SigElementType);
                 else
                     WriteType(module, bb, type);
             }

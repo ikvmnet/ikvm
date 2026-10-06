@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Writer;
 
@@ -55,9 +56,9 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
-                var bb = new ByteBuffer(16);
+                var bb = new BlobBuilder(16);
                 Signature.WriteSignatureHelper(module, bb, type, argumentCount, args);
                 return bb;
             }
@@ -88,7 +89,7 @@ namespace IKVM.Reflection.Emit
         {
 
             readonly ModuleBuilder module;
-            readonly ByteBuffer bb = new ByteBuffer(16);
+            readonly BlobBuilder arguments = new BlobBuilder(16);
             readonly Type returnType;
 
             /// <summary>
@@ -102,10 +103,6 @@ namespace IKVM.Reflection.Emit
             {
                 this.module = module;
                 this.returnType = returnType;
-
-                bb.Write(type);
-                if (type != Signature.FIELD)
-                    bb.Write((byte)0); // space for parameterCount
             }
 
             public override byte[] GetSignature()
@@ -113,35 +110,35 @@ namespace IKVM.Reflection.Emit
                 return GetSignature(null).ToArray();
             }
 
-            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
+                // the argument count precedes the arguments but is only known once they have all been added
+                var bb = new BlobBuilder(16 + arguments.Count);
+                bb.WriteByte(type);
                 if (type != Signature.FIELD)
-                {
-                    bb.Position = 1;
-                    bb.Insert(MetadataWriter.GetCompressedUIntLength(argumentCount) - bb.GetCompressedUIntLength());
-                    bb.WriteCompressedUInt(argumentCount);
-                }
+                    bb.WriteCompressedInteger(argumentCount);
 
+                arguments.WriteContentTo(bb);
                 return bb;
             }
 
             public override void AddSentinel()
             {
-                bb.Write(Signature.SENTINEL);
+                arguments.WriteByte(Signature.SENTINEL);
             }
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
                 if (pinned)
-                    bb.Write(Signature.ELEMENT_TYPE_PINNED);
+                    arguments.WriteByte(Signature.ELEMENT_TYPE_PINNED);
 
                 foreach (var mod in customModifiers)
                 {
-                    bb.Write(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
-                    Signature.WriteTypeSpec(module, bb, mod.Type);
+                    arguments.WriteByte(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
+                    Signature.WriteTypeSpec(module, arguments, mod.Type);
                 }
 
-                Signature.WriteTypeSpec(module, bb, argument ?? module.Universe.System_Void);
+                Signature.WriteTypeSpec(module, arguments, argument ?? module.Universe.System_Void);
                 argumentCount++;
             }
         }
@@ -208,7 +205,7 @@ namespace IKVM.Reflection.Emit
 
         public abstract byte[] GetSignature();
 
-        internal abstract ByteBuffer GetSignature(ModuleBuilder module);
+        internal abstract BlobBuilder GetSignature(ModuleBuilder module);
 
         public abstract void AddSentinel();
 

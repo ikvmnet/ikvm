@@ -59,9 +59,9 @@ namespace IKVM.Reflection.Emit
             this.signature = FieldSignature.Create(fieldType, customModifiers);
 
             // create signature blob
-            var buf = new ByteBuffer(5);
+            var buf = new BlobBuilder(5);
             signature.Write(type.ModuleBuilder, buf);
-            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf.ToArray());
+            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf);
         }
 
         public void SetConstant(object defaultValue)

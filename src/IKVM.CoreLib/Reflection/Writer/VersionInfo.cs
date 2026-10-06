@@ -137,9 +137,9 @@ namespace IKVM.Reflection.Writer
             }
 
             var stringTable = new ByteBuffer(512);
-            stringTable.Write((short)0);    // wLength (placeholder)
-            stringTable.Write((short)0);    // wValueLength
-            stringTable.Write((short)1);    // wType
+            stringTable.WriteInt16((short)0);    // wLength (placeholder)
+            stringTable.WriteInt16((short)0);    // wValueLength
+            stringTable.WriteInt16((short)1);    // wType
             WriteUTF16Z(stringTable, string.Format("{0:x4}{1:x4}", lcid, codepage));
             stringTable.Align(4);
 
@@ -155,17 +155,17 @@ namespace IKVM.Reflection.Writer
             WriteString(stringTable, "ProductVersion", informationalVersion);
 
             stringTable.Position = 0;
-            stringTable.Write((short)stringTable.Length);
+            stringTable.WriteInt16((short)stringTable.Length);
 
             var stringFileInfo = new ByteBuffer(512);
-            stringFileInfo.Write((short)0); // wLength (placeholder)
-            stringFileInfo.Write((short)0); // wValueLength
-            stringFileInfo.Write((short)1); // wType
+            stringFileInfo.WriteInt16((short)0); // wLength (placeholder)
+            stringFileInfo.WriteInt16((short)0); // wValueLength
+            stringFileInfo.WriteInt16((short)1); // wType
             WriteUTF16Z(stringFileInfo, "StringFileInfo");
             stringFileInfo.Align(4);
-            stringFileInfo.Write(stringTable);
+            stringFileInfo.WriteBuffer(stringTable);
             stringFileInfo.Position = 0;
-            stringFileInfo.Write((short)stringFileInfo.Length);
+            stringFileInfo.WriteInt16((short)stringFileInfo.Length);
 
             var preamble1 = new byte[] {
 			  // VS_VERSIONINFO (platform SDK)
@@ -201,44 +201,44 @@ namespace IKVM.Reflection.Writer
 			  0x00, 0x00,				// Padding (32 bit alignment)
 			};
 
-            bb.Write((short)(2 + preamble1.Length + 8 + 8 + preamble2.Length + 4 + stringFileInfo.Length));
-            bb.Write(preamble1);
-            bb.Write((short)fileVersionMinor);
-            bb.Write((short)fileVersionMajor);
-            bb.Write((short)fileVersionRevision);
-            bb.Write((short)fileVersionBuild);
-            bb.Write((short)productVersionMinor);
-            bb.Write((short)productVersionMajor);
-            bb.Write((short)productVersionRevision);
-            bb.Write((short)productVersionBuild);
-            bb.Write(preamble2);
-            bb.Write((short)lcid);
-            bb.Write((short)codepage);
-            bb.Write(stringFileInfo);
+            bb.WriteInt16((short)(2 + preamble1.Length + 8 + 8 + preamble2.Length + 4 + stringFileInfo.Length));
+            bb.WriteBytes(preamble1);
+            bb.WriteInt16((short)fileVersionMinor);
+            bb.WriteInt16((short)fileVersionMajor);
+            bb.WriteInt16((short)fileVersionRevision);
+            bb.WriteInt16((short)fileVersionBuild);
+            bb.WriteInt16((short)productVersionMinor);
+            bb.WriteInt16((short)productVersionMajor);
+            bb.WriteInt16((short)productVersionRevision);
+            bb.WriteInt16((short)productVersionBuild);
+            bb.WriteBytes(preamble2);
+            bb.WriteInt16((short)lcid);
+            bb.WriteInt16((short)codepage);
+            bb.WriteBuffer(stringFileInfo);
         }
 
         static void WriteUTF16Z(ByteBuffer bb, string str)
         {
             foreach (char c in str)
-                bb.Write((short)c);
+                bb.WriteInt16((short)c);
 
-            bb.Write((short)0);
+            bb.WriteInt16((short)0);
         }
 
         static void WriteString(ByteBuffer bb, string name, string value)
         {
             value ??= " ";
             var pos = bb.Position;
-            bb.Write((short)0);                 // wLength (placeholder)
-            bb.Write((short)(value.Length + 1));// wValueLength
-            bb.Write((short)1);                 // wType
+            bb.WriteInt16((short)0);                 // wLength (placeholder)
+            bb.WriteInt16((short)(value.Length + 1));// wValueLength
+            bb.WriteInt16((short)1);                 // wType
             WriteUTF16Z(bb, name);
             bb.Align(4);
             WriteUTF16Z(bb, value);
             bb.Align(4);
             var savedPos = bb.Position;
             bb.Position = pos;
-            bb.Write((short)(savedPos - pos));
+            bb.WriteInt16((short)(savedPos - pos));
             bb.Position = savedPos;
         }
 

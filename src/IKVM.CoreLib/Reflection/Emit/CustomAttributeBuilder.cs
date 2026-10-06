@@ -122,7 +122,7 @@ namespace IKVM.Reflection.Emit
 
             readonly Assembly assembly;
             readonly CustomAttributeBuilder cab;
-            readonly ByteBuffer bb;
+            readonly BlobBuilder bb;
 
             /// <summary>
             /// Initializes a new instance.
@@ -130,7 +130,7 @@ namespace IKVM.Reflection.Emit
             /// <param name="assembly"></param>
             /// <param name="cab"></param>
             /// <param name="bb"></param>
-            internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, ByteBuffer bb)
+            internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, BlobBuilder bb)
             {
                 this.assembly = assembly;
                 this.cab = cab;
@@ -195,17 +195,17 @@ namespace IKVM.Reflection.Emit
 
             void WriteByte(byte value)
             {
-                bb.Write(value);
+                bb.WriteByte(value);
             }
 
             void WriteUInt16(ushort value)
             {
-                bb.Write(value);
+                bb.WriteUInt16(value);
             }
 
             void WriteInt32(int value)
             {
-                bb.Write(value);
+                bb.WriteInt32(value);
             }
 
             void WriteFixedArg(Type type, object value)
@@ -320,17 +320,17 @@ namespace IKVM.Reflection.Emit
 
             void WriteInt64(long value)
             {
-                bb.Write(value);
+                bb.WriteInt64(value);
             }
 
             void WriteSingle(float value)
             {
-                bb.Write(value);
+                bb.WriteSingle(value);
             }
 
             void WriteDouble(double value)
             {
-                bb.Write(value);
+                bb.WriteDouble(value);
             }
 
             void WriteTypeName(Type type)
@@ -403,12 +403,12 @@ namespace IKVM.Reflection.Emit
 
             void WriteString(string val)
             {
-                bb.Write(val);
+                bb.WriteSerializedString(val);
             }
 
             void WritePackedLen(int len)
             {
-                bb.WriteCompressedUInt(len);
+                bb.WriteCompressedInteger(len);
             }
 
             void WriteFieldOrPropType(Type type)
@@ -498,19 +498,12 @@ namespace IKVM.Reflection.Emit
 
         internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
-            ByteBuffer bb;
             if (blob != null)
-            {
-                bb = ByteBuffer.Wrap(blob);
-            }
-            else
-            {
-                bb = new ByteBuffer(100);
-                var bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
-                bw.WriteCustomAttributeBlob();
-            }
+                return moduleBuilder.GetOrAddBlob(blob);
 
-            return moduleBuilder.GetOrAddBlob(bb.ToArray());
+            var bb = new BlobBuilder(100);
+            new BlobWriter(moduleBuilder.Assembly, this, bb).WriteCustomAttributeBlob();
+            return moduleBuilder.GetOrAddBlob(bb);
         }
 
         internal object GetConstructorArgument(int pos)
