@@ -450,6 +450,71 @@ namespace IKVM.Tests.Runtime
         }
 
         [TestMethod]
+        public void SplittingTryBlockCanMakeForwardBranchInsideItCrossParts()
+        {
+            // the branch from outside splits the block at 5, which puts the branch from 4 to 7 in a different part than
+            // its target, so the block must also be split at 7
+            var c = new TestClassBuilder("SplitCascadeForward");
+            c.AddMethod("m", "(I)V", 1, 1, (code, handlers) =>
+            {
+                var outer = code.DefineLabel();
+                var inner = code.DefineLabel();
+                code.Iload0();
+                code.Ifeq(outer);
+                var start = code.Offset;
+                code.InvokeStatic(c.F);
+                code.Iload0();
+                code.Ifne(inner);
+                code.MarkLabel(outer);
+                code.InvokeStatic(c.F);
+                code.InvokeStatic(c.F);
+                code.MarkLabel(inner);
+                code.InvokeStatic(c.F);
+                var end = code.Offset;
+                code.Return();
+                var handler = code.Offset;
+                code.Pop();
+                code.Return();
+                handlers.Add((start, end, handler, c.Class("java/lang/Exception")));
+            });
+
+            var m = Analyze(c, "m", "(I)V");
+            m.ExceptionEntries().Should().Equal((2, 5, 9, 0), (5, 7, 9, 0), (7, 8, 9, 0));
+        }
+
+        [TestMethod]
+        public void SplittingTryBlockCanMakeBackwardBranchInsideItCrossParts()
+        {
+            // the branch from outside splits the block at 4, which puts the loop branch from 6 back to 3 in a different
+            // part than its target, so the block must also be split at 3
+            var c = new TestClassBuilder("SplitCascadeBackward");
+            c.AddMethod("m", "(I)V", 1, 1, (code, handlers) =>
+            {
+                var loop = code.DefineLabel();
+                var outer = code.DefineLabel();
+                code.Iload0();
+                code.Ifeq(outer);
+                var start = code.Offset;
+                code.InvokeStatic(c.F);
+                code.MarkLabel(loop);
+                code.InvokeStatic(c.F);
+                code.MarkLabel(outer);
+                code.InvokeStatic(c.F);
+                code.Iload0();
+                code.Ifne(loop);
+                var end = code.Offset;
+                code.Return();
+                var handler = code.Offset;
+                code.Pop();
+                code.Return();
+                handlers.Add((start, end, handler, c.Class("java/lang/Exception")));
+            });
+
+            var m = Analyze(c, "m", "(I)V");
+            m.ExceptionEntries().Should().Equal((2, 3, 8, 0), (3, 4, 8, 0), (4, 7, 8, 0));
+        }
+
+        [TestMethod]
         public void PartiallyOverlappingTryBlocksAreSplit()
         {
             var c = new TestClassBuilder("PartialOverlap");
