@@ -28,7 +28,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
@@ -64,8 +63,8 @@ namespace IKVM.Reflection
 
             var descriptor = (token >> 24) switch
             {
-                FieldTable.Index => reader.Metadata.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
-                ParamTable.Index => reader.Metadata.GetParameter(MetadataTokens.ParameterHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                (int)TableIndex.Field => reader.Metadata.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                (int)TableIndex.Param => reader.Metadata.GetParameter(MetadataTokens.ParameterHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
                 _ => default,
             };
 

@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
 
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
@@ -203,7 +202,7 @@ namespace IKVM.Reflection.Emit
             get
             {
                 CheckBaked();
-                return (GenericParamTable.Index << 24) | pseudoIndex;
+                return ((int)TableIndex.GenericParam << 24) | pseudoIndex;
             }
         }
 
@@ -252,7 +251,7 @@ namespace IKVM.Reflection.Emit
 
         internal override int GetCurrentToken()
         {
-            return (GenericParamTable.Index << 24) | (ModuleBuilder.IsSaved ? row : pseudoIndex);
+            return ((int)TableIndex.GenericParam << 24) | (ModuleBuilder.IsSaved ? row : pseudoIndex);
         }
 
         internal override bool IsBaked

@@ -29,7 +29,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 
-using IKVM.Reflection.Metadata;
 
 using SrmMetadataReader = System.Reflection.Metadata.MetadataReader;
 using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
@@ -82,7 +81,6 @@ namespace IKVM.Reflection.Reader
         GCHandle metadataImageHandle;
         readonly SrmMetadataReader metadata;
         readonly int blobHeapOffset;
-        int metadataStreamVersion;
         readonly Dictionary<int, string> userStrings = new Dictionary<int, string>();
         TypeDefImpl[] typeDefs;
         TypeDefImpl moduleType;
@@ -125,86 +123,11 @@ namespace IKVM.Reflection.Reader
             }
 
             blobHeapOffset = metadata.GetHeapMetadataOffset(HeapIndex.Blob);
-            ReadTables();
 
             if (assembly == null && metadata.IsAssembly)
                 assembly = new AssemblyReader(location, this);
 
             this.assembly = assembly;
-        }
-
-        /// <summary>
-        /// Reads the tables from the #~ or #- stream of the metadata image.
-        /// </summary>
-        void ReadTables()
-        {
-            var br = new BinaryReader(new MemoryStream(metadataImage, false));
-            foreach (var sh in ReadStreamHeaders(br))
-            {
-                if (sh.Name is "#~" or "#-")
-                {
-                    br.BaseStream.Position = sh.Offset;
-                    ReadTables(br);
-                    return;
-                }
-            }
-        }
-
-        static StreamHeader[] ReadStreamHeaders(BinaryReader br)
-        {
-            var signature = br.ReadUInt32();
-            if (signature != 0x424A5342)
-                throw new BadImageFormatException("Invalid metadata signature");
-
-            br.ReadUInt16(); // major version
-            br.ReadUInt16(); // minor version
-            br.ReadUInt32(); // reserved
-            var length = br.ReadUInt32();
-            br.ReadBytes((int)length); // version
-            br.ReadUInt16(); // flags
-
-            var streams = br.ReadUInt16();
-            var streamHeaders = new StreamHeader[streams];
-            for (int i = 0; i < streamHeaders.Length; i++)
-            {
-                streamHeaders[i] = new StreamHeader();
-                streamHeaders[i].Read(br);
-            }
-
-            return streamHeaders;
-        }
-
-        void ReadTables(BinaryReader br)
-        {
-            var tables = GetTables();
-
-            /*uint Reserved0 =*/
-            br.ReadUInt32();
-            var majorVersion = br.ReadByte();
-            var minorVersion = br.ReadByte();
-            metadataStreamVersion = majorVersion << 16 | minorVersion;
-            var heapSizes = br.ReadByte();
-            /*byte Reserved7 =*/
-            br.ReadByte();
-
-            ulong valid = br.ReadUInt64();
-            ulong sorted = br.ReadUInt64();
-            for (int i = 0; i < 64; i++)
-            {
-                if ((valid & (1UL << i)) != 0)
-                {
-                    tables[i].Sorted = (sorted & (1UL << i)) != 0;
-                    tables[i].RowCount = br.ReadInt32();
-                }
-            }
-
-            var mr = new MetadataReader(this, br.BaseStream, heapSizes);
-            for (int i = 0; i < 64; i++)
-                if ((valid & (1UL << i)) != 0)
-                    tables[i].Read(mr);
-
-            if (ParamPtrTable.RowCount != 0)
-                throw new NotImplementedException("ParamPtr table support has not yet been implemented.");
         }
 
         internal override void GetTypesImpl(List<Type> list)
@@ -311,19 +234,19 @@ namespace IKVM.Reflection.Reader
             if (index < 0)
                 throw TokenOutOfRangeException(metadataToken);
 
-            if ((metadataToken >> 24) == TypeDefTable.Index && index < metadata.TypeDefinitions.Count)
+            if ((metadataToken >> 24) == (int)TableIndex.TypeDef && index < metadata.TypeDefinitions.Count)
             {
                 PopulateTypeDef();
                 return typeDefs[index];
             }
 
-            if ((metadataToken >> 24) == TypeRefTable.Index && index < metadata.TypeReferences.Count)
+            if ((metadataToken >> 24) == (int)TableIndex.TypeRef && index < metadata.TypeReferences.Count)
             {
                 typeRefs ??= new Type[metadata.TypeReferences.Count];
                 return typeRefs[index] ??= ResolveTypeRef(metadata.GetTypeReference(MetadataTokens.TypeReferenceHandle(index + 1)));
             }
 
-            if ((metadataToken >> 24) == TypeSpecTable.Index && index < metadata.GetTableRowCount(TableIndex.TypeSpec))
+            if ((metadataToken >> 24) == (int)TableIndex.TypeSpec && index < metadata.GetTableRowCount(TableIndex.TypeSpec))
             {
                 typeSpecs ??= new Type[metadata.GetTableRowCount(TableIndex.TypeSpec)];
 
@@ -501,20 +424,20 @@ namespace IKVM.Reflection.Reader
         {
             switch (metadataToken >> 24)
             {
-                case FieldTable.Index:
+                case (int)TableIndex.Field:
                     return ResolveField(metadataToken, genericTypeArguments, genericMethodArguments);
-                case MemberRefTable.Index:
+                case (int)TableIndex.MemberRef:
                     int index = (metadataToken & 0xFFFFFF) - 1;
                     if (index < 0 || index >= metadata.MemberReferences.Count)
                         goto default;
 
                     return GetMemberRef(index, genericTypeArguments, genericMethodArguments);
-                case MethodDefTable.Index:
-                case MethodSpecTable.Index:
+                case (int)TableIndex.MethodDef:
+                case (int)TableIndex.MethodSpec:
                     return ResolveMethod(metadataToken, genericTypeArguments, genericMethodArguments);
-                case TypeRefTable.Index:
-                case TypeDefTable.Index:
-                case TypeSpecTable.Index:
+                case (int)TableIndex.TypeRef:
+                case (int)TableIndex.TypeDef:
+                case (int)TableIndex.TypeSpec:
                     return ResolveType(metadataToken, genericTypeArguments, genericMethodArguments);
                 default:
                     throw TokenOutOfRangeException(metadataToken);
@@ -542,11 +465,11 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == FieldTable.Index && index < metadata.FieldDefinitions.Count)
+            else if ((metadataToken >> 24) == (int)TableIndex.Field && index < metadata.FieldDefinitions.Count)
             {
                 return GetFieldAt(null, MetadataTokens.FieldDefinitionHandle(index + 1));
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < metadata.MemberReferences.Count)
+            else if ((metadataToken >> 24) == (int)TableIndex.MemberRef && index < metadata.MemberReferences.Count)
             {
                 var field = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as FieldInfo;
                 if (field != null)
@@ -580,11 +503,11 @@ namespace IKVM.Reflection.Reader
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == MethodDefTable.Index && index < metadata.MethodDefinitions.Count)
+            else if ((metadataToken >> 24) == (int)TableIndex.MethodDef && index < metadata.MethodDefinitions.Count)
             {
                 return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(index + 1));
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < metadata.MemberReferences.Count)
+            else if ((metadataToken >> 24) == (int)TableIndex.MemberRef && index < metadata.MemberReferences.Count)
             {
                 var method = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as MethodBase;
                 if (method != null)
@@ -592,7 +515,7 @@ namespace IKVM.Reflection.Reader
 
                 throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
             }
-            else if ((metadataToken >> 24) == MethodSpecTable.Index && index < metadata.GetTableRowCount(TableIndex.MethodSpec))
+            else if ((metadataToken >> 24) == (int)TableIndex.MethodSpec && index < metadata.GetTableRowCount(TableIndex.MethodSpec))
             {
                 var spec = metadata.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle(index + 1));
                 var method = (MethodInfo)ResolveMethod(MetadataTokens.GetToken(spec.Method), genericTypeArguments, genericMethodArguments);
@@ -622,16 +545,16 @@ namespace IKVM.Reflection.Reader
                 var name = GetString(reference.Name);
                 switch (owner >> 24)
                 {
-                    case MethodDefTable.Index:
+                    case (int)TableIndex.MethodDef:
                         return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(owner & 0xFFFFFF));
-                    case ModuleRefTable.Index:
+                    case (int)TableIndex.ModuleRef:
                         memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, GetBlobReader(sig));
                         break;
-                    case TypeDefTable.Index:
-                    case TypeRefTable.Index:
+                    case (int)TableIndex.TypeDef:
+                    case (int)TableIndex.TypeRef:
                         memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, GetBlobReader(sig));
                         break;
-                    case TypeSpecTable.Index:
+                    case (int)TableIndex.TypeSpec:
                         {
                             var type = ResolveType(owner, genericTypeArguments, genericMethodArguments);
                             if (type.IsArray)
@@ -719,7 +642,7 @@ namespace IKVM.Reflection.Reader
         public override byte[] ResolveSignature(int metadataToken)
         {
             int index = (metadataToken & 0xFFFFFF) - 1;
-            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < metadata.GetTableRowCount(TableIndex.StandAloneSig))
+            if ((metadataToken >> 24) == (int)TableIndex.StandAloneSig && index >= 0 && index < metadata.GetTableRowCount(TableIndex.StandAloneSig))
                 return GetBlobCopy(metadata.GetStandaloneSignature(MetadataTokens.StandaloneSignatureHandle(index + 1)).Signature);
 
             throw TokenOutOfRangeException(metadataToken);
@@ -895,9 +818,34 @@ namespace IKVM.Reflection.Reader
 
         public string __ImageRuntimeVersion => metadata.MetadataVersion;
 
-        public override int MDStreamVersion
+        public override int MDStreamVersion => GetTablesStreamVersion();
+
+        /// <summary>
+        /// Gets the version of the #~ or #- stream, which System.Reflection.Metadata does not expose, from the metadata root.
+        /// </summary>
+        /// <returns></returns>
+        unsafe int GetTablesStreamVersion()
         {
-            get { return metadataStreamVersion; }
+            var root = new BlobReader(metadata.MetadataPointer, metadata.MetadataLength);
+            root.Offset = 12;
+            root.Offset += 4 + root.ReadInt32() + 2; // version string and flags
+
+            for (int i = root.ReadUInt16(); i > 0; i--)
+            {
+                var offset = root.ReadInt32();
+                root.ReadInt32(); // size
+                var name = root.ReadUTF8(root.IndexOf(0));
+                root.Offset = (root.Offset + 4) & ~3; // the terminator and the padding to four bytes
+
+                if (name is "#~" or "#-")
+                {
+                    var stream = new BlobReader(metadata.MetadataPointer + offset, metadata.MetadataLength - offset);
+                    stream.Offset = 4;
+                    return stream.ReadByte() << 16 | stream.ReadByte();
+                }
+            }
+
+            throw new BadImageFormatException("The metadata has no tables stream.");
         }
 
         public void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)

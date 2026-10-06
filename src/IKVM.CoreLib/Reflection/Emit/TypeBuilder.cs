@@ -29,7 +29,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Impl;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {

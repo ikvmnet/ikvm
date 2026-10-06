@@ -28,7 +28,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection

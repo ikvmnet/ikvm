@@ -25,8 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Reflection.Metadata.Ecma335;
 
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Writer
 {
@@ -303,13 +303,13 @@ namespace IKVM.Reflection.Writer
         {
             switch (token >> 24)
             {
-                case TypeDefTable.Index:
+                case (int)TableIndex.TypeDef:
                     WriteCompressedInteger((token & 0xFFFFFF) << 2 | 0);
                     break;
-                case TypeRefTable.Index:
+                case (int)TableIndex.TypeRef:
                     WriteCompressedInteger((token & 0xFFFFFF) << 2 | 1);
                     break;
-                case TypeSpecTable.Index:
+                case (int)TableIndex.TypeSpec:
                     WriteCompressedInteger((token & 0xFFFFFF) << 2 | 2);
                     break;
                 default:

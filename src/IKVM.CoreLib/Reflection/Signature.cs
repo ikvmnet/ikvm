@@ -27,7 +27,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
@@ -401,9 +400,9 @@ namespace IKVM.Reflection
             var encoded = br.ReadCompressedUInt();
             return (encoded & 3) switch
             {
-                0 => module.ResolveType((TypeDefTable.Index << 24) + (encoded >> 2), null, null),
-                1 => module.ResolveType((TypeRefTable.Index << 24) + (encoded >> 2), null, null),
-                2 => module.ResolveType((TypeSpecTable.Index << 24) + (encoded >> 2), context),
+                0 => module.ResolveType(((int)TableIndex.TypeDef << 24) + (encoded >> 2), null, null),
+                1 => module.ResolveType(((int)TableIndex.TypeRef << 24) + (encoded >> 2), null, null),
+                2 => module.ResolveType(((int)TableIndex.TypeSpec << 24) + (encoded >> 2), context),
                 _ => throw new BadImageFormatException(),
             };
         }
