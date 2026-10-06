@@ -26,9 +26,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
-using System.Text;
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Metadata;
+
+using SrmMetadataReader = System.Reflection.Metadata.MetadataReader;
+using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
 
 namespace IKVM.Reflection.Reader
 {
@@ -73,16 +77,13 @@ namespace IKVM.Reflection.Reader
         readonly Stream stream;
         readonly string location;
         Assembly assembly;
-        readonly PEReader peFile = new PEReader();
-        readonly CliHeader cliHeader = new CliHeader();
-        string imageRuntimeVersion;
+        readonly SrmPEReader pe;
+        readonly byte[] metadataImage;
+        GCHandle metadataImageHandle;
+        readonly SrmMetadataReader metadata;
+        readonly int blobHeapOffset;
         int metadataStreamVersion;
-        byte[] stringHeap;
-        byte[] blobHeap;
-        byte[] guidHeap;
-        uint userStringHeapOffset;
-        uint userStringHeapSize;
-        byte[] lazyUserStringHeap;
+        readonly Dictionary<int, string> userStrings = new Dictionary<int, string>();
         TypeDefImpl[] typeDefs;
         TypeDefImpl moduleType;
         Assembly[] assemblyRefs;
@@ -108,7 +109,23 @@ namespace IKVM.Reflection.Reader
         {
             this.stream = stream;
             this.location = location;
-            Read(stream, mapped);
+
+            // one copy of the metadata, pinned so that the metadata reader and the signature decoders share it
+            pe = new SrmPEReader(stream, PEStreamOptions.LeaveOpen | (mapped ? PEStreamOptions.IsLoadedImage : PEStreamOptions.Default));
+            if (pe.HasMetadata == false)
+                throw new BadImageFormatException("The image has no metadata.");
+
+            unsafe
+            {
+                var block = pe.GetMetadata();
+                metadataImage = new byte[block.Length];
+                Marshal.Copy((IntPtr)block.Pointer, metadataImage, 0, block.Length);
+                metadataImageHandle = GCHandle.Alloc(metadataImage, GCHandleType.Pinned);
+                metadata = new SrmMetadataReader((byte*)metadataImageHandle.AddrOfPinnedObject(), metadataImage.Length, MetadataReaderOptions.None);
+            }
+
+            blobHeapOffset = metadata.GetHeapMetadataOffset(HeapIndex.Blob);
+            ReadTables();
 
             if (assembly == null && AssemblyTable.records.Length != 0)
                 assembly = new AssemblyReader(location, this);
@@ -116,61 +133,35 @@ namespace IKVM.Reflection.Reader
             this.assembly = assembly;
         }
 
-        void Read(Stream stream, bool mapped)
+        /// <summary>
+        /// Reads the tables from the #~ or #- stream of the metadata image.
+        /// </summary>
+        void ReadTables()
         {
-            var br = new BinaryReader(stream);
-            peFile.Read(br, mapped);
-            stream.Seek(peFile.RvaToFileOffset(peFile.GetComDescriptorVirtualAddress()), SeekOrigin.Begin);
-            cliHeader.Read(br);
-
-            stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress), SeekOrigin.Begin);
-            foreach (var sh in ReadStreamHeaders(br, out imageRuntimeVersion))
+            var br = new BinaryReader(new MemoryStream(metadataImage, false));
+            foreach (var sh in ReadStreamHeaders(br))
             {
-                switch (sh.Name)
+                if (sh.Name is "#~" or "#-")
                 {
-                    case "#Strings":
-                        stringHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#Blob":
-                        blobHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#US":
-                        userStringHeapOffset = sh.Offset;
-                        userStringHeapSize = sh.Size;
-                        break;
-                    case "#GUID":
-                        guidHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#~":
-                    case "#-":
-                        stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + sh.Offset), SeekOrigin.Begin);
-                        ReadTables(br);
-                        break;
-                    default:
-                        // we ignore unknown streams, because the CLR does so too
-                        // (and some obfuscators add bogus streams)
-                        break;
+                    br.BaseStream.Position = sh.Offset;
+                    ReadTables(br);
+                    return;
                 }
             }
         }
 
-        static StreamHeader[] ReadStreamHeaders(BinaryReader br, out string version)
+        static StreamHeader[] ReadStreamHeaders(BinaryReader br)
         {
             var signature = br.ReadUInt32();
             if (signature != 0x424A5342)
                 throw new BadImageFormatException("Invalid metadata signature");
 
-            /*ushort MajorVersion =*/
-            br.ReadUInt16();
-            /*ushort MinorVersion =*/
-            br.ReadUInt16();
-            /*uint Reserved =*/
-            br.ReadUInt32();
-            var Length = br.ReadUInt32();
-            var buf = br.ReadBytes((int)Length);
-            version = Encoding.UTF8.GetString(buf).TrimEnd('\u0000');
-            /*ushort Flags =*/
-            br.ReadUInt16();
+            br.ReadUInt16(); // major version
+            br.ReadUInt16(); // minor version
+            br.ReadUInt32(); // reserved
+            var length = br.ReadUInt32();
+            br.ReadBytes((int)length); // version
+            br.ReadUInt16(); // flags
 
             var streams = br.ReadUInt16();
             var streamHeaders = new StreamHeader[streams];
@@ -216,33 +207,6 @@ namespace IKVM.Reflection.Reader
                 throw new NotImplementedException("ParamPtr table support has not yet been implemented.");
         }
 
-        byte[] ReadHeap(Stream stream, uint offset, uint size)
-        {
-            var buf = new byte[size];
-            stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + offset), SeekOrigin.Begin);
-
-            for (var pos = 0; pos < buf.Length;)
-            {
-                var read = stream.Read(buf, pos, buf.Length - pos);
-                if (read == 0)
-                    throw new BadImageFormatException();
-
-                pos += read;
-            }
-
-            return buf;
-        }
-
-        internal void SeekRVA(int rva)
-        {
-            GetStream().Seek(peFile.RvaToFileOffset((uint)rva), SeekOrigin.Begin);
-        }
-
-        internal Stream GetStream()
-        {
-            return stream;
-        }
-
         internal override void GetTypesImpl(List<Type> list)
         {
             PopulateTypeDef();
@@ -285,77 +249,23 @@ namespace IKVM.Reflection.Reader
             if (handle.IsNil)
                 return null;
 
-            if (!strings.TryGetValue(handle, out var str))
-            {
-                int len = 0;
-                while (stringHeap[MetadataTokens.GetHeapOffset(handle) + len] != 0)
-                    len++;
-
-                str = Encoding.UTF8.GetString(stringHeap, MetadataTokens.GetHeapOffset(handle), len);
-                strings.Add(handle, str);
-            }
+            if (strings.TryGetValue(handle, out var str) == false)
+                strings.Add(handle, str = metadata.GetString(handle));
 
             return str;
         }
 
-        static int ReadCompressedUInt(byte[] buffer, ref int offset)
-        {
-            var b1 = buffer[offset++];
-            if (b1 <= 0x7F)
-            {
-                return b1;
-            }
-            else if ((b1 & 0xC0) == 0x80)
-            {
-                var b2 = buffer[offset++];
-                return ((b1 & 0x3F) << 8) | b2;
-            }
-            else
-            {
-                var b2 = buffer[offset++];
-                var b3 = buffer[offset++];
-                var b4 = buffer[offset++];
-                return ((b1 & 0x3F) << 24) + (b2 << 16) + (b3 << 8) + b4;
-            }
-        }
+        internal byte[] GetBlobCopy(BlobHandle handle) => metadata.GetBlobBytes(handle);
 
-        internal byte[] GetBlobCopy(BlobHandle handle)
-        {
-            var idx = MetadataTokens.GetHeapOffset(handle);
-            var len = ReadCompressedUInt(blobHeap, ref idx);
-            var buf = new byte[len];
-            Buffer.BlockCopy(blobHeap, idx, buf, 0, len);
-            return buf;
-        }
-
-        internal override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            return ByteReader.FromBlob(blobHeap, handle);
-        }
+        internal override ByteReader GetBlobReader(BlobHandle handle) => ByteReader.FromBlob(metadataImage, blobHeapOffset, handle);
 
         public override string ResolveString(int metadataToken)
         {
             if ((metadataToken >> 24) != 0x70)
                 throw TokenOutOfRangeException(metadataToken);
 
-            var h = MetadataTokens.StringHandle(metadataToken);
-
-            if (strings.TryGetValue(h, out var str) == false)
-            {
-                lazyUserStringHeap ??= ReadHeap(GetStream(), userStringHeapOffset, userStringHeapSize);
-
-                var index = metadataToken & 0xFFFFFF;
-                var len = ReadCompressedUInt(lazyUserStringHeap, ref index) & ~1;
-                var sb = new StringBuilder(len / 2);
-                for (int i = 0; i < len; i += 2)
-                {
-                    var ch = (char)(lazyUserStringHeap[index + i] | lazyUserStringHeap[index + i + 1] << 8);
-                    sb.Append(ch);
-                }
-
-                str = sb.ToString();
-                strings.Add(h, str);
-            }
+            if (userStrings.TryGetValue(metadataToken, out var str) == false)
+                userStrings.Add(metadataToken, str = metadata.GetUserString(MetadataTokens.UserStringHandle(metadataToken & 0xFFFFFF)));
 
             return str;
         }
@@ -436,7 +346,7 @@ namespace IKVM.Reflection.Reader
 
                     try
                     {
-                        type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpecTable.records[index]), tc);
+                        type = Signature.ReadTypeSpec(this, GetBlobReader(TypeSpecTable.records[index]), tc);
                     }
                     finally
                     {
@@ -533,32 +443,7 @@ namespace IKVM.Reflection.Reader
             return Universe.Load(name, this, true);
         }
 
-        public override Guid ModuleVersionId => GuidFromSpan(guidHeap.AsSpan(16 * (MetadataTokens.GetHeapOffset(ModuleTable.records[0].Mvid) - 1), 16));
-
-        /// <summary>
-        /// Creates a new <see cref="Guid"/> from a span. Optimized for .NET.
-        /// </summary>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        static Guid GuidFromSpan(ReadOnlySpan<byte> b)
-        {
-#if NETFRAMEWORK
-            var _a = (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
-            var _b = (short)((b[5] << 8) | b[4]);
-            var _c = (short)((b[7] << 8) | b[6]);
-            var _d = b[8];
-            var _e = b[9];
-            var _f = b[10];
-            var _g = b[11];
-            var _h = b[12];
-            var _i = b[13];
-            var _j = b[14];
-            var _k = b[15];
-            return new Guid(_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k);
-#else
-            return new Guid(b);
-#endif
-        }
+        public override Guid ModuleVersionId => metadata.GetGuid(metadata.GetModuleDefinition().Mvid);
 
         public override string FullyQualifiedName => location ?? "<Unknown>";
 
@@ -704,7 +589,7 @@ namespace IKVM.Reflection.Reader
             else if ((metadataToken >> 24) == MethodSpecTable.Index && index < MethodSpecTable.RowCount)
             {
                 var method = (MethodInfo)ResolveMethod(MethodSpecTable.records[index].Method, genericTypeArguments, genericMethodArguments);
-                var instantiation = ByteReader.FromBlob(blobHeap, MethodSpecTable.records[index].Instantiation);
+                var instantiation = GetBlobReader(MethodSpecTable.records[index].Instantiation);
                 return method.MakeGenericMethod(Signature.ReadMethodSpec(this, instantiation, new GenericContext(genericTypeArguments, genericMethodArguments)));
             }
             else
@@ -749,23 +634,23 @@ namespace IKVM.Reflection.Reader
                     case MethodDefTable.Index:
                         return GetMethodAt(null, (owner & 0xFFFFFF) - 1);
                     case ModuleRefTable.Index:
-                        memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+                        memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, GetBlobReader(sig));
                         break;
                     case TypeDefTable.Index:
                     case TypeRefTable.Index:
-                        memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+                        memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, GetBlobReader(sig));
                         break;
                     case TypeSpecTable.Index:
                         {
                             var type = ResolveType(owner, genericTypeArguments, genericMethodArguments);
                             if (type.IsArray)
                             {
-                                var methodSig = MethodSignature.ReadSig(this, ByteReader.FromBlob(blobHeap, sig), new GenericContext(genericTypeArguments, genericMethodArguments));
+                                var methodSig = MethodSignature.ReadSig(this, GetBlobReader(sig), new GenericContext(genericTypeArguments, genericMethodArguments));
                                 return type.FindMethod(name, methodSig) ?? Universe.GetMissingMethodOrThrow(this, type, name, methodSig);
                             }
                             else if (type.IsConstructedGenericType)
                             {
-                                var member = ResolveTypeMemberRef(type.GetGenericTypeDefinition(), name, ByteReader.FromBlob(blobHeap, sig));
+                                var member = ResolveTypeMemberRef(type.GetGenericTypeDefinition(), name, GetBlobReader(sig));
                                 var mb = member as MethodBase;
                                 if (mb != null)
                                     member = mb.BindTypeParameters(type);
@@ -778,7 +663,7 @@ namespace IKVM.Reflection.Reader
                             }
                             else
                             {
-                                return ResolveTypeMemberRef(type, name, ByteReader.FromBlob(blobHeap, sig));
+                                return ResolveTypeMemberRef(type, name, GetBlobReader(sig));
                             }
                         }
                     default:
@@ -838,7 +723,7 @@ namespace IKVM.Reflection.Reader
 
         internal ByteReader GetStandAloneSig(int index)
         {
-            return ByteReader.FromBlob(blobHeap, StandAloneSigTable.records[index]);
+            return GetBlobReader(StandAloneSigTable.records[index]);
         }
 
         public override byte[] ResolveSignature(int metadataToken)
@@ -857,8 +742,9 @@ namespace IKVM.Reflection.Reader
 
         internal MethodInfo GetEntryPoint()
         {
-            if (cliHeader.EntryPointToken != 0 && (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0)
-                return (MethodInfo)ResolveMethod((int)cliHeader.EntryPointToken);
+            var cor = pe.PEHeaders.CorHeader;
+            if (cor.EntryPointTokenOrRelativeVirtualAddress != 0 && (cor.Flags & CorFlags.NativeEntryPoint) == 0)
+                return (MethodInfo)ResolveMethod(cor.EntryPointTokenOrRelativeVirtualAddress);
 
             return null;
         }
@@ -919,10 +805,10 @@ namespace IKVM.Reflection.Reader
                                 throw new BadImageFormatException();
                         }
                     }
-                    SeekRVA((int)cliHeader.Resources.VirtualAddress + ManifestResourceTable.records[i].Offset);
-                    var br = new BinaryReader(stream);
-                    var length = br.ReadInt32();
-                    return new MemoryStream(br.ReadBytes(length));
+                    // an embedded resource is its length followed by its content
+                    var data = pe.GetSectionData(pe.PEHeaders.CorHeader.ResourcesDirectory.RelativeVirtualAddress + ManifestResourceTable.records[i].Offset).GetReader();
+                    var length = data.ReadInt32();
+                    return new MemoryStream(data.ReadBytes(length));
                 }
             }
 
@@ -1006,10 +892,7 @@ namespace IKVM.Reflection.Reader
             return moduleType;
         }
 
-        public string __ImageRuntimeVersion
-        {
-            get { return imageRuntimeVersion; }
-        }
+        public string __ImageRuntimeVersion => metadata.MetadataVersion;
 
         public override int MDStreamVersion
         {
@@ -1018,32 +901,36 @@ namespace IKVM.Reflection.Reader
 
         public void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
         {
+            var headers = pe.PEHeaders;
+            var flags = headers.CorHeader.Flags;
+
             peKind = 0;
-            if ((cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_ILONLY) != 0)
+            if ((flags & CorFlags.ILOnly) != 0)
                 peKind |= PortableExecutableKinds.ILOnly;
 
-            switch (cliHeader.Flags & (CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED))
+            // 32BITPREFERRED by itself is illegal, so it is ignored
+            switch (flags & (CorFlags.Requires32Bit | CorFlags.Prefers32Bit))
             {
-                case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED:
+                case CorFlags.Requires32Bit:
                     peKind |= PortableExecutableKinds.Required32Bit;
                     break;
-                case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED:
+                case CorFlags.Requires32Bit | CorFlags.Prefers32Bit:
                     peKind |= PortableExecutableKinds.Preferred32Bit;
-                    break;
-                default:
-                    // COMIMAGE_FLAGS_32BITPREFERRED by itself is illegal, so we ignore it
-                    // (not setting any flag is ok)
                     break;
             }
 
-            if (peFile.OptionalHeader.Magic == IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+            if (headers.PEHeader.Magic == PEMagic.PE32Plus)
                 peKind |= PortableExecutableKinds.PE32Plus;
 
-            machine = (ImageFileMachine)peFile.FileHeader.Machine;
+            machine = (ImageFileMachine)headers.CoffHeader.Machine;
         }
 
         internal override void Dispose()
         {
+            pe.Dispose();
+            if (metadataImageHandle.IsAllocated)
+                metadataImageHandle.Free();
+
             stream?.Dispose();
         }
 

@@ -49,9 +49,16 @@ namespace IKVM.Reflection.Reader
             this.end = pos + length;
         }
 
-        internal static ByteReader FromBlob(byte[] blobHeap, BlobHandle blob)
+        /// <summary>
+        /// Creates a reader over a blob of a metadata image.
+        /// </summary>
+        /// <param name="image">The metadata image.</param>
+        /// <param name="blobHeapOffset">The offset of the #Blob heap in the image.</param>
+        /// <param name="blob"></param>
+        /// <returns></returns>
+        internal static ByteReader FromBlob(byte[] image, int blobHeapOffset, BlobHandle blob)
         {
-            var br = new ByteReader(blobHeap, MetadataTokens.GetHeapOffset(blob), 4);
+            var br = new ByteReader(image, blobHeapOffset + MetadataTokens.GetHeapOffset(blob), 4);
             var length = br.ReadCompressedUInt();
             br.end = br.pos + length;
             return br;
