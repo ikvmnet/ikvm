@@ -216,7 +216,7 @@ namespace IKVM.Reflection.Emit
         {
 
             internal int Parent;
-            internal BlobHandle NativeType;
+            internal byte[] NativeType;
 
         }
 
@@ -332,8 +332,6 @@ namespace IKVM.Reflection.Emit
         readonly List<int> resolvedTokens = new List<int>();
         ISymbolWriter symbolWriter;
 
-        internal readonly Dictionary<StringHandle, string> strings = new();
-        internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
         readonly List<TypeRefRow> typeRefs = new List<TypeRefRow>();
@@ -412,61 +410,21 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal StringHandle GetOrAddString(string value)
-        {
-            var h = metadata.GetOrAddString(value);
-            strings[h] = value;
-            return h;
-        }
-
-        /// <summary>
-        /// Gets the string value of the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override string GetString(StringHandle handle) => strings.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
+        internal StringHandle GetOrAddString(string value) => metadata.GetOrAddString(value);
 
         /// <summary>
         /// Gets a new blob handle from the metadata.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(BlobBuilder value)
-        {
-            var h = metadata.GetOrAddBlob(value);
-            blobs[h] = value;
-            return h;
-        }
+        internal BlobHandle GetOrAddBlob(BlobBuilder value) => metadata.GetOrAddBlob(value);
 
         /// <summary>
         /// Gets a new blob handle from the metadata.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(byte[] value)
-        {
-            var b = new BlobBuilder();
-            b.WriteBytes(value);
-            return GetOrAddBlob(b);
-        }
-
-        /// <summary>
-        /// Gets the blob value of the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal BlobBuilder GetBlob(BlobHandle handle) => blobs.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
-
-        /// <summary>
-        /// Gets a <see cref="ByteReader"/> for the the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            var b = GetBlob(handle).ToArray();
-            return new ByteReader(b, 0, b.Length);
-        }
+        internal BlobHandle GetOrAddBlob(byte[] value) => metadata.GetOrAddBlob(value);
 
         /// <summary>
         /// Sets the active symbol writer.
@@ -1256,7 +1214,7 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="parentToken"></param>
         /// <param name="nativeType"></param>
-        internal void AddFieldMarshal(int parentToken, BlobHandle nativeType)
+        internal void AddFieldMarshal(int parentToken, byte[] nativeType)
         {
             fieldMarshals.Add(new FieldMarshalRow() { Parent = parentToken, NativeType = nativeType });
         }
@@ -1267,7 +1225,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="token"></param>
         /// <param name="nativeType"></param>
         /// <returns></returns>
-        internal bool TryGetFieldMarshal(int token, out BlobHandle nativeType)
+        internal bool TryGetFieldMarshal(int token, out byte[] nativeType)
         {
             foreach (var row in fieldMarshals)
             {
@@ -1345,7 +1303,7 @@ namespace IKVM.Reflection.Emit
                 var row = fieldMarshals[i];
                 row.Parent = ResolvePseudoToken(row.Parent);
                 fieldMarshals[i] = row;
-                metadata.AddMarshallingDescriptor(MetadataTokens.EntityHandle(row.Parent), row.NativeType);
+                metadata.AddMarshallingDescriptor(MetadataTokens.EntityHandle(row.Parent), metadata.GetOrAddBlob(row.NativeType));
             }
 
             for (int i = 0; i < implMaps.Count; i++)

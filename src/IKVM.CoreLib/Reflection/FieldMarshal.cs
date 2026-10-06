@@ -57,7 +57,7 @@ namespace IKVM.Reflection
             fm = new FieldMarshal();
 
             if (module is ModuleBuilder builder)
-                return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, module.GetBlobReader(nativeType), out fm);
+                return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, new ByteReader(nativeType, 0, nativeType.Length), out fm);
 
             foreach (var i in module.FieldMarshalTable.Filter(token))
                 return Decode(module, module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType), out fm);
@@ -133,7 +133,7 @@ namespace IKVM.Reflection
             module.AddFieldMarshal(token, WriteMarshallingDescriptor(module, attribute));
         }
 
-        static BlobHandle WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
+        static byte[] WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
         {
             var val = attribute.GetConstructorArgument(0);
             var unmanagedType = val switch
@@ -223,7 +223,7 @@ namespace IKVM.Reflection
                     }
             }
 
-            return module.GetOrAddBlob(bb.ToArray());
+            return bb.ToArray();
         }
 
         static Type ReadType(Module module, ByteReader br)
