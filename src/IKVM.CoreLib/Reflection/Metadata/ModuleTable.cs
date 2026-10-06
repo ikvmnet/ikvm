@@ -57,32 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddModule(
-                    records[i].Generation,
-                    records[i].Name,
-                    records[i].Mvid,
-                    records[i].EncId,
-                    records[i].EncBaseId);
-
-                Debug.Assert(MetadataTokens.GetRowNumber(h) == i + 1);
-            }
-        }
-
-        internal void Add(short generation, StringHandle name, GuidHandle mvid, GuidHandle encid, GuidHandle encbaseid)
-        {
-            var record = new Record();
-            record.Generation = generation;
-            record.Name = name;
-            record.Mvid = mvid;
-            record.EncId = encid;
-            record.EncBaseId = encbaseid;
-            AddRecord(record);
-        }
-
     }
 
 }

@@ -232,7 +232,7 @@ namespace IKVM.Reflection.Emit
             {
                 var spec = new ByteBuffer(5);
                 Signature.WriteTypeSpec(ModuleBuilder, spec, this);
-                typeToken = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(ModuleBuilder.TypeSpecTable.AddRecord(ModuleBuilder.GetOrAddBlob(spec.ToArray()))));
+                typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec.ToArray()));
             }
             return typeToken;
         }

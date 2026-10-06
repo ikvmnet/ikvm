@@ -54,43 +54,11 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddMemberReference(
-                    MetadataTokens.EntityHandle(records[i].Class),
-                    records[i].Name,
-                    records[i].Signature);
-
-                Debug.Assert(h == MetadataTokens.MemberReferenceHandle(i + 1));
-            }
-        }
-
         /// <summary>
         /// Finds the specified record in the table and returns the row number.
         /// </summary>
         /// <param name="record"></param>
         /// <returns></returns>
-        internal int FindOrAddRecord(Record record)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                if (records[i].Class == record.Class &&
-                    records[i].Name == record.Name &&
-                    records[i].Signature == record.Signature)
-                    return i + 1;
-            }
-
-            return AddRecord(record);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Class);
-        }
-
     }
 
 }

@@ -649,7 +649,7 @@ namespace IKVM.Reflection.Emit
             {
                 var buf = new BlobBuilder();
                 buf.WriteBytes(m_localSignature);
-                localSignatureHandle = MetadataTokens.StandaloneSignatureHandle(ModuleBuilder.StandAloneSigTable.FindOrAddRecord(ModuleBuilder.GetOrAddBlob(buf)));
+                localSignatureHandle = ModuleBuilder.GetStandAloneSignature(ModuleBuilder.GetOrAddBlob(buf));
             }
 
             // write the body to the metadata

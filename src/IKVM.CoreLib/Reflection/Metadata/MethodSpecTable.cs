@@ -52,33 +52,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddMethodSpecification(
-                    MetadataTokens.EntityHandle(records[i].Method),
-                    records[i].Instantiation);
-
-                Debug.Assert(h == MetadataTokens.MethodSpecificationHandle(i + 1));
-            }
-        }
-
-        internal int FindOrAddRecord(Record record)
-        {
-            for (int i = 0; i < rowCount; i++)
-                if (records[i].Method == record.Method && records[i].Instantiation == record.Instantiation)
-                    return i + 1;
-
-            return AddRecord(record);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Method);
-        }
-
     }
 
 }

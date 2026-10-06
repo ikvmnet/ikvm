@@ -57,26 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddManifestResource(
-                    (System.Reflection.ManifestResourceAttributes)records[i].Flags,
-                    records[i].Name,
-                    MetadataTokens.EntityHandle(records[i].Implementation),
-                    (uint)records[i].Offset);
-
-                Debug.Assert(h == MetadataTokens.ManifestResourceHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Implementation);
-        }
-
     }
 
 }

@@ -280,29 +280,14 @@ namespace IKVM.Reflection.Emit
             // generate new manifest module
             manifestModule ??= DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 
-            // assembly record goes on manifest module
-            var assemblyRecord = new AssemblyTable.Record();
-            assemblyRecord.HashAlgId = (int)hashAlgorithm;
-            assemblyRecord.Name = manifestModule.GetOrAddString(name);
-            assemblyRecord.MajorVersion = majorVersion;
-            assemblyRecord.MinorVersion = minorVersion;
-            assemblyRecord.BuildNumber = buildVersion;
-            assemblyRecord.RevisionNumber = revisionVersion;
-
-            if (publicKey != null)
-            {
-                assemblyRecord.PublicKey = manifestModule.GetOrAddBlob(publicKey);
-                assemblyRecord.Flags = (int)(flags | AssemblyNameFlags.PublicKey);
-            }
-            else
-            {
-                assemblyRecord.Flags = (int)(flags & ~AssemblyNameFlags.PublicKey);
-            }
-
-            if (culture != null)
-                assemblyRecord.Culture = manifestModule.GetOrAddString(culture);
-
-            manifestModule.AssemblyTable.AddRecord(assemblyRecord);
+            // the assembly row goes on the manifest module
+            manifestModule.Metadata.AddAssembly(
+                manifestModule.GetOrAddString(name),
+                new Version(majorVersion, minorVersion, buildVersion, revisionVersion),
+                culture != null ? manifestModule.GetOrAddString(culture) : default,
+                publicKey != null ? manifestModule.GetOrAddBlob(publicKey) : default,
+                (System.Reflection.AssemblyFlags)(publicKey != null ? flags | AssemblyNameFlags.PublicKey : flags & ~AssemblyNameFlags.PublicKey),
+                (System.Reflection.AssemblyHashAlgorithm)hashAlgorithm);
 
             // final copy of manifest module native resources
             var nativeResources = manifestModule.nativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.nativeResources) : new ModuleResourceSectionBuilder();
@@ -344,12 +329,7 @@ namespace IKVM.Reflection.Emit
             foreach (var resfile in resourceFiles)
             {
                 var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
-                var rec = new ManifestResourceTable.Record();
-                rec.Offset = 0;
-                rec.Flags = (int)resfile.Attributes;
-                rec.Name = manifestModule.GetOrAddString(resfile.Name);
-                rec.Implementation = MetadataTokens.GetToken(fileToken);
-                manifestModule.ManifestResourceTable.AddRecord(rec);
+                manifestModule.AddManifestResource(resfile.Attributes, resfile.Name, MetadataTokens.GetToken(fileToken), 0);
             }
 
             // write each non-manifest module

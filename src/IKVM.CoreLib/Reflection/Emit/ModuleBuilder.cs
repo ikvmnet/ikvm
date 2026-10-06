@@ -98,13 +98,7 @@ namespace IKVM.Reflection.Emit
                 while ((length = stream.Read(buffer, 0, buffer.Length)) != 0)
                     module.resourceStream.WriteBytes(buffer, 0, length);
 
-                // add the resource record
-                var rec = new ManifestResourceTable.Record();
-                rec.Offset = offset;
-                rec.Flags = (int)attributes;
-                rec.Name = module.GetOrAddString(name);
-                rec.Implementation = 0;
-                module.ManifestResourceTable.AddRecord(rec);
+                module.AddManifestResource(attributes, name, 0, offset);
             }
 
             internal readonly void Close()
@@ -131,6 +125,70 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// A constant of a field, parameter or property. The parent can be a pseudo token until the module is written.
         /// </summary>
+        /// <summary>
+        /// A reference to a type. The resolution scope can be a pseudo token for an assembly reference until the module is
+        /// written.
+        /// </summary>
+        struct TypeRefRow
+        {
+
+            internal int ResolutionScope;
+            internal StringHandle Namespace;
+            internal StringHandle Name;
+
+        }
+
+        /// <summary>
+        /// A reference to a field or method. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct MemberRefRow
+        {
+
+            internal int Class;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
+
+        }
+
+        /// <summary>
+        /// An instantiation of a generic method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSpecRow
+        {
+
+            internal int Method;
+            internal BlobHandle Instantiation;
+
+        }
+
+        /// <summary>
+        /// A type exported from or forwarded by the assembly. The implementation can be a pseudo token for an assembly
+        /// reference until the module is written.
+        /// </summary>
+        struct ExportedTypeRow
+        {
+
+            internal TypeAttributes Flags;
+            internal int TypeDefId;
+            internal StringHandle Name;
+            internal StringHandle Namespace;
+            internal int Implementation;
+
+        }
+
+        /// <summary>
+        /// A manifest resource, embedded at an offset or stored in a file.
+        /// </summary>
+        struct ManifestResourceRow
+        {
+
+            internal ResourceAttributes Flags;
+            internal StringHandle Name;
+            internal int Implementation;
+            internal int Offset;
+
+        }
+
         /// <summary>
         /// Associates an accessor method with a property. The method can be a pseudo token until the module is written.
         /// </summary>
@@ -246,7 +304,6 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        static readonly bool usePublicKeyAssemblyReference = false;
 
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
@@ -279,6 +336,18 @@ namespace IKVM.Reflection.Emit
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
+        readonly List<TypeRefRow> typeRefs = new List<TypeRefRow>();
+        readonly List<MemberRefRow> memberRefs = new List<MemberRefRow>();
+        readonly Dictionary<(int Class, StringHandle Name, BlobHandle Signature), int> memberRefTokens = new Dictionary<(int, StringHandle, BlobHandle), int>();
+        readonly List<MethodSpecRow> methodSpecs = new List<MethodSpecRow>();
+        readonly Dictionary<(int Method, BlobHandle Instantiation), int> methodSpecTokens = new Dictionary<(int, BlobHandle), int>();
+        readonly Dictionary<BlobHandle, int> standAloneSignatureTokens = new Dictionary<BlobHandle, int>();
+        readonly Dictionary<StringHandle, ModuleReferenceHandle> moduleRefs = new Dictionary<StringHandle, ModuleReferenceHandle>();
+        readonly Dictionary<(StringHandle Name, Version Version, StringHandle Culture, BlobHandle PublicKeyOrToken, int Flags), AssemblyReferenceHandle> assemblyRefs = new Dictionary<(StringHandle, Version, StringHandle, BlobHandle, int), AssemblyReferenceHandle>();
+        readonly List<ExportedTypeRow> exportedTypes = new List<ExportedTypeRow>();
+        readonly Dictionary<(int Implementation, StringHandle Name, StringHandle Namespace), int> exportedTypeTokens = new Dictionary<(int, StringHandle, StringHandle), int>();
+        readonly List<ManifestResourceRow> manifestResources = new List<ManifestResourceRow>();
+        bool referencesWritten;
         readonly List<MethodSemanticsRow> methodSemantics = new List<MethodSemanticsRow>();
         readonly List<ConstantRow> constants = new List<ConstantRow>();
         readonly List<FieldMarshalRow> fieldMarshals = new List<FieldMarshalRow>();
@@ -311,7 +380,7 @@ namespace IKVM.Reflection.Emit
 
             // add module
             mvidFixup = metadata.ReserveGuid();
-            ModuleTable.Add(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
+            metadata.AddModule(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
 
             // <Module> must be the first record in the TypeDef table
             moduleType = new TypeBuilder(this, null, "<Module>");
@@ -613,26 +682,36 @@ namespace IKVM.Reflection.Emit
 
         int ExportType(Type type)
         {
-            var rec = new ExportedTypeTable.Record();
-            if (asm.ImageRuntimeVersion == "v2.0.50727")
-            {
-                // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
-                rec.TypeDefId = type.MetadataToken;
-            }
+            var row = new ExportedTypeRow();
 
-            SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
+            // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
+            if (asm.ImageRuntimeVersion == "v2.0.50727")
+                row.TypeDefId = type.MetadataToken;
+
+            SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
             if (type.IsNested)
             {
-                rec.Flags = 0;
-                rec.Implementation = ExportType(type.DeclaringType);
+                row.Flags = 0;
+                row.Implementation = ExportType(type.DeclaringType);
             }
             else
             {
-                rec.Flags = 0x00200000; // CorTypeAttr.tdForwarder
-                rec.Implementation = ImportAssemblyRef(type.Assembly);
+                row.Flags = (TypeAttributes)0x00200000; // CorTypeAttr.tdForwarder
+                row.Implementation = ImportAssemblyRef(type.Assembly);
             }
 
-            return 0x27000000 | ExportedTypeTable.FindOrAddRecord(rec);
+            var key = (row.Implementation, row.Name, row.Namespace);
+            if (exportedTypeTokens.TryGetValue(key, out var token) == false)
+                exportedTypeTokens.Add(key, token = AddExportedType(row));
+
+            return token;
+        }
+
+        int AddExportedType(ExportedTypeRow row)
+        {
+            CheckReferencesNotWritten();
+            exportedTypes.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.ExportedTypeHandle(exportedTypes.Count));
         }
 
         void SetTypeNameAndTypeNamespace(TypeName name, out StringHandle typeName, out StringHandle typeNamespace)
@@ -765,14 +844,14 @@ namespace IKVM.Reflection.Emit
                 {
                     var spec = new ByteBuffer(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
+                    token = AddTypeSpec(GetOrAddBlob(spec.ToArray()));
                     memberRefTypeTokens.Add(type, token);
                 }
                 return token;
             }
             else if (type.IsModulePseudoType)
             {
-                return MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleRefTable.FindOrAddRecord(GetOrAddString(type.Module.ScopeName))));
+                return MetadataTokens.GetToken(GetModuleRef(type.Module.ScopeName));
             }
             else
             {
@@ -816,11 +895,16 @@ namespace IKVM.Reflection.Emit
             var sig = new ByteBuffer(16);
             method.MethodSignature.WriteMethodRef(this, sig, optionalParameterTypes, customModifiers);
 
-            var record = new MemberRefTable.Record();
-            record.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
-            record.Name = GetOrAddString(method.Name);
-            record.Signature = GetOrAddBlob(sig.ToArray());
-            return new MethodToken(MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.FindOrAddRecord(record))));
+            var row = new MemberRefRow();
+            row.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
+            row.Name = GetOrAddString(method.Name);
+            row.Signature = GetOrAddBlob(sig.ToArray());
+
+            var key = (row.Class, row.Name, row.Signature);
+            if (memberRefTokens.TryGetValue(key, out var token) == false)
+                memberRefTokens.Add(key, token = AddMemberRef(row));
+
+            return new MethodToken(token);
         }
 
         // when we refer to a method on a generic type definition in the IL stream,
@@ -846,13 +930,13 @@ namespace IKVM.Reflection.Emit
             var key = new MemberRefKey(declaringType, name, sig);
             if (!importedMemberRefs.TryGetValue(key, out var token))
             {
-                var rec = new MemberRefTable.Record();
-                rec.Class = GetTypeTokenForMemberRef(declaringType);
-                rec.Name = GetOrAddString(name);
+                var row = new MemberRefRow();
+                row.Class = GetTypeTokenForMemberRef(declaringType);
+                row.Name = GetOrAddString(name);
                 var bb = new ByteBuffer(16);
                 sig.Write(this, bb);
-                rec.Signature = GetOrAddBlob(bb.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.AddRecord(rec)));
+                row.Signature = GetOrAddBlob(bb.ToArray());
+                token = AddMemberRef(row);
                 importedMemberRefs.Add(key, token);
             }
 
@@ -865,23 +949,27 @@ namespace IKVM.Reflection.Emit
             var key = new MethodSpecKey(declaringType, method.Name, method.MethodSignature, genericParameters);
             if (!importedMethodSpecs.TryGetValue(key, out var token))
             {
-                var rec = new MethodSpecTable.Record();
-                var mb = method as MethodBuilder;
-                if (mb != null && mb.ModuleBuilder == this && !declaringType.IsGenericType)
-                {
-                    rec.Method = mb.MetadataToken;
-                }
+                var row = new MethodSpecRow();
+
+                // 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance (in other words
+                // the method and type have already been decoupled by the caller), so import it with the declaring type
+                if (method is MethodBuilder mb && mb.ModuleBuilder == this && !declaringType.IsGenericType)
+                    row.Method = mb.MetadataToken;
                 else
-                {
-                    // we're calling ImportMethodOrField directly here, because 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance
-                    // (in order words the method and type have already been decoupled by the caller)
-                    rec.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
-                }
+                    row.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
 
                 var spec = new ByteBuffer(10);
                 Signature.WriteMethodSpec(this, spec, genericParameters);
-                rec.Instantiation = GetOrAddBlob(spec.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(MethodSpecTable.FindOrAddRecord(rec)));
+                row.Instantiation = GetOrAddBlob(spec.ToArray());
+
+                var rowKey = (row.Method, row.Instantiation);
+                if (methodSpecTokens.TryGetValue(rowKey, out token) == false)
+                {
+                    CheckReferencesNotWritten();
+                    methodSpecs.Add(row);
+                    methodSpecTokens.Add(rowKey, token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(methodSpecs.Count)));
+                }
+
                 importedMethodSpecs.Add(key, token);
             }
 
@@ -896,20 +984,19 @@ namespace IKVM.Reflection.Emit
                 {
                     var spec = new ByteBuffer(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
+                    token = AddTypeSpec(GetOrAddBlob(spec.ToArray()));
                 }
                 else
                 {
-                    var rec = new TypeRefTable.Record();
+                    int scope;
                     if (type.IsNested)
-                        rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
+                        scope = GetTypeToken(type.DeclaringType).Token;
                     else if (type.Module == this)
-                        rec.ResolutionScope = 1;
+                        scope = 1;
                     else
-                        rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
+                        scope = ImportAssemblyRef(type.Assembly);
 
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(TypeRefTable.AddRecord(rec)));
+                    token = AddTypeRef(scope, type.TypeName);
                 }
 
                 typeTokens.Add(type, token);
@@ -935,55 +1022,127 @@ namespace IKVM.Reflection.Emit
         {
             foreach (var kv in referencedAssemblies)
                 if (IsPseudoToken(kv.Value))
-                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName(), false));
+                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName()));
         }
 
-        private int FindOrAddAssemblyRef(AssemblyName name, bool alwaysAdd)
+        int FindOrAddAssemblyRef(AssemblyName name)
         {
-            var rec = new AssemblyRefTable.Record();
-            var ver = name.Version ?? new Version(0, 0, 0, 0);
-            rec.MajorVersion = (ushort)ver.Major;
-            rec.MinorVersion = (ushort)ver.Minor;
-            rec.BuildNumber = (ushort)ver.Build;
-            rec.RevisionNumber = (ushort)ver.Revision;
-            rec.Flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
+            var version = name.Version ?? new Version(0, 0, 0, 0);
+            var flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
             const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
             const AssemblyNameFlags afPA_Mask = (AssemblyNameFlags)0x0070;
             if ((name.RawFlags & afPA_Specified) != 0)
-            {
-                rec.Flags |= (int)(name.RawFlags & afPA_Mask);
-            }
+                flags |= (int)(name.RawFlags & afPA_Mask);
             if (name.ContentType == AssemblyContentType.WindowsRuntime)
-            {
-                rec.Flags |= 0x0200;
-            }
-            byte[] publicKeyOrToken = null;
-            if (usePublicKeyAssemblyReference)
-            {
-                publicKeyOrToken = name.GetPublicKey();
-            }
-            if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
-            {
-                publicKeyOrToken = name.GetPublicKeyToken() ?? Array.Empty<byte>();
-            }
-            else
-            {
-                const int PublicKey = 0x0001;
-                rec.Flags |= PublicKey;
-            }
-            rec.PublicKeyOrToken = GetOrAddBlob(publicKeyOrToken);
-            rec.Name = GetOrAddString(name.Name);
-            rec.Culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
-            if (name.hash != null)
-            {
-                rec.HashValue = GetOrAddBlob(name.hash);
-            }
-            else
-            {
-                rec.HashValue = default;
-            }
+                flags |= 0x0200;
 
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyReferenceHandle(alwaysAdd ? AssemblyRefTable.AddRecord(rec) : AssemblyRefTable.FindOrAddRecord(rec)));
+            var publicKeyOrToken = GetOrAddBlob(name.GetPublicKeyToken() ?? Array.Empty<byte>());
+            var nameHandle = GetOrAddString(name.Name);
+            var culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
+
+            // references that differ only in their hash are the same reference
+            var key = (nameHandle, version, culture, publicKeyOrToken, flags);
+            if (assemblyRefs.TryGetValue(key, out var handle) == false)
+                assemblyRefs.Add(key, handle = metadata.AddAssemblyReference(nameHandle, version, culture, publicKeyOrToken, (System.Reflection.AssemblyFlags)flags, name.hash != null ? GetOrAddBlob(name.hash) : default));
+
+            return MetadataTokens.GetToken(handle);
+        }
+
+        /// <summary>
+        /// Adds a type specification, returning its token. Type specifications refer to nothing that is resolved later, so
+        /// they are written immediately.
+        /// </summary>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal int AddTypeSpec(BlobHandle signature)
+        {
+            return MetadataTokens.GetToken(metadata.AddTypeSpecification(signature));
+        }
+
+        /// <summary>
+        /// Gets the stand alone signature with the given blob, adding it if needed.
+        /// </summary>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal StandaloneSignatureHandle GetStandAloneSignature(BlobHandle signature)
+        {
+            if (standAloneSignatureTokens.TryGetValue(signature, out var token) == false)
+                standAloneSignatureTokens.Add(signature, token = MetadataTokens.GetToken(metadata.AddStandaloneSignature(signature)));
+
+            return MetadataTokens.StandaloneSignatureHandle(MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(token)));
+        }
+
+        /// <summary>
+        /// Gets the module reference with the given name, adding it if needed.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        ModuleReferenceHandle GetModuleRef(string name)
+        {
+            var handle = name == null ? default : GetOrAddString(name);
+            if (moduleRefs.TryGetValue(handle, out var moduleRef) == false)
+                moduleRefs.Add(handle, moduleRef = metadata.AddModuleReference(handle));
+
+            return moduleRef;
+        }
+
+        int AddTypeRef(int resolutionScope, TypeName name)
+        {
+            CheckReferencesNotWritten();
+            var row = new TypeRefRow() { ResolutionScope = resolutionScope };
+            SetTypeNameAndTypeNamespace(name, out row.Name, out row.Namespace);
+            typeRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(typeRefs.Count));
+        }
+
+        int AddMemberRef(MemberRefRow row)
+        {
+            CheckReferencesNotWritten();
+            memberRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(memberRefs.Count));
+        }
+
+        /// <summary>
+        /// Records a manifest resource.
+        /// </summary>
+        /// <param name="flags"></param>
+        /// <param name="name"></param>
+        /// <param name="implementation"></param>
+        /// <param name="offset"></param>
+        internal void AddManifestResource(ResourceAttributes flags, string name, int implementation, int offset)
+        {
+            CheckReferencesNotWritten();
+            manifestResources.Add(new ManifestResourceRow() { Flags = flags, Name = GetOrAddString(name), Implementation = implementation, Offset = offset });
+        }
+
+        void CheckReferencesNotWritten()
+        {
+            if (referencesWritten)
+                throw new InvalidOperationException("A reference was added after the references of the module were written.");
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the type, member and method references, exported types and manifest resources and
+        /// adds them to the metadata, in the order they were created so their tokens stay valid.
+        /// </summary>
+        void WriteReferences()
+        {
+            referencesWritten = true;
+
+            foreach (var row in typeRefs)
+                metadata.AddTypeReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.ResolutionScope)), row.Namespace, row.Name);
+
+            foreach (var row in memberRefs)
+                metadata.AddMemberReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Class)), row.Name, row.Signature);
+
+            foreach (var row in methodSpecs)
+                metadata.AddMethodSpecification(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)), row.Instantiation);
+
+            foreach (var row in exportedTypes)
+                metadata.AddExportedType((System.Reflection.TypeAttributes)row.Flags, row.Namespace, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), row.TypeDefId);
+
+            foreach (var row in manifestResources)
+                metadata.AddManifestResource((System.Reflection.ManifestResourceAttributes)row.Flags, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), (uint)row.Offset);
         }
 
         internal void RegisterTokenFixup(int pseudoToken, int realToken)
@@ -1024,13 +1183,9 @@ namespace IKVM.Reflection.Emit
             WriteFieldTable();
             WriteMethodDefTable();
             WriteParamTable();
-
-            foreach (var table in GetTables())
-                if (table != null)
-                    table.Write(this);
-
             WriteTypeStructure();
             WriteMemberData();
+            WriteReferences();
             WriteCustomAttributes();
         }
 
@@ -1047,19 +1202,13 @@ namespace IKVM.Reflection.Emit
             {
                 if (type.IsModulePseudoType == false && IsVisible(type))
                 {
-                    var rec = new ExportedTypeTable.Record();
-                    rec.Flags = (int)type.Attributes;
+                    var row = new ExportedTypeRow();
+                    row.Flags = type.Attributes;
                     // LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
-                    rec.TypeDefId = type.MetadataToken;
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-
-                    if (type.IsNested)
-                        rec.Implementation = MetadataTokens.GetToken(declaringTypes[type.DeclaringType]);
-                    else
-                        rec.Implementation = MetadataTokens.GetToken(fileToken);
-
-                    var exportTypeToken = MetadataTokens.ExportedTypeHandle(ExportedTypeTable.AddRecord(rec));
-                    declaringTypes.Add(type, exportTypeToken);
+                    row.TypeDefId = type.MetadataToken;
+                    SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
+                    row.Implementation = type.IsNested ? MetadataTokens.GetToken(declaringTypes[type.DeclaringType]) : MetadataTokens.GetToken(fileToken);
+                    declaringTypes.Add(type, (ExportedTypeHandle)MetadataTokens.EntityHandle(AddExportedType(row)));
                 }
             }
         }
@@ -1148,7 +1297,7 @@ namespace IKVM.Reflection.Emit
                 Flags = flags,
                 ImportName = importName,
                 ImportScope = importScope,
-                ImportScopeHandle = MetadataTokens.ModuleReferenceHandle(ModuleRefTable.FindOrAddRecord(importScope == null ? default : GetOrAddString(importScope))),
+                ImportScopeHandle = GetModuleRef(importScope),
             });
         }
 
@@ -1321,7 +1470,7 @@ namespace IKVM.Reflection.Emit
 
         public SignatureToken GetSignatureToken(SignatureHelper sigHelper)
         {
-            return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(sigHelper.GetSignature(this).ToArray())) | (StandAloneSigTable.Index << 24));
+            return new SignatureToken(MetadataTokens.GetToken(GetStandAloneSignature(GetOrAddBlob(sigHelper.GetSignature(this).ToArray()))));
         }
 
         internal override Type GetModuleType()
@@ -1360,12 +1509,9 @@ namespace IKVM.Reflection.Emit
             get { return asm.mdStreamVersion; }
         }
 
-        private int AddTypeRefByName(int resolutionScope, string ns, string name)
+        int AddTypeRefByName(int resolutionScope, string ns, string name)
         {
-            TypeRefTable.Record rec = new TypeRefTable.Record();
-            rec.ResolutionScope = resolutionScope;
-            SetTypeNameAndTypeNamespace(new TypeName(ns, name), out rec.TypeName, out rec.TypeNamespace);
-            return 0x01000000 | this.TypeRefTable.AddRecord(rec);
+            return AddTypeRef(resolutionScope, new TypeName(ns, name));
         }
 
         /// <summary>
@@ -1455,11 +1601,8 @@ namespace IKVM.Reflection.Emit
 
         public int __AddModule(int flags, string name, byte[] hash)
         {
-            var file = new FileTable.Record();
-            file.Flags = flags;
-            file.Name = GetOrAddString(name);
-            file.HashValue = GetOrAddBlob(hash);
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyFileHandle(FileTable.AddRecord(file)));
+            const int ContainsNoMetaData = 0x0001;
+            return MetadataTokens.GetToken(metadata.AddAssemblyFile(GetOrAddString(name), GetOrAddBlob(hash), (flags & ContainsNoMetaData) == 0));
         }
 
         internal void FixupPseudoToken(ref int token)

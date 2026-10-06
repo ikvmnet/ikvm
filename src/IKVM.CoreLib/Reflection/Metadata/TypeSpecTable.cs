@@ -41,17 +41,6 @@ namespace IKVM.Reflection.Metadata
                 records[i] = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddTypeSpecification(
-                    records[i]);
-
-                Debug.Assert(h == MetadataTokens.TypeSpecificationHandle(i + 1));
-            }
-        }
-
     }
 
 }

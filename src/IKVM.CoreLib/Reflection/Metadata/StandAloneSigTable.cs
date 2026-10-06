@@ -41,26 +41,6 @@ namespace IKVM.Reflection.Metadata
                 records[i] = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddStandaloneSignature(
-                    records[i]);
-
-                Debug.Assert(h == MetadataTokens.StandaloneSignatureHandle(i + 1));
-            }
-        }
-
-        internal int FindOrAddRecord(BlobHandle blob)
-        {
-            for (int i = 0; i < rowCount; i++)
-                if (records[i] == blob)
-                    return i + 1;
-
-            return AddRecord(blob);
-        }
-
     }
 
 }

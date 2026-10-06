@@ -291,11 +291,6 @@ namespace IKVM.Reflection.Writer
             module.FixupMethodBodyTokens();
 
             // fixup content in tables
-            module.TypeRefTable.Fixup(module);
-            module.MemberRefTable.Fixup(module);
-            module.ExportedTypeTable.Fixup(module);
-            module.ManifestResourceTable.Fixup(module);
-            module.MethodSpecTable.Fixup(module);
 
             // close the symbol writer which may cause entries in the module table
             module.GetSymWriter()?.Close();

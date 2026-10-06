@@ -65,18 +65,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddAssembly(
-                    records[i].Name,
-                    new Version(records[i].MajorVersion, records[i].MinorVersion, records[i].BuildNumber, records[i].RevisionNumber),
-                    records[i].Culture,
-                    records[i].PublicKey,
-                    (System.Reflection.AssemblyFlags)records[i].Flags,
-                    (System.Reflection.AssemblyHashAlgorithm)records[i].HashAlgId);
-        }
-
     }
 
 }

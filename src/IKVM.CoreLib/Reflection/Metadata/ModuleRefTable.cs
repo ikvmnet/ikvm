@@ -41,26 +41,6 @@ namespace IKVM.Reflection.Metadata
                 records[i] = MetadataTokens.StringHandle(mr.ReadStringIndex());
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddModuleReference(
-                    records[i]);
-
-                Debug.Assert(h == MetadataTokens.ModuleReferenceHandle(i + 1));
-            }
-        }
-
-        internal int FindOrAddRecord(StringHandle handle)
-        {
-            for (int i = 0; i < rowCount; i++)
-                if (records[i] == handle)
-                    return i + 1;
-
-            return AddRecord(handle);
-        }
-
     }
 
 }
