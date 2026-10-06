@@ -586,9 +586,13 @@ namespace IKVM.Runtime
                     {
                         string str = (string)ConvertValue(loader, loader.Context.Types.String, ((object[])annotation)[3]);
                         Version version;
-                        if (ImportContext.TryParseVersion(str, out version))
+                        if (ImportContext.TryParseVersion(str, loader.Context.StaticCompiler.Deterministic, out version))
                         {
                             ab.__SetAssemblyVersion(version);
+                        }
+                        else if (str.EndsWith(".*") && loader.Context.StaticCompiler.Deterministic)
+                        {
+                            loader.Diagnostics.InvalidCustomAttribute(type.FullName, "The version '" + str + "' contains wildcards, which are not supported when producing deterministic output.");
                         }
                         else
                         {

@@ -765,6 +765,12 @@ namespace IKVM.Tools.Importer
             GetTypeWrapperFactory().ModuleBuilder.DefineManifestResource("ikvm.exports", ms, ResourceAttributes.Public);
         }
 
+        /// <summary>
+        /// Timestamp applied to embedded resource entries when producing deterministic output: the earliest time
+        /// representable in the zip format.
+        /// </summary>
+        static readonly DateTimeOffset DeterministicZipTimestamp = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
         void WriteResources()
         {
             Diagnostics.GenericCompilerInfo("CompilerClassLoader adding resources...");
@@ -790,6 +796,8 @@ namespace IKVM.Tools.Importer
                             continue;
                         }
                         var zipEntry = zip.CreateEntry(item.Name, state.compressedResources ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
+                        if (compiler.Deterministic)
+                            zipEntry.LastWriteTime = DeterministicZipTimestamp;
 
                         byte[] data = item.GetData();
 
@@ -803,6 +811,8 @@ namespace IKVM.Tools.Importer
                     {
                         // generate the --ikvm-classes-- file in the jar
                         var zipEntry = zip.CreateEntry(JVM.Internal.JarClassList);
+                        if (compiler.Deterministic)
+                            zipEntry.LastWriteTime = DeterministicZipTimestamp;
 
                         using Stream stream = zipEntry.Open();
                         using BinaryWriter bw = new BinaryWriter(stream);

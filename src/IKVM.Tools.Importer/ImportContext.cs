@@ -774,6 +774,7 @@ namespace IKVM.Tools.Importer
                 {
                     var path = Path.GetDirectoryName(fileName);
                     files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(fileName));
+                    Array.Sort(files, StringComparer.Ordinal);
                 }
                 catch
                 {
@@ -795,10 +796,17 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        internal static bool TryParseVersion(string str, out Version version)
+        internal static bool TryParseVersion(string str, bool deterministic, out Version version)
         {
             if (str.EndsWith(".*"))
             {
+                // wildcard versions are derived from the current time
+                if (deterministic)
+                {
+                    version = null;
+                    return false;
+                }
+
                 str = str.Substring(0, str.Length - 1);
                 int count = str.Split('.').Length;
                 // NOTE this is the published algorithm for generating automatic build and revision numbers
@@ -1133,13 +1141,13 @@ namespace IKVM.Tools.Importer
         {
             bool found = false;
 
-            foreach (var file in dir.GetFiles(spec))
+            foreach (var file in dir.GetFiles(spec).OrderBy(i => i.Name, StringComparer.Ordinal))
             {
                 found = true;
                 ProcessFile(context, compiler, options, diagnostics, baseDir, file.FullName);
             }
 
-            foreach (var sub in dir.GetDirectories())
+            foreach (var sub in dir.GetDirectories().OrderBy(i => i.Name, StringComparer.Ordinal))
             {
                 found |= Recurse(context, compiler, options, diagnostics, baseDir, sub, spec);
             }
