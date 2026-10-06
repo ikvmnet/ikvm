@@ -103,7 +103,7 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             }
 
             foreach (var type in assembly.GetTypes().OrderBy(TypeName, StringComparer.Ordinal))
-                TypeDefinition(w, type);
+                Guard(w, () => TypeDefinition(w, type));
 
             return w.ToString();
         }
@@ -133,20 +133,20 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
                 w.Line("nested " + i);
 
             foreach (var i in type.GetFields(DeclaredOnly).OrderBy(i => i.Name, StringComparer.Ordinal))
-                Field(w, i);
+                Guard(w, () => Field(w, i));
 
             foreach (var i in type.GetConstructors(DeclaredOnly).Select(i => (Key: MethodKey(i), Value: i)).OrderBy(i => i.Key, StringComparer.Ordinal))
-                Method(w, i.Value);
+                Guard(w, () => Method(w, i.Value));
 
             foreach (var i in type.GetMethods(DeclaredOnly).Select(i => (Key: MethodKey(i), Value: i)).Where(i => w.Includes(i.Key)).OrderBy(i => i.Key, StringComparer.Ordinal))
-                Method(w, i.Value);
+                Guard(w, () => Method(w, i.Value));
 
             foreach (var i in type.GetProperties(DeclaredOnly).Select(i => (Key: i.Name + "(" + string.Join(",", i.GetIndexParameters().Select(p => TypeName(p.ParameterType))) + ")", Value: i)).OrderBy(i => i.Key, StringComparer.Ordinal))
-                Property(w, i.Value);
+                Guard(w, () => Property(w, i.Value));
 
             if (w.Scope == DumpScope.Full)
                 foreach (var i in type.GetEvents(DeclaredOnly).OrderBy(i => i.Name, StringComparer.Ordinal))
-                    Event(w, i);
+                    Guard(w, () => Event(w, i));
 
             // what the public flattened lookup sees, limited to members declared in this assembly
             foreach (var i in type.GetMembers(PublicFlattened).Where(i => i.DeclaringType != null && i.DeclaringType.Assembly == type.Assembly && (w.Scope == DumpScope.Full || i is not EventInfo)).Select(i => i.MemberType + " " + TypeName(i.DeclaringType) + "::" + MemberKey(i)).Where(w.Includes).OrderBy(i => i, StringComparer.Ordinal))
@@ -193,8 +193,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
                 Parameter(w, "return", m.ReturnParameter);
                 if (m.IsVirtual)
                 {
-                    var b = m.GetBaseDefinition();
-                    w.Line("basedefinition " + TypeName(b.DeclaringType) + "::" + MethodKey(b));
+                    Guard(w, () =>
+                    {
+                        var b = m.GetBaseDefinition();
+                        w.Line("basedefinition " + TypeName(b.DeclaringType) + "::" + MethodKey(b));
+                    });
                 }
 
                 GenericParameters(w, m.GetGenericArguments());
