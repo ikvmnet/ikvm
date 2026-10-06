@@ -163,7 +163,7 @@ namespace IKVM.Reflection
                 ^ modifiers.GetHashCode() * 55;
         }
 
-        internal static MethodSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static MethodSignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
         {
             var flags = br.ReadByte();
             var callingConvention = (flags & 7) switch
@@ -182,14 +182,14 @@ namespace IKVM.Reflection
             var genericParamCount = 0;
             if ((flags & GENERIC) != 0)
             {
-                genericParamCount = br.ReadCompressedUInt();
+                genericParamCount = br.ReadCompressedInteger();
                 context = new UnboundGenericMethodContext(context);
             }
 
-            var paramCount = br.ReadCompressedUInt();
+            var paramCount = br.ReadCompressedInteger();
             CustomModifiers[] modifiers = null;
-            PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-            var returnType = ReadRetType(module, br, context);
+            PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+            var returnType = ReadRetType(module, ref br, context);
 
             var parameterTypes = new Type[paramCount];
             for (int i = 0; i < parameterTypes.Length; i++)
@@ -203,14 +203,14 @@ namespace IKVM.Reflection
                     break;
                 }
 
-                PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                parameterTypes[i] = ReadParam(module, br, context);
+                PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, ref br, context);
             }
 
             return new MethodSignature(returnType, parameterTypes, PackedCustomModifiers.Wrap(modifiers), callingConvention, genericParamCount);
         }
 
-        internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             CallingConventions callingConvention = 0;
             System.Runtime.InteropServices.CallingConvention unmanagedCallingConvention = 0;
@@ -254,11 +254,11 @@ namespace IKVM.Reflection
             if ((flags & GENERIC) != 0)
                 throw new BadImageFormatException();
 
-            var paramCount = br.ReadCompressedUInt();
+            var paramCount = br.ReadCompressedInteger();
             CustomModifiers[] customModifiers = null;
-            PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
+            PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
 
-            var returnType = ReadRetType(module, br, context);
+            var returnType = ReadRetType(module, ref br, context);
 
             var parameterTypes = new List<Type>();
             var optionalParameterTypes = new List<Type>();
@@ -271,8 +271,8 @@ namespace IKVM.Reflection
                     curr = optionalParameterTypes;
                 }
 
-                PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                curr.Add(ReadParam(module, br, context));
+                PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                curr.Add(ReadParam(module, ref br, context));
             }
 
             return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));

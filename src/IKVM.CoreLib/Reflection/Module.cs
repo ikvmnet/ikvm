@@ -345,7 +345,7 @@ namespace IKVM.Reflection
             throw new NotImplementedException();
         }
 
-        internal virtual ByteReader GetBlobReader(BlobHandle handle)
+        internal virtual BlobReader GetBlobReader(BlobHandle handle)
         {
             throw new NotImplementedException();
         }

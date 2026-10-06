@@ -559,7 +559,11 @@ namespace IKVM.Reflection.Emit
                 if (constructorArgs != null)
                     return new CustomAttributeData(asm, con, (int)constructorArgs[0], blob, -1);
 
-                return new CustomAttributeData(asm, con, new IKVM.Reflection.Reader.ByteReader(blob, 0, blob.Length));
+                unsafe
+                {
+                    fixed (byte* p = blob)
+                        return new CustomAttributeData(asm, con, new System.Reflection.Metadata.BlobReader(p, blob.Length));
+                }
             }
             else
             {

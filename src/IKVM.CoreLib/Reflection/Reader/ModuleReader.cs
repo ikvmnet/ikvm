@@ -27,7 +27,6 @@ using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
-using System.Runtime.InteropServices;
 
 using SrmMetadataReader = System.Reflection.Metadata.MetadataReader;
 using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
@@ -76,10 +75,7 @@ namespace IKVM.Reflection.Reader
         readonly string location;
         Assembly assembly;
         readonly SrmPEReader pe;
-        readonly byte[] metadataImage;
-        GCHandle metadataImageHandle;
         readonly SrmMetadataReader metadata;
-        readonly int blobHeapOffset;
         readonly Dictionary<int, string> userStrings = new Dictionary<int, string>();
         TypeDefImpl[] typeDefs;
         TypeDefImpl moduleType;
@@ -107,21 +103,11 @@ namespace IKVM.Reflection.Reader
             this.stream = stream;
             this.location = location;
 
-            // one copy of the metadata, pinned so that the metadata reader and the signature decoders share it
             pe = new SrmPEReader(stream, PEStreamOptions.LeaveOpen | (mapped ? PEStreamOptions.IsLoadedImage : PEStreamOptions.Default));
             if (pe.HasMetadata == false)
                 throw new BadImageFormatException("The image has no metadata.");
 
-            unsafe
-            {
-                var block = pe.GetMetadata();
-                metadataImage = new byte[block.Length];
-                Marshal.Copy((IntPtr)block.Pointer, metadataImage, 0, block.Length);
-                metadataImageHandle = GCHandle.Alloc(metadataImage, GCHandleType.Pinned);
-                metadata = new SrmMetadataReader((byte*)metadataImageHandle.AddrOfPinnedObject(), metadataImage.Length, MetadataReaderOptions.None);
-            }
-
-            blobHeapOffset = metadata.GetHeapMetadataOffset(HeapIndex.Blob);
+            metadata = pe.GetMetadataReader(MetadataReaderOptions.None);
 
             if (assembly == null && metadata.IsAssembly)
                 assembly = new AssemblyReader(location, this);
@@ -214,7 +200,7 @@ namespace IKVM.Reflection.Reader
             };
         }
 
-        internal override ByteReader GetBlobReader(BlobHandle handle) => ByteReader.FromBlob(metadataImage, blobHeapOffset, handle);
+        internal override BlobReader GetBlobReader(BlobHandle handle) => metadata.GetBlobReader(handle);
 
         public override string ResolveString(int metadataToken)
         {
@@ -597,7 +583,7 @@ namespace IKVM.Reflection.Reader
             return module.GetModuleType();
         }
 
-        MemberInfo ResolveTypeMemberRef(Type type, string name, ByteReader sig)
+        MemberInfo ResolveTypeMemberRef(Type type, string name, BlobReader sig)
         {
             if (sig.PeekByte() == Signature.FIELD)
             {
@@ -871,8 +857,6 @@ namespace IKVM.Reflection.Reader
         internal override void Dispose()
         {
             pe.Dispose();
-            if (metadataImageHandle.IsAllocated)
-                metadataImageHandle.Free();
 
             stream?.Dispose();
         }
