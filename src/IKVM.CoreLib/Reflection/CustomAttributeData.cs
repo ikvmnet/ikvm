@@ -713,7 +713,8 @@ namespace IKVM.Reflection
                     if (parameter.__TryGetFieldMarshal(out var spec))
                     {
                         list ??= new List<CustomAttributeData>();
-                        list.Add(CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(parameter.Module, spec));
+                        if (CustomAttributeData.CreateMarshalAsPseudoCustomAttribute(parameter.Module, spec) is { } pseudo)
+                            list.Add(pseudo);
                     }
                 }
             }
@@ -850,6 +851,9 @@ namespace IKVM.Reflection
 
         internal static CustomAttributeData CreateDllImportPseudoCustomAttribute(Module module, ImplMapFlags flags, string entryPoint, string dllName, MethodImplAttributes attr)
         {
+            if (module.Universe.System_Runtime_InteropServices_DllImportAttribute == null)
+                return null;
+
 
             var charSet = (flags & ImplMapFlags.CharSetMask) switch
             {
@@ -886,6 +890,9 @@ namespace IKVM.Reflection
         internal static CustomAttributeData CreateMarshalAsPseudoCustomAttribute(Module module, FieldMarshal fm)
         {
             var typeofMarshalAs = module.Universe.System_Runtime_InteropServices_MarshalAsAttribute;
+            if (typeofMarshalAs == null)
+                return null;
+
             var typeofUnmanagedType = module.Universe.System_Runtime_InteropServices_UnmanagedType;
             var typeofVarEnum = module.Universe.System_Runtime_InteropServices_VarEnum;
             var typeofType = module.Universe.System_Type;
@@ -929,6 +936,9 @@ namespace IKVM.Reflection
         internal static CustomAttributeData CreateFieldOffsetPseudoCustomAttribute(Module module, int offset)
         {
             var type = module.Universe.System_Runtime_InteropServices_FieldOffsetAttribute;
+            if (type == null)
+                return null;
+
             var constructor = type.GetPseudoCustomAttributeConstructor(module.Universe.System_Int32);
             return new CustomAttributeData(module, constructor, new object[] { offset }, null);
         }
@@ -936,6 +946,9 @@ namespace IKVM.Reflection
         internal static CustomAttributeData CreatePreserveSigPseudoCustomAttribute(Module module)
         {
             var type = module.Universe.System_Runtime_InteropServices_PreserveSigAttribute;
+            if (type == null)
+                return null;
+
             var constructor = type.GetPseudoCustomAttributeConstructor();
             return new CustomAttributeData(module, constructor, Array.Empty<object>(), null);
         }

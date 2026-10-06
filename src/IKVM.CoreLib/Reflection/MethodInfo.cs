@@ -182,10 +182,12 @@ namespace IKVM.Reflection
 
             if ((Attributes & MethodAttributes.PinvokeImpl) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.Universe.System_Runtime_InteropServices_DllImportAttribute)))
                 if (__TryGetImplMap(out var flags, out var importName, out var importScope))
-                    list.Add(CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()));
+                    if (CustomAttributeData.CreateDllImportPseudoCustomAttribute(module, flags, importName, importScope, GetMethodImplementationFlags()) is { } pseudo)
+                        list.Add(pseudo);
 
             if ((GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0 && (attributeType == null || attributeType.IsAssignableFrom(module.Universe.System_Runtime_InteropServices_PreserveSigAttribute)))
-                list.Add(CustomAttributeData.CreatePreserveSigPseudoCustomAttribute(module));
+                if (CustomAttributeData.CreatePreserveSigPseudoCustomAttribute(module) is { } pseudo)
+                    list.Add(pseudo);
 
             return list;
         }

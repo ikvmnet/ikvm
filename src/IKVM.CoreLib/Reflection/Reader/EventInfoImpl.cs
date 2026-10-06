@@ -63,7 +63,7 @@ namespace IKVM.Reflection.Reader
 
         public override EventAttributes Attributes
         {
-            get { return (EventAttributes)module.EventTable.records[index].EventFlags; }
+            get { return (EventAttributes)(ushort)module.EventTable.records[index].EventFlags; }
         }
 
         public override MethodInfo GetAddMethod(bool nonPublic)

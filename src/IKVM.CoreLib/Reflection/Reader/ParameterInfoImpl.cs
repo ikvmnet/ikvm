@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -61,7 +61,7 @@ namespace IKVM.Reflection.Reader
 
         public override ParameterAttributes Attributes
         {
-            get { return index == -1 ? ParameterAttributes.None : (ParameterAttributes)this.Module.ParamTable.records[index].Flags; }
+            get { return index == -1 ? ParameterAttributes.None : (ParameterAttributes)(ushort)this.Module.ParamTable.records[index].Flags; }
         }
 
         public override int Position
@@ -76,37 +76,8 @@ namespace IKVM.Reflection.Reader
                 if ((Attributes & ParameterAttributes.HasDefault) != 0)
                     return Module.ConstantTable.GetRawConstantValue(Module, MetadataToken);
 
-                var universe = Module.Universe;
-                if (ParameterType == universe.System_Decimal)
-                {
-                    var attr = universe.System_Runtime_CompilerServices_DecimalConstantAttribute;
-                    if (attr != null)
-                    {
-                        foreach (var cad in CustomAttributeData.__GetCustomAttributes(this, attr, false))
-                        {
-                            var args = cad.ConstructorArguments;
-                            if (args.Count == 5)
-                            {
-                                if (args[0].ArgumentType == universe.System_Byte &&
-                                    args[1].ArgumentType == universe.System_Byte &&
-                                    args[2].ArgumentType == universe.System_Int32 &&
-                                    args[3].ArgumentType == universe.System_Int32 &&
-                                    args[4].ArgumentType == universe.System_Int32)
-                                {
-                                    return new decimal((int)args[4].Value, (int)args[3].Value, (int)args[2].Value, (byte)args[1].Value != 0, (byte)args[0].Value);
-                                }
-                                else if (args[0].ArgumentType == universe.System_Byte &&
-                                    args[1].ArgumentType == universe.System_Byte &&
-                                    args[2].ArgumentType == universe.System_UInt32 &&
-                                    args[3].ArgumentType == universe.System_UInt32 &&
-                                    args[4].ArgumentType == universe.System_UInt32)
-                                {
-                                    return new Decimal(unchecked((int)(uint)args[4].Value), unchecked((int)(uint)args[3].Value), unchecked((int)(uint)args[2].Value), (byte)args[1].Value != 0, (byte)args[0].Value);
-                                }
-                            }
-                        }
-                    }
-                }
+                if (TryGetCustomConstant(out var value))
+                    return value;
 
                 if ((Attributes & ParameterAttributes.Optional) != 0)
                     return Missing.Value;

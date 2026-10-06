@@ -730,12 +730,43 @@ namespace IKVM.Reflection
                     type.CheckBaked();
 
                     foreach (var member in type.GetMembers<T>())
-                        if (member is T m && m.BindingFlagsMatchInherited(flags))
+                        if (member is T m && m.BindingFlagsMatchInherited(flags) && IsHiddenByDerived(m, list) == false)
                             list.Add((T)m.SetReflectedType(this));
                 }
             }
 
             return list.ToArray();
+        }
+
+        /// <summary>
+        /// Gets whether an inherited member is hidden by one already collected from a more derived type. Like
+        /// System.Reflection, properties hide by name and signature, and events hide by name. Methods are handled by
+        /// <see cref="GetMethods(BindingFlags)"/>, and fields and nested types are never hidden.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="member"></param>
+        /// <param name="derived"></param>
+        /// <returns></returns>
+        static bool IsHiddenByDerived<T>(T member, List<T> derived)
+            where T : MemberInfo
+        {
+            switch (member)
+            {
+                case PropertyInfo property:
+                    foreach (var i in derived)
+                        if (i.Name == property.Name && ((PropertyInfo)(MemberInfo)i).PropertySignature.Equals(property.PropertySignature))
+                            return true;
+
+                    return false;
+                case EventInfo @event:
+                    foreach (var i in derived)
+                        if (i.Name == @event.Name)
+                            return true;
+
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         T GetMemberByName<T>(string name, BindingFlags flags, Predicate<T> filter)
@@ -1374,10 +1405,11 @@ namespace IKVM.Reflection
             get { return (Attributes & TypeAttributes.SpecialName) != 0; }
         }
 
-        public bool IsSerializable
-        {
-            get { return (Attributes & TypeAttributes.Serializable) != 0; }
-        }
+        /// <summary>
+        /// Gets whether the type is serializable. Like System.Reflection, enums and delegates are always serializable,
+        /// whether or not they carry the metadata flag.
+        /// </summary>
+        public bool IsSerializable => (Attributes & TypeAttributes.Serializable) != 0 || IsEnum || (BaseType is { } baseType && baseType == Universe.System_MulticastDelegate);
 
         public bool IsClass
         {

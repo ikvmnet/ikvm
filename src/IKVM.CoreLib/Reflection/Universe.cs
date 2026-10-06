@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -79,6 +79,7 @@ namespace IKVM.Reflection
         Func<ModuleBuilder, ISymbolWriter> symbolWriterFactory;
         Type typeof_System_Object;
         Type typeof_System_ValueType;
+        Type typeof_System_MulticastDelegate;
         Type typeof_System_Enum;
         Type typeof_System_Void;
         Type typeof_System_Boolean;
@@ -116,6 +117,7 @@ namespace IKVM.Reflection
         Type typeof_System_Runtime_InteropServices_CallingConvention;
         Type typeof_System_Runtime_InteropServices_CharSet;
         Type typeof_System_Runtime_CompilerServices_DecimalConstantAttribute;
+        Type typeof_System_Runtime_CompilerServices_DateTimeConstantAttribute;
         Type typeof_System_Reflection_AssemblyCopyrightAttribute;
         Type typeof_System_Reflection_AssemblyTrademarkAttribute;
         Type typeof_System_Reflection_AssemblyProductAttribute;
@@ -225,6 +227,22 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
+        /// Imports a type from the System.Runtime.InteropServices namespace. The .NET Framework core library defines all
+        /// of them, but .NET reference assemblies define some in the System.Runtime.InteropServices assembly instead.
+        /// Returns <c>null</c> if the type cannot be found.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        Type ImportInteropType(string name)
+        {
+            var typeName = new TypeName("System.Runtime.InteropServices", name);
+            if (ImportCoreLibType(typeName.Namespace, typeName.Name) is { } type)
+                return type;
+
+            return Load("System.Runtime.InteropServices", null, false) is { __IsMissing: false } assembly ? assembly.FindType(typeName) : null;
+        }
+
+        /// <summary>
         /// Resolves the primitive type with teh specified name.
         /// </summary>
         /// <param name="name"></param>
@@ -240,6 +258,8 @@ namespace IKVM.Reflection
         internal Type System_Object => typeof_System_Object ??= ResolvePrimitive("Object");
 
         internal Type System_ValueType => typeof_System_ValueType ??= ResolvePrimitive("ValueType");
+
+        internal Type System_MulticastDelegate => typeof_System_MulticastDelegate ??= ImportCoreLibType("System", "MulticastDelegate");
 
         internal Type System_Enum => typeof_System_Enum ??= ResolvePrimitive("Enum");
 
@@ -297,23 +317,25 @@ namespace IKVM.Reflection
 
         internal Type System_IO_TextWriter => typeof_System_IO_TextWriter ??= ImportCoreLibType("System.IO", "TextWriter");
 
-        internal Type System_Runtime_InteropServices_DllImportAttribute => typeof_System_Runtime_InteropServices_DllImportAttribute ??= ImportCoreLibType("System.Runtime.InteropServices", "DllImportAttribute");
+        internal Type System_Runtime_InteropServices_DllImportAttribute => typeof_System_Runtime_InteropServices_DllImportAttribute ??= ImportInteropType("DllImportAttribute");
 
-        internal Type System_Runtime_InteropServices_FieldOffsetAttribute => typeof_System_Runtime_InteropServices_FieldOffsetAttribute ??= ImportCoreLibType("System.Runtime.InteropServices", "FieldOffsetAttribute");
+        internal Type System_Runtime_InteropServices_FieldOffsetAttribute => typeof_System_Runtime_InteropServices_FieldOffsetAttribute ??= ImportInteropType("FieldOffsetAttribute");
 
-        internal Type System_Runtime_InteropServices_MarshalAsAttribute => typeof_System_Runtime_InteropServices_MarshalAsAttribute ??= ImportCoreLibType("System.Runtime.InteropServices", "MarshalAsAttribute");
+        internal Type System_Runtime_InteropServices_MarshalAsAttribute => typeof_System_Runtime_InteropServices_MarshalAsAttribute ??= ImportInteropType("MarshalAsAttribute");
 
-        internal Type System_Runtime_InteropServices_UnmanagedType => typeof_System_Runtime_InteropServices_UnmanagedType ??= ImportCoreLibType("System.Runtime.InteropServices", "UnmanagedType");
+        internal Type System_Runtime_InteropServices_UnmanagedType => typeof_System_Runtime_InteropServices_UnmanagedType ??= ImportInteropType("UnmanagedType");
 
-        internal Type System_Runtime_InteropServices_VarEnum => typeof_System_Runtime_InteropServices_VarEnum ??= ImportCoreLibType("System.Runtime.InteropServices", "VarEnum");
+        internal Type System_Runtime_InteropServices_VarEnum => typeof_System_Runtime_InteropServices_VarEnum ??= ImportInteropType("VarEnum");
 
-        internal Type System_Runtime_InteropServices_PreserveSigAttribute => typeof_System_Runtime_InteropServices_PreserveSigAttribute ??= ImportCoreLibType("System.Runtime.InteropServices", "PreserveSigAttribute");
+        internal Type System_Runtime_InteropServices_PreserveSigAttribute => typeof_System_Runtime_InteropServices_PreserveSigAttribute ??= ImportInteropType("PreserveSigAttribute");
 
-        internal Type System_Runtime_InteropServices_CallingConvention => typeof_System_Runtime_InteropServices_CallingConvention ??= ImportCoreLibType("System.Runtime.InteropServices", "CallingConvention");
+        internal Type System_Runtime_InteropServices_CallingConvention => typeof_System_Runtime_InteropServices_CallingConvention ??= ImportInteropType("CallingConvention");
 
-        internal Type System_Runtime_InteropServices_CharSet => typeof_System_Runtime_InteropServices_CharSet ??= ImportCoreLibType("System.Runtime.InteropServices", "CharSet");
+        internal Type System_Runtime_InteropServices_CharSet => typeof_System_Runtime_InteropServices_CharSet ??= ImportInteropType("CharSet");
 
         internal Type System_Runtime_CompilerServices_DecimalConstantAttribute => typeof_System_Runtime_CompilerServices_DecimalConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DecimalConstantAttribute");
+
+        internal Type System_Runtime_CompilerServices_DateTimeConstantAttribute => typeof_System_Runtime_CompilerServices_DateTimeConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DateTimeConstantAttribute");
 
         internal Type System_Reflection_AssemblyCopyrightAttribute => typeof_System_Reflection_AssemblyCopyrightAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyCopyrightAttribute");
 

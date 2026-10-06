@@ -79,12 +79,12 @@ namespace IKVM.Reflection.Reader
 
         public override MethodAttributes Attributes
         {
-            get { return (MethodAttributes)module.MethodDefTable.records[index].Flags; }
+            get { return (MethodAttributes)(ushort)module.MethodDefTable.records[index].Flags; }
         }
 
         public override MethodImplAttributes GetMethodImplementationFlags()
         {
-            return (MethodImplAttributes)module.MethodDefTable.records[index].ImplFlags;
+            return (MethodImplAttributes)(ushort)module.MethodDefTable.records[index].ImplFlags;
         }
 
         public override ParameterInfo[] GetParameters()
