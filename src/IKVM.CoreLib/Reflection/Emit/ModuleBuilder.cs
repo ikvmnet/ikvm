@@ -192,7 +192,6 @@ namespace IKVM.Reflection.Emit
         readonly AssemblyBuilder asm;
         Guid mvid;
         ReservedBlob<GuidHandle> mvidFixup;
-        uint timestamp;
         ulong imageBaseAddress = 0;
         uint fileAlignment = 0;
         DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
@@ -235,11 +234,9 @@ namespace IKVM.Reflection.Emit
             this.moduleName = moduleName;
             this.fileName = fileName;
 
+            // the image gets its real module version id when it is written; until then report a provisional one
             if (Universe.Deterministic == false)
-            {
-                __PEHeaderTimeDateStamp = DateTime.UtcNow;
                 mvid = Guid.NewGuid();
-            }
 
             // add module
             mvidFixup = metadata.ReserveGuid();
@@ -1053,18 +1050,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public DateTime __PEHeaderTimeDateStamp
-        {
-            get { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(timestamp); }
-            set
-            {
-                if (value < new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) || value > new DateTime(2106, 2, 7, 6, 28, 15, DateTimeKind.Utc))
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-                timestamp = (uint)(value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-            }
-        }
+        /// <summary>
+        /// Records the module version id the image was written with.
+        /// </summary>
+        /// <param name="value"></param>
+        internal void SetModuleVersionId(Guid value) => mvid = value;
 
         public override string ScopeName
         {

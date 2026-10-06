@@ -85,6 +85,14 @@ namespace IKVM.Reflection.Tests
         public static TestUniverse Create(string tfm, IEnumerable<string>? searchPaths = null) => new(FrameworkSpec.Get(tfm), UniverseOptions.None, searchPaths);
 
         /// <summary>
+        /// Creates a new instance for the specified target framework with the given options.
+        /// </summary>
+        /// <param name="tfm"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public static TestUniverse Create(string tfm, UniverseOptions options) => new(FrameworkSpec.Get(tfm), options, null);
+
+        /// <summary>
         /// Creates a new instance for the specified target framework, configured the way the IKVM importer configures its
         /// universe.
         /// </summary>

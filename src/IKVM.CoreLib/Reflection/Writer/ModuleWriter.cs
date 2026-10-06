@@ -257,6 +257,7 @@ namespace IKVM.Reflection.Writer
             var mvidId = new BlobWriter(module.GetModuleVersionIdFixup().Content);
             mvidId.WriteGuid(peContentId.Guid);
             Debug.Assert(mvidId.RemainingBytes == 0);
+            module.SetModuleVersionId(peContentId.Guid);
 
             // strong name specified, sign the blobs
             if (keyPair != null)

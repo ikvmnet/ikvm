@@ -54,6 +54,39 @@ namespace IKVM.Reflection.Tests.Emit
             TextDiff.ShouldMatch(actual, expected, $"between the {tfm} fixture and its copy emitted on {Fixture.HostTargetFramework}");
         }
 
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void ModuleVersionIdMatchesWrittenImage(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            module.DefineType("Test").CreateType();
+            assembly.Save("Test.dll");
+
+            module.ModuleVersionId.Should().Be(u.VerifyAndLoad("Test.dll").ManifestModule.ModuleVersionId);
+        }
+
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void DeterministicOutputIsRepeatable(string tfm)
+        {
+            byte[] Save()
+            {
+                using var u = TestUniverse.Create(tfm, UniverseOptions.DeterministicOutput);
+                var assembly = u.DefineAssembly();
+                var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+                var type = module.DefineType("Test", TypeAttributes.Public);
+                type.DefineField("value", u.Import(typeof(int)), FieldAttributes.Public);
+                type.CreateType();
+                assembly.Save("Test.dll");
+                return File.ReadAllBytes(Path.Combine(u.TempPath, "Test.dll"));
+            }
+
+            Save().Should().Equal(Save());
+        }
+
         static byte[] ReadAll(Stream stream)
         {
             using var m = new MemoryStream();
