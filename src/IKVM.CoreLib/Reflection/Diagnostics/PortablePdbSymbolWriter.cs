@@ -515,12 +515,8 @@ namespace IKVM.Reflection.Diagnostics
             var buf = new BlobBuilder();
             var enc = new SequencePointEncoder(buf);
 
-            // obtain local signature from method builder directly
-            if (method.LocalSignatureHandle.IsNil)
-                throw new InvalidOperationException("MethodBuilder missing local signature.");
-
-            // define the local signature, default seems to work fine
-            enc.LocalSignature(default);
+            // the local signature of the method body, which is nil for a method without locals
+            enc.LocalSignature(method.LocalSignatureHandle);
 
             // add the sequence points recorded on the method
             foreach (var (document, offset, startLine, endLine, startColumn, endColumn) in ExpandSequencePoints(method.SequencePoints).OrderBy(i => i.Offset))

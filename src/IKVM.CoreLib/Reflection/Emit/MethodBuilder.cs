@@ -547,8 +547,10 @@ namespace IKVM.Reflection.Emit
                 if (m_ilGenerator.m_ScopeTree.m_iOpenScopeCount != 0)
                     throw new InvalidOperationException("Local variable scope was not properly closed.");
 
-                // save information from the ILGenerator
-                SetMethodBody(m_ilGenerator.BakeByteArray(), m_ilGenerator.GetMaxStackSize(), m_ilGenerator.m_localSignature.GetSignature(), GetExceptions(m_ilGenerator.GetExceptions()), m_ilGenerator.GetTokenFixups());
+                // save information from the ILGenerator; a local signature must have at least one local, and without one
+                // the body can use a tiny header
+                var localSignature = m_ilGenerator.m_localCount > 0 ? m_ilGenerator.m_localSignature.GetSignature() : null;
+                SetMethodBody(m_ilGenerator.BakeByteArray(), m_ilGenerator.GetMaxStackSize(), localSignature, GetExceptions(m_ilGenerator.GetExceptions()), m_ilGenerator.GetTokenFixups());
             }
 
         }

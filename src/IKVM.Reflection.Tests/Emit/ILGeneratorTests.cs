@@ -92,6 +92,40 @@ namespace IKVM.Reflection.Tests.Emit
             signatures.Should().Equal("default(fnptr default(Int32) : Void) : fnptr default(Int32) : Int32");
         }
 
+        /// <summary>
+        /// A method that declares no locals gets no local signature, which the metadata requires to have at least one
+        /// element and which would also prevent a tiny method header. A method with locals keeps its signature.
+        /// </summary>
+        /// <param name="tfm"></param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void EmitsLocalSignatureOnlyForLocals(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type");
+            var without = type.DefineMethod("Without", MethodAttributes.Public | MethodAttributes.Static, null, Type.EmptyTypes);
+            without.GetILGenerator().Emit(OpCodes.Ret);
+            var with = type.DefineMethod("With", MethodAttributes.Public | MethodAttributes.Static, null, Type.EmptyTypes);
+            var il = with.GetILGenerator();
+            var local = il.DeclareLocal(u.Import(typeof(int)));
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Stloc, local);
+            il.Emit(OpCodes.Ret);
+            type.CreateType();
+            assembly.Save("Test.dll");
+            u.Verify("Test.dll");
+
+            using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, "Test.dll")));
+            var md = pe.GetMetadataReader();
+            MethodBodyBlock Body(string name) => pe.GetMethodBody(md.MethodDefinitions.Select(md.GetMethodDefinition).Single(i => md.GetString(i.Name) == name).RelativeVirtualAddress);
+            Body("Without").LocalSignature.IsNil.Should().BeTrue();
+            Body("Without").Size.Should().Be(2, "a method without locals fits a tiny header");
+            Body("With").LocalSignature.IsNil.Should().BeFalse();
+        }
+
         static string EmitCalli(TestUniverse u, System.Action<ILGenerator> calli)
         {
             var assembly = u.DefineAssembly();
