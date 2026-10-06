@@ -33,13 +33,6 @@ namespace IKVM.Reflection
         [System.Runtime.InteropServices.FieldOffset(0)]
         float f;
 
-        internal static int SingleToInt32Bits(float v)
-        {
-            var c = new SingleConverter();
-            c.f = v;
-            return c.i;
-        }
-
         internal static float Int32BitsToSingle(int v)
         {
             var c = new SingleConverter();

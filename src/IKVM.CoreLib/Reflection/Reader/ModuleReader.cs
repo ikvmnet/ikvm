@@ -29,7 +29,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 
-
 using SrmMetadataReader = System.Reflection.Metadata.MetadataReader;
 using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
 
@@ -632,11 +631,6 @@ namespace IKVM.Reflection.Reader
 
                 throw new MissingMethodException(org.ToString(), name);
             }
-        }
-
-        internal ByteReader GetStandAloneSig(int index)
-        {
-            return GetBlobReader(metadata.GetStandaloneSignature(MetadataTokens.StandaloneSignatureHandle(index + 1)).Signature);
         }
 
         public override byte[] ResolveSignature(int metadataToken)

@@ -303,7 +303,6 @@ namespace IKVM.Reflection.Emit
 
         }
 
-
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
         readonly MethodBodyStreamEncoder methodBodyEncoder;
@@ -1560,12 +1559,6 @@ namespace IKVM.Reflection.Emit
         {
             const int ContainsNoMetaData = 0x0001;
             return MetadataTokens.GetToken(metadata.AddAssemblyFile(GetOrAddString(name), GetOrAddBlob(hash), (flags & ContainsNoMetaData) == 0));
-        }
-
-        internal void FixupPseudoToken(ref int token)
-        {
-            if (IsPseudoToken(token))
-                token = ResolvePseudoToken(token);
         }
 
         internal void SetIsSaved()

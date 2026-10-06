@@ -25,14 +25,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-
 namespace IKVM.Reflection.Reader
 {
 
     sealed class AssemblyReader : Assembly
     {
-
-        const int ContainsNoMetaData = 0x0001;
 
         readonly string location;
         readonly ModuleReader manifestModule;
