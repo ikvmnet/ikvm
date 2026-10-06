@@ -57,7 +57,6 @@ namespace IKVM.Reflection.Emit
             this.attributes = attributes;
             this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
             this.signature = FieldSignature.Create(fieldType, customModifiers);
-            this.type.ModuleBuilder.FieldTable.AddVirtualRecord();
 
             // create signature blob
             var buf = new ByteBuffer(5);

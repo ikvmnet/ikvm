@@ -54,25 +54,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddFieldRelativeVirtualAddress(
-                    System.Reflection.Metadata.Ecma335.MetadataTokens.FieldDefinitionHandle(records[i].Field),
-                    records[i].RVA);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                //records[i].RVA = records[i].RVA < 0 ? (records[i].RVA & 0x7fffffff) + cilRVA : sdataRVA;
-                moduleBuilder.FixupPseudoToken(ref records[i].Field);
-            }
-
-            Sort();
-        }
-
     }
 
 }

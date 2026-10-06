@@ -292,10 +292,7 @@ namespace IKVM.Reflection.Writer
 
             // fixup content in tables
             module.TypeRefTable.Fixup(module);
-            module.MethodSemanticsTable.Fixup(module);
             module.MemberRefTable.Fixup(module);
-            module.DeclSecurityTable.Fixup(module);
-            module.FieldRVATable.Fixup(module);
             module.ExportedTypeTable.Fixup(module);
             module.ManifestResourceTable.Fixup(module);
             module.MethodSpecTable.Fixup(module);

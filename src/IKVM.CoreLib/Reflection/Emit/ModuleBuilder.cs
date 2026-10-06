@@ -131,6 +131,18 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// A constant of a field, parameter or property. The parent can be a pseudo token until the module is written.
         /// </summary>
+        /// <summary>
+        /// Associates an accessor method with a property. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSemanticsRow
+        {
+
+            internal int Association;
+            internal short Semantics;
+            internal int Method;
+
+        }
+
         struct ConstantRow
         {
 
@@ -257,6 +269,8 @@ namespace IKVM.Reflection.Emit
         readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
         readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
         int nextPseudoToken = -1;
+        int typeCount;
+        int propertyCount;
         int genericParameterCount;
         readonly List<int> resolvedTokens = new List<int>();
         ISymbolWriter symbolWriter;
@@ -265,6 +279,7 @@ namespace IKVM.Reflection.Emit
         internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
         readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
+        readonly List<MethodSemanticsRow> methodSemantics = new List<MethodSemanticsRow>();
         readonly List<ConstantRow> constants = new List<ConstantRow>();
         readonly List<FieldMarshalRow> fieldMarshals = new List<FieldMarshalRow>();
         readonly List<ImplMapRow> implMaps = new List<ImplMapRow>();
@@ -402,7 +417,7 @@ namespace IKVM.Reflection.Emit
                 type.PopulatePropertyTable();
         }
 
-        internal void WriteTypeDefTable()
+        void WriteTypeDefTable()
         {
             int fieldList = 1;
             int methodList = 1;
@@ -410,20 +425,20 @@ namespace IKVM.Reflection.Emit
                 type.WriteTypeDefRecord(ref fieldList, ref methodList);
         }
 
-        internal void WriteMethodDefTable()
+        void WriteMethodDefTable()
         {
             int paramList = 1;
             foreach (var type in types)
                 type.WriteMethodDefRecords(ref paramList);
         }
 
-        internal void WriteParamTable()
+        void WriteParamTable()
         {
             foreach (var type in types)
                 type.WriteParamRecords();
         }
 
-        internal void WriteFieldTable()
+        void WriteFieldTable()
         {
             foreach (var type in types)
                 type.WriteFieldRecords();
@@ -432,6 +447,47 @@ namespace IKVM.Reflection.Emit
         internal int AllocPseudoToken()
         {
             return nextPseudoToken--;
+        }
+
+        /// <summary>
+        /// Allocates the TypeDef token of a new type. Types are written in the order they are defined.
+        /// </summary>
+        /// <returns></returns>
+        internal int AllocTypeToken()
+        {
+            return MetadataTokens.GetToken(MetadataTokens.TypeDefinitionHandle(++typeCount));
+        }
+
+        /// <summary>
+        /// Gets the number of properties written so far.
+        /// </summary>
+        internal int PropertyCount => propertyCount;
+
+        /// <summary>
+        /// Writes a property definition, returning its token. Properties are written type by type while the module is
+        /// being saved, which keeps each type's properties contiguous.
+        /// </summary>
+        /// <param name="attributes"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal int AddProperty(PropertyAttributes attributes, string name, PropertySignature signature)
+        {
+            var h = metadata.AddProperty((System.Reflection.PropertyAttributes)attributes, GetOrAddString(name), GetSignatureBlobIndex(signature));
+            Debug.Assert(MetadataTokens.GetRowNumber(h) == propertyCount + 1);
+            propertyCount++;
+            return MetadataTokens.GetToken(h);
+        }
+
+        /// <summary>
+        /// Records an accessor of a property.
+        /// </summary>
+        /// <param name="semantics"></param>
+        /// <param name="methodToken"></param>
+        /// <param name="association"></param>
+        internal void AddMethodSemantics(short semantics, int methodToken, int association)
+        {
+            methodSemantics.Add(new MethodSemanticsRow() { Semantics = semantics, Method = methodToken, Association = association });
         }
 
         /// <summary>
@@ -964,6 +1020,11 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         internal void WriteMetadata()
         {
+            WriteTypeDefTable();
+            WriteFieldTable();
+            WriteMethodDefTable();
+            WriteParamTable();
+
             foreach (var table in GetTables())
                 if (table != null)
                     table.Write(this);
@@ -1119,6 +1180,9 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         void WriteMemberData()
         {
+            foreach (var row in methodSemantics)
+                metadata.AddMethodSemantics(MetadataTokens.EntityHandle(row.Association), (System.Reflection.MethodSemanticsAttributes)row.Semantics, (MethodDefinitionHandle)MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)));
+
             for (int i = 0; i < constants.Count; i++)
             {
                 var row = constants[i];

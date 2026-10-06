@@ -53,11 +53,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            module.WriteParamTable();
-        }
-
     }
 
 }

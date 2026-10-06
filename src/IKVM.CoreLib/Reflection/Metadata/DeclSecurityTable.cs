@@ -59,41 +59,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddDeclarativeSecurityAttribute(
-                    MetadataTokens.EntityHandle(records[i].Parent),
-                    (System.Reflection.DeclarativeSecurityAction)records[i].Action,
-                    records[i].PermissionSet);
-
-                Debug.Assert(h == MetadataTokens.DeclarativeSecurityAttributeHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var token = records[i].Parent;
-                moduleBuilder.FixupPseudoToken(ref token);
-
-                // do the HasDeclSecurity encoding, so that we can sort the table
-                token = (token >> 24) switch
-                {
-                    TypeDefTable.Index => (token & 0xFFFFFF) << 2 | 0,
-                    MethodDefTable.Index => (token & 0xFFFFFF) << 2 | 1,
-                    AssemblyTable.Index => (token & 0xFFFFFF) << 2 | 2,
-                    _ => throw new InvalidOperationException(),
-                };
-
-                records[i].Parent = token;
-            }
-
-            Sort();
-        }
-
     }
 
 }

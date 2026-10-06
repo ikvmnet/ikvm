@@ -65,11 +65,6 @@ namespace IKVM.Reflection.Metadata
             return rowCount;
         }
 
-        internal int AddVirtualRecord()
-        {
-            return ++rowCount;
-        }
-
         internal override void Write(ModuleBuilder module)
         {
 

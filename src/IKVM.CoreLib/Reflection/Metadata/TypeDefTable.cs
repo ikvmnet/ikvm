@@ -59,16 +59,6 @@ namespace IKVM.Reflection.Metadata
 			}
 		}
 
-		internal override void Write(ModuleBuilder module)
-		{
-			module.WriteTypeDefTable();
-		}
-
-		internal int AllocToken()
-		{
-			return 0x02000000 + AddVirtualRecord();
-		}
-
 	}
 
 }

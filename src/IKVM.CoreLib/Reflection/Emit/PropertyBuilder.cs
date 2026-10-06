@@ -174,11 +174,7 @@ namespace IKVM.Reflection.Emit
             if (patchCallingConvention)
                 sig.HasThis = !this.IsStatic;
 
-            var rec = new PropertyTable.Record();
-            rec.Flags = (short)attributes;
-            rec.Name = typeBuilder.ModuleBuilder.GetOrAddString(name);
-            rec.Type = typeBuilder.ModuleBuilder.GetSignatureBlobIndex(sig);
-            int token = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(typeBuilder.ModuleBuilder.PropertyTable.AddRecord(rec)));
+            var token = typeBuilder.ModuleBuilder.AddProperty(attributes, name, sig);
 
             if (lazyPseudoToken == 0)
                 lazyPseudoToken = token;
@@ -186,16 +182,7 @@ namespace IKVM.Reflection.Emit
                 typeBuilder.ModuleBuilder.RegisterTokenFixup(lazyPseudoToken, token);
 
             foreach (var acc in accessors)
-                AddMethodSemantics(acc.Semantics, acc.Method.MetadataToken, token);
-        }
-
-        void AddMethodSemantics(short semantics, int methodToken, int propertyToken)
-        {
-            var rec = new MethodSemanticsTable.Record();
-            rec.Semantics = semantics;
-            rec.Method = methodToken;
-            rec.Association = propertyToken;
-            typeBuilder.ModuleBuilder.MethodSemanticsTable.AddRecord(rec);
+                typeBuilder.ModuleBuilder.AddMethodSemantics(acc.Semantics, acc.Method.MetadataToken, token);
         }
 
         internal override bool IsPublic

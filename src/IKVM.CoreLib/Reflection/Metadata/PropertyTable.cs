@@ -54,19 +54,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddProperty(
-                    (System.Reflection.PropertyAttributes)records[i].Flags,
-                    records[i].Name,
-                    records[i].Type);
-
-                Debug.Assert(h == MetadataTokens.PropertyDefinitionHandle(i + 1));
-            }
-        }
-
     }
 
 }

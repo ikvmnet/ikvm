@@ -67,7 +67,7 @@ namespace IKVM.Reflection.Emit
         internal TypeBuilder(ITypeOwner owner, string ns, string name)
         {
             this.owner = owner;
-            this.token = ModuleBuilder.TypeDefTable.AllocToken();
+            this.token = ModuleBuilder.AllocTypeToken();
             this.ns = ns;
             this.name = name;
             this.typeNameSpace = ns == null ? default : ModuleBuilder.GetOrAddString(ns);
@@ -100,7 +100,6 @@ namespace IKVM.Reflection.Emit
 
         private MethodBuilder CreateMethodBuilder(string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
-            ModuleBuilder.MethodDefTable.AddVirtualRecord();
             var mb = new MethodBuilder(this, name, attributes, callingConvention);
             methods.Add(mb);
             return mb;
@@ -379,10 +378,7 @@ namespace IKVM.Reflection.Emit
         {
             if (properties != null)
             {
-                var rec = new PropertyMapTable.Record();
-                rec.Parent = token;
-                rec.PropertyList = MetadataTokens.GetToken(MetadataTokens.PropertyDefinitionHandle(ModuleBuilder.PropertyTable.RowCount + 1));
-                ModuleBuilder.PropertyMapTable.AddRecord(rec);
+                ModuleBuilder.Metadata.AddPropertyMap(MetadataTokens.TypeDefinitionHandle(token), MetadataTokens.PropertyDefinitionHandle(ModuleBuilder.PropertyCount + 1));
                 foreach (var pb in properties)
                     pb.Bake();
             }
