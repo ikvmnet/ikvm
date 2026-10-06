@@ -21,10 +21,8 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
@@ -34,47 +32,37 @@ namespace IKVM.Reflection.Reader
 
         readonly MethodDefImpl method;
         readonly int position;
-        readonly int index;
+        readonly ParameterHandle handle;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="method"></param>
         /// <param name="position"></param>
-        /// <param name="index"></param>
-        internal ParameterInfoImpl(MethodDefImpl method, int position, int index)
+        /// <param name="handle">The parameter row, or a nil handle for a parameter without one.</param>
+        internal ParameterInfoImpl(MethodDefImpl method, int position, ParameterHandle handle)
         {
             this.method = method;
             this.position = position;
-            this.index = index;
+            this.handle = handle;
         }
 
-        public override string Name
-        {
-            get { return index == -1 ? null : ((ModuleReader)this.Module).GetString(this.Module.ParamTable.records[index].Name); }
-        }
+        ModuleReader ModuleReader => (ModuleReader)method.Module;
 
-        public override Type ParameterType
-        {
-            get { return position == -1 ? method.MethodSignature.GetReturnType(method) : method.MethodSignature.GetParameterType(method, position); }
-        }
+        public override string Name => handle.IsNil ? null : ModuleReader.GetString(ModuleReader.Metadata.GetParameter(handle).Name);
 
-        public override ParameterAttributes Attributes
-        {
-            get { return index == -1 ? ParameterAttributes.None : (ParameterAttributes)(ushort)this.Module.ParamTable.records[index].Flags; }
-        }
+        public override Type ParameterType => position == -1 ? method.MethodSignature.GetReturnType(method) : method.MethodSignature.GetParameterType(method, position);
 
-        public override int Position
-        {
-            get { return position; }
-        }
+        public override ParameterAttributes Attributes => handle.IsNil ? ParameterAttributes.None : (ParameterAttributes)ModuleReader.Metadata.GetParameter(handle).Attributes;
+
+        public override int Position => position;
 
         public override object RawDefaultValue
         {
             get
             {
                 if ((Attributes & ParameterAttributes.HasDefault) != 0)
-                    return Module.ConstantTable.GetRawConstantValue(Module, MetadataToken);
+                    return ModuleReader.GetConstantValue(ModuleReader.Metadata.GetParameter(handle).GetDefaultValue());
 
                 if (TryGetCustomConstant(out var value))
                     return value;
@@ -91,34 +79,15 @@ namespace IKVM.Reflection.Reader
             return position == -1 ? method.MethodSignature.GetReturnTypeCustomModifiers(method) : method.MethodSignature.GetParameterCustomModifiers(method, position);
         }
 
-        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-        {
-            return FieldMarshal.ReadFieldMarshal(this.Module, this.MetadataToken, out fieldMarshal);
-        }
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => FieldMarshal.ReadFieldMarshal(Module, MetadataToken, out fieldMarshal);
 
-        public override MemberInfo Member
-        {
-            get
-            {
-                // return the right ConstructorInfo wrapper
-                return method.Module.ResolveMethod(method.MetadataToken);
-            }
-        }
+        // return the right ConstructorInfo wrapper
+        public override MemberInfo Member => method.Module.ResolveMethod(method.MetadataToken);
 
-        public override int MetadataToken
-        {
-            get
-            {
-                // for parameters that don't have a row in the Param table, we return 0x08000000 (because index is -1 in that case),
-                // just like .NET
-                return (ParamTable.Index << 24) + index + 1;
-            }
-        }
+        // like .NET, a parameter without a row in the Param table has token 0x08000000
+        public override int MetadataToken => handle.IsNil ? 0x08000000 : MetadataTokens.GetToken(handle);
 
-        public override Module Module
-        {
-            get { return method.Module; }
-        }
+        public override Module Module => method.Module;
 
     }
 

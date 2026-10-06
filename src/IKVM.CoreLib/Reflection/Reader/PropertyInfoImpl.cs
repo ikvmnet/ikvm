@@ -21,7 +21,9 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
@@ -31,7 +33,8 @@ namespace IKVM.Reflection.Reader
 
         readonly ModuleReader module;
         readonly Type declaringType;
-        readonly int index;
+        readonly PropertyDefinitionHandle handle;
+        readonly PropertyDefinition definition;
 
         PropertySignature sig;
         bool isPublic;
@@ -44,53 +47,67 @@ namespace IKVM.Reflection.Reader
         /// </summary>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal PropertyInfoImpl(ModuleReader module, Type declaringType, int index)
+        /// <param name="handle"></param>
+        internal PropertyInfoImpl(ModuleReader module, Type declaringType, PropertyDefinitionHandle handle)
         {
             this.module = module;
             this.declaringType = declaringType;
-            this.index = index;
+            this.handle = handle;
+            this.definition = module.Metadata.GetPropertyDefinition(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is PropertyInfoImpl other && other.DeclaringType == declaringType && other.index == index;
-        }
+        public override bool Equals(object obj) => obj is PropertyInfoImpl other && other.DeclaringType == declaringType && other.handle == handle;
 
-        public override int GetHashCode() => declaringType.GetHashCode() * 77 + index;
+        public override int GetHashCode() => declaringType.GetHashCode() * 77 + MetadataTokens.GetRowNumber(handle);
 
-        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.PropertyTable.records[index].Type), declaringType);
+        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(definition.Signature), declaringType);
 
-        public override PropertyAttributes Attributes => (PropertyAttributes)(ushort)module.PropertyTable.records[index].Flags;
+        public override PropertyAttributes Attributes => (PropertyAttributes)definition.Attributes;
 
-        public override object GetRawConstantValue() => module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
+        public override object GetRawConstantValue() => module.GetConstantValue(definition.GetDefaultValue());
 
         public override bool CanRead => GetGetMethod(true) != null;
 
         public override bool CanWrite => GetSetMethod(true) != null;
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
-        }
+        public override MethodInfo GetGetMethod(bool nonPublic) => Accessor(definition.GetAccessors().Getter, nonPublic);
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
-        }
+        public override MethodInfo GetSetMethod(bool nonPublic) => Accessor(definition.GetAccessors().Setter, nonPublic);
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
+            var accessors = definition.GetAccessors();
+            var list = new List<MethodInfo>();
+            Add(accessors.Getter);
+            Add(accessors.Setter);
+            foreach (var h in accessors.Others)
+                Add(h);
+
+            return list.ToArray();
+
+            void Add(MethodDefinitionHandle h)
+            {
+                if (Accessor(h, nonPublic) is { } m)
+                    list.Add(m);
+            }
+        }
+
+        MethodInfo Accessor(MethodDefinitionHandle h, bool nonPublic)
+        {
+            if (h.IsNil)
+                return null;
+
+            var method = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(h));
+            return nonPublic || method.IsPublic ? method : null;
         }
 
         public override Type DeclaringType => declaringType;
 
         public override Module Module => module;
 
-        public override int MetadataToken => (PropertyTable.Index << 24) + index + 1;
+        public override int MetadataToken => MetadataTokens.GetToken(handle);
 
-        public override string Name => module.GetString(module.PropertyTable.records[index].Name);
+        public override string Name => module.GetString(definition.Name);
 
         internal override bool IsPublic
         {
@@ -127,19 +144,19 @@ namespace IKVM.Reflection.Reader
 
         void ComputeFlags()
         {
-            module.MethodSemanticsTable.ComputeFlags(module, MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            foreach (var method in GetAccessors(true))
+            {
+                isPublic |= method.IsPublic;
+                isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                isStatic |= method.IsStatic;
+            }
+
             flagsCached = true;
         }
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        internal override int GetCurrentToken() => MetadataToken;
 
     }
 

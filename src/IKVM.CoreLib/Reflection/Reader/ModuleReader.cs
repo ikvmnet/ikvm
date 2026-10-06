@@ -220,10 +220,10 @@ namespace IKVM.Reflection.Reader
         {
             if (typeDefs == null)
             {
-                typeDefs = new TypeDefImpl[TypeDefTable.records.Length];
+                typeDefs = new TypeDefImpl[metadata.TypeDefinitions.Count];
                 for (int i = 0; i < typeDefs.Length; i++)
                 {
-                    var type = new TypeDefImpl(this, i);
+                    var type = new TypeDefImpl(this, MetadataTokens.TypeDefinitionHandle(i + 1));
                     typeDefs[i] = type;
                     if (type.IsModulePseudoType)
                         moduleType = type;
@@ -256,6 +256,44 @@ namespace IKVM.Reflection.Reader
         }
 
         internal byte[] GetBlobCopy(BlobHandle handle) => metadata.GetBlobBytes(handle);
+
+        /// <summary>
+        /// Gets the metadata reader over the module.
+        /// </summary>
+        internal SrmMetadataReader Metadata => metadata;
+
+        /// <summary>
+        /// Gets the value of a constant row.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">The member has no constant.</exception>
+        internal object GetConstantValue(ConstantHandle handle)
+        {
+            if (handle.IsNil)
+                throw new InvalidOperationException();
+
+            var constant = metadata.GetConstant(handle);
+            var value = metadata.GetBlobReader(constant.Value);
+            return constant.TypeCode switch
+            {
+                ConstantTypeCode.Boolean => value.ReadBoolean(),
+                ConstantTypeCode.Char => value.ReadChar(),
+                ConstantTypeCode.SByte => value.ReadSByte(),
+                ConstantTypeCode.Byte => value.ReadByte(),
+                ConstantTypeCode.Int16 => value.ReadInt16(),
+                ConstantTypeCode.UInt16 => value.ReadUInt16(),
+                ConstantTypeCode.Int32 => value.ReadInt32(),
+                ConstantTypeCode.UInt32 => value.ReadUInt32(),
+                ConstantTypeCode.Int64 => value.ReadInt64(),
+                ConstantTypeCode.UInt64 => value.ReadUInt64(),
+                ConstantTypeCode.Single => value.ReadSingle(),
+                ConstantTypeCode.Double => value.ReadDouble(),
+                ConstantTypeCode.String => value.ReadUTF16(value.Length),
+                ConstantTypeCode.NullReference => null,
+                _ => throw new BadImageFormatException(),
+            };
+        }
 
         internal override ByteReader GetBlobReader(BlobHandle handle) => ByteReader.FromBlob(metadataImage, blobHeapOffset, handle);
 
@@ -506,11 +544,18 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        internal FieldInfo GetFieldAt(TypeDefImpl owner, int index)
+        internal FieldInfo GetFieldAt(TypeDefImpl owner, FieldDefinitionHandle handle)
         {
-            fields ??= new FieldInfo[FieldTable.records.Length];
-            fields[index] ??= new FieldDefImpl(this, owner ?? FindFieldOwner(index), index);
+            var index = MetadataTokens.GetRowNumber(handle) - 1;
+            fields ??= new FieldInfo[metadata.FieldDefinitions.Count];
+            fields[index] ??= new FieldDefImpl(this, owner ?? GetTypeDef(metadata.GetFieldDefinition(handle).GetDeclaringType()), handle);
             return fields[index];
+        }
+
+        TypeDefImpl GetTypeDef(TypeDefinitionHandle handle)
+        {
+            PopulateTypeDef();
+            return typeDefs[MetadataTokens.GetRowNumber(handle) - 1];
         }
 
         public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
@@ -522,7 +567,7 @@ namespace IKVM.Reflection.Reader
             }
             else if ((metadataToken >> 24) == FieldTable.Index && index < FieldTable.RowCount)
             {
-                return GetFieldAt(null, index);
+                return GetFieldAt(null, MetadataTokens.FieldDefinitionHandle(index + 1));
             }
             else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
             {
@@ -538,29 +583,13 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        TypeDefImpl FindFieldOwner(int fieldIndex)
+        internal MethodBase GetMethodAt(TypeDefImpl owner, MethodDefinitionHandle handle)
         {
-            // TODO use binary search?
-            for (int i = 0; i < TypeDefTable.records.Length; i++)
-            {
-                var field = TypeDefTable.records[i].FieldList - 1;
-                var end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].FieldList - 1 : FieldTable.records.Length;
-                if (field <= fieldIndex && fieldIndex < end)
-                {
-                    PopulateTypeDef();
-                    return typeDefs[i];
-                }
-            }
-
-            throw new InvalidOperationException();
-        }
-
-        internal MethodBase GetMethodAt(TypeDefImpl owner, int index)
-        {
-            methods ??= new MethodBase[MethodDefTable.records.Length];
+            var index = MetadataTokens.GetRowNumber(handle) - 1;
+            methods ??= new MethodBase[metadata.MethodDefinitions.Count];
             if (methods[index] == null)
             {
-                var method = new MethodDefImpl(this, owner ?? FindMethodOwner(index), index);
+                var method = new MethodDefImpl(this, owner ?? GetTypeDef(metadata.GetMethodDefinition(handle).GetDeclaringType()), handle);
                 methods[index] = method.IsConstructor ? new ConstructorInfoImpl(method) : (MethodBase)method;
             }
 
@@ -576,7 +605,7 @@ namespace IKVM.Reflection.Reader
             }
             else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDefTable.RowCount)
             {
-                return GetMethodAt(null, index);
+                return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(index + 1));
             }
             else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
             {
@@ -603,23 +632,6 @@ namespace IKVM.Reflection.Reader
             get { return GetString(ModuleTable.records[0].Name); }
         }
 
-        TypeDefImpl FindMethodOwner(int methodIndex)
-        {
-            // TODO use binary search?
-            for (int i = 0; i < TypeDefTable.records.Length; i++)
-            {
-                int method = TypeDefTable.records[i].MethodList - 1;
-                int end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].MethodList - 1 : MethodDefTable.records.Length;
-                if (method <= methodIndex && methodIndex < end)
-                {
-                    PopulateTypeDef();
-                    return typeDefs[i];
-                }
-            }
-
-            throw new InvalidOperationException();
-        }
-
         MemberInfo GetMemberRef(int index, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             memberRefs ??= new MemberInfo[MemberRefTable.records.Length];
@@ -632,7 +644,7 @@ namespace IKVM.Reflection.Reader
                 switch (owner >> 24)
                 {
                     case MethodDefTable.Index:
-                        return GetMethodAt(null, (owner & 0xFFFFFF) - 1);
+                        return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(owner & 0xFFFFFF));
                     case ModuleRefTable.Index:
                         memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, GetBlobReader(sig));
                         break;
