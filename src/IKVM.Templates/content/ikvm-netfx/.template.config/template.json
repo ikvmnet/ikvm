@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "IKVM.NET",
+  "classifications": [
+    "Common",
+    "Console"
+  ],
+  "identity": "IKVM.Java.Console.NetFramework",
+  "name": "Java Console App (.NET Framework)",
+  "description": "A project for creating a command-line application in Java that runs on .NET Framework.",
+  "shortName": "ikvm-netfx",
+  "tags": {
+    "language": "Java",
+    "type": "project"
+  },
+  "sourceName": "IkvmConsoleApp",
+  "defaultName": "ConsoleApp1",
+  "preferNameDirectory": true,
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "net472",
+          "description": "Target net472"
+        },
+        {
+          "choice": "net48",
+          "description": "Target net48"
+        },
+        {
+          "choice": "net481",
+          "description": "Target net481"
+        }
+      ],
+      "replaces": "net48",
+      "defaultValue": "net48"
+    },
+    "skipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "If specified, skips the automatic restore of the project on create.",
+      "defaultValue": "false"
+    },
+    "packageNameIdentifier": {
+      "type": "generated",
+      "generator": "regex",
+      "parameters": {
+        "source": "name",
+        "steps": [
+          {
+            "regex": "[^A-Za-z0-9_]",
+            "replacement": ""
+          },
+          {
+            "regex": "^(?=[0-9])",
+            "replacement": "_"
+          },
+          {
+            "regex": "^$",
+            "replacement": "app"
+          }
+        ]
+      }
+    },
+    "packageName": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": {
+        "source": "packageNameIdentifier",
+        "toLower": true
+      },
+      "replaces": "javapackagename",
+      "fileRename": "javapackagename"
+    }
+  },
+  "primaryOutputs": [
+    {
+      "path": "IkvmConsoleApp.ikvmproj"
+    },
+    {
+      "path": "src/main/java/javapackagename/Program.java"
+    }
+  ],
+  "postActions": [
+    {
+      "id": "restore",
+      "condition": "(!skipRestore)",
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    },
+    {
+      "id": "editor",
+      "condition": "(HostIdentifier != \"dotnetcli\" && HostIdentifier != \"dotnetcli-preview\")",
+      "description": "Opens Program.java in the editor.",
+      "manualInstructions": [],
+      "actionId": "84C0DA21-51C8-4541-9940-6CA19AF04EE6",
+      "args": {
+        "files": "1"
+      },
+      "continueOnError": true
+    }
+  ]
+}

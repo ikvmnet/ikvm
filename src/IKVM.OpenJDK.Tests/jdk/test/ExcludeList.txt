@@ -2389,6 +2389,7 @@ sun/net/www/protocol/jar/B5105410.sh                                            
 sun/net/www/protocol/jar/B6449504.java                                                                                  generic-all
 sun/net/www/protocol/jar/GetContentType.java                                                                            generic-all
 sun/net/www/protocol/jar/jarbug/run.sh                                                                                  generic-all
+sun/nio/ch/TempBuffer.java                                                                                              linux-all
 sun/pisces/DashStrokeTest.java                                                                                          generic-all
 sun/pisces/JoinMiterTest.java                                                                                           generic-all
 sun/reflect/AnonymousNewInstance/ManyNewInstanceAnonTest.java                                                           generic-all
@@ -2412,6 +2413,7 @@ sun/rmi/transport/tcp/DisableRMIOverHttp/DisableRMIOverHTTPTest.java            
 sun/rmi/transport/tcp/blockAccept/BlockAcceptTest.java                                                                  generic-all
 sun/security/krb5/auto/BasicProc.java                                                                                   generic-all
 sun/security/krb5/auto/rcache_usemd5.sh                                                                                 linux-all
+sun/security/krb5/auto/UserIterCount.java                                                                               windows-all
 sun/security/krb5/auto/W83.java                                                                                         generic-all
 sun/security/krb5/config/dns.sh                                                                                         generic-all
 sun/security/krb5/runNameEquals.sh                                                                                      generic-all

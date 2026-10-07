@@ -36,6 +36,9 @@
         <PackageProjectReference Include="..\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Templates\IKVM.Templates.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM\IKVM.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

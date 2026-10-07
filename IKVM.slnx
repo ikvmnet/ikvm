@@ -111,6 +111,7 @@
     <Project Path="src/IKVM.Reflection.Tests/IKVM.Reflection.Tests.csproj" />
     <Project Path="src/IKVM.Runtime-ref/IKVM.Runtime-ref.csproj" />
     <Project Path="src/IKVM.Runtime/IKVM.Runtime.csproj" />
+    <Project Path="src/IKVM.Templates/IKVM.Templates.csproj" />
     <Project Path="src/IKVM.Tests.Util/IKVM.Tests.Util.csproj" />
     <Project Path="src/IKVM.Tests/IKVM.Tests.csproj" />
     <Project Path="src/IKVM.Tools.Core/IKVM.Tools.Core.csproj" />
