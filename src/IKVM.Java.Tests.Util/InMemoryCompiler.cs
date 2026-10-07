@@ -230,6 +230,20 @@ namespace IKVM.Java.Tests.Util
         }
 
         /// <summary>
+        /// Gets the class file bytes of the compiled class with the given name.
+        /// </summary>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        /// <exception cref="java.lang.ClassNotFoundException"></exception>
+        public byte[] GetClassBytes(string className)
+        {
+            if (streams.TryGetValue(className, out var stream))
+                return stream.toByteArray();
+
+            throw new ClassNotFoundException(className);
+        }
+
+        /// <summary>
         /// Writes the compiled classes to a JAR.
         /// </summary>
         /// <param name="path"></param>
