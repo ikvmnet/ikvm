@@ -125,7 +125,7 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Gets the namespace of the generic type definition that declares the parameter.
         /// </summary>
-        public override string Namespace => DeclaringType.Namespace;
+        public override string Namespace => (DeclaringType ?? DeclaringMethod.DeclaringType)?.Namespace;
 
         /// <summary>
         /// Gets the name of the current generic type parameter.

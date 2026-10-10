@@ -75,11 +75,12 @@ namespace IKVM.Reflection
         {
             return obj is PropertySignature other
                 && other._propertyType.Equals(_propertyType)
+                && Util.ArrayEquals(other._parameterTypes, _parameterTypes)
                 && other._customModifiers.Equals(_customModifiers);
         }
 
         /// <inheritdoc />
-        public override int GetHashCode() => _propertyType.GetHashCode() ^ _customModifiers.GetHashCode();
+        public override int GetHashCode() => _propertyType.GetHashCode() ^ Util.GetHashCode(_parameterTypes) ^ _customModifiers.GetHashCode();
 
         /// <summary>
         /// Gets the number of index parameters.

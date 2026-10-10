@@ -1265,7 +1265,7 @@ namespace IKVM.Reflection
             return GetMemberByName<ConstructorInfo>(name, bindingAttr | BindingFlags.DeclaredOnly,
                 delegate (ConstructorInfo ctor)
                 { return ctor.MethodSignature.MatchParameterTypes(types); })
-                ?? GetMethodWithBinder<ConstructorInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+                ?? GetMethodWithBinder<ConstructorInfo>(name, bindingAttr | BindingFlags.DeclaredOnly, binder ?? DefaultBinder, types, modifiers);
         }
 
         /// <summary>

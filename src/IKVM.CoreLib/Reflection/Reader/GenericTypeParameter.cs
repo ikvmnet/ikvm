@@ -58,7 +58,7 @@ namespace IKVM.Reflection.Reader
         public override int GetHashCode() => base.GetHashCode();
 
         /// <inheritdoc />
-        public override string Namespace => DeclaringType.Namespace;
+        public override string Namespace => (DeclaringType ?? DeclaringMethod.DeclaringType)?.Namespace;
 
         /// <inheritdoc />
         public override string Name => _module.GetString(_definition.Name);
