@@ -19,7 +19,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 using System.Collections.Generic;
@@ -34,6 +34,9 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Defines and represents a dynamic assembly.
+    /// </summary>
     sealed class AssemblyBuilder : Assembly
     {
 
@@ -47,32 +50,69 @@ namespace IKVM.Reflection.Emit
         readonly AssemblyHashAlgorithm _hashAlgorithm;
         readonly StrongNameKeyPair _keyPair;
         readonly byte[] _publicKey;
+
+        /// <summary>
+        /// The directory that the assembly's modules are written to and its resource files and added modules are read
+        /// from.
+        /// </summary>
         internal readonly string Dir;
+
         PEFileKinds _fileKind = PEFileKinds.Dll;
         MethodInfo _entryPoint;
+
+        /// <summary>
+        /// The Win32 version resource to generate, or <see langword="null"/> if
+        /// <see cref="DefineVersionInfoResource"/> has not been called.
+        /// </summary>
         VersionInfo _versionInfo;
+
         byte[] _win32icon;
         byte[] _win32manifest;
         readonly string _imageRuntimeVersion;
+
+        /// <summary>
+        /// The metadata stream version reported by the modules of this assembly.
+        /// </summary>
         internal int MdStreamVersion = 0x20000;
+
+        /// <summary>
+        /// The placeholder module returned by <see cref="ManifestModule"/>, created on first access.
+        /// </summary>
         Module _pseudoManifestModule;
+
         readonly List<ResourceFile> _resourceFiles = [];
         readonly List<ModuleBuilder> _modules = [];
+
+        /// <summary>
+        /// Existing modules that belong to the assembly in addition to the modules defined with
+        /// <see cref="DefineDynamicModule"/>.
+        /// </summary>
         readonly List<Module> _addedModules = [];
+
         readonly List<CustomAttributeBuilder> _customAttributes = [];
         readonly List<TypeForwarder> _typeForwarders = [];
 
+        /// <summary>
+        /// Records a type forwarded to another assembly, to be written to the <c>ExportedType</c> table.
+        /// </summary>
         readonly struct TypeForwarder
         {
 
+            /// <summary>
+            /// The forwarded type.
+            /// </summary>
             internal readonly Type Type;
+
+            /// <summary>
+            /// Whether the nested types of <see cref="Type"/> are forwarded as well.
+            /// </summary>
             internal readonly bool IncludeNested;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="type"></param>
-            /// <param name="includeNested"></param>
+            /// <param name="type">The forwarded type.</param>
+            /// <param name="includeNested"><see langword="true"/> to forward the nested types of <paramref name="type"/> as well.</param>
             internal TypeForwarder(Type type, bool includeNested)
             {
                 Type = type;
@@ -81,22 +121,36 @@ namespace IKVM.Reflection.Emit
 
         }
 
+        /// <summary>
+        /// Records a file linked into the assembly as a manifest resource.
+        /// </summary>
         struct ResourceFile
         {
 
+            /// <summary>
+            /// The logical name of the resource.
+            /// </summary>
             internal string Name;
+
+            /// <summary>
+            /// The name of the file that contains the resource, relative to <see cref="Dir"/>.
+            /// </summary>
             internal string FileName;
+
+            /// <summary>
+            /// The visibility of the resource.
+            /// </summary>
             internal ResourceAttributes Attributes;
 
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance and registers it with the universe.
         /// </summary>
-        /// <param name="universe"></param>
-        /// <param name="name"></param>
-        /// <param name="dir"></param>
-        /// <param name="customAttributes"></param>
+        /// <param name="universe">The universe that owns the assembly.</param>
+        /// <param name="name">The name of the assembly, including its version, culture, flags, hash algorithm and key.</param>
+        /// <param name="dir">The directory the assembly is saved to, or <see langword="null"/> for the current directory.</param>
+        /// <param name="customAttributes">Custom attributes to apply to the assembly, or <see langword="null"/>.</param>
         internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes) :
             base(universe)
         {
@@ -136,6 +190,10 @@ namespace IKVM.Reflection.Emit
             universe.RegisterDynamicAssembly(this);
         }
 
+        /// <summary>
+        /// Stores the components of the version, treating undefined components as zero.
+        /// </summary>
+        /// <param name="version">The version, or <see langword="null"/> for 0.0.0.0.</param>
         void SetVersionHelper(Version version)
         {
             if (version == null)
@@ -154,12 +212,20 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Clears the cached full name and re-registers the assembly with the universe under its new name.
+        /// </summary>
+        /// <param name="oldName">The name the assembly was registered under.</param>
         void Rename(AssemblyName oldName)
         {
             fullName = null;
             Universe.RenameAssembly(this, oldName);
         }
 
+        /// <summary>
+        /// Changes the version of the assembly after it has been defined.
+        /// </summary>
+        /// <param name="version">The new version, or <see langword="null"/> for 0.0.0.0.</param>
         public void __SetAssemblyVersion(Version version)
         {
             AssemblyName oldName = GetName();
@@ -167,6 +233,10 @@ namespace IKVM.Reflection.Emit
             Rename(oldName);
         }
 
+        /// <summary>
+        /// Changes the culture of the assembly after it has been defined.
+        /// </summary>
+        /// <param name="cultureName">The name of the new culture, or <see langword="null"/> for the invariant culture.</param>
         public void __SetAssemblyCulture(string cultureName)
         {
             AssemblyName oldName = GetName();
@@ -174,8 +244,12 @@ namespace IKVM.Reflection.Emit
             Rename(oldName);
         }
 
+        /// <summary>
+        /// Gets the simple name of the assembly.
+        /// </summary>
         internal string Name => _name;
 
+        /// <inheritdoc />
         public override AssemblyName GetName()
         {
             AssemblyName n = new AssemblyName
@@ -191,15 +265,20 @@ namespace IKVM.Reflection.Emit
             return n;
         }
 
+        /// <summary>
+        /// Gets the location of the assembly. Not supported for dynamic assemblies.
+        /// </summary>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
         public override string Location => throw new NotSupportedException();
 
         /// <summary>
-        /// Defines a persistable dynamic module, specifying the module name, the name of the file to which the module will be saved, and whether symbol information should be emitted using the default symbol writer.
+        /// Defines a persistable dynamic module, specifying the module name, the name of the file to which the module
+        /// will be saved, and whether symbol information should be emitted using the default symbol writer.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="fileName"></param>
-        /// <param name="emitSymbolInfo"></param>
-        /// <returns></returns>
+        /// <param name="name">The name of the dynamic module.</param>
+        /// <param name="fileName">The name of the file to which the dynamic module should be saved.</param>
+        /// <param name="emitSymbolInfo"><see langword="true"/> if symbolic information is to be emitted; otherwise, <see langword="false"/>.</param>
+        /// <returns>A <see cref="ModuleBuilder"/> object representing the defined dynamic module.</returns>
         public ModuleBuilder DefineDynamicModule(string name, string fileName, bool emitSymbolInfo)
         {
             var module = new ModuleBuilder(this, name, fileName);
@@ -208,12 +287,30 @@ namespace IKVM.Reflection.Emit
             return module;
         }
 
+        /// <summary>
+        /// Sets a custom attribute on this assembly using a custom attribute builder.
+        /// </summary>
+        /// <param name="customBuilder">An instance of a helper class to define the custom attribute.</param>
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder) => _customAttributes.Add(customBuilder);
 
+        /// <summary>
+        /// Adds a type forwarder for the type and all of its nested types.
+        /// </summary>
+        /// <param name="type">The type that has been moved to another assembly.</param>
         public void __AddTypeForwarder(Type type) => __AddTypeForwarder(type, true);
 
+        /// <summary>
+        /// Adds a type forwarder for the type, written to the <c>ExportedType</c> table of the manifest module.
+        /// </summary>
+        /// <param name="type">The type that has been moved to another assembly.</param>
+        /// <param name="includeNested"><see langword="true"/> to forward the nested types of <paramref name="type"/> as well.</param>
         public void __AddTypeForwarder(Type type, bool includeNested) => _typeForwarders.Add(new TypeForwarder(type, includeNested));
 
+        /// <summary>
+        /// Sets the entry point for this assembly and defines the type of the portable executable (PE file) being built.
+        /// </summary>
+        /// <param name="entryMethod">A reference to the method that represents the entry point for this dynamic assembly.</param>
+        /// <param name="fileKind">The type of the assembly executable being built.</param>
         public void SetEntryPoint(MethodInfo entryMethod, PEFileKinds fileKind)
         {
             _entryPoint = entryMethod;
@@ -223,26 +320,30 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Saves this dynamic assembly to disk.
         /// </summary>
-        /// <param name="assemblyFileName"></param>
+        /// <param name="assemblyFileName">The file name of the assembly.</param>
         public void Save(string assemblyFileName) => Save(assemblyFileName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
 
         /// <summary>
-        /// Saves this dynamic assembly to disk, specifying the nature of code in the assembly's executables and the target platform.
+        /// Saves this dynamic assembly to disk, specifying the nature of code in the assembly's executables and the
+        /// target platform.
         /// </summary>
-        /// <param name="assemblyFileName"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
+        /// <param name="assemblyFileName">The file name of the assembly.</param>
+        /// <param name="portableExecutableKind">A bitwise combination of the <see cref="PortableExecutableKinds"/> values that specifies the nature of the code.</param>
+        /// <param name="imageFileMachine">One of the <see cref="ImageFileMachine"/> values that specifies the target platform.</param>
         public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
             SaveImpl(assemblyFileName, null, null, portableExecutableKind, imageFileMachine);
 
         /// <summary>
-        /// Implements the logic to save all of the modules within the assembly.
+        /// Implements the logic to save all of the modules within the assembly. The module whose file name matches
+        /// <paramref name="assemblyFileName"/> becomes the manifest module; if there is none, an empty manifest module
+        /// is defined. Every other module is written to its own file and linked from the manifest.
         /// </summary>
-        /// <param name="assemblyFileName"></param>
-        /// <param name="peStream"></param>
-        /// <param name="pdbStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
+        /// <param name="assemblyFileName">The file name of the manifest module.</param>
+        /// <param name="peStream">The stream to write the manifest module to, or <see langword="null"/> to write it to a file.</param>
+        /// <param name="pdbStream">The stream to write the manifest module's symbols to, or <see langword="null"/> to write them to a file.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the executables.</param>
+        /// <param name="imageFileMachine">The target platform.</param>
+        /// <exception cref="NotSupportedException">The entry point is in a module other than the manifest module.</exception>
         void SaveImpl(string assemblyFileName, Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
@@ -312,7 +413,7 @@ namespace IKVM.Reflection.Emit
                 manifestModule.AddManifestResource(resfile.Attributes, resfile.Name, MetadataTokens.GetToken(fileToken), 0);
             }
 
-            // write each non-manifest module
+            // fill in the assembly references of every module, and write each non-manifest module
             foreach (var module in _modules)
             {
                 module.FillAssemblyRefTable();
@@ -345,6 +446,13 @@ namespace IKVM.Reflection.Emit
             ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, peStream, null, pdbStream);
         }
 
+        /// <summary>
+        /// Adds a <c>File</c> row for a file that belongs to the assembly, hashing the file's contents with SHA-1.
+        /// </summary>
+        /// <param name="manifestModule">The manifest module to add the row to.</param>
+        /// <param name="fileName">The name of the file, relative to <see cref="Dir"/>.</param>
+        /// <param name="flags">The <c>File</c> row flags: 0 if the file contains metadata, 1 if it does not.</param>
+        /// <returns>A handle to the added <c>File</c> row.</returns>
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
             var fullPath = fileName;
@@ -358,8 +466,19 @@ namespace IKVM.Reflection.Emit
             return MetadataTokens.AssemblyFileHandle(manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash));
         }
 
+        /// <summary>
+        /// Adds an existing resource file to this assembly.
+        /// </summary>
+        /// <param name="name">The logical name of the resource.</param>
+        /// <param name="fileName">The physical file name (.resources file) to which the logical name is mapped. This should not include a path; the file must be in the same directory as the assembly to which it is added.</param>
         public void AddResourceFile(string name, string fileName) => AddResourceFile(name, fileName, ResourceAttributes.Public);
 
+        /// <summary>
+        /// Adds an existing resource file to this assembly.
+        /// </summary>
+        /// <param name="name">The logical name of the resource.</param>
+        /// <param name="fileName">The physical file name (.resources file) to which the logical name is mapped. This should not include a path; the file must be in the same directory as the assembly to which it is added.</param>
+        /// <param name="attribs">The resource attributes.</param>
         public void AddResourceFile(string name, string fileName, ResourceAttributes attribs)
         {
             var resfile = new ResourceFile
@@ -371,6 +490,11 @@ namespace IKVM.Reflection.Emit
             _resourceFiles.Add(resfile);
         }
 
+        /// <summary>
+        /// Defines an unmanaged version information resource using the information specified in the assembly's
+        /// <see cref="AssemblyName"/> object and the assembly's custom attributes.
+        /// </summary>
+        /// <exception cref="ArgumentException">An unmanaged version information resource was previously defined.</exception>
         public void DefineVersionInfoResource()
         {
             if (_versionInfo != null)
@@ -379,6 +503,11 @@ namespace IKVM.Reflection.Emit
             _versionInfo = new VersionInfo();
         }
 
+        /// <summary>
+        /// Defines an unmanaged icon resource for the assembly.
+        /// </summary>
+        /// <param name="iconFile">The contents of the icon file; the array is copied.</param>
+        /// <exception cref="ArgumentException">An icon resource was previously defined.</exception>
         public void __DefineIconResource(byte[] iconFile)
         {
             if (_win32icon != null)
@@ -387,6 +516,11 @@ namespace IKVM.Reflection.Emit
             _win32icon = (byte[])iconFile.Clone();
         }
 
+        /// <summary>
+        /// Defines an unmanaged Win32 application manifest resource for the assembly.
+        /// </summary>
+        /// <param name="manifest">The contents of the manifest; the array is copied.</param>
+        /// <exception cref="ArgumentException">A manifest resource was previously defined.</exception>
         public void __DefineManifestResource(byte[] manifest)
         {
             if (_win32manifest != null)
@@ -395,6 +529,7 @@ namespace IKVM.Reflection.Emit
             _win32manifest = (byte[])manifest.Clone();
         }
 
+        /// <inheritdoc />
         public override Type[] GetTypes()
         {
             var list = new List<Type>();
@@ -408,6 +543,7 @@ namespace IKVM.Reflection.Emit
             return list.ToArray();
         }
 
+        /// <inheritdoc />
         internal override Type FindType(TypeName typeName)
         {
             foreach (var mb in _modules)
@@ -427,6 +563,7 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
+        /// <inheritdoc />
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
             foreach (var mb in _modules)
@@ -446,16 +583,31 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
+        /// <summary>
+        /// Gets the version of the common language runtime that will be saved in the file containing the manifest. This
+        /// is taken from the core library of the universe when it is available, and from the running runtime otherwise.
+        /// </summary>
         public override string ImageRuntimeVersion => _imageRuntimeVersion;
 
+        /// <summary>
+        /// Gets a module that represents the manifest of this assembly. It is a placeholder that stands for the assembly
+        /// before it is saved, not one of the modules defined with <see cref="DefineDynamicModule"/>.
+        /// </summary>
         public override Module ManifestModule => _pseudoManifestModule ??= new ManifestModule(this);
 
+        /// <inheritdoc />
         public override MethodInfo EntryPoint => _entryPoint;
 
+        /// <summary>
+        /// Gets the names of the assemblies referenced by this assembly. Dynamic assemblies report none.
+        /// </summary>
+        /// <returns>An empty array.</returns>
         public override AssemblyName[] GetReferencedAssemblies() => Array.Empty<AssemblyName>();
 
+        /// <inheritdoc />
         public override Module[] GetLoadedModules(bool getResourceModules) => GetModules(getResourceModules);
 
+        /// <inheritdoc />
         public override Module[] GetModules(bool getResourceModules)
         {
             var list = new List<Module>();
@@ -471,6 +623,11 @@ namespace IKVM.Reflection.Emit
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Gets the specified module in this assembly, comparing names case-insensitively.
+        /// </summary>
+        /// <param name="name">The name of the module being requested.</param>
+        /// <returns>The module being requested, or <see langword="null"/> if the module is not found.</returns>
         public override Module GetModule(string name)
         {
             foreach (var module in _modules)
@@ -484,10 +641,27 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
+        /// <summary>
+        /// Returns information about how the given resource has been persisted. Not supported for dynamic assemblies.
+        /// </summary>
+        /// <param name="resourceName">The case-sensitive name of the resource.</param>
+        /// <returns>Does not return.</returns>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName) => throw new NotSupportedException();
 
+        /// <summary>
+        /// Loads the specified manifest resource from this assembly. Not supported for dynamic assemblies.
+        /// </summary>
+        /// <param name="resourceName">The case-sensitive name of the manifest resource being requested.</param>
+        /// <returns>Does not return.</returns>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
         public override Stream GetManifestResourceStream(string resourceName) => throw new NotSupportedException();
 
+        /// <summary>
+        /// Gets the custom attributes applied to the assembly so far, built from their <see cref="CustomAttributeBuilder"/>s.
+        /// </summary>
+        /// <param name="attributeType">The attribute type to filter by, or <see langword="null"/> for all.</param>
+        /// <returns>The custom attributes whose type is assignable to <paramref name="attributeType"/>.</returns>
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {
             var list = new List<CustomAttributeData>();

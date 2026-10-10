@@ -19,12 +19,16 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Represents a token that represents a string.
+    /// </summary>
+    /// <param name="Token">The metadata token of the string in the module's user string heap.</param>
     readonly record struct StringToken(int Token)
     {
 

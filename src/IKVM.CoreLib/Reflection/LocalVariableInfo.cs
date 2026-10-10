@@ -26,6 +26,9 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Discovers the attributes of a local variable and provides access to local variable metadata.
+    /// </summary>
     class LocalVariableInfo
     {
 
@@ -36,9 +39,9 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="type"></param>
-        /// <param name="pinned"></param>
+        /// <param name="index">The index of the local variable within the method body.</param>
+        /// <param name="type">The type of the local variable.</param>
+        /// <param name="pinned"><see langword="true"/> if the object referred to by the local variable is pinned in memory.</param>
         internal LocalVariableInfo(int index, Type type, bool pinned)
         {
             _index = index;
@@ -46,10 +49,20 @@ namespace IKVM.Reflection
             _pinned = pinned;
         }
 
+        /// <summary>
+        /// Gets the index of the local variable within the method body.
+        /// </summary>
         public int LocalIndex => _index;
 
+        /// <summary>
+        /// Gets the type of the local variable.
+        /// </summary>
         public Type LocalType => _type;
 
+        /// <summary>
+        /// Returns a user-readable string that describes the local variable.
+        /// </summary>
+        /// <returns>A string that displays the type and index of the local variable, and whether it is pinned.</returns>
         public override string ToString() => string.Format(_pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", _type, _index);
 
     }

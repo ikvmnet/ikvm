@@ -30,6 +30,9 @@ using System.Text;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a type defined in the TypeDef table of a module that was read from a file.
+    /// </summary>
     sealed class TypeDefImpl : TypeInfo
     {
 
@@ -44,8 +47,8 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="handle"></param>
+        /// <param name="module">The module that defines the type.</param>
+        /// <param name="handle">The handle of the type's TypeDef row.</param>
         internal TypeDefImpl(ModuleReader module, TypeDefinitionHandle handle)
         {
             _module = module;
@@ -56,10 +59,16 @@ namespace IKVM.Reflection.Reader
             MarkKnownType(_typeNamespace, _typeName);
         }
 
+        /// <summary>
+        /// Gets the type from which the current type directly inherits, or <see langword="null"/> if the type has no
+        /// base type, as is the case for <see cref="object"/>, interfaces and the &lt;Module&gt; pseudo type.
+        /// </summary>
         public override Type BaseType => _definition.BaseType.IsNil ? null : _module.ResolveType(MetadataTokens.GetToken(_definition.BaseType), this);
 
+        /// <inheritdoc />
         public override TypeAttributes Attributes => (TypeAttributes)_definition.Attributes;
 
+        /// <inheritdoc />
         public override EventInfo[] __GetDeclaredEvents()
         {
             var handles = _definition.GetEvents();
@@ -71,6 +80,7 @@ namespace IKVM.Reflection.Reader
             return events;
         }
 
+        /// <inheritdoc />
         public override FieldInfo[] __GetDeclaredFields()
         {
             var handles = _definition.GetFields();
@@ -82,6 +92,7 @@ namespace IKVM.Reflection.Reader
             return fields;
         }
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredInterfaces()
         {
             var handles = _definition.GetInterfaceImplementations();
@@ -96,6 +107,7 @@ namespace IKVM.Reflection.Reader
             return interfaces;
         }
 
+        /// <inheritdoc />
         public override MethodBase[] __GetDeclaredMethods()
         {
             var handles = _definition.GetMethods();
@@ -107,6 +119,7 @@ namespace IKVM.Reflection.Reader
             return methods;
         }
 
+        /// <inheritdoc />
         public override __MethodImplMap __GetMethodImplMap()
         {
             PopulateGenericArguments();
@@ -140,6 +153,7 @@ namespace IKVM.Reflection.Reader
             return map;
         }
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredTypes()
         {
             var handles = _definition.GetNestedTypes();
@@ -153,6 +167,7 @@ namespace IKVM.Reflection.Reader
             return types;
         }
 
+        /// <inheritdoc />
         public override PropertyInfo[] __GetDeclaredProperties()
         {
             var handles = _definition.GetProperties();
@@ -164,20 +179,33 @@ namespace IKVM.Reflection.Reader
             return properties;
         }
 
+        /// <inheritdoc />
         internal override TypeName TypeName => new(_typeNamespace, _typeName);
 
+        /// <summary>
+        /// Gets the name of the type, escaped as in a type name string.
+        /// </summary>
         public override string Name => TypeNameParser.Escape(_typeName);
 
+        /// <inheritdoc />
         public override string FullName => GetFullName();
 
+        /// <inheritdoc />
         public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
+        /// <summary>
+        /// Returns the generic type parameters of the type definition.
+        /// </summary>
+        /// <returns>A copy of the array of generic type parameters, or an empty array if the type is not generic.</returns>
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
             return Util.Copy(_typeArgs);
         }
 
+        /// <summary>
+        /// Creates the generic type parameters of the type definition on first use.
+        /// </summary>
         void PopulateGenericArguments()
         {
             if (_typeArgs == null)
@@ -191,24 +219,45 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         internal override Type GetGenericTypeArgument(int index)
         {
             PopulateGenericArguments();
             return _typeArgs[index];
         }
 
+        /// <summary>
+        /// Returns the custom modifiers of the generic arguments. The generic parameters of a type definition have no
+        /// custom modifiers, so every element is empty.
+        /// </summary>
+        /// <returns>An array of empty custom modifiers, one for each generic type parameter.</returns>
         public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
         {
             PopulateGenericArguments();
             return new CustomModifiers[_typeArgs.Length];
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the current type is a generic type. A type definition is generic exactly
+        /// when it is a generic type definition.
+        /// </summary>
         public override bool IsGenericType => IsGenericTypeDefinition;
 
+        /// <inheritdoc />
         public override bool IsGenericTypeDefinition => _definition.GetGenericParameters().Count > 0;
 
+        /// <summary>
+        /// Returns a <see cref="Type"/> object that represents a generic type definition from which the current generic
+        /// type can be constructed.
+        /// </summary>
+        /// <returns>The current type, which is its own generic type definition.</returns>
+        /// <exception cref="InvalidOperationException">The current type is not a generic type.</exception>
         public override Type GetGenericTypeDefinition() => IsGenericTypeDefinition ? (Type)this : throw new InvalidOperationException();
 
+        /// <summary>
+        /// Returns the full name of the type followed by its generic type parameters in brackets, if it has any.
+        /// </summary>
+        /// <returns>A string that represents the current type.</returns>
         public override string ToString()
         {
             var sb = new StringBuilder(FullName);
@@ -227,13 +276,21 @@ namespace IKVM.Reflection.Reader
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the type is nested, determined from its visibility flags alone, so that it
+        /// can be evaluated without resolving the declaring type.
+        /// </summary>
         internal bool IsNestedByFlags => (Attributes & TypeAttributes.VisibilityMask & ~TypeAttributes.Public) != 0;
 
+        /// <summary>
+        /// Gets the type that declares the current nested type, or <see langword="null"/> if the type is not nested.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The type has nested visibility but no NestedClass row.</exception>
         public override Type DeclaringType
         {
             get
             {
-                // note that we cannot use Type.IsNested for this, because that calls DeclaringType
+                // we cannot use Type.IsNested for this, because that calls DeclaringType
                 if (!IsNestedByFlags)
                     return null;
 
@@ -245,12 +302,24 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         public override Module Module => _module;
 
+        /// <summary>
+        /// Gets a value indicating whether this is the &lt;Module&gt; pseudo type, which is always the first row of the
+        /// TypeDef table.
+        /// </summary>
         internal override bool IsModulePseudoType => MetadataTokens.GetRowNumber(_handle) == 1;
 
+        /// <summary>
+        /// Gets a value indicating whether the type is complete. A type read from a file is always complete.
+        /// </summary>
         internal override bool IsBaked => true;
 
+        /// <summary>
+        /// Gets a value indicating whether the type is a value type: it derives from <see cref="ValueType"/> or
+        /// <see cref="Enum"/> and is not one of those two types itself. The result is cached in the type flags.
+        /// </summary>
         protected override bool IsValueTypeImpl
         {
             get

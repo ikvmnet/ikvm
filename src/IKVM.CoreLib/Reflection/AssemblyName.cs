@@ -33,6 +33,9 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Describes an assembly's unique identity in full.
+    /// </summary>
     sealed class AssemblyName :
         ICloneable
     {
@@ -46,22 +49,26 @@ namespace IKVM.Reflection
         AssemblyNameFlags _flags;
         AssemblyHashAlgorithm _hashAlgorithm;
         string _codeBase;
+
+        /// <summary>
+        /// The hash value of the referenced assembly, as stored in an AssemblyRef row, or <see langword="null"/> if there is none.
+        /// </summary>
         internal byte[] Hash;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance with no name set.
         /// </summary>
         public AssemblyName()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance with the specified display name.
         /// </summary>
-        /// <param name="assemblyName"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="FileLoadException"></exception>
+        /// <param name="assemblyName">The display name of the assembly, as returned by the <see cref="FullName"/> property.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="assemblyName"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="assemblyName"/> is a zero length string.</exception>
+        /// <exception cref="FileLoadException"><paramref name="assemblyName"/> is not a valid assembly display name.</exception>
         public AssemblyName(string assemblyName)
         {
             if (assemblyName == null)
@@ -113,6 +120,12 @@ namespace IKVM.Reflection
                 ContentType = AssemblyContentType.WindowsRuntime;
         }
 
+        /// <summary>
+        /// Parses a hexadecimal string into the bytes of a public key or public key token.
+        /// </summary>
+        /// <param name="key">The hexadecimal string.</param>
+        /// <returns>The parsed bytes.</returns>
+        /// <exception cref="FileLoadException"><paramref name="key"/> has an odd length or contains a character that is not a hexadecimal digit.</exception>
         static byte[] ParseKey(string key)
         {
             if ((key.Length & 1) != 0)
@@ -125,6 +138,12 @@ namespace IKVM.Reflection
             return buf;
         }
 
+        /// <summary>
+        /// Parses a single hexadecimal digit, ignoring case.
+        /// </summary>
+        /// <param name="digit">The character to parse.</param>
+        /// <returns>The value of the digit, from 0 to 15.</returns>
+        /// <exception cref="FileLoadException"><paramref name="digit"/> is not a hexadecimal digit.</exception>
         static int ParseHexDigit(char digit)
         {
             if (digit >= '0' && digit <= '9')
@@ -141,44 +160,71 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Returns the full name of the assembly, also known as the display name.
+        /// </summary>
+        /// <returns>The full name of the assembly, or an empty string if the name has not been set.</returns>
         public override string ToString() => FullName;
 
+        /// <summary>
+        /// Gets or sets the simple name of the assembly. This is usually, but not necessarily, the file name of the manifest
+        /// file of the assembly, minus its extension.
+        /// </summary>
         public string Name
         {
             get => _name;
             set => _name = value;
         }
 
+        /// <summary>
+        /// Gets or sets the culture supported by the assembly.
+        /// </summary>
         public CultureInfo CultureInfo
         {
             get => _culture == null ? null : new CultureInfo(_culture);
             set => _culture = value?.Name;
         }
 
+        /// <summary>
+        /// Gets or sets the name of the culture associated with the assembly; an empty string denotes the neutral culture.
+        /// </summary>
         public string CultureName
         {
             get => _culture;
             set => _culture = value;
         }
 
+        /// <summary>
+        /// Gets or sets the major, minor, build, and revision numbers of the assembly.
+        /// </summary>
         public Version Version
         {
             get => _version;
             set => _version = value;
         }
 
+        /// <summary>
+        /// Gets or sets the public and private cryptographic key pair that is used to create a strong name signature for the assembly.
+        /// </summary>
         public StrongNameKeyPair KeyPair
         {
             get => _keyPair;
             set => _keyPair = value;
         }
 
+        /// <summary>
+        /// Gets or sets the location of the assembly as a URL.
+        /// </summary>
         public string CodeBase
         {
             get => _codeBase;
             set => _codeBase = value;
         }
 
+        /// <summary>
+        /// Gets or sets a value that identifies the processor and bits-per-word of the platform targeted by an executable.
+        /// Values outside the defined range are ignored.
+        /// </summary>
         public ProcessorArchitecture ProcessorArchitecture
         {
             get => (ProcessorArchitecture)(((int)_flags & 0x70) >> 4);
@@ -189,12 +235,19 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Gets or sets the attributes of the assembly, excluding the processor architecture and content type bits, which are
+        /// exposed through <see cref="ProcessorArchitecture"/> and <see cref="ContentType"/>.
+        /// </summary>
         public AssemblyNameFlags Flags
         {
             get => _flags & (AssemblyNameFlags)~0xEF0;
             set => _flags = (_flags & (AssemblyNameFlags)0xEF0) | (value & (AssemblyNameFlags)~0xEF0);
         }
 
+        /// <summary>
+        /// Gets or sets a value that indicates what type of content the assembly contains. Values outside the defined range are ignored.
+        /// </summary>
         public AssemblyContentType ContentType
         {
             get => (AssemblyContentType)(((int)_flags & 0xE00) >> 9);
@@ -205,14 +258,28 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Gets the public key of the assembly.
+        /// </summary>
+        /// <returns>A byte array that contains the public key of the assembly, or <see langword="null"/> if none has been set.</returns>
         public byte[] GetPublicKey() => _publicKey;
 
+        /// <summary>
+        /// Sets the public key identifying the assembly, and sets or clears <see cref="AssemblyNameFlags.PublicKey"/> accordingly.
+        /// </summary>
+        /// <param name="publicKey">A byte array containing the public key of the assembly, or <see langword="null"/>.</param>
         public void SetPublicKey(byte[] publicKey)
         {
             _publicKey = publicKey;
             _flags = (_flags & ~AssemblyNameFlags.PublicKey) | (publicKey == null ? 0 : AssemblyNameFlags.PublicKey);
         }
 
+        /// <summary>
+        /// Gets the public key token, which is the last 8 bytes of the SHA-1 hash of the public key under which the application
+        /// or assembly is signed.
+        /// </summary>
+        /// <returns>A byte array that contains the public key token, an empty array if the assembly has no public key token, or
+        /// <see langword="null"/> if neither a public key nor a public key token has been set.</returns>
         public byte[] GetPublicKeyToken()
         {
             if (_publicKeyToken == null && _publicKey != null)
@@ -224,14 +291,25 @@ namespace IKVM.Reflection
             return _publicKeyToken;
         }
 
+        /// <summary>
+        /// Sets the public key token, which is the last 8 bytes of the SHA-1 hash of the public key under which the application
+        /// or assembly is signed.
+        /// </summary>
+        /// <param name="publicKeyToken">A byte array containing the public key token of the assembly.</param>
         public void SetPublicKeyToken(byte[] publicKeyToken) => _publicKeyToken = publicKeyToken;
 
+        /// <summary>
+        /// Gets or sets the hash algorithm used by the assembly manifest.
+        /// </summary>
         public AssemblyHashAlgorithm HashAlgorithm
         {
             get => _hashAlgorithm;
             set => _hashAlgorithm = value;
         }
 
+        /// <summary>
+        /// Gets the full name of the assembly, also known as the display name.
+        /// </summary>
         public string FullName
         {
             get
@@ -260,6 +338,18 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Formats an assembly display name from its components, quoting and escaping the simple name where required.
+        /// </summary>
+        /// <param name="name">The simple name of the assembly.</param>
+        /// <param name="versionMajor">The major version, or 0xFFFF to omit the version.</param>
+        /// <param name="versionMinor">The minor version, or 0xFFFF to omit it and the following components.</param>
+        /// <param name="versionBuild">The build number, or 0xFFFF to omit it and the following component.</param>
+        /// <param name="versionRevision">The revision number, or 0xFFFF to omit it.</param>
+        /// <param name="culture">The culture name, an empty string for the neutral culture, or <see langword="null"/> to omit it.</param>
+        /// <param name="publicKeyToken">The public key token, an empty array for <c>null</c>, or <see langword="null"/> to omit it.</param>
+        /// <param name="flags">The raw assembly name flags, used for the Retargetable and ContentType components.</param>
+        /// <returns>The display name.</returns>
         internal static string GetFullName(string name, ushort versionMajor, ushort versionMinor, ushort versionBuild, ushort versionRevision, string culture, byte[] publicKeyToken, int flags)
         {
             var sb = new StringBuilder();
@@ -338,6 +428,11 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Computes the public key token of a public key: the last 8 bytes of its SHA-1 hash, in reverse order.
+        /// </summary>
+        /// <param name="publicKey">The public key.</param>
+        /// <returns>The public key token, or <paramref name="publicKey"/> itself if it is empty.</returns>
         internal static byte[] ComputePublicKeyToken(byte[] publicKey)
         {
             if (publicKey.Length == 0)
@@ -354,6 +449,11 @@ namespace IKVM.Reflection
             return token;
         }
 
+        /// <summary>
+        /// Computes the public key token of a public key given as a hexadecimal string.
+        /// </summary>
+        /// <param name="publicKey">The public key as a hexadecimal string.</param>
+        /// <returns>The public key token as a lower-case hexadecimal string.</returns>
         internal static string ComputePublicKeyToken(string publicKey)
         {
             var sb = new StringBuilder(16);
@@ -361,6 +461,11 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Appends the bytes of a public key or public key token to <paramref name="sb"/> as lower-case hexadecimal digits.
+        /// </summary>
+        /// <param name="sb">The string builder to append to.</param>
+        /// <param name="publicKey">The bytes to append.</param>
         static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
         {
             for (var i = 0; i < publicKey.Length; i++)
@@ -370,10 +475,23 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Determines whether the specified object is an <see cref="AssemblyName"/> with the same full name.
+        /// </summary>
+        /// <param name="obj">The object to compare with.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an <see cref="AssemblyName"/> with an equal <see cref="FullName"/>; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj) => obj is AssemblyName other && other.FullName == FullName;
 
+        /// <summary>
+        /// Returns the hash code of the full name.
+        /// </summary>
+        /// <returns>A hash code for the current object.</returns>
         public override int GetHashCode() => FullName.GetHashCode();
 
+        /// <summary>
+        /// Makes a copy of this <see cref="AssemblyName"/> object.
+        /// </summary>
+        /// <returns>An object that is a copy of this <see cref="AssemblyName"/> object.</returns>
         public object Clone()
         {
             var copy = (AssemblyName)MemberwiseClone();
@@ -382,15 +500,20 @@ namespace IKVM.Reflection
             return copy;
         }
 
+        /// <summary>
+        /// Copies a byte array, returning <see langword="null"/> and empty arrays as they are.
+        /// </summary>
+        /// <param name="b">The array to copy.</param>
+        /// <returns>A copy of <paramref name="b"/>, or <paramref name="b"/> itself if it is <see langword="null"/> or empty.</returns>
         static byte[] Copy(byte[] b) => b == null || b.Length == 0 ? b : (byte[])b.Clone();
 
         /// <summary>
         /// Gets the <see cref="AssemblyName"/> for a given file.
         /// </summary>
-        /// <param name="assemblyFile"></param>
-        /// <returns></returns>
-        /// <exception cref="BadImageFormatException"></exception>
-        /// <exception cref="FileNotFoundException"></exception>
+        /// <param name="assemblyFile">The path for the assembly whose <see cref="AssemblyName"/> is to be returned.</param>
+        /// <returns>An object that represents the given assembly file.</returns>
+        /// <exception cref="BadImageFormatException"><paramref name="assemblyFile"/> is not a valid assembly.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="assemblyFile"/> cannot be opened.</exception>
         public static AssemblyName GetAssemblyName(string assemblyFile)
         {
             try
@@ -418,12 +541,22 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Gets or sets all assembly name flags, including the processor architecture and content type bits.
+        /// </summary>
         internal AssemblyNameFlags RawFlags
         {
             get => _flags;
             set => _flags = value;
         }
 
+        /// <summary>
+        /// Parses the version component of an assembly display name.
+        /// </summary>
+        /// <param name="str">The version string, or <see langword="null"/> if the display name has no version.</param>
+        /// <param name="mustBeComplete"><see langword="true"/> if the version must have all four components to be used, as is the case when the name is retargetable.</param>
+        /// <param name="version">When this method returns, the parsed version, or <see langword="null"/> if there is no usable version.</param>
+        /// <returns><see langword="false"/> if the version is invalid enough to fail the parse of the whole assembly name; otherwise, <see langword="true"/>.</returns>
         static bool ParseVersion(string str, bool mustBeComplete, out Version version)
         {
             version = null;

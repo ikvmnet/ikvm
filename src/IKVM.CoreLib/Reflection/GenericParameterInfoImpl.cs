@@ -24,6 +24,10 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// A parameter of a <see cref="GenericMethodInstance"/>: wraps the parameter of the underlying method and binds the
+    /// type parameters in its type and custom modifiers to the instance's type arguments.
+    /// </summary>
     sealed class GenericParameterInfoImpl : ParameterInfo
     {
 
@@ -33,32 +37,50 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="method"></param>
-        /// <param name="parameterInfo"></param>
+        /// <param name="method">The generic method instance the parameter belongs to.</param>
+        /// <param name="parameterInfo">The corresponding parameter of the underlying method.</param>
         internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
         {
             _method = method;
             _parameterInfo = parameterInfo;
         }
 
+        /// <inheritdoc />
         public override string Name => _parameterInfo.Name;
 
+        /// <summary>
+        /// Gets the type of the parameter, with the type parameters bound to the type arguments of the method instance.
+        /// </summary>
         public override Type ParameterType => _parameterInfo.ParameterType.BindTypeParameters(_method);
 
+        /// <inheritdoc />
         public override ParameterAttributes Attributes => _parameterInfo.Attributes;
 
+        /// <inheritdoc />
         public override int Position => _parameterInfo.Position;
 
+        /// <inheritdoc />
         public override object RawDefaultValue => _parameterInfo.RawDefaultValue;
 
+        /// <summary>
+        /// Gets the custom modifiers of the parameter, with the type parameters bound to the type arguments of the
+        /// method instance.
+        /// </summary>
+        /// <returns>The bound custom modifiers.</returns>
         public override CustomModifiers __GetCustomModifiers() => _parameterInfo.__GetCustomModifiers().Bind(_method);
 
+        /// <inheritdoc />
         public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => _parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
 
+        /// <summary>
+        /// Gets the generic method instance the parameter belongs to.
+        /// </summary>
         public override MemberInfo Member => _method;
 
+        /// <inheritdoc />
         public override int MetadataToken => _parameterInfo.MetadataToken;
 
+        /// <inheritdoc />
         public override Module Module => _method.Module;
 
     }

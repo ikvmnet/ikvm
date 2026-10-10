@@ -11,12 +11,13 @@ namespace IKVM.Reflection.Emit
 {
 
     /// <summary>
-    /// Describes exception handler in a method body.
+    /// Represents an exception handler in a byte array of IL to be passed to a method such as
+    /// <c>MethodBuilder.SetMethodBody</c>.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
+    readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
     {
-        // Keep in sync with unmanged structure. 
+
         readonly int _exceptionClass;
         readonly int _tryStartOffset;
         readonly int _tryEndOffset;
@@ -25,22 +26,53 @@ readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
         readonly int _handlerEndOffset;
         readonly ExceptionHandlingClauseOptions _kind;
 
+        /// <summary>
+        /// Gets the token of the exception type handled by this handler.
+        /// </summary>
         public int ExceptionTypeToken => _exceptionClass;
 
+        /// <summary>
+        /// Gets the byte offset at which the code that is protected by this exception handler begins.
+        /// </summary>
         public int TryOffset => _tryStartOffset;
 
+        /// <summary>
+        /// Gets the length, in bytes, of the code protected by this exception handler.
+        /// </summary>
         public int TryLength => _tryEndOffset - _tryStartOffset;
 
+        /// <summary>
+        /// Gets the byte offset at which the filter code for the exception handler begins.
+        /// </summary>
         public int FilterOffset => _filterOffset;
 
+        /// <summary>
+        /// Gets the byte offset of the first instruction of the exception handler.
+        /// </summary>
         public int HandlerOffset => _handlerStartOffset;
 
+        /// <summary>
+        /// Gets the length, in bytes, of the exception handler.
+        /// </summary>
         public int HandlerLength => _handlerEndOffset - _handlerStartOffset;
 
+        /// <summary>
+        /// Gets a value that represents the kind of exception handler this object represents.
+        /// </summary>
         public ExceptionHandlingClauseOptions Kind => _kind;
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance from start and end offsets.
+        /// </summary>
+        /// <param name="tryStartOffset">The byte offset of the first instruction protected by this handler.</param>
+        /// <param name="tryEndOffset">The byte offset just past the last instruction protected by this handler.</param>
+        /// <param name="filterOffset">The byte offset of the filter code, or 0 if the handler has no filter.</param>
+        /// <param name="handlerStartOffset">The byte offset of the first instruction of the handler.</param>
+        /// <param name="handlerEndOffset">The byte offset just past the last instruction of the handler.</param>
+        /// <param name="kind">The kind of handler, as an <see cref="ExceptionHandlingClauseOptions"/> value.</param>
+        /// <param name="exceptionTypeToken">The token of the exception type handled, for a catch clause.</param>
         internal ExceptionHandler(int tryStartOffset, int tryEndOffset, int filterOffset, int handlerStartOffset, int handlerEndOffset,
             int kind, int exceptionTypeToken)
         {
@@ -61,6 +93,11 @@ readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
             _exceptionClass = exceptionTypeToken;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the specified value is one of the four handler kinds.
+        /// </summary>
+        /// <param name="kind">The value to check.</param>
+        /// <returns><see langword="true"/> if <paramref name="kind"/> is a catch, filter, finally or fault clause; otherwise, <see langword="false"/>.</returns>
         static bool IsValidKind(ExceptionHandlingClauseOptions kind)
         {
             return kind switch
@@ -74,11 +111,26 @@ readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
 
         #region Equality
 
+        /// <summary>
+        /// Serves as the default hash function.
+        /// </summary>
+        /// <returns>The hash code for the current object.</returns>
         public override int GetHashCode() =>
             _exceptionClass ^ _tryStartOffset ^ _tryEndOffset ^ _filterOffset ^ _handlerStartOffset ^ _handlerEndOffset ^ (int)_kind;
 
+        /// <summary>
+        /// Indicates whether this instance of the <see cref="ExceptionHandler"/> object is equal to a specified object.
+        /// </summary>
+        /// <param name="obj">The object to compare this instance to.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> and this instance are equal; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj) => obj is ExceptionHandler && Equals((ExceptionHandler)obj);
 
+        /// <summary>
+        /// Indicates whether this instance of the <see cref="ExceptionHandler"/> object is equal to another
+        /// <see cref="ExceptionHandler"/> object.
+        /// </summary>
+        /// <param name="other">The exception handler object to compare this instance to.</param>
+        /// <returns><see langword="true"/> if <paramref name="other"/> and this instance are equal; otherwise, <see langword="false"/>.</returns>
         public bool Equals(ExceptionHandler other)
         {
             return

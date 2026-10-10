@@ -27,6 +27,9 @@ using System.Reflection.Metadata.Ecma335;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a generic type or method parameter defined in the GenericParam table of a module that was read from a file.
+    /// </summary>
     sealed class GenericTypeParameter : TypeParameterType
     {
 
@@ -37,9 +40,9 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="handle"></param>
-        /// <param name="sigElementType"></param>
+        /// <param name="module">The module that defines the generic parameter.</param>
+        /// <param name="handle">The handle of the generic parameter in the GenericParam table.</param>
+        /// <param name="sigElementType">The signature element type: <c>ELEMENT_TYPE_VAR</c> for a type parameter or <c>ELEMENT_TYPE_MVAR</c> for a method parameter.</param>
         internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
@@ -48,26 +51,36 @@ namespace IKVM.Reflection.Reader
             _definition = module.Metadata.GetGenericParameter(handle);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj) => base.Equals(obj);
 
+        /// <inheritdoc />
         public override int GetHashCode() => base.GetHashCode();
 
+        /// <inheritdoc />
         public override string Namespace => DeclaringType.Namespace;
 
+        /// <inheritdoc />
         public override string Name => _module.GetString(_definition.Name);
 
+        /// <inheritdoc />
         public override Module Module => _module;
 
+        /// <inheritdoc />
         public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
+        /// <inheritdoc />
         public override int GenericParameterPosition => _definition.Index;
 
+        /// <inheritdoc />
         public override Type DeclaringType =>
             _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
 
+        /// <inheritdoc />
         public override MethodBase DeclaringMethod =>
             _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
 
+        /// <inheritdoc />
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
@@ -79,11 +92,14 @@ namespace IKVM.Reflection.Reader
             return constraints;
         }
 
+        /// <inheritdoc />
         public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_definition.Attributes;
 
+        /// <inheritdoc />
         internal override Type BindTypeParameters(IGenericBinder binder) =>
             _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
 
+        /// <inheritdoc />
         internal override bool IsBaked => true;
 
     }

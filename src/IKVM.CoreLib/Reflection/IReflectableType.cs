@@ -24,8 +24,12 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a type that you can reflect over.
+    /// </summary>
     interface IReflectableType
     {
+
     }
 
 }

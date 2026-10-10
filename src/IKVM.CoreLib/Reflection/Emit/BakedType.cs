@@ -24,68 +24,101 @@
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Represents a completed <see cref="TypeBuilder"/>, as returned by <see cref="TypeBuilder.CreateType"/>. Members are
+    /// forwarded to the underlying type builder, but the type reports itself as baked.
+    /// </summary>
     sealed class BakedType : TypeInfo
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeBuilder"></param>
+        /// <param name="typeBuilder">The completed type builder that this type represents.</param>
         internal BakedType(TypeBuilder typeBuilder) :
             base(typeBuilder)
         {
         }
 
+        /// <inheritdoc />
         public override string AssemblyQualifiedName => underlyingType.AssemblyQualifiedName;
 
+        /// <inheritdoc />
         public override Type BaseType => underlyingType.BaseType;
 
+        /// <inheritdoc />
         internal override TypeName TypeName => underlyingType.TypeName;
 
+        /// <summary>
+        /// Gets the name of the type, escaped for use in a type name string.
+        /// </summary>
         public override string Name
             // we need to escape here, because TypeBuilder.Name does not escape
             => TypeNameParser.Escape(underlyingType.__Name);
 
+        /// <inheritdoc />
         public override string FullName => GetFullName();
 
+        /// <inheritdoc />
         public override TypeAttributes Attributes => underlyingType.Attributes;
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredInterfaces() => underlyingType.__GetDeclaredInterfaces();
 
+        /// <inheritdoc />
         public override MethodBase[] __GetDeclaredMethods() => underlyingType.__GetDeclaredMethods();
 
+        /// <inheritdoc />
         public override __MethodImplMap __GetMethodImplMap() => underlyingType.__GetMethodImplMap();
 
+        /// <inheritdoc />
         public override FieldInfo[] __GetDeclaredFields() => underlyingType.__GetDeclaredFields();
 
+        /// <inheritdoc />
         public override EventInfo[] __GetDeclaredEvents() => underlyingType.__GetDeclaredEvents();
 
+        /// <inheritdoc />
         public override PropertyInfo[] __GetDeclaredProperties() => underlyingType.__GetDeclaredProperties();
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredTypes() => underlyingType.__GetDeclaredTypes();
 
+        /// <inheritdoc />
         public override Type DeclaringType => underlyingType.DeclaringType;
 
+        /// <inheritdoc />
         public override Type[] GetGenericArguments() => underlyingType.GetGenericArguments();
 
+        /// <inheritdoc />
         internal override Type GetGenericTypeArgument(int index) => underlyingType.GetGenericTypeArgument(index);
 
+        /// <inheritdoc />
         public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() => underlyingType.__GetGenericArgumentsCustomModifiers();
 
+        /// <inheritdoc />
         public override bool IsGenericType => underlyingType.IsGenericType;
 
+        /// <inheritdoc />
         public override bool IsGenericTypeDefinition => underlyingType.IsGenericTypeDefinition;
 
+        /// <inheritdoc />
         public override bool ContainsGenericParameters => underlyingType.ContainsGenericParameters;
 
+        /// <inheritdoc />
         public override int MetadataToken => underlyingType.MetadataToken;
 
+        /// <inheritdoc />
         public override Module Module => underlyingType.Module;
 
+        /// <inheritdoc />
         internal override int GetModuleBuilderToken() => underlyingType.GetModuleBuilderToken();
 
+        /// <summary>
+        /// Gets a value indicating whether the type is complete, which is always <see langword="true"/>.
+        /// </summary>
         internal override bool IsBaked => true;
 
+        /// <inheritdoc />
         protected override bool IsValueTypeImpl => underlyingType.IsValueType;
 
     }

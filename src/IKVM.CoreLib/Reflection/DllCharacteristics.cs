@@ -26,9 +26,12 @@ using System;
 namespace IKVM.Reflection
 {
 
-    // IKVM.Reflection specific type
+    /// <summary>
+    /// Specifies the DLL characteristics flags written to the optional header of a PE image. This type is specific to
+    /// IKVM.Reflection.
+    /// </summary>
     [Flags]
-enum DllCharacteristics
+    enum DllCharacteristics
     {
 
         /// <summary>

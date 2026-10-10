@@ -24,6 +24,11 @@
 
 namespace IKVM.Reflection.Emit
 {
+
+    /// <summary>
+    /// Represents the metadata token of a method.
+    /// </summary>
+    /// <param name="Token">The metadata token of the method.</param>
     readonly record struct MethodToken(int Token)
     {
     }

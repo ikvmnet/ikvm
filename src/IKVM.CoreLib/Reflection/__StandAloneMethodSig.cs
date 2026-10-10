@@ -26,6 +26,10 @@ using System.Runtime.InteropServices;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a stand-alone method signature, such as the signature referenced by a <c>calli</c> instruction. This is
+    /// an IKVM extension; System.Reflection has no equivalent type.
+    /// </summary>
     sealed class __StandAloneMethodSig
     {
 
@@ -40,13 +44,13 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="unmanaged"></param>
-        /// <param name="unmanagedCallingConvention"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="returnType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="optionalParameterTypes"></param>
-        /// <param name="customModifiers"></param>
+        /// <param name="unmanaged"><see langword="true"/> if the signature uses an unmanaged calling convention.</param>
+        /// <param name="unmanagedCallingConvention">The unmanaged calling convention; meaningful only when <paramref name="unmanaged"/> is <see langword="true"/>.</param>
+        /// <param name="callingConvention">The managed calling convention; meaningful only when <paramref name="unmanaged"/> is <see langword="false"/>.</param>
+        /// <param name="returnType">The return type.</param>
+        /// <param name="parameterTypes">The types of the fixed parameters.</param>
+        /// <param name="optionalParameterTypes">The types of the variable arguments that follow the sentinel, for a vararg call site.</param>
+        /// <param name="customModifiers">The custom modifiers of the return type and parameters.</param>
         internal __StandAloneMethodSig(bool unmanaged, CallingConvention unmanagedCallingConvention, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes, PackedCustomModifiers customModifiers)
         {
             _unmanaged = unmanaged;
@@ -58,6 +62,11 @@ namespace IKVM.Reflection
             _customModifiers = customModifiers;
         }
 
+        /// <summary>
+        /// Determines whether this signature is identical to another.
+        /// </summary>
+        /// <param name="other">The signature to compare with, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the calling conventions, return type, parameter types and custom modifiers are all equal; otherwise, <see langword="false"/>.</returns>
         public bool Equals(__StandAloneMethodSig other)
         {
             return other != null
@@ -70,30 +79,62 @@ namespace IKVM.Reflection
                 && other._customModifiers.Equals(_customModifiers);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj) => Equals(obj as __StandAloneMethodSig);
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return _returnType.GetHashCode()
                 ^ Util.GetHashCode(_parameterTypes);
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the signature uses an unmanaged calling convention.
+        /// </summary>
         public bool IsUnmanaged => _unmanaged;
 
+        /// <summary>
+        /// Gets the managed calling convention of the signature.
+        /// </summary>
         public CallingConventions CallingConvention => _callingConvention;
 
+        /// <summary>
+        /// Gets the unmanaged calling convention of the signature.
+        /// </summary>
         public CallingConvention UnmanagedCallingConvention => _unmanagedCallingConvention;
 
+        /// <summary>
+        /// Gets the return type of the signature.
+        /// </summary>
         public Type ReturnType => _returnType;
 
+        /// <summary>
+        /// Gets the custom modifiers of the return type.
+        /// </summary>
+        /// <returns>The custom modifiers of the return type.</returns>
         public CustomModifiers GetReturnTypeCustomModifiers() => _customModifiers.GetReturnTypeCustomModifiers();
 
+        /// <summary>
+        /// Gets a copy of the types of the fixed parameters.
+        /// </summary>
         public Type[] ParameterTypes => Util.Copy(_parameterTypes);
 
+        /// <summary>
+        /// Gets a copy of the types of the variable arguments that follow the sentinel.
+        /// </summary>
         public Type[] OptionalParameterTypes => Util.Copy(_optionalParameterTypes);
 
+        /// <summary>
+        /// Gets the custom modifiers of a parameter.
+        /// </summary>
+        /// <param name="index">The zero-based index of the parameter.</param>
+        /// <returns>The custom modifiers of the parameter.</returns>
         public CustomModifiers GetParameterCustomModifiers(int index) => _customModifiers.GetParameterCustomModifiers(index);
 
+        /// <summary>
+        /// Gets a value indicating whether the signature refers to a type that could not be resolved.
+        /// </summary>
         public bool ContainsMissingType
         {
             get

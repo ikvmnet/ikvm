@@ -26,8 +26,12 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when an assembly being written exceeds a limit imposed by the metadata or PE file
+    /// format. The importer catches it to report the failure; nothing in IKVM.Reflection currently throws it.
+    /// </summary>
     [Serializable]
-sealed class FileFormatLimitationExceededException : InvalidOperationException
+    sealed class FileFormatLimitationExceededException : InvalidOperationException
     {
     }
 

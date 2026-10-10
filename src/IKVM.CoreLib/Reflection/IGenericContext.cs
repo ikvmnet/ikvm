@@ -23,11 +23,25 @@
 */
 namespace IKVM.Reflection
 {
+
+    /// <summary>
+    /// Supplies the generic type and method arguments used to resolve generic parameters while decoding signatures.
+    /// </summary>
     interface IGenericContext
     {
 
+        /// <summary>
+        /// Gets the generic type argument at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based position of the generic type parameter.</param>
+        /// <returns>The type that substitutes for the generic type parameter at <paramref name="index"/>.</returns>
         Type GetGenericTypeArgument(int index);
 
+        /// <summary>
+        /// Gets the generic method argument at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based position of the generic method parameter.</param>
+        /// <returns>The type that substitutes for the generic method parameter at <paramref name="index"/>.</returns>
         Type GetGenericMethodArgument(int index);
 
     }

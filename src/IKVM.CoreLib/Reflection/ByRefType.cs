@@ -24,32 +24,52 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a type that is passed by reference.
+    /// </summary>
     sealed class ByRefType : ElementHolderType
     {
 
+        /// <summary>
+        /// Gets the canonical by-reference type for the specified element type and custom modifiers.
+        /// </summary>
+        /// <param name="type">The type that is passed by reference.</param>
+        /// <param name="mods">The custom modifiers applied to the by-reference type.</param>
+        /// <returns>The canonical instance of the by-reference type from the element type's universe.</returns>
         internal static Type Make(Type type, CustomModifiers mods) => type.Universe.CanonicalizeType(new ByRefType(type, mods));
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="mods"></param>
+        /// <param name="type">The type that is passed by reference.</param>
+        /// <param name="mods">The custom modifiers applied to the by-reference type.</param>
         ByRefType(Type type, CustomModifiers mods) :
             base(type, mods, Signature.ELEMENT_TYPE_BYREF)
         {
 
         }
 
+        /// <inheritdoc />
         public override bool Equals(object o) => EqualsHelper(o as ByRefType);
 
+        /// <inheritdoc />
         public override int GetHashCode() => elementType.GetHashCode() * 3;
 
+        /// <summary>
+        /// Gets the type from which the current type directly inherits. By-reference types have no base type, so this
+        /// is always <see langword="null"/>.
+        /// </summary>
         public override Type BaseType => null;
 
+        /// <summary>
+        /// Gets the attributes associated with the type. By-reference types have no attributes, so this is always 0.
+        /// </summary>
         public override TypeAttributes Attributes => 0;
 
+        /// <inheritdoc />
         internal override string GetSuffix() => "&";
 
+        /// <inheritdoc />
         protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, mods);
 
     }

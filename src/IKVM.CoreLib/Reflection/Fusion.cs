@@ -30,51 +30,100 @@ using System.Text;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Parses and compares assembly display names the way the .NET Framework assembly loader (fusion) does.
+    /// </summary>
     static class Fusion
     {
 
+        /// <summary>
+        /// The version that .NET Framework assemblies are unified to.
+        /// </summary>
         static readonly Version s_frameworkVersion = new(4, 0, 0, 0);
+
+        /// <summary>
+        /// The first version of a framework assembly that is no longer unified to <see cref="s_frameworkVersion"/>.
+        /// </summary>
         static readonly Version s_frameworkVersionNext = new(5, 0, 0, 0);
+
+        /// <summary>
+        /// The minimum version of a retargetable assembly for its public key token to be remapped.
+        /// </summary>
         static readonly Version s_silverlightVersion = new(2, 0, 5, 0);
+
+        /// <summary>
+        /// The lowest Silverlight assembly version whose public key token is remapped to a .NET Framework one.
+        /// </summary>
         static readonly Version s_silverlightVersionMinimum = new(2, 0, 0, 0);
+
+        /// <summary>
+        /// The highest Silverlight assembly version whose public key token is remapped to a .NET Framework one.
+        /// </summary>
         static readonly Version s_silverlightVersionMaximum = new(5, 9, 0, 0);
 
+        /// <summary>
+        /// The public key token of the ECMA key, used by the core .NET Framework assemblies.
+        /// </summary>
         const string PublicKeyTokenEcma = "b77a5c561934e089";
+
+        /// <summary>
+        /// The public key token of the Microsoft key, used by most other .NET Framework assemblies.
+        /// </summary>
         const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
+
+        /// <summary>
+        /// The public key token of the Silverlight platform assemblies.
+        /// </summary>
         const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
+
+        /// <summary>
+        /// The public key token of the WinFX key, used by the assemblies introduced with .NET Framework 3.0 and 3.5.
+        /// </summary>
         const string PublicKeyTokenWinFX = "31bf3856ad364e35";
 
         /// <summary>
-        /// Native implementation of CompareAssemblyIdentity.
+        /// Compares two assembly identities using the native CompareAssemblyIdentity function of fusion.dll, which is
+        /// only available on the .NET Framework on Windows.
         /// </summary>
-        /// <param name="coreLibName"></param>
-        /// <param name="assemblyIdentity1"></param>
-        /// <param name="unified1"></param>
-        /// <param name="assemblyIdentity2"></param>
-        /// <param name="unified2"></param>
-        /// <param name="result"></param>
-        /// <returns></returns>
-		internal static bool CompareAssemblyIdentityNative(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+        /// <param name="coreLibName">The simple name of the core library. Not used by the native implementation.</param>
+        /// <param name="assemblyIdentity1">The display name of the reference assembly.</param>
+        /// <param name="unified1"><see langword="true"/> if the version of <paramref name="assemblyIdentity1"/> has been unified by the application.</param>
+        /// <param name="assemblyIdentity2">The display name of the definition assembly.</param>
+        /// <param name="unified2"><see langword="true"/> if the version of <paramref name="assemblyIdentity2"/> has been unified by the application.</param>
+        /// <param name="result">When this method returns, describes how the identities compare.</param>
+        /// <returns><see langword="true"/> if the identities are equivalent; otherwise, <see langword="false"/>.</returns>
+        internal static bool CompareAssemblyIdentityNative(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             Marshal.ThrowExceptionForHR(CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out var equivalent, out result));
             return equivalent;
         }
 
+        /// <summary>
+        /// Compares two assembly identities to determine whether they are equivalent.
+        /// </summary>
+        /// <param name="pwzAssemblyIdentity1">The display name of the reference assembly.</param>
+        /// <param name="fUnified1">Whether the version of the first assembly has been unified by the application.</param>
+        /// <param name="pwzAssemblyIdentity2">The display name of the definition assembly.</param>
+        /// <param name="fUnified2">Whether the version of the second assembly has been unified by the application.</param>
+        /// <param name="pfEquivalent">When this method returns, whether the identities are equivalent.</param>
+        /// <param name="pResult">When this method returns, describes how the identities compare.</param>
+        /// <returns>An HRESULT.</returns>
         [DllImport("fusion", CharSet = CharSet.Unicode)]
         static extern int CompareAssemblyIdentity(string pwzAssemblyIdentity1, bool fUnified1, string pwzAssemblyIdentity2, bool fUnified2, out bool pfEquivalent, out AssemblyComparisonResult pResult);
 
         /// <summary>
-        /// Managed implementation of CompareAssemblyIdentity.
+        /// Compares two assembly identities, following the rules of the native CompareAssemblyIdentity function of
+        /// fusion.dll, including .NET Framework and Silverlight unification and retargeting.
         /// </summary>
-        /// <param name="coreLibName"></param>
-        /// <param name="assemblyIdentity1"></param>
-        /// <param name="unified1"></param>
-        /// <param name="assemblyIdentity2"></param>
-        /// <param name="unified2"></param>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="System.IO.FileLoadException"></exception>
+        /// <param name="coreLibName">The simple name of the core library; a definition with this name matches any reference with the same name.</param>
+        /// <param name="assemblyIdentity1">The display name of the reference assembly.</param>
+        /// <param name="unified1"><see langword="true"/> if the version of <paramref name="assemblyIdentity1"/> has been unified by the application.</param>
+        /// <param name="assemblyIdentity2">The display name of the definition assembly.</param>
+        /// <param name="unified2"><see langword="true"/> if the version of <paramref name="assemblyIdentity2"/> has been unified by the application.</param>
+        /// <param name="result">When this method returns, describes how the identities compare.</param>
+        /// <returns><see langword="true"/> if the identities are equivalent; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentException">One of the display names is invalid, or is partial where a full name is required.</exception>
+        /// <exception cref="System.IO.FileLoadException">The reference has a duplicate attribute, or is partial and retargetable.</exception>
         internal static bool CompareAssemblyIdentityPure(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             var r1 = ParseAssemblyName(assemblyIdentity1, out var name1);
@@ -304,10 +353,15 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Determines whether the assembly is a .NET Framework assembly whose version is unified to the framework version.
+        /// </summary>
+        /// <param name="name">The parsed assembly name.</param>
+        /// <returns><see langword="true"/> if the name and public key token identify a framework assembly; otherwise, <see langword="false"/>.</returns>
         static bool IsFrameworkAssembly(ParsedAssemblyName name)
         {
-            // Framework assemblies use different unification rules, so when
-            // a new framework is released the new assemblies need to be added.
+            // framework assemblies use different unification rules, so when
+            // a new framework is released the new assemblies need to be added
             return name.Name switch
             {
                 "System" or "System.Core" or "System.Data" or "System.Data.DataSetExtensions" or "System.Data.Linq" or "System.Data.OracleClient" or "System.Data.Services" or "System.Data.Services.Client" or "System.IdentityModel" or "System.IdentityModel.Selectors" or "System.IO.Compression" or "System.Numerics" or "System.Reflection.Context" or "System.Runtime.Remoting" or "System.Runtime.Serialization" or "System.Runtime.WindowsRuntime" or "System.Runtime.WindowsRuntime.UI.Xaml" or "System.ServiceModel" or "System.Transactions" or "System.Windows.Forms" or "System.Xml" or "System.Xml.Linq" or "System.Xml.Serialization" => name.PublicKeyToken == PublicKeyTokenEcma,
@@ -317,6 +371,12 @@ namespace IKVM.Reflection
             };
         }
 
+        /// <summary>
+        /// Gets the .NET Framework public key token that a Silverlight or retargetable assembly reference is remapped to.
+        /// </summary>
+        /// <param name="name">The parsed assembly name.</param>
+        /// <param name="version">The version of the assembly.</param>
+        /// <returns>The remapped public key token, or <see langword="null"/> if the assembly is not remapped.</returns>
         static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name, Version version)
         {
             if (name.Retargetable.GetValueOrDefault() && version < s_silverlightVersion)
@@ -377,6 +437,13 @@ namespace IKVM.Reflection
             return null;
         }
 
+        /// <summary>
+        /// Parses the simple name at the start of an assembly display name.
+        /// </summary>
+        /// <param name="fullName">The assembly display name.</param>
+        /// <param name="pos">When this method returns, the position following the simple name.</param>
+        /// <param name="simpleName">When this method returns, the simple name.</param>
+        /// <returns><see cref="ParseAssemblyResult.OK"/> if the simple name was parsed; otherwise, <see cref="ParseAssemblyResult.GenericError"/>.</returns>
         internal static ParseAssemblyResult ParseAssemblySimpleName(string fullName, out int pos, out string simpleName)
         {
             pos = 0;
@@ -389,6 +456,13 @@ namespace IKVM.Reflection
             return ParseAssemblyResult.OK;
         }
 
+        /// <summary>
+        /// Parses a possibly quoted and escaped token of an assembly display name, up to the next unquoted comma or equals sign.
+        /// </summary>
+        /// <param name="fullName">The assembly display name.</param>
+        /// <param name="pos">The position to start parsing at; advanced past the token.</param>
+        /// <param name="value">When this method returns, the token with surrounding white space removed.</param>
+        /// <returns><see langword="true"/> if a token was parsed; <see langword="false"/> if the token is empty or malformed.</returns>
         static bool TryParse(string fullName, ref int pos, out string value)
         {
             value = null;
@@ -441,6 +515,13 @@ namespace IKVM.Reflection
             return value.Length != 0 || quote != -1;
         }
 
+        /// <summary>
+        /// Consumes the specified character if it is at the current position.
+        /// </summary>
+        /// <param name="fullName">The assembly display name.</param>
+        /// <param name="ch">The character to consume.</param>
+        /// <param name="pos">The current position; advanced if the character was consumed.</param>
+        /// <returns><see langword="true"/> if the character was consumed; otherwise, <see langword="false"/>.</returns>
         static bool TryConsume(string fullName, char ch, ref int pos)
         {
             if (pos < fullName.Length && fullName[pos] == ch)
@@ -452,6 +533,14 @@ namespace IKVM.Reflection
             return false;
         }
 
+        /// <summary>
+        /// Parses a <c>, key=value</c> attribute of an assembly display name.
+        /// </summary>
+        /// <param name="fullName">The assembly display name.</param>
+        /// <param name="pos">The current position; advanced past the attribute.</param>
+        /// <param name="key">When this method returns, the attribute key.</param>
+        /// <param name="value">When this method returns, the attribute value.</param>
+        /// <returns><see langword="true"/> if an attribute was parsed; otherwise, <see langword="false"/>.</returns>
         static bool TryParseAssemblyAttribute(string fullName, ref int pos, ref string key, ref string value)
         {
             return TryConsume(fullName, ',', ref pos)
@@ -460,6 +549,13 @@ namespace IKVM.Reflection
                 && TryParse(fullName, ref pos, out value);
         }
 
+        /// <summary>
+        /// Parses an assembly display name into its components.
+        /// </summary>
+        /// <param name="fullName">The assembly display name.</param>
+        /// <param name="parsedName">When this method returns, the parsed components.</param>
+        /// <returns><see cref="ParseAssemblyResult.OK"/> if the name was parsed, <see cref="ParseAssemblyResult.DuplicateKey"/> if an attribute occurs more than once, or <see cref="ParseAssemblyResult.GenericError"/> if the name is malformed.</returns>
+        /// <exception cref="COMException">The public key and public key token attributes do not match.</exception>
         internal static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
         {
             const int ERROR_SXS_IDENTITIES_DIFFERENT = unchecked((int)0x80073716);
@@ -593,6 +689,12 @@ namespace IKVM.Reflection
             return ParseAssemblyResult.OK;
         }
 
+        /// <summary>
+        /// Parses the version attribute of an assembly display name.
+        /// </summary>
+        /// <param name="str">The version string, or <see langword="null"/> if the display name has no version.</param>
+        /// <param name="version">When this method returns, the parsed version, or <see langword="null"/> if there is no usable version.</param>
+        /// <returns><see langword="false"/> if the version is invalid enough to fail the parse of the whole assembly name; otherwise, <see langword="true"/>.</returns>
         static bool ParseVersion(string str, out Version version)
         {
             if (str == null)
@@ -637,6 +739,12 @@ namespace IKVM.Reflection
             return false;
         }
 
+        /// <summary>
+        /// Parses the culture attribute of an assembly display name.
+        /// </summary>
+        /// <param name="str">The attribute value.</param>
+        /// <param name="culture">When this method returns, the culture name.</param>
+        /// <returns><see langword="true"/> if <paramref name="str"/> is not <see langword="null"/>; otherwise, <see langword="false"/>.</returns>
         static bool ParseCulture(string str, out string culture)
         {
             if (str == null)
@@ -649,6 +757,12 @@ namespace IKVM.Reflection
             return true;
         }
 
+        /// <summary>
+        /// Parses the public key token attribute of an assembly display name.
+        /// </summary>
+        /// <param name="str">The attribute value.</param>
+        /// <param name="publicKeyToken">When this method returns, the public key token in lower case.</param>
+        /// <returns><see langword="true"/> if <paramref name="str"/> is not <see langword="null"/>; otherwise, <see langword="false"/>.</returns>
         static bool ParsePublicKeyToken(string str, out string publicKeyToken)
         {
             if (str == null)
@@ -661,6 +775,12 @@ namespace IKVM.Reflection
             return true;
         }
 
+        /// <summary>
+        /// Parses the public key attribute of an assembly display name and computes its public key token.
+        /// </summary>
+        /// <param name="str">The attribute value, a hexadecimal public key.</param>
+        /// <param name="publicKeyToken">When this method returns, the public key token computed from the public key.</param>
+        /// <returns><see langword="true"/> if <paramref name="str"/> is not <see langword="null"/>; otherwise, <see langword="false"/>.</returns>
         static bool ParsePublicKey(string str, out string publicKeyToken)
         {
             if (str == null)
@@ -673,8 +793,19 @@ namespace IKVM.Reflection
             return true;
         }
 
+        /// <summary>
+        /// Determines whether an assembly name is partial, that is, lacks a version, culture or public key token.
+        /// </summary>
+        /// <param name="name">The parsed assembly name.</param>
+        /// <param name="version">The parsed version of the assembly.</param>
+        /// <returns><see langword="true"/> if the name is partial; otherwise, <see langword="false"/>.</returns>
         static bool IsPartial(ParsedAssemblyName name, Version version) => version == null || name.Culture == null || name.PublicKeyToken == null;
 
+        /// <summary>
+        /// Determines whether an assembly name has a public key token other than <c>null</c>.
+        /// </summary>
+        /// <param name="name">The parsed assembly name.</param>
+        /// <returns><see langword="true"/> if the name is strong named; otherwise, <see langword="false"/>.</returns>
         static bool IsStrongNamed(ParsedAssemblyName name) => name.PublicKeyToken != null && name.PublicKeyToken != "null";
 
     }

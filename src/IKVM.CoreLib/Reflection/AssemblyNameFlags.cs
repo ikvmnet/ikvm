@@ -19,21 +19,43 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Provides information about an assembly reference.
+    /// </summary>
     [Flags]
-enum AssemblyNameFlags
+    enum AssemblyNameFlags
     {
 
+        /// <summary>
+        /// Specifies that no flags are in effect.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Specifies that a public key is formed from the full public key rather than the public key token.
+        /// </summary>
         PublicKey = 1,
+
+        /// <summary>
+        /// Specifies that the assembly can be retargeted at runtime to an assembly from a different publisher.
+        /// </summary>
         Retargetable = 256,
+
+        /// <summary>
+        /// Specifies that just-in-time (JIT) compiler optimization is disabled for the assembly.
+        /// </summary>
         EnableJITcompileOptimizer = 16384,
+
+        /// <summary>
+        /// Specifies that just-in-time (JIT) compiler tracking is enabled for the assembly.
+        /// </summary>
         EnableJITcompileTracking = 32768,
 
     }

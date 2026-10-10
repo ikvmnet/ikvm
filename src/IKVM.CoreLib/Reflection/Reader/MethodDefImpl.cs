@@ -28,6 +28,9 @@ using System.Reflection.Metadata.Ecma335;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a method defined by a row of the MethodDef table of a module read from metadata.
+    /// </summary>
     sealed class MethodDefImpl : MethodInfo
     {
 
@@ -43,9 +46,9 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="handle"></param>
+        /// <param name="module">The module that contains the method definition.</param>
+        /// <param name="declaringType">The type that defines the method; for a global method, the module's &lt;Module&gt; pseudo type.</param>
+        /// <param name="handle">The handle of the method definition in the module's metadata.</param>
         internal MethodDefImpl(ModuleReader module, TypeDefImpl declaringType, MethodDefinitionHandle handle)
         {
             _module = module;
@@ -54,18 +57,26 @@ namespace IKVM.Reflection.Reader
             _declaringType = declaringType;
         }
 
+        /// <inheritdoc />
         public override CallingConventions CallingConvention => MethodSignature.CallingConvention;
 
+        /// <inheritdoc />
         public override MethodAttributes Attributes => (MethodAttributes)_definition.Attributes;
 
+        /// <inheritdoc />
         public override MethodImplAttributes GetMethodImplementationFlags() => (MethodImplAttributes)_definition.ImplAttributes;
 
+        /// <inheritdoc />
         public override ParameterInfo[] GetParameters()
         {
             PopulateParameters();
             return (ParameterInfo[])_parameters.Clone();
         }
 
+        /// <summary>
+        /// Creates the parameter and return parameter objects on first use, from the Param rows of the method and its
+        /// signature.
+        /// </summary>
         void PopulateParameters()
         {
             if (_parameters == null)
@@ -90,6 +101,7 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         internal override Type[] GetParameterTypes()
         {
             var parameterTypes = new Type[MethodSignature.GetParameterCount()];
@@ -99,8 +111,10 @@ namespace IKVM.Reflection.Reader
             return parameterTypes;
         }
 
+        /// <inheritdoc />
         internal override int ParameterCount => MethodSignature.GetParameterCount();
 
+        /// <inheritdoc />
         public override ParameterInfo ReturnParameter
         {
             get
@@ -110,24 +124,40 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         public override Type ReturnType => MethodSignature.GetReturnType(this);
 
+        /// <summary>
+        /// Gets the class that declares this member, or <see langword="null"/> for a global method, which is defined on
+        /// the module's &lt;Module&gt; pseudo type.
+        /// </summary>
         public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
+        /// <inheritdoc />
         public override string Name => _module.GetString(_definition.Name);
 
+        /// <inheritdoc />
         public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
+        /// <inheritdoc />
         public override bool IsGenericMethodDefinition => _definition.GetGenericParameters().Count > 0;
 
+        /// <summary>
+        /// Gets a value indicating whether the method is generic. A method read from a MethodDef row is generic only
+        /// when it is a generic method definition.
+        /// </summary>
         public override bool IsGenericMethod => IsGenericMethodDefinition;
 
+        /// <inheritdoc />
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
             return Util.Copy(_typeArgs);
         }
 
+        /// <summary>
+        /// Creates the generic method parameter types on first use, from the GenericParam rows of the method.
+        /// </summary>
         void PopulateGenericArguments()
         {
             if (_typeArgs == null)
@@ -141,26 +171,47 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         internal override Type GetGenericMethodArgument(int index)
         {
             PopulateGenericArguments();
             return _typeArgs[index];
         }
 
+        /// <summary>
+        /// Returns a <see cref="MethodInfo"/> object that represents a generic method definition from which the current
+        /// method can be constructed.
+        /// </summary>
+        /// <returns>The current method, which is a generic method definition.</returns>
+        /// <exception cref="InvalidOperationException">The current method is not a generic method.</exception>
         public override MethodInfo GetGenericMethodDefinition() =>
             IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
 
+        /// <inheritdoc />
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(_declaringType, this, typeArguments);
 
+        /// <inheritdoc />
         public override Module Module => _module;
 
+        /// <summary>
+        /// Gets the signature of the method, decoded from the method's signature blob on first use.
+        /// </summary>
         internal override MethodSignature MethodSignature =>
             _lazyMethodSignature ??= MethodSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), this);
 
+        /// <summary>
+        /// Imports the method into <paramref name="module"/> as a MemberRef on its declaring type.
+        /// </summary>
+        /// <param name="module">The module being built that references the method.</param>
+        /// <returns>The token of the method reference in <paramref name="module"/>.</returns>
         internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, MethodSignature);
 
+        /// <inheritdoc />
         internal override int GetCurrentToken() => MetadataToken;
 
+        /// <summary>
+        /// Gets a value indicating whether the method is complete; a method read from metadata always is.
+        /// </summary>
         internal override bool IsBaked => true;
 
     }

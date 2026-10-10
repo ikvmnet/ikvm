@@ -28,6 +28,9 @@ using System.Security.Cryptography;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Encapsulates access to a public or private key pair used to sign strong name assemblies.
+    /// </summary>
     sealed class StrongNameKeyPair
     {
 
@@ -37,9 +40,9 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="keyPairContainer"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotSupportedException"></exception>
+        /// <param name="keyPairContainer">The name of the key container that holds the key pair.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="keyPairContainer"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NotSupportedException">Key containers are not supported when running on Mono on Windows.</exception>
         public StrongNameKeyPair(string keyPairContainer)
         {
             if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
@@ -51,8 +54,8 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="keyPairArray"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="keyPairArray">An array of bytes containing the key pair.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="keyPairArray"/> is <see langword="null"/>.</exception>
         public StrongNameKeyPair(byte[] keyPairArray)
         {
             if (keyPairArray == null)
@@ -61,6 +64,9 @@ namespace IKVM.Reflection
             _keyPairArray = (byte[])keyPairArray.Clone();
         }
 
+        /// <summary>
+        /// Gets the public part of the public key or public key token of the key pair.
+        /// </summary>
         public byte[] PublicKey
         {
             get
@@ -85,6 +91,11 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Creates an <see cref="RSA"/> instance holding the key pair, for signing the assembly.
+        /// </summary>
+        /// <returns>A new <see cref="RSA"/> instance that the caller must dispose.</returns>
+        /// <exception cref="ArgumentException">The key pair cannot be loaded from the key blob or key container.</exception>
         internal RSA CreateRSA()
         {
             try
@@ -109,7 +120,8 @@ namespace IKVM.Reflection
                     if (Universe.MonoRuntime == false)
                     {
                         parm.Flags = CspProviderFlags.UseMachineKeyStore | CspProviderFlags.UseExistingKey;
-                        parm.KeyNumber = 2; // Signature
+                        // AT_SIGNATURE
+                        parm.KeyNumber = 2;
                     }
 
                     return new RSACryptoServiceProvider(parm);
@@ -127,6 +139,13 @@ namespace IKVM.Reflection
         // helper functions ExportPublicKey, RSAParametersFromStream and RSAParametersFromByteArray
         // based on code in the following article:-
         // https://www.developerfusion.com/article/84422/the-key-to-strong-names/
+
+        /// <summary>
+        /// Encodes the public half of <paramref name="rsaParameters"/> as a CryptoAPI PUBLICKEYBLOB.
+        /// </summary>
+        /// <param name="rsaParameters">The RSA key parameters.</param>
+        /// <returns>The PUBLICKEYBLOB bytes.</returns>
+        /// <exception cref="ArgumentNullException">The modulus or the exponent of <paramref name="rsaParameters"/> is <see langword="null"/>.</exception>
         static byte[] ExportPublicKey(RSAParameters rsaParameters)
         {
             if (rsaParameters.Modulus == null || rsaParameters.Exponent == null)
@@ -150,18 +169,29 @@ namespace IKVM.Reflection
             return ms.ToArray();
         }
 
+        /// <summary>
+        /// Reads RSA key parameters from a CryptoAPI key blob, as found in a .snk file.
+        /// </summary>
+        /// <param name="array">The key blob.</param>
+        /// <returns>The RSA key parameters.</returns>
         static RSAParameters RSAParametersFromByteArray(byte[] array)
         {
             using var ms = new MemoryStream(array);
             return RSAParametersFromStream(ms);
         }
 
+        /// <summary>
+        /// Reads RSA key parameters from a stream containing a CryptoAPI PUBLICKEYBLOB or PRIVATEKEYBLOB.
+        /// </summary>
+        /// <param name="str">The stream to read the key blob from.</param>
+        /// <returns>The RSA key parameters; the private key parameters are only set for a PRIVATEKEYBLOB.</returns>
+        /// <exception cref="CryptographicException">The stream does not contain an RSA key blob.</exception>
         static RSAParameters RSAParametersFromStream(Stream str)
         {
             var rsaParameters = new RSAParameters();
             using var br = new BinaryReader(str);
 
-            // Read BLOBHEADER
+            // read BLOBHEADER
             var keyType = br.ReadByte();
             if (keyType != 6 && keyType != 7)
                 throw new CryptographicException("SNK file not in correct format");
@@ -170,7 +200,7 @@ namespace IKVM.Reflection
             var reserverd = br.ReadUInt16();
             var algorithmID = br.ReadUInt32();
 
-            // Read RSAPUBKEY
+            // read RSAPUBKEY
             var magic = new string(br.ReadChars(4));
             if (!magic.Equals("RSA1") && !magic.Equals("RSA2"))
                 throw new CryptographicException("SNK file not in correct format");
@@ -180,14 +210,14 @@ namespace IKVM.Reflection
             br.ReadByte();
             rsaParameters.Exponent = publicExponent;
 
-            // Read Modulus
+            // read the modulus
             var modulus = br.ReadBytes((int)keyBitLength / 8);
             Array.Reverse(modulus);
             rsaParameters.Modulus = modulus;
 
             if (keyType == 7)
             {
-                // Read Private Key Parameters
+                // read the private key parameters
                 var prime1 = br.ReadBytes((int)keyBitLength / 16);
                 var prime2 = br.ReadBytes((int)keyBitLength / 16);
                 var exponent1 = br.ReadBytes((int)keyBitLength / 16);
@@ -212,6 +242,10 @@ namespace IKVM.Reflection
             return rsaParameters;
         }
 
+        /// <summary>
+        /// Gets the public key through <see cref="System.Reflection.StrongNameKeyPair"/>, as a workaround for a Mono bug.
+        /// </summary>
+        /// <returns>The public key.</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         byte[] MonoGetPublicKey() =>
             _keyPairArray != null ? new System.Reflection.StrongNameKeyPair(_keyPairArray).PublicKey : new System.Reflection.StrongNameKeyPair(_keyPairContainer).PublicKey;

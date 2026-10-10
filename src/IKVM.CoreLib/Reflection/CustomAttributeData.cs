@@ -33,63 +33,63 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Provides access to custom attribute data for assemblies, modules, types, members and parameters that are loaded into the
+    /// reflection-only context.
+    /// </summary>
     sealed class CustomAttributeData
     {
 
+        /// <summary>
+        /// An empty, read-only list of custom attribute data.
+        /// </summary>
         internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
 
-        /*
-		 * There are several states a CustomAttributeData object can be in:
-		 * 
-		 * 1) Unresolved Custom Attribute
-		 *    - customAttribute is not nil
-		 *    - declSecurityIndex == -1
-		 *    - declSecurityBlob == null
-		 *    - lazyConstructor = null
-		 *    - lazyConstructorArguments = null
-		 *    - lazyNamedArguments = null
-		 * 
-		 * 2) Resolved Custom Attribute
-		 *    - customAttribute is not nil
-		 *    - declSecurityIndex == -1
-		 *    - declSecurityBlob == null
-		 *    - lazyConstructor != null
-		 *    - lazyConstructorArguments != null
-		 *    - lazyNamedArguments != null
-		 *    
-		 * 3) Pre-resolved Custom Attribute
-		 *    - customAttribute is nil
-		 *    - declSecurityIndex == -1
-		 *    - declSecurityBlob == null
-		 *    - lazyConstructor != null
-		 *    - lazyConstructorArguments != null
-		 *    - lazyNamedArguments != null
-		 *    
-		 * 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
-		 *    - customAttribute is nil
-		 *    - declSecurityIndex == -1
-		 *    - declSecurityBlob == null
-		 *    - lazyConstructor != null
-		 *    - lazyConstructorArguments != null
-		 *    - lazyNamedArguments != null
-		 *    
-		 * 5) Unresolved declarative security
-		 *    - customAttribute is nil
-		 *    - declSecurityIndex >= 0
-		 *    - declSecurityBlob != null
-		 *    - lazyConstructor != null
-		 *    - lazyConstructorArguments != null
-		 *    - lazyNamedArguments == null
-		 * 
-		 * 6) Resolved declarative security
-		 *    - customAttribute is nil
-		 *    - declSecurityIndex >= 0
-		 *    - declSecurityBlob == null
-		 *    - lazyConstructor != null
-		 *    - lazyConstructorArguments != null
-		 *    - lazyNamedArguments != null
-		 * 
-		 */
+        // there are several states a CustomAttributeData object can be in:
+        //
+        // 1) Unresolved custom attribute
+        //    - _customAttribute is not nil
+        //    - _declSecurityBlob == null
+        //    - _lazyConstructor == null
+        //    - _lazyConstructorArguments == null
+        //    - _lazyNamedArguments == null
+        //
+        // 2) Resolved custom attribute
+        //    - _customAttribute is not nil
+        //    - _declSecurityBlob == null
+        //    - _lazyConstructor != null
+        //    - _lazyConstructorArguments != null
+        //    - _lazyNamedArguments != null
+        //
+        // 3) Pre-resolved custom attribute
+        //    - _customAttribute is nil
+        //    - _declSecurityBlob == null
+        //    - _lazyConstructor != null
+        //    - _lazyConstructorArguments != null
+        //    - _lazyNamedArguments != null
+        //
+        // 4) Pseudo custom attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+        //    - _customAttribute is nil
+        //    - _declSecurityBlob == null
+        //    - _lazyConstructor != null
+        //    - _lazyConstructorArguments != null
+        //    - _lazyNamedArguments != null
+        //
+        // 5) Unresolved declarative security
+        //    - _customAttribute is nil
+        //    - _declSecurityBlob != null
+        //    - _lazyConstructor != null
+        //    - _lazyConstructorArguments != null
+        //    - _lazyNamedArguments == null
+        //
+        // 6) Resolved declarative security
+        //    - _customAttribute is nil
+        //    - _declSecurityBlob != null
+        //    - _lazyConstructor != null
+        //    - _lazyConstructorArguments != null
+        //    - _lazyNamedArguments != null
+        //
+        // _declSecurityIndex is -1, except for declarative security, where it holds the index passed to the constructor
 
         readonly Module _module;
         readonly CustomAttributeHandle _customAttribute;
@@ -101,10 +101,12 @@ namespace IKVM.Reflection
         IList<CustomAttributeNamedArgument> _lazyNamedArguments;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a custom attribute row of a module that was read from a file. The constructor
+        /// and arguments are resolved on first use.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="index"></param>
+        /// <param name="module">The module that contains the custom attribute.</param>
+        /// <param name="handle">The handle of the custom attribute row.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="module"/> is <see langword="null"/>.</exception>
         internal CustomAttributeData(ModuleReader module, CustomAttributeHandle handle)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
@@ -113,17 +115,24 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a pseudo custom attribute, typing each constructor argument by the
+        /// corresponding constructor parameter type.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="constructor"></param>
-        /// <param name="args"></param>
-        /// <param name="namedArguments"></param>
+        /// <param name="module">The module the attribute applies in.</param>
+        /// <param name="constructor">The attribute constructor.</param>
+        /// <param name="args">The constructor argument values.</param>
+        /// <param name="namedArguments">The named arguments, or <see langword="null"/> if there are none.</param>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, object[] args, List<CustomAttributeNamedArgument> namedArguments) :
             this(module, constructor, WrapConstructorArgs(args, constructor.MethodSignature), namedArguments)
         {
         }
 
+        /// <summary>
+        /// Wraps constructor argument values as typed arguments, using the parameter types of <paramref name="sig"/>.
+        /// </summary>
+        /// <param name="args">The constructor argument values.</param>
+        /// <param name="sig">The signature of the constructor.</param>
+        /// <returns>The typed constructor arguments.</returns>
         static List<CustomAttributeTypedArgument> WrapConstructorArgs(object[] args, MethodSignature sig)
         {
             var list = new List<CustomAttributeTypedArgument>();
@@ -133,16 +142,15 @@ namespace IKVM.Reflection
             return list;
         }
 
-        // 4) Pseudo Custom Attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
-
         /// <summary>
-        /// Pseudo Custom Attribute for .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
+        /// Initializes a new instance for a pseudo custom attribute, .NET 1.x declarative security or the result of
+        /// <see cref="CustomAttributeBuilder.ToData"/> (state 4).
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="constructor"></param>
-        /// <param name="constructorArgs"></param>
-        /// <param name="namedArguments"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="module">The module the attribute applies in.</param>
+        /// <param name="constructor">The attribute constructor.</param>
+        /// <param name="constructorArgs">The typed constructor arguments.</param>
+        /// <param name="namedArguments">The named arguments, or <see langword="null"/> if there are none.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="module"/> is <see langword="null"/>.</exception>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
@@ -157,12 +165,13 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Pre-resolved custom attribute.
+        /// Initializes a new instance for a pre-resolved custom attribute, decoding the arguments from a custom attribute
+        /// blob immediately (state 3).
         /// </summary>
-        /// <param name="asm"></param>
-        /// <param name="constructor"></param>
-        /// <param name="br"></param>
-        /// <exception cref="BadImageFormatException"></exception>
+        /// <param name="asm">The assembly whose manifest module the attribute applies in.</param>
+        /// <param name="constructor">The attribute constructor.</param>
+        /// <param name="br">A reader over the custom attribute blob.</param>
+        /// <exception cref="BadImageFormatException">The blob does not start with the custom attribute prolog.</exception>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, BlobReader br)
         {
             _module = asm.ManifestModule;
@@ -184,6 +193,10 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Returns a string representation of the custom attribute.
+        /// </summary>
+        /// <returns>A string value that represents the custom attribute, in C# like syntax.</returns>
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -218,6 +231,13 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Appends the representation of an attribute argument to <paramref name="sb"/>, with a cast when its type differs from
+        /// the declared type.
+        /// </summary>
+        /// <param name="sb">The string builder to append to.</param>
+        /// <param name="type">The declared type of the parameter, field or property.</param>
+        /// <param name="arg">The argument.</param>
         static void AppendValue(StringBuilder sb, Type type, CustomAttributeTypedArgument arg)
         {
             if (arg.ArgumentType == arg.ArgumentType.Module.Universe.System_String)
@@ -263,13 +283,14 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a declarative security attribute; the named arguments are decoded from
+        /// <paramref name="blob"/> on first use (state 5).
         /// </summary>
-        /// <param name="asm"></param>
-        /// <param name="constructor"></param>
-        /// <param name="securityAction"></param>
-        /// <param name="blob"></param>
-        /// <param name="index"></param>
+        /// <param name="asm">The assembly whose manifest module the attribute applies in.</param>
+        /// <param name="constructor">The constructor of the security attribute, which takes a <c>SecurityAction</c>.</param>
+        /// <param name="securityAction">The security action, passed as the constructor argument.</param>
+        /// <param name="blob">The encoded named arguments of the security attribute.</param>
+        /// <param name="index">The index of the attribute within its permission set.</param>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob, int index)
         {
             _module = asm.ManifestModule;
@@ -284,6 +305,13 @@ namespace IKVM.Reflection
             _declSecurityBlob = blob;
         }
 
+        /// <summary>
+        /// Reads a FieldOrPropType from a custom attribute blob.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="br">The reader positioned at the type.</param>
+        /// <returns>The type.</returns>
+        /// <exception cref="BadImageFormatException">The blob contains an invalid type encoding.</exception>
         static Type ReadFieldOrPropType(Module context, ref BlobReader br)
         {
             return br.ReadByte() switch
@@ -302,13 +330,21 @@ namespace IKVM.Reflection
                 Signature.ELEMENT_TYPE_R8 => context.Universe.System_Double,
                 Signature.ELEMENT_TYPE_STRING => context.Universe.System_String,
                 Signature.ELEMENT_TYPE_SZARRAY => ReadFieldOrPropType(context, ref br).MakeArrayType(),
-                0x55 => ReadType(context, ref br),
-                0x50 => context.Universe.System_Type,
-                0x51 => context.Universe.System_Object,
+                0x55 => ReadType(context, ref br), // enum
+                0x50 => context.Universe.System_Type, // System.Type
+                0x51 => context.Universe.System_Object, // boxed object
                 _ => throw new BadImageFormatException(),
             };
         }
 
+        /// <summary>
+        /// Reads a fixed argument of the specified type from a custom attribute blob.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="br">The reader positioned at the argument.</param>
+        /// <param name="type">The type of the argument.</param>
+        /// <returns>The argument. Array values are returned as an array of <see cref="CustomAttributeTypedArgument"/>.</returns>
+        /// <exception cref="InvalidOperationException"><paramref name="type"/> is not a valid custom attribute argument type.</exception>
         static CustomAttributeTypedArgument ReadFixedArg(Module context, ref BlobReader br, Type type)
         {
             var u = context.Universe;
@@ -395,6 +431,12 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Reads a serialized type name from a custom attribute blob and resolves it.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="br">The reader positioned at the type name.</param>
+        /// <returns>The type, or <see langword="null"/> if the serialized string is null.</returns>
         static Type ReadType(Module context, ref BlobReader br)
         {
             var typeName = br.ReadSerializedString();
@@ -408,6 +450,13 @@ namespace IKVM.Reflection
             return TypeNameParser.Parse(typeName, true).GetType(context.Universe, context, true, typeName, true, false);
         }
 
+        /// <summary>
+        /// Reads the fixed arguments for the parameters of <paramref name="constructor"/> from a custom attribute blob.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="br">The reader positioned after the prolog.</param>
+        /// <param name="constructor">The attribute constructor.</param>
+        /// <returns>A read-only list of the constructor arguments.</returns>
         static IList<CustomAttributeTypedArgument> ReadConstructorArguments(Module context, ref BlobReader br, ConstructorInfo constructor)
         {
             var sig = constructor.MethodSignature;
@@ -419,6 +468,16 @@ namespace IKVM.Reflection
             return list.AsReadOnly();
         }
 
+        /// <summary>
+        /// Reads the named arguments from a custom attribute or declarative security blob.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="br">The reader positioned at the first named argument.</param>
+        /// <param name="named">The number of named arguments.</param>
+        /// <param name="type">The attribute type that declares the fields and properties.</param>
+        /// <param name="required"><see langword="false"/> to give up and return <see langword="null"/> when the type of a named argument is missing.</param>
+        /// <returns>A read-only list of the named arguments, or <see langword="null"/> if <paramref name="required"/> is <see langword="false"/> and a type is missing.</returns>
+        /// <exception cref="BadImageFormatException">A named argument is neither a field nor a property.</exception>
         static IList<CustomAttributeNamedArgument> ReadNamedArguments(Module context, ref BlobReader br, int named, Type type, bool required)
         {
             var list = new List<CustomAttributeNamedArgument>(named);
@@ -433,8 +492,8 @@ namespace IKVM.Reflection
                 var value = ReadFixedArg(context, ref br, fieldOrPropertyType);
                 var member = fieldOrProperty switch
                 {
-                    0x53 => (MemberInfo)GetField(context, type, name, fieldOrPropertyType),
-                    0x54 => (MemberInfo)GetProperty(context, type, name, fieldOrPropertyType),
+                    0x53 => (MemberInfo)GetField(context, type, name, fieldOrPropertyType), // FIELD
+                    0x54 => (MemberInfo)GetProperty(context, type, name, fieldOrPropertyType), // PROPERTY
                     _ => throw new BadImageFormatException(),
                 };
 
@@ -444,6 +503,14 @@ namespace IKVM.Reflection
             return list.AsReadOnly();
         }
 
+        /// <summary>
+        /// Finds the public instance field that a named argument sets, searching <paramref name="type"/> and its base types.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="type">The attribute type.</param>
+        /// <param name="name">The name of the field.</param>
+        /// <param name="fieldType">The type of the field.</param>
+        /// <returns>The field, or a missing field placed on the first missing base type (or <paramref name="type"/>) if it is not found.</returns>
         static FieldInfo GetField(Module context, Type type, string name, Type fieldType)
         {
             var org = type;
@@ -460,6 +527,14 @@ namespace IKVM.Reflection
             return type.FindField(name, sig) ?? type.Module.Universe.GetMissingFieldOrThrow(context, type, name, sig);
         }
 
+        /// <summary>
+        /// Finds the public instance property that a named argument sets, searching <paramref name="type"/> and its base types.
+        /// </summary>
+        /// <param name="context">The module the blob belongs to.</param>
+        /// <param name="type">The attribute type.</param>
+        /// <param name="name">The name of the property.</param>
+        /// <param name="propertyType">The type of the property.</param>
+        /// <returns>The property, or a missing property placed on the first missing base type (or <paramref name="type"/>) if it is not found.</returns>
         static PropertyInfo GetProperty(Module context, Type type, string name, Type propertyType)
         {
             var org = type;
@@ -475,8 +550,14 @@ namespace IKVM.Reflection
             return type.Module.Universe.GetMissingPropertyOrThrow(context, type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
         }
 
+        /// <summary>
+        /// Gets the type of the attribute.
+        /// </summary>
         public Type AttributeType => Constructor.DeclaringType;
 
+        /// <summary>
+        /// Gets a <see cref="ConstructorInfo"/> object that represents the constructor that would have initialized the custom attribute.
+        /// </summary>
         public ConstructorInfo Constructor
         {
             get
@@ -488,6 +569,9 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Gets the list of positional arguments specified for the attribute instance represented by the <see cref="CustomAttributeData"/> object.
+        /// </summary>
         public IList<CustomAttributeTypedArgument> ConstructorArguments
         {
             get
@@ -499,6 +583,9 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Gets the list of named arguments specified for the attribute instance represented by the <see cref="CustomAttributeData"/> object.
+        /// </summary>
         public IList<CustomAttributeNamedArgument> NamedArguments
         {
             get
@@ -529,6 +616,11 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Decodes the constructor and named arguments from the blob of the custom attribute row.
+        /// </summary>
+        /// <param name="requireNameArguments"><see langword="false"/> to leave the named arguments unresolved when the type of one of them is missing.</param>
+        /// <exception cref="BadImageFormatException">The blob does not start with the custom attribute prolog.</exception>
         void LazyParseArguments(bool requireNameArguments)
         {
             var br = _module.GetBlobReader(((ModuleReader)_module).Metadata.GetCustomAttribute(_customAttribute).Value);
@@ -548,6 +640,10 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Creates a <see cref="CustomAttributeBuilder"/> that recreates this custom attribute.
+        /// </summary>
+        /// <returns>The custom attribute builder.</returns>
         public CustomAttributeBuilder __ToBuilder()
         {
             var parameters = Constructor.GetParameters();
@@ -579,6 +675,13 @@ namespace IKVM.Reflection
             return new CustomAttributeBuilder(Constructor, args, namedProperties.ToArray(), propertyValues.ToArray(), namedFields.ToArray(), fieldValues.ToArray());
         }
 
+        /// <summary>
+        /// Converts an argument value back to the form <see cref="CustomAttributeBuilder"/> accepts, turning arrays of
+        /// <see cref="CustomAttributeTypedArgument"/> into arrays of values.
+        /// </summary>
+        /// <param name="type">The declared type of the parameter, field or property.</param>
+        /// <param name="arg">The argument.</param>
+        /// <returns>The argument value; an array value declared as <see cref="object"/> is wrapped with <see cref="CustomAttributeBuilder.__MakeTypedArgument"/> to keep its type.</returns>
         static object RewrapArray(Type type, CustomAttributeTypedArgument arg)
         {
             if (arg.Value is IList<CustomAttributeTypedArgument> list)
@@ -599,17 +702,52 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Returns a list of <see cref="CustomAttributeData"/> objects representing data about the attributes that have been applied to the target member.
+        /// </summary>
+        /// <param name="member">The member whose attribute data is to be retrieved.</param>
+        /// <returns>A list of objects that represent data about the attributes that have been applied to the target member.</returns>
         public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member) => __GetCustomAttributes(member, null, false);
 
+        /// <summary>
+        /// Returns a list of <see cref="CustomAttributeData"/> objects representing data about the attributes that have been applied to the target assembly.
+        /// </summary>
+        /// <param name="assembly">The assembly whose attribute data is to be retrieved.</param>
+        /// <returns>A list of objects that represent data about the attributes that have been applied to the target assembly.</returns>
         public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly) => assembly.GetCustomAttributesData(null);
 
+        /// <summary>
+        /// Returns a list of <see cref="CustomAttributeData"/> objects representing data about the attributes that have been applied to the target module.
+        /// </summary>
+        /// <param name="module">The module whose attribute data is to be retrieved.</param>
+        /// <returns>A list of objects that represent data about the attributes that have been applied to the target module.</returns>
         public static IList<CustomAttributeData> GetCustomAttributes(Module module) => __GetCustomAttributes(module, null, false);
 
+        /// <summary>
+        /// Returns a list of <see cref="CustomAttributeData"/> objects representing data about the attributes that have been applied to the target parameter.
+        /// </summary>
+        /// <param name="parameter">The parameter whose attribute data is to be retrieved.</param>
+        /// <returns>A list of objects that represent data about the attributes that have been applied to the target parameter.</returns>
         public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter) => __GetCustomAttributes(parameter, null, false);
 
+        /// <summary>
+        /// Returns the custom attributes of the specified type that have been applied to the target assembly.
+        /// </summary>
+        /// <param name="assembly">The assembly whose attribute data is to be retrieved.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <param name="inherit">Ignored for assemblies.</param>
+        /// <returns>A list of objects that represent data about the matching attributes.</returns>
         public static IList<CustomAttributeData> __GetCustomAttributes(Assembly assembly, Type attributeType, bool inherit) =>
             assembly.GetCustomAttributesData(attributeType);
 
+        /// <summary>
+        /// Returns the custom attributes of the specified type that have been applied to the target module.
+        /// </summary>
+        /// <param name="module">The module whose attribute data is to be retrieved.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <param name="inherit">Ignored for modules.</param>
+        /// <returns>A list of objects that represent data about the matching attributes.</returns>
+        /// <exception cref="MissingModuleException"><paramref name="module"/> is missing.</exception>
         public static IList<CustomAttributeData> __GetCustomAttributes(Module module, Type attributeType, bool inherit)
         {
             if (module.__IsMissing)
@@ -618,6 +756,14 @@ namespace IKVM.Reflection
             return GetCustomAttributesImpl(null, module, 0x00000001, attributeType) ?? EmptyList;
         }
 
+        /// <summary>
+        /// Returns the custom attributes of the specified type that have been applied to the target parameter, including a
+        /// <see cref="System.Runtime.InteropServices.MarshalAsAttribute"/> pseudo custom attribute for marshalling information.
+        /// </summary>
+        /// <param name="parameter">The parameter whose attribute data is to be retrieved.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <param name="inherit">Ignored for parameters.</param>
+        /// <returns>A list of objects that represent data about the matching attributes.</returns>
         public static IList<CustomAttributeData> __GetCustomAttributes(ParameterInfo parameter, Type attributeType, bool inherit)
         {
             var module = parameter.Module;
@@ -633,9 +779,19 @@ namespace IKVM.Reflection
             return GetCustomAttributesImpl(list, module, token, attributeType) ?? EmptyList;
         }
 
+        /// <summary>
+        /// Returns the custom attributes of the specified type that have been applied to the target member, including pseudo
+        /// custom attributes and, when <paramref name="inherit"/> is <see langword="true"/> and the attribute is inheritable,
+        /// the attributes of base types or base method definitions.
+        /// </summary>
+        /// <param name="member">The member whose attribute data is to be retrieved.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <param name="inherit"><see langword="true"/> to also search the inheritance chain of types and methods.</param>
+        /// <returns>A list of objects that represent data about the matching attributes.</returns>
+        /// <exception cref="NotImplementedException"><paramref name="member"/> has not been baked.</exception>
         public static IList<CustomAttributeData> __GetCustomAttributes(MemberInfo member, Type attributeType, bool inherit)
         {
-            // like .NET we we don't return custom attributes for unbaked members
+            // like .NET, we don't return custom attributes for unbaked members
             if (!member.IsBaked)
                 throw new NotImplementedException();
 
@@ -674,6 +830,13 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Adds the pseudo custom attributes and custom attributes of the specified type that have been applied to <paramref name="member"/>.
+        /// </summary>
+        /// <param name="list">The list to add to, or <see langword="null"/> to create one when needed.</param>
+        /// <param name="member">The member whose attributes are returned.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <returns>The list, or <see langword="null"/> if <paramref name="list"/> was <see langword="null"/> and no attributes were found.</returns>
         static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, MemberInfo member, Type attributeType)
         {
             var pseudo = member.GetPseudoCustomAttributes(attributeType);
@@ -685,6 +848,14 @@ namespace IKVM.Reflection
             return GetCustomAttributesImpl(list, member.Module, member.GetCurrentToken(), attributeType);
         }
 
+        /// <summary>
+        /// Adds the custom attributes of the specified type that are attached to the metadata entity identified by <paramref name="token"/>.
+        /// </summary>
+        /// <param name="list">The list to add to, or <see langword="null"/> to create one when needed.</param>
+        /// <param name="module">The module that defines the entity.</param>
+        /// <param name="token">The metadata token of the entity.</param>
+        /// <param name="attributeType">The type of attribute to return, or <see langword="null"/> for all attributes.</param>
+        /// <returns>The list, or <see langword="null"/> if <paramref name="list"/> was <see langword="null"/> and no attributes were found.</returns>
         internal static List<CustomAttributeData> GetCustomAttributesImpl(List<CustomAttributeData> list, Module module, int token, Type attributeType)
         {
             if (module is ModuleBuilder builder)
@@ -705,6 +876,11 @@ namespace IKVM.Reflection
             return list;
         }
 
+        /// <summary>
+        /// Determines whether an attribute type is inherited, according to the <c>Inherited</c> property of its <see cref="AttributeUsageAttribute"/>.
+        /// </summary>
+        /// <param name="attribute">The attribute type.</param>
+        /// <returns><see langword="true"/> if the attribute is inherited or has no <see cref="AttributeUsageAttribute"/>; otherwise, <see langword="false"/>.</returns>
         static bool IsInheritableAttribute(Type attribute)
         {
             var attributeUsageAttribute = attribute.Module.Universe.System_AttributeUsageAttribute;
@@ -717,6 +893,15 @@ namespace IKVM.Reflection
             return true;
         }
 
+        /// <summary>
+        /// Creates a <see cref="System.Runtime.InteropServices.DllImportAttribute"/> pseudo custom attribute from P/Invoke mapping information.
+        /// </summary>
+        /// <param name="module">The module that defines the method.</param>
+        /// <param name="flags">The P/Invoke attributes of the mapping.</param>
+        /// <param name="entryPoint">The name of the entry point.</param>
+        /// <param name="dllName">The name of the module the entry point is imported from.</param>
+        /// <param name="attr">The implementation attributes of the method, used for <c>PreserveSig</c>.</param>
+        /// <returns>The pseudo custom attribute, or <see langword="null"/> if the core library has no DllImportAttribute.</returns>
         internal static CustomAttributeData CreateDllImportPseudoCustomAttribute(Module module, ImplMapFlags flags, string entryPoint, string dllName, MethodImplAttributes attr)
         {
             if (module.Universe.System_Runtime_InteropServices_DllImportAttribute == null)
@@ -754,6 +939,12 @@ namespace IKVM.Reflection
             return new CustomAttributeData(module, constructor, new object[] { dllName }, list);
         }
 
+        /// <summary>
+        /// Creates a <see cref="System.Runtime.InteropServices.MarshalAsAttribute"/> pseudo custom attribute from field marshalling information.
+        /// </summary>
+        /// <param name="module">The module that defines the field or parameter.</param>
+        /// <param name="fm">The marshalling information.</param>
+        /// <returns>The pseudo custom attribute, or <see langword="null"/> if the core library has no MarshalAsAttribute.</returns>
         internal static CustomAttributeData CreateMarshalAsPseudoCustomAttribute(Module module, FieldMarshal fm)
         {
             var typeofMarshalAs = module.Universe.System_Runtime_InteropServices_MarshalAsAttribute;
@@ -782,12 +973,35 @@ namespace IKVM.Reflection
             return new CustomAttributeData(module, constructor, new object[] { (int)fm.UnmanagedType }, named);
         }
 
+        /// <summary>
+        /// Adds a named argument for a string field of the attribute type.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
+        /// <param name="type">The attribute type.</param>
+        /// <param name="fieldName">The name of the field.</param>
+        /// <param name="value">The value of the field.</param>
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value) =>
             AddNamedArgument(list, type, fieldName, type.Module.Universe.System_String, value);
 
+        /// <summary>
+        /// Adds a named argument for a Boolean field of the attribute type that is <see langword="true"/> when <paramref name="flagMask"/> is set in <paramref name="flags"/>.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
+        /// <param name="type">The attribute type.</param>
+        /// <param name="fieldName">The name of the field.</param>
+        /// <param name="flags">The flags to test.</param>
+        /// <param name="flagMask">The flag that determines the value of the field.</param>
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask) =>
             AddNamedArgument(list, type, fieldName, type.Module.Universe.System_Boolean, (flags & flagMask) != 0);
 
+        /// <summary>
+        /// Adds a named argument for a field of the attribute type, if the attribute type has a field with that name and type.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
+        /// <param name="attributeType">The attribute type.</param>
+        /// <param name="fieldName">The name of the field.</param>
+        /// <param name="valueType">The type of the field.</param>
+        /// <param name="value">The value of the field.</param>
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
         {
             // some fields are not available on the .NET Compact Framework version of DllImportAttribute/MarshalAsAttribute
@@ -796,6 +1010,12 @@ namespace IKVM.Reflection
                 list.Add(new CustomAttributeNamedArgument(field, new CustomAttributeTypedArgument(valueType, value)));
         }
 
+        /// <summary>
+        /// Creates a <see cref="System.Runtime.InteropServices.FieldOffsetAttribute"/> pseudo custom attribute.
+        /// </summary>
+        /// <param name="module">The module that defines the field.</param>
+        /// <param name="offset">The offset of the field.</param>
+        /// <returns>The pseudo custom attribute, or <see langword="null"/> if the core library has no FieldOffsetAttribute.</returns>
         internal static CustomAttributeData CreateFieldOffsetPseudoCustomAttribute(Module module, int offset)
         {
             var type = module.Universe.System_Runtime_InteropServices_FieldOffsetAttribute;
@@ -806,6 +1026,11 @@ namespace IKVM.Reflection
             return new CustomAttributeData(module, constructor, new object[] { offset }, null);
         }
 
+        /// <summary>
+        /// Creates a <see cref="System.Runtime.InteropServices.PreserveSigAttribute"/> pseudo custom attribute.
+        /// </summary>
+        /// <param name="module">The module that defines the method.</param>
+        /// <returns>The pseudo custom attribute, or <see langword="null"/> if the core library has no PreserveSigAttribute.</returns>
         internal static CustomAttributeData CreatePreserveSigPseudoCustomAttribute(Module module)
         {
             var type = module.Universe.System_Runtime_InteropServices_PreserveSigAttribute;

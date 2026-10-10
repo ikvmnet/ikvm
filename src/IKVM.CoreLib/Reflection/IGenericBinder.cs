@@ -24,11 +24,25 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Supplies the replacements for generic type and method parameters when a type, method or signature is bound to
+    /// a generic instantiation.
+    /// </summary>
     interface IGenericBinder
     {
 
+        /// <summary>
+        /// Returns the replacement for a generic type parameter.
+        /// </summary>
+        /// <param name="type">The generic type parameter, identified by its <see cref="Type.GenericParameterPosition"/>.</param>
+        /// <returns>The type to substitute for the parameter.</returns>
         Type BindTypeParameter(Type type);
 
+        /// <summary>
+        /// Returns the replacement for a generic method parameter.
+        /// </summary>
+        /// <param name="type">The generic method parameter, identified by its <see cref="Type.GenericParameterPosition"/>.</param>
+        /// <returns>The type to substitute for the parameter.</returns>
         Type BindMethodParameter(Type type);
 
     }

@@ -26,9 +26,18 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Impl
 {
 
+    /// <summary>
+    /// Implemented by the builders that can own a <see cref="TypeBuilder"/>: a module builder for a top-level type, or
+    /// a type builder for a nested type.
+    /// </summary>
     interface ITypeOwner
     {
+
+        /// <summary>
+        /// Gets the module builder in which the owned types are defined.
+        /// </summary>
         ModuleBuilder ModuleBuilder { get; }
+
     }
 
 }

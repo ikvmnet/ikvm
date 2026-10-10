@@ -28,6 +28,11 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// A module that has been read from a file or stream but not yet loaded into its <see cref="Universe"/>. It allows
+    /// inspecting the assembly identity and references before deciding whether to load it with
+    /// <see cref="Universe.LoadAssembly(RawModule)"/>.
+    /// </summary>
     sealed class RawModule : IDisposable
     {
 
@@ -38,37 +43,65 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The module that has been read.</param>
         internal RawModule(ModuleReader module)
         {
             _module = module;
             _isManifestModule = module.Assembly != null;
         }
 
+        /// <summary>
+        /// Gets the fully qualified path of the module.
+        /// </summary>
         public string Location => _module.FullyQualifiedName;
 
+        /// <summary>
+        /// Gets whether the module contains an assembly manifest.
+        /// </summary>
         public bool IsManifestModule => _isManifestModule;
 
+        /// <summary>
+        /// Throws if the module does not contain an assembly manifest.
+        /// </summary>
+        /// <exception cref="BadImageFormatException">The module does not contain a manifest.</exception>
         void CheckManifestModule()
         {
             if (!IsManifestModule)
                 throw new BadImageFormatException("Module does not contain a manifest");
         }
 
+        /// <summary>
+        /// Gets the name of the assembly whose manifest the module contains.
+        /// </summary>
+        /// <returns>The assembly name.</returns>
+        /// <exception cref="BadImageFormatException">The module does not contain a manifest.</exception>
         public AssemblyName GetAssemblyName()
         {
             CheckManifestModule();
             return _module.Assembly.GetName();
         }
 
+        /// <summary>
+        /// Gets the names of the assemblies the module references.
+        /// </summary>
+        /// <returns>The referenced assembly names.</returns>
         public AssemblyName[] GetReferencedAssemblies() => _module.__GetReferencedAssemblies();
 
+        /// <summary>
+        /// Releases the underlying module, unless it has been loaded as an assembly with <see cref="ToAssembly"/>.
+        /// </summary>
         public void Dispose()
         {
             if (!_imported)
                 _module.Dispose();
         }
 
+        /// <summary>
+        /// Hands the module over to be loaded as an assembly. After this call, disposing the raw module no longer
+        /// releases the underlying module.
+        /// </summary>
+        /// <returns>The assembly the module is the manifest module of.</returns>
+        /// <exception cref="InvalidOperationException">The module has already been loaded.</exception>
         internal AssemblyReader ToAssembly()
         {
             if (_imported)

@@ -14,11 +14,18 @@ namespace IKVM.Reflection.Writer
 {
 
     /// <summary>
-    /// Provides cryptographic operations.
+    /// Computes cryptographic hashes over metadata and image content, for deterministic content IDs and strong name
+    /// signatures.
     /// </summary>
     class CryptographicHashProvider
     {
 
+        /// <summary>
+        /// Computes the hash of a sequence of blobs, as if they were one contiguous block of data.
+        /// </summary>
+        /// <param name="algorithmName">The hash algorithm to use.</param>
+        /// <param name="bytes">The blobs to hash, in order.</param>
+        /// <returns>The computed hash.</returns>
         public static ImmutableArray<byte> ComputeHash(HashAlgorithmName algorithmName, IEnumerable<Blob> bytes)
         {
             using (var incrementalHash = IncrementalHash.CreateHash(algorithmName))

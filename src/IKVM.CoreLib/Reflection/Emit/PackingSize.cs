@@ -19,16 +19,23 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Specifies the packing size of a type.
+    /// </summary>
     enum PackingSize
     {
 
+        /// <summary>
+        /// The packing size is not specified.
+        /// </summary>
         Unspecified = 0,
+
         Size1 = 1,
         Size2 = 2,
         Size4 = 4,

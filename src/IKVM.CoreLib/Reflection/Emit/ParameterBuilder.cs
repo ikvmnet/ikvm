@@ -26,6 +26,9 @@ using System.Reflection.Metadata;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Creates or associates parameter information.
+    /// </summary>
     sealed class ParameterBuilder
     {
 
@@ -34,15 +37,20 @@ namespace IKVM.Reflection.Emit
         readonly short _sequence;
         readonly StringHandle _nameIndex;
         readonly string _name;
+
+        /// <summary>
+        /// The pseudo token allocated for this parameter on first use, or zero if none has been allocated yet. It is
+        /// replaced by the real <c>Param</c> token once metadata is written.
+        /// </summary>
         int _lazyPseudoToken;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="method"></param>
-        /// <param name="sequence"></param>
-        /// <param name="attribs"></param>
-        /// <param name="name"></param>
+        /// <param name="method">The method that declares the parameter.</param>
+        /// <param name="sequence">The position of the parameter in the signature; 0 for the return value.</param>
+        /// <param name="attribs">The attributes of the parameter.</param>
+        /// <param name="name">The name of the parameter, or <see langword="null"/> if it is unnamed.</param>
         internal ParameterBuilder(MethodBuilder method, int sequence, ParameterAttributes attribs, string name)
         {
             _method = method;
@@ -52,6 +60,10 @@ namespace IKVM.Reflection.Emit
             _name = name;
         }
 
+        /// <summary>
+        /// Gets the pseudo token that stands for this parameter until its real metadata token is known, allocating it on
+        /// first access. Custom attributes and marshaling information applied to the parameter are recorded against it.
+        /// </summary>
         internal int PseudoToken
         {
             get
@@ -63,15 +75,28 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Retrieves the name of this parameter.
+        /// </summary>
         public string Name => _name;
 
         /// <summary>
-        /// One-based index of the parameter.
+        /// Retrieves the signature position for this parameter. Parameters are numbered from 1; 0 denotes the return
+        /// value.
         /// </summary>
         public int Position => _sequence;
 
+        /// <summary>
+        /// Retrieves the attributes for this parameter.
+        /// </summary>
         public int Attributes => _flags;
 
+        /// <summary>
+        /// Set a custom attribute using a custom attribute builder. The pseudo-custom attributes <c>InAttribute</c>,
+        /// <c>OutAttribute</c>, <c>OptionalAttribute</c> and <c>MarshalAsAttribute</c> are translated into parameter
+        /// flags and marshaling information rather than emitted as custom attributes.
+        /// </summary>
+        /// <param name="customAttributeBuilder">An instance of a helper class to define the custom attribute.</param>
         public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
         {
             switch (customAttributeBuilder.KnownCA)
@@ -95,6 +120,9 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Adds the <c>Param</c> row for this parameter to the module's metadata.
+        /// </summary>
         internal void WriteMetadata()
         {
             _method.ModuleBuilder.Metadata.AddParameter(
@@ -103,6 +131,11 @@ namespace IKVM.Reflection.Emit
                 _sequence);
         }
 
+        /// <summary>
+        /// Registers the real metadata token of this parameter as the replacement for its pseudo token, if one was
+        /// allocated.
+        /// </summary>
+        /// <param name="parameterToken">The <c>Param</c> metadata token assigned to this parameter.</param>
         internal void FixupToken(int parameterToken)
         {
             if (_lazyPseudoToken != 0)

@@ -24,6 +24,9 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Presents a <see cref="MethodInfo"/> that describes a constructor as a <see cref="ConstructorInfo"/>.
+    /// </summary>
     sealed class ConstructorInfoImpl : ConstructorInfo
     {
 
@@ -32,20 +35,23 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="method"></param>
+        /// <param name="method">The method that describes the constructor.</param>
         internal ConstructorInfoImpl(MethodInfo method)
         {
             _method = method;
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             ConstructorInfoImpl other = obj as ConstructorInfoImpl;
             return other != null && other._method.Equals(_method);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode() => _method.GetHashCode();
 
+        /// <inheritdoc />
         internal override MethodInfo GetMethodInfo() => _method;
 
     }

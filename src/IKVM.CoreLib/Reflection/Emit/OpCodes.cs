@@ -5,15 +5,17 @@
 
 namespace IKVM.Reflection.Emit
 {
+
     /// <summary>
-    /// Exposes all of the IL instructions supported by the runtime.
+    /// Defines the encoded values of the IL instructions supported by the runtime.
     /// </summary>
     /// <remarks>
-    /// Internal enums for opcode values. Note that the value names are used to construct
-    /// publicly visible ilasm-compatible opcode names, so their exact form is important!
+    /// The value names are used to construct the ilasm-compatible opcode names returned by <see cref="OpCode.Name"/>,
+    /// so their exact form is important.
     /// </remarks>
     enum OpCodeValues
     {
+
         Nop = 0x00,
         Break = 0x01,
         Ldarg_0 = 0x02,
@@ -205,14 +207,14 @@ namespace IKVM.Reflection.Emit
         Leave_S = 0xde,
         Stind_I = 0xdf,
         Conv_U = 0xe0,
-        Prefix7 = 0xf8,
-        Prefix6 = 0xf9,
-        Prefix5 = 0xfa,
-        Prefix4 = 0xfb,
-        Prefix3 = 0xfc,
-        Prefix2 = 0xfd,
-        Prefix1 = 0xfe,
-        Prefixref = 0xff,
+        Prefix7 = 0xf8, // reserved
+        Prefix6 = 0xf9, // reserved
+        Prefix5 = 0xfa, // reserved
+        Prefix4 = 0xfb, // reserved
+        Prefix3 = 0xfc, // reserved
+        Prefix2 = 0xfd, // reserved
+        Prefix1 = 0xfe, // first byte of every two-byte opcode
+        Prefixref = 0xff, // reserved
         Arglist = 0xfe00,
         Ceq = 0xfe01,
         Cgt = 0xfe02,
@@ -240,20 +242,22 @@ namespace IKVM.Reflection.Emit
         Sizeof = 0xfe1c,
         Refanytype = 0xfe1d,
         Readonly_ = 0xfe1e,
-        // If you add more opcodes here, modify OpCode.Name to handle them correctly
+
+        // if you add more opcodes here, modify OpCode.Name to handle them correctly
+
     }
 
     /// <summary>
-    ///    <para>
-    ///       The IL instruction opcodes supported by the
-    ///       runtime. The IL Instruction Specification describes each
-    ///       Opcode.
-    ///    </para>
+    /// Provides field representations of the Microsoft intermediate language (MSIL) instructions for emission by the
+    /// <see cref="ILGenerator"/> class members.
     /// </summary>
-    /// <seealso topic='IL Instruction Set Specification'/>
     class OpCodes
     {
 
+        /// <summary>
+        /// Fills space if opcodes are patched. No meaningful operation is performed although a processing cycle can be
+        /// consumed.
+        /// </summary>
         public static readonly OpCode Nop = new(OpCodeValues.Nop,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -264,6 +268,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the argument at index 0 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarg_0 = new(OpCodeValues.Ldarg_0,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -274,6 +281,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the argument at index 1 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarg_1 = new(OpCodeValues.Ldarg_1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -284,6 +294,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the argument at index 2 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarg_2 = new(OpCodeValues.Ldarg_2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -294,6 +307,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the argument at index 3 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarg_3 = new(OpCodeValues.Ldarg_3,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -304,6 +320,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at index 0 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloc_0 = new(OpCodeValues.Ldloc_0,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -314,6 +333,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at index 1 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloc_1 = new(OpCodeValues.Ldloc_1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -324,6 +346,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at index 2 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloc_2 = new(OpCodeValues.Ldloc_2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -334,6 +359,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at index 3 onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloc_3 = new(OpCodeValues.Ldloc_3,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -344,6 +372,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        /// index 0.
+        /// </summary>
         public static readonly OpCode Stloc_0 = new(OpCodeValues.Stloc_0,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -354,6 +386,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        /// index 1.
+        /// </summary>
         public static readonly OpCode Stloc_1 = new(OpCodeValues.Stloc_1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -364,6 +400,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        /// index 2.
+        /// </summary>
         public static readonly OpCode Stloc_2 = new(OpCodeValues.Stloc_2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -374,6 +414,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        /// index 3.
+        /// </summary>
         public static readonly OpCode Stloc_3 = new(OpCodeValues.Stloc_3,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -384,6 +428,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the argument (referenced by a specified short form index) onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarg_S = new(OpCodeValues.Ldarg_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -394,6 +441,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads an argument address, in short form, onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarga_S = new(OpCodeValues.Ldarga_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -404,6 +454,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores the value on top of the evaluation stack in the argument slot at a specified index, short form.
+        /// </summary>
         public static readonly OpCode Starg_S = new(OpCodeValues.Starg_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -414,6 +467,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at a specific index onto the evaluation stack, short form.
+        /// </summary>
         public static readonly OpCode Ldloc_S = new(OpCodeValues.Ldloc_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -424,6 +480,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the address of the local variable at a specific index onto the evaluation stack, short form.
+        /// </summary>
         public static readonly OpCode Ldloca_S = new(OpCodeValues.Ldloca_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -434,6 +493,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        /// index (short form).
+        /// </summary>
         public static readonly OpCode Stloc_S = new(OpCodeValues.Stloc_S,
             ((int)OperandType.ShortInlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -444,6 +507,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a null reference (type O) onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldnull = new(OpCodeValues.Ldnull,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -454,6 +520,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of -1 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_M1 = new(OpCodeValues.Ldc_I4_M1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -464,6 +533,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 0 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_0 = new(OpCodeValues.Ldc_I4_0,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -474,6 +546,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 1 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_1 = new(OpCodeValues.Ldc_I4_1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -484,6 +559,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 2 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_2 = new(OpCodeValues.Ldc_I4_2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -494,6 +572,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 3 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_3 = new(OpCodeValues.Ldc_I4_3,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -504,6 +585,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 4 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_4 = new(OpCodeValues.Ldc_I4_4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -514,6 +598,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 5 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_5 = new(OpCodeValues.Ldc_I4_5,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -524,6 +611,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 6 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_6 = new(OpCodeValues.Ldc_I4_6,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -534,6 +624,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 7 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_7 = new(OpCodeValues.Ldc_I4_7,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -544,6 +637,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the integer value of 8 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4_8 = new(OpCodeValues.Ldc_I4_8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -554,6 +650,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the supplied int8 value onto the evaluation stack as an int32, short form.
+        /// </summary>
         public static readonly OpCode Ldc_I4_S = new(OpCodeValues.Ldc_I4_S,
             ((int)OperandType.ShortInlineI) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -564,6 +663,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a supplied value of type int32 onto the evaluation stack as an int32.
+        /// </summary>
         public static readonly OpCode Ldc_I4 = new(OpCodeValues.Ldc_I4,
             ((int)OperandType.InlineI) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -574,6 +676,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a supplied value of type int64 onto the evaluation stack as an int64.
+        /// </summary>
         public static readonly OpCode Ldc_I8 = new(OpCodeValues.Ldc_I8,
             ((int)OperandType.InlineI8) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -584,6 +689,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a supplied value of type float32 onto the evaluation stack as type F (float).
+        /// </summary>
         public static readonly OpCode Ldc_R4 = new(OpCodeValues.Ldc_R4,
             ((int)OperandType.ShortInlineR) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -594,6 +702,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a supplied value of type float64 onto the evaluation stack as type F (float).
+        /// </summary>
         public static readonly OpCode Ldc_R8 = new(OpCodeValues.Ldc_R8,
             ((int)OperandType.InlineR) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -604,6 +715,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Copies the current topmost value on the evaluation stack, and then pushes the copy onto the evaluation
+        /// stack.
+        /// </summary>
         public static readonly OpCode Dup = new(OpCodeValues.Dup,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -614,6 +729,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Removes the value currently on top of the evaluation stack.
+        /// </summary>
         public static readonly OpCode Pop = new(OpCodeValues.Pop,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -624,6 +742,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Calls the method indicated by the passed method descriptor.
+        /// </summary>
         public static readonly OpCode Call = new(OpCodeValues.Call,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Call << OpCode.FlowControlShift) |
@@ -634,6 +755,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Calls the method indicated on the evaluation stack (as a pointer to an entry point) with arguments described
+        /// by a calling convention.
+        /// </summary>
         public static readonly OpCode Calli = new(OpCodeValues.Calli,
             ((int)OperandType.InlineSig) |
             ((int)FlowControl.Call << OpCode.FlowControlShift) |
@@ -644,6 +769,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Returns from the current method, pushing a return value (if present) from the callee's evaluation stack onto
+        /// the caller's evaluation stack.
+        /// </summary>
         public static readonly OpCode Ret = new(OpCodeValues.Ret,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Return << OpCode.FlowControlShift) |
@@ -655,6 +784,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Unconditionally transfers control to a target instruction (short form).
+        /// </summary>
         public static readonly OpCode Br_S = new(OpCodeValues.Br_S,
             ((int)OperandType.ShortInlineBrTarget) |
             ((int)FlowControl.Branch << OpCode.FlowControlShift) |
@@ -666,6 +798,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Unconditionally transfers control to a target instruction.
+        /// </summary>
         public static readonly OpCode Br = new(OpCodeValues.Br,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Branch << OpCode.FlowControlShift) |
@@ -677,6 +812,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if value is false, a null reference, or zero.
+        /// </summary>
         public static readonly OpCode Brfalse = new(OpCodeValues.Brfalse,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -687,6 +825,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if value is true, not null, or non-zero.
+        /// </summary>
         public static readonly OpCode Brtrue = new(OpCodeValues.Brtrue,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -697,6 +838,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if two values are equal.
+        /// </summary>
         public static readonly OpCode Beq = new(OpCodeValues.Beq,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -707,6 +851,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is greater than or equal to the second value.
+        /// </summary>
         public static readonly OpCode Bge = new(OpCodeValues.Bge,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -717,6 +864,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is greater than the second value.
+        /// </summary>
         public static readonly OpCode Bgt = new(OpCodeValues.Bgt,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -727,6 +877,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is less than or equal to the second value.
+        /// </summary>
         public static readonly OpCode Ble = new(OpCodeValues.Ble,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -737,6 +890,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is less than the second value.
+        /// </summary>
         public static readonly OpCode Blt = new(OpCodeValues.Blt,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -747,6 +903,10 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction when two unsigned integer values or unordered float values are not
+        /// equal.
+        /// </summary>
         public static readonly OpCode Bne_Un = new(OpCodeValues.Bne_Un,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -757,6 +917,10 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is greater than or equal to the second value,
+        /// when comparing unsigned integer values or unordered float values.
+        /// </summary>
         public static readonly OpCode Bge_Un = new(OpCodeValues.Bge_Un,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -767,6 +931,10 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is greater than the second value, when
+        /// comparing unsigned integer values or unordered float values.
+        /// </summary>
         public static readonly OpCode Bgt_Un = new(OpCodeValues.Bgt_Un,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -777,6 +945,10 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is less than or equal to the second value, when
+        /// comparing unsigned integer values or unordered float values.
+        /// </summary>
         public static readonly OpCode Ble_Un = new(OpCodeValues.Ble_Un,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -787,6 +959,10 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control to a target instruction if the first value is less than the second value, when comparing
+        /// unsigned integer values or unordered float values.
+        /// </summary>
         public static readonly OpCode Blt_Un = new(OpCodeValues.Blt_Un,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -797,6 +973,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Implements a jump table.
+        /// </summary>
         public static readonly OpCode Switch = new(OpCodeValues.Switch,
             ((int)OperandType.InlineSwitch) |
             ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
@@ -807,6 +986,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type int8 as an int32 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_I1 = new(OpCodeValues.Ldind_I1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -817,6 +999,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type unsigned int8 as an int32 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_U1 = new(OpCodeValues.Ldind_U1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -827,6 +1012,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type int16 as an int32 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_I2 = new(OpCodeValues.Ldind_I2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -837,6 +1025,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type unsigned int16 as an int32 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_U2 = new(OpCodeValues.Ldind_U2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -847,6 +1038,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type int32 as an int32 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_I4 = new(OpCodeValues.Ldind_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -857,6 +1051,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type int64 as an int64 onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_I8 = new(OpCodeValues.Ldind_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -867,6 +1064,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type float32 as a type F (float) onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_R4 = new(OpCodeValues.Ldind_R4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -877,6 +1077,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads a value of type float64 as a type F (float) onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_R8 = new(OpCodeValues.Ldind_R8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -887,6 +1090,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads an object reference as a type O (object reference) onto the evaluation stack indirectly.
+        /// </summary>
         public static readonly OpCode Ldind_Ref = new(OpCodeValues.Ldind_Ref,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -897,6 +1103,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores an object reference value at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_Ref = new(OpCodeValues.Stind_Ref,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -907,6 +1116,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type int8 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_I1 = new(OpCodeValues.Stind_I1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -917,6 +1129,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type int16 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_I2 = new(OpCodeValues.Stind_I2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -927,6 +1142,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type int32 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_I4 = new(OpCodeValues.Stind_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -937,6 +1155,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type int64 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_I8 = new(OpCodeValues.Stind_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -947,6 +1168,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type float32 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_R4 = new(OpCodeValues.Stind_R4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -957,6 +1181,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores a value of type float64 at a supplied address.
+        /// </summary>
         public static readonly OpCode Stind_R8 = new(OpCodeValues.Stind_R8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -967,6 +1194,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Adds two values and pushes the result onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Add = new(OpCodeValues.Add,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -977,6 +1207,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Subtracts one value from another and pushes the result onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Sub = new(OpCodeValues.Sub,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -987,6 +1220,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Multiplies two values and pushes the result on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Mul = new(OpCodeValues.Mul,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -997,6 +1233,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Divides two values and pushes the result as a floating-point (type F) or quotient (type int32) onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Div = new(OpCodeValues.Div,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1007,6 +1247,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Divides two unsigned integer values and pushes the result (int32) onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Div_Un = new(OpCodeValues.Div_Un,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1017,6 +1260,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Divides two values and pushes the remainder onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Rem = new(OpCodeValues.Rem,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1027,6 +1273,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Divides two unsigned values and pushes the remainder onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Rem_Un = new(OpCodeValues.Rem_Un,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1037,6 +1286,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Computes the bitwise AND of two values and pushes the result onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode And = new(OpCodeValues.And,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1047,6 +1299,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Computes the bitwise OR of the two integer values on top of the stack and pushes the result onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Or = new(OpCodeValues.Or,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1057,6 +1313,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Computes the bitwise XOR of the top two values on the evaluation stack, pushing the result onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Xor = new(OpCodeValues.Xor,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1067,6 +1327,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Shifts an integer value to the left (in zeroes) by a specified number of bits, pushing the result onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Shl = new(OpCodeValues.Shl,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1077,6 +1341,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Shifts an integer value (in sign) to the right by a specified number of bits, pushing the result onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Shr = new(OpCodeValues.Shr,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1087,6 +1355,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Shifts an unsigned integer value (in zeroes) to the right by a specified number of bits, pushing the result
+        /// onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Shr_Un = new(OpCodeValues.Shr_Un,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1097,6 +1369,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Negates a value and pushes the result onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Neg = new(OpCodeValues.Neg,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1107,6 +1382,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Computes the bitwise complement of the integer value on top of the stack and pushes the result onto the
+        /// evaluation stack as the same type.
+        /// </summary>
         public static readonly OpCode Not = new(OpCodeValues.Not,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1117,6 +1396,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to int8, then extends (pads) it to int32.
+        /// </summary>
         public static readonly OpCode Conv_I1 = new(OpCodeValues.Conv_I1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1127,6 +1409,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to int16, then extends (pads) it to int32.
+        /// </summary>
         public static readonly OpCode Conv_I2 = new(OpCodeValues.Conv_I2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1137,6 +1422,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to int32.
+        /// </summary>
         public static readonly OpCode Conv_I4 = new(OpCodeValues.Conv_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1147,6 +1435,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to int64.
+        /// </summary>
         public static readonly OpCode Conv_I8 = new(OpCodeValues.Conv_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1157,6 +1448,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to float32.
+        /// </summary>
         public static readonly OpCode Conv_R4 = new(OpCodeValues.Conv_R4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1167,6 +1461,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to float64.
+        /// </summary>
         public static readonly OpCode Conv_R8 = new(OpCodeValues.Conv_R8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1177,6 +1474,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to unsigned int32, and extends it to int32.
+        /// </summary>
         public static readonly OpCode Conv_U4 = new(OpCodeValues.Conv_U4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1187,6 +1487,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to unsigned int64, and extends it to int64.
+        /// </summary>
         public static readonly OpCode Conv_U8 = new(OpCodeValues.Conv_U8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1197,6 +1500,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Calls a late-bound method on an object, pushing the return value onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Callvirt = new(OpCodeValues.Callvirt,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Call << OpCode.FlowControlShift) |
@@ -1207,6 +1513,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Copies the value type object pointed to by an address to the top of the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldobj = new(OpCodeValues.Ldobj,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1217,6 +1526,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes a new object reference to a string literal stored in the metadata.
+        /// </summary>
         public static readonly OpCode Ldstr = new(OpCodeValues.Ldstr,
             ((int)OperandType.InlineString) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1227,6 +1539,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Creates a new object or a new instance of a value type, pushing an object reference (type O) onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Newobj = new(OpCodeValues.Newobj,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Call << OpCode.FlowControlShift) |
@@ -1237,6 +1553,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Attempts to cast an object passed by reference to the specified class.
+        /// </summary>
         public static readonly OpCode Castclass = new(OpCodeValues.Castclass,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1247,6 +1566,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Tests whether an object reference (type O) is an instance of a particular class.
+        /// </summary>
         public static readonly OpCode Isinst = new(OpCodeValues.Isinst,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1257,6 +1579,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the boxed representation of a value type to its unboxed form.
+        /// </summary>
         public static readonly OpCode Unbox = new(OpCodeValues.Unbox,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1267,6 +1592,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Throws the exception object currently on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Throw = new(OpCodeValues.Throw,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Throw << OpCode.FlowControlShift) |
@@ -1278,6 +1606,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Finds the value of a field in the object whose reference is currently on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldfld = new(OpCodeValues.Ldfld,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1288,6 +1619,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Finds the address of a field in the object whose reference is currently on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldflda = new(OpCodeValues.Ldflda,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1298,6 +1632,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the value stored in the field of an object reference or pointer with a new value.
+        /// </summary>
         public static readonly OpCode Stfld = new(OpCodeValues.Stfld,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1308,6 +1645,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the value of a static field onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldsfld = new(OpCodeValues.Ldsfld,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1318,6 +1658,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the address of a static field onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldsflda = new(OpCodeValues.Ldsflda,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1328,6 +1671,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the value of a static field with a value from the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stsfld = new(OpCodeValues.Stsfld,
             ((int)OperandType.InlineField) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1338,6 +1684,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Copies a value of a specified type from the evaluation stack into a supplied memory address.
+        /// </summary>
         public static readonly OpCode Stobj = new(OpCodeValues.Stobj,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1348,6 +1697,9 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts a value type to an object reference (type O).
+        /// </summary>
         public static readonly OpCode Box = new(OpCodeValues.Box,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1358,6 +1710,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes an object reference to a new zero-based, one-dimensional array whose elements are of a specific type
+        /// onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Newarr = new(OpCodeValues.Newarr,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1368,6 +1724,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the number of elements of a zero-based, one-dimensional array onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldlen = new(OpCodeValues.Ldlen,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1378,6 +1737,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the address of the array element at a specified array index onto the top of the evaluation stack as
+        /// type &amp; (managed pointer).
+        /// </summary>
         public static readonly OpCode Ldelema = new(OpCodeValues.Ldelema,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1388,6 +1751,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type int8 at a specified array index onto the top of the evaluation stack as an
+        /// int32.
+        /// </summary>
         public static readonly OpCode Ldelem_I1 = new(OpCodeValues.Ldelem_I1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1398,6 +1765,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type unsigned int8 at a specified array index onto the top of the evaluation stack as
+        /// an int32.
+        /// </summary>
         public static readonly OpCode Ldelem_U1 = new(OpCodeValues.Ldelem_U1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1408,6 +1779,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type int16 at a specified array index onto the top of the evaluation stack as an
+        /// int32.
+        /// </summary>
         public static readonly OpCode Ldelem_I2 = new(OpCodeValues.Ldelem_I2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1418,6 +1793,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type unsigned int16 at a specified array index onto the top of the evaluation stack
+        /// as an int32.
+        /// </summary>
         public static readonly OpCode Ldelem_U2 = new(OpCodeValues.Ldelem_U2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1428,6 +1807,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type int32 at a specified array index onto the top of the evaluation stack as an
+        /// int32.
+        /// </summary>
         public static readonly OpCode Ldelem_I4 = new(OpCodeValues.Ldelem_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1438,6 +1821,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type int64 at a specified array index onto the top of the evaluation stack as an
+        /// int64.
+        /// </summary>
         public static readonly OpCode Ldelem_I8 = new(OpCodeValues.Ldelem_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1448,6 +1835,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type float32 at a specified array index onto the top of the evaluation stack as type
+        /// F (float).
+        /// </summary>
         public static readonly OpCode Ldelem_R4 = new(OpCodeValues.Ldelem_R4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1458,6 +1849,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element with type float64 at a specified array index onto the top of the evaluation stack as type
+        /// F (float).
+        /// </summary>
         public static readonly OpCode Ldelem_R8 = new(OpCodeValues.Ldelem_R8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1468,6 +1863,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element containing an object reference at a specified array index onto the top of the evaluation
+        /// stack as type O (object reference).
+        /// </summary>
         public static readonly OpCode Ldelem_Ref = new(OpCodeValues.Ldelem_Ref,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1478,6 +1877,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the int8 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_I1 = new(OpCodeValues.Stelem_I1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1488,6 +1890,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the int16 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_I2 = new(OpCodeValues.Stelem_I2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1498,6 +1903,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the int32 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_I4 = new(OpCodeValues.Stelem_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1508,6 +1916,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the int64 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_I8 = new(OpCodeValues.Stelem_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1518,6 +1929,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the float32 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_R4 = new(OpCodeValues.Stelem_R4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1528,6 +1942,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the float64 value on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_R8 = new(OpCodeValues.Stelem_R8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1538,6 +1955,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the object ref value (type O) on the evaluation stack.
+        /// </summary>
         public static readonly OpCode Stelem_Ref = new(OpCodeValues.Stelem_Ref,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1548,6 +1968,10 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the element at a specified array index onto the top of the evaluation stack as the type specified in
+        /// the instruction.
+        /// </summary>
         public static readonly OpCode Ldelem = new(OpCodeValues.Ldelem,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1558,6 +1982,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Replaces the array element at a given index with the value on the evaluation stack, whose type is specified
+        /// in the instruction.
+        /// </summary>
         public static readonly OpCode Stelem = new(OpCodeValues.Stelem,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1568,6 +1996,10 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the signed value on top of the evaluation stack to signed int32, throwing <see
+        /// cref="System.OverflowException"/> on overflow.
+        /// </summary>
         public static readonly OpCode Conv_Ovf_I4 = new(OpCodeValues.Conv_Ovf_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1578,6 +2010,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts a metadata token to its runtime representation, pushing it onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldtoken = new(OpCodeValues.Ldtoken,
             ((int)OperandType.InlineTok) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1588,6 +2023,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to unsigned int16, and extends it to int32.
+        /// </summary>
         public static readonly OpCode Conv_U2 = new(OpCodeValues.Conv_U2,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1598,6 +2036,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to unsigned int8, and extends it to int32.
+        /// </summary>
         public static readonly OpCode Conv_U1 = new(OpCodeValues.Conv_U1,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1608,6 +2049,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Converts the value on top of the evaluation stack to native int.
+        /// </summary>
         public static readonly OpCode Conv_I = new(OpCodeValues.Conv_I,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1618,6 +2062,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control from the fault or finally clause of an exception block back to the Common Language
+        /// Infrastructure (CLI) exception handler.
+        /// </summary>
         public static readonly OpCode Endfinally = new(OpCodeValues.Endfinally,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Return << OpCode.FlowControlShift) |
@@ -1629,6 +2077,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Exits a protected region of code, unconditionally transferring control to a specific target instruction.
+        /// </summary>
         public static readonly OpCode Leave = new(OpCodeValues.Leave,
             ((int)OperandType.InlineBrTarget) |
             ((int)FlowControl.Branch << OpCode.FlowControlShift) |
@@ -1640,6 +2091,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Exits a protected region of code, unconditionally transferring control to a target instruction (short form).
+        /// </summary>
         public static readonly OpCode Leave_S = new(OpCodeValues.Leave_S,
             ((int)OperandType.ShortInlineBrTarget) |
             ((int)FlowControl.Branch << OpCode.FlowControlShift) |
@@ -1651,6 +2105,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Compares two values. If they are equal, the integer value 1 (int32) is pushed onto the evaluation stack;
+        /// otherwise 0 (int32) is pushed onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ceq = new(OpCodeValues.Ceq,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1661,6 +2119,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Compares two values. If the first value is greater than the second, the integer value 1 (int32) is pushed
+        /// onto the evaluation stack; otherwise 0 (int32) is pushed onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Cgt = new(OpCodeValues.Cgt,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1671,6 +2133,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Compares two unsigned or unordered values. If the first value is greater than the second, the integer value
+        /// 1 (int32) is pushed onto the evaluation stack; otherwise 0 (int32) is pushed onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Cgt_Un = new(OpCodeValues.Cgt_Un,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1681,6 +2147,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Compares two values. If the first value is less than the second, the integer value 1 (int32) is pushed onto
+        /// the evaluation stack; otherwise 0 (int32) is pushed onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Clt = new(OpCodeValues.Clt,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1691,6 +2161,11 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Compares the unsigned or unordered values value1 and value2. If value1 is less than value2, then the integer
+        /// value 1 (int32) is pushed onto the evaluation stack; otherwise 0 (int32) is pushed onto the evaluation
+        /// stack.
+        /// </summary>
         public static readonly OpCode Clt_Un = new(OpCodeValues.Clt_Un,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1701,6 +2176,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes an unmanaged pointer (type native int) to the native code implementing a specific method onto the
+        /// evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldftn = new(OpCodeValues.Ldftn,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1711,6 +2190,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes an unmanaged pointer (type native int) to the native code implementing a particular virtual method
+        /// associated with a specified object onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldvirtftn = new(OpCodeValues.Ldvirtftn,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1721,6 +2204,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads an argument (referenced by a specified index value) onto the stack.
+        /// </summary>
         public static readonly OpCode Ldarg = new(OpCodeValues.Ldarg,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1731,6 +2217,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads an argument address onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldarga = new(OpCodeValues.Ldarga,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1741,6 +2230,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Stores the value on top of the evaluation stack in the argument slot at a specified index.
+        /// </summary>
         public static readonly OpCode Starg = new(OpCodeValues.Starg,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1751,6 +2243,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the local variable at a specific index onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloc = new(OpCodeValues.Ldloc,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1761,6 +2256,9 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Loads the address of the local variable at a specific index onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Ldloca = new(OpCodeValues.Ldloca,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1771,6 +2269,10 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pops the current value from the top of the evaluation stack and stores it in the local variable list at a
+        /// specified index.
+        /// </summary>
         public static readonly OpCode Stloc = new(OpCodeValues.Stloc,
             ((int)OperandType.InlineVar) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1781,6 +2283,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Transfers control from the filter clause of an exception back to the Common Language Infrastructure (CLI)
+        /// exception handler.
+        /// </summary>
         public static readonly OpCode Endfilter = new(OpCodeValues.Endfilter,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Return << OpCode.FlowControlShift) |
@@ -1792,6 +2298,10 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Indicates that an address currently atop the evaluation stack might not be aligned to the natural size of
+        /// the immediately following ldind, stind, ldfld, stfld, ldobj, stobj, initblk, or cpblk instruction.
+        /// </summary>
         public static readonly OpCode Unaligned = new(OpCodeValues.Unaligned_,
             ((int)OperandType.ShortInlineI) |
             ((int)FlowControl.Meta << OpCode.FlowControlShift) |
@@ -1802,6 +2312,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Specifies that an address currently atop the evaluation stack might be volatile, and the results of reading
+        /// that location cannot be cached or that multiple stores to that location cannot be suppressed.
+        /// </summary>
         public static readonly OpCode Volatile = new(OpCodeValues.Volatile_,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Meta << OpCode.FlowControlShift) |
@@ -1812,6 +2326,10 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Initializes each field of the value type at a specified address to a null reference or a 0 of the
+        /// appropriate primitive type.
+        /// </summary>
         public static readonly OpCode Initobj = new(OpCodeValues.Initobj,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1822,6 +2340,9 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Copies a specified number of bytes from a source address to a destination address.
+        /// </summary>
         public static readonly OpCode Cpblk = new(OpCodeValues.Cpblk,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1832,6 +2353,9 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Rethrows the current exception.
+        /// </summary>
         public static readonly OpCode Rethrow = new(OpCodeValues.Rethrow,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Throw << OpCode.FlowControlShift) |
@@ -1843,6 +2367,9 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Pushes the size, in bytes, of a supplied value type onto the evaluation stack.
+        /// </summary>
         public static readonly OpCode Sizeof = new(OpCodeValues.Sizeof,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1853,6 +2380,12 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.StackChangeShift)
         );
 
+        /// <summary>
+        /// Returns <see langword="true"/> or <see langword="false"/> if the supplied opcode takes a single byte
+        /// argument.
+        /// </summary>
+        /// <param name="inst">An instance of an opcode object.</param>
+        /// <returns><see langword="true"/> if the opcode takes a single byte argument; otherwise, <see langword="false"/>.</returns>
         public static bool TakesSingleByteArgument(OpCode inst)
         {
             return inst.OperandType switch
@@ -1861,7 +2394,9 @@ namespace IKVM.Reflection.Emit
                 _ => false,
             };
         }
+
     }
+
 }
 
 #nullable restore

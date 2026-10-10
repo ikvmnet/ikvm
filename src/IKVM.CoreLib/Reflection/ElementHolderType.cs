@@ -26,19 +26,30 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Base class for types that are composed from a single element type, such as arrays, pointers and by-ref types.
+    /// </summary>
     abstract class ElementHolderType : TypeInfo
     {
 
+        /// <summary>
+        /// The type of the object encompassed or referred to by this type.
+        /// </summary>
         protected readonly Type elementType;
+
+        /// <summary>
+        /// The cached TypeSpec token of this type in the <see cref="ModuleBuilder"/> of the element type, or 0 if not yet imported.
+        /// </summary>
         int _token;
+
         readonly CustomModifiers _mods;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="elementType"></param>
-        /// <param name="mods"></param>
-        /// <param name="sigElementType"></param>
+        /// <param name="elementType">The type of the object encompassed or referred to by this type.</param>
+        /// <param name="mods">The custom modifiers applied to this type.</param>
+        /// <param name="sigElementType">The signature element type (an <c>ELEMENT_TYPE_*</c> value) of this type.</param>
         protected ElementHolderType(Type elementType, CustomModifiers mods, byte sigElementType) :
             base(sigElementType)
         {
@@ -46,6 +57,11 @@ namespace IKVM.Reflection
             _mods = mods;
         }
 
+        /// <summary>
+        /// Determines whether <paramref name="other"/> has the same element type and custom modifiers as this instance.
+        /// </summary>
+        /// <param name="other">The type to compare with, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if <paramref name="other"/> is not <see langword="null"/> and has an equal element type and equal custom modifiers; otherwise, <see langword="false"/>.</returns>
         protected bool EqualsHelper(ElementHolderType other)
         {
             return other != null
@@ -53,20 +69,31 @@ namespace IKVM.Reflection
                 && other._mods.Equals(_mods);
         }
 
+        /// <inheritdoc />
         public override CustomModifiers __GetCustomModifiers() => _mods;
 
+        /// <inheritdoc />
         public sealed override string Name => elementType.Name + GetSuffix();
 
+        /// <inheritdoc />
         public sealed override string Namespace => elementType.Namespace;
 
+        /// <inheritdoc />
         public sealed override string FullName => elementType.FullName + GetSuffix();
 
+        /// <inheritdoc />
         public sealed override string ToString() => elementType.ToString() + GetSuffix();
 
+        /// <inheritdoc />
         public sealed override Type GetElementType() => elementType;
 
+        /// <inheritdoc />
         public sealed override Module Module => elementType.Module;
 
+        /// <summary>
+        /// Gets the TypeSpec token for this type in the <see cref="ModuleBuilder"/> of the element type, importing the type on first use.
+        /// </summary>
+        /// <returns>The metadata token of this type.</returns>
         internal sealed override int GetModuleBuilderToken()
         {
             if (_token == 0)
@@ -75,6 +102,7 @@ namespace IKVM.Reflection
             return _token;
         }
 
+        /// <inheritdoc />
         public sealed override bool ContainsGenericParameters
         {
             get
@@ -87,6 +115,7 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <inheritdoc />
         protected sealed override bool ContainsMissingTypeImpl
         {
             get
@@ -99,8 +128,14 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <inheritdoc />
         protected sealed override bool IsValueTypeImpl => false;
 
+        /// <summary>
+        /// Substitutes the generic parameters of the element type and custom modifiers using <paramref name="binder"/>.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <returns>This instance if nothing changed; otherwise, a new type of the same kind wrapping the bound element type.</returns>
         internal sealed override Type BindTypeParameters(IGenericBinder binder)
         {
             var type = elementType.BindTypeParameters(binder);
@@ -111,18 +146,35 @@ namespace IKVM.Reflection
             return Wrap(type, mods);
         }
 
+        /// <inheritdoc />
         internal override void CheckBaked() => elementType.CheckBaked();
 
+        /// <inheritdoc />
         internal sealed override Universe Universe => elementType.Universe;
 
+        /// <inheritdoc />
         internal sealed override bool IsBaked => elementType.IsBaked;
 
+        /// <summary>
+        /// Gets the current metadata token of this type, which is always 0 because element holder types have no token of their own.
+        /// </summary>
+        /// <returns>Always 0.</returns>
         internal sealed override int GetCurrentToken() =>
             // we don't have a token, so we return 0 (which is never a valid token)
             0;
 
+        /// <summary>
+        /// Gets the suffix that is appended to the element type name to form the name of this type, such as <c>[]</c>, <c>*</c> or <c>&amp;</c>.
+        /// </summary>
+        /// <returns>The type name suffix.</returns>
         internal abstract string GetSuffix();
 
+        /// <summary>
+        /// Creates a type of the same kind as this instance around a different element type.
+        /// </summary>
+        /// <param name="type">The new element type.</param>
+        /// <param name="mods">The custom modifiers of the new type.</param>
+        /// <returns>The constructed type.</returns>
         protected abstract Type Wrap(Type type, CustomModifiers mods);
 
     }

@@ -24,6 +24,10 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a general array type (ELEMENT_TYPE_ARRAY), which has an explicit rank and optional sizes and lower
+    /// bounds, as opposed to a single-dimensional, zero-based array.
+    /// </summary>
     sealed class MultiArrayType : ElementHolderType
     {
 
@@ -31,17 +35,26 @@ namespace IKVM.Reflection
         readonly int[] _sizes;
         readonly int[] _lobounds;
 
+        /// <summary>
+        /// Gets the canonical general array type for the specified element type, shape and custom modifiers.
+        /// </summary>
+        /// <param name="type">The element type of the array.</param>
+        /// <param name="rank">The number of dimensions of the array.</param>
+        /// <param name="sizes">The sizes of the leading dimensions that have a specified size.</param>
+        /// <param name="lobounds">The lower bounds of the leading dimensions that have a specified lower bound.</param>
+        /// <param name="mods">The custom modifiers applied to the array type.</param>
+        /// <returns>The canonical instance of the array type from the element type's universe.</returns>
         internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods) =>
             type.Universe.CanonicalizeType(new MultiArrayType(type, rank, sizes, lobounds, mods));
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lobounds"></param>
-        /// <param name="mods"></param>
+        /// <param name="type">The element type of the array.</param>
+        /// <param name="rank">The number of dimensions of the array.</param>
+        /// <param name="sizes">The sizes of the leading dimensions that have a specified size.</param>
+        /// <param name="lobounds">The lower bounds of the leading dimensions that have a specified lower bound.</param>
+        /// <param name="mods">The custom modifiers applied to the array type.</param>
         MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods) :
             base(type, mods, Signature.ELEMENT_TYPE_ARRAY)
         {
@@ -50,8 +63,18 @@ namespace IKVM.Reflection
             _lobounds = lobounds;
         }
 
+        /// <summary>
+        /// Gets the type from which the current type directly inherits, which for an array type is
+        /// <see cref="System.Array"/>.
+        /// </summary>
         public override Type BaseType => elementType.Module.Universe.System_Array;
 
+        /// <summary>
+        /// Returns the methods the runtime provides for the array type: the two constructors (taking the lengths, or
+        /// the lower bounds and lengths, of every dimension) and the <c>Set</c>, <c>Address</c> and <c>Get</c>
+        /// accessors.
+        /// </summary>
+        /// <returns>The built-in methods of the array type.</returns>
         public override MethodBase[] __GetDeclaredMethods()
         {
             var int32 = Module.Universe.System_Int32;
@@ -78,14 +101,27 @@ namespace IKVM.Reflection
             };
         }
 
+        /// <summary>
+        /// Gets the attributes associated with the type, which for an array type are always public, sealed and
+        /// serializable.
+        /// </summary>
         public override TypeAttributes Attributes => TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable;
 
+        /// <inheritdoc />
         public override int GetArrayRank() => _rank;
 
+        /// <inheritdoc />
         public override int[] __GetArraySizes() => Util.Copy(_sizes);
 
+        /// <inheritdoc />
         public override int[] __GetArrayLowerBounds() => Util.Copy(_lobounds);
 
+        /// <summary>
+        /// Determines whether the specified object is a general array type with the same element type, custom
+        /// modifiers, rank, sizes and lower bounds.
+        /// </summary>
+        /// <param name="o">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="o"/> represents the same array type; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object o)
         {
             var at = o as MultiArrayType;
@@ -95,6 +131,12 @@ namespace IKVM.Reflection
                 && ArrayEquals(at._lobounds, _lobounds);
         }
 
+        /// <summary>
+        /// Determines whether two arrays have the same length and the same elements.
+        /// </summary>
+        /// <param name="i1">The first array to compare.</param>
+        /// <param name="i2">The second array to compare.</param>
+        /// <returns><see langword="true"/> if the arrays are equal element by element; otherwise, <see langword="false"/>.</returns>
         static bool ArrayEquals(int[] i1, int[] i2)
         {
             if (i1.Length == i2.Length)
@@ -109,8 +151,15 @@ namespace IKVM.Reflection
             return false;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode() => elementType.GetHashCode() * 9 + _rank;
 
+        /// <summary>
+        /// Gets the suffix appended to the element type's name: <c>[*]</c> for a rank 1 general array, to distinguish
+        /// it from a single-dimensional zero-based array, and otherwise brackets containing one comma less than the
+        /// rank.
+        /// </summary>
+        /// <returns>The array suffix.</returns>
         internal override string GetSuffix()
         {
             if (_rank == 1)
@@ -119,6 +168,7 @@ namespace IKVM.Reflection
                 return "[" + new string(',', _rank - 1) + "]";
         }
 
+        /// <inheritdoc />
         protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, _rank, _sizes, _lobounds, mods);
 
     }

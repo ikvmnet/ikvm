@@ -26,6 +26,10 @@ using System.Diagnostics;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Wraps an <see cref="EventInfo"/> that was obtained through a type other than its declaring type, so that the accessor
+    /// methods it returns report that type as their reflected type.
+    /// </summary>
     sealed class EventInfoWithReflectedType : EventInfo
     {
 
@@ -35,8 +39,8 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reflectedType"></param>
-        /// <param name="eventInfo"></param>
+        /// <param name="reflectedType">The type through which the event was obtained.</param>
+        /// <param name="eventInfo">The event to wrap.</param>
         internal EventInfoWithReflectedType(Type reflectedType, EventInfo eventInfo)
         {
             Debug.Assert(reflectedType != eventInfo.DeclaringType);
@@ -44,32 +48,46 @@ namespace IKVM.Reflection
             _eventInfo = eventInfo;
         }
 
+        /// <inheritdoc />
         public override EventAttributes Attributes => _eventInfo.Attributes;
 
+        /// <inheritdoc />
         public override MethodInfo GetAddMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetAddMethod(nonPublic), _reflectedType);
 
+        /// <inheritdoc />
         public override MethodInfo GetRaiseMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetRaiseMethod(nonPublic), _reflectedType);
 
+        /// <inheritdoc />
         public override MethodInfo GetRemoveMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetRemoveMethod(nonPublic), _reflectedType);
 
+        /// <inheritdoc />
         public override MethodInfo[] GetOtherMethods(bool nonPublic) => SetReflectedType(_eventInfo.GetOtherMethods(nonPublic), _reflectedType);
 
+        /// <inheritdoc />
         public override Type EventHandlerType => _eventInfo.EventHandlerType;
 
+        /// <inheritdoc />
         internal override bool IsPublic => _eventInfo.IsPublic;
 
+        /// <inheritdoc />
         internal override bool IsNonPrivate => _eventInfo.IsNonPrivate;
 
+        /// <inheritdoc />
         internal override bool IsStatic => _eventInfo.IsStatic;
 
+        /// <inheritdoc />
         internal override EventInfo BindTypeParameters(Type type) => _eventInfo.BindTypeParameters(type);
 
+        /// <inheritdoc />
         public override string ToString() => _eventInfo.ToString();
 
+        /// <inheritdoc />
         public override bool __IsMissing => _eventInfo.__IsMissing;
 
+        /// <inheritdoc />
         public override Type DeclaringType => _eventInfo.DeclaringType;
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             var other = obj as EventInfoWithReflectedType;
@@ -78,16 +96,22 @@ namespace IKVM.Reflection
                 && other._eventInfo == _eventInfo;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode() => _reflectedType.GetHashCode() ^ _eventInfo.GetHashCode();
 
+        /// <inheritdoc />
         public override int MetadataToken => _eventInfo.MetadataToken;
 
+        /// <inheritdoc />
         public override Module Module => _eventInfo.Module;
 
+        /// <inheritdoc />
         public override string Name => _eventInfo.Name;
 
+        /// <inheritdoc />
         internal override bool IsBaked => _eventInfo.IsBaked;
 
+        /// <inheritdoc />
         internal override int GetCurrentToken() => _eventInfo.GetCurrentToken();
 
     }

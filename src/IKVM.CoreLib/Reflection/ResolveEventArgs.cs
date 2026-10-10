@@ -19,13 +19,16 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Provides data for loader resolution events, such as the assembly resolve event.
+    /// </summary>
     sealed class ResolveEventArgs : EventArgs
     {
 
@@ -33,18 +36,25 @@ namespace IKVM.Reflection
         readonly Assembly _requestingAssembly;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance, specifying the name of the item to resolve and the assembly whose dependency is
+        /// being resolved.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="requestingAssembly"></param>
+        /// <param name="name">The name of an item to resolve.</param>
+        /// <param name="requestingAssembly">The assembly whose dependency is being resolved.</param>
         public ResolveEventArgs(string name, Assembly requestingAssembly)
         {
             _name = name;
             _requestingAssembly = requestingAssembly;
         }
 
+        /// <summary>
+        /// Gets the name of the item to resolve.
+        /// </summary>
         public string Name => _name;
 
+        /// <summary>
+        /// Gets the assembly whose dependency is being resolved.
+        /// </summary>
         public Assembly RequestingAssembly => _requestingAssembly;
 
     }

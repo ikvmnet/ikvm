@@ -37,6 +37,9 @@ using IKVM.Reflection.Diagnostics;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Defines and represents a method (or constructor) on a dynamic class.
+    /// </summary>
     sealed class MethodBuilder : MethodInfo
     {
 
@@ -62,20 +65,34 @@ namespace IKVM.Reflection.Emit
         BlobHandle _signature;
         int _rva = -1;
 
-        byte[] _body;                                // The IL for the method
-        int _maxStack;                                 // Maximum stack size calculated 
-        byte[] _localSignature;                        // Local signature if set explicitly via DefineBody. Null otherwise.
-        ExceptionHandler[] _exceptions;                // Exception handlers or null if there are none.
-        int[] _mdMethodFixups;                         // The location of all of the token fixups. Null means no fixups.
-        internal LocalSymInfo LocalSymInfo;           // keep track debugging local information
+        // the IL for the method
+        byte[] _body;
+
+        // maximum stack size calculated
+        int _maxStack;
+
+        // local variable signature taken from the ILGenerator, or null if the method has no locals
+        byte[] _localSignature;
+
+        // exception handlers, or null if there are none
+        ExceptionHandler[] _exceptions;
+
+        // the offsets in the IL of all of the token fixups, or null if there are none
+        int[] _mdMethodFixups;
+
+        /// <summary>
+        /// Debugging information about the local variables of the method, written to the symbol writer along with the
+        /// method.
+        /// </summary>
+        internal LocalSymInfo LocalSymInfo;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeBuilder"></param>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="callingConvention"></param>
+        /// <param name="typeBuilder">The type that defines the method.</param>
+        /// <param name="name">The name of the method.</param>
+        /// <param name="attributes">The attributes of the method.</param>
+        /// <param name="callingConvention">The calling convention of the method. <see cref="CallingConventions.HasThis"/> is added for an instance method.</param>
         internal MethodBuilder(TypeBuilder typeBuilder, string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
             _type = typeBuilder;
@@ -88,8 +105,21 @@ namespace IKVM.Reflection.Emit
             _returnType = Module.Universe.System_Void;
         }
 
+        /// <summary>
+        /// Returns an <see cref="ILGenerator"/> for this method with a default Microsoft intermediate language (MSIL)
+        /// stream size of 16 bytes.
+        /// </summary>
+        /// <returns>An <see cref="ILGenerator"/> object for this method.</returns>
+        /// <exception cref="InvalidOperationException">The method body has already been written.</exception>
         public ILGenerator GetILGenerator() => GetILGenerator(16);
 
+        /// <summary>
+        /// Returns an <see cref="ILGenerator"/> for this method with the specified Microsoft intermediate language
+        /// (MSIL) stream size. The same generator is returned on every call.
+        /// </summary>
+        /// <param name="streamSize">The size of the MSIL stream, in bytes.</param>
+        /// <returns>An <see cref="ILGenerator"/> object for this method.</returns>
+        /// <exception cref="InvalidOperationException">The method body has already been written.</exception>
         public ILGenerator GetILGenerator(int streamSize)
         {
             if (_rva != -1)
@@ -98,6 +128,10 @@ namespace IKVM.Reflection.Emit
             return _ilGenerator ??= new ILGenerator(this, streamSize);
         }
 
+        /// <summary>
+        /// Records a <c>DllImportAttribute</c> as an ImplMap row instead of a custom attribute.
+        /// </summary>
+        /// <param name="customBuilder">The decoded <c>DllImportAttribute</c>.</param>
         void SetDllImportPseudoCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             var callingConvention = customBuilder.GetFieldValue<CallingConvention>("CallingConvention");
@@ -113,6 +147,20 @@ namespace IKVM.Reflection.Emit
                 (bool?)customBuilder.GetFieldValue("ExactSpelling"));
         }
 
+        /// <summary>
+        /// Records the platform invoke information of the method as an ImplMap row, encoding the options of
+        /// <c>DllImportAttribute</c> as P/Invoke flags. Unless <paramref name="preserveSig"/> is
+        /// <see langword="false"/>, <see cref="MethodImplAttributes.PreserveSig"/> is also set on the method.
+        /// </summary>
+        /// <param name="dllName">The name of the DLL that contains the unmanaged method.</param>
+        /// <param name="entryName">The name of the unmanaged entry point, or <see langword="null"/> to use the name of the method.</param>
+        /// <param name="nativeCallConv">The unmanaged calling convention, or <see langword="null"/> for the platform default.</param>
+        /// <param name="nativeCharSet">The character set used to marshal strings, or <see langword="null"/> if not specified.</param>
+        /// <param name="bestFitMapping">Whether best-fit mapping is enabled, or <see langword="null"/> if not specified.</param>
+        /// <param name="throwOnUnmappableChar">Whether an unmappable character throws, or <see langword="null"/> if not specified.</param>
+        /// <param name="setLastError">Whether the callee calls <c>SetLastError</c> before returning, or <see langword="null"/> if not specified.</param>
+        /// <param name="preserveSig">Whether the signature is preserved exactly, or <see langword="null"/> for the default of <see langword="true"/>.</param>
+        /// <param name="exactSpelling">Whether the entry point name is used without character set suffixes, or <see langword="null"/> if not specified.</param>
         internal void SetDllImportPseudoCustomAttribute(string dllName, string entryName, CallingConvention? nativeCallConv, CharSet? nativeCharSet, bool? bestFitMapping, bool? throwOnUnmappableChar, bool? setLastError, bool? preserveSig, bool? exactSpelling)
         {
             const short NoMangle = 0x0001;
@@ -194,6 +242,12 @@ namespace IKVM.Reflection.Emit
             ModuleBuilder.AddImplMap(_pseudoToken, (ImplMapFlags)(ushort)flags, entryName ?? _name, dllName);
         }
 
+        /// <summary>
+        /// Applies a <c>MethodImplAttribute</c> to the implementation flags of the method instead of emitting it as a
+        /// custom attribute. This replaces any implementation flags set earlier.
+        /// </summary>
+        /// <param name="customBuilder">The decoded <c>MethodImplAttribute</c>.</param>
+        /// <exception cref="NotSupportedException">The attribute constructor has more than one parameter.</exception>
         void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
         {
             MethodImplOptions opt;
@@ -222,6 +276,11 @@ namespace IKVM.Reflection.Emit
                 _implFlags |= (MethodImplAttributes)type;
         }
 
+        /// <summary>
+        /// Sets a custom attribute using a custom attribute builder. Pseudo custom attributes, such as
+        /// <c>DllImportAttribute</c> and <c>MethodImplAttribute</c>, are applied to the method metadata instead.
+        /// </summary>
+        /// <param name="customBuilder">An instance of a helper class to describe the custom attribute.</param>
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             switch (customBuilder.KnownCA)
@@ -248,8 +307,20 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Sets the implementation flags for this method.
+        /// </summary>
+        /// <param name="attributes">The implementation flags to set.</param>
         public void SetImplementationFlags(MethodImplAttributes attributes) => _implFlags = attributes;
 
+        /// <summary>
+        /// Sets the parameter attributes and the name of a parameter of this method, or of the return value of this
+        /// method. Returns a <see cref="ParameterBuilder"/> that can be used to apply custom attributes.
+        /// </summary>
+        /// <param name="position">The position of the parameter in the parameter list. Parameters are indexed beginning with the number 1 for the first parameter; the number 0 represents the return value of the method.</param>
+        /// <param name="attributes">The parameter attributes of the parameter.</param>
+        /// <param name="strParamName">The name of the parameter. The name can be the null string.</param>
+        /// <returns>An object that represents a parameter of this method or the return value of this method.</returns>
         public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
         {
             _parameters ??= [];
@@ -274,15 +345,37 @@ namespace IKVM.Reflection.Emit
             return pb;
         }
 
+        /// <summary>
+        /// Throws if the signature of the method has already been computed, after which it can no longer change.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The signature has already been used.</exception>
         void CheckSig()
         {
             if (_methodSignature != null)
                 throw new InvalidOperationException("The method signature can not be modified after it has been used.");
         }
 
+        /// <summary>
+        /// Sets the method signature, including the return type, the parameter types, and the required and optional
+        /// custom modifiers of the return type and parameter types.
+        /// </summary>
+        /// <param name="returnType">The return type of the method.</param>
+        /// <param name="returnTypeRequiredCustomModifiers">An array of types representing the required custom modifiers, such as <c>IsConst</c>, for the return type of the method. If the return type has no required custom modifiers, specify <see langword="null"/>.</param>
+        /// <param name="returnTypeOptionalCustomModifiers">An array of types representing the optional custom modifiers, such as <c>IsConst</c>, for the return type of the method. If the return type has no optional custom modifiers, specify <see langword="null"/>.</param>
+        /// <param name="parameterTypes">The types of the parameters of the method.</param>
+        /// <param name="parameterTypeRequiredCustomModifiers">An array of arrays of types. Each array of types represents the required custom modifiers for the corresponding parameter. If no parameter has required custom modifiers, specify <see langword="null"/>.</param>
+        /// <param name="parameterTypeOptionalCustomModifiers">An array of arrays of types. Each array of types represents the optional custom modifiers for the corresponding parameter. If no parameter has optional custom modifiers, specify <see langword="null"/>.</param>
+        /// <exception cref="InvalidOperationException">The signature has already been used.</exception>
         public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers) =>
             SetSignature(returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
 
+        /// <summary>
+        /// Sets the return type, parameter types and custom modifiers of the method.
+        /// </summary>
+        /// <param name="returnType">The return type, or <see langword="null"/> for <see cref="void"/>.</param>
+        /// <param name="parameterTypes">The parameter types. The array is copied.</param>
+        /// <param name="customModifiers">The custom modifiers of the return type and parameters.</param>
+        /// <exception cref="InvalidOperationException">The signature has already been used.</exception>
         void SetSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
             CheckSig();
@@ -292,10 +385,17 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Gets the generic parameters defined on the method, or <c>null</c>.
+        /// Gets the generic parameters defined on the method, or <see langword="null"/> if none have been defined.
         /// </summary>
         internal GenericTypeParameterBuilder[] GenericParameters => _gtpb;
 
+        /// <summary>
+        /// Sets the number of generic type parameters for the current method, specifies their names, and returns an
+        /// array of <see cref="GenericTypeParameterBuilder"/> objects that can be used to define their constraints.
+        /// </summary>
+        /// <param name="names">An array of strings that represent the names of the generic type parameters.</param>
+        /// <returns>An array of <see cref="GenericTypeParameterBuilder"/> objects representing the type parameters of the generic method.</returns>
+        /// <exception cref="InvalidOperationException">Generic type parameters have already been defined for this method, or the signature has already been used.</exception>
         public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
         {
             CheckSig();
@@ -309,8 +409,14 @@ namespace IKVM.Reflection.Emit
             return (GenericTypeParameterBuilder[])_gtpb.Clone();
         }
 
+        /// <inheritdoc />
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(_type, this, typeArguments);
 
+        /// <summary>
+        /// Returns this method, which is its own generic method definition.
+        /// </summary>
+        /// <returns>The current instance.</returns>
+        /// <exception cref="InvalidOperationException">The current method is not generic.</exception>
         public override MethodInfo GetGenericMethodDefinition()
         {
             if (_gtpb == null)
@@ -319,18 +425,29 @@ namespace IKVM.Reflection.Emit
             return this;
         }
 
+        /// <inheritdoc />
         public override Type[] GetGenericArguments() => Util.Copy(_gtpb);
 
+        /// <inheritdoc />
         internal override Type GetGenericMethodArgument(int index) => _gtpb[index];
 
+        /// <inheritdoc />
         public override Type ReturnType => _returnType;
 
+        /// <inheritdoc />
         public override ParameterInfo ReturnParameter => new ParameterInfoImpl(this, -1);
 
+        /// <inheritdoc />
         public override MethodAttributes Attributes => _attributes;
 
+        /// <inheritdoc />
         public override MethodImplAttributes GetMethodImplementationFlags() => _implFlags;
 
+        /// <summary>
+        /// Represents a parameter, or the return parameter, of a <see cref="MethodBuilder"/>. The type comes from the
+        /// method signature; the name, attributes and default value come from the <see cref="Emit.ParameterBuilder"/>
+        /// defined for the position, if there is one.
+        /// </summary>
         sealed class ParameterInfoImpl : ParameterInfo
         {
 
@@ -340,14 +457,17 @@ namespace IKVM.Reflection.Emit
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="method"></param>
-            /// <param name="parameter"></param>
+            /// <param name="method">The method that declares the parameter.</param>
+            /// <param name="parameter">The zero-based position of the parameter, or -1 for the return parameter.</param>
             internal ParameterInfoImpl(MethodBuilder method, int parameter)
             {
                 _method = method;
                 _parameter = parameter;
             }
 
+            /// <summary>
+            /// Gets the parameter builder defined for this position, or <see langword="null"/> if none was defined.
+            /// </summary>
             ParameterBuilder ParameterBuilder
             {
                 get
@@ -361,6 +481,7 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <inheritdoc />
             public override string Name
             {
                 get
@@ -370,8 +491,10 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <inheritdoc />
             public override Type ParameterType => _parameter == -1 ? _method._returnType : _method._parameterTypes[_parameter];
 
+            /// <inheritdoc />
             public override ParameterAttributes Attributes
             {
                 get
@@ -381,8 +504,10 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <inheritdoc />
             public override int Position => _parameter;
 
+            /// <inheritdoc />
             public override object RawDefaultValue
             {
                 get
@@ -397,16 +522,27 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <inheritdoc />
             public override CustomModifiers __GetCustomModifiers() => _method._customModifiers.GetParameterCustomModifiers(_parameter);
 
+            /// <summary>
+            /// Attempts to read the marshalling information of the parameter. Marshalling information is not available
+            /// for the parameters of a method being built, so this always returns <see langword="false"/>.
+            /// </summary>
+            /// <param name="fieldMarshal">When this method returns, contains the default value.</param>
+            /// <returns>Always <see langword="false"/>.</returns>
             public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
             {
                 fieldMarshal = new FieldMarshal();
                 return false;
             }
 
+            /// <inheritdoc />
             public override MemberInfo Member => _method;
 
+            /// <summary>
+            /// Gets the pseudo token of the parameter builder, or 0x08000000 for a parameter without one.
+            /// </summary>
             public override int MetadataToken
             {
                 get
@@ -416,10 +552,12 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <inheritdoc />
             public override Module Module => _method.Module;
 
         }
 
+        /// <inheritdoc />
         public override ParameterInfo[] GetParameters()
         {
             var parameters = new ParameterInfo[_parameterTypes.Length];
@@ -429,32 +567,47 @@ namespace IKVM.Reflection.Emit
             return parameters;
         }
 
+        /// <inheritdoc />
         internal override Type[] GetParameterTypes() => _parameterTypes;
 
+        /// <inheritdoc />
         internal override int ParameterCount => _parameterTypes.Length;
 
+        /// <summary>
+        /// Gets the type that declares this method, or <see langword="null"/> for a global method defined on the
+        /// &lt;Module&gt; pseudo type.
+        /// </summary>
         public override Type DeclaringType => _type.IsModulePseudoType ? null : _type;
 
+        /// <inheritdoc />
         public override string Name => _name;
 
+        /// <inheritdoc />
         public override CallingConventions CallingConvention => _callingConvention;
 
+        /// <summary>
+        /// Gets the pseudo token of the method, which is resolved to its real token when the module is saved.
+        /// </summary>
         public override int MetadataToken => _pseudoToken;
 
+        /// <inheritdoc />
         public override bool IsGenericMethod => _gtpb != null;
 
+        /// <inheritdoc />
         public override bool IsGenericMethodDefinition => _gtpb != null;
 
+        /// <inheritdoc />
         public override Module Module => _type.Module;
 
         /// <summary>
-        /// Sets the method body to the specified IL and exception information. Space in the module IL blob is reserved and later filled in after tokens are resolved.
+        /// Sets the method body to the specified IL and exception information. The body is copied to the module IL
+        /// stream when the metadata is written, after the tokens have been resolved.
         /// </summary>
-        /// <param name="il"></param>
-        /// <param name="maxStack"></param>
-        /// <param name="localSignature"></param>
-        /// <param name="exceptionHandlers"></param>
-        /// <param name="tokenFixups"></param>
+        /// <param name="il">The IL of the method body.</param>
+        /// <param name="maxStack">The maximum stack depth of the method body.</param>
+        /// <param name="localSignature">The local variable signature, or <see langword="null"/> if the method has no locals.</param>
+        /// <param name="exceptionHandlers">The exception handlers, or <see langword="null"/> if there are none.</param>
+        /// <param name="tokenFixups">The offsets in <paramref name="il"/> of the tokens to resolve, or <see langword="null"/> if there are none.</param>
         void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, ExceptionHandler[] exceptionHandlers, int[] tokenFixups)
         {
             _body = il;
@@ -464,6 +617,11 @@ namespace IKVM.Reflection.Emit
             _mdMethodFixups = tokenFixups;
         }
 
+        /// <summary>
+        /// Completes the method: adds its name and signature to the metadata, and takes the IL, local signature,
+        /// exception handlers and token fixups from its <see cref="ILGenerator"/>, if it has one.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">A local variable scope is still open.</exception>
         internal void Bake()
         {
             _nameIndex = ModuleBuilder.GetOrAddString(_name);
@@ -480,14 +638,14 @@ namespace IKVM.Reflection.Emit
                 var localSignature = _ilGenerator.LocalCount > 0 ? _ilGenerator.LocalSignature.GetSignature() : null;
                 SetMethodBody(_ilGenerator.BakeByteArray(), _ilGenerator.GetMaxStackSize(), localSignature, GetExceptions(_ilGenerator.GetExceptions()), _ilGenerator.GetTokenFixups());
             }
-
         }
 
         /// <summary>
-        /// Transforms the ILGenerator exception information into a list of <see cref="ExceptionHandler"/> structures.
+        /// Transforms the ILGenerator exception information into a list of <see cref="ExceptionHandler"/> structures,
+        /// one for each catch, filter, fault or finally clause.
         /// </summary>
-        /// <param name="excp"></param>
-        /// <returns></returns>
+        /// <param name="excp">The exception blocks recorded by the <see cref="ILGenerator"/>, or <see langword="null"/> if there are none.</param>
+        /// <returns>The exception handlers, or <see langword="null"/> if <paramref name="excp"/> is <see langword="null"/>.</returns>
         ExceptionHandler[] GetExceptions(__ExceptionInfo[] excp)
         {
             // no exceptions required
@@ -512,7 +670,7 @@ namespace IKVM.Reflection.Emit
                     var catchEndAddrs = excp[i].GetCatchEndAddresses();
                     var catchClass = excp[i].GetCatchClass();
 
-                    // for each 
+                    // for each clause of the exception block
                     for (var j = 0; j < numCatch; j++)
                     {
                         var tkExceptionClass = 0;
@@ -544,13 +702,14 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Calculates the number of exception regions to be emitted from the exceptions information returned by the <see cref="ILGenerator"/>.
+        /// Calculates the number of exception regions to be emitted from the exceptions information returned by the
+        /// <see cref="ILGenerator"/>.
         /// </summary>
         /// <remarks>
         /// Copied from .NET 8.0 RuntimeMethodBuilder.
         /// </remarks>
-        /// <param name="excp"></param>
-        /// <returns></returns>
+        /// <param name="excp">The exception blocks recorded by the <see cref="ILGenerator"/>, or <see langword="null"/>.</param>
+        /// <returns>The total number of clauses in all exception blocks.</returns>
         static int CalculateNumberOfExceptions(__ExceptionInfo[] excp)
         {
             var num = 0;
@@ -562,13 +721,16 @@ namespace IKVM.Reflection.Emit
             return num;
         }
 
+        /// <summary>
+        /// Gets the module builder that defines the method.
+        /// </summary>
         internal ModuleBuilder ModuleBuilder => _type.ModuleBuilder;
 
         /// <summary>
-        /// Writes the method information to the metadata.
+        /// Writes the method body, the MethodDef row and the debugging information of the method to the metadata, and
+        /// then releases the IL information.
         /// </summary>
-        /// <param name="paramList"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="paramList">The row number of the first Param row of this method. On return, advanced past the parameters of this method.</param>
         internal void WriteMetadata(ref int paramList)
         {
             Debug.Assert(IsBaked);
@@ -612,9 +774,10 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Writes the final method body to the metadata.
+        /// Writes the final method body, with its tokens resolved, to the module IL stream and records its RVA. Does
+        /// nothing if the method has no body.
         /// </summary>
-        /// <param name="localSignatureHandle"></param>
+        /// <param name="localSignatureHandle">The handle of the local variable signature, or a nil handle if the method has no locals.</param>
         void WriteBody(StandaloneSignatureHandle localSignatureHandle)
         {
             // might not have a body
@@ -650,10 +813,10 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Returns true if the exceptions can fit into a small region.
+        /// Determines whether the exception handlers can be encoded in the small exception region format.
         /// </summary>
-        /// <param name="exceptions"></param>
-        /// <returns></returns>
+        /// <param name="exceptions">The exception handlers, or <see langword="null"/> if there are none.</param>
+        /// <returns><see langword="true"/> if the handlers fit the small format; otherwise, <see langword="false"/>.</returns>
         bool HasSmallExceptionRegions(ExceptionHandler[] exceptions)
         {
             if (exceptions == null)
@@ -670,17 +833,16 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Writes the final debugging information to the metadata tables.
+        /// Writes the final debugging information of the method, its scopes, locals and line numbers, to the module's
+        /// symbol writer, if it has one.
         /// </summary>
-        /// <param name="methodHandle"></param>
-        /// <param name="localSignatureHandle"></param>
+        /// <param name="methodHandle">The handle of the method's MethodDef row.</param>
+        /// <param name="localSignatureHandle">The handle of the local variable signature, or a nil handle if the method has no locals.</param>
         void WriteSymbols(MethodDefinitionHandle methodHandle, StandaloneSignatureHandle localSignatureHandle)
         {
             if (ModuleBuilder.GetSymWriter() != null)
             {
-                // set the debugging information such as scope and line number
-                // if it is in a debug module
-                //
+                // set the debugging information such as scope and line number if it is in a debug module
                 SymbolToken tk = new SymbolToken(MetadataTokens.GetToken(methodHandle));
                 ISymbolWriter symWriter = ModuleBuilder.GetSymWriter();
 
@@ -693,8 +855,7 @@ namespace IKVM.Reflection.Emit
                 // we do write method (since the method exists), but not the contents
                 if (_ilGenerator != null)
                 {
-                    // call OpenScope because OpenMethod no longer implicitly creating
-                    // the top-level method scope
+                    // call OpenScope because OpenMethod no longer implicitly creates the top-level method scope
                     symWriter.OpenScope(0);
 
                     // emit debug information for method
@@ -710,6 +871,9 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Writes the Param rows of the parameters defined on the method.
+        /// </summary>
         internal void WriteParamRecords()
         {
             if (_parameters != null)
@@ -717,6 +881,11 @@ namespace IKVM.Reflection.Emit
                     pb.WriteMetadata();
         }
 
+        /// <summary>
+        /// Registers the real tokens of the method and of its parameters, replacing their pseudo tokens.
+        /// </summary>
+        /// <param name="token">The real MethodDef token of the method.</param>
+        /// <param name="parameterToken">The real Param token of the first parameter. On return, advanced past the parameters of this method.</param>
         internal void FixupToken(int token, ref int parameterToken)
         {
             _type.ModuleBuilder.RegisterTokenFixup(_pseudoToken, token);
@@ -725,13 +894,25 @@ namespace IKVM.Reflection.Emit
                     pb.FixupToken(parameterToken++);
         }
 
+        /// <summary>
+        /// Gets the signature of the method, computing it on first use. After that the signature can no longer be
+        /// changed.
+        /// </summary>
         internal override MethodSignature MethodSignature =>
             _methodSignature ??= MethodSignature.MakeFromBuilder(_returnType ?? _type.Universe.System_Void, _parameterTypes ?? Type.EmptyTypes, _customModifiers, _callingConvention, _gtpb == null ? 0 : _gtpb.Length);
 
+        /// <inheritdoc />
         internal override int ImportTo(ModuleBuilder other) => other.ImportMethodOrField(_type, _name, MethodSignature);
 
+        /// <summary>
+        /// Throws if the type that declares the method has not been created.
+        /// </summary>
         internal void CheckBaked() => _type.CheckBaked();
 
+        /// <summary>
+        /// Gets the real token of the method once the module has been saved, and its pseudo token before that.
+        /// </summary>
+        /// <returns>The current token of the method.</returns>
         internal override int GetCurrentToken()
         {
             if (_type.ModuleBuilder.IsSaved)
@@ -740,8 +921,13 @@ namespace IKVM.Reflection.Emit
                 return _pseudoToken;
         }
 
+        /// <summary>
+        /// Determines whether the type that declares the method has been created.
+        /// </summary>
+        /// <returns><see langword="true"/> if the declaring type has been created; otherwise, <see langword="false"/>.</returns>
         internal bool IsTypeCreated() => _type.IsCreated();
 
+        /// <inheritdoc />
         internal override bool IsBaked => _type.IsBaked;
 
     }

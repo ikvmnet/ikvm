@@ -26,18 +26,56 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Marks each type of member that is defined as a derived class of <see cref="MemberInfo"/>.
+    /// </summary>
     [Flags]
-enum MemberTypes
+    enum MemberTypes
     {
 
+        /// <summary>
+        /// Specifies that the member is a constructor.
+        /// </summary>
         Constructor = 0x01,
+
+        /// <summary>
+        /// Specifies that the member is an event.
+        /// </summary>
         Event = 0x02,
+
+        /// <summary>
+        /// Specifies that the member is a field.
+        /// </summary>
         Field = 0x04,
+
+        /// <summary>
+        /// Specifies that the member is a method.
+        /// </summary>
         Method = 0x08,
+
+        /// <summary>
+        /// Specifies that the member is a property.
+        /// </summary>
         Property = 0x10,
+
+        /// <summary>
+        /// Specifies that the member is a type.
+        /// </summary>
         TypeInfo = 0x20,
+
+        /// <summary>
+        /// Specifies that the member is a custom member type.
+        /// </summary>
         Custom = 0x40,
+
+        /// <summary>
+        /// Specifies that the member is a nested type.
+        /// </summary>
         NestedType = 0x80,
+
+        /// <summary>
+        /// Specifies all member types.
+        /// </summary>
         All = Constructor | Event | Field | Method | Property | TypeInfo | NestedType
 
     }

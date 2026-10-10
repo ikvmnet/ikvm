@@ -30,7 +30,7 @@ namespace IKVM.Reflection
     /// Options that configure a <see cref="Universe"/>.
     /// </summary>
     [Flags]
-enum UniverseOptions
+    enum UniverseOptions
     {
 
         /// <summary>

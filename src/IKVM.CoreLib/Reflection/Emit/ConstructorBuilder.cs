@@ -27,6 +27,10 @@ using System.Collections.Generic;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Defines and represents a constructor of a dynamic class. The constructor is backed by a
+    /// <see cref="MethodBuilder"/> that holds its definition.
+    /// </summary>
     sealed class ConstructorBuilder : ConstructorInfo
     {
 
@@ -35,22 +39,37 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="mb"></param>
+        /// <param name="mb">The method builder that defines the constructor.</param>
         internal ConstructorBuilder(MethodBuilder mb)
         {
             _methodBuilder = mb;
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether this instance is equal to a specified object. Two instances are equal
+        /// when they wrap equal method builders.
+        /// </summary>
+        /// <param name="obj">An object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> represents the same constructor; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             ConstructorBuilder other = obj as ConstructorBuilder;
             return other != null && other._methodBuilder.Equals(_methodBuilder);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode() => _methodBuilder.GetHashCode();
 
+        /// <summary>
+        /// Gets an <see cref="ILGenerator"/> for this constructor.
+        /// </summary>
+        /// <returns>An <see cref="ILGenerator"/> object for this constructor.</returns>
         public ILGenerator GetILGenerator() => _methodBuilder.GetILGenerator();
 
+        /// <summary>
+        /// Gets the method builder that defines the constructor.
+        /// </summary>
+        /// <returns>The underlying <see cref="MethodBuilder"/>.</returns>
         internal override MethodInfo GetMethodInfo() => _methodBuilder;
 
     }

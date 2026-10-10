@@ -25,6 +25,10 @@
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Represents the metadata token that identifies a type.
+    /// </summary>
+    /// <param name="Token">The metadata token value.</param>
     readonly record struct TypeToken(int Token)
     {
     }

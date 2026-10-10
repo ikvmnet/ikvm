@@ -19,15 +19,19 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when an operation is attempted on a member that could not be resolved, such as a
+    /// member of a missing type or of an assembly that could not be found.
+    /// </summary>
     [Serializable]
-sealed class MissingMemberException : InvalidOperationException
+    sealed class MissingMemberException : InvalidOperationException
     {
 
         [NonSerialized]
@@ -36,13 +40,16 @@ sealed class MissingMemberException : InvalidOperationException
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="member"></param>
+        /// <param name="member">The missing member on which the unsupported operation was attempted.</param>
         internal MissingMemberException(MemberInfo member) :
             base("Member '" + member + "' is a missing member and does not support the requested operation.")
         {
             _member = member;
         }
 
+        /// <summary>
+        /// Gets the missing member on which the unsupported operation was attempted.
+        /// </summary>
         public MemberInfo MemberInfo => _member;
 
     }

@@ -28,18 +28,26 @@ using System.IO;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents an assembly read from metadata, consisting of a manifest module and any other modules listed in its
+    /// File table.
+    /// </summary>
     sealed class AssemblyReader : Assembly
     {
 
         readonly string _location;
         readonly ModuleReader _manifestModule;
+
+        /// <summary>
+        /// The modules listed in the manifest's File table, indexed by row, loaded on demand.
+        /// </summary>
         readonly Module[] _externalModules;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="location"></param>
-        /// <param name="manifestModule"></param>
+        /// <param name="location">The path the assembly was loaded from, or <see langword="null"/> if it was not loaded from a file.</param>
+        /// <param name="manifestModule">The module that contains the assembly manifest.</param>
         internal AssemblyReader(string location, ModuleReader manifestModule) :
             base(manifestModule.Universe)
         {
@@ -48,8 +56,17 @@ namespace IKVM.Reflection.Reader
             _externalModules = new Module[manifestModule.FileCount];
         }
 
+        /// <summary>
+        /// Gets the full path of the file that contains the manifest, or an empty string if the assembly was not loaded
+        /// from a file.
+        /// </summary>
         public override string Location => _location ?? "";
 
+        /// <summary>
+        /// Gets an <see cref="AssemblyName"/> for this assembly, built from the manifest's Assembly table row and the
+        /// image's PE kind and machine.
+        /// </summary>
+        /// <returns>An object that contains the fully parsed display name for this assembly.</returns>
         public override AssemblyName GetName()
         {
             var definition = _manifestModule.Metadata.GetAssemblyDefinition();
@@ -73,8 +90,9 @@ namespace IKVM.Reflection.Reader
                     // FXBUG we copy the .NET bug that Preferred32Bit implies x86
                     if ((peKind & (PortableExecutableKinds.Required32Bit | PortableExecutableKinds.Preferred32Bit)) != 0)
                         name.ProcessorArchitecture = ProcessorArchitecture.X86;
+                    // it's a reference assembly
                     else if ((flags & 0x70) == 0x70)
-                        name.ProcessorArchitecture = ProcessorArchitecture.None; // it's a reference assembly
+                        name.ProcessorArchitecture = ProcessorArchitecture.None;
                     else
                         name.ProcessorArchitecture = ProcessorArchitecture.MSIL;
                     break;
@@ -96,6 +114,7 @@ namespace IKVM.Reflection.Reader
             return name;
         }
 
+        /// <inheritdoc />
         public override Type[] GetTypes()
         {
             if (_externalModules.Length == 0)
@@ -108,6 +127,11 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Finds a type by name in the manifest module, then in each other module that contains metadata.
+        /// </summary>
+        /// <param name="typeName">The name of the type to find.</param>
+        /// <returns>The type, or <see langword="null"/> if no module defines it.</returns>
         internal override Type FindType(TypeName typeName)
         {
             var type = _manifestModule.FindType(typeName);
@@ -118,6 +142,12 @@ namespace IKVM.Reflection.Reader
             return type;
         }
 
+        /// <summary>
+        /// Finds a type by case-insensitive name in the manifest module, then in each other module that contains
+        /// metadata.
+        /// </summary>
+        /// <param name="lowerCaseName">The lower-case name of the type to find.</param>
+        /// <returns>The type, or <see langword="null"/> if no module defines it.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
             var type = _manifestModule.FindTypeIgnoreCase(lowerCaseName);
@@ -128,10 +158,18 @@ namespace IKVM.Reflection.Reader
             return type;
         }
 
+        /// <inheritdoc />
         public override string ImageRuntimeVersion => _manifestModule.__ImageRuntimeVersion;
 
+        /// <inheritdoc />
         public override Module ManifestModule => _manifestModule;
 
+        /// <summary>
+        /// Gets all the loaded modules that are part of this assembly: the manifest module and any other modules that
+        /// have been loaded so far.
+        /// </summary>
+        /// <param name="getResourceModules">Ignored; loaded resource modules are always included.</param>
+        /// <returns>An array of modules.</returns>
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
             List<Module> list = [_manifestModule];
@@ -145,6 +183,11 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Gets all the modules that are part of this assembly, loading any that have not been loaded yet.
+        /// </summary>
+        /// <param name="getResourceModules"><see langword="true"/> to include resource modules; otherwise, <see langword="false"/>.</param>
+        /// <returns>An array of modules.</returns>
         public override Module[] GetModules(bool getResourceModules)
         {
             if (_externalModules.Length == 0)
@@ -165,6 +208,11 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets the specified module in this assembly.
+        /// </summary>
+        /// <param name="name">The name of the module requested, compared case-insensitively.</param>
+        /// <returns>The module being requested, or <see langword="null"/> if the module is not found.</returns>
         public override Module GetModule(string name)
         {
             if (name.Equals(_manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
@@ -177,6 +225,11 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
+        /// <summary>
+        /// Finds the File table row of a module by file name.
+        /// </summary>
+        /// <param name="name">The file name of the module, compared case-insensitively.</param>
+        /// <returns>The zero-based index of the module in the File table, or -1 if it is not listed.</returns>
         int GetModuleIndex(string name)
         {
             for (var i = 0; i < _manifestModule.FileCount; i++)
@@ -186,6 +239,11 @@ namespace IKVM.Reflection.Reader
             return -1;
         }
 
+        /// <summary>
+        /// Gets the module listed at a File table index, loading it on first use.
+        /// </summary>
+        /// <param name="index">The zero-based index of the module in the File table.</param>
+        /// <returns>The module.</returns>
         Module GetModule(int index)
         {
             if (_externalModules[index] != null)
@@ -194,6 +252,16 @@ namespace IKVM.Reflection.Reader
             return LoadModule(index, null, _manifestModule.GetFileName(index));
         }
 
+        /// <summary>
+        /// Loads the module listed at a File table index. A file without metadata becomes a
+        /// <see cref="ResourceModule"/>. A module file that cannot be found is offered to the module resolvers, then
+        /// becomes a <see cref="MissingModule"/> if the universe allows missing members.
+        /// </summary>
+        /// <param name="index">The zero-based index of the module in the File table.</param>
+        /// <param name="rawModule">The contents of the module, or <see langword="null"/> to read it from the file next to the manifest.</param>
+        /// <param name="name">The file name of the module, or <see langword="null"/> if it has no location.</param>
+        /// <returns>The loaded module.</returns>
+        /// <exception cref="FileNotFoundException">The module file does not exist and neither a resolver nor missing member resolution supplied a module.</exception>
         Module LoadModule(int index, byte[] rawModule, string name)
         {
             var location = name == null ? null : Path.Combine(Path.GetDirectoryName(_location), name);
@@ -232,18 +300,33 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         public override MethodInfo EntryPoint => _manifestModule.GetEntryPoint();
 
+        /// <inheritdoc />
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName) => _manifestModule.GetManifestResourceInfo(resourceName);
 
+        /// <inheritdoc />
         public override Stream GetManifestResourceStream(string resourceName) => _manifestModule.GetManifestResourceStream(resourceName);
 
+        /// <inheritdoc />
         public override AssemblyName[] GetReferencedAssemblies() => _manifestModule.__GetReferencedAssemblies();
 
+        /// <summary>
+        /// Gets the simple name of the assembly from the manifest's Assembly table row, without building a full
+        /// <see cref="AssemblyName"/>.
+        /// </summary>
         internal string Name => _manifestModule.GetString(_manifestModule.Metadata.GetAssemblyDefinition().Name);
 
+        /// <summary>
+        /// Gets the custom attributes applied to the assembly, which are those whose parent is the Assembly table row
+        /// (token 0x20000001).
+        /// </summary>
+        /// <param name="attributeType">The attribute type to filter by, or <see langword="null"/> for all attributes.</param>
+        /// <returns>The matching custom attributes.</returns>
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType) =>
             CustomAttributeData.GetCustomAttributesImpl(null, _manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
+
     }
 
 }

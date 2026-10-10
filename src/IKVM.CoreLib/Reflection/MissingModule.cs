@@ -28,17 +28,26 @@ using System.Reflection.Metadata;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Stands in for a module that could not be loaded, either the manifest module of a missing assembly or a module
+    /// file of an assembly that was not found, when <see cref="Universe.MissingMemberResolution"/> is enabled. Most
+    /// members throw <see cref="MissingModuleException"/>.
+    /// </summary>
     sealed class MissingModule : NonPEModule
     {
 
         readonly Assembly _assembly;
+
+        /// <summary>
+        /// The index of the module in the manifest's File table, or -1 for the manifest module of a missing assembly.
+        /// </summary>
         readonly int _index;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="index"></param>
+        /// <param name="assembly">The assembly the module belongs to.</param>
+        /// <param name="index">The index of the module in the manifest's File table, or -1 for the manifest module of a missing assembly.</param>
         internal MissingModule(Assembly assembly, int index) :
             base(assembly.Universe)
         {
@@ -46,12 +55,25 @@ namespace IKVM.Reflection
             _index = index;
         }
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         public override int MDStreamVersion => throw new MissingModuleException(this);
 
+        /// <inheritdoc />
         public override Assembly Assembly => _assembly;
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         public override string FullyQualifiedName => throw new MissingModuleException(this);
 
+        /// <summary>
+        /// Gets the file name of the module, as listed in the manifest's File table.
+        /// </summary>
+        /// <exception cref="MissingModuleException">The module is the manifest module of a missing assembly, whose name is unknown.</exception>
         public override string Name
         {
             get
@@ -63,25 +85,70 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         public override Guid ModuleVersionId => throw new MissingModuleException(this);
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         public override string ScopeName => throw new MissingModuleException(this);
 
+        /// <summary>
+        /// Finds no type, because the contents of a missing module are unknown.
+        /// </summary>
+        /// <param name="typeName">The name of the type to find.</param>
+        /// <returns>Always <see langword="null"/>.</returns>
         internal override Type FindType(TypeName typeName) => null;
 
+        /// <summary>
+        /// Finds no type, because the contents of a missing module are unknown.
+        /// </summary>
+        /// <param name="lowerCaseName">The lower-case name of the type to find.</param>
+        /// <returns>Always <see langword="null"/>.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <param name="list">The list the types would be added to.</param>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         internal override void GetTypesImpl(List<Type> list) => throw new MissingModuleException(this);
 
+        /// <summary>
+        /// Not available for a missing module.
+        /// </summary>
+        /// <param name="handle">The File table row of the module in the manifest being written.</param>
+        /// <param name="manifestModule">The manifest module the types would be exported to.</param>
+        /// <exception cref="MissingModuleException">Always thrown.</exception>
         internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule) =>
             throw new MissingModuleException(this);
 
+        /// <summary>
+        /// Gets a value indicating whether the module is missing, which is always <see langword="true"/>.
+        /// </summary>
         public override bool __IsMissing => true;
 
+        /// <summary>
+        /// Creates the exception thrown where the base class would throw <see cref="System.InvalidOperationException"/>.
+        /// </summary>
+        /// <returns>A <see cref="MissingModuleException"/> for this module.</returns>
         protected override Exception InvalidOperationException() => new MissingModuleException(this);
 
+        /// <summary>
+        /// Creates the exception thrown where the base class would throw <see cref="System.NotSupportedException"/>.
+        /// </summary>
+        /// <returns>A <see cref="MissingModuleException"/> for this module.</returns>
         protected override Exception NotSupportedException() => new MissingModuleException(this);
 
+        /// <summary>
+        /// Creates the exception thrown where the base class would throw
+        /// <see cref="System.ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <returns>A <see cref="MissingModuleException"/> for this module.</returns>
         protected override Exception ArgumentOutOfRangeException() => new MissingModuleException(this);
 
     }

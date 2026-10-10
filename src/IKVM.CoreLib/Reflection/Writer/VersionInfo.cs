@@ -28,6 +28,10 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// Collects the assembly name, file name and the standard assembly attributes (copyright, product, file version
+    /// and so on) and writes them as a Win32 VS_VERSIONINFO resource.
+    /// </summary>
     sealed class VersionInfo
     {
 
@@ -42,10 +46,24 @@ namespace IKVM.Reflection.Writer
         string _informationalVersion;
         string _fileVersion;
 
+        /// <summary>
+        /// Sets the assembly name, which supplies the internal name, the culture and the default file version.
+        /// </summary>
+        /// <param name="name">The assembly name.</param>
         internal void SetName(AssemblyName name) => _name = name;
 
+        /// <summary>
+        /// Sets the original file name, taken from the file name part of the specified path.
+        /// </summary>
+        /// <param name="assemblyFileName">The path of the assembly file.</param>
         internal void SetFileName(string assemblyFileName) => _fileName = System.IO.Path.GetFileName(assemblyFileName);
 
+        /// <summary>
+        /// Records the value of a custom attribute if it is one of the assembly attributes that feed the version
+        /// resource. Only the first occurrence of each attribute is used; other attributes are ignored.
+        /// </summary>
+        /// <param name="asm">The assembly the attribute is applied to.</param>
+        /// <param name="cab">The custom attribute.</param>
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
             var u = cab.Constructor.Module.Universe;
@@ -84,6 +102,11 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes the VS_VERSIONINFO resource. When no file version attribute was set, the assembly version, or
+        /// 0.0.0.0, is used; the product version is parsed from the informational version when one was set.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
         internal void Write(ByteBuffer bb)
         {
             if (_fileVersion == null)
@@ -98,7 +121,8 @@ namespace IKVM.Reflection.Writer
                 }
             }
 
-            var codepage = 1200;    // Unicode codepage
+            // Unicode codepage
+            var codepage = 1200;
 
             var lcid = 0x7f;
             try
@@ -211,6 +235,11 @@ namespace IKVM.Reflection.Writer
             bb.WriteBuffer(stringFileInfo);
         }
 
+        /// <summary>
+        /// Writes a string as null-terminated UTF-16.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="str">The string to write.</param>
         static void WriteUTF16Z(ByteBuffer bb, string str)
         {
             foreach (var c in str)
@@ -219,6 +248,13 @@ namespace IKVM.Reflection.Writer
             bb.WriteInt16((short)0);
         }
 
+        /// <summary>
+        /// Writes a String structure (a name and value pair) of a StringTable. A missing value is written as a single
+        /// space.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="name">The name of the entry, for example <c>CompanyName</c>.</param>
+        /// <param name="value">The value of the entry, or <see langword="null"/>.</param>
         static void WriteString(ByteBuffer bb, string name, string value)
         {
             value ??= " ";
@@ -236,6 +272,12 @@ namespace IKVM.Reflection.Writer
             bb.Position = savedPos;
         }
 
+        /// <summary>
+        /// Parses up to four dot-separated numeric parts from a version string, tolerating malformed input. Parsing
+        /// of the parts stops at the first character that is neither a digit nor a dot, and missing parts are 0.
+        /// </summary>
+        /// <param name="ver">The version string.</param>
+        /// <returns>The parsed version.</returns>
         static Version ParseVersionRobust(string ver)
         {
             var index = 0;
@@ -246,6 +288,12 @@ namespace IKVM.Reflection.Writer
             return new Version(major, minor, build, revision);
         }
 
+        /// <summary>
+        /// Parses the digits of one version part starting at <paramref name="pos"/>, consuming a following dot.
+        /// </summary>
+        /// <param name="str">The version string.</param>
+        /// <param name="pos">The position to start at. It is advanced past the digits and the dot, if any.</param>
+        /// <returns>The numeric value of the part, wrapping on overflow.</returns>
         static ushort ParseVersionPart(string str, ref int pos)
         {
             ushort value = 0;

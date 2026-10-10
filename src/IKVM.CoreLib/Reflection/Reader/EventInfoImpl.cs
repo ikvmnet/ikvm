@@ -28,6 +28,9 @@ using System.Reflection.Metadata.Ecma335;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// An event read from a row of the Event table of a module loaded from a PE image.
+    /// </summary>
     sealed class EventInfoImpl : EventInfo
     {
 
@@ -43,9 +46,9 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="handle"></param>
+        /// <param name="module">The module that contains the event definition.</param>
+        /// <param name="declaringType">The type that declares the event.</param>
+        /// <param name="handle">The handle of the event definition.</param>
         internal EventInfoImpl(ModuleReader module, Type declaringType, EventDefinitionHandle handle)
         {
             _module = module;
@@ -54,18 +57,29 @@ namespace IKVM.Reflection.Reader
             _definition = module.Metadata.GetEventDefinition(handle);
         }
 
+        /// <summary>
+        /// Determines whether the specified object represents the same event definition of the same declaring type.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an <see cref="EventInfoImpl"/> for the same declaring type and handle; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj) => obj is EventInfoImpl other && other._declaringType == _declaringType && other._handle == _handle;
 
+        /// <inheritdoc />
         public override int GetHashCode() => _declaringType.GetHashCode() * 123 + MetadataTokens.GetRowNumber(_handle);
 
+        /// <inheritdoc />
         public override EventAttributes Attributes => (EventAttributes)_definition.Attributes;
 
+        /// <inheritdoc />
         public override MethodInfo GetAddMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Adder, nonPublic);
 
+        /// <inheritdoc />
         public override MethodInfo GetRaiseMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Raiser, nonPublic);
 
+        /// <inheritdoc />
         public override MethodInfo GetRemoveMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Remover, nonPublic);
 
+        /// <inheritdoc />
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
             var list = new List<MethodInfo>();
@@ -76,6 +90,12 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Resolves an accessor method of the event, filtering out non-public accessors unless requested.
+        /// </summary>
+        /// <param name="h">The handle of the accessor method, which may be nil.</param>
+        /// <param name="nonPublic"><see langword="true"/> to return the accessor even if it is not public.</param>
+        /// <returns>The accessor method, or <see langword="null"/> if the handle is nil or the accessor is non-public and <paramref name="nonPublic"/> is <see langword="false"/>.</returns>
         MethodInfo Accessor(MethodDefinitionHandle h, bool nonPublic)
         {
             if (h.IsNil)
@@ -85,6 +105,10 @@ namespace IKVM.Reflection.Reader
             return nonPublic || method.IsPublic ? method : null;
         }
 
+        /// <summary>
+        /// Enumerates every accessor method of the event, public or not: add, remove, raise and other methods.
+        /// </summary>
+        /// <returns>The accessor methods that are present.</returns>
         IEnumerable<MethodInfo> AllAccessors()
         {
             var accessors = _definition.GetAccessors();
@@ -97,16 +121,24 @@ namespace IKVM.Reflection.Reader
                     yield return m;
         }
 
+        /// <inheritdoc />
         public override Type EventHandlerType => _module.ResolveType(MetadataTokens.GetToken(_definition.Type), _declaringType);
 
+        /// <inheritdoc />
         public override string Name => _module.GetString(_definition.Name);
 
+        /// <inheritdoc />
         public override Type DeclaringType => _declaringType;
 
+        /// <inheritdoc />
         public override Module Module => _module;
 
+        /// <inheritdoc />
         public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is public.
+        /// </summary>
         internal override bool IsPublic
         {
             get
@@ -118,6 +150,9 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is more accessible than private.
+        /// </summary>
         internal override bool IsNonPrivate
         {
             get
@@ -129,6 +164,9 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the event is static.
+        /// </summary>
         internal override bool IsStatic
         {
             get
@@ -140,6 +178,9 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Computes and caches the accessibility and static flags of the event from all of its accessors.
+        /// </summary>
         void ComputeFlags()
         {
             foreach (var method in AllAccessors())
@@ -152,8 +193,12 @@ namespace IKVM.Reflection.Reader
             _flagsCached = true;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the event is complete; an event read from a PE image always is.
+        /// </summary>
         internal override bool IsBaked => true;
 
+        /// <inheritdoc />
         internal override int GetCurrentToken() => MetadataToken;
 
     }

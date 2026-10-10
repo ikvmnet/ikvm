@@ -26,14 +26,37 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Defines the valid calling conventions for a method.
+    /// </summary>
     [Flags]
-enum CallingConventions
+    enum CallingConventions
     {
 
+        /// <summary>
+        /// Specifies the default calling convention as determined by the common language runtime.
+        /// </summary>
         Standard = 1,
+
+        /// <summary>
+        /// Specifies the calling convention for methods with variable arguments.
+        /// </summary>
         VarArgs = 2,
+
+        /// <summary>
+        /// Specifies that either the <see cref="Standard"/> or the <see cref="VarArgs"/> calling convention may be used.
+        /// </summary>
         Any = 3,
+
+        /// <summary>
+        /// Specifies an instance or virtual method (not a static method).
+        /// </summary>
         HasThis = 32,
+
+        /// <summary>
+        /// Specifies that the signature is a function-pointer signature, representing a call to an instance or virtual
+        /// method whose first explicit parameter is the <c>this</c> pointer.
+        /// </summary>
         ExplicitThis = 64,
 
     }

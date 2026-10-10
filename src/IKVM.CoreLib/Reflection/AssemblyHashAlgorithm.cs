@@ -24,14 +24,40 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Specifies the hash algorithms used for hashing assembly files and for generating the strong name.
+    /// </summary>
     enum AssemblyHashAlgorithm
     {
 
+        /// <summary>
+        /// A mask indicating that there is no hash algorithm.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Retrieves the MD5 message-digest algorithm.
+        /// </summary>
         MD5 = 0x8003,
+
+        /// <summary>
+        /// A mask used to retrieve a revision of the Secure Hash Algorithm that corrects an unpublished flaw in SHA.
+        /// </summary>
         SHA1 = 0x8004,
+
+        /// <summary>
+        /// A mask used to retrieve a version of the Secure Hash Algorithm with a hash size of 256 bits.
+        /// </summary>
         SHA256 = 0x800c,
+
+        /// <summary>
+        /// A mask used to retrieve a version of the Secure Hash Algorithm with a hash size of 384 bits.
+        /// </summary>
         SHA384 = 0x800d,
+
+        /// <summary>
+        /// A mask used to retrieve a version of the Secure Hash Algorithm with a hash size of 512 bits.
+        /// </summary>
         SHA512 = 0x800e,
 
     }

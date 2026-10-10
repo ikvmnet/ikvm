@@ -28,28 +28,44 @@ using System.Linq;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// A node in the tree of unmanaged (Win32) resources of an image: either a directory of child entries or, when
+    /// <see cref="Data"/> is set, a leaf that holds the data of a resource.
+    /// </summary>
     sealed class ResourceDirectoryEntry
     {
 
         readonly OrdinalOrName _ordinalOrName;
+
+        /// <summary>
+        /// The child entries, kept sorted with the named entries first, followed by the entries identified by ordinal.
+        /// </summary>
         readonly List<ResourceDirectoryEntry> _entries = [];
+
+        /// <summary>
+        /// The number of entries at the start of <see cref="_entries"/> that are identified by name.
+        /// </summary>
         int _namedEntries;
 
+        /// <summary>
+        /// The data of the resource, or <see langword="null"/> if this entry is a directory.
+        /// </summary>
         internal ByteBuffer Data;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="ordinalOrName"></param>
+        /// <param name="ordinalOrName">The ordinal or name that identifies the entry within its parent directory.</param>
         internal ResourceDirectoryEntry(OrdinalOrName ordinalOrName)
         {
             _ordinalOrName = ordinalOrName;
         }
 
         /// <summary>
-        /// Initializes a new instance as a copy of the specified instance.
+        /// Initializes a new instance as a copy of the specified instance, copying its child entries recursively.
         /// </summary>
-        /// <param name="other"></param>
+        /// <param name="other">The entry to copy.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
         internal ResourceDirectoryEntry(ResourceDirectoryEntry other)
         {
             if (other is null)
@@ -66,10 +82,10 @@ namespace IKVM.Reflection.Writer
         public int Count => _entries.Count;
 
         /// <summary>
-        /// Gets the directory entry specified by the given ID.
+        /// Gets the child entry specified by the given ID, adding it in sorted position if it does not exist yet.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">The ordinal or name of the child entry.</param>
+        /// <returns>The existing or newly added child entry.</returns>
         internal ResourceDirectoryEntry this[OrdinalOrName id]
         {
             get
@@ -112,6 +128,10 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Gets the number of bytes this entry and its descendants occupy in the directory tables: 16 for a data entry,
+        /// otherwise a 16 byte directory header and 8 bytes per child, plus the children's own lengths.
+        /// </summary>
         int DirectoryLength
         {
             get
@@ -131,6 +151,14 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes the resource tree rooted at this entry: the directory tables of the three levels (type, name and
+        /// language), the data entries, the string table and the resource data. Data offsets are written relative to
+        /// the start of the section.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="linkOffsets">Receives the position of each data entry's offset field, which the caller must
+        /// relocate by adding the section's relative virtual address.</param>
         internal void Write(ByteBuffer bb, List<int> linkOffsets)
         {
             if (_entries.Count != 0)
@@ -152,6 +180,13 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes a data entry for every leaf below this entry, in tree order.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="linkOffsets">Receives the position of each data entry's offset field.</param>
+        /// <param name="offset">The offset at which the next resource's data will be written; advanced past each
+        /// resource, rounded up to a multiple of four.</param>
         void WriteResourceDataEntries(ByteBuffer bb, List<int> linkOffsets, ref int offset)
         {
             foreach (var entry in _entries)
@@ -172,6 +207,10 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes the data of every leaf below this entry, in tree order, each aligned to four bytes.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
         void WriteData(ByteBuffer bb)
         {
             foreach (var entry in _entries)
@@ -188,6 +227,19 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes the directory tables at one level of the tree: when <paramref name="currentDepth"/> equals
+        /// <paramref name="writeDepth"/>, the directory header of this entry and the entries of its children, otherwise
+        /// the same for each child one level further down.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="writeDepth">The depth of the level being written.</param>
+        /// <param name="currentDepth">The depth of this entry.</param>
+        /// <param name="offset">The offset at which the next directory or data entry will be placed; advanced past each
+        /// entry written.</param>
+        /// <param name="strings">The names already added to the string table, with their offsets.</param>
+        /// <param name="stringTableOffset">The offset at which the next string will be placed in the string table.</param>
+        /// <param name="stringTable">The buffer that collects the string table.</param>
         void Write(ByteBuffer bb, int writeDepth, int currentDepth, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
         {
             if (currentDepth == writeDepth)
@@ -209,6 +261,15 @@ namespace IKVM.Reflection.Writer
             }
         }
 
+        /// <summary>
+        /// Writes the directory entry that points to this entry from its parent: its name or ordinal, followed by the
+        /// offset of its subdirectory (with the high bit set) or of its data entry.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="offset">The offset of this entry's subdirectory or data entry; advanced past it.</param>
+        /// <param name="strings">The names already added to the string table, with their offsets.</param>
+        /// <param name="stringTableOffset">The offset at which the next string will be placed in the string table.</param>
+        /// <param name="stringTable">The buffer that collects the string table.</param>
         void WriteEntry(ByteBuffer bb, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
         {
             WriteNameOrOrdinal(bb, _ordinalOrName, strings, ref stringTableOffset, stringTable);
@@ -220,6 +281,15 @@ namespace IKVM.Reflection.Writer
             offset += 16 + _entries.Count * 8;
         }
 
+        /// <summary>
+        /// Writes the name or ordinal field of a directory entry. A name is added to the string table once, as a length
+        /// prefixed UTF-16 string, and referenced by its offset with the high bit set.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="id">The ordinal or name to write.</param>
+        /// <param name="strings">The names already added to the string table, with their offsets.</param>
+        /// <param name="stringTableOffset">The offset at which the next string will be placed in the string table.</param>
+        /// <param name="stringTable">The buffer that collects the string table.</param>
         static void WriteNameOrOrdinal(ByteBuffer bb, OrdinalOrName id, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
         {
             if (id.Name == null)

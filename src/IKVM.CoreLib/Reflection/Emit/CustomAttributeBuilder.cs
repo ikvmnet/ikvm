@@ -32,6 +32,10 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection.Emit
 {
 
+    /// <summary>
+    /// Helps build custom attributes. An instance holds either the constructor arguments and named field and property
+    /// values, or an already encoded custom attribute blob.
+    /// </summary>
     sealed class CustomAttributeBuilder
     {
 
@@ -44,10 +48,10 @@ namespace IKVM.Reflection.Emit
         readonly object[] _fieldValues;
 
         /// <summary>
-        /// Initialiezes a new instance.
+        /// Initializes a new instance from an already encoded custom attribute blob.
         /// </summary>
-        /// <param name="con"></param>
-        /// <param name="blob"></param>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="blob">The encoded custom attribute value, starting with the prolog.</param>
         internal CustomAttributeBuilder(ConstructorInfo con, byte[] blob)
         {
             _con = con;
@@ -55,48 +59,52 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance given the constructor for the custom attribute and the arguments to the
+        /// constructor.
         /// </summary>
-        /// <param name="con"></param>
-        /// <param name="constructorArgs"></param>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="constructorArgs">The arguments to the constructor of the custom attribute.</param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs) :
             this(con, constructorArgs, null, null, null, null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance given the constructor for the custom attribute, the arguments to the
+        /// constructor, and a set of named field/value pairs.
         /// </summary>
-        /// <param name="con"></param>
-        /// <param name="constructorArgs"></param>
-        /// <param name="namedFields"></param>
-        /// <param name="fieldValues"></param>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="constructorArgs">The arguments to the constructor of the custom attribute.</param>
+        /// <param name="namedFields">Named fields of the custom attribute.</param>
+        /// <param name="fieldValues">Values for the named fields of the custom attribute.</param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, FieldInfo[] namedFields, object[] fieldValues) :
             this(con, constructorArgs, null, null, namedFields, fieldValues)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance given the constructor for the custom attribute, the arguments to the
+        /// constructor, and a set of named property/value pairs.
         /// </summary>
-        /// <param name="con"></param>
-        /// <param name="constructorArgs"></param>
-        /// <param name="namedProperties"></param>
-        /// <param name="propertyValues"></param>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="constructorArgs">The arguments to the constructor of the custom attribute.</param>
+        /// <param name="namedProperties">Named properties of the custom attribute.</param>
+        /// <param name="propertyValues">Values for the named properties of the custom attribute.</param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues) :
             this(con, constructorArgs, namedProperties, propertyValues, null, null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance given the constructor for the custom attribute, the arguments to the
+        /// constructor, a set of named property/value pairs, and a set of named field/value pairs.
         /// </summary>
-        /// <param name="con"></param>
-        /// <param name="constructorArgs"></param>
-        /// <param name="namedProperties"></param>
-        /// <param name="propertyValues"></param>
-        /// <param name="namedFields"></param>
-        /// <param name="fieldValues"></param>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="constructorArgs">The arguments to the constructor of the custom attribute.</param>
+        /// <param name="namedProperties">Named properties of the custom attribute.</param>
+        /// <param name="propertyValues">Values for the named properties of the custom attribute.</param>
+        /// <param name="namedFields">Named fields of the custom attribute.</param>
+        /// <param name="fieldValues">Values for the named fields of the custom attribute.</param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues, FieldInfo[] namedFields, object[] fieldValues)
         {
             _con = con;
@@ -107,10 +115,28 @@ namespace IKVM.Reflection.Emit
             _fieldValues = fieldValues;
         }
 
+        /// <summary>
+        /// Creates a custom attribute builder from an already encoded custom attribute blob, which is written to the
+        /// output as is.
+        /// </summary>
+        /// <param name="con">The constructor for the custom attribute.</param>
+        /// <param name="blob">The encoded custom attribute value, starting with the prolog.</param>
+        /// <returns>A new custom attribute builder.</returns>
         public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob) => new CustomAttributeBuilder(con, blob);
 
+        /// <summary>
+        /// Creates a typed argument, which can be passed as a value of type <see cref="object"/> to give the type
+        /// under which the value is encoded explicitly.
+        /// </summary>
+        /// <param name="type">The type to encode the value as.</param>
+        /// <param name="value">The value.</param>
+        /// <returns>A typed argument wrapping <paramref name="value"/>.</returns>
         public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value) => new CustomAttributeTypedArgument(type, value);
 
+        /// <summary>
+        /// Encodes the arguments of a custom attribute builder into the custom attribute blob format of ECMA-335
+        /// II.23.3.
+        /// </summary>
         sealed class BlobWriter
         {
 
@@ -121,9 +147,9 @@ namespace IKVM.Reflection.Emit
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="assembly"></param>
-            /// <param name="cab"></param>
-            /// <param name="bb"></param>
+            /// <param name="assembly">The assembly the attribute is written to, which determines how type names are qualified.</param>
+            /// <param name="cab">The custom attribute builder to encode.</param>
+            /// <param name="bb">The blob builder to write to.</param>
             internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, BlobBuilder bb)
             {
                 _assembly = assembly;
@@ -131,6 +157,10 @@ namespace IKVM.Reflection.Emit
                 _bb = bb;
             }
 
+            /// <summary>
+            /// Writes the complete custom attribute blob: the prolog, the fixed constructor arguments and the named
+            /// arguments.
+            /// </summary>
             internal void WriteCustomAttributeBlob()
             {
                 // prolog
@@ -143,6 +173,12 @@ namespace IKVM.Reflection.Emit
                 WriteNamedArguments(false);
             }
 
+            /// <summary>
+            /// Writes the count of named arguments followed by each named field and property argument.
+            /// </summary>
+            /// <param name="forDeclSecurity"><see langword="true"/> to write the count as a compressed integer, as in a
+            /// declarative security blob; <see langword="false"/> to write it as a 16-bit integer, as in a custom
+            /// attribute blob.</param>
             internal void WriteNamedArguments(bool forDeclSecurity)
             {
                 // NumNamed
@@ -179,6 +215,13 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <summary>
+            /// Writes a single named argument.
+            /// </summary>
+            /// <param name="fieldOrProperty"><c>0x53</c> for a field or <c>0x54</c> for a property.</param>
+            /// <param name="type">The type of the field or property.</param>
+            /// <param name="name">The name of the field or property.</param>
+            /// <param name="value">The value of the argument.</param>
             void WriteNamedArg(byte fieldOrProperty, Type type, string name, object value)
             {
                 WriteByte(fieldOrProperty);
@@ -187,12 +230,31 @@ namespace IKVM.Reflection.Emit
                 WriteFixedArg(type, value);
             }
 
+            /// <summary>
+            /// Writes a byte.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteByte(byte value) => _bb.WriteByte(value);
 
+            /// <summary>
+            /// Writes a 16-bit unsigned integer.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteUInt16(ushort value) => _bb.WriteUInt16(value);
 
+            /// <summary>
+            /// Writes a 32-bit signed integer.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteInt32(int value) => _bb.WriteInt32(value);
 
+            /// <summary>
+            /// Writes a fixed argument value of the specified type. A value of declared type <see cref="object"/> is
+            /// written boxed, preceded by its actual type.
+            /// </summary>
+            /// <param name="type">The declared type of the argument.</param>
+            /// <param name="value">The value of the argument.</param>
+            /// <exception cref="ArgumentException"><paramref name="type"/> is not a type that can appear in a custom attribute.</exception>
             void WriteFixedArg(Type type, object value)
             {
                 var u = _assembly.Universe;
@@ -302,12 +364,28 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <summary>
+            /// Writes a 64-bit signed integer.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteInt64(long value) => _bb.WriteInt64(value);
 
+            /// <summary>
+            /// Writes a single-precision floating-point number.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteSingle(float value) => _bb.WriteSingle(value);
 
+            /// <summary>
+            /// Writes a double-precision floating-point number.
+            /// </summary>
+            /// <param name="value">The value to write.</param>
             void WriteDouble(double value) => _bb.WriteDouble(value);
 
+            /// <summary>
+            /// Writes the serialized name of a type, or a null string if the type is <see langword="null"/>.
+            /// </summary>
+            /// <param name="type">The type whose name to write, or <see langword="null"/>.</param>
             void WriteTypeName(Type type)
             {
                 string name = null;
@@ -320,6 +398,15 @@ namespace IKVM.Reflection.Emit
                 WriteString(name);
             }
 
+            /// <summary>
+            /// Appends the name of a type as it is serialized in a custom attribute, qualified with its assembly name
+            /// unless the type is defined in the assembly being written or, for a version 1 metadata assembly, in the
+            /// core library.
+            /// </summary>
+            /// <param name="sb">The builder to append to.</param>
+            /// <param name="type">The type whose name to append.</param>
+            /// <param name="isTypeParam"><see langword="true"/> if the type is a generic type argument, in which case an
+            /// assembly-qualified name is enclosed in brackets.</param>
             void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
             {
                 var v1 = !_assembly.ManifestModule.__IsMissing && _assembly.ManifestModule.MDStreamVersion < 0x20000;
@@ -350,6 +437,12 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <summary>
+            /// Appends the full name of a type without its assembly name, including the element type suffixes and the
+            /// generic type arguments.
+            /// </summary>
+            /// <param name="sb">The builder to append to.</param>
+            /// <param name="type">The type whose name to append.</param>
             void GetTypeNameImpl(StringBuilder sb, Type type)
             {
                 if (type.HasElementType)
@@ -376,10 +469,24 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
+            /// <summary>
+            /// Writes a serialized string: a compressed length followed by the UTF-8 bytes, or <c>0xFF</c> for
+            /// <see langword="null"/>.
+            /// </summary>
+            /// <param name="val">The string to write, or <see langword="null"/>.</param>
             void WriteString(string val) => _bb.WriteSerializedString(val);
 
+            /// <summary>
+            /// Writes a compressed unsigned integer.
+            /// </summary>
+            /// <param name="len">The value to write.</param>
             void WritePackedLen(int len) => _bb.WriteCompressedInteger(len);
 
+            /// <summary>
+            /// Writes the FieldOrPropType encoding of a type, as used for named arguments and boxed values.
+            /// </summary>
+            /// <param name="type">The type to encode.</param>
+            /// <exception cref="ArgumentException"><paramref name="type"/> is not a type that can appear in a custom attribute.</exception>
             void WriteFieldOrPropType(Type type)
             {
                 var u = type.Module.Universe;
@@ -458,10 +565,20 @@ namespace IKVM.Reflection.Emit
                     throw new ArgumentException();
                 }
             }
+
         }
 
+        /// <summary>
+        /// Gets the constructor for the custom attribute.
+        /// </summary>
         internal ConstructorInfo Constructor => _con;
 
+        /// <summary>
+        /// Adds the encoded custom attribute value to the blob heap of the specified module, encoding it first unless
+        /// the builder was created from a blob.
+        /// </summary>
+        /// <param name="moduleBuilder">The module whose blob heap receives the value.</param>
+        /// <returns>The handle of the blob.</returns>
         internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
             if (_blob != null)
@@ -472,8 +589,21 @@ namespace IKVM.Reflection.Emit
             return moduleBuilder.GetOrAddBlob(bb);
         }
 
+        /// <summary>
+        /// Gets the constructor argument at the specified position. Not valid on a builder created from a blob; call
+        /// <see cref="DecodeBlob(Assembly)"/> first.
+        /// </summary>
+        /// <param name="pos">The zero-based position of the argument.</param>
+        /// <returns>The argument value.</returns>
         internal object GetConstructorArgument(int pos) => _constructorArgs[pos];
 
+        /// <summary>
+        /// Gets the value of the named field argument with the specified name, converted to <typeparamref name="T"/>.
+        /// Converts between an enumeration and its underlying type in either direction.
+        /// </summary>
+        /// <typeparam name="T">The value type to return.</typeparam>
+        /// <param name="name">The name of the field.</param>
+        /// <returns>The field value, or <see langword="null"/> if the field is not set.</returns>
         internal T? GetFieldValue<T>(string name) where T : struct
         {
             var val = GetFieldValue(name);
@@ -500,6 +630,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Gets the value of the named field argument with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the field.</param>
+        /// <returns>The field value, or <see langword="null"/> if the field is not set.</returns>
         internal object GetFieldValue(string name)
         {
             if (_namedFields != null)
@@ -515,6 +650,12 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
+        /// <summary>
+        /// Creates a <see cref="CustomAttributeData"/> that describes this custom attribute, decoding the blob if the
+        /// builder was created from one.
+        /// </summary>
+        /// <param name="asm">The assembly that the custom attribute is applied in.</param>
+        /// <returns>The custom attribute data.</returns>
         internal CustomAttributeData ToData(Assembly asm)
         {
             if (_blob != null)
@@ -549,6 +690,13 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Wraps an argument value in a <see cref="CustomAttributeTypedArgument"/>, converting arrays into arrays of
+        /// typed arguments as <see cref="CustomAttributeData"/> represents them.
+        /// </summary>
+        /// <param name="type">The declared type of the argument.</param>
+        /// <param name="value">The argument value, which may already be a typed argument.</param>
+        /// <returns>The typed argument.</returns>
         static CustomAttributeTypedArgument RewrapValue(Type type, object value)
         {
             if (value is Array array)
@@ -569,6 +717,12 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Converts an array argument into a typed argument whose value is an array of typed arguments.
+        /// </summary>
+        /// <param name="arrayType">The array type of the argument.</param>
+        /// <param name="array">The array value.</param>
+        /// <returns>The typed argument.</returns>
         static CustomAttributeTypedArgument RewrapArray(Type arrayType, Array array)
         {
             var elementType = arrayType.GetElementType();
@@ -579,8 +733,16 @@ namespace IKVM.Reflection.Emit
             return new CustomAttributeTypedArgument(arrayType, newArray);
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the builder was created from an encoded blob.
+        /// </summary>
         internal bool HasBlob => _blob != null;
 
+        /// <summary>
+        /// Gets a builder whose arguments are available, decoding the blob if the builder was created from one.
+        /// </summary>
+        /// <param name="asm">The assembly that the custom attribute is applied in.</param>
+        /// <returns>This instance if it was not created from a blob; otherwise, a new builder with the decoded arguments.</returns>
         internal CustomAttributeBuilder DecodeBlob(Assembly asm)
         {
             if (_blob == null)
@@ -593,13 +755,19 @@ namespace IKVM.Reflection.Emit
             }
         }
 
+        /// <summary>
+        /// Gets which well-known attribute this is, for attributes that must be turned into metadata flags or tables
+        /// (pseudo custom attributes) instead of being written as custom attributes.
+        /// </summary>
         internal KnownCA KnownCA
         {
             get
             {
                 var attributeType = _con.DeclaringType;
+
+                // a constructed generic type doesn't have a TypeName and we already know it's not a Known CA
                 if (attributeType.IsConstructedGenericType)
-                    return KnownCA.Unknown; // a constructed generic type doesn't have a TypeName and we already know it's not a Known CA
+                    return KnownCA.Unknown;
 
                 var typeName = attributeType.TypeName;
                 switch (typeName.Namespace)

@@ -24,11 +24,26 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Describes the explicit method implementations (the MethodImpl table rows) of a type, grouped by method body.
+    /// </summary>
     struct __MethodImplMap
     {
 
+        /// <summary>
+        /// The type whose method implementations are described.
+        /// </summary>
         public Type TargetType;
+
+        /// <summary>
+        /// The distinct methods that implement one or more method declarations.
+        /// </summary>
         public MethodInfo[] MethodBodies;
+
+        /// <summary>
+        /// For each entry in <see cref="MethodBodies"/>, the method declarations that the body at the same index
+        /// implements.
+        /// </summary>
         public MethodInfo[][] MethodDeclarations;
 
     }

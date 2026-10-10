@@ -26,11 +26,17 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a missing <see cref="object"/>. This class cannot be inherited.
+    /// </summary>
     [Serializable]
-sealed class Missing :
+    sealed class Missing :
         System.Runtime.Serialization.ISerializable
     {
 
+        /// <summary>
+        /// Represents the sole instance of the <see cref="Missing"/> class.
+        /// </summary>
         public static readonly Missing Value = new();
 
         /// <summary>
@@ -41,13 +47,27 @@ sealed class Missing :
 
         }
 
+        /// <summary>
+        /// Sets up serialization so that the sole instance is serialized as a reference to
+        /// <see cref="SingletonSerializationHelper"/>, which deserializes back to <see cref="Value"/>.
+        /// </summary>
+        /// <param name="info">The object to populate with serialization information.</param>
+        /// <param name="context">The destination of the serialization.</param>
         void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) =>
             info.SetType(typeof(SingletonSerializationHelper));
 
+        /// <summary>
+        /// Stands in for <see cref="Missing"/> during serialization, so that deserialization yields the sole instance.
+        /// </summary>
         [Serializable]
         sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
         {
 
+            /// <summary>
+            /// Returns the object that this helper stands for.
+            /// </summary>
+            /// <param name="context">The source of the serialized stream.</param>
+            /// <returns>The sole instance, <see cref="Value"/>.</returns>
             public object GetRealObject(System.Runtime.Serialization.StreamingContext context) => Value;
 
         }

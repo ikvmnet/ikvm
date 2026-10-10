@@ -34,9 +34,16 @@ using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// A module read from a PE image, on top of System.Reflection.Metadata. Types, members and other metadata are
+    /// resolved lazily and cached by row.
+    /// </summary>
     sealed class ModuleReader : Module
     {
 
+        /// <summary>
+        /// A type forwarded to another assembly by an ExportedType row, resolved on first use.
+        /// </summary>
         sealed class LazyForwardedType
         {
 
@@ -46,12 +53,19 @@ namespace IKVM.Reflection.Reader
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="index"></param>
+            /// <param name="index">The zero-based index of the ExportedType row.</param>
             internal LazyForwardedType(int index)
             {
                 _index = index;
             }
 
+            /// <summary>
+            /// Resolves the forwarded type, caching the result. If the type is reached again while it is being resolved,
+            /// because of circular forwarding, a missing type is returned instead, or an exception is thrown if missing types
+            /// are not allowed.
+            /// </summary>
+            /// <param name="module">The module that contains the ExportedType row.</param>
+            /// <returns>The forwarded type.</returns>
             internal Type GetType(ModuleReader module)
             {
                 // guard against circular type forwarding
@@ -92,11 +106,15 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="universe"></param>
-        /// <param name="stream"></param>
-        /// <param name="location"></param>
-        /// <param name="mapped"></param>
+        /// <param name="assembly">
+        /// The assembly the module belongs to, or <see langword="null"/> to create an <see cref="AssemblyReader"/> if
+        /// the module has a manifest.
+        /// </param>
+        /// <param name="universe">The universe the module is loaded into.</param>
+        /// <param name="stream">The stream containing the image. It is left open by the PE reader and disposed with the module.</param>
+        /// <param name="location">The path the module was read from, or <see langword="null"/>.</param>
+        /// <param name="mapped"><see langword="true"/> if the stream contains an image mapped by the loader rather than a file.</param>
+        /// <exception cref="BadImageFormatException">The image has no metadata.</exception>
         internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped) :
             base(universe)
         {
@@ -115,6 +133,10 @@ namespace IKVM.Reflection.Reader
             _assembly = assembly;
         }
 
+        /// <summary>
+        /// Adds the types defined in the module, except the module pseudo type, to the list.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
         internal override void GetTypesImpl(List<Type> list)
         {
             PopulateTypeDef();
@@ -124,6 +146,9 @@ namespace IKVM.Reflection.Reader
                     list.Add(type);
         }
 
+        /// <summary>
+        /// Creates the TypeDef objects and indexes the top-level and forwarded types by name, on first use.
+        /// </summary>
         void PopulateTypeDef()
         {
             if (_typeDefs == null)
@@ -149,6 +174,11 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets a string from the #Strings heap, caching it.
+        /// </summary>
+        /// <param name="handle">The handle of the string.</param>
+        /// <returns>The string, or <see langword="null"/> if <paramref name="handle"/> is nil.</returns>
         internal override string GetString(StringHandle handle)
         {
             if (handle.IsNil)
@@ -160,6 +190,11 @@ namespace IKVM.Reflection.Reader
             return str;
         }
 
+        /// <summary>
+        /// Gets a copy of a blob from the #Blob heap.
+        /// </summary>
+        /// <param name="handle">The handle of the blob.</param>
+        /// <returns>A new array with the contents of the blob.</returns>
         internal byte[] GetBlobCopy(BlobHandle handle) => _metadata.GetBlobBytes(handle);
 
         /// <summary>
@@ -170,8 +205,8 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Gets the value of a constant row.
         /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
+        /// <param name="handle">The Constant row.</param>
+        /// <returns>The value of the constant.</returns>
         /// <exception cref="InvalidOperationException">The member has no constant.</exception>
         internal object GetConstantValue(ConstantHandle handle)
         {
@@ -200,8 +235,15 @@ namespace IKVM.Reflection.Reader
             };
         }
 
+        /// <inheritdoc />
         internal override BlobReader GetBlobReader(BlobHandle handle) => _metadata.GetBlobReader(handle);
 
+        /// <summary>
+        /// Returns the string identified by the specified metadata token.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a string in the string heap of the module.</param>
+        /// <returns>A string containing a string value from the metadata string heap.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a token for a string.</exception>
         public override string ResolveString(int metadataToken)
         {
             if ((metadataToken >> 24) != 0x70)
@@ -213,6 +255,15 @@ namespace IKVM.Reflection.Reader
             return str;
         }
 
+        /// <summary>
+        /// Resolves a TypeDef, TypeRef or TypeSpec token. A TypeSpec is cached only when resolving it did not depend on the
+        /// generic context.
+        /// </summary>
+        /// <param name="metadataToken">The token to resolve.</param>
+        /// <param name="context">The generic context used to resolve a TypeSpec, or <see langword="null"/>.</param>
+        /// <returns>The type.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid type token in this module.</exception>
+        /// <exception cref="BadImageFormatException">A TypeSpec refers to itself.</exception>
         internal override Type ResolveType(int metadataToken, IGenericContext context)
         {
             var index = (metadataToken & 0xFFFFFF) - 1;
@@ -271,6 +322,12 @@ namespace IKVM.Reflection.Reader
             throw TokenOutOfRangeException(metadataToken);
         }
 
+        /// <summary>
+        /// Resolves a TypeRef row through its resolution scope.
+        /// </summary>
+        /// <param name="reference">The TypeRef row.</param>
+        /// <returns>The referenced type, or a missing type if it cannot be found and missing types are allowed.</returns>
+        /// <exception cref="BadImageFormatException">The resolution scope is not valid.</exception>
         Type ResolveTypeRef(TypeReference reference)
         {
             var typeName = GetTypeName(reference.Namespace, reference.Name);
@@ -296,12 +353,22 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Finds a module of this assembly by the name in a ModuleRef row.
+        /// </summary>
+        /// <param name="moduleNameIndex">The name of the module.</param>
+        /// <returns>The module.</returns>
+        /// <exception cref="FileNotFoundException">The assembly has no module with that name.</exception>
         Module ResolveModuleRef(StringHandle moduleNameIndex)
         {
             var moduleName = GetString(moduleNameIndex);
             return _assembly.GetModule(moduleName) ?? throw new FileNotFoundException(moduleName);
         }
 
+        /// <summary>
+        /// Wraps a generic context and records whether it was consulted, to decide whether a resolved TypeSpec is
+        /// independent of the context and can be cached.
+        /// </summary>
         sealed class TrackingGenericContext : IGenericContext
         {
 
@@ -311,20 +378,25 @@ namespace IKVM.Reflection.Reader
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="context"></param>
+            /// <param name="context">The context to wrap.</param>
             internal TrackingGenericContext(IGenericContext context)
             {
                 _context = context;
             }
 
+            /// <summary>
+            /// Gets whether a type argument has been requested from the context.
+            /// </summary>
             internal bool IsUsed => _used;
 
+            /// <inheritdoc />
             public Type GetGenericTypeArgument(int index)
             {
                 _used = true;
                 return _context.GetGenericTypeArgument(index);
             }
 
+            /// <inheritdoc />
             public Type GetGenericMethodArgument(int index)
             {
                 _used = true;
@@ -333,14 +405,30 @@ namespace IKVM.Reflection.Reader
 
         }
 
+        /// <summary>
+        /// Creates a type name from #Strings heap handles.
+        /// </summary>
+        /// <param name="typeNamespace">The namespace of the type.</param>
+        /// <param name="typeName">The name of the type.</param>
+        /// <returns>The type name.</returns>
         TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName) => new TypeName(GetString(typeNamespace), GetString(typeName));
 
+        /// <summary>
+        /// Resolves the assembly referenced by an AssemblyRef row, caching it.
+        /// </summary>
+        /// <param name="index">The zero-based index of the AssemblyRef row.</param>
+        /// <returns>The referenced assembly.</returns>
         internal Assembly ResolveAssemblyRef(int index)
         {
             _assemblyRefs ??= new Assembly[_metadata.AssemblyReferences.Count];
             return _assemblyRefs[index] ??= ResolveAssemblyRefImpl(_metadata.GetAssemblyReference(MetadataTokens.AssemblyReferenceHandle(index + 1)));
         }
 
+        /// <summary>
+        /// Loads the assembly referenced by an AssemblyRef row into the universe.
+        /// </summary>
+        /// <param name="reference">The AssemblyRef row.</param>
+        /// <returns>The referenced assembly.</returns>
         Assembly ResolveAssemblyRefImpl(AssemblyReference reference)
         {
             var flags = (int)reference.Flags;
@@ -358,16 +446,32 @@ namespace IKVM.Reflection.Reader
             return Universe.Load(name, this, true);
         }
 
+        /// <summary>
+        /// The AssemblyRef flag indicating that the row holds a full public key rather than a public key token.
+        /// </summary>
         const int PublicKeyFlag = 0x0001;
 
+        /// <inheritdoc />
         public override Guid ModuleVersionId => _metadata.GetGuid(_metadata.GetModuleDefinition().Mvid);
 
+        /// <summary>
+        /// Gets the fully qualified name and path of the module, or <c>&lt;Unknown&gt;</c> if it was not read from a file.
+        /// </summary>
         public override string FullyQualifiedName => _location ?? "<Unknown>";
 
+        /// <summary>
+        /// Gets the file name of the module, or <c>&lt;Unknown&gt;</c> if it was not read from a file.
+        /// </summary>
         public override string Name => _location == null ? "<Unknown>" : Path.GetFileName(_location);
 
+        /// <inheritdoc />
         public override Assembly Assembly => _assembly;
 
+        /// <summary>
+        /// Finds a top-level type defined in, or forwarded by, the module.
+        /// </summary>
+        /// <param name="typeName">The name of the type.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindType(TypeName typeName)
         {
             PopulateTypeDef();
@@ -379,6 +483,11 @@ namespace IKVM.Reflection.Reader
             return type;
         }
 
+        /// <summary>
+        /// Finds a top-level type defined in, or forwarded by, the module, ignoring case.
+        /// </summary>
+        /// <param name="lowerCaseName">The name of the type, in lower case.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
             PopulateTypeDef();
@@ -394,9 +503,23 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
+        /// <summary>
+        /// Creates the exception for a token that is not valid in this module.
+        /// </summary>
+        /// <param name="metadataToken">The token.</param>
+        /// <returns>An <see cref="ArgumentOutOfRangeException"/> for <paramref name="metadataToken"/>.</returns>
         Exception TokenOutOfRangeException(int metadataToken) =>
             new ArgumentOutOfRangeException("metadataToken", string.Format("Token 0x{0:x8} is not valid in the scope of module {1}.", metadataToken, Name));
 
+        /// <summary>
+        /// Returns the type or member identified by the specified metadata token, in the context defined by the specified
+        /// generic type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a type or member in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="MemberInfo"/> object representing the type or member that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
         public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             switch (metadataToken >> 24)
@@ -421,6 +544,12 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets the field defined by a Field row, creating and caching it on first use.
+        /// </summary>
+        /// <param name="owner">The type that declares the field, or <see langword="null"/> to look it up.</param>
+        /// <param name="handle">The Field row.</param>
+        /// <returns>The field.</returns>
         internal FieldInfo GetFieldAt(TypeDefImpl owner, FieldDefinitionHandle handle)
         {
             var index = MetadataTokens.GetRowNumber(handle) - 1;
@@ -429,12 +558,27 @@ namespace IKVM.Reflection.Reader
             return _fields[index];
         }
 
+        /// <summary>
+        /// Gets the type defined by a TypeDef row.
+        /// </summary>
+        /// <param name="handle">The TypeDef row.</param>
+        /// <returns>The type.</returns>
         TypeDefImpl GetTypeDef(TypeDefinitionHandle handle)
         {
             PopulateTypeDef();
             return _typeDefs[MetadataTokens.GetRowNumber(handle) - 1];
         }
 
+        /// <summary>
+        /// Returns the field identified by the specified metadata token, in the context defined by the specified generic
+        /// type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a field in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="FieldInfo"/> object representing the field that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
+        /// <exception cref="ArgumentException"><paramref name="metadataToken"/> is a MemberRef that does not refer to a field.</exception>
         public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             var index = (metadataToken & 0xFFFFFF) - 1;
@@ -460,6 +604,12 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets the method or constructor defined by a MethodDef row, creating and caching it on first use.
+        /// </summary>
+        /// <param name="owner">The type that declares the method, or <see langword="null"/> to look it up.</param>
+        /// <param name="handle">The MethodDef row.</param>
+        /// <returns>The method, or a <see cref="ConstructorInfo"/> if it is a constructor.</returns>
         internal MethodBase GetMethodAt(TypeDefImpl owner, MethodDefinitionHandle handle)
         {
             var index = MetadataTokens.GetRowNumber(handle) - 1;
@@ -473,6 +623,16 @@ namespace IKVM.Reflection.Reader
             return _methods[index];
         }
 
+        /// <summary>
+        /// Returns the method or constructor identified by the specified metadata token, in the context defined by the
+        /// specified generic type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a method or constructor in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="MethodBase"/> object representing the method that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
+        /// <exception cref="ArgumentException"><paramref name="metadataToken"/> is a MemberRef that does not refer to a method.</exception>
         public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             var index = (metadataToken & 0xFFFFFF) - 1;
@@ -505,8 +665,18 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <inheritdoc />
         public override string ScopeName => GetString(_metadata.GetModuleDefinition().Name);
 
+        /// <summary>
+        /// Resolves the member referenced by a MemberRef row. Members of a TypeSpec or MethodDef parent are not cached, the
+        /// former because they depend on the generic context; the others are.
+        /// </summary>
+        /// <param name="index">The zero-based index of the MemberRef row.</param>
+        /// <param name="genericTypeArguments">The generic type arguments in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">The generic method arguments in scope, or <see langword="null"/>.</param>
+        /// <returns>The referenced member.</returns>
+        /// <exception cref="BadImageFormatException">The parent of the MemberRef is not valid.</exception>
         MemberInfo GetMemberRef(int index, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             _memberRefs ??= new MemberInfo[_metadata.MemberReferences.Count];
@@ -562,6 +732,13 @@ namespace IKVM.Reflection.Reader
             return _memberRefs[index];
         }
 
+        /// <summary>
+        /// Gets the module pseudo type of the module named by a ModuleRef row, which declares the global members referenced
+        /// through it.
+        /// </summary>
+        /// <param name="token">The ModuleRef token.</param>
+        /// <returns>The module pseudo type.</returns>
+        /// <exception cref="BadImageFormatException">The module is not found or is a resource module.</exception>
         Type ResolveModuleType(int token)
         {
             var name = GetString(_metadata.GetModuleReference(MetadataTokens.ModuleReferenceHandle(token & 0xFFFFFF)).Name);
@@ -572,6 +749,16 @@ namespace IKVM.Reflection.Reader
             return module.GetModuleType();
         }
 
+        /// <summary>
+        /// Finds the field or method with the given name and signature in a type or its base types. If it is not declared
+        /// by the type and missing members are allowed, a missing member on the type is returned instead.
+        /// </summary>
+        /// <param name="type">The type to search.</param>
+        /// <param name="name">The name of the member.</param>
+        /// <param name="sig">The signature of the member, whose first byte tells a field from a method.</param>
+        /// <returns>The member.</returns>
+        /// <exception cref="MissingFieldException">The field is not found.</exception>
+        /// <exception cref="MissingMethodException">The method is not found.</exception>
         MemberInfo ResolveTypeMemberRef(Type type, string name, BlobReader sig)
         {
             if (sig.PeekByte() == Signature.FIELD)
@@ -608,6 +795,12 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Returns the signature blob identified by a metadata token.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a signature in the module.</param>
+        /// <returns>An array of bytes representing the signature blob.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid StandAloneSig token in the scope of the module.</exception>
         public override byte[] ResolveSignature(int metadataToken)
         {
             var index = (metadataToken & 0xFFFFFF) - 1;
@@ -617,6 +810,10 @@ namespace IKVM.Reflection.Reader
             throw TokenOutOfRangeException(metadataToken);
         }
 
+        /// <summary>
+        /// Gets the managed entry point of the module.
+        /// </summary>
+        /// <returns>The entry point method, or <see langword="null"/> if there is none or it is native.</returns>
         internal MethodInfo GetEntryPoint()
         {
             var cor = _pe.PEHeaders.CorHeader;
@@ -626,6 +823,11 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
+        /// <summary>
+        /// Finds the ManifestResource row with the given name.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>The row, or a nil handle if there is none.</returns>
         ManifestResourceHandle FindManifestResource(string resourceName)
         {
             foreach (var h in _metadata.ManifestResources)
@@ -635,6 +837,14 @@ namespace IKVM.Reflection.Reader
             return default;
         }
 
+        /// <summary>
+        /// Gets information about where a manifest resource is stored.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>
+        /// The resource information, or <see langword="null"/> if the resource is not found, including when it refers to a
+        /// loaded assembly that does not have it.
+        /// </returns>
         internal ManifestResourceInfo GetManifestResourceInfo(string resourceName)
         {
             var h = FindManifestResource(resourceName);
@@ -649,6 +859,12 @@ namespace IKVM.Reflection.Reader
             return info;
         }
 
+        /// <summary>
+        /// Opens a manifest resource, which may be embedded, linked from a file, or defined in a referenced assembly.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>A stream over the resource, or <see langword="null"/> if it is not found or is an empty file.</returns>
+        /// <exception cref="BadImageFormatException">The implementation of the resource is not valid.</exception>
         internal Stream GetManifestResourceStream(string resourceName)
         {
             var h = FindManifestResource(resourceName);
@@ -695,6 +911,11 @@ namespace IKVM.Reflection.Reader
             return new MemoryStream(data.ReadBytes(length));
         }
 
+        /// <summary>
+        /// Gets the names of the assemblies referenced by the module, read directly from its AssemblyRef rows without
+        /// loading them.
+        /// </summary>
+        /// <returns>The referenced assembly names.</returns>
         public AssemblyName[] __GetReferencedAssemblies()
         {
             var list = new List<AssemblyName>(_metadata.AssemblyReferences.Count);
@@ -732,6 +953,10 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Resolves the types in the ExportedType table: forwarded types and the types of the other modules of the assembly.
+        /// </summary>
+        /// <returns>The exported types.</returns>
         public override Type[] __GetExportedTypes()
         {
             var arr = new Type[_metadata.ExportedTypes.Count];
@@ -741,6 +966,12 @@ namespace IKVM.Reflection.Reader
             return arr;
         }
 
+        /// <summary>
+        /// Resolves the type described by an ExportedType row through its implementation.
+        /// </summary>
+        /// <param name="index">The zero-based index of the ExportedType row.</param>
+        /// <returns>The type, or a missing type if it cannot be found and missing types are allowed.</returns>
+        /// <exception cref="BadImageFormatException">The implementation of the row is not valid.</exception>
         Type ResolveExportedType(int index)
         {
             var exported = _metadata.GetExportedType(MetadataTokens.ExportedTypeHandle(index + 1));
@@ -770,31 +1001,40 @@ namespace IKVM.Reflection.Reader
         /// <summary>
         /// Gets the name of the file at the specified index of the File table.
         /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        /// <param name="index">The zero-based index of the File row.</param>
+        /// <returns>The file name.</returns>
         internal string GetFileName(int index) => GetString(_metadata.GetAssemblyFile(MetadataTokens.AssemblyFileHandle(index + 1)).Name);
 
         /// <summary>
         /// Gets whether the file at the specified index of the File table contains metadata.
         /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        /// <param name="index">The zero-based index of the File row.</param>
+        /// <returns><see langword="true"/> if the file is a module; <see langword="false"/> if it is a resource file.</returns>
         internal bool FileContainsMetadata(int index) => _metadata.GetAssemblyFile(MetadataTokens.AssemblyFileHandle(index + 1)).ContainsMetadata;
 
+        /// <summary>
+        /// Gets the module pseudo type <c>&lt;Module&gt;</c>, which declares the global members.
+        /// </summary>
+        /// <returns>The module pseudo type.</returns>
         internal override Type GetModuleType()
         {
             PopulateTypeDef();
             return _moduleType;
         }
 
+        /// <summary>
+        /// Gets the runtime version string stored in the metadata root.
+        /// </summary>
         public string __ImageRuntimeVersion => _metadata.MetadataVersion;
 
+        /// <inheritdoc />
         public override int MDStreamVersion => GetTablesStreamVersion();
 
         /// <summary>
         /// Gets the version of the #~ or #- stream, which System.Reflection.Metadata does not expose, from the metadata root.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The major version shifted left by 16 bits, combined with the minor version.</returns>
+        /// <exception cref="BadImageFormatException">The metadata has no tables stream.</exception>
         unsafe int GetTablesStreamVersion()
         {
             var root = new BlobReader(_metadata.MetadataPointer, _metadata.MetadataLength)
@@ -823,6 +1063,11 @@ namespace IKVM.Reflection.Reader
             throw new BadImageFormatException("The metadata has no tables stream.");
         }
 
+        /// <summary>
+        /// Gets a pair of values indicating the nature of the code in a module and the platform targeted by the module.
+        /// </summary>
+        /// <param name="peKind">When this method returns, a combination of the <see cref="PortableExecutableKinds"/> values indicating the nature of the code in the module.</param>
+        /// <param name="machine">When this method returns, one of the <see cref="ImageFileMachine"/> values indicating the platform targeted by the module.</param>
         public void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
         {
             var headers = _pe.PEHeaders;
@@ -849,6 +1094,9 @@ namespace IKVM.Reflection.Reader
             machine = (ImageFileMachine)headers.CoffHeader.Machine;
         }
 
+        /// <summary>
+        /// Releases the PE reader and the stream the module was read from.
+        /// </summary>
         internal override void Dispose()
         {
             _pe.Dispose();
@@ -856,6 +1104,11 @@ namespace IKVM.Reflection.Reader
             _stream?.Dispose();
         }
 
+        /// <summary>
+        /// Adds ExportedType rows for the types of this module to the manifest module of an assembly being built.
+        /// </summary>
+        /// <param name="fileToken">The File row of this module in the manifest.</param>
+        /// <param name="manifestModule">The manifest module being built.</param>
         internal override void ExportTypes(AssemblyFileHandle fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
         {
             PopulateTypeDef();

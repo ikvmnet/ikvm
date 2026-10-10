@@ -25,24 +25,40 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection.Reader
 {
+
+    /// <summary>
+    /// Base class for generic type and method parameters read from a module. Derives the base type, interfaces and
+    /// value type status from the parameter's constraints.
+    /// </summary>
     abstract class TypeParameterType : TypeInfo
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="sigElementType"></param>
+        /// <param name="sigElementType">The signature element type, ELEMENT_TYPE_VAR or ELEMENT_TYPE_MVAR.</param>
         protected TypeParameterType(byte sigElementType) :
             base(sigElementType)
         {
 
         }
 
+        /// <summary>
+        /// Gets the assembly-qualified name of the type, which is always <see langword="null"/> for a generic parameter.
+        /// </summary>
         public sealed override string AssemblyQualifiedName => null;
 
+        /// <summary>
+        /// Gets whether the parameter is a value type, which is the case when it has the
+        /// <see cref="GenericParameterAttributes.NotNullableValueTypeConstraint"/> constraint.
+        /// </summary>
         protected sealed override bool IsValueTypeImpl =>
             (GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0;
 
+        /// <summary>
+        /// Gets the base type of the parameter: its first class constraint, or <see cref="System.ValueType"/> or
+        /// <see cref="object"/> when it has none.
+        /// </summary>
         public sealed override Type BaseType
         {
             get
@@ -55,6 +71,10 @@ namespace IKVM.Reflection.Reader
             }
         }
 
+        /// <summary>
+        /// Gets the interface constraints of the parameter.
+        /// </summary>
+        /// <returns>The constraints that are interfaces.</returns>
         public override Type[] __GetDeclaredInterfaces()
         {
             var list = new List<Type>();
@@ -65,13 +85,27 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Gets the attributes of the parameter, which are always <see cref="TypeAttributes.Public"/>.
+        /// </summary>
         public sealed override TypeAttributes Attributes => TypeAttributes.Public;
 
+        /// <summary>
+        /// Gets the fully qualified name of the type, which is always <see langword="null"/> for a generic parameter.
+        /// </summary>
         public sealed override string FullName => null;
 
+        /// <summary>
+        /// Returns the name of the parameter.
+        /// </summary>
+        /// <returns>The name of the parameter.</returns>
         public sealed override string ToString() => Name;
 
+        /// <summary>
+        /// Gets whether any of the parameter's constraints refers to a missing type.
+        /// </summary>
         protected sealed override bool ContainsMissingTypeImpl => ContainsMissingType(GetGenericParameterConstraints());
+
     }
 
 }

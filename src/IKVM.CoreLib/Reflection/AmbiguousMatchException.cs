@@ -26,9 +26,18 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when binding to a member results in more than one member matching the binding
+    /// criteria.
+    /// </summary>
     [Serializable]
-sealed class AmbiguousMatchException : Exception
+    sealed class AmbiguousMatchException : Exception
     {
+
+        /// <summary>
+        /// Initializes a new instance with an empty message string and the root cause exception set to
+        /// <see langword="null"/>.
+        /// </summary>
         public AmbiguousMatchException()
         {
         }

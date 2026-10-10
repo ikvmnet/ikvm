@@ -19,7 +19,7 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 using System.Collections.Generic;
@@ -27,24 +27,40 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a single-dimensional array type with a zero lower bound (an SZARRAY).
+    /// </summary>
     sealed class ArrayType : ElementHolderType
     {
 
+        /// <summary>
+        /// Gets the canonical single-dimensional array type of the specified element type and custom modifiers.
+        /// </summary>
+        /// <param name="type">The element type of the array.</param>
+        /// <param name="mods">The custom modifiers applied to the element type.</param>
+        /// <returns>The array type, shared with any equal array type previously created in the same universe.</returns>
         internal static Type Make(Type type, CustomModifiers mods) => type.Universe.CanonicalizeType(new ArrayType(type, mods));
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="mods"></param>
+        /// <param name="type">The element type of the array.</param>
+        /// <param name="mods">The custom modifiers applied to the element type.</param>
         ArrayType(Type type, CustomModifiers mods) :
            base(type, mods, Signature.ELEMENT_TYPE_SZARRAY)
         {
-
         }
 
+        /// <summary>
+        /// Gets the type from which the current array type directly inherits, which is always <c>System.Array</c>.
+        /// </summary>
         public override Type BaseType => elementType.Module.Universe.System_Array;
 
+        /// <summary>
+        /// Gets the interfaces the array type itself declares: <see cref="IList{T}"/>, <see cref="ICollection{T}"/>
+        /// and <see cref="IEnumerable{T}"/> of the element type.
+        /// </summary>
+        /// <returns>The generic collection interfaces implemented by the array type.</returns>
         public override Type[] __GetDeclaredInterfaces()
         {
             return new Type[] {
@@ -54,6 +70,15 @@ namespace IKVM.Reflection
             };
         }
 
+        /// <summary>
+        /// Gets the methods the runtime provides on the array type: <c>Set</c>, <c>Address</c>, <c>Get</c> and the
+        /// constructors.
+        /// </summary>
+        /// <returns>
+        /// The built-in array methods. Besides the constructor that takes a length, one additional constructor is
+        /// included for each level of nested single-dimensional array in the element type, taking one more length per
+        /// level.
+        /// </returns>
         public override MethodBase[] __GetDeclaredMethods()
         {
             var int32 = new Type[] { Module.Universe.System_Int32 };
@@ -75,16 +100,30 @@ namespace IKVM.Reflection
             return list.ToArray();
         }
 
+        /// <inheritdoc />
         public override TypeAttributes Attributes => TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable;
 
+        /// <inheritdoc />
         public override int GetArrayRank() => 1;
 
+        /// <inheritdoc />
         public override bool Equals(object o) => EqualsHelper(o as ArrayType);
 
+        /// <inheritdoc />
         public override int GetHashCode() => elementType.GetHashCode() * 5;
 
+        /// <summary>
+        /// Gets the suffix appended to the element type name to form the name of this type.
+        /// </summary>
+        /// <returns>The string <c>[]</c>.</returns>
         internal override string GetSuffix() => "[]";
 
+        /// <summary>
+        /// Creates a single-dimensional array type around a different element type.
+        /// </summary>
+        /// <param name="type">The new element type.</param>
+        /// <param name="mods">The custom modifiers applied to the new element type.</param>
+        /// <returns>The single-dimensional array type of <paramref name="type"/>.</returns>
         protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, mods);
 
     }

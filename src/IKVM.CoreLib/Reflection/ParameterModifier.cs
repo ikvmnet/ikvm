@@ -19,13 +19,18 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Attaches a modifier to parameters so that binding can work with parameter signatures in which the types have
+    /// been modified. This mirror carries no data; it exists so that method signatures match System.Reflection.
+    /// </summary>
     readonly struct ParameterModifier
     {
+
     }
 
 }

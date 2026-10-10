@@ -19,24 +19,58 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Describes the constraints on a generic type parameter of a generic type or method.
+    /// </summary>
     [Flags]
-enum GenericParameterAttributes
+    enum GenericParameterAttributes
     {
 
+        /// <summary>
+        /// There are no special flags.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// The generic type parameter is covariant.
+        /// </summary>
         Covariant = 1,
+
+        /// <summary>
+        /// The generic type parameter is contravariant.
+        /// </summary>
         Contravariant = 2,
+
+        /// <summary>
+        /// Selects the combination of all variance flags.
+        /// </summary>
         VarianceMask = 3,
+
+        /// <summary>
+        /// A type can be substituted for the generic type parameter only if it is a reference type.
+        /// </summary>
         ReferenceTypeConstraint = 4,
+
+        /// <summary>
+        /// A type can be substituted for the generic type parameter only if it is a value type and is not nullable.
+        /// </summary>
         NotNullableValueTypeConstraint = 8,
+
+        /// <summary>
+        /// A type can be substituted for the generic type parameter only if it has a parameterless constructor.
+        /// </summary>
         DefaultConstructorConstraint = 16,
+
+        /// <summary>
+        /// Selects the combination of all special constraint flags.
+        /// </summary>
         SpecialConstraintMask = 28,
 
     }

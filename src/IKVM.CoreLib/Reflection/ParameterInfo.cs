@@ -26,6 +26,9 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Discovers the attributes of a parameter and provides access to parameter metadata.
+    /// </summary>
     abstract class ParameterInfo : ICustomAttributeProvider
     {
 
@@ -34,53 +37,130 @@ namespace IKVM.Reflection
         /// </summary>
         public ParameterInfo()
         {
+
         }
 
+        /// <summary>
+        /// Determines whether the specified object is a parameter of the same member at the same position.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> represents the same parameter; otherwise, <see langword="false"/>.</returns>
         public sealed override bool Equals(object obj)
         {
             var other = obj as ParameterInfo;
             return other != null && other.Member == Member && other.Position == Position;
         }
 
+        /// <inheritdoc />
         public sealed override int GetHashCode() => Member.GetHashCode() * 1777 + Position;
 
+        /// <summary>
+        /// Determines whether two parameters are equal.
+        /// </summary>
+        /// <param name="p1">The first parameter to compare.</param>
+        /// <param name="p2">The second parameter to compare.</param>
+        /// <returns><see langword="true"/> if <paramref name="p1"/> equals <paramref name="p2"/>; otherwise, <see langword="false"/>.</returns>
         public static bool operator ==(ParameterInfo p1, ParameterInfo p2) =>
             ReferenceEquals(p1, p2) || (!ReferenceEquals(p1, null) && p1.Equals(p2));
 
+        /// <summary>
+        /// Determines whether two parameters are not equal.
+        /// </summary>
+        /// <param name="p1">The first parameter to compare.</param>
+        /// <param name="p2">The second parameter to compare.</param>
+        /// <returns><see langword="true"/> if <paramref name="p1"/> does not equal <paramref name="p2"/>; otherwise, <see langword="false"/>.</returns>
         public static bool operator !=(ParameterInfo p1, ParameterInfo p2) => !(p1 == p2);
 
+        /// <summary>
+        /// Gets the name of the parameter, or <see langword="null"/> if the parameter has no name.
+        /// </summary>
         public abstract string Name { get; }
 
+        /// <summary>
+        /// Gets the <see cref="Type"/> of this parameter.
+        /// </summary>
         public abstract Type ParameterType { get; }
 
+        /// <summary>
+        /// Gets the attributes for this parameter.
+        /// </summary>
         public abstract ParameterAttributes Attributes { get; }
 
+        /// <summary>
+        /// Gets the zero-based position of the parameter in the formal parameter list, or -1 for the return parameter.
+        /// </summary>
         public abstract int Position { get; }
 
+        /// <summary>
+        /// Gets a value indicating the default value if the parameter has a default value. This is
+        /// <see cref="Missing.Value"/> for an optional parameter without a default value, and <see langword="null"/>
+        /// when there is no default value.
+        /// </summary>
         public abstract object RawDefaultValue { get; }
 
+        /// <summary>
+        /// Gets the optional and required custom modifiers of the parameter, in signature order.
+        /// </summary>
+        /// <returns>The custom modifiers of the parameter.</returns>
         public abstract CustomModifiers __GetCustomModifiers();
 
+        /// <summary>
+        /// Attempts to read the marshalling information recorded for the parameter in the FieldMarshal table.
+        /// </summary>
+        /// <param name="fieldMarshal">When this method returns, contains the marshalling information if there is any; otherwise, the default value.</param>
+        /// <returns><see langword="true"/> if the parameter has marshalling information; otherwise, <see langword="false"/>.</returns>
         public abstract bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal);
 
+        /// <summary>
+        /// Gets a value indicating the member in which the parameter is implemented.
+        /// </summary>
         public abstract MemberInfo Member { get; }
 
+        /// <summary>
+        /// Gets a value that identifies this parameter in metadata.
+        /// </summary>
         public abstract int MetadataToken { get; }
 
+        /// <summary>
+        /// Gets the module in which the parameter is defined.
+        /// </summary>
         public abstract Module Module { get; }
 
+        /// <summary>
+        /// Gets the optional custom modifiers of the parameter.
+        /// </summary>
+        /// <returns>An array of <see cref="Type"/> objects that identify the optional custom modifiers of the current parameter.</returns>
         public Type[] GetOptionalCustomModifiers() => __GetCustomModifiers().GetOptional();
 
+        /// <summary>
+        /// Gets the required custom modifiers of the parameter.
+        /// </summary>
+        /// <returns>An array of <see cref="Type"/> objects that identify the required custom modifiers of the current parameter.</returns>
         public Type[] GetRequiredCustomModifiers() => __GetCustomModifiers().GetRequired();
 
+        /// <summary>
+        /// Gets a value indicating whether this is an input parameter.
+        /// </summary>
         public bool IsIn => (Attributes & ParameterAttributes.In) != 0;
 
+        /// <summary>
+        /// Gets a value indicating whether this is an output parameter.
+        /// </summary>
         public bool IsOut => (Attributes & ParameterAttributes.Out) != 0;
 
+        /// <summary>
+        /// Gets a value indicating whether this parameter is a locale identifier (lcid).
+        /// </summary>
         public bool IsLcid => (Attributes & ParameterAttributes.Lcid) != 0;
 
+        /// <summary>
+        /// Gets a value indicating whether this is a <c>Retval</c> parameter.
+        /// </summary>
         public bool IsRetval => (Attributes & ParameterAttributes.Retval) != 0;
 
+        /// <summary>
+        /// Gets a value indicating whether this parameter is optional.
+        /// </summary>
         public bool IsOptional => (Attributes & ParameterAttributes.Optional) != 0;
 
         /// <summary>
@@ -93,8 +173,8 @@ namespace IKVM.Reflection
         /// Attempts to read a default value that the compiler recorded as a DecimalConstantAttribute or
         /// DateTimeConstantAttribute, because metadata constants cannot hold those types.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">When this method returns, contains the <see cref="decimal"/> or <see cref="System.DateTime"/> default value if one was found; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if a custom constant default value was found; otherwise, <see langword="false"/>.</returns>
         internal bool TryGetCustomConstant(out object value)
         {
             var universe = Module.Universe;
@@ -139,15 +219,37 @@ namespace IKVM.Reflection
             return false;
         }
 
+        /// <summary>
+        /// Determines whether the custom attribute of the specified type or its derived types is applied to this
+        /// parameter.
+        /// </summary>
+        /// <param name="attributeType">The type of the custom attribute to search for.</param>
+        /// <param name="inherit">This argument is ignored for objects of this type.</param>
+        /// <returns><see langword="true"/> if one or more instances of <paramref name="attributeType"/> or its derived types are applied to this parameter; otherwise, <see langword="false"/>.</returns>
         public bool IsDefined(Type attributeType, bool inherit) => CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 
+        /// <summary>
+        /// Returns the custom attributes of the specified type or its derived types that are applied to this parameter.
+        /// </summary>
+        /// <param name="attributeType">The type of the custom attributes to return.</param>
+        /// <param name="inherit">This argument is ignored for objects of this type.</param>
+        /// <returns>The matching custom attributes.</returns>
         public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit) =>
             CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 
+        /// <summary>
+        /// Returns a list of <see cref="CustomAttributeData"/> objects for the current parameter.
+        /// </summary>
+        /// <returns>A list of objects that represent data about the attributes that have been applied to the current parameter.</returns>
         public IList<CustomAttributeData> GetCustomAttributesData() => CustomAttributeData.GetCustomAttributes(this);
 
     }
 
+    /// <summary>
+    /// Wraps a <see cref="ParameterInfo"/> so that it reports a different <see cref="ParameterInfo.Member"/>, such as a
+    /// member wrapper that records a reflected type. All other members forward to the wrapped parameter, except
+    /// <see cref="ParameterInfo.Module"/>, which comes from the reported member.
+    /// </summary>
     sealed class ParameterInfoWrapper : ParameterInfo
     {
 
@@ -157,32 +259,42 @@ namespace IKVM.Reflection
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="member"></param>
-        /// <param name="forward"></param>
+        /// <param name="member">The member to report as the member the parameter belongs to.</param>
+        /// <param name="forward">The parameter to forward to.</param>
         internal ParameterInfoWrapper(MemberInfo member, ParameterInfo forward)
         {
             _member = member;
             _forward = forward;
         }
 
+        /// <inheritdoc />
         public override string Name => _forward.Name;
 
+        /// <inheritdoc />
         public override Type ParameterType => _forward.ParameterType;
 
+        /// <inheritdoc />
         public override ParameterAttributes Attributes => _forward.Attributes;
 
+        /// <inheritdoc />
         public override int Position => _forward.Position;
 
+        /// <inheritdoc />
         public override object RawDefaultValue => _forward.RawDefaultValue;
 
+        /// <inheritdoc />
         public override CustomModifiers __GetCustomModifiers() => _forward.__GetCustomModifiers();
 
+        /// <inheritdoc />
         public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => _forward.__TryGetFieldMarshal(out fieldMarshal);
 
+        /// <inheritdoc />
         public override MemberInfo Member => _member;
 
+        /// <inheritdoc />
         public override int MetadataToken => _forward.MetadataToken;
 
+        /// <inheritdoc />
         public override Module Module => _member.Module;
 
     }
