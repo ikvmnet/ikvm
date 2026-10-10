@@ -263,7 +263,7 @@ namespace IKVM.Reflection
         {
             get
             {
-                // MissingType sets both flags for WinRT projection types
+                // both flags are set when signatures disagree about the type, and the type itself decides
                 return (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType)) switch
                 {
                     0 or TypeFlags.ValueType | TypeFlags.NotValueType => IsValueTypeImpl,

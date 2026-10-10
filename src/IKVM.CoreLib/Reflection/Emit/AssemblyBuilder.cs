@@ -322,7 +322,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="portableExecutableKind">A bitwise combination of the <see cref="PortableExecutableKinds"/> values that specifies the nature of the code.</param>
         /// <param name="imageFileMachine">One of the <see cref="ImageFileMachine"/> values that specifies the target platform.</param>
         public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
-            SaveImpl(assemblyFileName, null, null, portableExecutableKind, imageFileMachine);
+            SaveImpl(assemblyFileName, portableExecutableKind, imageFileMachine);
 
         /// <summary>
         /// Implements the logic to save all of the modules within the assembly. The module whose file name matches
@@ -330,12 +330,10 @@ namespace IKVM.Reflection.Emit
         /// is defined. Every other module is written to its own file and linked from the manifest.
         /// </summary>
         /// <param name="assemblyFileName">The file name of the manifest module.</param>
-        /// <param name="peStream">The stream to write the manifest module to, or <see langword="null"/> to write it to a file.</param>
-        /// <param name="pdbStream">The stream to write the manifest module's symbols to, or <see langword="null"/> to write them to a file.</param>
         /// <param name="portableExecutableKind">The nature of the code in the executables.</param>
         /// <param name="imageFileMachine">The target platform.</param>
         /// <exception cref="NotSupportedException">The entry point is in a module other than the manifest module.</exception>
-        void SaveImpl(string assemblyFileName, Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        void SaveImpl(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
@@ -427,7 +425,7 @@ namespace IKVM.Reflection.Emit
             }
 
             // finally, write the manifest module
-            ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, null, null, null);
         }
 
         /// <summary>
@@ -439,9 +437,7 @@ namespace IKVM.Reflection.Emit
         /// <returns>A handle to the added <c>File</c> row.</returns>
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
-            var fullPath = fileName;
-            if (Dir != null)
-                fullPath = Path.Combine(Dir, fileName);
+            var fullPath = Path.Combine(Dir, fileName);
 
             using var sha1 = SHA1.Create();
             using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
