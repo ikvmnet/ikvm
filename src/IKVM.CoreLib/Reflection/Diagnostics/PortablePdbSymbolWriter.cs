@@ -723,21 +723,19 @@ namespace IKVM.Reflection.Diagnostics
                 importScope = metadata.AddImportScope(parentImportScope, metadata.GetOrAddBlob(buf));
             }
 
-            // insert variables for this scope, keeping first entry
-            var variableList = default(LocalVariableHandle);
+            // the scope's variables and constants are the runs of rows starting at the next row of each table, which
+            // for a scope without any is where the next scope's begin
+            var variableList = MetadataTokens.LocalVariableHandle(metadata.GetRowCount(TableIndex.LocalVariable) + 1);
+            var constantList = MetadataTokens.LocalConstantHandle(metadata.GetRowCount(TableIndex.LocalConstant) + 1);
             foreach (var kvp in scope.Locals.OrderBy(i => i.Value.Address1))
-            {
-                var h = metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value.Address1, metadata.GetOrAddString(kvp.Key));
-                if (variableList.IsNil)
-                    variableList = h;
-            }
+                metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value.Address1, metadata.GetOrAddString(kvp.Key));
 
             // add scope
             metadata.AddLocalScope(
                 (MethodDefinitionHandle)MetadataTokens.EntityHandle(method.Token),
                 importScope,
                 variableList,
-                default,
+                constantList,
                 scope.StartOffset,
                 scope.EndOffset - scope.StartOffset);
 

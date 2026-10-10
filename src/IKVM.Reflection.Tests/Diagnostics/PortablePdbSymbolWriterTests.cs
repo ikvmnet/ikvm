@@ -74,6 +74,79 @@ namespace IKVM.Reflection.Tests.Diagnostics
             Check("With", 2);
         }
 
+        /// <summary>
+        /// Each local scope lists exactly its own variables, including a scope that declares none followed by one
+        /// that does, which is where a nil variable list would make readers attribute the wrong rows.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies the universe loads.</param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void CanWriteLocalScopes(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+            u.Universe.SetSymbolWriterFactory(module => new PortablePdbSymbolWriter(module));
+
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", true);
+            var document = module.DefineDocument("Test.java", Guid.Empty, Guid.Empty, Guid.Empty);
+            var type = module.DefineType("Type", TypeAttributes.Public);
+            var int32 = u.Import(typeof(int));
+
+            // an outer scope with a local, holding an inner scope without one
+            var first = type.DefineMethod("First", MethodAttributes.Public | MethodAttributes.Static, null, Type.EmptyTypes);
+            var il = first.GetILGenerator();
+            il.BeginScope();
+            var a = il.DeclareLocal(int32);
+            a.SetLocalSymInfo("a");
+            il.MarkSequencePoint(document, 1, 1, 1, 10);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Stloc, a);
+            il.BeginScope();
+            il.Emit(OpCodes.Nop);
+            il.EndScope();
+            il.EndScope();
+            il.Emit(OpCodes.Ret);
+
+            // a method whose scope has two locals, written after the scope without any
+            var second = type.DefineMethod("Second", MethodAttributes.Public | MethodAttributes.Static, null, Type.EmptyTypes);
+            il = second.GetILGenerator();
+            il.BeginScope();
+            var b = il.DeclareLocal(int32);
+            b.SetLocalSymInfo("b");
+            var c = il.DeclareLocal(int32);
+            c.SetLocalSymInfo("c");
+            il.MarkSequencePoint(document, 2, 1, 2, 10);
+            il.Emit(OpCodes.Ldc_I4_2);
+            il.Emit(OpCodes.Stloc, b);
+            il.Emit(OpCodes.Ldc_I4_3);
+            il.Emit(OpCodes.Stloc, c);
+            il.EndScope();
+            il.Emit(OpCodes.Ret);
+
+            type.CreateType();
+            assembly.Save("Test.dll");
+            u.Verify("Test.dll");
+
+            using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, "Test.dll")));
+            var md = pe.GetMetadataReader();
+            using var pdbProvider = MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(Path.Combine(u.TempPath, "Test.pdb")));
+            var pdb = pdbProvider.GetMetadataReader();
+
+            // the variable names of each scope of the named method, outermost first; the first is the root scope the
+            // writer adds for the whole method
+            string[][] Scopes(string name)
+            {
+                var handle = md.MethodDefinitions.Single(i => md.GetString(md.GetMethodDefinition(i).Name) == name);
+                return pdb.GetLocalScopes(handle)
+                    .Select(pdb.GetLocalScope)
+                    .Select(s => s.GetLocalVariables().Select(v => pdb.GetString(pdb.GetLocalVariable(v).Name)).ToArray())
+                    .ToArray();
+            }
+
+            Scopes("First").Should().BeEquivalentTo(new[] { new string[0], new[] { "a" }, new string[0] }, o => o.WithStrictOrdering());
+            Scopes("Second").Should().BeEquivalentTo(new[] { new string[0], new[] { "b", "c" } }, o => o.WithStrictOrdering());
+        }
+
     }
 
 }
