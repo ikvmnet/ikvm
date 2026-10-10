@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -14,14 +14,17 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Diagnostics
 {
 
+    /// <summary>
+    /// Tests for <see cref="PortablePdbSymbolWriter"/>.
+    /// </summary>
     public class PortablePdbSymbolWriterTests
     {
 
         /// <summary>
-        /// Methods with sequence points get debug information that names the same local signature as their body, or none
-        /// for a method without locals.
+        /// Checks that methods with sequence points get debug information holding those sequence points and naming the
+        /// same local signature as their body, or none for a method without locals.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanWriteSequencePoints(string tfm)
@@ -57,6 +60,7 @@ namespace IKVM.Reflection.Tests.Diagnostics
             using var pdbProvider = MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(Path.Combine(u.TempPath, "Test.pdb")));
             var pdb = pdbProvider.GetMetadataReader();
 
+            // checks the debug information of the named method against its body
             void Check(string name, int sequencePoints)
             {
                 var handle = md.MethodDefinitions.Single(i => md.GetString(md.GetMethodDefinition(i).Name) == name);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,15 +14,19 @@ namespace IKVM.Reflection.Tests
     static class TextDiff
     {
 
+        /// <summary>
+        /// The most hunks reported in one failure, so a badly broken rendering does not produce an unreadable message.
+        /// </summary>
         const int MaxHunks = 200;
 
         /// <summary>
         /// Asserts that two renderings are equal, reporting a line diff where each hunk is preceded by the less-indented
         /// lines that enclose it.
         /// </summary>
-        /// <param name="actual"></param>
-        /// <param name="expected"></param>
-        /// <param name="because"></param>
+        /// <param name="actual">The rendering produced by the code under test.</param>
+        /// <param name="expected">The rendering it should match.</param>
+        /// <param name="because">A phrase describing what is compared, included in the failure message.</param>
+        /// <exception cref="AssertionFailedException">The renderings differ.</exception>
         public static void ShouldMatch(string actual, string expected, string because)
         {
             if (actual == expected)
@@ -57,9 +61,9 @@ namespace IKVM.Reflection.Tests
         /// <summary>
         /// Gets the less-indented lines enclosing the given line, outermost first.
         /// </summary>
-        /// <param name="lines"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        /// <param name="lines">The lines of the rendering.</param>
+        /// <param name="index">The index of the line whose enclosing lines are wanted.</param>
+        /// <returns>The enclosing lines, outermost first.</returns>
         static List<string> Headers(string[] lines, int index)
         {
             var result = new List<string>();
@@ -78,6 +82,11 @@ namespace IKVM.Reflection.Tests
             return result;
         }
 
+        /// <summary>
+        /// Gets the number of leading spaces of a line.
+        /// </summary>
+        /// <param name="line">The line to measure.</param>
+        /// <returns>The number of leading space characters.</returns>
         static int Indent(string line)
         {
             var i = 0;
@@ -91,9 +100,9 @@ namespace IKVM.Reflection.Tests
         /// Computes a shortest line edit script with the Myers algorithm. Unchanged and removed lines index into
         /// <paramref name="a"/>; inserted lines index into <paramref name="b"/>.
         /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
+        /// <param name="a">The original lines.</param>
+        /// <param name="b">The changed lines.</param>
+        /// <returns>The edits in order, each a kind (<c>' '</c> unchanged, <c>'-'</c> removed, <c>'+'</c> inserted) and a line index.</returns>
         static List<(char Kind, int Index)> Diff(string[] a, string[] b)
         {
             int n = a.Length, m = b.Length, max = n + m;
@@ -122,6 +131,14 @@ namespace IKVM.Reflection.Tests
             throw new InvalidOperationException("Unreachable.");
         }
 
+        /// <summary>
+        /// Walks the saved Myers frontiers backwards from the end of both inputs to recover the edit script.
+        /// </summary>
+        /// <param name="trace">The frontier saved before each edit distance <c>d</c> was explored.</param>
+        /// <param name="n">The number of original lines.</param>
+        /// <param name="m">The number of changed lines.</param>
+        /// <param name="max">The offset added to a diagonal <c>k</c> to index a frontier.</param>
+        /// <returns>The edits in order, as returned by <see cref="Diff"/>.</returns>
         static List<(char Kind, int Index)> Backtrack(List<int[]> trace, int n, int m, int max)
         {
             var result = new List<(char Kind, int Index)>();

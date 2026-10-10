@@ -5,17 +5,25 @@ using Xunit;
 namespace IKVM.Reflection.Tests
 {
 
+    /// <summary>
+    /// Tests for <see cref="Module"/>.
+    /// </summary>
     public class ModuleTests
     {
 
+        /// <summary>
+        /// The namespace of the fixture types, with a trailing dot.
+        /// </summary>
         const string Ns = "IKVM.Reflection.Tests.Fixture.";
 
         /// <summary>
-        /// Plain names are looked up without the type name parser, so these cover the names that take that path and the
-        /// ones that must still be left to the parser, which decides the expected results.
+        /// Checks that <see cref="Module.GetType(string, bool, bool)"/> finds the types of the fixture module by name and
+        /// returns <see langword="null"/> for names it does not define. Plain names are looked up without the type name
+        /// parser, so these cover the names that take that path and the ones that must still be left to the parser, which
+        /// decides the expected results.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="expected">The full name of the type that is found, or null for none.</param>
+        /// <param name="name">The type name to look up.</param>
+        /// <param name="expected">The full name of the type that is found, or <see langword="null"/> for none.</param>
         [Theory]
         [InlineData(Ns + "AttributedClass", Ns + "AttributedClass")]
         [InlineData(Ns + "GenericClass`1", Ns + "GenericClass`1")]

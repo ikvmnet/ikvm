@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 using FluentAssertions;
 
@@ -9,9 +9,16 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="FieldBuilder"/>.
+    /// </summary>
     public class FieldBuilderTests
     {
 
+        /// <summary>
+        /// Checks that a constant set on a literal field is written to the saved assembly.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSetConstant(string tfm)
@@ -33,10 +40,10 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
-        /// The constant and marshalling descriptor of a field builder can be read back from the created type, before and
-        /// after saving.
+        /// Checks that the constant and marshalling descriptor of a field builder can be read back from the created type,
+        /// before and after saving.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanReadBackConstantAndMarshal(string tfm)
@@ -51,6 +58,7 @@ namespace IKVM.Reflection.Tests.Emit
             type.DefineField("marshalled", u.Import(typeof(string)), FieldAttributes.Public).SetCustomAttribute(new CustomAttributeBuilder(marshalAs.GetConstructor([u.Import(typeof(System.Runtime.InteropServices.UnmanagedType))]), [System.Runtime.InteropServices.UnmanagedType.LPWStr]));
             var created = type.CreateType();
 
+            // checks what the created type reports
             void Check()
             {
                 created.GetField("constant")!.GetRawConstantValue().Should().Be("value");
@@ -67,6 +75,11 @@ namespace IKVM.Reflection.Tests.Emit
             t.GetField("constant")!.GetRawConstantValue().Should().Be("value");
         }
 
+        /// <summary>
+        /// Checks that field offsets set on an explicit layout type are written to the saved assembly, including two
+        /// fields at the same offset.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSetOffset(string tfm)

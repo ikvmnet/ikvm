@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -12,14 +12,17 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="MethodBuilder"/>.
+    /// </summary>
     public class MethodBuilderTests
     {
 
         /// <summary>
-        /// A DllImportAttribute set on a method builder becomes its P/Invoke import, readable from the created type
-        /// before and after saving and written to the image.
+        /// Checks that a DllImportAttribute set on a method builder becomes its P/Invoke import, readable from the created
+        /// type before and after saving and written to the image.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSetDllImport(string tfm)
@@ -34,6 +37,7 @@ namespace IKVM.Reflection.Tests.Emit
             method.SetCustomAttribute(new CustomAttributeBuilder(dllImport.GetConstructor([u.Import(typeof(string))]), ["user32.dll"], [dllImport.GetField("EntryPoint")], ["MessageBeep"]));
             var created = type.CreateType();
 
+            // checks what the created type reports
             void Check()
             {
                 created.GetMethod("Beep")!.__TryGetImplMap(out _, out var importName, out var importScope).Should().BeTrue();

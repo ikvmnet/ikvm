@@ -10,9 +10,17 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="TypeBuilder"/>.
+    /// </summary>
     public class TypeBuilderTests
     {
 
+        /// <summary>
+        /// Checks that a type with a field, a property with its accessors and a method is written to the saved
+        /// assembly.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanDefineFieldMethodsAndProperty(string tfm)
@@ -62,6 +70,11 @@ namespace IKVM.Reflection.Tests.Emit
             t.Should().HaveProperty(u.LoadContextType("System.Object"), "Value");
         }
 
+        /// <summary>
+        /// Checks that an interface and a class that implements it with an explicit method override are written
+        /// to the saved assembly.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanDefineInterfaceImplementation(string tfm)
@@ -99,15 +112,16 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
-        /// Custom attributes set on builders can be read back from the created type, before and after saving.
+        /// Checks that custom attributes set on builders can be read back from the created type, before and after saving.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanReadBackCustomAttributes(string tfm)
         {
             using var u = TestUniverse.Create(tfm);
             var obsolete = u.Import(typeof(System.ObsoleteAttribute)).GetConstructor([u.Import(typeof(string))]);
+            // builds an ObsoleteAttribute that carries the given message
             CustomAttributeBuilder Attribute(string message) => new(obsolete, [message]);
 
             var assembly = u.DefineAssembly();
@@ -122,6 +136,7 @@ namespace IKVM.Reflection.Tests.Emit
             method.GetILGenerator().Emit(OpCodes.Ret);
             var created = type.CreateType();
 
+            // checks what the created type reports
             void Check()
             {
                 static string Message(System.Collections.Generic.IList<CustomAttributeData> data) => (string)data.Single(i => i.AttributeType.Name == "ObsoleteAttribute").ConstructorArguments[0].Value!;
@@ -138,9 +153,10 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
-        /// The InterfaceImpl table must be sorted by class; defining overrides out of type order checks that.
+        /// Checks that the saved assembly verifies and reads back when overrides are defined out of type order. The
+        /// InterfaceImpl and MethodImpl tables must be sorted by class, and the overrides are what land in MethodImpl.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanDefineMultipleInterfaceImplementationsOutOfOrder(string tfm)

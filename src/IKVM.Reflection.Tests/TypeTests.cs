@@ -7,9 +7,17 @@ using Xunit;
 namespace IKVM.Reflection.Tests
 {
 
+    /// <summary>
+    /// Tests for <see cref="Type"/>.
+    /// </summary>
     public class TypeTests
     {
 
+        /// <summary>
+        /// Checks that a generic type definition imported from the framework reports itself as one, and that
+        /// <see cref="Type.MakeGenericType(Type[])"/> produces a constructed generic type.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanMakeGenericType(string tfm)
@@ -26,6 +34,11 @@ namespace IKVM.Reflection.Tests
             g.IsConstructedGenericType.Should().BeTrue();
         }
 
+        /// <summary>
+        /// Checks that a property of a constructed generic type, and its getter, have the type argument substituted for
+        /// the generic parameter.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanGetGenericPropertyOfGenericType(string tfm)
