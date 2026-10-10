@@ -773,7 +773,9 @@ namespace IKVM.Tools.Importer
                 try
                 {
                     var path = Path.GetDirectoryName(fileName);
-                    files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(fileName));
+                    var directory = path == "" ? "." : path;
+                    var name = Path.GetFileName(fileName);
+                    files = options.inputDirectories.TryGetFiles(directory, name) ?? Directory.GetFiles(directory, name);
                     Array.Sort(files, StringComparer.Ordinal);
                 }
                 catch
