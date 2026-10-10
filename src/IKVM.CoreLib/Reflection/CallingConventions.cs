@@ -27,15 +27,15 @@ namespace IKVM.Reflection
 {
 
     [Flags]
-    internal enum CallingConventions
-	{
+enum CallingConventions
+    {
 
-		Standard = 1,
-		VarArgs = 2,
-		Any = 3,
-		HasThis = 32,
-		ExplicitThis = 64,
+        Standard = 1,
+        VarArgs = 2,
+        Any = 3,
+        HasThis = 32,
+        ExplicitThis = 64,
 
-	}
+    }
 
 }

@@ -37,8 +37,8 @@ namespace IKVM.Reflection
         /// <param name="field"></param>
         internal GenericFieldInstance(Type declaringType, FieldInfo field)
         {
-            this._declaringType = declaringType;
-            this._field = field;
+            _declaringType = declaringType;
+            _field = field;
         }
 
         public override bool Equals(object obj)
@@ -47,70 +47,31 @@ namespace IKVM.Reflection
             return other != null && other._declaringType.Equals(_declaringType) && other._field.Equals(_field);
         }
 
-        public override int GetHashCode()
-        {
-            return _declaringType.GetHashCode() * 3 ^ _field.GetHashCode();
-        }
+        public override int GetHashCode() => _declaringType.GetHashCode() * 3 ^ _field.GetHashCode();
 
-        public override FieldAttributes Attributes
-        {
-            get { return _field.Attributes; }
-        }
+        public override FieldAttributes Attributes => _field.Attributes;
 
-        public override string Name
-        {
-            get { return _field.Name; }
-        }
+        public override string Name => _field.Name;
 
-        public override Type DeclaringType
-        {
-            get { return _declaringType; }
-        }
+        public override Type DeclaringType => _declaringType;
 
-        public override Module Module
-        {
-            get { return _declaringType.Module; }
-        }
+        public override Module Module => _declaringType.Module;
 
-        public override int MetadataToken
-        {
-            get { return _field.MetadataToken; }
-        }
+        public override int MetadataToken => _field.MetadataToken;
 
-        public override object GetRawConstantValue()
-        {
-            return _field.GetRawConstantValue();
-        }
+        public override object GetRawConstantValue() => _field.GetRawConstantValue();
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return _field.__TryGetFieldOffset(out offset);
-        }
+        public override bool __TryGetFieldOffset(out int offset) => _field.__TryGetFieldOffset(out offset);
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return _field.FieldSignature.ExpandTypeParameters(_declaringType); }
-        }
+        internal override FieldSignature FieldSignature => _field.FieldSignature.ExpandTypeParameters(_declaringType);
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(_declaringType, _field.Name, _field.FieldSignature);
-        }
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, _field.Name, _field.FieldSignature);
 
-        internal override FieldInfo BindTypeParameters(Type type)
-        {
-            return new GenericFieldInstance(_declaringType.BindTypeParameters(type), _field);
-        }
+        internal override FieldInfo BindTypeParameters(Type type) => new GenericFieldInstance(_declaringType.BindTypeParameters(type), _field);
 
-        internal override int GetCurrentToken()
-        {
-            return _field.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => _field.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return _field.IsBaked; }
-        }
+        internal override bool IsBaked => _field.IsBaked;
 
     }
 

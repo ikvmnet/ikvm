@@ -27,14 +27,14 @@ namespace IKVM.Reflection
 {
 
     [Flags]
-    internal enum PropertyAttributes
-	{
+enum PropertyAttributes
+    {
 
-		None = 0,
-		SpecialName = 512,
-		RTSpecialName = 1024,
-		HasDefault = 4096,
+        None = 0,
+        SpecialName = 512,
+        RTSpecialName = 1024,
+        HasDefault = 4096,
 
-	}
+    }
 
 }

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -50,18 +50,12 @@ namespace IKVM.Reflection
             /// <param name="original"></param>
             internal UnboundGenericMethodContext(IGenericContext original)
             {
-                this._original = original;
+                _original = original;
             }
 
-            public Type GetGenericTypeArgument(int index)
-            {
-                return _original.GetGenericTypeArgument(index);
-            }
+            public Type GetGenericTypeArgument(int index) => _original.GetGenericTypeArgument(index);
 
-            public Type GetGenericMethodArgument(int index)
-            {
-                return UnboundGenericMethodParameter.Make(index);
-            }
+            public Type GetGenericMethodArgument(int index) => UnboundGenericMethodParameter.Make(index);
 
         }
 
@@ -78,14 +72,11 @@ namespace IKVM.Reflection
             /// <param name="methodArgs"></param>
             internal Binder(Type declaringType, Type[] methodArgs)
             {
-                this._declaringType = declaringType;
-                this._methodArgs = methodArgs;
+                _declaringType = declaringType;
+                _methodArgs = methodArgs;
             }
 
-            public Type BindTypeParameter(Type type)
-            {
-                return _declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
-            }
+            public Type BindTypeParameter(Type type) => _declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
 
             public Type BindMethodParameter(Type type)
             {
@@ -99,7 +90,7 @@ namespace IKVM.Reflection
         sealed class Unbinder : IGenericBinder
         {
 
-            internal static readonly Unbinder Instance = new Unbinder();
+            internal static readonly Unbinder Instance = new();
 
             /// <summary>
             /// Initializes a new instance.
@@ -109,15 +100,9 @@ namespace IKVM.Reflection
 
             }
 
-            public Type BindTypeParameter(Type type)
-            {
-                return type;
-            }
+            public Type BindTypeParameter(Type type) => type;
 
-            public Type BindMethodParameter(Type type)
-            {
-                return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
-            }
+            public Type BindMethodParameter(Type type) => UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
 
         }
 
@@ -137,17 +122,16 @@ namespace IKVM.Reflection
         /// <param name="genericParamCount"></param>
         internal MethodSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
         {
-            this._returnType = returnType;
-            this._parameterTypes = parameterTypes;
-            this._modifiers = modifiers;
-            this._callingConvention = callingConvention;
-            this._genericParamCount = genericParamCount;
+            _returnType = returnType;
+            _parameterTypes = parameterTypes;
+            _modifiers = modifiers;
+            _callingConvention = callingConvention;
+            _genericParamCount = genericParamCount;
         }
 
         public override bool Equals(object obj)
         {
-            var other = obj as MethodSignature;
-            return other != null
+            return obj is MethodSignature other
                 && other._callingConvention == _callingConvention
                 && other._genericParamCount == _genericParamCount
                 && other._returnType.Equals(_returnType)
@@ -192,7 +176,7 @@ namespace IKVM.Reflection
             var returnType = ReadRetType(module, ref br, context);
 
             var parameterTypes = new Type[paramCount];
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < parameterTypes.Length; i++)
             {
                 if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
                 {
@@ -263,7 +247,7 @@ namespace IKVM.Reflection
             var parameterTypes = new List<Type>();
             var optionalParameterTypes = new List<Type>();
             var curr = parameterTypes;
-            for (int i = 0; i < paramCount; i++)
+            for (var i = 0; i < paramCount; i++)
             {
                 if (br.PeekByte() == SENTINEL)
                 {
@@ -278,45 +262,22 @@ namespace IKVM.Reflection
             return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));
         }
 
-        internal int GetParameterCount()
-        {
-            return _parameterTypes.Length;
-        }
+        internal int GetParameterCount() => _parameterTypes.Length;
 
-        internal Type GetParameterType(int index)
-        {
-            return _parameterTypes[index];
-        }
+        internal Type GetParameterType(int index) => _parameterTypes[index];
 
-        internal Type GetReturnType(IGenericBinder binder)
-        {
-            return _returnType.BindTypeParameters(binder);
-        }
+        internal Type GetReturnType(IGenericBinder binder) => _returnType.BindTypeParameters(binder);
 
-        internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder)
-        {
-            return _modifiers.GetReturnTypeCustomModifiers().Bind(binder);
-        }
+        internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder) => _modifiers.GetReturnTypeCustomModifiers().Bind(binder);
 
-        internal Type GetParameterType(IGenericBinder binder, int index)
-        {
-            return _parameterTypes[index].BindTypeParameters(binder);
-        }
+        internal Type GetParameterType(IGenericBinder binder, int index) => _parameterTypes[index].BindTypeParameters(binder);
 
-        internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index)
-        {
-            return _modifiers.GetParameterCustomModifiers(index).Bind(binder);
-        }
+        internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index) =>
+            _modifiers.GetParameterCustomModifiers(index).Bind(binder);
 
-        internal CallingConventions CallingConvention
-        {
-            get { return _callingConvention; }
-        }
+        internal CallingConventions CallingConvention => _callingConvention;
 
-        internal int GenericParameterCount
-        {
-            get { return _genericParamCount; }
-        }
+        internal int GenericParameterCount => _genericParamCount;
 
         internal MethodSignature Bind(Type type, Type[] methodArgs)
         {
@@ -336,20 +297,11 @@ namespace IKVM.Reflection
             return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
         }
 
-        internal bool MatchParameterTypes(MethodSignature other)
-        {
-            return Util.ArrayEquals(other._parameterTypes, _parameterTypes);
-        }
+        internal bool MatchParameterTypes(MethodSignature other) => Util.ArrayEquals(other._parameterTypes, _parameterTypes);
 
-        internal bool MatchParameterTypes(Type[] types)
-        {
-            return Util.ArrayEquals(types, _parameterTypes);
-        }
+        internal bool MatchParameterTypes(Type[] types) => Util.ArrayEquals(types, _parameterTypes);
 
-        internal override void Write(ModuleBuilder module, BlobBuilder bb)
-        {
-            WriteImpl(module, bb, _parameterTypes.Length);
-        }
+        internal override void Write(ModuleBuilder module, BlobBuilder bb) => WriteImpl(module, bb, _parameterTypes.Length);
 
         internal void WriteMethodRef(ModuleBuilder module, BlobBuilder bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
@@ -358,7 +310,7 @@ namespace IKVM.Reflection
             if (optionalParameterTypes.Length > 0)
             {
                 bb.WriteByte(SENTINEL);
-                for (int i = 0; i < optionalParameterTypes.Length; i++)
+                for (var i = 0; i < optionalParameterTypes.Length; i++)
                 {
                     WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
                     WriteType(module, bb, optionalParameterTypes[i]);
@@ -401,7 +353,7 @@ namespace IKVM.Reflection
             WriteType(module, bb, _returnType);
 
             // Param
-            for (int i = 0; i < _parameterTypes.Length; i++)
+            for (var i = 0; i < _parameterTypes.Length; i++)
             {
                 WriteCustomModifiers(module, bb, _modifiers.GetParameterCustomModifiers(i));
                 WriteType(module, bb, _parameterTypes[i]);

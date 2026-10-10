@@ -48,10 +48,10 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal MethodDefImpl(ModuleReader module, TypeDefImpl declaringType, MethodDefinitionHandle handle)
         {
-            this._module = module;
-            this._handle = handle;
-            this._definition = module.Metadata.GetMethodDefinition(handle);
-            this._declaringType = declaringType;
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetMethodDefinition(handle);
+            _declaringType = declaringType;
         }
 
         public override CallingConventions CallingConvention => MethodSignature.CallingConvention;
@@ -82,7 +82,7 @@ namespace IKVM.Reflection.Reader
                         array[position] = new ParameterInfoImpl(this, position, h);
                 }
 
-                for (int i = 0; i < array.Length; i++)
+                for (var i = 0; i < array.Length; i++)
                     array[i] ??= new ParameterInfoImpl(this, i, default);
 
                 _returnParameter ??= new ParameterInfoImpl(this, -1, default);
@@ -93,7 +93,7 @@ namespace IKVM.Reflection.Reader
         internal override Type[] GetParameterTypes()
         {
             var parameterTypes = new Type[MethodSignature.GetParameterCount()];
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < parameterTypes.Length; i++)
                 parameterTypes[i] = MethodSignature.GetParameterType(i);
 
             return parameterTypes;
@@ -134,7 +134,7 @@ namespace IKVM.Reflection.Reader
             {
                 var handles = _definition.GetGenericParameters();
                 var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
-                for (int i = 0; i < args.Length; i++)
+                for (var i = 0; i < args.Length; i++)
                     args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_MVAR);
 
                 _typeArgs = args;
@@ -147,16 +147,15 @@ namespace IKVM.Reflection.Reader
             return _typeArgs[index];
         }
 
-        public override MethodInfo GetGenericMethodDefinition()
-        {
-            return IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
-        }
+        public override MethodInfo GetGenericMethodDefinition() =>
+            IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
 
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(_declaringType, this, typeArguments);
 
         public override Module Module => _module;
 
-        internal override MethodSignature MethodSignature => _lazyMethodSignature ??= MethodSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), this);
+        internal override MethodSignature MethodSignature =>
+            _lazyMethodSignature ??= MethodSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), this);
 
         internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, MethodSignature);
 

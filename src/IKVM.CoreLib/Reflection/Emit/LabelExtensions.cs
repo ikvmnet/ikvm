@@ -1,13 +1,10 @@
 ﻿namespace IKVM.Reflection.Emit
 {
 
-    internal static class LabelExtensions
+    static class LabelExtensions
     {
 
-        public static int GetLabelValue(this Label self)
-        {
-            return self.Id;
-        }
+        public static int GetLabelValue(this Label self) => self.Id;
 
     }
 

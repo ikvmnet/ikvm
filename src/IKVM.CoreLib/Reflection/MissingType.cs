@@ -46,10 +46,10 @@ namespace IKVM.Reflection
         /// <param name="name"></param>
         internal MissingType(Module module, Type declaringType, string ns, string name)
         {
-            this._module = module;
-            this._declaringType = declaringType;
-            this._ns = ns;
-            this._name = name;
+            _module = module;
+            _declaringType = declaringType;
+            _ns = ns;
+            _name = name;
             MarkKnownType(ns, name);
         }
 
@@ -62,141 +62,66 @@ namespace IKVM.Reflection
             return method;
         }
 
-        internal override FieldInfo FindField(string name, FieldSignature signature)
-        {
-            return new MissingField(this, name, signature);
-        }
+        internal override FieldInfo FindField(string name, FieldSignature signature) => new MissingField(this, name, signature);
 
-        internal override Type FindNestedType(TypeName name)
-        {
-            return null;
-        }
+        internal override Type FindNestedType(TypeName name) => null;
 
-        internal override Type FindNestedTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
+        internal override Type FindNestedTypeIgnoreCase(TypeName lowerCaseName) => null;
 
-        public override bool __IsMissing
-        {
-            get { return true; }
-        }
+        public override bool __IsMissing => true;
 
-        public override Type DeclaringType
-        {
-            get { return _declaringType; }
-        }
+        public override Type DeclaringType => _declaringType;
 
-        internal override TypeName TypeName
-        {
-            get { return new TypeName(_ns, _name); }
-        }
+        internal override TypeName TypeName => new TypeName(_ns, _name);
 
-        public override string Name
-        {
-            get { return TypeNameParser.Escape(_name); }
-        }
+        public override string Name => TypeNameParser.Escape(_name);
 
-        public override string FullName
-        {
-            get { return GetFullName(); }
-        }
+        public override string FullName => GetFullName();
 
-        public override Module Module
-        {
-            get { return _module; }
-        }
+        public override Module Module => _module;
 
-        public override int MetadataToken
-        {
-            get { return _token; }
-        }
+        public override int MetadataToken => _token;
 
         protected override bool IsValueTypeImpl
         {
             get
             {
-                switch (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType))
+                return (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType)) switch
                 {
-                    case TypeFlags.ValueType:
-                        return true;
-                    case TypeFlags.NotValueType:
-                        return false;
-                    default:
-                        throw new MissingMemberException(this);
-                }
+                    TypeFlags.ValueType => true,
+                    TypeFlags.NotValueType => false,
+                    _ => throw new MissingMemberException(this),
+                };
             }
         }
 
-        public override Type BaseType
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override Type BaseType => throw new MissingMemberException(this);
 
-        public override TypeAttributes Attributes
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override TypeAttributes Attributes => throw new MissingMemberException(this);
 
-        public override Type[] __GetDeclaredTypes()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override Type[] __GetDeclaredTypes() => throw new MissingMemberException(this);
 
-        public override Type[] __GetDeclaredInterfaces()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override Type[] __GetDeclaredInterfaces() => throw new MissingMemberException(this);
 
-        public override MethodBase[] __GetDeclaredMethods()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override MethodBase[] __GetDeclaredMethods() => throw new MissingMemberException(this);
 
-        public override __MethodImplMap __GetMethodImplMap()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override __MethodImplMap __GetMethodImplMap() => throw new MissingMemberException(this);
 
-        public override FieldInfo[] __GetDeclaredFields()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override FieldInfo[] __GetDeclaredFields() => throw new MissingMemberException(this);
 
-        public override EventInfo[] __GetDeclaredEvents()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override EventInfo[] __GetDeclaredEvents() => throw new MissingMemberException(this);
 
-        public override PropertyInfo[] __GetDeclaredProperties()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override PropertyInfo[] __GetDeclaredProperties() => throw new MissingMemberException(this);
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override CustomModifiers __GetCustomModifiers() => throw new MissingMemberException(this);
 
-        public override Type[] GetGenericArguments()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override Type[] GetGenericArguments() => throw new MissingMemberException(this);
 
-        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() => throw new MissingMemberException(this);
 
-        public override bool IsGenericType
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override bool IsGenericType => throw new MissingMemberException(this);
 
-        public override bool IsGenericTypeDefinition
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override bool IsGenericTypeDefinition => throw new MissingMemberException(this);
 
         internal override Type GetGenericTypeArgument(int index)
         {
@@ -208,22 +133,16 @@ namespace IKVM.Reflection
             return _typeArgs[index] ?? (_typeArgs[index] = new MissingTypeParameter(this, index));
         }
 
-        internal override Type BindTypeParameters(IGenericBinder binder)
-        {
-            return this;
-        }
+        internal override Type BindTypeParameters(IGenericBinder binder) => this;
 
         internal override Type SetMetadataTokenForMissing(int token, int flags)
         {
-            this._token = token;
-            this._flags = flags;
+            _token = token;
+            _flags = flags;
             return this;
         }
 
-        internal override bool IsBaked
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        internal override bool IsBaked => throw new MissingMemberException(this);
 
     }
 

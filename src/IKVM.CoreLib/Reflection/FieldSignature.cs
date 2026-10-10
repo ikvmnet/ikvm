@@ -1,4 +1,4 @@
-using System.Reflection.Metadata;
+﻿using System.Reflection.Metadata;
 /*
   Copyright (C) 2009 Jeroen Frijters
 
@@ -35,44 +35,31 @@ namespace IKVM.Reflection
         readonly Type _fieldType;
         readonly CustomModifiers _mods;
 
-        internal static FieldSignature Create(Type fieldType, CustomModifiers customModifiers)
-        {
-            return new FieldSignature(fieldType, customModifiers);
-        }
+        internal static FieldSignature Create(Type fieldType, CustomModifiers customModifiers) => new FieldSignature(fieldType, customModifiers);
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="fieldType"></param>
         /// <param name="mods"></param>
-        private FieldSignature(Type fieldType, CustomModifiers mods)
+        FieldSignature(Type fieldType, CustomModifiers mods)
         {
-            this._fieldType = fieldType;
-            this._mods = mods;
+            _fieldType = fieldType;
+            _mods = mods;
         }
 
         public override bool Equals(object obj)
         {
-            var other = obj as FieldSignature;
-            return other != null
+            return obj is FieldSignature other
                 && other._fieldType.Equals(_fieldType)
                 && other._mods.Equals(_mods);
         }
 
-        public override int GetHashCode()
-        {
-            return _fieldType.GetHashCode() ^ _mods.GetHashCode();
-        }
+        public override int GetHashCode() => _fieldType.GetHashCode() ^ _mods.GetHashCode();
 
-        internal Type FieldType
-        {
-            get { return _fieldType; }
-        }
+        internal Type FieldType => _fieldType;
 
-        internal CustomModifiers GetCustomModifiers()
-        {
-            return _mods;
-        }
+        internal CustomModifiers GetCustomModifiers() => _mods;
 
         internal FieldSignature ExpandTypeParameters(Type declaringType)
         {

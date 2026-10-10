@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -34,7 +34,7 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection
 {
 
-    internal struct FieldMarshal
+    struct FieldMarshal
     {
 
         const UnmanagedType UnmanagedType_CustomMarshaler = (UnmanagedType)0x2c;
@@ -82,9 +82,10 @@ namespace IKVM.Reflection
 
         static bool Decode(Module module, BlobReader blob, out FieldMarshal fm)
         {
-            fm = new FieldMarshal();
-
-            fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedInteger();
+            fm = new FieldMarshal
+            {
+                UnmanagedType = (UnmanagedType)blob.ReadCompressedInteger()
+            };
             switch (fm.UnmanagedType)
             {
                 case UnmanagedType.LPArray:
@@ -250,15 +251,10 @@ namespace IKVM.Reflection
             return module.Assembly.GetType(str) ?? module.Universe.GetType(str, true);
         }
 
-        static void WriteType(Module module, BlobBuilder bb, Type type)
-        {
+        static void WriteType(Module module, BlobBuilder bb, Type type) =>
             WriteString(bb, type.Assembly == module.Assembly ? type.FullName : type.AssemblyQualifiedName);
-        }
 
-        static string ReadString(ref BlobReader br)
-        {
-            return Encoding.UTF8.GetString(br.ReadBytes(br.ReadCompressedInteger()));
-        }
+        static string ReadString(ref BlobReader br) => Encoding.UTF8.GetString(br.ReadBytes(br.ReadCompressedInteger()));
 
         static void WriteString(BlobBuilder bb, string str)
         {

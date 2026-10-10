@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -48,10 +48,10 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal EventInfoImpl(ModuleReader module, Type declaringType, EventDefinitionHandle handle)
         {
-            this._module = module;
-            this._declaringType = declaringType;
-            this._handle = handle;
-            this._definition = module.Metadata.GetEventDefinition(handle);
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetEventDefinition(handle);
         }
 
         public override bool Equals(object obj) => obj is EventInfoImpl other && other._declaringType == _declaringType && other._handle == _handle;

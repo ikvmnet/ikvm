@@ -27,7 +27,7 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class PropertyInfo : MemberInfo
+    abstract class PropertyInfo : MemberInfo
     {
 
         /// <summary>
@@ -80,9 +80,9 @@ namespace IKVM.Reflection
             /// <param name="accessor">The matching accessor parameter, or <c>null</c> if the property has no accessor.</param>
             internal ParameterInfoImpl(PropertyInfo property, int parameter, ParameterInfo accessor)
             {
-                this._property = property;
-                this._parameter = parameter;
-                this._accessor = accessor;
+                _property = property;
+                _parameter = parameter;
+                _accessor = accessor;
             }
 
             public override string Name => _accessor?.Name;
@@ -132,65 +132,29 @@ namespace IKVM.Reflection
             return parameters;
         }
 
-        public Type PropertyType
-        {
-            get { return PropertySignature.PropertyType; }
-        }
+        public Type PropertyType => PropertySignature.PropertyType;
 
-        public CustomModifiers __GetCustomModifiers()
-        {
-            return PropertySignature.GetCustomModifiers();
-        }
+        public CustomModifiers __GetCustomModifiers() => PropertySignature.GetCustomModifiers();
 
-        public Type[] GetRequiredCustomModifiers()
-        {
-            return __GetCustomModifiers().GetRequired();
-        }
+        public Type[] GetRequiredCustomModifiers() => __GetCustomModifiers().GetRequired();
 
-        public Type[] GetOptionalCustomModifiers()
-        {
-            return __GetCustomModifiers().GetOptional();
-        }
+        public Type[] GetOptionalCustomModifiers() => __GetCustomModifiers().GetOptional();
 
-        public bool IsSpecialName
-        {
-            get { return (Attributes & PropertyAttributes.SpecialName) != 0; }
-        }
+        public bool IsSpecialName => (Attributes & PropertyAttributes.SpecialName) != 0;
 
-        public MethodInfo GetMethod
-        {
-            get { return GetGetMethod(true); }
-        }
+        public MethodInfo GetMethod => GetGetMethod(true);
 
-        public MethodInfo SetMethod
-        {
-            get { return GetSetMethod(true); }
-        }
+        public MethodInfo SetMethod => GetSetMethod(true);
 
-        public MethodInfo GetGetMethod()
-        {
-            return GetGetMethod(false);
-        }
+        public MethodInfo GetGetMethod() => GetGetMethod(false);
 
-        public MethodInfo GetSetMethod()
-        {
-            return GetSetMethod(false);
-        }
+        public MethodInfo GetSetMethod() => GetSetMethod(false);
 
-        public MethodInfo[] GetAccessors()
-        {
-            return GetAccessors(false);
-        }
+        public MethodInfo[] GetAccessors() => GetAccessors(false);
 
-        internal virtual PropertyInfo BindTypeParameters(Type type)
-        {
-            return new GenericPropertyInfo(this.DeclaringType.BindTypeParameters(type), this);
-        }
+        internal virtual PropertyInfo BindTypeParameters(Type type) => new GenericPropertyInfo(DeclaringType.BindTypeParameters(type), this);
 
-        public override string ToString()
-        {
-            return DeclaringType.ToString() + " " + Name;
-        }
+        public override string ToString() => DeclaringType.ToString() + " " + Name;
 
         internal sealed override bool BindingFlagsMatch(BindingFlags flags)
         {
@@ -205,16 +169,11 @@ namespace IKVM.Reflection
                 && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
         }
 
-        internal sealed override MemberInfo SetReflectedType(Type type)
-        {
-            return new PropertyInfoWithReflectedType(type, this);
-        }
+        internal sealed override MemberInfo SetReflectedType(Type type) => new PropertyInfoWithReflectedType(type, this);
 
-        internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
-        {
+        internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType) =>
             // properties don't have pseudo custom attributes
-            return null;
-        }
+            null;
 
     }
 

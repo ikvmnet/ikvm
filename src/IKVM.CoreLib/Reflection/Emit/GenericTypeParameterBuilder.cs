@@ -23,15 +23,15 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class GenericTypeParameterBuilder : TypeInfo
+    sealed class GenericTypeParameterBuilder : TypeInfo
     {
 
         readonly string _name;
@@ -39,7 +39,7 @@ namespace IKVM.Reflection.Emit
         readonly MethodBuilder _method;
         readonly int _pseudoIndex;
         readonly int _position;
-        readonly List<int> _constraints = new List<int>();
+        readonly List<int> _constraints = [];
         int _row;
         int _typeToken;
         Type _baseType;
@@ -78,87 +78,42 @@ namespace IKVM.Reflection.Emit
         GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position, byte sigElementType) :
             base(sigElementType)
         {
-            this._name = name;
-            this._type = type;
-            this._method = method;
-            this._position = position;
-            this._pseudoIndex = ModuleBuilder.AllocGenericParameterIndex();
+            _name = name;
+            _type = type;
+            _method = method;
+            _position = position;
+            _pseudoIndex = ModuleBuilder.AllocGenericParameterIndex();
         }
 
-        public override string AssemblyQualifiedName
-        {
-            get { return null; }
-        }
+        public override string AssemblyQualifiedName => null;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
-        }
+        protected override bool IsValueTypeImpl => (GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0;
 
-        public override Type BaseType
-        {
-            get { return _baseType; }
-        }
+        public override Type BaseType => _baseType;
 
-        public override Type[] __GetDeclaredInterfaces()
-        {
-            throw new NotImplementedException();
-        }
+        public override Type[] __GetDeclaredInterfaces() => throw new NotImplementedException();
 
-        public override TypeAttributes Attributes
-        {
-            get { return TypeAttributes.Public; }
-        }
+        public override TypeAttributes Attributes => TypeAttributes.Public;
 
-        public override string Namespace
-        {
-            get { return DeclaringType.Namespace; }
-        }
+        public override string Namespace => DeclaringType.Namespace;
 
-        public override string Name
-        {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public override string FullName
-        {
-            get { return null; }
-        }
+        public override string FullName => null;
 
-        public override string ToString()
-        {
-            return this.Name;
-        }
+        public override string ToString() => Name;
 
-        private ModuleBuilder ModuleBuilder
-        {
-            get { return _type != null ? _type.ModuleBuilder : _method.ModuleBuilder; }
-        }
+        ModuleBuilder ModuleBuilder => _type != null ? _type.ModuleBuilder : _method.ModuleBuilder;
 
-        public override Module Module
-        {
-            get { return ModuleBuilder; }
-        }
+        public override Module Module => ModuleBuilder;
 
-        public override int GenericParameterPosition
-        {
-            get { return _position; }
-        }
+        public override int GenericParameterPosition => _position;
 
-        public override Type DeclaringType
-        {
-            get { return _type; }
-        }
+        public override Type DeclaringType => _type;
 
-        public override MethodBase DeclaringMethod
-        {
-            get { return _method; }
-        }
+        public override MethodBase DeclaringMethod => _method;
 
-        public override Type[] GetGenericParameterConstraints()
-        {
-            throw new NotImplementedException();
-        }
+        public override Type[] GetGenericParameterConstraints() => throw new NotImplementedException();
 
         public override GenericParameterAttributes GenericParameterAttributes
         {
@@ -181,21 +136,15 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        void AddConstraint(Type type)
-        {
-            _constraints.Add(ModuleBuilder.GetTypeTokenForMemberRef(type));
-        }
+        void AddConstraint(Type type) => _constraints.Add(ModuleBuilder.GetTypeTokenForMemberRef(type));
 
         public void SetBaseTypeConstraint(Type? baseTypeConstraint)
         {
-            this._baseType = baseTypeConstraint;
+            _baseType = baseTypeConstraint;
             AddConstraint(baseTypeConstraint);
         }
 
-        public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
-        {
-            this._attr = genericParameterAttributes;
-        }
+        public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes) => _attr = genericParameterAttributes;
 
         public override int MetadataToken
         {
@@ -224,7 +173,7 @@ namespace IKVM.Reflection.Emit
         /// Records the row the parameter was written to.
         /// </summary>
         /// <param name="row"></param>
-        internal void SetRow(int row) => this._row = row;
+        internal void SetRow(int row) => _row = row;
 
         internal override int GetModuleBuilderToken()
         {
@@ -249,15 +198,9 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal override int GetCurrentToken()
-        {
-            return ((int)TableIndex.GenericParam << 24) | (ModuleBuilder.IsSaved ? _row : _pseudoIndex);
-        }
+        internal override int GetCurrentToken() => ((int)TableIndex.GenericParam << 24) | (ModuleBuilder.IsSaved ? _row : _pseudoIndex);
 
-        internal override bool IsBaked
-        {
-            get { return ((MemberInfo)_type ?? _method).IsBaked; }
-        }
+        internal override bool IsBaked => ((MemberInfo)_type ?? _method).IsBaked;
 
     }
 

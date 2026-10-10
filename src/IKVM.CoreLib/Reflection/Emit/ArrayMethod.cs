@@ -48,97 +48,54 @@ namespace IKVM.Reflection.Emit
         /// <param name="parameterTypes"></param>
         internal ArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
         {
-            this._module = module;
-            this._arrayClass = arrayClass;
-            this._methodName = methodName;
-            this._callingConvention = callingConvention;
-            this._returnType = returnType ?? module.Universe.System_Void;
+            _module = module;
+            _arrayClass = arrayClass;
+            _methodName = methodName;
+            _callingConvention = callingConvention;
+            _returnType = returnType ?? module.Universe.System_Void;
             this.parameterTypes = Util.Copy(parameterTypes);
         }
 
-        public override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            throw new NotSupportedException();
-        }
+        public override MethodImplAttributes GetMethodImplementationFlags() => throw new NotSupportedException();
 
-        public override ParameterInfo[] GetParameters()
-        {
-            throw new NotSupportedException();
-        }
+        public override ParameterInfo[] GetParameters() => throw new NotSupportedException();
 
-        internal override Type[] GetParameterTypes()
-        {
-            return parameterTypes;
-        }
+        internal override Type[] GetParameterTypes() => parameterTypes;
 
-        internal override int ImportTo(ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(_arrayClass, _methodName, MethodSignature);
-        }
+        internal override int ImportTo(ModuleBuilder module) => module.ImportMethodOrField(_arrayClass, _methodName, MethodSignature);
 
-        public override MethodAttributes Attributes
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override MethodAttributes Attributes => throw new NotSupportedException();
 
-        public override CallingConventions CallingConvention
-        {
-            get { return _callingConvention; }
-        }
+        public override CallingConventions CallingConvention => _callingConvention;
 
-        public override Type DeclaringType
-        {
-            get { return _arrayClass; }
-        }
+        public override Type DeclaringType => _arrayClass;
 
         internal override MethodSignature MethodSignature
         {
             get
             {
-                if (_methodSignature == null)
-                {
-                    _methodSignature = MethodSignature.MakeFromBuilder(_returnType, parameterTypes, new PackedCustomModifiers(), _callingConvention, 0);
-                }
+                _methodSignature ??= MethodSignature.MakeFromBuilder(_returnType, parameterTypes, new PackedCustomModifiers(), _callingConvention, 0);
                 return _methodSignature;
             }
         }
 
         public override Module Module
-        {
             // FXBUG like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
-            get { return _module; }
-        }
+            => _module;
 
-        public override string Name
-        {
-            get { return _methodName; }
-        }
+        public override string Name => _methodName;
 
-        internal override int ParameterCount
-        {
-            get { return parameterTypes.Length; }
-        }
+        internal override int ParameterCount => parameterTypes.Length;
 
         public override ParameterInfo ReturnParameter
-        {
             // FXBUG like .NET, we throw NotImplementedException
-            get { throw new NotImplementedException(); }
-        }
+            => throw new NotImplementedException();
 
-        public override Type ReturnType
-        {
-            get { return _returnType; }
-        }
+        public override Type ReturnType => _returnType;
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        internal override int GetCurrentToken() => MetadataToken;
 
-        internal override bool IsBaked
-        {
-            get { return _arrayClass.IsBaked; }
-        }
+        internal override bool IsBaked => _arrayClass.IsBaked;
 
     }
 

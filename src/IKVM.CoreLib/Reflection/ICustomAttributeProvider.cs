@@ -26,8 +26,8 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal interface ICustomAttributeProvider
-	{
-	}
+    interface ICustomAttributeProvider
+    {
+    }
 
 }

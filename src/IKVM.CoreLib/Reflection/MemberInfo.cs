@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -31,7 +31,7 @@ namespace IKVM.Reflection
     // disable warnings that complain about us having == and != operators without also overriding Equals/GetHashCode,
     // this is intentional because most subtypes use reference equality
 #pragma warning disable 660, 661
-    internal abstract class MemberInfo : ICustomAttributeProvider
+    abstract class MemberInfo : ICustomAttributeProvider
     {
 
         /// <summary>
@@ -49,45 +49,25 @@ namespace IKVM.Reflection
 
         internal abstract MemberInfo SetReflectedType(Type type);
 
-        public virtual int MetadataToken
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public virtual int MetadataToken => throw new NotSupportedException();
 
         public abstract Module Module
         {
             get;
         }
 
-        public virtual bool __IsMissing
-        {
-            get { return false; }
-        }
+        public virtual bool __IsMissing => false;
 
-        public bool IsDefined(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
-        }
+        public bool IsDefined(Type attributeType, bool inherit) => CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 
-        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
-        }
+        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit) =>
+            CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 
-        public IList<CustomAttributeData> GetCustomAttributesData()
-        {
-            return CustomAttributeData.GetCustomAttributes(this);
-        }
+        public IList<CustomAttributeData> GetCustomAttributesData() => CustomAttributeData.GetCustomAttributes(this);
 
-        public static bool operator ==(MemberInfo m1, MemberInfo m2)
-        {
-            return ReferenceEquals(m1, m2) || (!ReferenceEquals(m1, null) && m1.Equals(m2));
-        }
+        public static bool operator ==(MemberInfo m1, MemberInfo m2) => ReferenceEquals(m1, m2) || (!ReferenceEquals(m1, null) && m1.Equals(m2));
 
-        public static bool operator !=(MemberInfo m1, MemberInfo m2)
-        {
-            return !(m1 == m2);
-        }
+        public static bool operator !=(MemberInfo m1, MemberInfo m2) => !(m1 == m2);
 
         internal abstract int GetCurrentToken();
 
@@ -95,31 +75,20 @@ namespace IKVM.Reflection
 
         internal abstract bool IsBaked { get; }
 
-        internal virtual bool BindingFlagsMatch(BindingFlags flags)
-        {
-            throw new InvalidOperationException();
-        }
+        internal virtual bool BindingFlagsMatch(BindingFlags flags) => throw new InvalidOperationException();
 
-        internal virtual bool BindingFlagsMatchInherited(BindingFlags flags)
-        {
-            throw new InvalidOperationException();
-        }
+        internal virtual bool BindingFlagsMatchInherited(BindingFlags flags) => throw new InvalidOperationException();
 
-        protected static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag)
-        {
-            return (state && (flags & trueFlag) == trueFlag) || (!state && (flags & falseFlag) == falseFlag);
-        }
+        protected static bool BindingFlagsMatch(bool state, BindingFlags flags, BindingFlags trueFlag, BindingFlags falseFlag) =>
+            (state && (flags & trueFlag) == trueFlag) || (!state && (flags & falseFlag) == falseFlag);
 
         protected static T SetReflectedType<T>(T member, Type type)
-            where T : MemberInfo
-        {
-            return member == null ? null : (T)member.SetReflectedType(type);
-        }
+            where T : MemberInfo => member == null ? null : (T)member.SetReflectedType(type);
 
         protected static T[] SetReflectedType<T>(T[] members, Type type)
             where T : MemberInfo
         {
-            for (int i = 0; i < members.Length; i++)
+            for (var i = 0; i < members.Length; i++)
                 members[i] = SetReflectedType(members[i], type);
 
             return members;

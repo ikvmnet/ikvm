@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class FieldInfo : MemberInfo
+    abstract class FieldInfo : MemberInfo
     {
 
         /// <summary>
@@ -36,10 +36,7 @@ namespace IKVM.Reflection
         {
         }
 
-        public sealed override MemberTypes MemberType
-        {
-            get { return MemberTypes.Field; }
-        }
+        public sealed override MemberTypes MemberType => MemberTypes.Field;
 
         public abstract FieldAttributes Attributes { get; }
 
@@ -47,99 +44,45 @@ namespace IKVM.Reflection
 
         internal abstract FieldSignature FieldSignature { get; }
 
-        public Type FieldType
-        {
-            get { return this.FieldSignature.FieldType; }
-        }
+        public Type FieldType => FieldSignature.FieldType;
 
-        public CustomModifiers __GetCustomModifiers()
-        {
-            return this.FieldSignature.GetCustomModifiers();
-        }
+        public CustomModifiers __GetCustomModifiers() => FieldSignature.GetCustomModifiers();
 
-        public Type[] GetOptionalCustomModifiers()
-        {
-            return __GetCustomModifiers().GetOptional();
-        }
+        public Type[] GetOptionalCustomModifiers() => __GetCustomModifiers().GetOptional();
 
-        public Type[] GetRequiredCustomModifiers()
-        {
-            return __GetCustomModifiers().GetRequired();
-        }
+        public Type[] GetRequiredCustomModifiers() => __GetCustomModifiers().GetRequired();
 
-        public bool IsStatic
-        {
-            get { return (Attributes & FieldAttributes.Static) != 0; }
-        }
+        public bool IsStatic => (Attributes & FieldAttributes.Static) != 0;
 
-        public bool IsLiteral
-        {
-            get { return (Attributes & FieldAttributes.Literal) != 0; }
-        }
+        public bool IsLiteral => (Attributes & FieldAttributes.Literal) != 0;
 
-        public bool IsInitOnly
-        {
-            get { return (Attributes & FieldAttributes.InitOnly) != 0; }
-        }
+        public bool IsInitOnly => (Attributes & FieldAttributes.InitOnly) != 0;
 
-        public bool IsNotSerialized
-        {
-            get { return (Attributes & FieldAttributes.NotSerialized) != 0; }
-        }
+        public bool IsNotSerialized => (Attributes & FieldAttributes.NotSerialized) != 0;
 
-        public bool IsSpecialName
-        {
-            get { return (Attributes & FieldAttributes.SpecialName) != 0; }
-        }
+        public bool IsSpecialName => (Attributes & FieldAttributes.SpecialName) != 0;
 
-        public bool IsPublic
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Public; }
-        }
+        public bool IsPublic => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Public;
 
-        public bool IsPrivate
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Private; }
-        }
+        public bool IsPrivate => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Private;
 
-        public bool IsFamily
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Family; }
-        }
+        public bool IsFamily => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Family;
 
-        public bool IsFamilyOrAssembly
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamORAssem; }
-        }
+        public bool IsFamilyOrAssembly => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamORAssem;
 
-        public bool IsAssembly
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Assembly; }
-        }
+        public bool IsAssembly => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.Assembly;
 
-        public bool IsFamilyAndAssembly
-        {
-            get { return (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamANDAssem; }
-        }
+        public bool IsFamilyAndAssembly => (Attributes & FieldAttributes.FieldAccessMask) == FieldAttributes.FamANDAssem;
 
-        public bool IsPinvokeImpl
-        {
-            get { return (Attributes & FieldAttributes.PinvokeImpl) != 0; }
-        }
+        public bool IsPinvokeImpl => (Attributes & FieldAttributes.PinvokeImpl) != 0;
 
         public abstract bool __TryGetFieldOffset(out int offset);
 
-        public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-        {
-            return FieldMarshal.ReadFieldMarshal(this.Module, GetCurrentToken(), out fieldMarshal);
-        }
+        public bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => FieldMarshal.ReadFieldMarshal(Module, GetCurrentToken(), out fieldMarshal);
 
         internal abstract int ImportTo(Emit.ModuleBuilder module);
 
-        internal virtual FieldInfo BindTypeParameters(Type type)
-        {
-            return new GenericFieldInstance(this.DeclaringType.BindTypeParameters(type), this);
-        }
+        internal virtual FieldInfo BindTypeParameters(Type type) => new GenericFieldInstance(DeclaringType.BindTypeParameters(type), this);
 
         internal sealed override bool BindingFlagsMatch(BindingFlags flags)
         {
@@ -154,10 +97,7 @@ namespace IKVM.Reflection
                 && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
         }
 
-        internal sealed override MemberInfo SetReflectedType(Type type)
-        {
-            return new FieldInfoWithReflectedType(type, this);
-        }
+        internal sealed override MemberInfo SetReflectedType(Type type) => new FieldInfoWithReflectedType(type, this);
 
         internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
         {

@@ -24,12 +24,12 @@
 namespace IKVM.Reflection
 {
     interface IGenericContext
-	{
+    {
 
-		Type GetGenericTypeArgument(int index);
+        Type GetGenericTypeArgument(int index);
 
-		Type GetGenericMethodArgument(int index);
+        Type GetGenericMethodArgument(int index);
 
-	}
+    }
 
 }

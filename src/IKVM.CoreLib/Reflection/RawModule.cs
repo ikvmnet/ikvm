@@ -28,7 +28,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class RawModule : IDisposable
+    sealed class RawModule : IDisposable
     {
 
         readonly ModuleReader _module;
@@ -41,19 +41,13 @@ namespace IKVM.Reflection
         /// <param name="module"></param>
         internal RawModule(ModuleReader module)
         {
-            this._module = module;
-            this._isManifestModule = module.Assembly != null;
+            _module = module;
+            _isManifestModule = module.Assembly != null;
         }
 
-        public string Location
-        {
-            get { return _module.FullyQualifiedName; }
-        }
+        public string Location => _module.FullyQualifiedName;
 
-        public bool IsManifestModule
-        {
-            get { return _isManifestModule; }
-        }
+        public bool IsManifestModule => _isManifestModule;
 
         void CheckManifestModule()
         {
@@ -67,10 +61,7 @@ namespace IKVM.Reflection
             return _module.Assembly.GetName();
         }
 
-        public AssemblyName[] GetReferencedAssemblies()
-        {
-            return _module.__GetReferencedAssemblies();
-        }
+        public AssemblyName[] GetReferencedAssemblies() => _module.__GetReferencedAssemblies();
 
         public void Dispose()
         {

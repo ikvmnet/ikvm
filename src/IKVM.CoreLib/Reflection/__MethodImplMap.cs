@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,13 +24,13 @@
 namespace IKVM.Reflection
 {
 
-    internal struct __MethodImplMap
-	{
+    struct __MethodImplMap
+    {
 
-		public Type TargetType;
-		public MethodInfo[] MethodBodies;
-		public MethodInfo[][] MethodDeclarations;
+        public Type TargetType;
+        public MethodInfo[] MethodBodies;
+        public MethodInfo[][] MethodDeclarations;
 
-	}
+    }
 
 }

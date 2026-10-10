@@ -26,7 +26,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="writer"></param>
         public SequencePointEncoder(BlobBuilder writer)
         {
-            this._writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         /// <summary>

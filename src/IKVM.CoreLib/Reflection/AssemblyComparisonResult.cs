@@ -25,7 +25,7 @@
 namespace IKVM.Reflection
 {
 
-    internal enum AssemblyComparisonResult
+    enum AssemblyComparisonResult
     {
 
         Unknown = 0,

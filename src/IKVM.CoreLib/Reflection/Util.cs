@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -55,7 +55,7 @@ namespace IKVM.Reflection
                 return empty;
 
             var array = new T[list.Count];
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 array[i] = list[i];
 
             return array;
@@ -74,7 +74,7 @@ namespace IKVM.Reflection
 
             if (t1.Length == t2.Length)
             {
-                for (int i = 0; i < t1.Length; i++)
+                for (var i = 0; i < t1.Length; i++)
                     if (!TypeEquals(t1[i], t2[i]))
                         return false;
 
@@ -99,7 +99,7 @@ namespace IKVM.Reflection
             if (types == null)
                 return 0;
 
-            int h = 0;
+            var h = 0;
             foreach (var t in types)
             {
                 if (t != null)
@@ -120,7 +120,7 @@ namespace IKVM.Reflection
             if (m1.Length != m2.Length)
                 return false;
 
-            for (int i = 0; i < m1.Length; i++)
+            for (var i = 0; i < m1.Length; i++)
                 if (!m1[i].Equals(m2[i]))
                     return false;
 
@@ -129,7 +129,7 @@ namespace IKVM.Reflection
 
         internal static int GetHashCode(CustomModifiers[] mods)
         {
-            int h = 0;
+            var h = 0;
             if (mods != null)
                 foreach (var mod in mods)
                     h ^= mod.GetHashCode();
@@ -137,15 +137,9 @@ namespace IKVM.Reflection
             return h;
         }
 
-        internal static T NullSafeElementAt<T>(T[] array, int index)
-        {
-            return array == null ? default : array[index];
-        }
+        internal static T NullSafeElementAt<T>(T[] array, int index) => array == null ? default : array[index];
 
-        internal static int NullSafeLength<T>(T[] array)
-        {
-            return array == null ? 0 : array.Length;
-        }
+        internal static int NullSafeLength<T>(T[] array) => array == null ? 0 : array.Length;
 
     }
 

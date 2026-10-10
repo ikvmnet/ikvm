@@ -27,7 +27,7 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class FileFormatLimitationExceededException : InvalidOperationException
+sealed class FileFormatLimitationExceededException : InvalidOperationException
     {
     }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009, 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -37,8 +37,8 @@ namespace IKVM.Reflection
         /// <param name="eventInfo"></param>
         internal GenericEventInfo(Type typeInstance, EventInfo eventInfo)
         {
-            this._typeInstance = typeInstance;
-            this._eventInfo = eventInfo;
+            _typeInstance = typeInstance;
+            _eventInfo = eventInfo;
         }
 
         public override bool Equals(object obj)
@@ -47,17 +47,11 @@ namespace IKVM.Reflection
             return other != null && other._typeInstance == _typeInstance && other._eventInfo == _eventInfo;
         }
 
-        public override int GetHashCode()
-        {
-            return _typeInstance.GetHashCode() * 777 + _eventInfo.GetHashCode();
-        }
+        public override int GetHashCode() => _typeInstance.GetHashCode() * 777 + _eventInfo.GetHashCode();
 
-        public override EventAttributes Attributes
-        {
-            get { return _eventInfo.Attributes; }
-        }
+        public override EventAttributes Attributes => _eventInfo.Attributes;
 
-        private MethodInfo Wrap(MethodInfo method)
+        MethodInfo Wrap(MethodInfo method)
         {
             if (method == null)
                 return null;
@@ -65,84 +59,42 @@ namespace IKVM.Reflection
             return new GenericMethodInstance(_typeInstance, method, null);
         }
 
-        public override MethodInfo GetAddMethod(bool nonPublic)
-        {
-            return Wrap(_eventInfo.GetAddMethod(nonPublic));
-        }
+        public override MethodInfo GetAddMethod(bool nonPublic) => Wrap(_eventInfo.GetAddMethod(nonPublic));
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic)
-        {
-            return Wrap(_eventInfo.GetRaiseMethod(nonPublic));
-        }
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => Wrap(_eventInfo.GetRaiseMethod(nonPublic));
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic)
-        {
-            return Wrap(_eventInfo.GetRemoveMethod(nonPublic));
-        }
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => Wrap(_eventInfo.GetRemoveMethod(nonPublic));
 
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
             var others = _eventInfo.GetOtherMethods(nonPublic);
-            for (int i = 0; i < others.Length; i++)
+            for (var i = 0; i < others.Length; i++)
                 others[i] = Wrap(others[i]);
 
             return others;
         }
 
-        public override Type EventHandlerType
-        {
-            get { return _eventInfo.EventHandlerType.BindTypeParameters(_typeInstance); }
-        }
+        public override Type EventHandlerType => _eventInfo.EventHandlerType.BindTypeParameters(_typeInstance);
 
-        public override string Name
-        {
-            get { return _eventInfo.Name; }
-        }
+        public override string Name => _eventInfo.Name;
 
-        public override Type DeclaringType
-        {
-            get { return _typeInstance; }
-        }
+        public override Type DeclaringType => _typeInstance;
 
-        public override Module Module
-        {
-            get { return _eventInfo.Module; }
-        }
+        public override Module Module => _eventInfo.Module;
 
-        public override int MetadataToken
-        {
-            get { return _eventInfo.MetadataToken; }
-        }
+        public override int MetadataToken => _eventInfo.MetadataToken;
 
-        internal override EventInfo BindTypeParameters(Type type)
-        {
-            return new GenericEventInfo(_typeInstance.BindTypeParameters(type), _eventInfo);
-        }
+        internal override EventInfo BindTypeParameters(Type type) => new GenericEventInfo(_typeInstance.BindTypeParameters(type), _eventInfo);
 
-        internal override bool IsPublic
-        {
-            get { return _eventInfo.IsPublic; }
-        }
+        internal override bool IsPublic => _eventInfo.IsPublic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return _eventInfo.IsNonPrivate; }
-        }
+        internal override bool IsNonPrivate => _eventInfo.IsNonPrivate;
 
-        internal override bool IsStatic
-        {
-            get { return _eventInfo.IsStatic; }
-        }
+        internal override bool IsStatic => _eventInfo.IsStatic;
 
-        internal override bool IsBaked
-        {
-            get { return _eventInfo.IsBaked; }
-        }
+        internal override bool IsBaked => _eventInfo.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            return _eventInfo.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => _eventInfo.GetCurrentToken();
 
     }
 

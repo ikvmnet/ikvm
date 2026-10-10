@@ -30,353 +30,298 @@ namespace IKVM.Reflection
 {
 
     sealed class GenericTypeInstance : TypeInfo
-	{
+    {
 
-		private readonly Type _type;
-		private readonly Type[] _args;
-		private readonly CustomModifiers[] _mods;
-		private Type _baseType;
-		private int _token;
+        readonly Type _type;
+        readonly Type[] _args;
+        readonly CustomModifiers[] _mods;
+        Type _baseType;
+        int _token;
 
-		internal static Type Make(Type type, Type[] typeArguments, CustomModifiers[] mods)
-		{
-			bool identity = true;
-			if (type is TypeBuilder || type is BakedType || type.__IsMissing)
-			{
-				// a TypeBuiler identity must be instantiated
-				identity = false;
-			}
-			else
-			{
-				// we must not instantiate the identity instance, because typeof(Foo<>).MakeGenericType(typeof(Foo<>).GetGenericArguments()) == typeof(Foo<>)
-				for (int i = 0; i < typeArguments.Length; i++)
-				{
-					if (typeArguments[i] != type.GetGenericTypeArgument(i)
-						|| !IsEmpty(mods, i))
-					{
-						identity = false;
-						break;
-					}
-				}
-			}
-			if (identity)
-			{
-				return type;
-			}
-			else
-			{
-				return type.Universe.CanonicalizeType(new GenericTypeInstance(type, typeArguments, mods));
-			}
-		}
+        internal static Type Make(Type type, Type[] typeArguments, CustomModifiers[] mods)
+        {
+            var identity = true;
+            if (type is TypeBuilder || type is BakedType || type.__IsMissing)
+            {
+                // a TypeBuiler identity must be instantiated
+                identity = false;
+            }
+            else
+            {
+                // we must not instantiate the identity instance, because typeof(Foo<>).MakeGenericType(typeof(Foo<>).GetGenericArguments()) == typeof(Foo<>)
+                for (var i = 0; i < typeArguments.Length; i++)
+                {
+                    if (typeArguments[i] != type.GetGenericTypeArgument(i)
+                        || !IsEmpty(mods, i))
+                    {
+                        identity = false;
+                        break;
+                    }
+                }
+            }
+            if (identity)
+            {
+                return type;
+            }
+            else
+            {
+                return type.Universe.CanonicalizeType(new GenericTypeInstance(type, typeArguments, mods));
+            }
+        }
 
-		private static bool IsEmpty(CustomModifiers[] mods, int i)
-		{
-			// we need to be extra careful, because mods doesn't not need to be in canonical format
-			// (Signature.ReadGenericInst() calls Make() directly, without copying the modifier arrays)
-			return mods == null || mods[i].IsEmpty;
-		}
+        static bool IsEmpty(CustomModifiers[] mods, int i) =>
+            // we need to be extra careful, because mods doesn't not need to be in canonical format
+            // (Signature.ReadGenericInst() calls Make() directly, without copying the modifier arrays)
+            mods == null || mods[i].IsEmpty;
 
-		private GenericTypeInstance(Type type, Type[] args, CustomModifiers[] mods)
-		{
-			this._type = type;
-			this._args = args;
-			this._mods = mods;
-		}
+        GenericTypeInstance(Type type, Type[] args, CustomModifiers[] mods)
+        {
+            _type = type;
+            _args = args;
+            _mods = mods;
+        }
 
-		public override bool Equals(object o)
-		{
-			GenericTypeInstance gt = o as GenericTypeInstance;
-			return gt != null && gt._type.Equals(_type) && Util.ArrayEquals(gt._args, _args)
-				&& Util.ArrayEquals(gt._mods, _mods);
-		}
+        public override bool Equals(object o)
+        {
+            GenericTypeInstance gt = o as GenericTypeInstance;
+            return gt != null && gt._type.Equals(_type) && Util.ArrayEquals(gt._args, _args)
+                && Util.ArrayEquals(gt._mods, _mods);
+        }
 
-		public override int GetHashCode()
-		{
-			return _type.GetHashCode() * 3 ^ Util.GetHashCode(_args);
-		}
+        public override int GetHashCode() => _type.GetHashCode() * 3 ^ Util.GetHashCode(_args);
 
-		public override string AssemblyQualifiedName
-		{
-			get
-			{
-				string fn = FullName;
-				return fn == null ? null : fn + ", " + _type.Assembly.FullName;
-			}
-		}
+        public override string AssemblyQualifiedName
+        {
+            get
+            {
+                var fn = FullName;
+                return fn == null ? null : fn + ", " + _type.Assembly.FullName;
+            }
+        }
 
-		public override Type BaseType
-		{
-			get
-			{
-				if (_baseType == null)
-				{
-					Type rawBaseType = _type.BaseType;
-					if (rawBaseType == null)
-					{
-						_baseType = rawBaseType;
-					}
-					else
-					{
-						_baseType = rawBaseType.BindTypeParameters(this);
-					}
-				}
-				return _baseType;
-			}
-		}
+        public override Type BaseType
+        {
+            get
+            {
+                if (_baseType == null)
+                {
+                    Type rawBaseType = _type.BaseType;
+                    if (rawBaseType == null)
+                    {
+                        _baseType = rawBaseType;
+                    }
+                    else
+                    {
+                        _baseType = rawBaseType.BindTypeParameters(this);
+                    }
+                }
+                return _baseType;
+            }
+        }
 
-		protected override bool IsValueTypeImpl
-		{
-			get { return _type.IsValueType; }
-		}
+        protected override bool IsValueTypeImpl => _type.IsValueType;
 
-		public override bool IsVisible
-		{
-			get
-			{
-				if (base.IsVisible)
-				{
-					foreach (Type arg in _args)
-					{
-						if (!arg.IsVisible)
-						{
-							return false;
-						}
-					}
-					return true;
-				}
-				return false;
-			}
-		}
+        public override bool IsVisible
+        {
+            get
+            {
+                if (base.IsVisible)
+                {
+                    foreach (Type arg in _args)
+                    {
+                        if (!arg.IsVisible)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
 
-		public override Type DeclaringType
-		{
-			get { return _type.DeclaringType; }
-		}
+        public override Type DeclaringType => _type.DeclaringType;
 
-		public override TypeAttributes Attributes
-		{
-			get { return _type.Attributes; }
-		}
+        public override TypeAttributes Attributes => _type.Attributes;
 
-		internal override void CheckBaked()
-		{
-			_type.CheckBaked();
-		}
+        internal override void CheckBaked() => _type.CheckBaked();
 
-		public override FieldInfo[] __GetDeclaredFields()
-		{
-			FieldInfo[] fields = _type.__GetDeclaredFields();
-			for (int i = 0; i < fields.Length; i++)
-			{
-				fields[i] = fields[i].BindTypeParameters(this);
-			}
-			return fields;
-		}
+        public override FieldInfo[] __GetDeclaredFields()
+        {
+            FieldInfo[] fields = _type.__GetDeclaredFields();
+            for (var i = 0; i < fields.Length; i++)
+            {
+                fields[i] = fields[i].BindTypeParameters(this);
+            }
+            return fields;
+        }
 
-		public override Type[] __GetDeclaredInterfaces()
-		{
-			Type[] interfaces = _type.__GetDeclaredInterfaces();
-			for (int i = 0; i < interfaces.Length; i++)
-			{
-				interfaces[i] = interfaces[i].BindTypeParameters(this);
-			}
-			return interfaces;
-		}
+        public override Type[] __GetDeclaredInterfaces()
+        {
+            Type[] interfaces = _type.__GetDeclaredInterfaces();
+            for (var i = 0; i < interfaces.Length; i++)
+            {
+                interfaces[i] = interfaces[i].BindTypeParameters(this);
+            }
+            return interfaces;
+        }
 
-		public override MethodBase[] __GetDeclaredMethods()
-		{
-			MethodBase[] methods = _type.__GetDeclaredMethods();
-			for (int i = 0; i < methods.Length; i++)
-			{
-				methods[i] = methods[i].BindTypeParameters(this);
-			}
-			return methods;
-		}
+        public override MethodBase[] __GetDeclaredMethods()
+        {
+            MethodBase[] methods = _type.__GetDeclaredMethods();
+            for (var i = 0; i < methods.Length; i++)
+            {
+                methods[i] = methods[i].BindTypeParameters(this);
+            }
+            return methods;
+        }
 
-		public override Type[] __GetDeclaredTypes()
-		{
-			return _type.__GetDeclaredTypes();
-		}
+        public override Type[] __GetDeclaredTypes() => _type.__GetDeclaredTypes();
 
-		public override EventInfo[] __GetDeclaredEvents()
-		{
-			EventInfo[] events = _type.__GetDeclaredEvents();
-			for (int i = 0; i < events.Length; i++)
-			{
-				events[i] = events[i].BindTypeParameters(this);
-			}
-			return events;
-		}
+        public override EventInfo[] __GetDeclaredEvents()
+        {
+            EventInfo[] events = _type.__GetDeclaredEvents();
+            for (var i = 0; i < events.Length; i++)
+            {
+                events[i] = events[i].BindTypeParameters(this);
+            }
+            return events;
+        }
 
-		public override PropertyInfo[] __GetDeclaredProperties()
-		{
-			PropertyInfo[] properties = _type.__GetDeclaredProperties();
-			for (int i = 0; i < properties.Length; i++)
-			{
-				properties[i] = properties[i].BindTypeParameters(this);
-			}
-			return properties;
-		}
+        public override PropertyInfo[] __GetDeclaredProperties()
+        {
+            PropertyInfo[] properties = _type.__GetDeclaredProperties();
+            for (var i = 0; i < properties.Length; i++)
+            {
+                properties[i] = properties[i].BindTypeParameters(this);
+            }
+            return properties;
+        }
 
-		public override __MethodImplMap __GetMethodImplMap()
-		{
-			__MethodImplMap map = _type.__GetMethodImplMap();
-			map.TargetType = this;
-			for (int i = 0; i < map.MethodBodies.Length; i++)
-			{
-				map.MethodBodies[i] = (MethodInfo)map.MethodBodies[i].BindTypeParameters(this);
-				for (int j = 0; j < map.MethodDeclarations[i].Length; j++)
-				{
-					Type interfaceType = map.MethodDeclarations[i][j].DeclaringType;
-					if (interfaceType.IsGenericType)
-					{
-						map.MethodDeclarations[i][j] = (MethodInfo)map.MethodDeclarations[i][j].BindTypeParameters(this);
-					}
-				}
-			}
-			return map;
-		}
+        public override __MethodImplMap __GetMethodImplMap()
+        {
+            __MethodImplMap map = _type.__GetMethodImplMap();
+            map.TargetType = this;
+            for (var i = 0; i < map.MethodBodies.Length; i++)
+            {
+                map.MethodBodies[i] = (MethodInfo)map.MethodBodies[i].BindTypeParameters(this);
+                for (var j = 0; j < map.MethodDeclarations[i].Length; j++)
+                {
+                    Type interfaceType = map.MethodDeclarations[i][j].DeclaringType;
+                    if (interfaceType.IsGenericType)
+                    {
+                        map.MethodDeclarations[i][j] = (MethodInfo)map.MethodDeclarations[i][j].BindTypeParameters(this);
+                    }
+                }
+            }
+            return map;
+        }
 
-		public override string Namespace
-		{
-			get { return _type.Namespace; }
-		}
+        public override string Namespace => _type.Namespace;
 
-		public override string Name
-		{
-			get { return _type.Name; }
-		}
+        public override string Name => _type.Name;
 
-		public override string FullName
-		{
-			get
-			{
-				if (!this.__ContainsMissingType && this.ContainsGenericParameters)
-				{
-					return null;
-				}
-				StringBuilder sb = new StringBuilder(this._type.FullName);
-				sb.Append('[');
-				string sep = "";
-				foreach (Type type in _args)
-				{
-					sb.Append(sep).Append('[').Append(type.FullName).Append(", ").Append(type.Assembly.FullName.Replace("]", "\\]")).Append(']');
-					sep = ",";
-				}
-				sb.Append(']');
-				return sb.ToString();
-			}
-		}
+        public override string FullName
+        {
+            get
+            {
+                if (!__ContainsMissingType && ContainsGenericParameters)
+                {
+                    return null;
+                }
+                StringBuilder sb = new StringBuilder(_type.FullName);
+                sb.Append('[');
+                var sep = "";
+                foreach (Type type in _args)
+                {
+                    sb.Append(sep).Append('[').Append(type.FullName).Append(", ").Append(type.Assembly.FullName.Replace("]", "\\]")).Append(']');
+                    sep = ",";
+                }
+                sb.Append(']');
+                return sb.ToString();
+            }
+        }
 
-		public override string ToString()
-		{
-			StringBuilder sb = new StringBuilder(_type.FullName);
-			sb.Append('[');
-			string sep = "";
-			foreach (Type arg in _args)
-			{
-				sb.Append(sep);
-				sb.Append(arg);
-				sep = ",";
-			}
-			sb.Append(']');
-			return sb.ToString();
-		}
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder(_type.FullName);
+            sb.Append('[');
+            var sep = "";
+            foreach (Type arg in _args)
+            {
+                sb.Append(sep);
+                sb.Append(arg);
+                sep = ",";
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
 
-		public override Module Module
-		{
-			get { return _type.Module; }
-		}
+        public override Module Module => _type.Module;
 
-		public override bool IsGenericType
-		{
-			get { return true; }
-		}
+        public override bool IsGenericType => true;
 
-		public override bool IsConstructedGenericType
-		{
-			get { return true; }
-		}
+        public override bool IsConstructedGenericType => true;
 
-		public override Type GetGenericTypeDefinition()
-		{
-			return _type;
-		}
+        public override Type GetGenericTypeDefinition() => _type;
 
-		public override Type[] GetGenericArguments()
-		{
-			return Util.Copy(_args);
-		}
+        public override Type[] GetGenericArguments() => Util.Copy(_args);
 
-		public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-		{
-			return _mods != null ? (CustomModifiers[])_mods.Clone() : new CustomModifiers[_args.Length];
-		}
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() =>
+            _mods != null ? (CustomModifiers[])_mods.Clone() : new CustomModifiers[_args.Length];
 
-		internal override Type GetGenericTypeArgument(int index)
-		{
-			return _args[index];
-		}
+        internal override Type GetGenericTypeArgument(int index) => _args[index];
 
-		public override bool ContainsGenericParameters
-		{
-			get
-			{
-				foreach (Type type in _args)
-				{
-					if (type.ContainsGenericParameters)
-					{
-						return true;
-					}
-				}
-				return false;
-			}
-		}
+        public override bool ContainsGenericParameters
+        {
+            get
+            {
+                foreach (Type type in _args)
+                {
+                    if (type.ContainsGenericParameters)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
 
-		protected override bool ContainsMissingTypeImpl
-		{
-			get { return _type.__ContainsMissingType || ContainsMissingType(_args); }
-		}
+        protected override bool ContainsMissingTypeImpl => _type.__ContainsMissingType || ContainsMissingType(_args);
 
-		internal override int GetModuleBuilderToken()
-		{
-			if (_token == 0)
-			{
-				_token = ((ModuleBuilder)_type.Module).ImportType(this);
-			}
-			return _token;
-		}
+        internal override int GetModuleBuilderToken()
+        {
+            if (_token == 0)
+            {
+                _token = ((ModuleBuilder)_type.Module).ImportType(this);
+            }
+            return _token;
+        }
 
-		internal override Type BindTypeParameters(IGenericBinder binder)
-		{
-			for (int i = 0; i < _args.Length; i++)
-			{
-				Type xarg = _args[i].BindTypeParameters(binder);
-				if (!ReferenceEquals(xarg, _args[i]))
-				{
-					Type[] xargs = new Type[_args.Length];
-					Array.Copy(_args, xargs, i);
-					xargs[i++] = xarg;
-					for (; i < _args.Length; i++)
-					{
-						xargs[i] = _args[i].BindTypeParameters(binder);
-					}
-					return Make(_type, xargs, null);
-				}
-			}
-			return this;
-		}
+        internal override Type BindTypeParameters(IGenericBinder binder)
+        {
+            for (var i = 0; i < _args.Length; i++)
+            {
+                Type xarg = _args[i].BindTypeParameters(binder);
+                if (!ReferenceEquals(xarg, _args[i]))
+                {
+                    Type[] xargs = new Type[_args.Length];
+                    Array.Copy(_args, xargs, i);
+                    xargs[i++] = xarg;
+                    for (; i < _args.Length; i++)
+                    {
+                        xargs[i] = _args[i].BindTypeParameters(binder);
+                    }
+                    return Make(_type, xargs, null);
+                }
+            }
+            return this;
+        }
 
-		internal override int GetCurrentToken()
-		{
-			return _type.GetCurrentToken();
-		}
+        internal override int GetCurrentToken() => _type.GetCurrentToken();
 
-		internal override bool IsBaked
-		{
-			get { return _type.IsBaked; }
-		}
+        internal override bool IsBaked => _type.IsBaked;
 
-	}
+    }
 
 }

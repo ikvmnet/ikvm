@@ -41,49 +41,25 @@ namespace IKVM.Reflection
         internal FieldInfoWithReflectedType(Type reflectedType, FieldInfo field)
         {
             Debug.Assert(reflectedType != field.DeclaringType);
-            this._reflectedType = reflectedType;
-            this._field = field;
+            _reflectedType = reflectedType;
+            _field = field;
         }
 
-        public override FieldAttributes Attributes
-        {
-            get { return _field.Attributes; }
-        }
+        public override FieldAttributes Attributes => _field.Attributes;
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return _field.__TryGetFieldOffset(out offset);
-        }
+        public override bool __TryGetFieldOffset(out int offset) => _field.__TryGetFieldOffset(out offset);
 
-        public override object GetRawConstantValue()
-        {
-            return _field.GetRawConstantValue();
-        }
+        public override object GetRawConstantValue() => _field.GetRawConstantValue();
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return _field.FieldSignature; }
-        }
+        internal override FieldSignature FieldSignature => _field.FieldSignature;
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return _field.ImportTo(module);
-        }
+        internal override int ImportTo(Emit.ModuleBuilder module) => _field.ImportTo(module);
 
-        internal override FieldInfo BindTypeParameters(Type type)
-        {
-            return _field.BindTypeParameters(type);
-        }
+        internal override FieldInfo BindTypeParameters(Type type) => _field.BindTypeParameters(type);
 
-        public override bool __IsMissing
-        {
-            get { return _field.__IsMissing; }
-        }
+        public override bool __IsMissing => _field.__IsMissing;
 
-        public override Type DeclaringType
-        {
-            get { return _field.DeclaringType; }
-        }
+        public override Type DeclaringType => _field.DeclaringType;
 
         public override bool Equals(object obj)
         {
@@ -93,40 +69,19 @@ namespace IKVM.Reflection
                 && other._field == _field;
         }
 
-        public override int GetHashCode()
-        {
-            return _reflectedType.GetHashCode() ^ _field.GetHashCode();
-        }
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _field.GetHashCode();
 
-        public override int MetadataToken
-        {
-            get { return _field.MetadataToken; }
-        }
+        public override int MetadataToken => _field.MetadataToken;
 
-        public override Module Module
-        {
-            get { return _field.Module; }
-        }
+        public override Module Module => _field.Module;
 
-        public override string Name
-        {
-            get { return _field.Name; }
-        }
+        public override string Name => _field.Name;
 
-        public override string ToString()
-        {
-            return _field.ToString();
-        }
+        public override string ToString() => _field.ToString();
 
-        internal override int GetCurrentToken()
-        {
-            return _field.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => _field.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return _field.IsBaked; }
-        }
+        internal override bool IsBaked => _field.IsBaked;
 
     }
 

@@ -33,7 +33,7 @@ namespace IKVM.Reflection.Writer
         /// Initializes a new instance.
         /// </summary>
         /// <param name="ordinal"></param>
-        internal OrdinalOrName(ushort ordinal) : 
+        internal OrdinalOrName(ushort ordinal) :
             this(ordinal, null)
         {
 
@@ -43,7 +43,7 @@ namespace IKVM.Reflection.Writer
         /// Initializes a new instance.
         /// </summary>
         /// <param name="name"></param>
-        internal OrdinalOrName(string name) : 
+        internal OrdinalOrName(string name) :
             this(0xFFFF, name)
         {
 
@@ -62,16 +62,10 @@ namespace IKVM.Reflection.Writer
                 return Ordinal > other.Ordinal;
         }
 
-        public readonly bool Equals(OrdinalOrName other)
-        {
-            return Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
-        }
+        public readonly bool Equals(OrdinalOrName other) => Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
 
         /// <inheritdoc />
-        public override readonly int GetHashCode()
-        {
-            return Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
-        }
+        public override readonly int GetHashCode() => Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
 
     }
 

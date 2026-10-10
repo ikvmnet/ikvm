@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader

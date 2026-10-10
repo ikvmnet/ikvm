@@ -30,10 +30,7 @@ namespace IKVM.Reflection
     sealed class ArrayType : ElementHolderType
     {
 
-        internal static Type Make(Type type, CustomModifiers mods)
-        {
-            return type.Universe.CanonicalizeType(new ArrayType(type, mods));
-        }
+        internal static Type Make(Type type, CustomModifiers mods) => type.Universe.CanonicalizeType(new ArrayType(type, mods));
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,10 +43,7 @@ namespace IKVM.Reflection
 
         }
 
-        public override Type BaseType
-        {
-            get { return elementType.Module.Universe.System_Array; }
-        }
+        public override Type BaseType => elementType.Module.Universe.System_Array;
 
         public override Type[] __GetDeclaredInterfaces()
         {
@@ -63,51 +57,35 @@ namespace IKVM.Reflection
         public override MethodBase[] __GetDeclaredMethods()
         {
             var int32 = new Type[] { Module.Universe.System_Int32 };
-            var list = new List<MethodBase>();
-            list.Add(new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, new Type[] { Module.Universe.System_Int32, elementType }));
-            list.Add(new BuiltinArrayMethod(Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), int32));
-            list.Add(new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32));
-            list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, int32)));
+            var list = new List<MethodBase>
+            {
+                new BuiltinArrayMethod(Module, this, "Set", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, new Type[] { Module.Universe.System_Int32, elementType }),
+                new BuiltinArrayMethod(Module, this, "Address", CallingConventions.Standard | CallingConventions.HasThis, elementType.MakeByRefType(), int32),
+                new BuiltinArrayMethod(Module, this, "Get", CallingConventions.Standard | CallingConventions.HasThis, elementType, int32),
+                new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, int32))
+            };
 
             for (var type = elementType; type.IsSZArray; type = type.GetElementType())
             {
                 Array.Resize(ref int32, int32.Length + 1);
-                int32[int32.Length - 1] = int32[0];
+                int32[^1] = int32[0];
                 list.Add(new ConstructorInfoImpl(new BuiltinArrayMethod(Module, this, ".ctor", CallingConventions.Standard | CallingConventions.HasThis, Module.Universe.System_Void, int32)));
             }
 
             return list.ToArray();
         }
 
-        public override TypeAttributes Attributes
-        {
-            get { return TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable; }
-        }
+        public override TypeAttributes Attributes => TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Serializable;
 
-        public override int GetArrayRank()
-        {
-            return 1;
-        }
+        public override int GetArrayRank() => 1;
 
-        public override bool Equals(object o)
-        {
-            return EqualsHelper(o as ArrayType);
-        }
+        public override bool Equals(object o) => EqualsHelper(o as ArrayType);
 
-        public override int GetHashCode()
-        {
-            return elementType.GetHashCode() * 5;
-        }
+        public override int GetHashCode() => elementType.GetHashCode() * 5;
 
-        internal override string GetSuffix()
-        {
-            return "[]";
-        }
+        internal override string GetSuffix() => "[]";
 
-        protected override Type Wrap(Type type, CustomModifiers mods)
-        {
-            return Make(type, mods);
-        }
+        protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, mods);
 
     }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,7 +27,7 @@ using System.Collections.Generic;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class ConstructorBuilder : ConstructorInfo
+    sealed class ConstructorBuilder : ConstructorInfo
     {
 
         readonly MethodBuilder _methodBuilder;
@@ -38,7 +38,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="mb"></param>
         internal ConstructorBuilder(MethodBuilder mb)
         {
-            this._methodBuilder = mb;
+            _methodBuilder = mb;
         }
 
         public override bool Equals(object obj)
@@ -47,20 +47,11 @@ namespace IKVM.Reflection.Emit
             return other != null && other._methodBuilder.Equals(_methodBuilder);
         }
 
-        public override int GetHashCode()
-        {
-            return _methodBuilder.GetHashCode();
-        }
+        public override int GetHashCode() => _methodBuilder.GetHashCode();
 
-        public ILGenerator GetILGenerator()
-        {
-            return _methodBuilder.GetILGenerator();
-        }
+        public ILGenerator GetILGenerator() => _methodBuilder.GetILGenerator();
 
-        internal override MethodInfo GetMethodInfo()
-        {
-            return _methodBuilder;
-        }
+        internal override MethodInfo GetMethodInfo() => _methodBuilder;
 
     }
 

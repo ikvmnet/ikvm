@@ -32,15 +32,9 @@ namespace IKVM.Reflection
     readonly struct TypeName : IEquatable<TypeName>
     {
 
-        public static bool operator ==(TypeName o1, TypeName o2)
-        {
-            return o1._ns == o2._ns && o1._name == o2._name;
-        }
+        public static bool operator ==(TypeName o1, TypeName o2) => o1._ns == o2._ns && o1._name == o2._name;
 
-        public static bool operator !=(TypeName o1, TypeName o2)
-        {
-            return o1._ns != o2._ns || o1._name != o2._name;
-        }
+        public static bool operator !=(TypeName o1, TypeName o2) => o1._ns != o2._ns || o1._name != o2._name;
 
         readonly string _ns;
         readonly string _name;
@@ -53,8 +47,8 @@ namespace IKVM.Reflection
         /// <exception cref="ArgumentNullException"></exception>
         internal TypeName(string ns, string name)
         {
-            this._ns = ns;
-            this._name = name ?? throw new ArgumentNullException("name");
+            _ns = ns;
+            _name = name ?? throw new ArgumentNullException("name");
         }
 
         internal string Name => _name;
@@ -69,15 +63,9 @@ namespace IKVM.Reflection
             return other != null && other.Value == this;
         }
 
-        public override string ToString()
-        {
-            return _ns == null ? _name : _ns + "." + _name;
-        }
+        public override string ToString() => _ns == null ? _name : _ns + "." + _name;
 
-        bool IEquatable<TypeName>.Equals(TypeName other)
-        {
-            return this == other;
-        }
+        bool IEquatable<TypeName>.Equals(TypeName other) => this == other;
 
         internal bool Matches(string fullName)
         {
@@ -90,15 +78,15 @@ namespace IKVM.Reflection
             return false;
         }
 
-        internal TypeName ToLowerInvariant() => new TypeName(_ns?.ToLowerInvariant(), _name.ToLowerInvariant());
+        internal TypeName ToLowerInvariant() => new(_ns?.ToLowerInvariant(), _name.ToLowerInvariant());
 
         internal static TypeName Split(string name)
         {
-            int dot = name.LastIndexOf('.');
+            var dot = name.LastIndexOf('.');
             if (dot == -1)
                 return new TypeName(null, name);
             else
-                return new TypeName(name.Substring(0, dot), name.Substring(dot + 1));
+                return new TypeName(name[..dot], name[(dot + 1)..]);
         }
 
     }

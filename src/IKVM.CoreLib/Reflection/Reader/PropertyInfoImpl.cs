@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -50,17 +50,18 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal PropertyInfoImpl(ModuleReader module, Type declaringType, PropertyDefinitionHandle handle)
         {
-            this._module = module;
-            this._declaringType = declaringType;
-            this._handle = handle;
-            this._definition = module.Metadata.GetPropertyDefinition(handle);
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetPropertyDefinition(handle);
         }
 
         public override bool Equals(object obj) => obj is PropertyInfoImpl other && other.DeclaringType == _declaringType && other._handle == _handle;
 
         public override int GetHashCode() => _declaringType.GetHashCode() * 77 + MetadataTokens.GetRowNumber(_handle);
 
-        internal override PropertySignature PropertySignature => _sig ??= PropertySignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
+        internal override PropertySignature PropertySignature =>
+            _sig ??= PropertySignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
 
         public override PropertyAttributes Attributes => (PropertyAttributes)_definition.Attributes;
 

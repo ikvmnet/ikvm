@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -77,10 +77,8 @@ namespace IKVM.Reflection.Writer
         /// <param name="imageFileMachine"></param>
         /// <param name="nativeResources"></param>
         /// <param name="entryPoint"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
-        {
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint) =>
             WriteModule(keyPair, publicKey, module, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null, null, null, null);
-        }
 
         /// <summary>
         /// Writes the module specified by <paramref name="module"/> to the specified <see cref="Stream"/>.
@@ -326,10 +324,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="module"></param>
         /// <param name="is64BitArch"></param>
         /// <returns></returns>
-        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return DefaultSectionAlignment;
-        }
+        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) => DefaultSectionAlignment;
 
         /// <summary>
         /// Gets the appropriate file alignment for the image.
@@ -373,19 +368,15 @@ namespace IKVM.Reflection.Writer
         /// Gets the major subsystem verison.
         /// </summary>
         /// <returns></returns>
-        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
-        {
-            return imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
-        }
+        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds) =>
+            imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
 
         /// <summary>
         /// Gets the minor subsystem version.
         /// </summary>
         /// <returns></returns>
-        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
-        {
-            return imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
-        }
+        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds) =>
+            imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
 
         /// <summary>
         /// Obtains the appropriate <see cref="Subsystem"/> value for a given <see cref="PEFileKinds"/>.
@@ -444,10 +435,8 @@ namespace IKVM.Reflection.Writer
         /// <param name="module"></param>
         /// <param name="is64BitArch"></param>
         /// <returns></returns>
-        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
-        }
+        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
 
         /// <summary>
         /// Gets the size of the stack commit.
@@ -455,10 +444,8 @@ namespace IKVM.Reflection.Writer
         /// <param name="module"></param>
         /// <param name="is64BitArch"></param>
         /// <returns></returns>
-        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
-        }
+        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
 
         /// <summary>
         /// Gets the size of the heap reserve.
@@ -466,10 +453,8 @@ namespace IKVM.Reflection.Writer
         /// <param name="module"></param>
         /// <param name="is64BitArch"></param>
         /// <returns></returns>
-        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
-        }
+        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
 
         /// <summary>
         /// Gets the size of the heap commit.
@@ -477,10 +462,8 @@ namespace IKVM.Reflection.Writer
         /// <param name="module"></param>
         /// <param name="is64BitArch"></param>
         /// <returns></returns>
-        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
-        }
+        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
 
         /// <summary>
         /// Obtains the appropriate <see cref="CorFlags"/> value for the given <see cref="PortableExecutableKinds"/> and <see cref="StrongNameKeyPair"/>.

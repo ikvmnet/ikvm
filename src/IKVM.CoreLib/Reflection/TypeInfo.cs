@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class TypeInfo : Type, IReflectableType
+    abstract class TypeInfo : Type, IReflectableType
     {
 
         /// <summary>

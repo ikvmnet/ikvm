@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -23,8 +23,8 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -86,26 +86,19 @@ namespace IKVM.Reflection
 
         static Type ReadGenericInst(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
-            Type type;
-            switch (br.ReadByte())
+            var type = br.ReadByte() switch
             {
-                case ELEMENT_TYPE_CLASS:
-                    type = ReadTypeDefOrRefEncoded(module, ref br, context).MarkNotValueType();
-                    break;
-                case ELEMENT_TYPE_VALUETYPE:
-                    type = ReadTypeDefOrRefEncoded(module, ref br, context).MarkValueType();
-                    break;
-                default:
-                    throw new BadImageFormatException();
-            }
-
+                ELEMENT_TYPE_CLASS => ReadTypeDefOrRefEncoded(module, ref br, context).MarkNotValueType(),
+                ELEMENT_TYPE_VALUETYPE => ReadTypeDefOrRefEncoded(module, ref br, context).MarkValueType(),
+                _ => throw new BadImageFormatException(),
+            };
             if (!type.__IsMissing && !type.IsGenericTypeDefinition)
                 throw new BadImageFormatException();
 
-            int genArgCount = br.ReadCompressedInteger();
+            var genArgCount = br.ReadCompressedInteger();
             var args = new Type[genArgCount];
             CustomModifiers[] mods = null;
-            for (int i = 0; i < genArgCount; i++)
+            for (var i = 0; i < genArgCount; i++)
             {
                 // LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for genericinst, but C++ uses it, the verifier allows it and ildasm also supports it
                 var cm = CustomModifiers.Read(module, ref br, context);
@@ -130,7 +123,7 @@ namespace IKVM.Reflection
             return ReadType(module, ref br, context);
         }
 
-        private static Type ReadFunctionPointer(ModuleReader module, ref BlobReader br, IGenericContext context)
+        static Type ReadFunctionPointer(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             __StandAloneMethodSig sig = MethodSignature.ReadStandAloneMethodSig(module, ref br, context);
             if (module.Universe.EnableFunctionPointers)
@@ -150,7 +143,7 @@ namespace IKVM.Reflection
                 throw new BadImageFormatException();
 
             var args = new Type[br.ReadCompressedInteger()];
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
                 CustomModifiers.Skip(ref br);
                 args[i] = ReadType(module, ref br, context);
@@ -172,7 +165,7 @@ namespace IKVM.Reflection
             return arr;
         }
 
-        private static int[] ReadArrayBounds(ref BlobReader br)
+        static int[] ReadArrayBounds(ref BlobReader br)
         {
             var num = br.ReadCompressedInteger();
             if (num == 0)
@@ -310,7 +303,7 @@ namespace IKVM.Reflection
         {
             while (type.HasElementType)
             {
-                byte sigElementType = type.SigElementType;
+                var sigElementType = type.SigElementType;
                 bb.WriteByte(sigElementType);
                 if (sigElementType == ELEMENT_TYPE_ARRAY)
                 {
@@ -321,12 +314,12 @@ namespace IKVM.Reflection
 
                     var sizes = type.__GetArraySizes();
                     bb.WriteCompressedInteger(sizes.Length);
-                    for (int i = 0; i < sizes.Length; i++)
+                    for (var i = 0; i < sizes.Length; i++)
                         bb.WriteCompressedInteger(sizes[i]);
 
                     var lobounds = type.__GetArrayLowerBounds();
                     bb.WriteCompressedInteger(lobounds.Length);
-                    for (int i = 0; i < lobounds.Length; i++)
+                    for (var i = 0; i < lobounds.Length; i++)
                         bb.WriteCompressedSignedInteger(lobounds[i]);
 
                     return;
@@ -450,7 +443,7 @@ namespace IKVM.Reflection
             WriteCustomModifiers(module, bb, sig.GetReturnTypeCustomModifiers());
             WriteType(module, bb, sig.ReturnType);
 
-            int index = 0;
+            var index = 0;
             foreach (var t in parameterTypes)
             {
                 WriteCustomModifiers(module, bb, sig.GetParameterCustomModifiers(index++));
@@ -469,10 +462,7 @@ namespace IKVM.Reflection
             }
         }
 
-        internal static void WriteTypeSpec(ModuleBuilder module, BlobBuilder bb, Type type)
-        {
-            WriteType(module, bb, type);
-        }
+        internal static void WriteTypeSpec(ModuleBuilder module, BlobBuilder bb, Type type) => WriteType(module, bb, type);
 
         internal static void WriteMethodSpec(ModuleBuilder module, BlobBuilder bb, Type[] genArgs)
         {

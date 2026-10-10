@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2011-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -40,90 +40,42 @@ namespace IKVM.Reflection
         /// <param name="signature"></param>
         internal MissingProperty(Type declaringType, string name, PropertySignature signature)
         {
-            this._declaringType = declaringType;
-            this._name = name;
-            this._signature = signature;
+            _declaringType = declaringType;
+            _name = name;
+            _signature = signature;
         }
 
-        public override PropertyAttributes Attributes
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override PropertyAttributes Attributes => throw new MissingMemberException(this);
 
-        public override bool CanRead
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override bool CanRead => throw new MissingMemberException(this);
 
-        public override bool CanWrite
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        public override bool CanWrite => throw new MissingMemberException(this);
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            throw new MissingMemberException(this);
-        }
+        public override MethodInfo GetGetMethod(bool nonPublic) => throw new MissingMemberException(this);
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            throw new MissingMemberException(this);
-        }
+        public override MethodInfo GetSetMethod(bool nonPublic) => throw new MissingMemberException(this);
 
-        public override MethodInfo[] GetAccessors(bool nonPublic)
-        {
-            throw new MissingMemberException(this);
-        }
+        public override MethodInfo[] GetAccessors(bool nonPublic) => throw new MissingMemberException(this);
 
-        public override object GetRawConstantValue()
-        {
-            throw new MissingMemberException(this);
-        }
+        public override object GetRawConstantValue() => throw new MissingMemberException(this);
 
-        internal override bool IsPublic
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        internal override bool IsPublic => throw new MissingMemberException(this);
 
-        internal override bool IsNonPrivate
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        internal override bool IsNonPrivate => throw new MissingMemberException(this);
 
-        internal override bool IsStatic
-        {
-            get { throw new MissingMemberException(this); }
-        }
+        internal override bool IsStatic => throw new MissingMemberException(this);
 
-        internal override PropertySignature PropertySignature
-        {
-            get { return _signature; }
-        }
+        internal override PropertySignature PropertySignature => _signature;
 
-        public override string Name
-        {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public override Type DeclaringType
-        {
-            get { return _declaringType; }
-        }
+        public override Type DeclaringType => _declaringType;
 
-        public override Module Module
-        {
-            get { return _declaringType.Module; }
-        }
+        public override Module Module => _declaringType.Module;
 
-        internal override bool IsBaked
-        {
-            get { return _declaringType.IsBaked; }
-        }
+        internal override bool IsBaked => _declaringType.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            throw new MissingMemberException(this);
-        }
+        internal override int GetCurrentToken() => throw new MissingMemberException(this);
 
     }
 

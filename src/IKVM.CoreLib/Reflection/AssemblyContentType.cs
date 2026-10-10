@@ -24,12 +24,12 @@
 namespace IKVM.Reflection
 {
 
-    internal enum AssemblyContentType
-	{
+    enum AssemblyContentType
+    {
 
-		Default = 0,
-		WindowsRuntime = 1,
+        Default = 0,
+        WindowsRuntime = 1,
 
-	}
+    }
 
 }

@@ -41,7 +41,7 @@ namespace IKVM.Reflection.Emit
         internal ManifestModule(AssemblyBuilder assembly) :
             base(assembly.Universe)
         {
-            this._assembly = assembly;
+            _assembly = assembly;
         }
 
         public override int MDStreamVersion => _assembly.MdStreamVersion;

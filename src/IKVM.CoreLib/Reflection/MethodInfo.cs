@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -28,35 +28,26 @@ using System.Text;
 namespace IKVM.Reflection
 {
 
-    internal abstract class MethodInfo : MethodBase, IGenericContext, IGenericBinder
+    abstract class MethodInfo : MethodBase, IGenericContext, IGenericBinder
     {
         // prevent external subclasses
         internal MethodInfo()
         {
         }
 
-        public sealed override MemberTypes MemberType
-        {
-            get { return MemberTypes.Method; }
-        }
+        public sealed override MemberTypes MemberType => MemberTypes.Method;
 
         public abstract Type ReturnType { get; }
         public abstract ParameterInfo ReturnParameter { get; }
 
-        public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments)
-        {
-            throw new NotSupportedException(this.GetType().FullName);
-        }
+        public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments) => throw new NotSupportedException(GetType().FullName);
 
-        public virtual MethodInfo GetGenericMethodDefinition()
-        {
-            throw new NotSupportedException(this.GetType().FullName);
-        }
+        public virtual MethodInfo GetGenericMethodDefinition() => throw new NotSupportedException(GetType().FullName);
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(ReturnType.Name).Append(' ').Append(this.Name);
+            sb.Append(ReturnType.Name).Append(' ').Append(Name);
 
             string sep;
             if (IsGenericMethod)
@@ -86,10 +77,7 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
-        internal bool IsNewSlot
-        {
-            get { return (Attributes & MethodAttributes.NewSlot) != 0; }
-        }
+        internal bool IsNewSlot => (Attributes & MethodAttributes.NewSlot) != 0;
 
         public MethodInfo GetBaseDefinition()
         {
@@ -107,51 +95,24 @@ namespace IKVM.Reflection
             return match;
         }
 
-        public bool __TryGetImplMap(out ImplMapFlags mappingFlags, out string importName, out string importScope)
-        {
-            return Module.__TryGetImplMap(GetCurrentToken(), out mappingFlags, out importName, out importScope);
-        }
+        public bool __TryGetImplMap(out ImplMapFlags mappingFlags, out string importName, out string importScope) =>
+            Module.__TryGetImplMap(GetCurrentToken(), out mappingFlags, out importName, out importScope);
 
-        public ConstructorInfo __AsConstructorInfo()
-        {
-            return new ConstructorInfoImpl(this);
-        }
+        public ConstructorInfo __AsConstructorInfo() => new ConstructorInfoImpl(this);
 
-        Type IGenericContext.GetGenericTypeArgument(int index)
-        {
-            return this.DeclaringType.GetGenericTypeArgument(index);
-        }
+        Type IGenericContext.GetGenericTypeArgument(int index) => DeclaringType.GetGenericTypeArgument(index);
 
-        Type IGenericContext.GetGenericMethodArgument(int index)
-        {
-            return GetGenericMethodArgument(index);
-        }
+        Type IGenericContext.GetGenericMethodArgument(int index) => GetGenericMethodArgument(index);
 
-        internal virtual Type GetGenericMethodArgument(int index)
-        {
-            throw new InvalidOperationException();
-        }
+        internal virtual Type GetGenericMethodArgument(int index) => throw new InvalidOperationException();
 
+        Type IGenericBinder.BindTypeParameter(Type type) => DeclaringType.GetGenericTypeArgument(type.GenericParameterPosition);
 
-        Type IGenericBinder.BindTypeParameter(Type type)
-        {
-            return this.DeclaringType.GetGenericTypeArgument(type.GenericParameterPosition);
-        }
+        Type IGenericBinder.BindMethodParameter(Type type) => GetGenericMethodArgument(type.GenericParameterPosition);
 
-        Type IGenericBinder.BindMethodParameter(Type type)
-        {
-            return GetGenericMethodArgument(type.GenericParameterPosition);
-        }
+        internal override MethodBase BindTypeParameters(Type type) => new GenericMethodInstance(DeclaringType.BindTypeParameters(type), this, null);
 
-        internal override MethodBase BindTypeParameters(Type type)
-        {
-            return new GenericMethodInstance(this.DeclaringType.BindTypeParameters(type), this, null);
-        }
-
-        internal sealed override MemberInfo SetReflectedType(Type type)
-        {
-            return new MethodInfoWithReflectedType(type, this);
-        }
+        internal sealed override MemberInfo SetReflectedType(Type type) => new MethodInfoWithReflectedType(type, this);
 
         internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
         {

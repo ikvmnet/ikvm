@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class LocalBuilder : LocalVariableInfo
+    sealed class LocalBuilder : LocalVariableInfo
     {
 
         readonly MethodBuilder _method;
@@ -18,7 +18,7 @@ namespace IKVM.Reflection.Emit
         internal LocalBuilder(MethodBuilder method, Type localType, int index, bool pinned) :
             base(index, localType, pinned)
         {
-            this._method = method ?? throw new ArgumentNullException(nameof(method));
+            _method = method ?? throw new ArgumentNullException(nameof(method));
         }
 
         /// <summary>
@@ -30,10 +30,7 @@ namespace IKVM.Reflection.Emit
         /// Sets the name of this local variable.
         /// </summary>
         /// <param name="name"></param>
-        public void SetLocalSymInfo(string name)
-        {
-            SetLocalSymInfo(name, 0, 0);
-        }
+        public void SetLocalSymInfo(string name) => SetLocalSymInfo(name, 0, 0);
 
         /// <summary>
         /// Sets the name and lexical scope of this local variable.
@@ -52,7 +49,7 @@ namespace IKVM.Reflection.Emit
             signature.AddArgument(LocalType);
             var array = signature.GetSignature();
 
-            int currentActiveScopeIndex = _method.GetILGenerator().ScopeTree.GetCurrentActiveScopeIndex();
+            var currentActiveScopeIndex = _method.GetILGenerator().ScopeTree.GetCurrentActiveScopeIndex();
             if (currentActiveScopeIndex == -1)
             {
                 _method.LocalSymInfo ??= new();

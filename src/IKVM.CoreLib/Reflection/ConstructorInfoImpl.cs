@@ -35,7 +35,7 @@ namespace IKVM.Reflection
         /// <param name="method"></param>
         internal ConstructorInfoImpl(MethodInfo method)
         {
-            this._method = method;
+            _method = method;
         }
 
         public override bool Equals(object obj)
@@ -44,15 +44,9 @@ namespace IKVM.Reflection
             return other != null && other._method.Equals(_method);
         }
 
-        public override int GetHashCode()
-        {
-            return _method.GetHashCode();
-        }
+        public override int GetHashCode() => _method.GetHashCode();
 
-        internal override MethodInfo GetMethodInfo()
-        {
-            return _method;
-        }
+        internal override MethodInfo GetMethodInfo() => _method;
 
     }
 

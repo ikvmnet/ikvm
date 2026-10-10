@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -33,7 +33,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class AssemblyName :
+    sealed class AssemblyName :
         ICloneable
     {
 
@@ -119,7 +119,7 @@ namespace IKVM.Reflection
                 throw new FileLoadException();
 
             var buf = new byte[key.Length / 2];
-            for (int i = 0; i < buf.Length; i++)
+            for (var i = 0; i < buf.Length; i++)
                 buf[i] = (byte)(ParseHexDigit(key[i * 2]) * 16 + ParseHexDigit(key[i * 2 + 1]));
 
             return buf;
@@ -141,10 +141,7 @@ namespace IKVM.Reflection
             }
         }
 
-        public override string ToString()
-        {
-            return FullName;
-        }
+        public override string ToString() => FullName;
 
         public string Name
         {
@@ -208,14 +205,11 @@ namespace IKVM.Reflection
             }
         }
 
-        public byte[] GetPublicKey()
-        {
-            return _publicKey;
-        }
+        public byte[] GetPublicKey() => _publicKey;
 
         public void SetPublicKey(byte[] publicKey)
         {
-            this._publicKey = publicKey;
+            _publicKey = publicKey;
             _flags = (_flags & ~AssemblyNameFlags.PublicKey) | (publicKey == null ? 0 : AssemblyNameFlags.PublicKey);
         }
 
@@ -230,10 +224,7 @@ namespace IKVM.Reflection
             return _publicKeyToken;
         }
 
-        public void SetPublicKeyToken(byte[] publicKeyToken)
-        {
-            this._publicKeyToken = publicKeyToken;
-        }
+        public void SetPublicKeyToken(byte[] publicKeyToken) => _publicKeyToken = publicKeyToken;
 
         public AssemblyHashAlgorithm HashAlgorithm
         {
@@ -261,7 +252,7 @@ namespace IKVM.Reflection
                     versionRevision = (ushort)_version.Revision;
                 }
 
-                var publicKeyToken = this._publicKeyToken;
+                var publicKeyToken = _publicKeyToken;
                 if ((publicKeyToken == null || publicKeyToken.Length == 0) && _publicKey != null)
                     publicKeyToken = ComputePublicKeyToken(_publicKey);
 
@@ -272,8 +263,8 @@ namespace IKVM.Reflection
         internal static string GetFullName(string name, ushort versionMajor, ushort versionMinor, ushort versionBuild, ushort versionRevision, string culture, byte[] publicKeyToken, int flags)
         {
             var sb = new StringBuilder();
-            bool doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
-            bool singleQuotes = name.IndexOf('"') != -1;
+            var doubleQuotes = name.StartsWith(" ") || name.EndsWith(" ") || name.IndexOf('\'') != -1;
+            var singleQuotes = name.IndexOf('"') != -1;
             if (singleQuotes)
                 sb.Append('\'');
             else if (doubleQuotes)
@@ -281,9 +272,9 @@ namespace IKVM.Reflection
 
             if (name.IndexOf(',') != -1 || name.IndexOf('\\') != -1 || name.IndexOf('=') != -1 || (singleQuotes && name.IndexOf('\'') != -1))
             {
-                for (int i = 0; i < name.Length; i++)
+                for (var i = 0; i < name.Length; i++)
                 {
-                    char c = name[i];
+                    var c = name[i];
                     if (c == ',' || c == '\\' || c == '=' || (singleQuotes && c == '\''))
                     {
                         sb.Append('\\');
@@ -357,7 +348,7 @@ namespace IKVM.Reflection
                 hash = sha1.ComputeHash(publicKey);
 
             var token = new byte[8];
-            for (int i = 0; i < token.Length; i++)
+            for (var i = 0; i < token.Length; i++)
                 token[i] = hash[hash.Length - 1 - i];
 
             return token;
@@ -372,22 +363,16 @@ namespace IKVM.Reflection
 
         static void AppendPublicKey(StringBuilder sb, byte[] publicKey)
         {
-            for (int i = 0; i < publicKey.Length; i++)
+            for (var i = 0; i < publicKey.Length; i++)
             {
                 sb.Append("0123456789abcdef"[publicKey[i] >> 4]);
                 sb.Append("0123456789abcdef"[publicKey[i] & 0x0F]);
             }
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is AssemblyName other && other.FullName == FullName;
-        }
+        public override bool Equals(object obj) => obj is AssemblyName other && other.FullName == FullName;
 
-        public override int GetHashCode()
-        {
-            return FullName.GetHashCode();
-        }
+        public override int GetHashCode() => FullName.GetHashCode();
 
         public object Clone()
         {
@@ -397,10 +382,7 @@ namespace IKVM.Reflection
             return copy;
         }
 
-        static byte[] Copy(byte[] b)
-        {
-            return b == null || b.Length == 0 ? b : (byte[])b.Clone();
-        }
+        static byte[] Copy(byte[] b) => b == null || b.Length == 0 ? b : (byte[])b.Clone();
 
         /// <summary>
         /// Gets the <see cref="AssemblyName"/> for a given file.
@@ -462,8 +444,8 @@ namespace IKVM.Reflection
             }
 
             ushort build = 65535, revision = 65535;
-            if (ushort.TryParse(parts[0], NumberStyles.Integer, null, out ushort major) &&
-                ushort.TryParse(parts[1], NumberStyles.Integer, null, out ushort minor) &&
+            if (ushort.TryParse(parts[0], NumberStyles.Integer, null, out var major) &&
+                ushort.TryParse(parts[1], NumberStyles.Integer, null, out var minor) &&
                 (parts.Length <= 2 || parts[2] == "" || ushort.TryParse(parts[2], NumberStyles.Integer, null, out build)) &&
                 (parts.Length <= 3 || parts[3] == "" || (parts[2] != "" && ushort.TryParse(parts[3], NumberStyles.Integer, null, out revision))))
             {

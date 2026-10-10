@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -29,7 +29,7 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class FieldBuilder : FieldInfo
+    sealed class FieldBuilder : FieldInfo
     {
 
         readonly TypeBuilder _type;
@@ -39,7 +39,7 @@ namespace IKVM.Reflection.Emit
         readonly FieldSignature _signature;
         int _offset = -1;
 
-        BlobHandle _signatureBlobHandle;
+        readonly BlobHandle _signatureBlobHandle;
 
         /// <summary>
         /// Initializes a new instance.
@@ -51,11 +51,11 @@ namespace IKVM.Reflection.Emit
         /// <param name="attributes"></param>
         internal FieldBuilder(TypeBuilder type, string name, Type fieldType, CustomModifiers customModifiers, FieldAttributes attributes)
         {
-            this._type = type;
-            this._name = name;
-            this._attributes = attributes;
-            this._pseudoToken = type.ModuleBuilder.AllocPseudoToken();
-            this._signature = FieldSignature.Create(fieldType, customModifiers);
+            _type = type;
+            _name = name;
+            _attributes = attributes;
+            _pseudoToken = type.ModuleBuilder.AllocPseudoToken();
+            _signature = FieldSignature.Create(fieldType, customModifiers);
 
             // create signature blob
             var buf = new BlobBuilder(5);
@@ -81,10 +81,7 @@ namespace IKVM.Reflection.Emit
             return _type.ModuleBuilder.GetConstant(GetCurrentToken());
         }
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return (offset = this._offset) != -1;
-        }
+        public override bool __TryGetFieldOffset(out int offset) => (offset = _offset) != -1;
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
@@ -109,35 +106,17 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public void SetOffset(int iOffset)
-        {
-            _offset = iOffset;
-        }
+        public void SetOffset(int iOffset) => _offset = iOffset;
 
-        public override FieldAttributes Attributes
-        {
-            get { return _attributes; }
-        }
+        public override FieldAttributes Attributes => _attributes;
 
-        public override Type DeclaringType
-        {
-            get { return _type.IsModulePseudoType ? null : _type; }
-        }
+        public override Type DeclaringType => _type.IsModulePseudoType ? null : _type;
 
-        public override string Name
-        {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public override int MetadataToken
-        {
-            get { return _pseudoToken; }
-        }
+        public override int MetadataToken => _pseudoToken;
 
-        public override Module Module
-        {
-            get { return _type.Module; }
-        }
+        public override Module Module => _type.Module;
 
         internal void WriteFieldRecords()
         {
@@ -147,20 +126,11 @@ namespace IKVM.Reflection.Emit
                 _signatureBlobHandle);
         }
 
-        internal void FixupToken(int token)
-        {
-            _type.ModuleBuilder.RegisterTokenFixup(_pseudoToken, token);
-        }
+        internal void FixupToken(int token) => _type.ModuleBuilder.RegisterTokenFixup(_pseudoToken, token);
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return _signature; }
-        }
+        internal override FieldSignature FieldSignature => _signature;
 
-        internal override int ImportTo(ModuleBuilder other)
-        {
-            return other.ImportMethodOrField(_type, _name, _signature);
-        }
+        internal override int ImportTo(ModuleBuilder other) => other.ImportMethodOrField(_type, _name, _signature);
 
         internal override int GetCurrentToken()
         {
@@ -170,10 +140,7 @@ namespace IKVM.Reflection.Emit
                 return _pseudoToken;
         }
 
-        internal override bool IsBaked
-        {
-            get { return _type.IsBaked; }
-        }
+        internal override bool IsBaked => _type.IsBaked;
 
     }
 

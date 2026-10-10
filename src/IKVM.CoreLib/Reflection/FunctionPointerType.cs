@@ -32,10 +32,7 @@ namespace IKVM.Reflection
         readonly Universe _universe;
         readonly __StandAloneMethodSig _sig;
 
-        internal static Type Make(Universe universe, __StandAloneMethodSig sig)
-        {
-            return universe.CanonicalizeType(new FunctionPointerType(universe, sig));
-        }
+        internal static Type Make(Universe universe, __StandAloneMethodSig sig) => universe.CanonicalizeType(new FunctionPointerType(universe, sig));
 
         /// <summary>
         /// Initializes a new instance.
@@ -45,8 +42,8 @@ namespace IKVM.Reflection
         FunctionPointerType(Universe universe, __StandAloneMethodSig sig) :
             base(Signature.ELEMENT_TYPE_FNPTR)
         {
-            this._universe = universe;
-            this._sig = sig;
+            _universe = universe;
+            _sig = sig;
         }
 
         public override bool Equals(object obj)
@@ -57,65 +54,29 @@ namespace IKVM.Reflection
                 && other._sig.Equals(_sig);
         }
 
-        public override int GetHashCode()
-        {
-            return _sig.GetHashCode();
-        }
+        public override int GetHashCode() => _sig.GetHashCode();
 
-        public override __StandAloneMethodSig __MethodSignature
-        {
-            get { return _sig; }
-        }
+        public override __StandAloneMethodSig __MethodSignature => _sig;
 
-        public override Type BaseType
-        {
-            get { return null; }
-        }
+        public override Type BaseType => null;
 
-        public override TypeAttributes Attributes
-        {
-            get { return 0; }
-        }
+        public override TypeAttributes Attributes => 0;
 
-        public override string Name
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string Name => throw new InvalidOperationException();
 
-        public override string FullName
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string FullName => throw new InvalidOperationException();
 
-        public override Module Module
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override Module Module => throw new InvalidOperationException();
 
-        internal override Universe Universe
-        {
-            get { return _universe; }
-        }
+        internal override Universe Universe => _universe;
 
-        public override string ToString()
-        {
-            return "<FunctionPtr>";
-        }
+        public override string ToString() => "<FunctionPtr>";
 
-        protected override bool ContainsMissingTypeImpl
-        {
-            get { return _sig.ContainsMissingType; }
-        }
+        protected override bool ContainsMissingTypeImpl => _sig.ContainsMissingType;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { return false; }
-        }
+        protected override bool IsValueTypeImpl => false;
 
     }
 

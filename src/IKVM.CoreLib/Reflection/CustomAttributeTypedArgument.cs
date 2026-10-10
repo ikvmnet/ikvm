@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System;
 namespace IKVM.Reflection
 {
 
-    internal readonly struct CustomAttributeTypedArgument
+    readonly struct CustomAttributeTypedArgument
     {
 
         readonly Type _type;
@@ -39,34 +39,20 @@ namespace IKVM.Reflection
         /// <param name="value"></param>
         internal CustomAttributeTypedArgument(Type type, object value)
         {
-            this._type = type;
-            this._value = value;
+            _type = type;
+            _value = value;
         }
 
-        public override bool Equals(object obj)
-        {
-            return this == obj as CustomAttributeTypedArgument?;
-        }
+        public override bool Equals(object obj) => this == obj as CustomAttributeTypedArgument?;
 
-        public override int GetHashCode()
-        {
-            return _type.GetHashCode() ^ 77 * (_value == null ? 0 : _value.GetHashCode());
-        }
+        public override int GetHashCode() => _type.GetHashCode() ^ 77 * (_value == null ? 0 : _value.GetHashCode());
 
-        public Type ArgumentType
-        {
-            get { return _type; }
-        }
+        public Type ArgumentType => _type;
 
-        public Object Value
-        {
-            get { return _value; }
-        }
+        public object Value => _value;
 
-        public static bool operator ==(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
-        {
-            return arg1._type.Equals(arg2._type) && (arg1._value == arg2._value || (arg1._value != null && arg1._value.Equals(arg2._value)));
-        }
+        public static bool operator ==(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2) =>
+            arg1._type.Equals(arg2._type) && (arg1._value == arg2._value || (arg1._value != null && arg1._value.Equals(arg2._value)));
 
         public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2) => !(arg1 == arg2);
 

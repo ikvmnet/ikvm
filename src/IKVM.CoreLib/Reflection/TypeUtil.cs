@@ -27,35 +27,17 @@ namespace IKVM.Reflection
     static class TypeUtil
     {
 
-        internal static bool IsEnum(System.Type type)
-        {
-            return type.IsEnum;
-        }
+        internal static bool IsEnum(System.Type type) => type.IsEnum;
 
-        internal static System.Reflection.Assembly GetAssembly(System.Type type)
-        {
-            return type.Assembly;
-        }
+        internal static System.Reflection.Assembly GetAssembly(System.Type type) => type.Assembly;
 
-        internal static System.Reflection.MethodBase GetDeclaringMethod(System.Type type)
-        {
-            return type.DeclaringMethod;
-        }
+        internal static System.Reflection.MethodBase GetDeclaringMethod(System.Type type) => type.DeclaringMethod;
 
-        internal static bool IsGenericType(System.Type type)
-        {
-            return type.IsGenericType;
-        }
+        internal static bool IsGenericType(System.Type type) => type.IsGenericType;
 
-        internal static bool IsGenericTypeDefinition(System.Type type)
-        {
-            return type.IsGenericTypeDefinition;
-        }
+        internal static bool IsGenericTypeDefinition(System.Type type) => type.IsGenericTypeDefinition;
 
-        internal static System.Type[] GetGenericArguments(System.Type type)
-        {
-            return type.GetGenericArguments();
-        }
+        internal static System.Type[] GetGenericArguments(System.Type type) => type.GetGenericArguments();
 
     }
 

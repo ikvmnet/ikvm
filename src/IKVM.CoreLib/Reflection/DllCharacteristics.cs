@@ -28,7 +28,7 @@ namespace IKVM.Reflection
 
     // IKVM.Reflection specific type
     [Flags]
-    internal enum DllCharacteristics
+enum DllCharacteristics
     {
 
         /// <summary>

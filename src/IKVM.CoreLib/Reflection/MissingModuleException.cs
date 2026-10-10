@@ -27,7 +27,7 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class MissingModuleException : InvalidOperationException
+sealed class MissingModuleException : InvalidOperationException
     {
 
         [NonSerialized]
@@ -40,7 +40,7 @@ namespace IKVM.Reflection
         internal MissingModuleException(MissingModule module) :
             base("Module from missing assembly '" + module.Assembly.FullName + "' does not support the requested operation.")
         {
-            this._module = module;
+            _module = module;
         }
 
     }

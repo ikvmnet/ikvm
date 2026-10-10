@@ -43,7 +43,7 @@ namespace IKVM.Reflection
             base(sigElementType)
         {
             this.elementType = elementType;
-            this._mods = mods;
+            _mods = mods;
         }
 
         protected bool EqualsHelper(ElementHolderType other)
@@ -53,40 +53,19 @@ namespace IKVM.Reflection
                 && other._mods.Equals(_mods);
         }
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return _mods;
-        }
+        public override CustomModifiers __GetCustomModifiers() => _mods;
 
-        public sealed override string Name
-        {
-            get { return elementType.Name + GetSuffix(); }
-        }
+        public sealed override string Name => elementType.Name + GetSuffix();
 
-        public sealed override string Namespace
-        {
-            get { return elementType.Namespace; }
-        }
+        public sealed override string Namespace => elementType.Namespace;
 
-        public sealed override string FullName
-        {
-            get { return elementType.FullName + GetSuffix(); }
-        }
+        public sealed override string FullName => elementType.FullName + GetSuffix();
 
-        public sealed override string ToString()
-        {
-            return elementType.ToString() + GetSuffix();
-        }
+        public sealed override string ToString() => elementType.ToString() + GetSuffix();
 
-        public sealed override Type GetElementType()
-        {
-            return elementType;
-        }
+        public sealed override Type GetElementType() => elementType;
 
-        public sealed override Module Module
-        {
-            get { return elementType.Module; }
-        }
+        public sealed override Module Module => elementType.Module;
 
         internal sealed override int GetModuleBuilderToken()
         {
@@ -120,41 +99,27 @@ namespace IKVM.Reflection
             }
         }
 
-        protected sealed override bool IsValueTypeImpl
-        {
-            get { return false; }
-        }
+        protected sealed override bool IsValueTypeImpl => false;
 
         internal sealed override Type BindTypeParameters(IGenericBinder binder)
         {
             var type = elementType.BindTypeParameters(binder);
-            var mods = this._mods.Bind(binder);
-            if (ReferenceEquals(type, elementType) && mods.Equals(this._mods))
+            var mods = _mods.Bind(binder);
+            if (ReferenceEquals(type, elementType) && mods.Equals(_mods))
                 return this;
 
             return Wrap(type, mods);
         }
 
-        internal override void CheckBaked()
-        {
-            elementType.CheckBaked();
-        }
+        internal override void CheckBaked() => elementType.CheckBaked();
 
-        internal sealed override Universe Universe
-        {
-            get { return elementType.Universe; }
-        }
+        internal sealed override Universe Universe => elementType.Universe;
 
-        internal sealed override bool IsBaked
-        {
-            get { return elementType.IsBaked; }
-        }
+        internal sealed override bool IsBaked => elementType.IsBaked;
 
-        internal sealed override int GetCurrentToken()
-        {
+        internal sealed override int GetCurrentToken() =>
             // we don't have a token, so we return 0 (which is never a valid token)
-            return 0;
-        }
+            0;
 
         internal abstract string GetSuffix();
 

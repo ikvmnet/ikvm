@@ -16,7 +16,7 @@ namespace IKVM.Reflection.Writer
     /// <summary>
     /// Provides cryptographic operations.
     /// </summary>
-    internal class CryptographicHashProvider
+    class CryptographicHashProvider
     {
 
         public static ImmutableArray<byte> ComputeHash(HashAlgorithmName algorithmName, IEnumerable<Blob> bytes)

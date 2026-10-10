@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -33,7 +33,7 @@ using IKVM.Reflection.Impl;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class TypeBuilder : TypeInfo, ITypeOwner
+    sealed class TypeBuilder : TypeInfo, ITypeOwner
     {
 
         readonly ITypeOwner _owner;
@@ -44,8 +44,8 @@ namespace IKVM.Reflection.Emit
         readonly StringHandle _typeNameSpace;
         readonly string _ns;
         readonly string _name;
-        readonly List<MethodBuilder> _methods = new List<MethodBuilder>();
-        readonly List<FieldBuilder> _fields = new List<FieldBuilder>();
+        readonly List<MethodBuilder> _methods = [];
+        readonly List<FieldBuilder> _fields = [];
         List<PropertyBuilder> _properties;
         TypeAttributes _attribs;
         GenericTypeParameterBuilder[] _gtpb;
@@ -65,12 +65,12 @@ namespace IKVM.Reflection.Emit
         /// <param name="name"></param>
         internal TypeBuilder(ITypeOwner owner, string ns, string name)
         {
-            this._owner = owner;
-            this._token = ModuleBuilder.AllocTypeToken();
-            this._ns = ns;
-            this._name = name;
-            this._typeNameSpace = ns == null ? default : ModuleBuilder.GetOrAddString(ns);
-            this._typeName = ModuleBuilder.GetOrAddString(name);
+            _owner = owner;
+            _token = ModuleBuilder.AllocTypeToken();
+            _ns = ns;
+            _name = name;
+            _typeNameSpace = ns == null ? default : ModuleBuilder.GetOrAddString(ns);
+            _typeName = ModuleBuilder.GetOrAddString(name);
             MarkKnownType(ns, name);
         }
 
@@ -84,10 +84,8 @@ namespace IKVM.Reflection.Emit
             return cb;
         }
 
-        public ConstructorBuilder DefineConstructor(MethodAttributes attribs, CallingConventions callConv, Type[] parameterTypes)
-        {
-            return DefineConstructor(attribs, callConv, parameterTypes, null, null);
-        }
+        public ConstructorBuilder DefineConstructor(MethodAttributes attribs, CallingConventions callConv, Type[] parameterTypes) =>
+            DefineConstructor(attribs, callConv, parameterTypes, null, null);
 
         public ConstructorBuilder DefineConstructor(MethodAttributes attribs, CallingConventions callingConvention, Type[] parameterTypes, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
         {
@@ -97,22 +95,18 @@ namespace IKVM.Reflection.Emit
             return new ConstructorBuilder(mb);
         }
 
-        private MethodBuilder CreateMethodBuilder(string name, MethodAttributes attributes, CallingConventions callingConvention)
+        MethodBuilder CreateMethodBuilder(string name, MethodAttributes attributes, CallingConventions callingConvention)
         {
             var mb = new MethodBuilder(this, name, attributes, callingConvention);
             _methods.Add(mb);
             return mb;
         }
 
-        public MethodBuilder DefineMethod(string name, MethodAttributes attribs, Type returnType, Type[] parameterTypes)
-        {
-            return DefineMethod(name, attribs, CallingConventions.Standard, returnType, null, null, parameterTypes, null, null);
-        }
+        public MethodBuilder DefineMethod(string name, MethodAttributes attribs, Type returnType, Type[] parameterTypes) =>
+            DefineMethod(name, attribs, CallingConventions.Standard, returnType, null, null, parameterTypes, null, null);
 
-        public MethodBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return DefineMethod(name, attributes, callingConvention, returnType, null, null, parameterTypes, null, null);
-        }
+        public MethodBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes) =>
+            DefineMethod(name, attributes, callingConvention, returnType, null, null, parameterTypes, null, null);
 
         public MethodBuilder DefineMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
         {
@@ -121,20 +115,13 @@ namespace IKVM.Reflection.Emit
             return mb;
         }
 
-        public void DefineMethodOverride(MethodInfo methodInfoBody, MethodInfo methodInfoDeclaration)
-        {
-            (_methodImpls ??= new List<(int, int)>()).Add((ModuleBuilder.GetMethodToken(methodInfoBody).Token, ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token));
-        }
+        public void DefineMethodOverride(MethodInfo methodInfoBody, MethodInfo methodInfoDeclaration) =>
+            (_methodImpls ??= []).Add((ModuleBuilder.GetMethodToken(methodInfoBody).Token, ModuleBuilder.GetMethodToken(methodInfoDeclaration).Token));
 
-        public FieldBuilder DefineField(string name, Type fieldType, FieldAttributes attribs)
-        {
-            return DefineField(name, fieldType, null, null, attribs);
-        }
+        public FieldBuilder DefineField(string name, Type fieldType, FieldAttributes attribs) => DefineField(name, fieldType, null, null, attribs);
 
-        public FieldBuilder DefineField(string fieldName, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
-        {
-            return __DefineField(fieldName, type, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers), attributes);
-        }
+        public FieldBuilder DefineField(string fieldName, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes) =>
+            __DefineField(fieldName, type, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers), attributes);
 
         public FieldBuilder __DefineField(string fieldName, Type type, CustomModifiers customModifiers, FieldAttributes attributes)
         {
@@ -143,29 +130,22 @@ namespace IKVM.Reflection.Emit
             return fb;
         }
 
-        public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, Type returnType, Type[] parameterTypes)
-        {
-            return DefineProperty(name, attributes, returnType, null, null, parameterTypes, null, null);
-        }
+        public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, Type returnType, Type[] parameterTypes) =>
+            DefineProperty(name, attributes, returnType, null, null, parameterTypes, null, null);
 
-        public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-        {
-            return DefinePropertyImpl(name, attributes, CallingConventions.Standard, true, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
-        }
+        public PropertyBuilder DefineProperty(string name, PropertyAttributes attributes, Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers) =>
+            DefinePropertyImpl(name, attributes, CallingConventions.Standard, true, returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
 
-        private PropertyBuilder DefinePropertyImpl(string name, PropertyAttributes attributes, CallingConventions callingConvention, bool patchCallingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
+        PropertyBuilder DefinePropertyImpl(string name, PropertyAttributes attributes, CallingConventions callingConvention, bool patchCallingConvention, Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
-            _properties ??= new List<PropertyBuilder>();
+            _properties ??= [];
             var sig = PropertySignature.Create(callingConvention, returnType, parameterTypes, customModifiers);
             var pb = new PropertyBuilder(this, name, attributes, sig, patchCallingConvention);
             _properties.Add(pb);
             return pb;
         }
 
-        public TypeBuilder DefineNestedType(string name, TypeAttributes attribs)
-        {
-            return DefineNestedType(name, attribs, null);
-        }
+        public TypeBuilder DefineNestedType(string name, TypeAttributes attribs) => DefineNestedType(name, attribs, null);
 
         public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, Type[] interfaces)
         {
@@ -177,15 +157,10 @@ namespace IKVM.Reflection.Emit
             return tb;
         }
 
-        public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent)
-        {
-            return DefineNestedType(name, attr, parent, 0);
-        }
+        public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent) => DefineNestedType(name, attr, parent, 0);
 
-        public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, int typeSize)
-        {
-            return DefineNestedType(name, attr, parent, PackingSize.Unspecified, typeSize);
-        }
+        public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, int typeSize) =>
+            DefineNestedType(name, attr, parent, PackingSize.Unspecified, typeSize);
 
         public TypeBuilder DefineNestedType(string name, TypeAttributes attr, Type parent, PackingSize packSize, int typeSize)
         {
@@ -193,8 +168,8 @@ namespace IKVM.Reflection.Emit
             var lastdot = name.LastIndexOf('.');
             if (lastdot > 0)
             {
-                ns = name.Substring(0, lastdot);
-                name = name.Substring(lastdot + 1);
+                ns = name[..lastdot];
+                name = name[(lastdot + 1)..];
             }
 
             var typeBuilder = __DefineNestedType(ns, name);
@@ -210,25 +185,22 @@ namespace IKVM.Reflection.Emit
         {
             typeFlags |= TypeFlags.HasNestedTypes;
             var typeBuilder = ModuleBuilder.DefineType(this, ns, name);
-            (_nestedTypes ??= new List<TypeBuilder>()).Add(typeBuilder);
+            (_nestedTypes ??= []).Add(typeBuilder);
             return typeBuilder;
         }
 
-        public void SetParent(Type parent)
-        {
-            _lazyBaseType = parent;
-        }
+        public void SetParent(Type parent) => _lazyBaseType = parent;
 
         public void AddInterfaceImplementation(Type interfaceType)
         {
-            _interfaces ??= new List<Type>();
+            _interfaces ??= [];
             _interfaces.Add(interfaceType);
         }
 
         public void __SetLayout(int packingSize, int size)
         {
-            this._packingSize = (short)packingSize;
-            this._size = size;
+            _packingSize = (short)packingSize;
+            _size = size;
             _hasLayout = true;
         }
 
@@ -277,7 +249,7 @@ namespace IKVM.Reflection.Emit
             switch (customBuilder.KnownCA)
             {
                 case KnownCA.StructLayoutAttribute:
-                    SetStructLayoutPseudoCustomAttribute(customBuilder.DecodeBlob(this.Assembly));
+                    SetStructLayoutPseudoCustomAttribute(customBuilder.DecodeBlob(Assembly));
                     break;
                 case KnownCA.SerializableAttribute:
                     _attribs |= TypeAttributes.Serializable;
@@ -301,36 +273,22 @@ namespace IKVM.Reflection.Emit
         {
             typeFlags |= TypeFlags.IsGenericTypeDefinition;
             _gtpb = new GenericTypeParameterBuilder[names.Length];
-            for (int i = 0; i < names.Length; i++)
+            for (var i = 0; i < names.Length; i++)
                 _gtpb[i] = new GenericTypeParameterBuilder(names[i], this, i);
 
             return (GenericTypeParameterBuilder[])_gtpb.Clone();
         }
 
-        public override Type[] GetGenericArguments()
-        {
-            return Util.Copy(_gtpb);
-        }
+        public override Type[] GetGenericArguments() => Util.Copy(_gtpb);
 
-        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-        {
-            return _gtpb == null ? Array.Empty<CustomModifiers>() : new CustomModifiers[_gtpb.Length];
-        }
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() =>
+            _gtpb == null ? Array.Empty<CustomModifiers>() : new CustomModifiers[_gtpb.Length];
 
-        internal override Type GetGenericTypeArgument(int index)
-        {
-            return _gtpb[index];
-        }
+        internal override Type GetGenericTypeArgument(int index) => _gtpb[index];
 
-        public override bool ContainsGenericParameters
-        {
-            get { return _gtpb != null; }
-        }
+        public override bool ContainsGenericParameters => _gtpb != null;
 
-        public override Type GetGenericTypeDefinition()
-        {
-            return this;
-        }
+        public override Type GetGenericTypeDefinition() => this;
 
         public TypeInfo CreateTypeInfo()
         {
@@ -367,10 +325,7 @@ namespace IKVM.Reflection.Emit
             return new BakedType(this);
         }
 
-        public Type CreateType()
-        {
-            return CreateTypeInfo();
-        }
+        public Type CreateType() => CreateTypeInfo();
 
         internal void PopulatePropertyTable()
         {
@@ -411,88 +366,49 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal override TypeName TypeName
-        {
-            get { return new TypeName(_ns, _name); }
-        }
+        internal override TypeName TypeName => new TypeName(_ns, _name);
 
         public override string Name
-        {
             // FXBUG for a TypeBuilder the name is not escaped
-            get { return _name; }
-        }
+            => _name;
 
-        public override string Namespace
-        {
-            get
-            {
-                // for some reason, TypeBuilder doesn't return null (and mcs depends on this)
-                // note also that we don't return the declaring type namespace for nested types
-                return _ns ?? "";
-            }
-        }
+        public override string Namespace =>
+            // for some reason, TypeBuilder doesn't return null (and mcs depends on this)
+            // note also that we don't return the declaring type namespace for nested types
+            _ns ?? "";
 
-        public override TypeAttributes Attributes
-        {
-            get { return _attribs; }
-        }
+        public override TypeAttributes Attributes => _attribs;
 
-        public void __SetAttributes(TypeAttributes attributes)
-        {
-            _attribs = attributes;
-        }
+        public void __SetAttributes(TypeAttributes attributes) => _attribs = attributes;
 
-        public override Type[] __GetDeclaredInterfaces()
-        {
-            return Util.ToArray(_interfaces, Type.EmptyTypes);
-        }
+        public override Type[] __GetDeclaredInterfaces() => Util.ToArray(_interfaces, Type.EmptyTypes);
 
         public override MethodBase[] __GetDeclaredMethods()
         {
-            var methods = new MethodBase[this._methods.Count];
-            for (int i = 0; i < methods.Length; i++)
+            var methods = new MethodBase[_methods.Count];
+            for (var i = 0; i < methods.Length; i++)
             {
-                var mb = this._methods[i];
+                var mb = _methods[i];
                 methods[i] = mb.IsConstructor ? new ConstructorInfoImpl(mb) : mb;
             }
 
             return methods;
         }
 
-        public override Type DeclaringType
-        {
-            get { return _owner as TypeBuilder; }
-        }
+        public override Type DeclaringType => _owner as TypeBuilder;
 
-        public override bool IsGenericType
-        {
-            get { return IsGenericTypeDefinition; }
-        }
+        public override bool IsGenericType => IsGenericTypeDefinition;
 
-        public override bool IsGenericTypeDefinition
-        {
-            get { return (typeFlags & TypeFlags.IsGenericTypeDefinition) != 0; }
-        }
+        public override bool IsGenericTypeDefinition => (typeFlags & TypeFlags.IsGenericTypeDefinition) != 0;
 
-        public override int MetadataToken
-        {
-            get { return _token; }
-        }
+        public override int MetadataToken => _token;
 
-        public static MethodInfo GetMethod(Type type, MethodInfo method)
-        {
-            return new GenericMethodInstance(type, method, null);
-        }
+        public static MethodInfo GetMethod(Type type, MethodInfo method) => new GenericMethodInstance(type, method, null);
 
-        public static ConstructorInfo GetConstructor(Type type, ConstructorInfo constructor)
-        {
-            return new ConstructorInfoImpl(GetMethod(type, constructor.GetMethodInfo()));
-        }
+        public static ConstructorInfo GetConstructor(Type type, ConstructorInfo constructor) =>
+            new ConstructorInfoImpl(GetMethod(type, constructor.GetMethodInfo()));
 
-        public override Module Module
-        {
-            get { return _owner.ModuleBuilder; }
-        }
+        public override Module Module => _owner.ModuleBuilder;
 
         internal void WriteTypeDefRecord(ref int fieldList, ref int methodList)
         {
@@ -579,20 +495,11 @@ namespace IKVM.Reflection.Emit
                 fb.WriteFieldRecords();
         }
 
-        internal ModuleBuilder ModuleBuilder
-        {
-            get { return _owner.ModuleBuilder; }
-        }
+        internal ModuleBuilder ModuleBuilder => _owner.ModuleBuilder;
 
-        ModuleBuilder ITypeOwner.ModuleBuilder
-        {
-            get { return _owner.ModuleBuilder; }
-        }
+        ModuleBuilder ITypeOwner.ModuleBuilder => _owner.ModuleBuilder;
 
-        internal override int GetModuleBuilderToken()
-        {
-            return _token;
-        }
+        internal override int GetModuleBuilderToken() => _token;
 
         /// <summary>
         /// Helper for ModuleBuilder.ResolveMethod().
@@ -608,10 +515,7 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
-        public bool IsCreated()
-        {
-            return (typeFlags & TypeFlags.Baked) != 0;
-        }
+        public bool IsCreated() => (typeFlags & TypeFlags.Baked) != 0;
 
         internal override void CheckBaked()
         {
@@ -619,42 +523,24 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
         }
 
-        public override Type[] __GetDeclaredTypes()
-        {
-            return _nestedTypes != null ? _nestedTypes.ToArray() : Type.EmptyTypes;
-        }
+        public override Type[] __GetDeclaredTypes() => _nestedTypes != null ? _nestedTypes.ToArray() : Type.EmptyTypes;
 
-        public override FieldInfo[] __GetDeclaredFields()
-        {
-            return Util.ToArray(_fields, Array.Empty<FieldInfo>());
-        }
+        public override FieldInfo[] __GetDeclaredFields() => Util.ToArray(_fields, Array.Empty<FieldInfo>());
 
-        public override EventInfo[] __GetDeclaredEvents()
-        {
-            return [];
-        }
+        public override EventInfo[] __GetDeclaredEvents() => [];
 
-        public override PropertyInfo[] __GetDeclaredProperties()
-        {
-            return Util.ToArray(_properties, Array.Empty<PropertyInfo>());
-        }
+        public override PropertyInfo[] __GetDeclaredProperties() => Util.ToArray(_properties, Array.Empty<PropertyInfo>());
 
-        internal override bool IsModulePseudoType
-        {
-            get { return _token == 0x02000001; }
-        }
+        internal override bool IsModulePseudoType => _token == 0x02000001;
 
-        internal override bool IsBaked
-        {
-            get { return IsCreated(); }
-        }
+        internal override bool IsBaked => IsCreated();
 
         protected override bool IsValueTypeImpl
         {
             get
             {
-                var baseType = this.BaseType;
-                if (baseType != null && baseType.IsEnumOrValueType && !this.IsEnumOrValueType)
+                var baseType = BaseType;
+                if (baseType != null && baseType.IsEnumOrValueType && !IsEnumOrValueType)
                 {
                     if (IsCreated())
                         typeFlags |= TypeFlags.ValueType;

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -40,67 +40,37 @@ namespace IKVM.Reflection.Reader
         /// <param name="manifest"></param>
         /// <param name="index"></param>
         /// <param name="location"></param>
-        internal ResourceModule(ModuleReader manifest, int index, string location) : 
+        internal ResourceModule(ModuleReader manifest, int index, string location) :
             base(manifest.Universe)
         {
-            this._manifest = manifest;
-            this._index = index;
-            this._location = location;
+            _manifest = manifest;
+            _index = index;
+            _location = location;
         }
 
-        public override int MDStreamVersion
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override int MDStreamVersion => throw new NotSupportedException();
 
-        public override bool IsResource()
-        {
-            return true;
-        }
+        public override bool IsResource() => true;
 
-        public override Assembly Assembly
-        {
-            get { return _manifest.Assembly; }
-        }
+        public override Assembly Assembly => _manifest.Assembly;
 
-        public override string FullyQualifiedName
-        {
-            get { return _location ?? "<Unknown>"; }
-        }
+        public override string FullyQualifiedName => _location ?? "<Unknown>";
 
-        public override string Name
-        {
-            get { return _location == null ? "<Unknown>" : System.IO.Path.GetFileName(_location); }
-        }
+        public override string Name => _location == null ? "<Unknown>" : System.IO.Path.GetFileName(_location);
 
-        public override string ScopeName
-        {
-            get { return _manifest.GetFileName(_index); }
-        }
+        public override string ScopeName => _manifest.GetFileName(_index);
 
-        public override Guid ModuleVersionId
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override Guid ModuleVersionId => throw new NotSupportedException();
 
-        internal override Type FindType(TypeName typeName)
-        {
-            return null;
-        }
+        internal override Type FindType(TypeName typeName) => null;
 
-        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
+        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
         internal override void GetTypesImpl(List<Type> list)
         {
         }
 
-        protected override Exception ArgumentOutOfRangeException()
-        {
-            return new NotSupportedException();
-        }
+        protected override Exception ArgumentOutOfRangeException() => new NotSupportedException();
 
     }
 

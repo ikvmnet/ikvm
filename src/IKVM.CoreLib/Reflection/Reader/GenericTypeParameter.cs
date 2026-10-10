@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -43,9 +43,9 @@ namespace IKVM.Reflection.Reader
         internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
-            this._module = module;
-            this._handle = handle;
-            this._definition = module.Metadata.GetGenericParameter(handle);
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetGenericParameter(handle);
         }
 
         public override bool Equals(object obj) => base.Equals(obj);
@@ -62,16 +62,18 @@ namespace IKVM.Reflection.Reader
 
         public override int GenericParameterPosition => _definition.Index;
 
-        public override Type DeclaringType => _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
+        public override Type DeclaringType =>
+            _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
 
-        public override MethodBase DeclaringMethod => _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
+        public override MethodBase DeclaringMethod =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
 
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
             var handles = _definition.GetConstraints();
             var constraints = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
-            for (int i = 0; i < constraints.Length; i++)
+            for (var i = 0; i < constraints.Length; i++)
                 constraints[i] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
 
             return constraints;
@@ -79,10 +81,8 @@ namespace IKVM.Reflection.Reader
 
         public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_definition.Attributes;
 
-        internal override Type BindTypeParameters(IGenericBinder binder)
-        {
-            return _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
-        }
+        internal override Type BindTypeParameters(IGenericBinder binder) =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
 
         internal override bool IsBaked => true;
 

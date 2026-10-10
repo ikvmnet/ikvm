@@ -25,12 +25,12 @@
 namespace IKVM.Reflection.Emit
 {
 
-    internal enum AssemblyBuilderAccess
-	{
+    enum AssemblyBuilderAccess
+    {
 
-		Save = 2,
-		ReflectionOnly = 6,
+        Save = 2,
+        ReflectionOnly = 6,
 
-	}
+    }
 
 }

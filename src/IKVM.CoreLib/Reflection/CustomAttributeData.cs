@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -33,7 +33,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class CustomAttributeData
+    sealed class CustomAttributeData
     {
 
         internal static readonly IList<CustomAttributeData> EmptyList = new List<CustomAttributeData>(0).AsReadOnly();
@@ -107,9 +107,9 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(ModuleReader module, CustomAttributeHandle handle)
         {
-            this._module = module ?? throw new ArgumentNullException(nameof(module));
-            this._customAttribute = handle;
-            this._declSecurityIndex = -1;
+            _module = module ?? throw new ArgumentNullException(nameof(module));
+            _customAttribute = handle;
+            _declSecurityIndex = -1;
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace IKVM.Reflection
         static List<CustomAttributeTypedArgument> WrapConstructorArgs(object[] args, MethodSignature sig)
         {
             var list = new List<CustomAttributeTypedArgument>();
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
                 list.Add(new CustomAttributeTypedArgument(sig.GetParameterType(i), args[i]));
 
             return list;
@@ -145,15 +145,15 @@ namespace IKVM.Reflection
         /// <exception cref="ArgumentNullException"></exception>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
-            this._module = module ?? throw new ArgumentNullException(nameof(module));
-            this._declSecurityIndex = -1;
-            this._lazyConstructor = constructor;
+            _module = module ?? throw new ArgumentNullException(nameof(module));
+            _declSecurityIndex = -1;
+            _lazyConstructor = constructor;
 
             _lazyConstructorArguments = constructorArgs.AsReadOnly();
             if (namedArguments == null)
-                this._lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
+                _lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
             else
-                this._lazyNamedArguments = namedArguments.AsReadOnly();
+                _lazyNamedArguments = namedArguments.AsReadOnly();
         }
 
         /// <summary>
@@ -165,9 +165,9 @@ namespace IKVM.Reflection
         /// <exception cref="BadImageFormatException"></exception>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, BlobReader br)
         {
-            this._module = asm.ManifestModule;
-            this._declSecurityIndex = -1;
-            this._lazyConstructor = constructor;
+            _module = asm.ManifestModule;
+            _declSecurityIndex = -1;
+            _lazyConstructor = constructor;
             if (br.RemainingBytes == 0)
             {
                 // it's legal to have an empty blob
@@ -195,7 +195,7 @@ namespace IKVM.Reflection
             var parameters = Constructor.GetParameters();
             var args = ConstructorArguments;
 
-            for (int i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
                 sb.Append(sep);
                 sep = ", ";
@@ -272,14 +272,16 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob, int index)
         {
-            this._module = asm.ManifestModule;
-            this._declSecurityIndex = index;
-            this._lazyConstructor = constructor;
+            _module = asm.ManifestModule;
+            _declSecurityIndex = index;
+            _lazyConstructor = constructor;
 
-            var list = new List<CustomAttributeTypedArgument>();
-            list.Add(new CustomAttributeTypedArgument(constructor.Module.Universe.System_Security_Permissions_SecurityAction, securityAction));
-            this._lazyConstructorArguments = list.AsReadOnly();
-            this._declSecurityBlob = blob;
+            var list = new List<CustomAttributeTypedArgument>
+            {
+                new CustomAttributeTypedArgument(constructor.Module.Universe.System_Security_Permissions_SecurityAction, securityAction)
+            };
+            _lazyConstructorArguments = list.AsReadOnly();
+            _declSecurityBlob = blob;
         }
 
         static Type ReadFieldOrPropType(Module context, ref BlobReader br)
@@ -378,7 +380,7 @@ namespace IKVM.Reflection
 
                 var elementType = type.GetElementType();
                 var array = new CustomAttributeTypedArgument[length];
-                for (int i = 0; i < length; i++)
+                for (var i = 0; i < length; i++)
                     array[i] = ReadFixedArg(context, ref br, elementType);
 
                 return new CustomAttributeTypedArgument(type, array);
@@ -400,8 +402,8 @@ namespace IKVM.Reflection
                 return null;
 
             // there are broken compilers that emit an extra NUL character after the type name
-            if (typeName.Length > 0 && typeName[typeName.Length - 1] == 0)
-                typeName = typeName.Substring(0, typeName.Length - 1);
+            if (typeName.Length > 0 && typeName[^1] == 0)
+                typeName = typeName[..^1];
 
             return TypeNameParser.Parse(typeName, true).GetType(context.Universe, context, true, typeName, true, false);
         }
@@ -411,7 +413,7 @@ namespace IKVM.Reflection
             var sig = constructor.MethodSignature;
             var count = sig.GetParameterCount();
             var list = new List<CustomAttributeTypedArgument>(count);
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 list.Add(ReadFixedArg(context, ref br, sig.GetParameterType(i)));
 
             return list.AsReadOnly();
@@ -420,7 +422,7 @@ namespace IKVM.Reflection
         static IList<CustomAttributeNamedArgument> ReadNamedArguments(Module context, ref BlobReader br, int named, Type type, bool required)
         {
             var list = new List<CustomAttributeNamedArgument>(named);
-            for (int i = 0; i < named; i++)
+            for (var i = 0; i < named; i++)
             {
                 var fieldOrProperty = br.ReadByte();
                 var fieldOrPropertyType = ReadFieldOrPropType(context, ref br);
@@ -473,10 +475,7 @@ namespace IKVM.Reflection
             return type.Module.Universe.GetMissingPropertyOrThrow(context, type, name, PropertySignature.Create(CallingConventions.Standard | CallingConventions.HasThis, propertyType, null, new PackedCustomModifiers()));
         }
 
-        public Type AttributeType
-        {
-            get { return Constructor.DeclaringType; }
-        }
+        public Type AttributeType => Constructor.DeclaringType;
 
         public ConstructorInfo Constructor
         {
@@ -553,7 +552,7 @@ namespace IKVM.Reflection
         {
             var parameters = Constructor.GetParameters();
             var args = new object[ConstructorArguments.Count];
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
                 args[i] = RewrapArray(parameters[i].ParameterType, ConstructorArguments[i]);
 
             var namedProperties = new List<PropertyInfo>();
@@ -582,12 +581,11 @@ namespace IKVM.Reflection
 
         static object RewrapArray(Type type, CustomAttributeTypedArgument arg)
         {
-            var list = arg.Value as IList<CustomAttributeTypedArgument>;
-            if (list != null)
+            if (arg.Value is IList<CustomAttributeTypedArgument> list)
             {
                 var elementType = arg.ArgumentType.GetElementType();
                 var arr = new object[list.Count];
-                for (int i = 0; i < arr.Length; i++)
+                for (var i = 0; i < arr.Length; i++)
                     arr[i] = RewrapArray(elementType, list[i]);
 
                 if (type == type.Module.Universe.System_Object)
@@ -601,30 +599,16 @@ namespace IKVM.Reflection
             }
         }
 
-        public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member)
-        {
-            return __GetCustomAttributes(member, null, false);
-        }
+        public static IList<CustomAttributeData> GetCustomAttributes(MemberInfo member) => __GetCustomAttributes(member, null, false);
 
-        public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly)
-        {
-            return assembly.GetCustomAttributesData(null);
-        }
+        public static IList<CustomAttributeData> GetCustomAttributes(Assembly assembly) => assembly.GetCustomAttributesData(null);
 
-        public static IList<CustomAttributeData> GetCustomAttributes(Module module)
-        {
-            return __GetCustomAttributes(module, null, false);
-        }
+        public static IList<CustomAttributeData> GetCustomAttributes(Module module) => __GetCustomAttributes(module, null, false);
 
-        public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter)
-        {
-            return __GetCustomAttributes(parameter, null, false);
-        }
+        public static IList<CustomAttributeData> GetCustomAttributes(ParameterInfo parameter) => __GetCustomAttributes(parameter, null, false);
 
-        public static IList<CustomAttributeData> __GetCustomAttributes(Assembly assembly, Type attributeType, bool inherit)
-        {
-            return assembly.GetCustomAttributesData(attributeType);
-        }
+        public static IList<CustomAttributeData> __GetCustomAttributes(Assembly assembly, Type attributeType, bool inherit) =>
+            assembly.GetCustomAttributesData(attributeType);
 
         public static IList<CustomAttributeData> __GetCustomAttributes(Module module, Type attributeType, bool inherit)
         {
@@ -713,7 +697,7 @@ namespace IKVM.Reflection
             {
                 if (attributeType == null || attributeType.IsAssignableFrom(module.ResolveMethod(MetadataTokens.GetToken(reader.Metadata.GetCustomAttribute(h).Constructor)).DeclaringType))
                 {
-                    list ??= new List<CustomAttributeData>();
+                    list ??= [];
                     list.Add(new CustomAttributeData(reader, h));
                 }
             }
@@ -721,7 +705,7 @@ namespace IKVM.Reflection
             return list;
         }
 
-        private static bool IsInheritableAttribute(Type attribute)
+        static bool IsInheritableAttribute(Type attribute)
         {
             var attributeUsageAttribute = attribute.Module.Universe.System_AttributeUsageAttribute;
             var attr = __GetCustomAttributes(attribute, attributeUsageAttribute, false);
@@ -798,15 +782,11 @@ namespace IKVM.Reflection
             return new CustomAttributeData(module, constructor, new object[] { (int)fm.UnmanagedType }, named);
         }
 
-        static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value)
-        {
+        static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, string value) =>
             AddNamedArgument(list, type, fieldName, type.Module.Universe.System_String, value);
-        }
 
-        static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask)
-        {
+        static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type type, string fieldName, int flags, int flagMask) =>
             AddNamedArgument(list, type, fieldName, type.Module.Universe.System_Boolean, (flags & flagMask) != 0);
-        }
 
         static void AddNamedArgument(List<CustomAttributeNamedArgument> list, Type attributeType, string fieldName, Type valueType, object value)
         {

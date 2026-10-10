@@ -25,13 +25,13 @@
 namespace IKVM.Reflection.Emit
 {
 
-    internal enum PEFileKinds
-	{
+    enum PEFileKinds
+    {
 
-		Dll = 1,
-		ConsoleApplication = 2,
-		WindowApplication = 3,
+        Dll = 1,
+        ConsoleApplication = 2,
+        WindowApplication = 3,
 
-	}
+    }
 
 }

@@ -8,7 +8,7 @@ namespace IKVM.Reflection.Emit
     /// <summary>
     /// Describes the types of the IL instructions.
     /// </summary>
-    internal enum OpCodeType
+    enum OpCodeType
     {
         [Obsolete("OpCodeType.Annotation has been deprecated and is not supported.")]
         Annotation = 0,

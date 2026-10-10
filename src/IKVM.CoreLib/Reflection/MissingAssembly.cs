@@ -43,85 +43,37 @@ namespace IKVM.Reflection
             fullName = name;
         }
 
-        public override Type[] GetTypes()
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override Type[] GetTypes() => throw new MissingAssemblyException(this);
 
-        public override AssemblyName GetName()
-        {
-            return new AssemblyName(fullName);
-        }
+        public override AssemblyName GetName() => new AssemblyName(fullName);
 
-        public override string ImageRuntimeVersion
-        {
-            get { throw new MissingAssemblyException(this); }
-        }
+        public override string ImageRuntimeVersion => throw new MissingAssemblyException(this);
 
-        public override Module ManifestModule
-        {
-            get { return _module; }
-        }
+        public override Module ManifestModule => _module;
 
-        public override MethodInfo EntryPoint
-        {
-            get { throw new MissingAssemblyException(this); }
-        }
+        public override MethodInfo EntryPoint => throw new MissingAssemblyException(this);
 
-        public override string Location
-        {
-            get { throw new MissingAssemblyException(this); }
-        }
+        public override string Location => throw new MissingAssemblyException(this);
 
-        public override AssemblyName[] GetReferencedAssemblies()
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override AssemblyName[] GetReferencedAssemblies() => throw new MissingAssemblyException(this);
 
-        public override Module[] GetModules(bool getResourceModules)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override Module[] GetModules(bool getResourceModules) => throw new MissingAssemblyException(this);
 
-        public override Module[] GetLoadedModules(bool getResourceModules)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override Module[] GetLoadedModules(bool getResourceModules) => throw new MissingAssemblyException(this);
 
-        public override Module GetModule(string name)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override Module GetModule(string name) => throw new MissingAssemblyException(this);
 
-        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName) => throw new MissingAssemblyException(this);
 
-        public override System.IO.Stream GetManifestResourceStream(string resourceName)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        public override System.IO.Stream GetManifestResourceStream(string resourceName) => throw new MissingAssemblyException(this);
 
-        public override bool __IsMissing
-        {
-            get { return true; }
-        }
+        public override bool __IsMissing => true;
 
-        internal override Type FindType(TypeName typeName)
-        {
-            return null;
-        }
+        internal override Type FindType(TypeName typeName) => null;
 
-        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
+        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
-        internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
-        {
-            throw new MissingAssemblyException(this);
-        }
+        internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType) => throw new MissingAssemblyException(this);
 
     }
 

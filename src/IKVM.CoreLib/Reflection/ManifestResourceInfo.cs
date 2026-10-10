@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -29,7 +29,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class ManifestResourceInfo
+    sealed class ManifestResourceInfo
     {
 
         readonly ModuleReader _module;
@@ -42,13 +42,15 @@ namespace IKVM.Reflection
         /// <param name="implementation">The Implementation of the ManifestResource row, nil for a resource embedded in the module.</param>
         internal ManifestResourceInfo(ModuleReader module, EntityHandle implementation)
         {
-            this._module = module;
-            this._implementation = implementation;
+            _module = module;
+            _implementation = implementation;
         }
 
-        public Assembly ReferencedAssembly => _implementation.Kind == HandleKind.AssemblyReference && _implementation.IsNil == false ? _module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
+        public Assembly ReferencedAssembly =>
+            _implementation.Kind == HandleKind.AssemblyReference && _implementation.IsNil == false ? _module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
-        public string FileName => _implementation.Kind == HandleKind.AssemblyFile && _implementation.IsNil == false ? _module.GetFileName(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
+        public string FileName =>
+            _implementation.Kind == HandleKind.AssemblyFile && _implementation.IsNil == false ? _module.GetFileName(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
     }
 

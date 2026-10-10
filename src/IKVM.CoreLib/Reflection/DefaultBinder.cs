@@ -41,7 +41,7 @@ namespace IKVM.Reflection
 
             var bestMatch = match[0];
             var ambiguous = false;
-            for (int i = 1; i < matchCount; i++)
+            for (var i = 1; i < matchCount; i++)
                 SelectBestMatch(match[i], types, ref bestMatch, ref ambiguous);
 
             if (ambiguous)
@@ -55,7 +55,7 @@ namespace IKVM.Reflection
             if (parameters.Length != types.Length)
                 return false;
 
-            for (int i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
                 var sourceType = types[i];
                 var targetType = parameters[i].ParameterType;
@@ -82,8 +82,8 @@ namespace IKVM.Reflection
 
             if (currentBest.MethodSignature.MatchParameterTypes(candidate.MethodSignature))
             {
-                int depth1 = GetInheritanceDepth(currentBest.DeclaringType);
-                int depth2 = GetInheritanceDepth(candidate.DeclaringType);
+                var depth1 = GetInheritanceDepth(currentBest.DeclaringType);
+                var depth2 = GetInheritanceDepth(candidate.DeclaringType);
                 if (depth1 > depth2)
                 {
                     return;
@@ -101,7 +101,7 @@ namespace IKVM.Reflection
 
         static int GetInheritanceDepth(Type type)
         {
-            int depth = 0;
+            var depth = 0;
             while (type != null)
             {
                 depth++;
@@ -116,7 +116,7 @@ namespace IKVM.Reflection
             var sig2 = mb2.MethodSignature;
             var gb1 = mb1 as IGenericBinder ?? mb1.DeclaringType;
             var gb2 = mb2 as IGenericBinder ?? mb2.DeclaringType;
-            for (int i = 0; i < sig1.GetParameterCount(); i++)
+            for (var i = 0; i < sig1.GetParameterCount(); i++)
             {
                 var type1 = sig1.GetParameterType(gb1, i);
                 var type2 = sig2.GetParameterType(gb2, i);
@@ -129,7 +129,7 @@ namespace IKVM.Reflection
 
         static int MatchSignatures(PropertySignature sig1, PropertySignature sig2, Type[] types)
         {
-            for (int i = 0; i < sig1.ParameterCount; i++)
+            for (var i = 0; i < sig1.ParameterCount; i++)
             {
                 var type1 = sig1.GetParameter(i);
                 var type2 = sig2.GetParameter(i);
@@ -159,124 +159,60 @@ namespace IKVM.Reflection
 
             var sourceType = Type.GetTypeCode(source);
             var targetType = Type.GetTypeCode(target);
-            switch (sourceType)
+            return sourceType switch
             {
-                case TypeCode.Char:
-                    switch (targetType)
-                    {
-                        case TypeCode.UInt16:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.Byte:
-                    switch (targetType)
-                    {
-                        case TypeCode.Char:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.SByte:
-                    switch (targetType)
-                    {
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.UInt16:
-                    switch (targetType)
-                    {
-                        case TypeCode.UInt32:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.Int16:
-                    switch (targetType)
-                    {
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.UInt32:
-                    switch (targetType)
-                    {
-                        case TypeCode.UInt64:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.Int32:
-                    switch (targetType)
-                    {
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.UInt64:
-                    switch (targetType)
-                    {
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.Int64:
-                    switch (targetType)
-                    {
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                case TypeCode.Single:
-                    switch (targetType)
-                    {
-                        case TypeCode.Double:
-                            return true;
-                        default:
-                            return false;
-                    }
-                default:
-                    return false;
-            }
+                TypeCode.Char => targetType switch
+                {
+                    TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.Int32 or TypeCode.UInt64 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Byte => targetType switch
+                {
+                    TypeCode.Char or TypeCode.UInt16 or TypeCode.Int16 or TypeCode.UInt32 or TypeCode.Int32 or TypeCode.UInt64 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.SByte => targetType switch
+                {
+                    TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.UInt16 => targetType switch
+                {
+                    TypeCode.UInt32 or TypeCode.Int32 or TypeCode.UInt64 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Int16 => targetType switch
+                {
+                    TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.UInt32 => targetType switch
+                {
+                    TypeCode.UInt64 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Int32 => targetType switch
+                {
+                    TypeCode.Int64 or TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.UInt64 => targetType switch
+                {
+                    TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Int64 => targetType switch
+                {
+                    TypeCode.Single or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Single => targetType switch
+                {
+                    TypeCode.Double => true,
+                    _ => false,
+                },
+                _ => false,
+            };
         }
 
         public override PropertyInfo SelectProperty(BindingFlags bindingAttr, PropertyInfo[] match, Type returnType, Type[] indexes, ParameterModifier[] modifiers)
@@ -313,7 +249,7 @@ namespace IKVM.Reflection
 
             var bestMatch = match[0];
             var ambiguous = false;
-            for (int i = 1; i < matchCount; i++)
+            for (var i = 1; i < matchCount; i++)
             {
                 var best = MatchTypes(bestMatch.PropertyType, match[i].PropertyType, returnType);
 

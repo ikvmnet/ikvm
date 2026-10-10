@@ -51,10 +51,8 @@ namespace IKVM.Reflection.Writer
         /// Adds a VersionInfo structure.
         /// </summary>
         /// <param name="versionInfo"></param>
-        internal void AddVersionInfo(ByteBuffer versionInfo)
-        {
+        internal void AddVersionInfo(ByteBuffer versionInfo) =>
             _root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
-        }
 
         /// <summary>
         /// Adds a Win32 ICO file.
@@ -74,7 +72,7 @@ namespace IKVM.Reflection.Writer
             group.WriteUInt16(idReserved);
             group.WriteUInt16(idType);
             group.WriteUInt16(idCount);
-            for (int i = 0; i < idCount; i++)
+            for (var i = 0; i < idCount; i++)
             {
                 var bWidth = br.ReadByte();
                 var bHeight = br.ReadByte();
@@ -110,10 +108,8 @@ namespace IKVM.Reflection.Writer
         /// </summary>
         /// <param name="manifest"></param>
         /// <param name="resourceID"></param>
-        internal void AddManifest(byte[] manifest, ushort resourceID)
-        {
+        internal void AddManifest(byte[] manifest, ushort resourceID) =>
             _root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
-        }
 
         /// <inheritdoc />
         protected override void Serialize(BlobBuilder builder, SectionLocation location)
@@ -122,7 +118,7 @@ namespace IKVM.Reflection.Writer
             var linkOffsets = new List<int>();
             _root.Write(bb, linkOffsets);
 
-            foreach (int offset in linkOffsets)
+            foreach (var offset in linkOffsets)
             {
                 bb.Position = offset;
                 bb.WriteInt32(bb.GetInt32AtCurrentPosition() + (int)location.RelativeVirtualAddress);

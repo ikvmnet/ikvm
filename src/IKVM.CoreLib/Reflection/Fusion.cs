@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2010-2013 Jeroen Frijters
   Copyright (C) 2011 Marek Safar
 
@@ -33,11 +33,11 @@ namespace IKVM.Reflection
     static class Fusion
     {
 
-        static readonly Version s_frameworkVersion = new Version(4, 0, 0, 0);
-        static readonly Version s_frameworkVersionNext = new Version(5, 0, 0, 0);
-        static readonly Version s_silverlightVersion = new Version(2, 0, 5, 0);
-        static readonly Version s_silverlightVersionMinimum = new Version(2, 0, 0, 0);
-        static readonly Version s_silverlightVersionMaximum = new Version(5, 9, 0, 0);
+        static readonly Version s_frameworkVersion = new(4, 0, 0, 0);
+        static readonly Version s_frameworkVersionNext = new(5, 0, 0, 0);
+        static readonly Version s_silverlightVersion = new(2, 0, 5, 0);
+        static readonly Version s_silverlightVersionMinimum = new(2, 0, 0, 0);
+        static readonly Version s_silverlightVersionMaximum = new(5, 9, 0, 0);
 
         const string PublicKeyTokenEcma = "b77a5c561934e089";
         const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
@@ -136,7 +136,7 @@ namespace IKVM.Reflection
                 throw new ArgumentException();
             }
 
-            bool partial = IsPartial(name1, version1);
+            var partial = IsPartial(name1, version1);
 
             if (partial && name1.Retargetable.HasValue)
             {
@@ -180,7 +180,6 @@ namespace IKVM.Reflection
             }
 
             string remappedPublicKeyToken1 = null;
-            string remappedPublicKeyToken2 = null;
 
             if (version1 != null && (remappedPublicKeyToken1 = GetRemappedPublicKeyToken(ref name1, version1)) != null)
             {
@@ -188,6 +187,7 @@ namespace IKVM.Reflection
                 version1 = s_frameworkVersion;
             }
 
+            string remappedPublicKeyToken2;
             if ((remappedPublicKeyToken2 = GetRemappedPublicKeyToken(ref name2, version2)) != null)
             {
                 name2.PublicKeyToken = remappedPublicKeyToken2;
@@ -308,112 +308,13 @@ namespace IKVM.Reflection
         {
             // Framework assemblies use different unification rules, so when
             // a new framework is released the new assemblies need to be added.
-            switch (name.Name)
+            return name.Name switch
             {
-                case "System":
-                case "System.Core":
-                case "System.Data":
-                case "System.Data.DataSetExtensions":
-                case "System.Data.Linq":
-                case "System.Data.OracleClient":
-                case "System.Data.Services":
-                case "System.Data.Services.Client":
-                case "System.IdentityModel":
-                case "System.IdentityModel.Selectors":
-                case "System.IO.Compression":
-                case "System.Numerics":
-                case "System.Reflection.Context":
-                case "System.Runtime.Remoting":
-                case "System.Runtime.Serialization":
-                case "System.Runtime.WindowsRuntime":
-                case "System.Runtime.WindowsRuntime.UI.Xaml":
-                case "System.ServiceModel":
-                case "System.Transactions":
-                case "System.Windows.Forms":
-                case "System.Xml":
-                case "System.Xml.Linq":
-                case "System.Xml.Serialization":
-                    return name.PublicKeyToken == PublicKeyTokenEcma;
-                case "Microsoft.CSharp":
-                case "Microsoft.VisualBasic":
-                case "System.Collections":
-                case "System.Collections.Concurrent":
-                case "System.ComponentModel":
-                case "System.ComponentModel.Annotations":
-                case "System.ComponentModel.EventBasedAsync":
-                case "System.Configuration":
-                case "System.Configuration.Install":
-                case "System.Design":
-                case "System.Diagnostics.Contracts":
-                case "System.Diagnostics.Debug":
-                case "System.Diagnostics.Tools":
-                case "System.Diagnostics.Tracing":
-                case "System.DirectoryServices":
-                case "System.Drawing":
-                case "System.Drawing.Design":
-                case "System.Dynamic.Runtime":
-                case "System.EnterpriseServices":
-                case "System.Globalization":
-                case "System.IO":
-                case "System.Linq":
-                case "System.Linq.Expressions":
-                case "System.Linq.Parallel":
-                case "System.Linq.Queryable":
-                case "System.Management":
-                case "System.Messaging":
-                case "System.Net":
-                case "System.Net.Http":
-                case "System.Net.Http.Rtc":
-                case "System.Net.NetworkInformation":
-                case "System.Net.Primitives":
-                case "System.Net.Requests":
-                case "System.ObjectModel":
-                case "System.Reflection":
-                case "System.Reflection.Extensions":
-                case "System.Reflection.Primitives":
-                case "System.Resources.ResourceManager":
-                case "System.Runtime":
-                case "System.Runtime.Extensions":
-                case "System.Runtime.InteropServices":
-                case "System.Runtime.InteropServices.WindowsRuntime":
-                case "System.Runtime.Numerics":
-                case "System.Runtime.Serialization.Formatters.Soap":
-                case "System.Runtime.Serialization.Json":
-                case "System.Runtime.Serialization.Primitives":
-                case "System.Runtime.Serialization.Xml":
-                case "System.Security":
-                case "System.Security.Principal":
-                case "System.ServiceModel.Duplex":
-                case "System.ServiceModel.Http":
-                case "System.ServiceModel.NetTcp":
-                case "System.ServiceModel.Primitives":
-                case "System.ServiceModel.Security":
-                case "System.ServiceProcess":
-                case "System.Text.Encoding":
-                case "System.Text.Encoding.Extensions":
-                case "System.Text.RegularExpressions":
-                case "System.Threading":
-                case "System.Threading.Tasks":
-                case "System.Threading.Tasks.Parallel":
-                case "System.Web":
-                case "System.Web.Mobile":
-                case "System.Web.Services":
-                case "System.Windows":
-                case "System.Xml.ReaderWriter":
-                case "System.Xml.XDocument":
-                case "System.Xml.XmlSerializer":
-                    return name.PublicKeyToken == PublicKeyTokenMicrosoft;
-                case "System.ComponentModel.DataAnnotations":
-                case "System.ServiceModel.Web":
-                case "System.Web.Abstractions":
-                case "System.Web.Extensions":
-                case "System.Web.Extensions.Design":
-                case "System.Web.DynamicData":
-                case "System.Web.Routing":
-                    return name.PublicKeyToken == PublicKeyTokenWinFX;
-            }
-
-            return false;
+                "System" or "System.Core" or "System.Data" or "System.Data.DataSetExtensions" or "System.Data.Linq" or "System.Data.OracleClient" or "System.Data.Services" or "System.Data.Services.Client" or "System.IdentityModel" or "System.IdentityModel.Selectors" or "System.IO.Compression" or "System.Numerics" or "System.Reflection.Context" or "System.Runtime.Remoting" or "System.Runtime.Serialization" or "System.Runtime.WindowsRuntime" or "System.Runtime.WindowsRuntime.UI.Xaml" or "System.ServiceModel" or "System.Transactions" or "System.Windows.Forms" or "System.Xml" or "System.Xml.Linq" or "System.Xml.Serialization" => name.PublicKeyToken == PublicKeyTokenEcma,
+                "Microsoft.CSharp" or "Microsoft.VisualBasic" or "System.Collections" or "System.Collections.Concurrent" or "System.ComponentModel" or "System.ComponentModel.Annotations" or "System.ComponentModel.EventBasedAsync" or "System.Configuration" or "System.Configuration.Install" or "System.Design" or "System.Diagnostics.Contracts" or "System.Diagnostics.Debug" or "System.Diagnostics.Tools" or "System.Diagnostics.Tracing" or "System.DirectoryServices" or "System.Drawing" or "System.Drawing.Design" or "System.Dynamic.Runtime" or "System.EnterpriseServices" or "System.Globalization" or "System.IO" or "System.Linq" or "System.Linq.Expressions" or "System.Linq.Parallel" or "System.Linq.Queryable" or "System.Management" or "System.Messaging" or "System.Net" or "System.Net.Http" or "System.Net.Http.Rtc" or "System.Net.NetworkInformation" or "System.Net.Primitives" or "System.Net.Requests" or "System.ObjectModel" or "System.Reflection" or "System.Reflection.Extensions" or "System.Reflection.Primitives" or "System.Resources.ResourceManager" or "System.Runtime" or "System.Runtime.Extensions" or "System.Runtime.InteropServices" or "System.Runtime.InteropServices.WindowsRuntime" or "System.Runtime.Numerics" or "System.Runtime.Serialization.Formatters.Soap" or "System.Runtime.Serialization.Json" or "System.Runtime.Serialization.Primitives" or "System.Runtime.Serialization.Xml" or "System.Security" or "System.Security.Principal" or "System.ServiceModel.Duplex" or "System.ServiceModel.Http" or "System.ServiceModel.NetTcp" or "System.ServiceModel.Primitives" or "System.ServiceModel.Security" or "System.ServiceProcess" or "System.Text.Encoding" or "System.Text.Encoding.Extensions" or "System.Text.RegularExpressions" or "System.Threading" or "System.Threading.Tasks" or "System.Threading.Tasks.Parallel" or "System.Web" or "System.Web.Mobile" or "System.Web.Services" or "System.Windows" or "System.Xml.ReaderWriter" or "System.Xml.XDocument" or "System.Xml.XmlSerializer" => name.PublicKeyToken == PublicKeyTokenMicrosoft,
+                "System.ComponentModel.DataAnnotations" or "System.ServiceModel.Web" or "System.Web.Abstractions" or "System.Web.Extensions" or "System.Web.Extensions.Design" or "System.Web.DynamicData" or "System.Web.Routing" => name.PublicKeyToken == PublicKeyTokenWinFX,
+                _ => false,
+            };
         }
 
         static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name, Version version)
@@ -482,7 +383,7 @@ namespace IKVM.Reflection
             if (!TryParse(fullName, ref pos, out simpleName) || simpleName.Length == 0)
                 return ParseAssemblyResult.GenericError;
 
-            if (pos == fullName.Length && fullName[fullName.Length - 1] == ',')
+            if (pos == fullName.Length && fullName[^1] == ',')
                 return ParseAssemblyResult.GenericError;
 
             return ParseAssemblyResult.OK;
@@ -496,7 +397,7 @@ namespace IKVM.Reflection
             while (pos < fullName.Length && char.IsWhiteSpace(fullName[pos]))
                 pos++;
 
-            int quote = -1;
+            var quote = -1;
             if (pos < fullName.Length && (fullName[pos] == '"' || fullName[pos] == '\''))
                 quote = fullName[pos++];
 
@@ -569,9 +470,9 @@ namespace IKVM.Reflection
                 return res;
 
             System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
-            bool hasProcessorArchitecture = false;
-            bool hasContentType = false;
-            bool hasPublicKeyToken = false;
+            var hasProcessorArchitecture = false;
+            var hasContentType = false;
+            var hasPublicKeyToken = false;
             string publicKeyToken;
 
             while (pos != fullName.Length)
@@ -680,7 +581,7 @@ namespace IKVM.Reflection
                         if (key.Length == 0)
                             return ParseAssemblyResult.GenericError;
 
-                        unknownAttributes ??= new System.Collections.Generic.Dictionary<string, string>();
+                        unknownAttributes ??= [];
                         if (unknownAttributes.ContainsKey(key))
                             return ParseAssemblyResult.DuplicateKey;
 
@@ -716,9 +617,9 @@ namespace IKVM.Reflection
                 return true;
             }
 
-            ushort major, minor, build = 65535, revision = 65535;
-            if (ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out major)
-                && ushort.TryParse(parts[1], System.Globalization.NumberStyles.Integer, null, out minor)
+            ushort build = 65535, revision = 65535;
+            if (ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out var major)
+                && ushort.TryParse(parts[1], System.Globalization.NumberStyles.Integer, null, out var minor)
                 && (parts.Length <= 2 || parts[2] == "" || ushort.TryParse(parts[2], System.Globalization.NumberStyles.Integer, null, out build))
                 && (parts.Length <= 3 || parts[3] == "" || (parts[2] != "" && ushort.TryParse(parts[3], System.Globalization.NumberStyles.Integer, null, out revision))))
             {
@@ -772,15 +673,9 @@ namespace IKVM.Reflection
             return true;
         }
 
-        static bool IsPartial(ParsedAssemblyName name, Version version)
-        {
-            return version == null || name.Culture == null || name.PublicKeyToken == null;
-        }
+        static bool IsPartial(ParsedAssemblyName name, Version version) => version == null || name.Culture == null || name.PublicKeyToken == null;
 
-        static bool IsStrongNamed(ParsedAssemblyName name)
-        {
-            return name.PublicKeyToken != null && name.PublicKeyToken != "null";
-        }
+        static bool IsStrongNamed(ParsedAssemblyName name) => name.PublicKeyToken != null && name.PublicKeyToken != "null";
 
     }
 

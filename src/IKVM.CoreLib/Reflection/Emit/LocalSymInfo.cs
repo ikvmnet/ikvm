@@ -4,7 +4,7 @@ using System.Diagnostics.SymbolStore;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class LocalSymInfo
+    sealed class LocalSymInfo
     {
 
         // This class tracks the local variable's debugging information
@@ -17,8 +17,8 @@ namespace IKVM.Reflection.Emit
         int[] _startOffset = null!;
         int[] _endOffset = null!;
         int _localSymCount;         // how many entries in the arrays are occupied
-        string[] _namespace = null!;
-        int _nameSpaceCount;
+        readonly string[] _namespace = null!;
+        readonly int _nameSpaceCount;
         internal const int InitialSize = 16;
         #endregion
 
@@ -30,10 +30,10 @@ namespace IKVM.Reflection.Emit
             _nameSpaceCount = 0;
         }
 
-#endregion
-#region Private Members
+        #endregion
+        #region Private Members
 
-        private void EnsureCapacity()
+        void EnsureCapacity()
         {
             if (_localSymCount == 0)
             {
@@ -48,8 +48,8 @@ namespace IKVM.Reflection.Emit
             {
                 // the arrays are full. Enlarge the arrays
                 // why aren't we just using lists here?
-                int newSize = checked(_localSymCount * 2);
-                int[] temp = new int[newSize];
+                var newSize = checked(_localSymCount * 2);
+                var temp = new int[newSize];
                 Array.Copy(_localSlot, temp, _localSymCount);
                 _localSlot = temp;
 
@@ -61,11 +61,11 @@ namespace IKVM.Reflection.Emit
                 Array.Copy(_endOffset, temp, _localSymCount);
                 _endOffset = temp;
 
-                string[] strTemp = new string[newSize];
+                var strTemp = new string[newSize];
                 Array.Copy(_name, strTemp, _localSymCount);
                 _name = strTemp;
 
-                byte[][] ubTemp = new byte[newSize][];
+                var ubTemp = new byte[newSize][];
                 Array.Copy(_signature, ubTemp, _localSymCount);
                 _signature = ubTemp;
             }
@@ -83,7 +83,8 @@ namespace IKVM.Reflection.Emit
             _localSlot[_localSymCount] = slot;
             _name[_localSymCount] = strName;
             _signature[_localSymCount] = signature;
-            checked { _localSymCount++; }
+            checked
+            { _localSymCount++; }
         }
 
         internal void EmitLocalSymInfo(ISymbolWriter symWriter)

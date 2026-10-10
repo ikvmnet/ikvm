@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -25,22 +25,21 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 
-
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class PropertyBuilder : PropertyInfo
+    sealed class PropertyBuilder : PropertyInfo
     {
 
         readonly TypeBuilder _typeBuilder;
         readonly string _name;
         PropertyAttributes _attributes;
-        PropertySignature _sig;
+        readonly PropertySignature _sig;
         MethodBuilder _getter;
         MethodBuilder _setter;
-        readonly List<Accessor> _accessors = new List<Accessor>();
+        readonly List<Accessor> _accessors = [];
         int _lazyPseudoToken;
-        bool _patchCallingConvention;
+        readonly bool _patchCallingConvention;
 
         struct Accessor
         {
@@ -60,17 +59,14 @@ namespace IKVM.Reflection.Emit
         /// <param name="patchCallingConvention"></param>
         internal PropertyBuilder(TypeBuilder typeBuilder, string name, PropertyAttributes attributes, PropertySignature sig, bool patchCallingConvention)
         {
-            this._typeBuilder = typeBuilder;
-            this._name = name;
-            this._attributes = attributes;
-            this._sig = sig;
-            this._patchCallingConvention = patchCallingConvention;
+            _typeBuilder = typeBuilder;
+            _name = name;
+            _attributes = attributes;
+            _sig = sig;
+            _patchCallingConvention = patchCallingConvention;
         }
 
-        internal override PropertySignature PropertySignature
-        {
-            get { return _sig; }
-        }
+        internal override PropertySignature PropertySignature => _sig;
 
         public void SetGetMethod(MethodBuilder mdBuilder)
         {
@@ -113,30 +109,15 @@ namespace IKVM.Reflection.Emit
             throw new InvalidOperationException();
         }
 
-        public override PropertyAttributes Attributes
-        {
-            get { return _attributes; }
-        }
+        public override PropertyAttributes Attributes => _attributes;
 
-        public override bool CanRead
-        {
-            get { return _getter != null; }
-        }
+        public override bool CanRead => _getter != null;
 
-        public override bool CanWrite
-        {
-            get { return _setter != null; }
-        }
+        public override bool CanWrite => _setter != null;
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return nonPublic || (_getter != null && _getter.IsPublic) ? _getter : null;
-        }
+        public override MethodInfo GetGetMethod(bool nonPublic) => nonPublic || (_getter != null && _getter.IsPublic) ? _getter : null;
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return nonPublic || (_setter != null && _setter.IsPublic) ? _setter : null;
-        }
+        public override MethodInfo GetSetMethod(bool nonPublic) => nonPublic || (_setter != null && _setter.IsPublic) ? _setter : null;
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
@@ -153,25 +134,16 @@ namespace IKVM.Reflection.Emit
                 list.Add(method);
         }
 
-        public override Type DeclaringType
-        {
-            get { return _typeBuilder; }
-        }
+        public override Type DeclaringType => _typeBuilder;
 
-        public override string Name
-        {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public override Module Module
-        {
-            get { return _typeBuilder.Module; }
-        }
+        public override Module Module => _typeBuilder.Module;
 
         internal void Bake()
         {
             if (_patchCallingConvention)
-                _sig.HasThis = !this.IsStatic;
+                _sig.HasThis = !IsStatic;
 
             var token = _typeBuilder.ModuleBuilder.AddProperty(_attributes, _name, _sig);
 
@@ -220,10 +192,7 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal override bool IsBaked
-        {
-            get { return _typeBuilder.IsBaked; }
-        }
+        internal override bool IsBaked => _typeBuilder.IsBaked;
 
         internal override int GetCurrentToken()
         {

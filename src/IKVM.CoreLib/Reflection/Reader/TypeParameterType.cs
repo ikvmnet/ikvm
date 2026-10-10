@@ -38,15 +38,10 @@ namespace IKVM.Reflection.Reader
 
         }
 
-        public sealed override string AssemblyQualifiedName
-        {
-            get { return null; }
-        }
+        public sealed override string AssemblyQualifiedName => null;
 
-        protected sealed override bool IsValueTypeImpl
-        {
-            get { return (this.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0; }
-        }
+        protected sealed override bool IsValueTypeImpl =>
+            (GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0;
 
         public sealed override Type BaseType
         {
@@ -56,7 +51,7 @@ namespace IKVM.Reflection.Reader
                     if (!type.IsInterface && !type.IsGenericParameter)
                         return type;
 
-                return this.IsValueType ? this.Module.Universe.System_ValueType : this.Module.Universe.System_Object;
+                return IsValueType ? Module.Universe.System_ValueType : Module.Universe.System_Object;
             }
         }
 
@@ -70,25 +65,13 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
-        public sealed override TypeAttributes Attributes
-        {
-            get { return TypeAttributes.Public; }
-        }
+        public sealed override TypeAttributes Attributes => TypeAttributes.Public;
 
-        public sealed override string FullName
-        {
-            get { return null; }
-        }
+        public sealed override string FullName => null;
 
-        public sealed override string ToString()
-        {
-            return this.Name;
-        }
+        public sealed override string ToString() => Name;
 
-        protected sealed override bool ContainsMissingTypeImpl
-        {
-            get { return ContainsMissingType(GetGenericParameterConstraints()); }
-        }
+        protected sealed override bool ContainsMissingTypeImpl => ContainsMissingType(GetGenericParameterConstraints());
     }
 
 }

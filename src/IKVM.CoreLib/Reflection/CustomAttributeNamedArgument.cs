@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,7 +24,7 @@
 namespace IKVM.Reflection
 {
 
-    internal readonly struct CustomAttributeNamedArgument
+    readonly struct CustomAttributeNamedArgument
     {
 
         readonly MemberInfo _member;
@@ -37,44 +37,24 @@ namespace IKVM.Reflection
         /// <param name="value"></param>
         internal CustomAttributeNamedArgument(MemberInfo member, CustomAttributeTypedArgument value)
         {
-            this._member = member;
-            this._value = value;
+            _member = member;
+            _value = value;
         }
 
-        public override bool Equals(object obj)
-        {
-            return this == obj as CustomAttributeNamedArgument?;
-        }
+        public override bool Equals(object obj) => this == obj as CustomAttributeNamedArgument?;
 
-        public override int GetHashCode()
-        {
-            return _member.GetHashCode() ^ 53 * _value.GetHashCode();
-        }
+        public override int GetHashCode() => _member.GetHashCode() ^ 53 * _value.GetHashCode();
 
-        public MemberInfo MemberInfo
-        {
-            get { return _member; }
-        }
+        public MemberInfo MemberInfo => _member;
 
-        public CustomAttributeTypedArgument TypedValue
-        {
-            get { return _value; }
-        }
+        public CustomAttributeTypedArgument TypedValue => _value;
 
-        public bool IsField
-        {
-            get { return _member.MemberType == MemberTypes.Field; }
-        }
+        public bool IsField => _member.MemberType == MemberTypes.Field;
 
-        public string MemberName
-        {
-            get { return _member.Name; }
-        }
+        public string MemberName => _member.Name;
 
-        public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
-        {
-            return arg1._member.Equals(arg2._member) && arg1._value == arg2._value;
-        }
+        public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) =>
+            arg1._member.Equals(arg2._member) && arg1._value == arg2._value;
 
         public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) => !(arg1 == arg2);
 

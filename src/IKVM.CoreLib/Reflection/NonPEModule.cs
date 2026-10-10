@@ -41,60 +41,30 @@ namespace IKVM.Reflection
         {
         }
 
-        protected virtual Exception InvalidOperationException()
-        {
-            return new InvalidOperationException();
-        }
+        protected virtual Exception InvalidOperationException() => new InvalidOperationException();
 
-        protected virtual Exception NotSupportedException()
-        {
-            return new NotSupportedException();
-        }
+        protected virtual Exception NotSupportedException() => new NotSupportedException();
 
-        protected virtual Exception ArgumentOutOfRangeException()
-        {
-            return new ArgumentOutOfRangeException();
-        }
+        protected virtual Exception ArgumentOutOfRangeException() => new ArgumentOutOfRangeException();
 
-        internal sealed override Type GetModuleType()
-        {
-            throw InvalidOperationException();
-        }
+        internal sealed override Type GetModuleType() => throw InvalidOperationException();
 
-        internal sealed override BlobReader GetBlobReader(BlobHandle handle)
-        {
-            throw InvalidOperationException();
-        }
+        internal sealed override BlobReader GetBlobReader(BlobHandle handle) => throw InvalidOperationException();
 
-        public override Type[] __GetExportedTypes()
-        {
-            throw NotSupportedException();
-        }
+        public override Type[] __GetExportedTypes() => throw NotSupportedException();
 
-        internal sealed override Type ResolveType(int metadataToken, IGenericContext context)
-        {
+        internal sealed override Type ResolveType(int metadataToken, IGenericContext context) => throw ArgumentOutOfRangeException();
+
+        public sealed override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments) =>
             throw ArgumentOutOfRangeException();
-        }
 
-        public sealed override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
+        public sealed override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments) =>
             throw ArgumentOutOfRangeException();
-        }
 
-        public sealed override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
+        public sealed override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments) =>
             throw ArgumentOutOfRangeException();
-        }
 
-        public sealed override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            throw ArgumentOutOfRangeException();
-        }
-
-        public sealed override string ResolveString(int metadataToken)
-        {
-            throw ArgumentOutOfRangeException();
-        }
+        public sealed override string ResolveString(int metadataToken) => throw ArgumentOutOfRangeException();
 
     }
 

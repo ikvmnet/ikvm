@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -32,7 +32,7 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class CustomAttributeBuilder
+    sealed class CustomAttributeBuilder
     {
 
         readonly ConstructorInfo _con;
@@ -50,8 +50,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="blob"></param>
         internal CustomAttributeBuilder(ConstructorInfo con, byte[] blob)
         {
-            this._con = con;
-            this._blob = blob;
+            _con = con;
+            _blob = blob;
         }
 
         /// <summary>
@@ -99,25 +99,19 @@ namespace IKVM.Reflection.Emit
         /// <param name="fieldValues"></param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues, FieldInfo[] namedFields, object[] fieldValues)
         {
-            this._con = con;
-            this._constructorArgs = constructorArgs;
-            this._namedProperties = namedProperties;
-            this._propertyValues = propertyValues;
-            this._namedFields = namedFields;
-            this._fieldValues = fieldValues;
+            _con = con;
+            _constructorArgs = constructorArgs;
+            _namedProperties = namedProperties;
+            _propertyValues = propertyValues;
+            _namedFields = namedFields;
+            _fieldValues = fieldValues;
         }
 
-        public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob)
-        {
-            return new CustomAttributeBuilder(con, blob);
-        }
+        public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob) => new CustomAttributeBuilder(con, blob);
 
-        public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value)
-        {
-            return new CustomAttributeTypedArgument(type, value);
-        }
+        public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value) => new CustomAttributeTypedArgument(type, value);
 
-        private sealed class BlobWriter
+        sealed class BlobWriter
         {
 
             readonly Assembly _assembly;
@@ -132,9 +126,9 @@ namespace IKVM.Reflection.Emit
             /// <param name="bb"></param>
             internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, BlobBuilder bb)
             {
-                this._assembly = assembly;
-                this._cab = cab;
-                this._bb = bb;
+                _assembly = assembly;
+                _cab = cab;
+                _bb = bb;
             }
 
             internal void WriteCustomAttributeBlob()
@@ -143,7 +137,7 @@ namespace IKVM.Reflection.Emit
                 WriteUInt16(1);
 
                 var parameterTypes = _cab._con.GetParameterTypes();
-                for (int i = 0; i < parameterTypes.Length; i++)
+                for (var i = 0; i < parameterTypes.Length; i++)
                     WriteFixedArg(parameterTypes[i], _cab._constructorArgs[i]);
 
                 WriteNamedArguments(false);
@@ -152,7 +146,7 @@ namespace IKVM.Reflection.Emit
             internal void WriteNamedArguments(bool forDeclSecurity)
             {
                 // NumNamed
-                int named = 0;
+                var named = 0;
                 if (_cab._namedFields != null)
                 {
                     named += _cab._namedFields.Length;
@@ -171,14 +165,14 @@ namespace IKVM.Reflection.Emit
                 }
                 if (_cab._namedFields != null)
                 {
-                    for (int i = 0; i < _cab._namedFields.Length; i++)
+                    for (var i = 0; i < _cab._namedFields.Length; i++)
                     {
                         WriteNamedArg(0x53, _cab._namedFields[i].FieldType, _cab._namedFields[i].Name, _cab._fieldValues[i]);
                     }
                 }
                 if (_cab._namedProperties != null)
                 {
-                    for (int i = 0; i < _cab._namedProperties.Length; i++)
+                    for (var i = 0; i < _cab._namedProperties.Length; i++)
                     {
                         WriteNamedArg(0x54, _cab._namedProperties[i].PropertyType, _cab._namedProperties[i].Name, _cab._propertyValues[i]);
                     }
@@ -193,20 +187,11 @@ namespace IKVM.Reflection.Emit
                 WriteFixedArg(type, value);
             }
 
-            void WriteByte(byte value)
-            {
-                _bb.WriteByte(value);
-            }
+            void WriteByte(byte value) => _bb.WriteByte(value);
 
-            void WriteUInt16(ushort value)
-            {
-                _bb.WriteUInt16(value);
-            }
+            void WriteUInt16(ushort value) => _bb.WriteUInt16(value);
 
-            void WriteInt32(int value)
-            {
-                _bb.WriteInt32(value);
-            }
+            void WriteInt32(int value) => _bb.WriteInt32(value);
 
             void WriteFixedArg(Type type, object value)
             {
@@ -278,9 +263,8 @@ namespace IKVM.Reflection.Emit
                         // value.GetType() would return a subclass of Type, but we don't want to deal with that
                         type = u.System_Type;
                     }
-                    else if (value is CustomAttributeTypedArgument)
+                    else if (value is CustomAttributeTypedArgument cta)
                     {
-                        CustomAttributeTypedArgument cta = (CustomAttributeTypedArgument)value;
                         value = cta.Value;
                         type = cta.ArgumentType;
                     }
@@ -302,7 +286,7 @@ namespace IKVM.Reflection.Emit
                         Array array = (Array)value;
                         Type elemType = type.GetElementType();
                         WriteInt32(array.Length);
-                        foreach (object val in array)
+                        foreach (var val in array)
                         {
                             WriteFixedArg(elemType, val);
                         }
@@ -318,20 +302,11 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            void WriteInt64(long value)
-            {
-                _bb.WriteInt64(value);
-            }
+            void WriteInt64(long value) => _bb.WriteInt64(value);
 
-            void WriteSingle(float value)
-            {
-                _bb.WriteSingle(value);
-            }
+            void WriteSingle(float value) => _bb.WriteSingle(value);
 
-            void WriteDouble(double value)
-            {
-                _bb.WriteDouble(value);
-            }
+            void WriteDouble(double value) => _bb.WriteDouble(value);
 
             void WriteTypeName(Type type)
             {
@@ -347,8 +322,8 @@ namespace IKVM.Reflection.Emit
 
             void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
             {
-                bool v1 = !_assembly.ManifestModule.__IsMissing && _assembly.ManifestModule.MDStreamVersion < 0x20000;
-                bool includeAssemblyName = type.Assembly != _assembly && (!v1 || type.Assembly != type.Module.Universe.CoreLib);
+                var v1 = !_assembly.ManifestModule.__IsMissing && _assembly.ManifestModule.MDStreamVersion < 0x20000;
+                var includeAssemblyName = type.Assembly != _assembly && (!v1 || type.Assembly != type.Module.Universe.CoreLib);
                 if (isTypeParam && includeAssemblyName)
                 {
                     sb.Append('[');
@@ -386,7 +361,7 @@ namespace IKVM.Reflection.Emit
                 {
                     sb.Append(type.GetGenericTypeDefinition().FullName);
                     sb.Append('[');
-                    string sep = "";
+                    var sep = "";
                     foreach (Type typeParam in type.GetGenericArguments())
                     {
                         sb.Append(sep);
@@ -401,15 +376,9 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            void WriteString(string val)
-            {
-                _bb.WriteSerializedString(val);
-            }
+            void WriteString(string val) => _bb.WriteSerializedString(val);
 
-            void WritePackedLen(int len)
-            {
-                _bb.WriteCompressedInteger(len);
-            }
+            void WritePackedLen(int len) => _bb.WriteCompressedInteger(len);
 
             void WriteFieldOrPropType(Type type)
             {
@@ -491,10 +460,7 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        internal ConstructorInfo Constructor
-        {
-            get { return _con; }
-        }
+        internal ConstructorInfo Constructor => _con;
 
         internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
@@ -506,10 +472,7 @@ namespace IKVM.Reflection.Emit
             return moduleBuilder.GetOrAddBlob(bb);
         }
 
-        internal object GetConstructorArgument(int pos)
-        {
-            return _constructorArgs[pos];
-        }
+        internal object GetConstructorArgument(int pos) => _constructorArgs[pos];
 
         internal T? GetFieldValue<T>(string name) where T : struct
         {
@@ -541,7 +504,7 @@ namespace IKVM.Reflection.Emit
         {
             if (_namedFields != null)
             {
-                for (int i = 0; i < _namedFields.Length; i++)
+                for (var i = 0; i < _namedFields.Length; i++)
                 {
                     if (_namedFields[i].Name == name)
                     {
@@ -570,16 +533,16 @@ namespace IKVM.Reflection.Emit
                 var namedArgs = new List<CustomAttributeNamedArgument>();
 
                 if (_namedProperties != null)
-                    for (int i = 0; i < _namedProperties.Length; i++)
+                    for (var i = 0; i < _namedProperties.Length; i++)
                         namedArgs.Add(new CustomAttributeNamedArgument(_namedProperties[i], RewrapValue(_namedProperties[i].PropertyType, _propertyValues[i])));
 
                 if (_namedFields != null)
-                    for (int i = 0; i < _namedFields.Length; i++)
+                    for (var i = 0; i < _namedFields.Length; i++)
                         namedArgs.Add(new CustomAttributeNamedArgument(_namedFields[i], RewrapValue(_namedFields[i].FieldType, _fieldValues[i])));
 
                 var args = new List<CustomAttributeTypedArgument>(_constructorArgs.Length);
                 var parameterTypes = Constructor.GetParameterTypes();
-                for (int i = 0; i < _constructorArgs.Length; i++)
+                for (var i = 0; i < _constructorArgs.Length; i++)
                     args.Add(RewrapValue(parameterTypes[i], _constructorArgs[i]));
 
                 return new CustomAttributeData(asm.ManifestModule, _con, args, namedArgs);
@@ -588,15 +551,13 @@ namespace IKVM.Reflection.Emit
 
         static CustomAttributeTypedArgument RewrapValue(Type type, object value)
         {
-            if (value is Array)
+            if (value is Array array)
             {
-                var array = (Array)value;
                 var arrayType = type.Module.Universe.Import(array.GetType());
                 return RewrapArray(arrayType, array);
             }
-            else if (value is CustomAttributeTypedArgument)
+            else if (value is CustomAttributeTypedArgument arg)
             {
-                var arg = (CustomAttributeTypedArgument)value;
                 if (arg.Value is Array)
                     return RewrapArray(arg.ArgumentType, (Array)arg.Value);
 
@@ -612,16 +573,13 @@ namespace IKVM.Reflection.Emit
         {
             var elementType = arrayType.GetElementType();
             var newArray = new CustomAttributeTypedArgument[array.Length];
-            for (int i = 0; i < newArray.Length; i++)
+            for (var i = 0; i < newArray.Length; i++)
                 newArray[i] = RewrapValue(elementType, array.GetValue(i));
 
             return new CustomAttributeTypedArgument(arrayType, newArray);
         }
 
-        internal bool HasBlob
-        {
-            get { return _blob != null; }
-        }
+        internal bool HasBlob => _blob != null;
 
         internal CustomAttributeBuilder DecodeBlob(Assembly asm)
         {

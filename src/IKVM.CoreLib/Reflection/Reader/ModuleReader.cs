@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -49,7 +49,7 @@ namespace IKVM.Reflection.Reader
             /// <param name="index"></param>
             internal LazyForwardedType(int index)
             {
-                this._index = index;
+                _index = index;
             }
 
             internal Type GetType(ModuleReader module)
@@ -73,10 +73,10 @@ namespace IKVM.Reflection.Reader
 
         readonly Stream _stream;
         readonly string _location;
-        Assembly _assembly;
+        readonly Assembly _assembly;
         readonly SrmPEReader _pe;
         readonly SrmMetadataReader _metadata;
-        readonly Dictionary<int, string> _userStrings = new Dictionary<int, string>();
+        readonly Dictionary<int, string> _userStrings = [];
         TypeDefImpl[] _typeDefs;
         TypeDefImpl _moduleType;
         Assembly[] _assemblyRefs;
@@ -85,9 +85,9 @@ namespace IKVM.Reflection.Reader
         FieldInfo[] _fields;
         MethodBase[] _methods;
         MemberInfo[] _memberRefs;
-        Dictionary<StringHandle, string> _strings = new Dictionary<StringHandle, string>();
-        Dictionary<TypeName, Type> _types = new Dictionary<TypeName, Type>();
-        Dictionary<TypeName, LazyForwardedType> _forwardedTypes = new Dictionary<TypeName, LazyForwardedType>();
+        readonly Dictionary<StringHandle, string> _strings = [];
+        readonly Dictionary<TypeName, Type> _types = [];
+        readonly Dictionary<TypeName, LazyForwardedType> _forwardedTypes = [];
 
         /// <summary>
         /// Initializes a new instance.
@@ -100,8 +100,8 @@ namespace IKVM.Reflection.Reader
         internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped) :
             base(universe)
         {
-            this._stream = stream;
-            this._location = location;
+            _stream = stream;
+            _location = location;
 
             _pe = new SrmPEReader(stream, PEStreamOptions.LeaveOpen | (mapped ? PEStreamOptions.IsLoadedImage : PEStreamOptions.Default));
             if (_pe.HasMetadata == false)
@@ -112,7 +112,7 @@ namespace IKVM.Reflection.Reader
             if (assembly == null && _metadata.IsAssembly)
                 assembly = new AssemblyReader(location, this);
 
-            this._assembly = assembly;
+            _assembly = assembly;
         }
 
         internal override void GetTypesImpl(List<Type> list)
@@ -129,7 +129,7 @@ namespace IKVM.Reflection.Reader
             if (_typeDefs == null)
             {
                 _typeDefs = new TypeDefImpl[_metadata.TypeDefinitions.Count];
-                for (int i = 0; i < _typeDefs.Length; i++)
+                for (var i = 0; i < _typeDefs.Length; i++)
                 {
                     var type = new TypeDefImpl(this, MetadataTokens.TypeDefinitionHandle(i + 1));
                     _typeDefs[i] = type;
@@ -215,7 +215,7 @@ namespace IKVM.Reflection.Reader
 
         internal override Type ResolveType(int metadataToken, IGenericContext context)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
                 throw TokenOutOfRangeException(metadataToken);
 
@@ -314,13 +314,10 @@ namespace IKVM.Reflection.Reader
             /// <param name="context"></param>
             internal TrackingGenericContext(IGenericContext context)
             {
-                this._context = context;
+                _context = context;
             }
 
-            internal bool IsUsed
-            {
-                get { return _used; }
-            }
+            internal bool IsUsed => _used;
 
             public Type GetGenericTypeArgument(int index)
             {
@@ -336,10 +333,7 @@ namespace IKVM.Reflection.Reader
 
         }
 
-        TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName)
-        {
-            return new TypeName(GetString(typeNamespace), GetString(typeName));
-        }
+        TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName) => new TypeName(GetString(typeNamespace), GetString(typeName));
 
         internal Assembly ResolveAssemblyRef(int index)
         {
@@ -400,10 +394,8 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
-        Exception TokenOutOfRangeException(int metadataToken)
-        {
-            return new ArgumentOutOfRangeException("metadataToken", String.Format("Token 0x{0:x8} is not valid in the scope of module {1}.", metadataToken, this.Name));
-        }
+        Exception TokenOutOfRangeException(int metadataToken) =>
+            new ArgumentOutOfRangeException("metadataToken", string.Format("Token 0x{0:x8} is not valid in the scope of module {1}.", metadataToken, Name));
 
         public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
@@ -412,7 +404,7 @@ namespace IKVM.Reflection.Reader
                 case (int)TableIndex.Field:
                     return ResolveField(metadataToken, genericTypeArguments, genericMethodArguments);
                 case (int)TableIndex.MemberRef:
-                    int index = (metadataToken & 0xFFFFFF) - 1;
+                    var index = (metadataToken & 0xFFFFFF) - 1;
                     if (index < 0 || index >= _metadata.MemberReferences.Count)
                         goto default;
 
@@ -445,7 +437,7 @@ namespace IKVM.Reflection.Reader
 
         public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
             {
                 throw TokenOutOfRangeException(metadataToken);
@@ -460,7 +452,7 @@ namespace IKVM.Reflection.Reader
                 if (field != null)
                     return field;
 
-                throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid FieldInfo token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
+                throw new ArgumentException(string.Format("Token 0x{0:x8} is not a valid FieldInfo token in the scope of module {1}.", metadataToken, Name), "metadataToken");
             }
             else
             {
@@ -483,7 +475,7 @@ namespace IKVM.Reflection.Reader
 
         public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
             {
                 throw TokenOutOfRangeException(metadataToken);
@@ -498,7 +490,7 @@ namespace IKVM.Reflection.Reader
                 if (method != null)
                     return method;
 
-                throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
+                throw new ArgumentException(string.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, Name), "metadataToken");
             }
             else if ((metadataToken >> 24) == (int)TableIndex.MethodSpec && index < _metadata.GetTableRowCount(TableIndex.MethodSpec))
             {
@@ -513,10 +505,7 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override string ScopeName
-        {
-            get { return GetString(_metadata.GetModuleDefinition().Name); }
-        }
+        public override string ScopeName => GetString(_metadata.GetModuleDefinition().Name);
 
         MemberInfo GetMemberRef(int index, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
@@ -621,7 +610,7 @@ namespace IKVM.Reflection.Reader
 
         public override byte[] ResolveSignature(int metadataToken)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if ((metadataToken >> 24) == (int)TableIndex.StandAloneSig && index >= 0 && index < _metadata.GetTableRowCount(TableIndex.StandAloneSig))
                 return GetBlobCopy(_metadata.GetStandaloneSignature(MetadataTokens.StandaloneSignatureHandle(index + 1)).Signature);
 
@@ -712,9 +701,11 @@ namespace IKVM.Reflection.Reader
             foreach (var h in _metadata.AssemblyReferences)
             {
                 var reference = _metadata.GetAssemblyReference(h);
-                var name = new AssemblyName();
-                name.Name = GetString(reference.Name);
-                name.Version = reference.Version;
+                var name = new AssemblyName
+                {
+                    Name = GetString(reference.Name),
+                    Version = reference.Version
+                };
 
                 if (reference.PublicKeyOrToken.IsNil == false)
                 {
@@ -744,7 +735,7 @@ namespace IKVM.Reflection.Reader
         public override Type[] __GetExportedTypes()
         {
             var arr = new Type[_metadata.ExportedTypes.Count];
-            for (int i = 0; i < arr.Length; i++)
+            for (var i = 0; i < arr.Length; i++)
                 arr[i] = ResolveExportedType(i);
 
             return arr;
@@ -806,8 +797,10 @@ namespace IKVM.Reflection.Reader
         /// <returns></returns>
         unsafe int GetTablesStreamVersion()
         {
-            var root = new BlobReader(_metadata.MetadataPointer, _metadata.MetadataLength);
-            root.Offset = 12;
+            var root = new BlobReader(_metadata.MetadataPointer, _metadata.MetadataLength)
+            {
+                Offset = 12
+            };
             root.Offset += 4 + root.ReadInt32() + 2; // version string and flags
 
             for (int i = root.ReadUInt16(); i > 0; i--)
@@ -819,8 +812,10 @@ namespace IKVM.Reflection.Reader
 
                 if (name is "#~" or "#-")
                 {
-                    var stream = new BlobReader(_metadata.MetadataPointer + offset, _metadata.MetadataLength - offset);
-                    stream.Offset = 4;
+                    var stream = new BlobReader(_metadata.MetadataPointer + offset, _metadata.MetadataLength - offset)
+                    {
+                        Offset = 4
+                    };
                     return stream.ReadByte() << 16 | stream.ReadByte();
                 }
             }

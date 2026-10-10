@@ -27,7 +27,7 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class MissingMemberException : InvalidOperationException
+sealed class MissingMemberException : InvalidOperationException
     {
 
         [NonSerialized]
@@ -40,13 +40,10 @@ namespace IKVM.Reflection
         internal MissingMemberException(MemberInfo member) :
             base("Member '" + member + "' is a missing member and does not support the requested operation.")
         {
-            this._member = member;
+            _member = member;
         }
 
-        public MemberInfo MemberInfo
-        {
-            get { return _member; }
-        }
+        public MemberInfo MemberInfo => _member;
 
     }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -45,10 +45,10 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, FieldDefinitionHandle handle)
         {
-            this._module = module;
-            this._declaringType = declaringType;
-            this._handle = handle;
-            this._definition = module.Metadata.GetFieldDefinition(handle);
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetFieldDefinition(handle);
         }
 
         public override FieldAttributes Attributes => (FieldAttributes)_definition.Attributes;
@@ -75,7 +75,8 @@ namespace IKVM.Reflection.Reader
             return false;
         }
 
-        internal override FieldSignature FieldSignature => _lazyFieldSig ??= FieldSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
+        internal override FieldSignature FieldSignature =>
+            _lazyFieldSig ??= FieldSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
 
         internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, FieldSignature);
 

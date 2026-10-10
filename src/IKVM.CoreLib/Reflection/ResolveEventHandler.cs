@@ -24,6 +24,6 @@
 namespace IKVM.Reflection
 {
 
-    internal delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
+    delegate Assembly ResolveEventHandler(object sender, ResolveEventArgs args);
 
 }

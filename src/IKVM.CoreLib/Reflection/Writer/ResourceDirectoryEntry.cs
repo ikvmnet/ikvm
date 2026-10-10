@@ -32,7 +32,7 @@ namespace IKVM.Reflection.Writer
     {
 
         readonly OrdinalOrName _ordinalOrName;
-        readonly List<ResourceDirectoryEntry> _entries = new();
+        readonly List<ResourceDirectoryEntry> _entries = [];
         int _namedEntries;
 
         internal ByteBuffer Data;
@@ -43,7 +43,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="ordinalOrName"></param>
         internal ResourceDirectoryEntry(OrdinalOrName ordinalOrName)
         {
-            this._ordinalOrName = ordinalOrName;
+            _ordinalOrName = ordinalOrName;
         }
 
         /// <summary>
@@ -55,9 +55,9 @@ namespace IKVM.Reflection.Writer
             if (other is null)
                 throw new ArgumentNullException(nameof(other));
 
-            this._ordinalOrName = other._ordinalOrName;
-            this._entries = other._entries.Select(i => new ResourceDirectoryEntry(i)).ToList();
-            this._namedEntries = other._namedEntries;
+            _ordinalOrName = other._ordinalOrName;
+            _entries = other._entries.Select(i => new ResourceDirectoryEntry(i)).ToList();
+            _namedEntries = other._namedEntries;
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace IKVM.Reflection.Writer
                 }
                 else
                 {
-                    for (int i = 0; i < _namedEntries; i++)
+                    for (var i = 0; i < _namedEntries; i++)
                     {
                         if (_entries[i]._ordinalOrName.IsGreaterThan(id))
                         {
@@ -138,8 +138,8 @@ namespace IKVM.Reflection.Writer
                 var stringTableOffset = DirectoryLength;
                 var strings = new Dictionary<string, int>();
                 var stringTable = new ByteBuffer(16);
-                int offset = 16 + _entries.Count * 8;
-                for (int pass = 0; pass < 3; pass++)
+                var offset = 16 + _entries.Count * 8;
+                for (var pass = 0; pass < 3; pass++)
                     Write(bb, pass, 0, ref offset, strings, ref stringTableOffset, stringTable);
 
                 // the pecoff spec says that the string table is between the directory entries and the data entries,

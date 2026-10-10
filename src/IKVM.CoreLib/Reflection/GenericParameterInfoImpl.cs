@@ -37,59 +37,29 @@ namespace IKVM.Reflection
         /// <param name="parameterInfo"></param>
         internal GenericParameterInfoImpl(GenericMethodInstance method, ParameterInfo parameterInfo)
         {
-            this._method = method;
-            this._parameterInfo = parameterInfo;
+            _method = method;
+            _parameterInfo = parameterInfo;
         }
 
-        public override string Name
-        {
-            get { return _parameterInfo.Name; }
-        }
+        public override string Name => _parameterInfo.Name;
 
-        public override Type ParameterType
-        {
-            get { return _parameterInfo.ParameterType.BindTypeParameters(_method); }
-        }
+        public override Type ParameterType => _parameterInfo.ParameterType.BindTypeParameters(_method);
 
-        public override ParameterAttributes Attributes
-        {
-            get { return _parameterInfo.Attributes; }
-        }
+        public override ParameterAttributes Attributes => _parameterInfo.Attributes;
 
-        public override int Position
-        {
-            get { return _parameterInfo.Position; }
-        }
+        public override int Position => _parameterInfo.Position;
 
-        public override object RawDefaultValue
-        {
-            get { return _parameterInfo.RawDefaultValue; }
-        }
+        public override object RawDefaultValue => _parameterInfo.RawDefaultValue;
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return _parameterInfo.__GetCustomModifiers().Bind(_method);
-        }
+        public override CustomModifiers __GetCustomModifiers() => _parameterInfo.__GetCustomModifiers().Bind(_method);
 
-        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-        {
-            return _parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
-        }
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => _parameterInfo.__TryGetFieldMarshal(out fieldMarshal);
 
-        public override MemberInfo Member
-        {
-            get { return _method; }
-        }
+        public override MemberInfo Member => _method;
 
-        public override int MetadataToken
-        {
-            get { return _parameterInfo.MetadataToken; }
-        }
+        public override int MetadataToken => _parameterInfo.MetadataToken;
 
-        public override Module Module
-        {
-            get { return _method.Module; }
-        }
+        public override Module Module => _method.Module;
 
     }
 

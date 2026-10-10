@@ -34,15 +34,12 @@ namespace IKVM.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="customModifiers"></param>
-        private PackedCustomModifiers(CustomModifiers[] customModifiers)
+        PackedCustomModifiers(CustomModifiers[] customModifiers)
         {
-            this._customModifiers = customModifiers;
+            _customModifiers = customModifiers;
         }
 
-        public override int GetHashCode()
-        {
-            return Util.GetHashCode(_customModifiers);
-        }
+        public override int GetHashCode() => Util.GetHashCode(_customModifiers);
 
         public override bool Equals(object obj)
         {
@@ -50,10 +47,7 @@ namespace IKVM.Reflection
             return other != null && Equals(other.Value);
         }
 
-        internal bool Equals(PackedCustomModifiers other)
-        {
-            return Util.ArrayEquals(_customModifiers, other._customModifiers);
-        }
+        internal bool Equals(PackedCustomModifiers other) => Util.ArrayEquals(_customModifiers, other._customModifiers);
 
         internal CustomModifiers GetReturnTypeCustomModifiers()
         {
@@ -77,7 +71,7 @@ namespace IKVM.Reflection
                 return new PackedCustomModifiers();
 
             var expanded = new CustomModifiers[_customModifiers.Length];
-            for (int i = 0; i < _customModifiers.Length; i++)
+            for (var i = 0; i < _customModifiers.Length; i++)
                 expanded[i] = _customModifiers[i].Bind(binder);
 
             return new PackedCustomModifiers(expanded);
@@ -88,7 +82,7 @@ namespace IKVM.Reflection
             get
             {
                 if (_customModifiers != null)
-                    for (int i = 0; i < _customModifiers.Length; i++)
+                    for (var i = 0; i < _customModifiers.Length; i++)
                         if (_customModifiers[i].ContainsMissingType)
                             return true;
 
@@ -102,7 +96,7 @@ namespace IKVM.Reflection
             CustomModifiers[] modifiers = null;
 
             Pack(ref modifiers, 0, CustomModifiers.FromReqOpt(returnRequired, returnOptional), parameterCount + 1);
-            for (int i = 0; i < parameterCount; i++)
+            for (var i = 0; i < parameterCount; i++)
                 Pack(ref modifiers, i + 1, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(parameterRequired, i), Util.NullSafeElementAt(parameterOptional, i)), parameterCount + 1);
 
             return new PackedCustomModifiers(modifiers);
@@ -114,16 +108,13 @@ namespace IKVM.Reflection
 
             Pack(ref customModifiers, 0, returnTypeCustomModifiers, parameterCount + 1);
             if (parameterTypeCustomModifiers != null)
-                for (int i = 0; i < parameterCount; i++)
+                for (var i = 0; i < parameterCount; i++)
                     Pack(ref customModifiers, i + 1, parameterTypeCustomModifiers[i], parameterCount + 1);
 
             return new PackedCustomModifiers(customModifiers);
         }
 
-        internal static PackedCustomModifiers Wrap(CustomModifiers[] modifiers)
-        {
-            return new PackedCustomModifiers(modifiers);
-        }
+        internal static PackedCustomModifiers Wrap(CustomModifiers[] modifiers) => new PackedCustomModifiers(modifiers);
 
         internal static void Pack(ref CustomModifiers[] array, int index, CustomModifiers mods, int count)
         {

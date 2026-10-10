@@ -47,45 +47,21 @@ namespace IKVM.Reflection
 
         }
 
-        public override Type BaseType
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override Type BaseType => throw new InvalidOperationException();
 
-        public override TypeAttributes Attributes
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override TypeAttributes Attributes => throw new InvalidOperationException();
 
-        public override string Name
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string Name => throw new InvalidOperationException();
 
-        public override string FullName
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string FullName => throw new InvalidOperationException();
 
-        public override Module Module
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override Module Module => throw new InvalidOperationException();
 
-        internal override bool IsBaked
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        internal override bool IsBaked => throw new InvalidOperationException();
 
-        public override bool __IsMissing
-        {
-            get { return false; }
-        }
+        public override bool __IsMissing => false;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        protected override bool IsValueTypeImpl => throw new InvalidOperationException();
 
     }
 

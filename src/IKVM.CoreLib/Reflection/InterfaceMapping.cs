@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,14 +26,14 @@ using System;
 namespace IKVM.Reflection
 {
 
-    internal struct InterfaceMapping
-	{
+    struct InterfaceMapping
+    {
 
-		public MethodInfo[] InterfaceMethods;
-		public Type InterfaceType;
-		public MethodInfo[] TargetMethods;
-		public Type TargetType;
+        public MethodInfo[] InterfaceMethods;
+        public Type InterfaceType;
+        public MethodInfo[] TargetMethods;
+        public Type TargetType;
 
-	}
+    }
 
 }

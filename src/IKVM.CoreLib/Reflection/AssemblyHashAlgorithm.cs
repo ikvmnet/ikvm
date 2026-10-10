@@ -24,7 +24,7 @@
 namespace IKVM.Reflection
 {
 
-    internal enum AssemblyHashAlgorithm
+    enum AssemblyHashAlgorithm
     {
 
         None = 0,

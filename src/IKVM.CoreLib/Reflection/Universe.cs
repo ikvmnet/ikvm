@@ -38,7 +38,7 @@ namespace IKVM.Reflection
     /// <summary>
     /// Provides a view of the types available to the reflection infrastructure.
     /// </summary>
-    internal sealed class Universe : IDisposable
+    sealed class Universe : IDisposable
     {
 
         public static readonly string NetCoreLibName = "System.Runtime";
@@ -63,16 +63,16 @@ namespace IKVM.Reflection
 #endif
 
         readonly string _coreLibName;
-        readonly Dictionary<Type, Type> _canonicalizedTypes = new Dictionary<Type, Type>();
-        readonly List<AssemblyReader> _assemblies = new List<AssemblyReader>();
-        readonly List<AssemblyBuilder> _dynamicAssemblies = new List<AssemblyBuilder>();
-        readonly Dictionary<string, Assembly> _assembliesByName = new Dictionary<string, Assembly>();
-        readonly Dictionary<System.Type, Type> _importedTypes = new Dictionary<System.Type, Type>();
+        readonly Dictionary<Type, Type> _canonicalizedTypes = [];
+        readonly List<AssemblyReader> _assemblies = [];
+        readonly List<AssemblyBuilder> _dynamicAssemblies = [];
+        readonly Dictionary<string, Assembly> _assembliesByName = [];
+        readonly Dictionary<System.Type, Type> _importedTypes = [];
         Dictionary<ScopedTypeName, Type> _missingTypes;
-        bool _resolveMissingMembers;
+        readonly bool _resolveMissingMembers;
         readonly bool _enableFunctionPointers;
         readonly bool _useNativeFusion;
-        HashAlgorithmName _pdbChecksumAlgorithm = HashAlgorithmName.SHA256;
+        readonly HashAlgorithmName _pdbChecksumAlgorithm = HashAlgorithmName.SHA256;
         readonly UniverseOptions _options;
         Func<ModuleBuilder, ISymbolWriter> _symbolWriterFactory;
         Type _typeof_System_Object;
@@ -122,7 +122,7 @@ namespace IKVM.Reflection
         Type _typeof_System_Security_Permissions_CodeAccessSecurityAttribute;
 
         Type _typeof_System_Security_Permissions_SecurityAction;
-        List<ResolveEventHandler> _resolvers = new List<ResolveEventHandler>();
+        readonly List<ResolveEventHandler> _resolvers = [];
 
         /// <summary>
         /// Initializes a new instance.
@@ -140,8 +140,8 @@ namespace IKVM.Reflection
         /// <param name="coreLibName"></param>
         public Universe(UniverseOptions options, string coreLibName = null)
         {
-            this._options = options;
-            this._coreLibName = coreLibName ?? DefaultCoreLibName;
+            _options = options;
+            _coreLibName = coreLibName ?? DefaultCoreLibName;
             _enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
             _useNativeFusion = GetUseNativeFusion();
             _resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
@@ -151,20 +151,14 @@ namespace IKVM.Reflection
         /// Sets a factory to create a <see cref="ISymbolWriter"/> for a module name.
         /// </summary>
         /// <param name="factory"></param>
-        public void SetSymbolWriterFactory(Func<ModuleBuilder, ISymbolWriter> factory)
-        {
-            this._symbolWriterFactory = factory;
-        }
+        public void SetSymbolWriterFactory(Func<ModuleBuilder, ISymbolWriter> factory) => _symbolWriterFactory = factory;
 
         /// <summary>
         /// Creates a new <see cref="ISymbolWriter"/> for the specified assembly builder and new module name.
         /// </summary>
         /// <param name="module"></param>
         /// <returns></returns>
-        internal ISymbolWriter CreateSymbolWriter(ModuleBuilder module)
-        {
-            return _symbolWriterFactory?.Invoke(module);
-        }
+        internal ISymbolWriter CreateSymbolWriter(ModuleBuilder module) => _symbolWriterFactory?.Invoke(module);
 
         static bool GetUseNativeFusion()
         {
@@ -227,13 +221,11 @@ namespace IKVM.Reflection
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        Type ResolvePrimitive(string name)
-        {
+        Type ResolvePrimitive(string name) =>
             // Primitive here means that these types have a special metadata encoding, which means that
             // there can be references to them without referring to them by name explicitly.
             // We want these types to be usable even when they don't exist in mscorlib or there is no mscorlib loaded.
-            return CoreLib.FindType(new TypeName("System", name)) ?? GetMissingType(null, CoreLib.ManifestModule, null, new TypeName("System", name));
-        }
+            CoreLib.FindType(new TypeName("System", name)) ?? GetMissingType(null, CoreLib.ManifestModule, null, new TypeName("System", name));
 
         internal Type System_Object => _typeof_System_Object ??= ResolvePrimitive("Object");
 
@@ -285,63 +277,77 @@ namespace IKVM.Reflection
 
         internal Type System_Decimal => _typeof_System_Decimal ??= ImportCoreLibType("System", "Decimal");
 
-        internal Type System_AttributeUsageAttribute => _typeof_System_AttributeUsageAttribute ??= ImportCoreLibType("System", "AttributeUsageAttribute");
+        internal Type System_AttributeUsageAttribute =>
+            _typeof_System_AttributeUsageAttribute ??= ImportCoreLibType("System", "AttributeUsageAttribute");
 
-        internal Type System_Runtime_InteropServices_DllImportAttribute => _typeof_System_Runtime_InteropServices_DllImportAttribute ??= ImportInteropType("DllImportAttribute");
+        internal Type System_Runtime_InteropServices_DllImportAttribute =>
+            _typeof_System_Runtime_InteropServices_DllImportAttribute ??= ImportInteropType("DllImportAttribute");
 
-        internal Type System_Runtime_InteropServices_FieldOffsetAttribute => _typeof_System_Runtime_InteropServices_FieldOffsetAttribute ??= ImportInteropType("FieldOffsetAttribute");
+        internal Type System_Runtime_InteropServices_FieldOffsetAttribute =>
+            _typeof_System_Runtime_InteropServices_FieldOffsetAttribute ??= ImportInteropType("FieldOffsetAttribute");
 
-        internal Type System_Runtime_InteropServices_MarshalAsAttribute => _typeof_System_Runtime_InteropServices_MarshalAsAttribute ??= ImportInteropType("MarshalAsAttribute");
+        internal Type System_Runtime_InteropServices_MarshalAsAttribute =>
+            _typeof_System_Runtime_InteropServices_MarshalAsAttribute ??= ImportInteropType("MarshalAsAttribute");
 
-        internal Type System_Runtime_InteropServices_UnmanagedType => _typeof_System_Runtime_InteropServices_UnmanagedType ??= ImportInteropType("UnmanagedType");
+        internal Type System_Runtime_InteropServices_UnmanagedType =>
+            _typeof_System_Runtime_InteropServices_UnmanagedType ??= ImportInteropType("UnmanagedType");
 
         internal Type System_Runtime_InteropServices_VarEnum => _typeof_System_Runtime_InteropServices_VarEnum ??= ImportInteropType("VarEnum");
 
-        internal Type System_Runtime_InteropServices_PreserveSigAttribute => _typeof_System_Runtime_InteropServices_PreserveSigAttribute ??= ImportInteropType("PreserveSigAttribute");
+        internal Type System_Runtime_InteropServices_PreserveSigAttribute =>
+            _typeof_System_Runtime_InteropServices_PreserveSigAttribute ??= ImportInteropType("PreserveSigAttribute");
 
-        internal Type System_Runtime_InteropServices_CallingConvention => _typeof_System_Runtime_InteropServices_CallingConvention ??= ImportInteropType("CallingConvention");
+        internal Type System_Runtime_InteropServices_CallingConvention =>
+            _typeof_System_Runtime_InteropServices_CallingConvention ??= ImportInteropType("CallingConvention");
 
         internal Type System_Runtime_InteropServices_CharSet => _typeof_System_Runtime_InteropServices_CharSet ??= ImportInteropType("CharSet");
 
-        internal Type System_Runtime_CompilerServices_DecimalConstantAttribute => _typeof_System_Runtime_CompilerServices_DecimalConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DecimalConstantAttribute");
+        internal Type System_Runtime_CompilerServices_DecimalConstantAttribute =>
+            _typeof_System_Runtime_CompilerServices_DecimalConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DecimalConstantAttribute");
 
-        internal Type System_Runtime_CompilerServices_DateTimeConstantAttribute => _typeof_System_Runtime_CompilerServices_DateTimeConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DateTimeConstantAttribute");
+        internal Type System_Runtime_CompilerServices_DateTimeConstantAttribute =>
+            _typeof_System_Runtime_CompilerServices_DateTimeConstantAttribute ??= ImportCoreLibType("System.Runtime.CompilerServices", "DateTimeConstantAttribute");
 
-        internal Type System_Reflection_AssemblyCopyrightAttribute => _typeof_System_Reflection_AssemblyCopyrightAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyCopyrightAttribute");
+        internal Type System_Reflection_AssemblyCopyrightAttribute =>
+            _typeof_System_Reflection_AssemblyCopyrightAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyCopyrightAttribute");
 
-        internal Type System_Reflection_AssemblyTrademarkAttribute => _typeof_System_Reflection_AssemblyTrademarkAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyTrademarkAttribute");
+        internal Type System_Reflection_AssemblyTrademarkAttribute =>
+            _typeof_System_Reflection_AssemblyTrademarkAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyTrademarkAttribute");
 
-        internal Type System_Reflection_AssemblyProductAttribute => _typeof_System_Reflection_AssemblyProductAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyProductAttribute");
+        internal Type System_Reflection_AssemblyProductAttribute =>
+            _typeof_System_Reflection_AssemblyProductAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyProductAttribute");
 
-        internal Type System_Reflection_AssemblyCompanyAttribute => _typeof_System_Reflection_AssemblyCompanyAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyCompanyAttribute");
+        internal Type System_Reflection_AssemblyCompanyAttribute =>
+            _typeof_System_Reflection_AssemblyCompanyAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyCompanyAttribute");
 
-        internal Type System_Reflection_AssemblyDescriptionAttribute => _typeof_System_Reflection_AssemblyDescriptionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyDescriptionAttribute");
+        internal Type System_Reflection_AssemblyDescriptionAttribute =>
+            _typeof_System_Reflection_AssemblyDescriptionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyDescriptionAttribute");
 
-        internal Type System_Reflection_AssemblyTitleAttribute => _typeof_System_Reflection_AssemblyTitleAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyTitleAttribute");
+        internal Type System_Reflection_AssemblyTitleAttribute =>
+            _typeof_System_Reflection_AssemblyTitleAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyTitleAttribute");
 
-        internal Type System_Reflection_AssemblyInformationalVersionAttribute => _typeof_System_Reflection_AssemblyInformationalVersionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyInformationalVersionAttribute");
+        internal Type System_Reflection_AssemblyInformationalVersionAttribute =>
+            _typeof_System_Reflection_AssemblyInformationalVersionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyInformationalVersionAttribute");
 
-        internal Type System_Reflection_AssemblyFileVersionAttribute => _typeof_System_Reflection_AssemblyFileVersionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyFileVersionAttribute");
+        internal Type System_Reflection_AssemblyFileVersionAttribute =>
+            _typeof_System_Reflection_AssemblyFileVersionAttribute ??= ImportCoreLibType("System.Reflection", "AssemblyFileVersionAttribute");
 
-        internal Type System_Security_Permissions_CodeAccessSecurityAttribute => _typeof_System_Security_Permissions_CodeAccessSecurityAttribute ??= ImportCoreLibType("System.Security.Permissions", "CodeAccessSecurityAttribute");
+        internal Type System_Security_Permissions_CodeAccessSecurityAttribute =>
+            _typeof_System_Security_Permissions_CodeAccessSecurityAttribute ??= ImportCoreLibType("System.Security.Permissions", "CodeAccessSecurityAttribute");
 
-        internal Type System_Security_Permissions_SecurityAction => _typeof_System_Security_Permissions_SecurityAction ??= ImportCoreLibType("System.Security.Permissions", "SecurityAction");
+        internal Type System_Security_Permissions_SecurityAction =>
+            _typeof_System_Security_Permissions_SecurityAction ??= ImportCoreLibType("System.Security.Permissions", "SecurityAction");
 
         /// <summary>
         /// Returns <c>true</c> if a CoreLib implementation has been loaded.
         /// </summary>
-        internal bool HasCoreLib
-        {
-            get { return GetLoadedAssembly(_coreLibName) != null; }
-        }
+        internal bool HasCoreLib => GetLoadedAssembly(_coreLibName) != null;
 
         /// <summary>
         /// Invoked when an attempt to resolve an assembly occurs.
         /// </summary>
         public event ResolveEventHandler AssemblyResolve
-        {
-            add { _resolvers.Add(value); }
-            remove { _resolvers.Remove(value); }
+        { add => _resolvers.Add(value); remove => _resolvers.Remove(value);
         }
 
         /// <summary>
@@ -411,7 +417,7 @@ namespace IKVM.Reflection
             {
                 System.Type[] args = TypeUtil.GetGenericArguments(type);
                 Type[] importedArgs = new Type[args.Length];
-                for (int i = 0; i < args.Length; i++)
+                for (var i = 0; i < args.Length; i++)
                     importedArgs[i] = Import(args[i]);
 
                 return Import(type.GetGenericTypeDefinition()).MakeGenericType(importedArgs);
@@ -430,10 +436,7 @@ namespace IKVM.Reflection
         /// </summary>
         /// <param name="asm"></param>
         /// <returns></returns>
-        Assembly Import(System.Reflection.Assembly asm)
-        {
-            return Load(asm.FullName);
-        }
+        Assembly Import(System.Reflection.Assembly asm) => Load(asm.FullName);
 
         public RawModule OpenRawModule(string path)
         {
@@ -456,10 +459,7 @@ namespace IKVM.Reflection
             return module;
         }
 
-        public RawModule OpenRawModule(Stream stream, string location)
-        {
-            return OpenRawModule(stream, location, false);
-        }
+        public RawModule OpenRawModule(Stream stream, string location) => OpenRawModule(stream, location, false);
 
         RawModule OpenRawModule(Stream stream, string location, bool mapped)
         {
@@ -513,7 +513,7 @@ namespace IKVM.Reflection
             if (!_assembliesByName.TryGetValue(refname, out var asm))
             {
                 var simpleName = GetSimpleAssemblyName(refname);
-                for (int i = 0; i < _assemblies.Count; i++)
+                for (var i = 0; i < _assemblies.Count; i++)
                 {
                     if (simpleName.Equals(_assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(_coreLibName, refname, false, _assemblies[i].FullName, false, out var result))
                     {
@@ -537,10 +537,7 @@ namespace IKVM.Reflection
             return null;
         }
 
-        public Assembly Load(string refname)
-        {
-            return Load(refname, null, true);
-        }
+        public Assembly Load(string refname) => Load(refname, null, true);
 
         internal Assembly Load(string refname, Module requestingModule, bool throwOnError)
         {
@@ -554,7 +551,7 @@ namespace IKVM.Reflection
             }
             else
             {
-                var args = new ResolveEventArgs(refname, requestingModule == null ? null : requestingModule.Assembly);
+                var args = new ResolveEventArgs(refname, requestingModule?.Assembly);
                 foreach (var evt in _resolvers)
                 {
                     asm = evt(this, args);
@@ -562,8 +559,7 @@ namespace IKVM.Reflection
                         break;
                 }
 
-                if (asm == null)
-                    asm = GetDynamicAssembly(refname);
+                asm ??= GetDynamicAssembly(refname);
             }
 
             if (asm != null)
@@ -590,12 +586,10 @@ namespace IKVM.Reflection
             return null;
         }
 
-        public Type GetType(string assemblyQualifiedTypeName, bool throwOnError)
-        {
+        public Type GetType(string assemblyQualifiedTypeName, bool throwOnError) =>
             // to be more compatible with Type.GetType(), we could call Assembly.GetCallingAssembly(),
             // import that assembly and pass it as the context, but implicitly importing is considered evil
-            return GetType(null, assemblyQualifiedTypeName, throwOnError, false);
-        }
+            GetType(null, assemblyQualifiedTypeName, throwOnError, false);
 
         // note that context is slightly different from the calling assembly (System.Type.GetType),
         // because context is passed to the AssemblyResolve event as the RequestingAssembly
@@ -606,7 +600,7 @@ namespace IKVM.Reflection
             {
                 return null;
             }
-            return parser.GetType(this, context == null ? null : context.ManifestModule, throwOnError, assemblyQualifiedTypeName, false, ignoreCase);
+            return parser.GetType(this, context?.ManifestModule, throwOnError, assemblyQualifiedTypeName, false, ignoreCase);
         }
 
         // this is similar to GetType(Assembly context, string assemblyQualifiedTypeName, bool throwOnError),
@@ -619,7 +613,7 @@ namespace IKVM.Reflection
             {
                 return null;
             }
-            return parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
+            return parser.GetType(this, context?.ManifestModule, false, assemblyQualifiedTypeName, true, false);
         }
 
         /// <summary>
@@ -664,7 +658,7 @@ namespace IKVM.Reflection
         public Assembly[] GetAssemblies()
         {
             var array = new Assembly[_assemblies.Count + _dynamicAssemblies.Count];
-            for (int i = 0; i < _assemblies.Count; i++)
+            for (var i = 0; i < _assemblies.Count; i++)
                 array[i] = _assemblies[i];
             for (int i = 0, j = _assemblies.Count; j < array.Length; i++, j++)
                 array[j] = _dynamicAssemblies[i];
@@ -679,19 +673,14 @@ namespace IKVM.Reflection
                 : Fusion.CompareAssemblyIdentityPure(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
-        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir)
-        {
-            return new AssemblyBuilder(this, name, dir, null);
-        }
+        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir) =>
+            new AssemblyBuilder(this, name, dir, null);
 
-        internal void RegisterDynamicAssembly(AssemblyBuilder asm)
-        {
-            _dynamicAssemblies.Add(asm);
-        }
+        internal void RegisterDynamicAssembly(AssemblyBuilder asm) => _dynamicAssemblies.Add(asm);
 
         internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
         {
-            List<string> remove = new List<string>();
+            List<string> remove = [];
             foreach (KeyValuePair<string, Assembly> kv in _assembliesByName)
             {
                 if (kv.Value == assembly)
@@ -699,7 +688,7 @@ namespace IKVM.Reflection
                     remove.Add(kv.Key);
                 }
             }
-            foreach (string key in remove)
+            foreach (var key in remove)
             {
                 _assembliesByName.Remove(key);
             }
@@ -726,7 +715,7 @@ namespace IKVM.Reflection
         public Assembly CreateMissingAssembly(string assemblyName)
         {
             Assembly asm = new MissingAssembly(this, assemblyName);
-            string name = asm.FullName;
+            var name = asm.FullName;
             if (!_assembliesByName.ContainsKey(name))
             {
                 _assembliesByName.Add(name, asm);
@@ -734,25 +723,19 @@ namespace IKVM.Reflection
             return asm;
         }
 
-        internal bool MissingMemberResolution
-        {
-            get { return _resolveMissingMembers; }
-        }
+        internal bool MissingMemberResolution => _resolveMissingMembers;
 
-        internal bool EnableFunctionPointers
-        {
-            get { return _enableFunctionPointers; }
-        }
+        internal bool EnableFunctionPointers => _enableFunctionPointers;
 
-        private struct ScopedTypeName : IEquatable<ScopedTypeName>
+        struct ScopedTypeName : IEquatable<ScopedTypeName>
         {
-            private readonly object _scope;
-            private readonly TypeName _name;
+            readonly object _scope;
+            readonly TypeName _name;
 
             internal ScopedTypeName(object scope, TypeName name)
             {
-                this._scope = scope;
-                this._name = name;
+                _scope = scope;
+                _name = name;
             }
 
             public override bool Equals(object obj)
@@ -761,26 +744,16 @@ namespace IKVM.Reflection
                 return other != null && ((IEquatable<ScopedTypeName>)other.Value).Equals(this);
             }
 
-            public override int GetHashCode()
-            {
-                return _scope.GetHashCode() * 7 + _name.GetHashCode();
-            }
+            public override int GetHashCode() => _scope.GetHashCode() * 7 + _name.GetHashCode();
 
-            bool IEquatable<ScopedTypeName>.Equals(ScopedTypeName other)
-            {
-                return other._scope == _scope && other._name == _name;
-            }
+            bool IEquatable<ScopedTypeName>.Equals(ScopedTypeName other) => other._scope == _scope && other._name == _name;
         }
 
-        private Type GetMissingType(Module requester, Module module, Type declaringType, TypeName typeName)
+        Type GetMissingType(Module requester, Module module, Type declaringType, TypeName typeName)
         {
-            if (_missingTypes == null)
-            {
-                _missingTypes = new Dictionary<ScopedTypeName, Type>();
-            }
+            _missingTypes ??= [];
             ScopedTypeName stn = new ScopedTypeName(declaringType ?? (object)module, typeName);
-            Type type;
-            if (!_missingTypes.TryGetValue(stn, out type))
+            if (!_missingTypes.TryGetValue(stn, out var type))
             {
                 type = new MissingType(module, declaringType, typeName.Namespace, typeName.Name);
                 _missingTypes.Add(stn, type);
@@ -798,12 +771,12 @@ namespace IKVM.Reflection
             {
                 return GetMissingType(requester, module, declaringType, typeName);
             }
-            string fullName = TypeNameParser.Escape(typeName.ToString());
+            var fullName = TypeNameParser.Escape(typeName.ToString());
             if (declaringType != null)
             {
                 fullName = declaringType.FullName + "+" + fullName;
             }
-            throw new TypeLoadException(String.Format("Type '{0}' not found in assembly '{1}'", fullName, module.Assembly.FullName));
+            throw new TypeLoadException(string.Format("Type '{0}' not found in assembly '{1}'", fullName, module.Assembly.FullName));
         }
 
         internal MethodBase GetMissingMethodOrThrow(Module requester, Type declaringType, string name, MethodSignature signature)

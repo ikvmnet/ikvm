@@ -40,74 +40,35 @@ namespace IKVM.Reflection
         internal EventInfoWithReflectedType(Type reflectedType, EventInfo eventInfo)
         {
             Debug.Assert(reflectedType != eventInfo.DeclaringType);
-            this._reflectedType = reflectedType;
-            this._eventInfo = eventInfo;
+            _reflectedType = reflectedType;
+            _eventInfo = eventInfo;
         }
 
-        public override EventAttributes Attributes
-        {
-            get { return _eventInfo.Attributes; }
-        }
+        public override EventAttributes Attributes => _eventInfo.Attributes;
 
-        public override MethodInfo GetAddMethod(bool nonPublic)
-        {
-            return SetReflectedType(_eventInfo.GetAddMethod(nonPublic), _reflectedType);
-        }
+        public override MethodInfo GetAddMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetAddMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic)
-        {
-            return SetReflectedType(_eventInfo.GetRaiseMethod(nonPublic), _reflectedType);
-        }
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetRaiseMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic)
-        {
-            return SetReflectedType(_eventInfo.GetRemoveMethod(nonPublic), _reflectedType);
-        }
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => SetReflectedType(_eventInfo.GetRemoveMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo[] GetOtherMethods(bool nonPublic)
-        {
-            return SetReflectedType(_eventInfo.GetOtherMethods(nonPublic), _reflectedType);
-        }
+        public override MethodInfo[] GetOtherMethods(bool nonPublic) => SetReflectedType(_eventInfo.GetOtherMethods(nonPublic), _reflectedType);
 
-        public override Type EventHandlerType
-        {
-            get { return _eventInfo.EventHandlerType; }
-        }
+        public override Type EventHandlerType => _eventInfo.EventHandlerType;
 
-        internal override bool IsPublic
-        {
-            get { return _eventInfo.IsPublic; }
-        }
+        internal override bool IsPublic => _eventInfo.IsPublic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return _eventInfo.IsNonPrivate; }
-        }
+        internal override bool IsNonPrivate => _eventInfo.IsNonPrivate;
 
-        internal override bool IsStatic
-        {
-            get { return _eventInfo.IsStatic; }
-        }
+        internal override bool IsStatic => _eventInfo.IsStatic;
 
-        internal override EventInfo BindTypeParameters(Type type)
-        {
-            return _eventInfo.BindTypeParameters(type);
-        }
+        internal override EventInfo BindTypeParameters(Type type) => _eventInfo.BindTypeParameters(type);
 
-        public override string ToString()
-        {
-            return _eventInfo.ToString();
-        }
+        public override string ToString() => _eventInfo.ToString();
 
-        public override bool __IsMissing
-        {
-            get { return _eventInfo.__IsMissing; }
-        }
+        public override bool __IsMissing => _eventInfo.__IsMissing;
 
-        public override Type DeclaringType
-        {
-            get { return _eventInfo.DeclaringType; }
-        }
+        public override Type DeclaringType => _eventInfo.DeclaringType;
 
         public override bool Equals(object obj)
         {
@@ -117,35 +78,17 @@ namespace IKVM.Reflection
                 && other._eventInfo == _eventInfo;
         }
 
-        public override int GetHashCode()
-        {
-            return _reflectedType.GetHashCode() ^ _eventInfo.GetHashCode();
-        }
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _eventInfo.GetHashCode();
 
-        public override int MetadataToken
-        {
-            get { return _eventInfo.MetadataToken; }
-        }
+        public override int MetadataToken => _eventInfo.MetadataToken;
 
-        public override Module Module
-        {
-            get { return _eventInfo.Module; }
-        }
+        public override Module Module => _eventInfo.Module;
 
-        public override string Name
-        {
-            get { return _eventInfo.Name; }
-        }
+        public override string Name => _eventInfo.Name;
 
-        internal override bool IsBaked
-        {
-            get { return _eventInfo.IsBaked; }
-        }
+        internal override bool IsBaked => _eventInfo.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            return _eventInfo.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => _eventInfo.GetCurrentToken();
 
     }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -23,15 +23,15 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal abstract class SignatureHelper
+    abstract class SignatureHelper
     {
 
         protected readonly byte type;
@@ -40,7 +40,7 @@ namespace IKVM.Reflection.Emit
         sealed class Lazy : SignatureHelper
         {
 
-            readonly List<Type> _args = new List<Type>();
+            readonly List<Type> _args = [];
 
             /// <summary>
             /// Initializes a new instance.
@@ -51,10 +51,7 @@ namespace IKVM.Reflection.Emit
             {
             }
 
-            public override byte[] GetSignature()
-            {
-                throw new NotSupportedException();
-            }
+            public override byte[] GetSignature() => throw new NotSupportedException();
 
             internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
@@ -63,10 +60,7 @@ namespace IKVM.Reflection.Emit
                 return bb;
             }
 
-            public override void AddSentinel()
-            {
-                _args.Add(MarkerType.Sentinel);
-            }
+            public override void AddSentinel() => _args.Add(MarkerType.Sentinel);
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
@@ -89,7 +83,7 @@ namespace IKVM.Reflection.Emit
         {
 
             readonly ModuleBuilder _module;
-            readonly BlobBuilder _arguments = new BlobBuilder(16);
+            readonly BlobBuilder _arguments = new(16);
             readonly Type _returnType;
 
             /// <summary>
@@ -101,14 +95,11 @@ namespace IKVM.Reflection.Emit
             internal Eager(ModuleBuilder module, byte type, Type returnType) :
                 base(type)
             {
-                this._module = module;
-                this._returnType = returnType;
+                _module = module;
+                _returnType = returnType;
             }
 
-            public override byte[] GetSignature()
-            {
-                return GetSignature(null).ToArray();
-            }
+            public override byte[] GetSignature() => GetSignature(null).ToArray();
 
             internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
@@ -122,10 +113,7 @@ namespace IKVM.Reflection.Emit
                 return bb;
             }
 
-            public override void AddSentinel()
-            {
-                _arguments.WriteByte(Signature.SENTINEL);
-            }
+            public override void AddSentinel() => _arguments.WriteByte(Signature.SENTINEL);
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
@@ -152,20 +140,12 @@ namespace IKVM.Reflection.Emit
             this.type = type;
         }
 
-        private static SignatureHelper Create(Module mod, byte type, Type returnType)
-        {
-            return mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
-        }
+        static SignatureHelper Create(Module mod, byte type, Type returnType) =>
+            mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
 
-        public static SignatureHelper GetFieldSigHelper(Module mod)
-        {
-            return Create(mod, Signature.FIELD, null);
-        }
+        public static SignatureHelper GetFieldSigHelper(Module mod) => Create(mod, Signature.FIELD, null);
 
-        public static SignatureHelper GetLocalVarSigHelper(Module mod)
-        {
-            return Create(mod, Signature.LOCAL_SIG, null);
-        }
+        public static SignatureHelper GetLocalVarSigHelper(Module mod) => Create(mod, Signature.LOCAL_SIG, null);
 
         public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
         {
@@ -209,22 +189,16 @@ namespace IKVM.Reflection.Emit
 
         public abstract void AddSentinel();
 
-        public void AddArgument(Type clsArgument)
-        {
-            AddArgument(clsArgument, false);
-        }
+        public void AddArgument(Type clsArgument) => AddArgument(clsArgument, false);
 
-        public void AddArgument(Type argument, bool pinned)
-        {
-            __AddArgument(argument, pinned, new CustomModifiers());
-        }
+        public void AddArgument(Type argument, bool pinned) => __AddArgument(argument, pinned, new CustomModifiers());
 
         public abstract void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers);
 
         public void AddArguments(Type[] arguments, Type[][] requiredCustomModifiers, Type[][] optionalCustomModifiers)
         {
             if (arguments != null)
-                for (int i = 0; i < arguments.Length; i++)
+                for (var i = 0; i < arguments.Length; i++)
                     __AddArgument(arguments[i], false, CustomModifiers.FromReqOpt(Util.NullSafeElementAt(requiredCustomModifiers, i), Util.NullSafeElementAt(optionalCustomModifiers, i)));
         }
 

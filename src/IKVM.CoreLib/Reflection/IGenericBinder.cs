@@ -25,12 +25,12 @@ namespace IKVM.Reflection
 {
 
     interface IGenericBinder
-	{
+    {
 
-		Type BindTypeParameter(Type type);
+        Type BindTypeParameter(Type type);
 
-		Type BindMethodParameter(Type type);
+        Type BindMethodParameter(Type type);
 
-	}
+    }
 
 }

@@ -27,10 +27,7 @@ namespace IKVM.Reflection
     sealed class PointerType : ElementHolderType
     {
 
-        internal static Type Make(Type type, CustomModifiers mods)
-        {
-            return type.Universe.CanonicalizeType(new PointerType(type, mods));
-        }
+        internal static Type Make(Type type, CustomModifiers mods) => type.Universe.CanonicalizeType(new PointerType(type, mods));
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,35 +40,17 @@ namespace IKVM.Reflection
 
         }
 
-        public override bool Equals(object o)
-        {
-            return EqualsHelper(o as PointerType);
-        }
+        public override bool Equals(object o) => EqualsHelper(o as PointerType);
 
-        public override int GetHashCode()
-        {
-            return elementType.GetHashCode() * 7;
-        }
+        public override int GetHashCode() => elementType.GetHashCode() * 7;
 
-        public override Type BaseType
-        {
-            get { return null; }
-        }
+        public override Type BaseType => null;
 
-        public override TypeAttributes Attributes
-        {
-            get { return 0; }
-        }
+        public override TypeAttributes Attributes => 0;
 
-        internal override string GetSuffix()
-        {
-            return "*";
-        }
+        internal override string GetSuffix() => "*";
 
-        protected override Type Wrap(Type type, CustomModifiers mods)
-        {
-            return Make(type, mods);
-        }
+        protected override Type Wrap(Type type, CustomModifiers mods) => Make(type, mods);
 
     }
 

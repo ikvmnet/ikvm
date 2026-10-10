@@ -42,24 +42,15 @@ namespace IKVM.Reflection
         internal MissingModule(Assembly assembly, int index) :
             base(assembly.Universe)
         {
-            this._assembly = assembly;
-            this._index = index;
+            _assembly = assembly;
+            _index = index;
         }
 
-        public override int MDStreamVersion
-        {
-            get { throw new MissingModuleException(this); }
-        }
+        public override int MDStreamVersion => throw new MissingModuleException(this);
 
-        public override Assembly Assembly
-        {
-            get { return _assembly; }
-        }
+        public override Assembly Assembly => _assembly;
 
-        public override string FullyQualifiedName
-        {
-            get { throw new MissingModuleException(this); }
-        }
+        public override string FullyQualifiedName => throw new MissingModuleException(this);
 
         public override string Name
         {
@@ -72,55 +63,26 @@ namespace IKVM.Reflection
             }
         }
 
-        public override Guid ModuleVersionId
-        {
-            get { throw new MissingModuleException(this); }
-        }
+        public override Guid ModuleVersionId => throw new MissingModuleException(this);
 
-        public override string ScopeName
-        {
-            get { throw new MissingModuleException(this); }
-        }
+        public override string ScopeName => throw new MissingModuleException(this);
 
-        internal override Type FindType(TypeName typeName)
-        {
-            return null;
-        }
+        internal override Type FindType(TypeName typeName) => null;
 
-        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
+        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
-        internal override void GetTypesImpl(List<Type> list)
-        {
+        internal override void GetTypesImpl(List<Type> list) => throw new MissingModuleException(this);
+
+        internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule) =>
             throw new MissingModuleException(this);
-        }
 
-        internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
-        {
-            throw new MissingModuleException(this);
-        }
+        public override bool __IsMissing => true;
 
-        public override bool __IsMissing
-        {
-            get { return true; }
-        }
+        protected override Exception InvalidOperationException() => new MissingModuleException(this);
 
-        protected override Exception InvalidOperationException()
-        {
-            return new MissingModuleException(this);
-        }
+        protected override Exception NotSupportedException() => new MissingModuleException(this);
 
-        protected override Exception NotSupportedException()
-        {
-            return new MissingModuleException(this);
-        }
-
-        protected override Exception ArgumentOutOfRangeException()
-        {
-            return new MissingModuleException(this);
-        }
+        protected override Exception ArgumentOutOfRangeException() => new MissingModuleException(this);
 
     }
 

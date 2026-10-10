@@ -24,14 +24,14 @@
 namespace IKVM.Reflection
 {
 
-    internal enum ImageFileMachine
-	{
+    enum ImageFileMachine
+    {
 
         UNKNOWN = 0,
-		I386 = 332,
-		ARM = 452,
-		IA64 = 512,
-		AMD64 = 34404,
+        I386 = 332,
+        ARM = 452,
+        IA64 = 512,
+        AMD64 = 34404,
         ARM64 = 0xAA64,
 
     }

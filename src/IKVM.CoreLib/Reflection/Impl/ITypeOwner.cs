@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,8 +27,8 @@ namespace IKVM.Reflection.Impl
 {
 
     interface ITypeOwner
-	{
-		ModuleBuilder ModuleBuilder { get; }
-	}
+    {
+        ModuleBuilder ModuleBuilder { get; }
+    }
 
 }

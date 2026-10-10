@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 namespace IKVM.Reflection.Extensions
 {
 
-    internal static class IncrementalHashExtensions
+    static class IncrementalHashExtensions
     {
 
         /// <summary>
@@ -25,10 +25,8 @@ namespace IKVM.Reflection.Extensions
         /// </summary>
         /// <param name="hash"></param>
         /// <param name="segment"></param>
-        public static void AppendData(this IncrementalHash hash, ArraySegment<byte> segment)
-        {
+        public static void AppendData(this IncrementalHash hash, ArraySegment<byte> segment) =>
             hash.AppendData(segment.Array, segment.Offset, segment.Count);
-        }
 
     }
 

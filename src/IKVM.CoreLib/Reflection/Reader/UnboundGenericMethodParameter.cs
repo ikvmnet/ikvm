@@ -41,86 +41,41 @@ namespace IKVM.Reflection.Reader
             {
             }
 
-            protected override Exception NotSupportedException()
-            {
-                return new InvalidOperationException();
-            }
+            protected override Exception NotSupportedException() => new InvalidOperationException();
 
-            protected override Exception ArgumentOutOfRangeException()
-            {
-                return new InvalidOperationException();
-            }
+            protected override Exception ArgumentOutOfRangeException() => new InvalidOperationException();
 
-            public override bool Equals(object obj)
-            {
-                throw new InvalidOperationException();
-            }
+            public override bool Equals(object obj) => throw new InvalidOperationException();
 
-            public override int GetHashCode()
-            {
-                throw new InvalidOperationException();
-            }
+            public override int GetHashCode() => throw new InvalidOperationException();
 
-            public override string ToString()
-            {
-                throw new InvalidOperationException();
-            }
+            public override string ToString() => throw new InvalidOperationException();
 
-            public override int MDStreamVersion
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override int MDStreamVersion => throw new InvalidOperationException();
 
-            public override Assembly Assembly
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override Assembly Assembly => throw new InvalidOperationException();
 
-            internal override Type FindType(TypeName typeName)
-            {
-                throw new InvalidOperationException();
-            }
+            internal override Type FindType(TypeName typeName) => throw new InvalidOperationException();
 
-            internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-            {
-                throw new InvalidOperationException();
-            }
+            internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => throw new InvalidOperationException();
 
-            internal override void GetTypesImpl(List<Type> list)
-            {
-                throw new InvalidOperationException();
-            }
+            internal override void GetTypesImpl(List<Type> list) => throw new InvalidOperationException();
 
-            public override string FullyQualifiedName
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override string FullyQualifiedName => throw new InvalidOperationException();
 
-            public override string Name
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override string Name => throw new InvalidOperationException();
 
-            public override Guid ModuleVersionId
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override Guid ModuleVersionId => throw new InvalidOperationException();
 
-            public override string ScopeName
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override string ScopeName => throw new InvalidOperationException();
 
         }
 
-        static readonly DummyModule s_module = new DummyModule();
+        static readonly DummyModule s_module = new();
 
         readonly int _position;
 
-        internal static Type Make(int position)
-        {
-            return s_module.Universe.CanonicalizeType(new UnboundGenericMethodParameter(position));
-        }
+        internal static Type Make(int position) => s_module.Universe.CanonicalizeType(new UnboundGenericMethodParameter(position));
 
         /// <summary>
         /// Initializes a new instance.
@@ -129,7 +84,7 @@ namespace IKVM.Reflection.Reader
         UnboundGenericMethodParameter(int position) :
             base(Signature.ELEMENT_TYPE_MVAR)
         {
-            this._position = position;
+            _position = position;
         }
 
         public override bool Equals(object obj)
@@ -138,65 +93,29 @@ namespace IKVM.Reflection.Reader
             return other != null && other._position == _position;
         }
 
-        public override int GetHashCode()
-        {
-            return _position;
-        }
+        public override int GetHashCode() => _position;
 
-        public override string Namespace
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string Namespace => throw new InvalidOperationException();
 
-        public override string Name
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override string Name => throw new InvalidOperationException();
 
-        public override int MetadataToken
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override int MetadataToken => throw new InvalidOperationException();
 
-        public override Module Module
-        {
-            get { return s_module; }
-        }
+        public override Module Module => s_module;
 
-        public override int GenericParameterPosition
-        {
-            get { return _position; }
-        }
+        public override int GenericParameterPosition => _position;
 
-        public override Type DeclaringType
-        {
-            get { return null; }
-        }
+        public override Type DeclaringType => null;
 
-        public override MethodBase DeclaringMethod
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override MethodBase DeclaringMethod => throw new InvalidOperationException();
 
-        public override Type[] GetGenericParameterConstraints()
-        {
-            throw new InvalidOperationException();
-        }
+        public override Type[] GetGenericParameterConstraints() => throw new InvalidOperationException();
 
-        public override GenericParameterAttributes GenericParameterAttributes
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        public override GenericParameterAttributes GenericParameterAttributes => throw new InvalidOperationException();
 
-        internal override Type BindTypeParameters(IGenericBinder binder)
-        {
-            return binder.BindMethodParameter(this);
-        }
+        internal override Type BindTypeParameters(IGenericBinder binder) => binder.BindMethodParameter(this);
 
-        internal override bool IsBaked
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        internal override bool IsBaked => throw new InvalidOperationException();
 
     }
 

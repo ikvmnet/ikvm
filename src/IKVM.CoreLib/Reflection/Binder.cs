@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2010-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,20 +27,20 @@ using System.Globalization;
 namespace IKVM.Reflection
 {
 
-    internal abstract class Binder
-	{
+    abstract class Binder
+    {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         protected Binder()
-		{
-		}
+        {
+        }
 
-		public abstract MethodBase SelectMethod(BindingFlags bindingAttr, MethodBase[] match, Type[] types, ParameterModifier[] modifiers);
+        public abstract MethodBase SelectMethod(BindingFlags bindingAttr, MethodBase[] match, Type[] types, ParameterModifier[] modifiers);
 
-		public abstract PropertyInfo SelectProperty(BindingFlags bindingAttr, PropertyInfo[] match, Type returnType, Type[] indexes, ParameterModifier[] modifiers);
+        public abstract PropertyInfo SelectProperty(BindingFlags bindingAttr, PropertyInfo[] match, Type returnType, Type[] indexes, ParameterModifier[] modifiers);
 
-	}
+    }
 
 }

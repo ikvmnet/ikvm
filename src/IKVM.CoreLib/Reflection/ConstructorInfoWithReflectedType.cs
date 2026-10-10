@@ -40,8 +40,8 @@ namespace IKVM.Reflection
         internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
         {
             Debug.Assert(reflectedType != ctor.DeclaringType);
-            this._reflectedType = reflectedType;
-            this._ctor = ctor;
+            _reflectedType = reflectedType;
+            _ctor = ctor;
         }
 
         public override bool Equals(object obj)
@@ -50,15 +50,9 @@ namespace IKVM.Reflection
             return other != null && other._reflectedType == _reflectedType && other._ctor == _ctor;
         }
 
-        public override int GetHashCode()
-        {
-            return _reflectedType.GetHashCode() ^ _ctor.GetHashCode();
-        }
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _ctor.GetHashCode();
 
-        internal override MethodInfo GetMethodInfo()
-        {
-            return _ctor.GetMethodInfo();
-        }
+        internal override MethodInfo GetMethodInfo() => _ctor.GetMethodInfo();
 
     }
 

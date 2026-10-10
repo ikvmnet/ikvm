@@ -36,131 +36,57 @@ namespace IKVM.Reflection.Emit
         {
         }
 
-        public override string AssemblyQualifiedName
-        {
-            get { return underlyingType.AssemblyQualifiedName; }
-        }
+        public override string AssemblyQualifiedName => underlyingType.AssemblyQualifiedName;
 
-        public override Type BaseType
-        {
-            get { return underlyingType.BaseType; }
-        }
+        public override Type BaseType => underlyingType.BaseType;
 
-        internal override TypeName TypeName
-        {
-            get { return underlyingType.TypeName; }
-        }
+        internal override TypeName TypeName => underlyingType.TypeName;
 
         public override string Name
-        {
             // we need to escape here, because TypeBuilder.Name does not escape
-            get { return TypeNameParser.Escape(underlyingType.__Name); }
-        }
+            => TypeNameParser.Escape(underlyingType.__Name);
 
-        public override string FullName
-        {
-            get { return GetFullName(); }
-        }
+        public override string FullName => GetFullName();
 
-        public override TypeAttributes Attributes
-        {
-            get { return underlyingType.Attributes; }
-        }
+        public override TypeAttributes Attributes => underlyingType.Attributes;
 
-        public override Type[] __GetDeclaredInterfaces()
-        {
-            return underlyingType.__GetDeclaredInterfaces();
-        }
+        public override Type[] __GetDeclaredInterfaces() => underlyingType.__GetDeclaredInterfaces();
 
-        public override MethodBase[] __GetDeclaredMethods()
-        {
-            return underlyingType.__GetDeclaredMethods();
-        }
+        public override MethodBase[] __GetDeclaredMethods() => underlyingType.__GetDeclaredMethods();
 
-        public override __MethodImplMap __GetMethodImplMap()
-        {
-            return underlyingType.__GetMethodImplMap();
-        }
+        public override __MethodImplMap __GetMethodImplMap() => underlyingType.__GetMethodImplMap();
 
-        public override FieldInfo[] __GetDeclaredFields()
-        {
-            return underlyingType.__GetDeclaredFields();
-        }
+        public override FieldInfo[] __GetDeclaredFields() => underlyingType.__GetDeclaredFields();
 
-        public override EventInfo[] __GetDeclaredEvents()
-        {
-            return underlyingType.__GetDeclaredEvents();
-        }
+        public override EventInfo[] __GetDeclaredEvents() => underlyingType.__GetDeclaredEvents();
 
-        public override PropertyInfo[] __GetDeclaredProperties()
-        {
-            return underlyingType.__GetDeclaredProperties();
-        }
+        public override PropertyInfo[] __GetDeclaredProperties() => underlyingType.__GetDeclaredProperties();
 
-        public override Type[] __GetDeclaredTypes()
-        {
-            return underlyingType.__GetDeclaredTypes();
-        }
+        public override Type[] __GetDeclaredTypes() => underlyingType.__GetDeclaredTypes();
 
-        public override Type DeclaringType
-        {
-            get { return underlyingType.DeclaringType; }
-        }
+        public override Type DeclaringType => underlyingType.DeclaringType;
 
-        public override Type[] GetGenericArguments()
-        {
-            return underlyingType.GetGenericArguments();
-        }
+        public override Type[] GetGenericArguments() => underlyingType.GetGenericArguments();
 
-        internal override Type GetGenericTypeArgument(int index)
-        {
-            return underlyingType.GetGenericTypeArgument(index);
-        }
+        internal override Type GetGenericTypeArgument(int index) => underlyingType.GetGenericTypeArgument(index);
 
-        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
-        {
-            return underlyingType.__GetGenericArgumentsCustomModifiers();
-        }
+        public override CustomModifiers[] __GetGenericArgumentsCustomModifiers() => underlyingType.__GetGenericArgumentsCustomModifiers();
 
-        public override bool IsGenericType
-        {
-            get { return underlyingType.IsGenericType; }
-        }
+        public override bool IsGenericType => underlyingType.IsGenericType;
 
-        public override bool IsGenericTypeDefinition
-        {
-            get { return underlyingType.IsGenericTypeDefinition; }
-        }
+        public override bool IsGenericTypeDefinition => underlyingType.IsGenericTypeDefinition;
 
-        public override bool ContainsGenericParameters
-        {
-            get { return underlyingType.ContainsGenericParameters; }
-        }
+        public override bool ContainsGenericParameters => underlyingType.ContainsGenericParameters;
 
-        public override int MetadataToken
-        {
-            get { return underlyingType.MetadataToken; }
-        }
+        public override int MetadataToken => underlyingType.MetadataToken;
 
-        public override Module Module
-        {
-            get { return underlyingType.Module; }
-        }
+        public override Module Module => underlyingType.Module;
 
-        internal override int GetModuleBuilderToken()
-        {
-            return underlyingType.GetModuleBuilderToken();
-        }
+        internal override int GetModuleBuilderToken() => underlyingType.GetModuleBuilderToken();
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { return underlyingType.IsValueType; }
-        }
+        protected override bool IsValueTypeImpl => underlyingType.IsValueType;
 
     }
 

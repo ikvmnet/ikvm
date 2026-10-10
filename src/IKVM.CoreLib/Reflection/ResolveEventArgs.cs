@@ -26,7 +26,7 @@ using System;
 namespace IKVM.Reflection
 {
 
-    internal sealed class ResolveEventArgs : EventArgs
+    sealed class ResolveEventArgs : EventArgs
     {
 
         readonly string _name;
@@ -39,19 +39,13 @@ namespace IKVM.Reflection
         /// <param name="requestingAssembly"></param>
         public ResolveEventArgs(string name, Assembly requestingAssembly)
         {
-            this._name = name;
-            this._requestingAssembly = requestingAssembly;
+            _name = name;
+            _requestingAssembly = requestingAssembly;
         }
 
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name => _name;
 
-        public Assembly RequestingAssembly
-        {
-            get { return _requestingAssembly; }
-        }
+        public Assembly RequestingAssembly => _requestingAssembly;
 
     }
 

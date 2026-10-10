@@ -1,4 +1,4 @@
-using System.Reflection.Metadata;
+﻿using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Writer
@@ -15,7 +15,8 @@ namespace IKVM.Reflection.Writer
         /// </summary>
         /// <param name="builder"></param>
         /// <param name="token"></param>
-        public static void WriteTypeDefOrRefEncoded(this BlobBuilder builder, int token) => builder.WriteCompressedInteger(CodedIndex.TypeDefOrRefOrSpec(MetadataTokens.EntityHandle(token)));
+        public static void WriteTypeDefOrRefEncoded(this BlobBuilder builder, int token) =>
+            builder.WriteCompressedInteger(CodedIndex.TypeDefOrRefOrSpec(MetadataTokens.EntityHandle(token)));
 
     }
 

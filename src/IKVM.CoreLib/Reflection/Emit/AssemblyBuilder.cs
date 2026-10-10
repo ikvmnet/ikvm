@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -34,7 +34,7 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class AssemblyBuilder : Assembly
+    sealed class AssemblyBuilder : Assembly
     {
 
         readonly string _name;
@@ -43,24 +43,24 @@ namespace IKVM.Reflection.Emit
         ushort _buildVersion;
         ushort _revisionVersion;
         string _culture;
-        AssemblyNameFlags _flags;
-        AssemblyHashAlgorithm _hashAlgorithm;
-        StrongNameKeyPair _keyPair;
-        byte[] _publicKey;
+        readonly AssemblyNameFlags _flags;
+        readonly AssemblyHashAlgorithm _hashAlgorithm;
+        readonly StrongNameKeyPair _keyPair;
+        readonly byte[] _publicKey;
         internal readonly string Dir;
         PEFileKinds _fileKind = PEFileKinds.Dll;
         MethodInfo _entryPoint;
         VersionInfo _versionInfo;
         byte[] _win32icon;
         byte[] _win32manifest;
-        string _imageRuntimeVersion;
+        readonly string _imageRuntimeVersion;
         internal int MdStreamVersion = 0x20000;
         Module _pseudoManifestModule;
-        readonly List<ResourceFile> _resourceFiles = new List<ResourceFile>();
-        readonly List<ModuleBuilder> _modules = new List<ModuleBuilder>();
-        readonly List<Module> _addedModules = new List<Module>();
-        readonly List<CustomAttributeBuilder> _customAttributes = new List<CustomAttributeBuilder>();
-        readonly List<TypeForwarder> _typeForwarders = new List<TypeForwarder>();
+        readonly List<ResourceFile> _resourceFiles = [];
+        readonly List<ModuleBuilder> _modules = [];
+        readonly List<Module> _addedModules = [];
+        readonly List<CustomAttributeBuilder> _customAttributes = [];
+        readonly List<TypeForwarder> _typeForwarders = [];
 
         readonly struct TypeForwarder
         {
@@ -75,8 +75,8 @@ namespace IKVM.Reflection.Emit
             /// <param name="includeNested"></param>
             internal TypeForwarder(Type type, bool includeNested)
             {
-                this.Type = type;
-                this.IncludeNested = includeNested;
+                Type = type;
+                IncludeNested = includeNested;
             }
 
         }
@@ -100,38 +100,38 @@ namespace IKVM.Reflection.Emit
         internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes) :
             base(universe)
         {
-            this._name = name.Name;
+            _name = name.Name;
             SetVersionHelper(name.Version);
             if (!string.IsNullOrEmpty(name.CultureName))
             {
-                this._culture = name.CultureName;
+                _culture = name.CultureName;
             }
 
-            this._flags = name.RawFlags;
-            this._hashAlgorithm = name.HashAlgorithm;
-            if (this._hashAlgorithm == AssemblyHashAlgorithm.None)
-                this._hashAlgorithm = AssemblyHashAlgorithm.SHA1;
+            _flags = name.RawFlags;
+            _hashAlgorithm = name.HashAlgorithm;
+            if (_hashAlgorithm == AssemblyHashAlgorithm.None)
+                _hashAlgorithm = AssemblyHashAlgorithm.SHA1;
 
-            this._keyPair = name.KeyPair;
-            if (this._keyPair != null)
+            _keyPair = name.KeyPair;
+            if (_keyPair != null)
             {
-                this._publicKey = this._keyPair.PublicKey;
+                _publicKey = _keyPair.PublicKey;
             }
             else
             {
                 var publicKey = name.GetPublicKey();
                 if (publicKey != null && publicKey.Length != 0)
-                    this._publicKey = (byte[])publicKey.Clone();
+                    _publicKey = (byte[])publicKey.Clone();
             }
 
-            this.Dir = dir ?? ".";
+            Dir = dir ?? ".";
             if (customAttributes != null)
-                this._customAttributes.AddRange(customAttributes);
+                _customAttributes.AddRange(customAttributes);
 
             if (universe.HasCoreLib && !universe.CoreLib.__IsMissing && universe.CoreLib.ImageRuntimeVersion != null)
-                this._imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
+                _imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
             else
-                this._imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
+                _imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
 
             universe.RegisterDynamicAssembly(this);
         }
@@ -156,7 +156,7 @@ namespace IKVM.Reflection.Emit
 
         void Rename(AssemblyName oldName)
         {
-            this.fullName = null;
+            fullName = null;
             Universe.RenameAssembly(this, oldName);
         }
 
@@ -170,32 +170,28 @@ namespace IKVM.Reflection.Emit
         public void __SetAssemblyCulture(string cultureName)
         {
             AssemblyName oldName = GetName();
-            this._culture = cultureName;
+            _culture = cultureName;
             Rename(oldName);
         }
 
-        internal string Name
-        {
-            get { return _name; }
-        }
+        internal string Name => _name;
 
         public override AssemblyName GetName()
         {
-            AssemblyName n = new AssemblyName();
-            n.Name = _name;
-            n.Version = new Version(_majorVersion, _minorVersion, _buildVersion, _revisionVersion);
-            n.CultureName = _culture ?? "";
-            n.HashAlgorithm = _hashAlgorithm;
-            n.RawFlags = _flags;
+            AssemblyName n = new AssemblyName
+            {
+                Name = _name,
+                Version = new Version(_majorVersion, _minorVersion, _buildVersion, _revisionVersion),
+                CultureName = _culture ?? "",
+                HashAlgorithm = _hashAlgorithm,
+                RawFlags = _flags
+            };
             n.SetPublicKey(_publicKey != null ? (byte[])_publicKey.Clone() : Array.Empty<byte>());
             n.KeyPair = _keyPair;
             return n;
         }
 
-        public override string Location
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override string Location => throw new NotSupportedException();
 
         /// <summary>
         /// Defines a persistable dynamic module, specifying the module name, the name of the file to which the module will be saved, and whether symbol information should be emitted using the default symbol writer.
@@ -212,35 +208,23 @@ namespace IKVM.Reflection.Emit
             return module;
         }
 
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            _customAttributes.Add(customBuilder);
-        }
+        public void SetCustomAttribute(CustomAttributeBuilder customBuilder) => _customAttributes.Add(customBuilder);
 
-        public void __AddTypeForwarder(Type type)
-        {
-            __AddTypeForwarder(type, true);
-        }
+        public void __AddTypeForwarder(Type type) => __AddTypeForwarder(type, true);
 
-        public void __AddTypeForwarder(Type type, bool includeNested)
-        {
-            _typeForwarders.Add(new TypeForwarder(type, includeNested));
-        }
+        public void __AddTypeForwarder(Type type, bool includeNested) => _typeForwarders.Add(new TypeForwarder(type, includeNested));
 
         public void SetEntryPoint(MethodInfo entryMethod, PEFileKinds fileKind)
         {
-            this._entryPoint = entryMethod;
-            this._fileKind = fileKind;
+            _entryPoint = entryMethod;
+            _fileKind = fileKind;
         }
 
         /// <summary>
         /// Saves this dynamic assembly to disk.
         /// </summary>
         /// <param name="assemblyFileName"></param>
-        public void Save(string assemblyFileName)
-        {
-            Save(assemblyFileName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
-        }
+        public void Save(string assemblyFileName) => Save(assemblyFileName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
 
         /// <summary>
         /// Saves this dynamic assembly to disk, specifying the nature of code in the assembly's executables and the target platform.
@@ -248,10 +232,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="assemblyFileName"></param>
         /// <param name="portableExecutableKind"></param>
         /// <param name="imageFileMachine"></param>
-        public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
+        public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
             SaveImpl(assemblyFileName, null, null, portableExecutableKind, imageFileMachine);
-        }
 
         /// <summary>
         /// Implements the logic to save all of the modules within the assembly.
@@ -320,7 +302,6 @@ namespace IKVM.Reflection.Emit
             foreach (var cab in _customAttributes)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
 
-
             foreach (var fwd in _typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
 
@@ -377,17 +358,16 @@ namespace IKVM.Reflection.Emit
             return MetadataTokens.AssemblyFileHandle(manifestModule.__AddModule(flags, Path.GetFileName(fileName), hash));
         }
 
-        public void AddResourceFile(string name, string fileName)
-        {
-            AddResourceFile(name, fileName, ResourceAttributes.Public);
-        }
+        public void AddResourceFile(string name, string fileName) => AddResourceFile(name, fileName, ResourceAttributes.Public);
 
         public void AddResourceFile(string name, string fileName, ResourceAttributes attribs)
         {
-            var resfile = new ResourceFile();
-            resfile.Name = name;
-            resfile.FileName = fileName;
-            resfile.Attributes = attribs;
+            var resfile = new ResourceFile
+            {
+                Name = name,
+                FileName = fileName,
+                Attributes = attribs
+            };
             _resourceFiles.Add(resfile);
         }
 
@@ -466,10 +446,7 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
-        public override string ImageRuntimeVersion
-        {
-            get { return _imageRuntimeVersion; }
-        }
+        public override string ImageRuntimeVersion => _imageRuntimeVersion;
 
         public override Module ManifestModule => _pseudoManifestModule ??= new ManifestModule(this);
 
@@ -477,10 +454,7 @@ namespace IKVM.Reflection.Emit
 
         public override AssemblyName[] GetReferencedAssemblies() => Array.Empty<AssemblyName>();
 
-        public override Module[] GetLoadedModules(bool getResourceModules)
-        {
-            return GetModules(getResourceModules);
-        }
+        public override Module[] GetLoadedModules(bool getResourceModules) => GetModules(getResourceModules);
 
         public override Module[] GetModules(bool getResourceModules)
         {
@@ -510,15 +484,9 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
-        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
-        {
-            throw new NotSupportedException();
-        }
+        public override ManifestResourceInfo GetManifestResourceInfo(string resourceName) => throw new NotSupportedException();
 
-        public override Stream GetManifestResourceStream(string resourceName)
-        {
-            throw new NotSupportedException();
-        }
+        public override Stream GetManifestResourceStream(string resourceName) => throw new NotSupportedException();
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {

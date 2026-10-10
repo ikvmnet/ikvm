@@ -27,11 +27,11 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class Missing :
+sealed class Missing :
         System.Runtime.Serialization.ISerializable
     {
 
-        public static readonly Missing Value = new Missing();
+        public static readonly Missing Value = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,19 +41,14 @@ namespace IKVM.Reflection
 
         }
 
-        void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-        {
+        void System.Runtime.Serialization.ISerializable.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) =>
             info.SetType(typeof(SingletonSerializationHelper));
-        }
 
         [Serializable]
         sealed class SingletonSerializationHelper : System.Runtime.Serialization.IObjectReference
         {
 
-            public object GetRealObject(System.Runtime.Serialization.StreamingContext context)
-            {
-                return Value;
-            }
+            public object GetRealObject(System.Runtime.Serialization.StreamingContext context) => Value;
 
         }
 

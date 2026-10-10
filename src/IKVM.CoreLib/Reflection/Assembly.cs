@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -28,7 +28,7 @@ using System.Text;
 namespace IKVM.Reflection
 {
 
-    internal abstract class Assembly : ICustomAttributeProvider
+    abstract class Assembly : ICustomAttributeProvider
     {
 
         readonly Universe _universe;
@@ -41,7 +41,7 @@ namespace IKVM.Reflection
         /// <param name="universe"></param>
         internal Assembly(Universe universe)
         {
-            this._universe = universe ?? throw new ArgumentNullException(nameof(universe));
+            _universe = universe ?? throw new ArgumentNullException(nameof(universe));
         }
 
         /// <summary>
@@ -49,10 +49,7 @@ namespace IKVM.Reflection
         /// </summary>
         public Universe Universe => _universe;
 
-        public sealed override string ToString()
-        {
-            return FullName;
-        }
+        public sealed override string ToString() => FullName;
 
         public abstract Type[] GetTypes();
 
@@ -76,35 +73,18 @@ namespace IKVM.Reflection
         // The differences between ResolveType and FindType are:
         // - ResolveType is only used when a type is assumed to exist (because another module's metadata claims it)
         // - ResolveType can return a MissingType
-        internal Type ResolveType(Module requester, TypeName typeName)
-        {
-            return FindType(typeName) ?? _universe.GetMissingTypeOrThrow(requester, this.ManifestModule, null, typeName);
-        }
+        internal Type ResolveType(Module requester, TypeName typeName) =>
+            FindType(typeName) ?? _universe.GetMissingTypeOrThrow(requester, ManifestModule, null, typeName);
 
-        public string FullName
-        {
-            get { return fullName ??= GetName().FullName; }
-        }
+        public string FullName => fullName ??= GetName().FullName;
 
-        public Module[] GetModules()
-        {
-            return GetModules(true);
-        }
+        public Module[] GetModules() => GetModules(true);
 
-        public IEnumerable<Module> Modules
-        {
-            get { return GetLoadedModules(); }
-        }
+        public IEnumerable<Module> Modules => GetLoadedModules();
 
-        public Module[] GetLoadedModules()
-        {
-            return GetLoadedModules(true);
-        }
+        public Module[] GetLoadedModules() => GetLoadedModules(true);
 
-        public bool ReflectionOnly
-        {
-            get { return true; }
-        }
+        public bool ReflectionOnly => true;
 
         public Type[] GetExportedTypes()
         {
@@ -116,10 +96,7 @@ namespace IKVM.Reflection
             return list.ToArray();
         }
 
-        public IEnumerable<Type> ExportedTypes
-        {
-            get { return GetExportedTypes(); }
-        }
+        public IEnumerable<Type> ExportedTypes => GetExportedTypes();
 
         public IEnumerable<TypeInfo> DefinedTypes
         {
@@ -127,22 +104,16 @@ namespace IKVM.Reflection
             {
                 var types = GetTypes();
                 var typeInfos = new TypeInfo[types.Length];
-                for (int i = 0; i < types.Length; i++)
+                for (var i = 0; i < types.Length; i++)
                     typeInfos[i] = types[i].GetTypeInfo();
 
                 return typeInfos;
             }
         }
 
-        public Type GetType(string name)
-        {
-            return GetType(name, false);
-        }
+        public Type GetType(string name) => GetType(name, false);
 
-        public Type GetType(string name, bool throwOnError)
-        {
-            return GetType(name, throwOnError, false);
-        }
+        public Type GetType(string name, bool throwOnError) => GetType(name, throwOnError, false);
 
         public Type GetType(string name, bool throwOnError, bool ignoreCase)
         {
@@ -163,29 +134,21 @@ namespace IKVM.Reflection
             if (type == null && __IsMissing)
                 throw new MissingAssemblyException((MissingAssembly)this);
 
-            return parser.Expand(type, this.ManifestModule, throwOnError, name, false, ignoreCase);
+            return parser.Expand(type, ManifestModule, throwOnError, name, false, ignoreCase);
         }
 
-        public bool IsDefined(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
-        }
+        public bool IsDefined(Type attributeType, bool inherit) => CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 
-        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
-        }
+        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit) =>
+            CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 
-        public IList<CustomAttributeData> GetCustomAttributesData()
-        {
-            return CustomAttributeData.GetCustomAttributes(this);
-        }
+        public IList<CustomAttributeData> GetCustomAttributesData() => CustomAttributeData.GetCustomAttributes(this);
 
         public string CodeBase
         {
             get
             {
-                var path = this.Location.Replace(System.IO.Path.DirectorySeparatorChar, '/');
+                var path = Location.Replace(System.IO.Path.DirectorySeparatorChar, '/');
                 if (path.StartsWith("/") == false)
                     path = "/" + path;
 

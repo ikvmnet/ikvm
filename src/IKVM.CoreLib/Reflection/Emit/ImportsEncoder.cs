@@ -17,7 +17,7 @@ namespace IKVM.Reflection.Emit
         /// <exception cref="ArgumentNullException"></exception>
         public ImportsEncoder(BlobBuilder writer)
         {
-            this._writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         public void ImportNamespace(BlobHandle namespaceName)

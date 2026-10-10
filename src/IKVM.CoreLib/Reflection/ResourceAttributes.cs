@@ -27,12 +27,12 @@ namespace IKVM.Reflection
 {
 
     [Flags]
-    internal enum ResourceAttributes
-	{
+enum ResourceAttributes
+    {
 
-		Public = 1,
-		Private = 2,
+        Public = 1,
+        Private = 2,
 
-	}
+    }
 
 }

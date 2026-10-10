@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System;
 namespace IKVM.Reflection
 {
 
-    internal class LocalVariableInfo
+    class LocalVariableInfo
     {
 
         readonly int _index;
@@ -41,25 +41,16 @@ namespace IKVM.Reflection
         /// <param name="pinned"></param>
         internal LocalVariableInfo(int index, Type type, bool pinned)
         {
-            this._index = index;
-            this._type = type;
-            this._pinned = pinned;
+            _index = index;
+            _type = type;
+            _pinned = pinned;
         }
 
-        public int LocalIndex
-        {
-            get { return _index; }
-        }
+        public int LocalIndex => _index;
 
-        public Type LocalType
-        {
-            get { return _type; }
-        }
+        public Type LocalType => _type;
 
-        public override string ToString()
-        {
-            return String.Format(_pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", _type, _index);
-        }
+        public override string ToString() => string.Format(_pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", _type, _index);
 
     }
 

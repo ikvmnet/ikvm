@@ -27,7 +27,7 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class MissingAssemblyException : InvalidOperationException
+sealed class MissingAssemblyException : InvalidOperationException
     {
 
         [NonSerialized]
@@ -40,7 +40,7 @@ namespace IKVM.Reflection
         internal MissingAssemblyException(MissingAssembly assembly) :
             base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
         {
-            this._assembly = assembly;
+            _assembly = assembly;
         }
 
     }

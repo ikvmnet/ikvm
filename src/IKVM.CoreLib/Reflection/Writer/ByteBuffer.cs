@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
-using System.Text;
 using System.Reflection.Metadata.Ecma335;
+using System.Text;
 
 namespace IKVM.Reflection.Writer
 {
@@ -33,10 +33,7 @@ namespace IKVM.Reflection.Writer
     sealed class ByteBuffer
     {
 
-        internal static ByteBuffer Wrap(byte[] buf)
-        {
-            return new ByteBuffer(buf, buf.Length);
-        }
+        internal static ByteBuffer Wrap(byte[] buf) => new ByteBuffer(buf, buf.Length);
 
         byte[] _buffer;
         int _pos;
@@ -56,7 +53,7 @@ namespace IKVM.Reflection.Writer
         /// </summary>
         /// <param name="wrap"></param>
         /// <param name="length"></param>
-        private ByteBuffer(byte[] wrap, int length)
+        ByteBuffer(byte[] wrap, int length)
         {
             _buffer = wrap;
             _pos = length;
@@ -64,7 +61,7 @@ namespace IKVM.Reflection.Writer
 
         internal int Position
         {
-            get { return _pos; }
+            get => _pos;
             set
             {
                 if (value > Length || value > _buffer.Length)
@@ -75,10 +72,7 @@ namespace IKVM.Reflection.Writer
             }
         }
 
-        internal int Length
-        {
-            get { return Math.Max(_pos, __length); }
-        }
+        internal int Length => Math.Max(_pos, __length);
 
         void Grow(int minGrow)
         {
@@ -118,10 +112,7 @@ namespace IKVM.Reflection.Writer
             _buffer[_pos++] = value;
         }
 
-        internal void WriteUInt16(ushort value)
-        {
-            WriteInt16((short)value);
-        }
+        internal void WriteUInt16(ushort value) => WriteInt16((short)value);
 
         internal void WriteInt16(short value)
         {
@@ -132,10 +123,7 @@ namespace IKVM.Reflection.Writer
             _buffer[_pos++] = (byte)(value >> 8);
         }
 
-        internal void WriteUInt32(uint value)
-        {
-            WriteInt32((int)value);
-        }
+        internal void WriteUInt32(uint value) => WriteInt32((int)value);
 
         internal void WriteInt32(int value)
         {
@@ -161,7 +149,7 @@ namespace IKVM.Reflection.Writer
         {
             if (_pos + alignment > _buffer.Length)
                 Grow(alignment);
-            int newpos = (_pos + alignment - 1) & ~(alignment - 1);
+            var newpos = (_pos + alignment - 1) & ~(alignment - 1);
             while (_pos < newpos)
                 _buffer[_pos++] = 0;
         }

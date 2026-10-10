@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,12 +27,12 @@ namespace IKVM.Reflection
 {
 
     [Serializable]
-    internal sealed class AmbiguousMatchException : Exception
-	{
-		public AmbiguousMatchException()
-		{
-		}
+sealed class AmbiguousMatchException : Exception
+    {
+        public AmbiguousMatchException()
+        {
+        }
 
-	}
+    }
 
 }

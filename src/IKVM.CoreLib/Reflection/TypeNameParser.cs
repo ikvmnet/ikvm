@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -48,7 +48,7 @@ namespace IKVM.Reflection
                 return null;
 
             StringBuilder sb = null;
-            for (int pos = 0; pos < name.Length; pos++)
+            for (var pos = 0; pos < name.Length; pos++)
             {
                 var c = name[pos];
                 switch (c)
@@ -74,7 +74,7 @@ namespace IKVM.Reflection
 
         internal static string Unescape(string name)
         {
-            int pos = name.IndexOf('\\');
+            var pos = name.IndexOf('\\');
             if (pos == -1)
                 return name;
 
@@ -137,7 +137,7 @@ namespace IKVM.Reflection
 
         internal readonly string AssemblyName => _assemblyName;
 
-        private struct Parser
+        struct Parser
         {
 
             readonly string _typeName;
@@ -149,8 +149,8 @@ namespace IKVM.Reflection
             /// <param name="typeName"></param>
             internal Parser(string typeName)
             {
-                this._typeName = typeName;
-                this.Pos = 0;
+                _typeName = typeName;
+                Pos = 0;
             }
 
             void Check(bool condition)
@@ -159,10 +159,7 @@ namespace IKVM.Reflection
                     throw new ArgumentException("Invalid type name '" + _typeName + "'");
             }
 
-            void Consume(char c)
-            {
-                Check(Pos < _typeName.Length && _typeName[Pos++] == c);
-            }
+            void Consume(char c) => Check(Pos < _typeName.Length && _typeName[Pos++] == c);
 
             bool TryConsume(char c)
             {
@@ -181,7 +178,7 @@ namespace IKVM.Reflection
             {
                 SkipWhiteSpace();
 
-                int start = Pos;
+                var start = Pos;
                 for (; Pos < _typeName.Length; Pos++)
                 {
                     var c = _typeName[Pos];
@@ -200,7 +197,7 @@ namespace IKVM.Reflection
                 if (start == 0 && Pos == _typeName.Length)
                     return _typeName;
                 else
-                    return _typeName.Substring(start, Pos - start);
+                    return _typeName[start..Pos];
             }
 
             internal void ParseNested(ref string[] nested)
@@ -211,7 +208,7 @@ namespace IKVM.Reflection
 
             internal void ParseGenericParameters(ref TypeNameParser[] genericParameters)
             {
-                int saved = Pos;
+                var saved = Pos;
                 if (TryConsume('['))
                 {
                     SkipWhiteSpace();
@@ -287,10 +284,10 @@ namespace IKVM.Reflection
 
                         if (genericParameter)
                         {
-                            int start = Pos;
+                            var start = Pos;
                             while (Pos < _typeName.Length)
                             {
-                                char c = _typeName[Pos];
+                                var c = _typeName[Pos];
                                 if (c == '\\')
                                 {
                                     Pos++;
@@ -307,12 +304,12 @@ namespace IKVM.Reflection
                                 }
                             }
                             Check(Pos < _typeName.Length && _typeName[Pos] == ']');
-                            assemblyName = _typeName.Substring(start, Pos - start).Replace("\\]", "]");
+                            assemblyName = _typeName[start..Pos].Replace("\\]", "]");
                         }
                         else
                         {
                             // only when an assembly name is used in a generic type parameter, will it be escaped
-                            assemblyName = _typeName.Substring(Pos);
+                            assemblyName = _typeName[Pos..];
                         }
                         Check(assemblyName.Length != 0);
                     }
@@ -355,7 +352,7 @@ namespace IKVM.Reflection
 
             void SkipWhiteSpace()
             {
-                while (Pos < _typeName.Length && Char.IsWhiteSpace(_typeName[Pos]))
+                while (Pos < _typeName.Length && char.IsWhiteSpace(_typeName[Pos]))
                     Pos++;
             }
 
@@ -368,14 +365,14 @@ namespace IKVM.Reflection
                 }
 
                 Array.Resize(ref array, array.Length + 1);
-                array[array.Length - 1] = elem;
+                array[^1] = elem;
             }
         }
 
         internal Type GetType(Universe universe, Module context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
         {
             Debug.Assert(!resolve || !ignoreCase);
-            var name = TypeName.Split(this._name);
+            var name = TypeName.Split(_name);
 
             Type type;
             if (_assemblyName != null)
@@ -466,7 +463,7 @@ namespace IKVM.Reflection
             if (_nested != null)
             {
                 Type outer;
-                foreach (string nest in _nested)
+                foreach (var nest in _nested)
                 {
                     outer = type;
                     var name = TypeName.Split(TypeNameParser.Unescape(nest));
@@ -486,7 +483,7 @@ namespace IKVM.Reflection
             if (_genericParameters != null)
             {
                 var typeArgs = new Type[_genericParameters.Length];
-                for (int i = 0; i < typeArgs.Length; i++)
+                for (var i = 0; i < typeArgs.Length; i++)
                 {
                     typeArgs[i] = _genericParameters[i].GetType(type.Assembly.Universe, context, throwOnError, originalName, resolve, ignoreCase);
                     if (typeArgs[i] == null)

@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Reflection.Metadata;
+using System.Text;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -33,7 +33,7 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal readonly struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
+    readonly struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
     {
 
         public readonly record struct Entry(Type Type, bool IsRequired);
@@ -51,18 +51,18 @@ namespace IKVM.Reflection
             /// <param name="types"></param>
             internal Enumerator(Type[] types)
             {
-                this._types = types;
-                this._index = -1;
-                this._required = Initial == MarkerType.ModReq;
+                _types = types;
+                _index = -1;
+                _required = Initial == MarkerType.ModReq;
             }
 
             void System.Collections.IEnumerator.Reset()
             {
-                this._index = -1;
-                this._required = Initial == MarkerType.ModReq;
+                _index = -1;
+                _required = Initial == MarkerType.ModReq;
             }
 
-            public Entry Current => new Entry(_types[_index], _required);
+            public Entry Current => new(_types[_index], _required);
 
             public bool MoveNext()
             {
@@ -108,33 +108,18 @@ namespace IKVM.Reflection
         CustomModifiers(Type[] types)
         {
             Debug.Assert(types == null || types.Length != 0);
-            this._types = types;
+            _types = types;
         }
 
-        public Enumerator GetEnumerator()
-        {
-            return new Enumerator(_types);
-        }
+        public Enumerator GetEnumerator() => new Enumerator(_types);
 
-        IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator() => GetEnumerator();
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public bool IsEmpty
-        {
-            get { return _types == null; }
-        }
+        public bool IsEmpty => _types == null;
 
-        public bool Equals(CustomModifiers other)
-        {
-            return Util.ArrayEquals(_types, other._types);
-        }
+        public bool Equals(CustomModifiers other) => Util.ArrayEquals(_types, other._types);
 
         public override bool Equals(object obj)
         {
@@ -142,10 +127,7 @@ namespace IKVM.Reflection
             return other != null && Equals(other.Value);
         }
 
-        public override int GetHashCode()
-        {
-            return Util.GetHashCode(_types);
-        }
+        public override int GetHashCode() => Util.GetHashCode(_types);
 
         public override string ToString()
         {
@@ -163,17 +145,14 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
-        public bool ContainsMissingType
-        {
-            get { return Type.ContainsMissingType(_types); }
-        }
+        public bool ContainsMissingType => Type.ContainsMissingType(_types);
 
         Type[] GetRequiredOrOptional(bool required)
         {
             if (_types == null)
                 return Type.EmptyTypes;
 
-            int count = 0;
+            var count = 0;
             foreach (var e in this)
                 if (e.IsRequired == required)
                     count++;
@@ -186,15 +165,9 @@ namespace IKVM.Reflection
             return result;
         }
 
-        internal Type[] GetRequired()
-        {
-            return GetRequiredOrOptional(true);
-        }
+        internal Type[] GetRequired() => GetRequiredOrOptional(true);
 
-        internal Type[] GetOptional()
-        {
-            return GetRequiredOrOptional(false);
-        }
+        internal Type[] GetOptional() => GetRequiredOrOptional(false);
 
         internal CustomModifiers Bind(IGenericBinder binder)
         {
@@ -268,7 +241,7 @@ namespace IKVM.Reflection
 
             if (req != null && req.Length != 0)
             {
-                list ??= new List<Type>();
+                list ??= [];
                 list.Add(MarkerType.ModReq);
                 list.AddRange(req);
             }
@@ -279,10 +252,7 @@ namespace IKVM.Reflection
                 return new CustomModifiers(list.ToArray());
         }
 
-        static bool IsCustomModifier(byte b)
-        {
-            return b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
-        }
+        static bool IsCustomModifier(byte b) => b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
 
     }
 

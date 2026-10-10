@@ -39,9 +39,9 @@ namespace IKVM.Reflection
         /// <param name="signature"></param>
         internal MissingField(Type declaringType, string name, FieldSignature signature)
         {
-            this._declaringType = declaringType;
-            this._name = name;
-            this._signature = signature;
+            _declaringType = declaringType;
+            _name = name;
+            _signature = signature;
         }
 
         FieldInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
@@ -54,30 +54,15 @@ namespace IKVM.Reflection
             return _forwarder;
         }
 
-        public override bool __IsMissing
-        {
-            get { return TryGetForwarder() == null; }
-        }
+        public override bool __IsMissing => TryGetForwarder() == null;
 
-        public override FieldAttributes Attributes
-        {
-            get { return Forwarder.Attributes; }
-        }
+        public override FieldAttributes Attributes => Forwarder.Attributes;
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return Forwarder.__TryGetFieldOffset(out offset);
-        }
+        public override bool __TryGetFieldOffset(out int offset) => Forwarder.__TryGetFieldOffset(out offset);
 
-        public override object GetRawConstantValue()
-        {
-            return Forwarder.GetRawConstantValue();
-        }
+        public override object GetRawConstantValue() => Forwarder.GetRawConstantValue();
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return _signature; }
-        }
+        internal override FieldSignature FieldSignature => _signature;
 
         internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
         {
@@ -85,23 +70,14 @@ namespace IKVM.Reflection
             if (field != null)
                 return field.ImportTo(module);
 
-            return module.ImportMethodOrField(_declaringType, this.Name, this.FieldSignature);
+            return module.ImportMethodOrField(_declaringType, Name, FieldSignature);
         }
 
-        public override string Name
-        {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public override Type DeclaringType
-        {
-            get { return _declaringType.IsModulePseudoType ? null : _declaringType; }
-        }
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override Module Module
-        {
-            get { return _declaringType.Module; }
-        }
+        public override Module Module => _declaringType.Module;
 
         internal override FieldInfo BindTypeParameters(Type type)
         {
@@ -112,10 +88,7 @@ namespace IKVM.Reflection
             return new GenericFieldInstance(type, this);
         }
 
-        public override int MetadataToken
-        {
-            get { return Forwarder.MetadataToken; }
-        }
+        public override int MetadataToken => Forwarder.MetadataToken;
 
         public override bool Equals(object obj)
         {
@@ -126,25 +99,13 @@ namespace IKVM.Reflection
                 && other._signature.Equals(_signature);
         }
 
-        public override int GetHashCode()
-        {
-            return _declaringType.GetHashCode() ^ _name.GetHashCode() ^ _signature.GetHashCode();
-        }
+        public override int GetHashCode() => _declaringType.GetHashCode() ^ _name.GetHashCode() ^ _signature.GetHashCode();
 
-        public override string ToString()
-        {
-            return FieldType.Name + " " + Name;
-        }
+        public override string ToString() => FieldType.Name + " " + Name;
 
-        internal override int GetCurrentToken()
-        {
-            return Forwarder.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => Forwarder.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return Forwarder.IsBaked; }
-        }
+        internal override bool IsBaked => Forwarder.IsBaked;
 
     }
 

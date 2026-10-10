@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -42,15 +42,9 @@ namespace IKVM.Reflection.Writer
         string _informationalVersion;
         string _fileVersion;
 
-        internal void SetName(AssemblyName name)
-        {
-            this._name = name;
-        }
+        internal void SetName(AssemblyName name) => _name = name;
 
-        internal void SetFileName(string assemblyFileName)
-        {
-            this._fileName = System.IO.Path.GetFileName(assemblyFileName);
-        }
+        internal void SetFileName(string assemblyFileName) => _fileName = System.IO.Path.GetFileName(assemblyFileName);
 
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
@@ -104,9 +98,9 @@ namespace IKVM.Reflection.Writer
                 }
             }
 
-            int codepage = 1200;    // Unicode codepage
+            var codepage = 1200;    // Unicode codepage
 
-            int lcid = 0x7f;
+            var lcid = 0x7f;
             try
             {
                 if (_name.CultureInfo != null)
@@ -178,7 +172,7 @@ namespace IKVM.Reflection.Writer
 			  0x00, 0x00, 0x01, 0x00,	// dwStrucVersion
 			};
 
-            byte[] preamble2 = new byte[] {
+            var preamble2 = new byte[] {
               0x3F, 0x00, 0x00, 0x00,	// dwFileFlagsMask (??)
 			  0x00, 0x00, 0x00, 0x00,	// dwFileFlags (??)
 			  0x04, 0x00, 0x00, 0x00,	// dwFileOS
@@ -219,7 +213,7 @@ namespace IKVM.Reflection.Writer
 
         static void WriteUTF16Z(ByteBuffer bb, string str)
         {
-            foreach (char c in str)
+            foreach (var c in str)
                 bb.WriteInt16((short)c);
 
             bb.WriteInt16((short)0);
@@ -244,7 +238,7 @@ namespace IKVM.Reflection.Writer
 
         static Version ParseVersionRobust(string ver)
         {
-            int index = 0;
+            var index = 0;
             var major = ParseVersionPart(ver, ref index);
             var minor = ParseVersionPart(ver, ref index);
             var build = ParseVersionPart(ver, ref index);
@@ -257,7 +251,7 @@ namespace IKVM.Reflection.Writer
             ushort value = 0;
             while (pos < str.Length)
             {
-                char c = str[pos];
+                var c = str[pos];
                 if (c == '.')
                 {
                     pos++;

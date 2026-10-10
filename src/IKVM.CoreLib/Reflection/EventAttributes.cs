@@ -27,14 +27,14 @@ namespace IKVM.Reflection
 {
 
     [Flags]
-    internal enum EventAttributes
-	{
+enum EventAttributes
+    {
 
-		None = 0,
-		SpecialName = 512,
-		RTSpecialName = 1024,
-		ReservedMask = 1024,
+        None = 0,
+        SpecialName = 512,
+        RTSpecialName = 1024,
+        ReservedMask = 1024,
 
-	}
+    }
 
 }

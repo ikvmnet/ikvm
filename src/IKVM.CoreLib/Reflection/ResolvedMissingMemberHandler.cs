@@ -24,6 +24,6 @@
 namespace IKVM.Reflection
 {
 
-    internal delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
+    delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
 
 }

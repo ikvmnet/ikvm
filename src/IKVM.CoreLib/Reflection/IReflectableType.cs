@@ -24,8 +24,8 @@
 namespace IKVM.Reflection
 {
 
-    internal interface IReflectableType
-	{
-	}
+    interface IReflectableType
+    {
+    }
 
 }

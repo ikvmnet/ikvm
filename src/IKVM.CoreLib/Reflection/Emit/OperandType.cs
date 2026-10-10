@@ -8,7 +8,7 @@ namespace IKVM.Reflection.Emit
     /// <summary>
     /// Describes the operand type of IL instruction.
     /// </summary>
-    internal enum OperandType
+    enum OperandType
     {
         InlineBrTarget = 0,
         InlineField = 1,

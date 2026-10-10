@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,113 +26,75 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class EventInfo : MemberInfo
-	{
+    abstract class EventInfo : MemberInfo
+    {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         protected EventInfo()
-		{
-		}
+        {
+        }
 
-		public sealed override MemberTypes MemberType
-		{
-			get { return MemberTypes.Event; }
-		}
+        public sealed override MemberTypes MemberType => MemberTypes.Event;
 
-		public abstract EventAttributes Attributes { get; }
+        public abstract EventAttributes Attributes { get; }
 
-		public abstract MethodInfo GetAddMethod(bool nonPublic);
+        public abstract MethodInfo GetAddMethod(bool nonPublic);
 
-		public abstract MethodInfo GetRaiseMethod(bool nonPublic);
+        public abstract MethodInfo GetRaiseMethod(bool nonPublic);
 
-		public abstract MethodInfo GetRemoveMethod(bool nonPublic);
+        public abstract MethodInfo GetRemoveMethod(bool nonPublic);
 
-		public abstract MethodInfo[] GetOtherMethods(bool nonPublic);
+        public abstract MethodInfo[] GetOtherMethods(bool nonPublic);
 
-		public abstract Type EventHandlerType { get; }
+        public abstract Type EventHandlerType { get; }
 
-		internal abstract bool IsPublic { get; }
+        internal abstract bool IsPublic { get; }
 
-		internal abstract bool IsNonPrivate { get; }
+        internal abstract bool IsNonPrivate { get; }
 
-		internal abstract bool IsStatic { get; }
+        internal abstract bool IsStatic { get; }
 
-		public bool IsSpecialName
-		{
-			get { return (Attributes & EventAttributes.SpecialName) != 0; }
-		}
+        public bool IsSpecialName => (Attributes & EventAttributes.SpecialName) != 0;
 
-		public MethodInfo GetAddMethod()
-		{
-			return GetAddMethod(false);
-		}
+        public MethodInfo GetAddMethod() => GetAddMethod(false);
 
-		public MethodInfo GetRaiseMethod()
-		{
-			return GetRaiseMethod(false);
-		}
+        public MethodInfo GetRaiseMethod() => GetRaiseMethod(false);
 
-		public MethodInfo GetRemoveMethod()
-		{
-			return GetRemoveMethod(false);
-		}
+        public MethodInfo GetRemoveMethod() => GetRemoveMethod(false);
 
-		public MethodInfo[] GetOtherMethods()
-		{
-			return GetOtherMethods(false);
-		}
+        public MethodInfo[] GetOtherMethods() => GetOtherMethods(false);
 
-		public MethodInfo AddMethod
-		{
-			get { return GetAddMethod(true); }
-		}
+        public MethodInfo AddMethod => GetAddMethod(true);
 
-		public MethodInfo RaiseMethod
-		{
-			get { return GetRaiseMethod(true); }
-		}
+        public MethodInfo RaiseMethod => GetRaiseMethod(true);
 
-		public MethodInfo RemoveMethod
-		{
-			get { return GetRemoveMethod(true); }
-		}
+        public MethodInfo RemoveMethod => GetRemoveMethod(true);
 
-		internal virtual EventInfo BindTypeParameters(Type type)
-		{
-			return new GenericEventInfo(this.DeclaringType.BindTypeParameters(type), this);
-		}
+        internal virtual EventInfo BindTypeParameters(Type type) => new GenericEventInfo(DeclaringType.BindTypeParameters(type), this);
 
-		public override string ToString()
-		{
-			return this.DeclaringType.ToString() + " " + Name;
-		}
+        public override string ToString() => DeclaringType.ToString() + " " + Name;
 
-		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
-		{
-			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
-		}
+        internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+        {
+            return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+        }
 
-		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
-		{
-			return IsNonPrivate
-				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
-		}
+        internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+        {
+            return IsNonPrivate
+                && BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+        }
 
-		internal sealed override MemberInfo SetReflectedType(Type type)
-		{
-			return new EventInfoWithReflectedType(type, this);
-		}
+        internal sealed override MemberInfo SetReflectedType(Type type) => new EventInfoWithReflectedType(type, this);
 
-		internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType)
-		{
-			// events don't have pseudo custom attributes
-			return null;
-		}
+        internal sealed override List<CustomAttributeData> GetPseudoCustomAttributes(Type attributeType) =>
+            // events don't have pseudo custom attributes
+            null;
 
-	}
+    }
 
 }

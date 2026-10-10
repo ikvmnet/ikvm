@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System.Reflection.Metadata;
 namespace IKVM.Reflection.Emit
 {
 
-    internal sealed class ParameterBuilder
+    sealed class ParameterBuilder
     {
 
         readonly MethodBuilder _method;
@@ -45,11 +45,11 @@ namespace IKVM.Reflection.Emit
         /// <param name="name"></param>
         internal ParameterBuilder(MethodBuilder method, int sequence, ParameterAttributes attribs, string name)
         {
-            this._method = method;
-            this._flags = (short)attribs;
-            this._sequence = (short)sequence;
-            this._nameIndex = name == null ? default : method.ModuleBuilder.GetOrAddString(name);
-            this._name = name;
+            _method = method;
+            _flags = (short)attribs;
+            _sequence = (short)sequence;
+            _nameIndex = name == null ? default : method.ModuleBuilder.GetOrAddString(name);
+            _name = name;
         }
 
         internal int PseudoToken
@@ -63,23 +63,14 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name => _name;
 
         /// <summary>
         /// One-based index of the parameter.
         /// </summary>
-        public int Position
-        {
-            get { return _sequence; }
-        }
+        public int Position => _sequence;
 
-        public int Attributes
-        {
-            get { return _flags; }
-        }
+        public int Attributes => _flags;
 
         public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
         {

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -28,7 +28,7 @@ using System.Security.Cryptography;
 namespace IKVM.Reflection
 {
 
-    internal sealed class StrongNameKeyPair
+    sealed class StrongNameKeyPair
     {
 
         readonly byte[] _keyPairArray;
@@ -42,13 +42,10 @@ namespace IKVM.Reflection
         /// <exception cref="NotSupportedException"></exception>
         public StrongNameKeyPair(string keyPairContainer)
         {
-            if (keyPairContainer == null)
-                throw new ArgumentNullException("keyPairContainer");
-
             if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
                 throw new NotSupportedException("IKVM.Reflection does not support key containers when running on Mono");
 
-            this._keyPairContainer = keyPairContainer;
+            _keyPairContainer = keyPairContainer ?? throw new ArgumentNullException("keyPairContainer");
         }
 
         /// <summary>
@@ -61,7 +58,7 @@ namespace IKVM.Reflection
             if (keyPairArray == null)
                 throw new ArgumentNullException("keyPairArray");
 
-            this._keyPairArray = (byte[])keyPairArray.Clone();
+            _keyPairArray = (byte[])keyPairArray.Clone();
         }
 
         public byte[] PublicKey
@@ -103,8 +100,10 @@ namespace IKVM.Reflection
                 else
                 {
 #if NETFRAMEWORK
-                    var parm = new CspParameters();
-                    parm.KeyContainerName = _keyPairContainer;
+                    var parm = new CspParameters
+                    {
+                        KeyContainerName = _keyPairContainer
+                    };
 
                     // MONOBUG Mono doesn't like it when Flags or KeyNumber are set
                     if (Universe.MonoRuntime == false)
@@ -214,10 +213,8 @@ namespace IKVM.Reflection
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        byte[] MonoGetPublicKey()
-        {
-            return _keyPairArray != null ? new System.Reflection.StrongNameKeyPair(_keyPairArray).PublicKey : new System.Reflection.StrongNameKeyPair(_keyPairContainer).PublicKey;
-        }
+        byte[] MonoGetPublicKey() =>
+            _keyPairArray != null ? new System.Reflection.StrongNameKeyPair(_keyPairArray).PublicKey : new System.Reflection.StrongNameKeyPair(_keyPairContainer).PublicKey;
 
     }
 

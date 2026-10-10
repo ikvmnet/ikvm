@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -48,11 +48,11 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal TypeDefImpl(ModuleReader module, TypeDefinitionHandle handle)
         {
-            this._module = module;
-            this._handle = handle;
-            this._definition = module.Metadata.GetTypeDefinition(handle);
-            this._typeName = module.GetString(_definition.Name);
-            this._typeNamespace = module.GetString(_definition.Namespace);
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetTypeDefinition(handle);
+            _typeName = module.GetString(_definition.Name);
+            _typeNamespace = module.GetString(_definition.Namespace);
             MarkKnownType(_typeNamespace, _typeName);
         }
 
@@ -122,16 +122,18 @@ namespace IKVM.Reflection.Reader
                 {
                     index.Add(body, i = bodies.Count);
                     bodies.Add(body);
-                    declarations.Add(new List<MethodInfo>());
+                    declarations.Add([]);
                 }
 
                 declarations[i].Add((MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(impl.MethodDeclaration), _typeArgs, null));
             }
 
-            var map = new __MethodImplMap();
-            map.TargetType = this;
-            map.MethodBodies = bodies.ToArray();
-            map.MethodDeclarations = new MethodInfo[declarations.Count][];
+            var map = new __MethodImplMap
+            {
+                TargetType = this,
+                MethodBodies = bodies.ToArray(),
+                MethodDeclarations = new MethodInfo[declarations.Count][]
+            };
             for (var i = 0; i < map.MethodDeclarations.Length; i++)
                 map.MethodDeclarations[i] = declarations[i].ToArray();
 
@@ -145,7 +147,7 @@ namespace IKVM.Reflection.Reader
                 return Type.EmptyTypes;
 
             var types = new Type[handles.Length];
-            for (int i = 0; i < types.Length; i++)
+            for (var i = 0; i < types.Length; i++)
                 types[i] = _module.ResolveType(MetadataTokens.GetToken(handles[i]));
 
             return types;
@@ -162,7 +164,7 @@ namespace IKVM.Reflection.Reader
             return properties;
         }
 
-        internal override TypeName TypeName => new TypeName(_typeNamespace, _typeName);
+        internal override TypeName TypeName => new(_typeNamespace, _typeName);
 
         public override string Name => TypeNameParser.Escape(_typeName);
 
@@ -182,7 +184,7 @@ namespace IKVM.Reflection.Reader
             {
                 var handles = _definition.GetGenericParameters();
                 var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
-                for (int i = 0; i < args.Length; i++)
+                for (var i = 0; i < args.Length; i++)
                     args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_VAR);
 
                 _typeArgs = args;
@@ -205,14 +207,11 @@ namespace IKVM.Reflection.Reader
 
         public override bool IsGenericTypeDefinition => _definition.GetGenericParameters().Count > 0;
 
-        public override Type GetGenericTypeDefinition()
-        {
-            return IsGenericTypeDefinition ? (Type)this : throw new InvalidOperationException();
-        }
+        public override Type GetGenericTypeDefinition() => IsGenericTypeDefinition ? (Type)this : throw new InvalidOperationException();
 
         public override string ToString()
         {
-            var sb = new StringBuilder(this.FullName);
+            var sb = new StringBuilder(FullName);
             var sep = "[";
 
             foreach (var arg in GetGenericArguments())

@@ -24,19 +24,19 @@
 namespace IKVM.Reflection
 {
 
-    internal enum ProcessorArchitecture
-	{
+    enum ProcessorArchitecture
+    {
 
-		None = 0,
-		MSIL = 1,
-		X86 = 2,
-		IA64 = 3,
-		Amd64 = 4,
-		Arm = 5,
-		Arm64 = 6,
+        None = 0,
+        MSIL = 1,
+        X86 = 2,
+        IA64 = 3,
+        Amd64 = 4,
+        Arm = 5,
+        Arm64 = 6,
 
-		// if an item is added here, make sure to update AssemblyName.ProcessorArchitecture,
-		// AssemblyReader.GetNameImpl() and Fusion.ParseAssemblyName as well
-	}
+        // if an item is added here, make sure to update AssemblyName.ProcessorArchitecture,
+        // AssemblyReader.GetNameImpl() and Fusion.ParseAssemblyName as well
+    }
 
 }

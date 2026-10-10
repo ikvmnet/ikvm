@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,7 +24,7 @@
 namespace IKVM.Reflection
 {
 
-    internal readonly struct ParameterModifier
+    readonly struct ParameterModifier
     {
     }
 

@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 // Copied from .NET Core RuntimeMethodBuilder as of 1/24/2024.
@@ -14,7 +14,7 @@ namespace IKVM.Reflection.Emit
     /// Describes exception handler in a method body.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
+readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
     {
         // Keep in sync with unmanged structure. 
         readonly int _exceptionClass;
@@ -25,42 +25,21 @@ namespace IKVM.Reflection.Emit
         readonly int _handlerEndOffset;
         readonly ExceptionHandlingClauseOptions _kind;
 
-        public int ExceptionTypeToken
-        {
-            get { return _exceptionClass; }
-        }
+        public int ExceptionTypeToken => _exceptionClass;
 
-        public int TryOffset
-        {
-            get { return _tryStartOffset; }
-        }
+        public int TryOffset => _tryStartOffset;
 
-        public int TryLength
-        {
-            get { return _tryEndOffset - _tryStartOffset; }
-        }
+        public int TryLength => _tryEndOffset - _tryStartOffset;
 
-        public int FilterOffset
-        {
-            get { return _filterOffset; }
-        }
+        public int FilterOffset => _filterOffset;
 
-        public int HandlerOffset
-        {
-            get { return _handlerStartOffset; }
-        }
+        public int HandlerOffset => _handlerStartOffset;
 
-        public int HandlerLength
-        {
-            get { return _handlerEndOffset - _handlerStartOffset; }
-        }
+        public int HandlerLength => _handlerEndOffset - _handlerStartOffset;
 
-        public ExceptionHandlingClauseOptions Kind
-        {
-            get { return _kind; }
-        }
+        public ExceptionHandlingClauseOptions Kind => _kind;
 
-#region Constructors
+        #region Constructors
 
         internal ExceptionHandler(int tryStartOffset, int tryEndOffset, int filterOffset, int handlerStartOffset, int handlerEndOffset,
             int kind, int exceptionTypeToken)
@@ -82,34 +61,23 @@ namespace IKVM.Reflection.Emit
             _exceptionClass = exceptionTypeToken;
         }
 
-        private static bool IsValidKind(ExceptionHandlingClauseOptions kind)
+        static bool IsValidKind(ExceptionHandlingClauseOptions kind)
         {
-            switch (kind)
+            return kind switch
             {
-                case ExceptionHandlingClauseOptions.Clause:
-                case ExceptionHandlingClauseOptions.Filter:
-                case ExceptionHandlingClauseOptions.Finally:
-                case ExceptionHandlingClauseOptions.Fault:
-                    return true;
-
-                default:
-                    return false;
-            }
+                ExceptionHandlingClauseOptions.Clause or ExceptionHandlingClauseOptions.Filter or ExceptionHandlingClauseOptions.Finally or ExceptionHandlingClauseOptions.Fault => true,
+                _ => false,
+            };
         }
 
         #endregion
 
         #region Equality
 
-        public override int GetHashCode()
-        {
-            return _exceptionClass ^ _tryStartOffset ^ _tryEndOffset ^ _filterOffset ^ _handlerStartOffset ^ _handlerEndOffset ^ (int)_kind;
-        }
+        public override int GetHashCode() =>
+            _exceptionClass ^ _tryStartOffset ^ _tryEndOffset ^ _filterOffset ^ _handlerStartOffset ^ _handlerEndOffset ^ (int)_kind;
 
-        public override bool Equals(Object obj)
-        {
-            return obj is ExceptionHandler && Equals((ExceptionHandler)obj);
-        }
+        public override bool Equals(object obj) => obj is ExceptionHandler && Equals((ExceptionHandler)obj);
 
         public bool Equals(ExceptionHandler other)
         {

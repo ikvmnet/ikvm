@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,142 +24,91 @@
 namespace IKVM.Reflection
 {
 
-    internal abstract class MethodBase : MemberInfo
-	{
+    abstract class MethodBase : MemberInfo
+    {
 
-		/// <summary>
-		/// Initializes a new instance.
-		/// </summary>
-		internal MethodBase()
-		{
-		}
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal MethodBase()
+        {
+        }
 
-		internal abstract MethodSignature MethodSignature { get; }
-		internal abstract int ParameterCount { get; }
-		public abstract ParameterInfo[] GetParameters();
+        internal abstract MethodSignature MethodSignature { get; }
+        internal abstract int ParameterCount { get; }
+        public abstract ParameterInfo[] GetParameters();
 
-		internal abstract Type[] GetParameterTypes();
+        internal abstract Type[] GetParameterTypes();
 
-		public abstract MethodAttributes Attributes { get; }
-		public abstract MethodImplAttributes GetMethodImplementationFlags();
-		public abstract CallingConventions CallingConvention { get; }
+        public abstract MethodAttributes Attributes { get; }
+        public abstract MethodImplAttributes GetMethodImplementationFlags();
+        public abstract CallingConventions CallingConvention { get; }
 
-		public bool IsConstructor
-		{
-			get
-			{
-				if ((Attributes & MethodAttributes.RTSpecialName) != 0)
-				{
-					var name = Name;
-					return name == ConstructorInfo.ConstructorName || name == ConstructorInfo.TypeConstructorName;
-				}
+        public bool IsConstructor
+        {
+            get
+            {
+                if ((Attributes & MethodAttributes.RTSpecialName) != 0)
+                {
+                    var name = Name;
+                    return name == ConstructorInfo.ConstructorName || name == ConstructorInfo.TypeConstructorName;
+                }
 
-				return false;
-			}
-		}
+                return false;
+            }
+        }
 
-		public bool IsStatic
-		{
-			get { return (Attributes & MethodAttributes.Static) != 0; }
-		}
+        public bool IsStatic => (Attributes & MethodAttributes.Static) != 0;
 
-		public bool IsVirtual
-		{
-			get { return (Attributes & MethodAttributes.Virtual) != 0; }
-		}
+        public bool IsVirtual => (Attributes & MethodAttributes.Virtual) != 0;
 
-		public bool IsAbstract
-		{
-			get { return (Attributes & MethodAttributes.Abstract) != 0; }
-		}
+        public bool IsAbstract => (Attributes & MethodAttributes.Abstract) != 0;
 
-		public bool IsFinal
-		{
-			get { return (Attributes & MethodAttributes.Final) != 0; }
-		}
+        public bool IsFinal => (Attributes & MethodAttributes.Final) != 0;
 
-		public bool IsPublic
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Public; }
-		}
+        public bool IsPublic => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Public;
 
-		public bool IsFamily
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Family; }
-		}
+        public bool IsFamily => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Family;
 
-		public bool IsFamilyOrAssembly
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamORAssem; }
-		}
+        public bool IsFamilyOrAssembly => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamORAssem;
 
-		public bool IsAssembly
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly; }
-		}
+        public bool IsAssembly => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly;
 
-		public bool IsFamilyAndAssembly
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem; }
-		}
+        public bool IsFamilyAndAssembly => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem;
 
-		public bool IsPrivate
-		{
-			get { return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private; }
-		}
+        public bool IsPrivate => (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private;
 
-		public bool IsSpecialName
-		{
-			get { return (Attributes & MethodAttributes.SpecialName) != 0; }
-		}
+        public bool IsSpecialName => (Attributes & MethodAttributes.SpecialName) != 0;
 
-		public bool IsHideBySig
-		{
-			get { return (Attributes & MethodAttributes.HideBySig) != 0; }
-		}
+        public bool IsHideBySig => (Attributes & MethodAttributes.HideBySig) != 0;
 
-		public MethodImplAttributes MethodImplementationFlags
-		{
-			get { return GetMethodImplementationFlags(); }
-		}
+        public MethodImplAttributes MethodImplementationFlags => GetMethodImplementationFlags();
 
-		public virtual Type[] GetGenericArguments()
-		{
-			return Type.EmptyTypes;
-		}
+        public virtual Type[] GetGenericArguments() => Type.EmptyTypes;
 
-		public virtual bool IsGenericMethod
-		{
-			get { return false; }
-		}
+        public virtual bool IsGenericMethod => false;
 
-		public virtual bool IsGenericMethodDefinition
-		{
-			get { return false; }
-		}
+        public virtual bool IsGenericMethodDefinition => false;
 
-		public virtual bool ContainsGenericParameters
-		{
-			get { return IsGenericMethodDefinition; }
-		}
+        public virtual bool ContainsGenericParameters => IsGenericMethodDefinition;
 
-		internal abstract int ImportTo(Emit.ModuleBuilder module);
+        internal abstract int ImportTo(Emit.ModuleBuilder module);
 
-		internal abstract MethodBase BindTypeParameters(Type type);
+        internal abstract MethodBase BindTypeParameters(Type type);
 
-		internal sealed override bool BindingFlagsMatch(BindingFlags flags)
-		{
-			return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
-		}
+        internal sealed override bool BindingFlagsMatch(BindingFlags flags)
+        {
+            return BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static, BindingFlags.Instance);
+        }
 
-		internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
-		{
-			return (Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private
-				&& BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
-				&& BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
-		}
+        internal sealed override bool BindingFlagsMatchInherited(BindingFlags flags)
+        {
+            return (Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private
+                && BindingFlagsMatch(IsPublic, flags, BindingFlags.Public, BindingFlags.NonPublic)
+                && BindingFlagsMatch(IsStatic, flags, BindingFlags.Static | BindingFlags.FlattenHierarchy, BindingFlags.Instance);
+        }
 
-	}
+    }
 
 }

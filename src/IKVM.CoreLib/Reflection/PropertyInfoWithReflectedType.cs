@@ -37,93 +37,48 @@ namespace IKVM.Reflection
         /// <param name="property"></param>
         internal PropertyInfoWithReflectedType(Type reflectedType, PropertyInfo property)
         {
-            this._reflectedType = reflectedType;
-            this._property = property;
+            _reflectedType = reflectedType;
+            _property = property;
         }
 
-        public override PropertyAttributes Attributes
-        {
-            get { return _property.Attributes; }
-        }
+        public override PropertyAttributes Attributes => _property.Attributes;
 
-        public override bool CanRead
-        {
-            get { return _property.CanRead; }
-        }
+        public override bool CanRead => _property.CanRead;
 
-        public override bool CanWrite
-        {
-            get { return _property.CanWrite; }
-        }
+        public override bool CanWrite => _property.CanWrite;
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return SetReflectedType(_property.GetGetMethod(nonPublic), _reflectedType);
-        }
+        public override MethodInfo GetGetMethod(bool nonPublic) => SetReflectedType(_property.GetGetMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return SetReflectedType(_property.GetSetMethod(nonPublic), _reflectedType);
-        }
+        public override MethodInfo GetSetMethod(bool nonPublic) => SetReflectedType(_property.GetSetMethod(nonPublic), _reflectedType);
 
-        public override MethodInfo[] GetAccessors(bool nonPublic)
-        {
-            return SetReflectedType(_property.GetAccessors(nonPublic), _reflectedType);
-        }
+        public override MethodInfo[] GetAccessors(bool nonPublic) => SetReflectedType(_property.GetAccessors(nonPublic), _reflectedType);
 
-        public override object GetRawConstantValue()
-        {
-            return _property.GetRawConstantValue();
-        }
+        public override object GetRawConstantValue() => _property.GetRawConstantValue();
 
-        internal override bool IsPublic
-        {
-            get { return _property.IsPublic; }
-        }
+        internal override bool IsPublic => _property.IsPublic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return _property.IsNonPrivate; }
-        }
+        internal override bool IsNonPrivate => _property.IsNonPrivate;
 
-        internal override bool IsStatic
-        {
-            get { return _property.IsStatic; }
-        }
+        internal override bool IsStatic => _property.IsStatic;
 
-        internal override PropertySignature PropertySignature
-        {
-            get { return _property.PropertySignature; }
-        }
+        internal override PropertySignature PropertySignature => _property.PropertySignature;
 
         public override ParameterInfo[] GetIndexParameters()
         {
             var parameters = _property.GetIndexParameters();
-            for (int i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < parameters.Length; i++)
                 parameters[i] = new ParameterInfoWrapper(this, parameters[i]);
 
             return parameters;
         }
 
-        internal override PropertyInfo BindTypeParameters(Type type)
-        {
-            return _property.BindTypeParameters(type);
-        }
+        internal override PropertyInfo BindTypeParameters(Type type) => _property.BindTypeParameters(type);
 
-        public override string ToString()
-        {
-            return _property.ToString();
-        }
+        public override string ToString() => _property.ToString();
 
-        public override bool __IsMissing
-        {
-            get { return _property.__IsMissing; }
-        }
+        public override bool __IsMissing => _property.__IsMissing;
 
-        public override Type DeclaringType
-        {
-            get { return _property.DeclaringType; }
-        }
+        public override Type DeclaringType => _property.DeclaringType;
 
         public override bool Equals(object obj)
         {
@@ -133,35 +88,17 @@ namespace IKVM.Reflection
                 && other._property == _property;
         }
 
-        public override int GetHashCode()
-        {
-            return _reflectedType.GetHashCode() ^ _property.GetHashCode();
-        }
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _property.GetHashCode();
 
-        public override int MetadataToken
-        {
-            get { return _property.MetadataToken; }
-        }
+        public override int MetadataToken => _property.MetadataToken;
 
-        public override Module Module
-        {
-            get { return _property.Module; }
-        }
+        public override Module Module => _property.Module;
 
-        public override string Name
-        {
-            get { return _property.Name; }
-        }
+        public override string Name => _property.Name;
 
-        internal override bool IsBaked
-        {
-            get { return _property.IsBaked; }
-        }
+        internal override bool IsBaked => _property.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            return _property.GetCurrentToken();
-        }
+        internal override int GetCurrentToken() => _property.GetCurrentToken();
 
     }
 

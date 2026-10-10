@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class ParameterInfo : ICustomAttributeProvider
+    abstract class ParameterInfo : ICustomAttributeProvider
     {
 
         /// <summary>
@@ -42,20 +42,12 @@ namespace IKVM.Reflection
             return other != null && other.Member == Member && other.Position == Position;
         }
 
-        public sealed override int GetHashCode()
-        {
-            return Member.GetHashCode() * 1777 + Position;
-        }
+        public sealed override int GetHashCode() => Member.GetHashCode() * 1777 + Position;
 
-        public static bool operator ==(ParameterInfo p1, ParameterInfo p2)
-        {
-            return ReferenceEquals(p1, p2) || (!ReferenceEquals(p1, null) && p1.Equals(p2));
-        }
+        public static bool operator ==(ParameterInfo p1, ParameterInfo p2) =>
+            ReferenceEquals(p1, p2) || (!ReferenceEquals(p1, null) && p1.Equals(p2));
 
-        public static bool operator !=(ParameterInfo p1, ParameterInfo p2)
-        {
-            return !(p1 == p2);
-        }
+        public static bool operator !=(ParameterInfo p1, ParameterInfo p2) => !(p1 == p2);
 
         public abstract string Name { get; }
 
@@ -77,40 +69,19 @@ namespace IKVM.Reflection
 
         public abstract Module Module { get; }
 
-        public Type[] GetOptionalCustomModifiers()
-        {
-            return __GetCustomModifiers().GetOptional();
-        }
+        public Type[] GetOptionalCustomModifiers() => __GetCustomModifiers().GetOptional();
 
-        public Type[] GetRequiredCustomModifiers()
-        {
-            return __GetCustomModifiers().GetRequired();
-        }
+        public Type[] GetRequiredCustomModifiers() => __GetCustomModifiers().GetRequired();
 
-        public bool IsIn
-        {
-            get { return (Attributes & ParameterAttributes.In) != 0; }
-        }
+        public bool IsIn => (Attributes & ParameterAttributes.In) != 0;
 
-        public bool IsOut
-        {
-            get { return (Attributes & ParameterAttributes.Out) != 0; }
-        }
+        public bool IsOut => (Attributes & ParameterAttributes.Out) != 0;
 
-        public bool IsLcid
-        {
-            get { return (Attributes & ParameterAttributes.Lcid) != 0; }
-        }
+        public bool IsLcid => (Attributes & ParameterAttributes.Lcid) != 0;
 
-        public bool IsRetval
-        {
-            get { return (Attributes & ParameterAttributes.Retval) != 0; }
-        }
+        public bool IsRetval => (Attributes & ParameterAttributes.Retval) != 0;
 
-        public bool IsOptional
-        {
-            get { return (Attributes & ParameterAttributes.Optional) != 0; }
-        }
+        public bool IsOptional => (Attributes & ParameterAttributes.Optional) != 0;
 
         /// <summary>
         /// Gets whether the parameter has a default value. Like System.Reflection, a <see cref="decimal"/> or
@@ -168,20 +139,12 @@ namespace IKVM.Reflection
             return false;
         }
 
-        public bool IsDefined(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
-        }
+        public bool IsDefined(Type attributeType, bool inherit) => CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit).Count != 0;
 
-        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit)
-        {
-            return CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
-        }
+        public IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit) =>
+            CustomAttributeData.__GetCustomAttributes(this, attributeType, inherit);
 
-        public IList<CustomAttributeData> GetCustomAttributesData()
-        {
-            return CustomAttributeData.GetCustomAttributes(this);
-        }
+        public IList<CustomAttributeData> GetCustomAttributesData() => CustomAttributeData.GetCustomAttributes(this);
 
     }
 
@@ -198,59 +161,29 @@ namespace IKVM.Reflection
         /// <param name="forward"></param>
         internal ParameterInfoWrapper(MemberInfo member, ParameterInfo forward)
         {
-            this._member = member;
-            this._forward = forward;
+            _member = member;
+            _forward = forward;
         }
 
-        public override string Name
-        {
-            get { return _forward.Name; }
-        }
+        public override string Name => _forward.Name;
 
-        public override Type ParameterType
-        {
-            get { return _forward.ParameterType; }
-        }
+        public override Type ParameterType => _forward.ParameterType;
 
-        public override ParameterAttributes Attributes
-        {
-            get { return _forward.Attributes; }
-        }
+        public override ParameterAttributes Attributes => _forward.Attributes;
 
-        public override int Position
-        {
-            get { return _forward.Position; }
-        }
+        public override int Position => _forward.Position;
 
-        public override object RawDefaultValue
-        {
-            get { return _forward.RawDefaultValue; }
-        }
+        public override object RawDefaultValue => _forward.RawDefaultValue;
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return _forward.__GetCustomModifiers();
-        }
+        public override CustomModifiers __GetCustomModifiers() => _forward.__GetCustomModifiers();
 
-        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
-        {
-            return _forward.__TryGetFieldMarshal(out fieldMarshal);
-        }
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => _forward.__TryGetFieldMarshal(out fieldMarshal);
 
-        public override MemberInfo Member
-        {
-            get { return _member; }
-        }
+        public override MemberInfo Member => _member;
 
-        public override int MetadataToken
-        {
-            get { return _forward.MetadataToken; }
-        }
+        public override int MetadataToken => _forward.MetadataToken;
 
-        public override Module Module
-        {
-            get { return _member.Module; }
-        }
+        public override Module Module => _member.Module;
 
     }
 

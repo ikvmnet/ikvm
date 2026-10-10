@@ -42,18 +42,20 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle">The parameter row, or a nil handle for a parameter without one.</param>
         internal ParameterInfoImpl(MethodDefImpl method, int position, ParameterHandle handle)
         {
-            this._method = method;
-            this._position = position;
-            this._handle = handle;
+            _method = method;
+            _position = position;
+            _handle = handle;
         }
 
         ModuleReader ModuleReader => (ModuleReader)_method.Module;
 
         public override string Name => _handle.IsNil ? null : ModuleReader.GetString(ModuleReader.Metadata.GetParameter(_handle).Name);
 
-        public override Type ParameterType => _position == -1 ? _method.MethodSignature.GetReturnType(_method) : _method.MethodSignature.GetParameterType(_method, _position);
+        public override Type ParameterType =>
+            _position == -1 ? _method.MethodSignature.GetReturnType(_method) : _method.MethodSignature.GetParameterType(_method, _position);
 
-        public override ParameterAttributes Attributes => _handle.IsNil ? ParameterAttributes.None : (ParameterAttributes)ModuleReader.Metadata.GetParameter(_handle).Attributes;
+        public override ParameterAttributes Attributes =>
+            _handle.IsNil ? ParameterAttributes.None : (ParameterAttributes)ModuleReader.Metadata.GetParameter(_handle).Attributes;
 
         public override int Position => _position;
 
@@ -74,12 +76,11 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override CustomModifiers __GetCustomModifiers()
-        {
-            return _position == -1 ? _method.MethodSignature.GetReturnTypeCustomModifiers(_method) : _method.MethodSignature.GetParameterCustomModifiers(_method, _position);
-        }
+        public override CustomModifiers __GetCustomModifiers() =>
+            _position == -1 ? _method.MethodSignature.GetReturnTypeCustomModifiers(_method) : _method.MethodSignature.GetParameterCustomModifiers(_method, _position);
 
-        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => FieldMarshal.ReadFieldMarshal(Module, MetadataToken, out fieldMarshal);
+        public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) =>
+            FieldMarshal.ReadFieldMarshal(Module, MetadataToken, out fieldMarshal);
 
         // return the right ConstructorInfo wrapper
         public override MemberInfo Member => _method.Module.ResolveMethod(_method.MetadataToken);

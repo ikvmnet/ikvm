@@ -43,40 +43,22 @@ namespace IKVM.Reflection
             /// <param name="pos"></param>
             internal ParameterInfoImpl(MethodInfo method, Type type, int pos)
             {
-                this._method = method;
-                this._type = type;
-                this._pos = pos;
+                _method = method;
+                _type = type;
+                _pos = pos;
             }
 
-            public override Type ParameterType
-            {
-                get { return _type; }
-            }
+            public override Type ParameterType => _type;
 
-            public override string Name
-            {
-                get { return null; }
-            }
+            public override string Name => null;
 
-            public override ParameterAttributes Attributes
-            {
-                get { return ParameterAttributes.None; }
-            }
+            public override ParameterAttributes Attributes => ParameterAttributes.None;
 
-            public override int Position
-            {
-                get { return _pos; }
-            }
+            public override int Position => _pos;
 
-            public override object RawDefaultValue
-            {
-                get { return null; }
-            }
+            public override object RawDefaultValue => null;
 
-            public override CustomModifiers __GetCustomModifiers()
-            {
-                return new CustomModifiers();
-            }
+            public override CustomModifiers __GetCustomModifiers() => new CustomModifiers();
 
             public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
             {
@@ -84,20 +66,11 @@ namespace IKVM.Reflection
                 return false;
             }
 
-            public override MemberInfo Member
-            {
-                get { return _method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(_method) : _method; }
-            }
+            public override MemberInfo Member => _method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(_method) : _method;
 
-            public override int MetadataToken
-            {
-                get { return 0x08000000; }
-            }
+            public override int MetadataToken => 0x08000000;
 
-            public override Module Module
-            {
-                get { return _method.Module; }
-            }
+            public override Module Module => _method.Module;
 
         }
 
@@ -115,34 +88,23 @@ namespace IKVM.Reflection
         {
         }
 
-        public override MethodAttributes Attributes
-        {
-            get { return this.Name == ".ctor" ? MethodAttributes.RTSpecialName | MethodAttributes.Public : MethodAttributes.Public; }
-        }
+        public override MethodAttributes Attributes =>
+            Name == ".ctor" ? MethodAttributes.RTSpecialName | MethodAttributes.Public : MethodAttributes.Public;
 
-        public override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            return MethodImplAttributes.IL;
-        }
+        public override MethodImplAttributes GetMethodImplementationFlags() => MethodImplAttributes.IL;
 
-        public override int MetadataToken
-        {
-            get { return 0x06000000; }
-        }
+        public override int MetadataToken => 0x06000000;
 
         public override ParameterInfo[] GetParameters()
         {
             var parameterInfos = new ParameterInfo[parameterTypes.Length];
-            for (int i = 0; i < parameterInfos.Length; i++)
+            for (var i = 0; i < parameterInfos.Length; i++)
                 parameterInfos[i] = new ParameterInfoImpl(this, parameterTypes[i], i);
 
             return parameterInfos;
         }
 
-        public override ParameterInfo ReturnParameter
-        {
-            get { return new ParameterInfoImpl(this, this.ReturnType, -1); }
-        }
+        public override ParameterInfo ReturnParameter => new ParameterInfoImpl(this, ReturnType, -1);
 
     }
 

@@ -61,34 +61,19 @@ namespace IKVM.Reflection
         MissingTypeParameter(MemberInfo owner, int index, byte sigElementType) :
             base(sigElementType)
         {
-            this._owner = owner;
-            this._index = index;
+            _owner = owner;
+            _index = index;
         }
 
-        public override Module Module
-        {
-            get { return _owner.Module; }
-        }
+        public override Module Module => _owner.Module;
 
-        public override string Name
-        {
-            get { return null; }
-        }
+        public override string Name => null;
 
-        public override int GenericParameterPosition
-        {
-            get { return _index; }
-        }
+        public override int GenericParameterPosition => _index;
 
-        public override MethodBase DeclaringMethod
-        {
-            get { return _owner as MethodBase; }
-        }
+        public override MethodBase DeclaringMethod => _owner as MethodBase;
 
-        public override Type DeclaringType
-        {
-            get { return _owner as Type; }
-        }
+        public override Type DeclaringType => _owner as Type;
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
@@ -98,10 +83,7 @@ namespace IKVM.Reflection
                 return binder.BindTypeParameter(this);
         }
 
-        internal override bool IsBaked
-        {
-            get { return _owner.IsBaked; }
-        }
+        internal override bool IsBaked => _owner.IsBaked;
 
     }
 

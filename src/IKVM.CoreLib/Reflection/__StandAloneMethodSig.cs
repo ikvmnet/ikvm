@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 namespace IKVM.Reflection
 {
 
-    internal sealed class __StandAloneMethodSig
+    sealed class __StandAloneMethodSig
     {
 
         readonly bool _unmanaged;
@@ -49,13 +49,13 @@ namespace IKVM.Reflection
         /// <param name="customModifiers"></param>
         internal __StandAloneMethodSig(bool unmanaged, CallingConvention unmanagedCallingConvention, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes, PackedCustomModifiers customModifiers)
         {
-            this._unmanaged = unmanaged;
-            this._unmanagedCallingConvention = unmanagedCallingConvention;
-            this._callingConvention = callingConvention;
-            this._returnType = returnType;
-            this._parameterTypes = parameterTypes;
-            this._optionalParameterTypes = optionalParameterTypes;
-            this._customModifiers = customModifiers;
+            _unmanaged = unmanaged;
+            _unmanagedCallingConvention = unmanagedCallingConvention;
+            _callingConvention = callingConvention;
+            _returnType = returnType;
+            _parameterTypes = parameterTypes;
+            _optionalParameterTypes = optionalParameterTypes;
+            _customModifiers = customModifiers;
         }
 
         public bool Equals(__StandAloneMethodSig other)
@@ -70,10 +70,7 @@ namespace IKVM.Reflection
                 && other._customModifiers.Equals(_customModifiers);
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as __StandAloneMethodSig);
-        }
+        public override bool Equals(object obj) => Equals(obj as __StandAloneMethodSig);
 
         public override int GetHashCode()
         {
@@ -81,45 +78,21 @@ namespace IKVM.Reflection
                 ^ Util.GetHashCode(_parameterTypes);
         }
 
-        public bool IsUnmanaged
-        {
-            get { return _unmanaged; }
-        }
+        public bool IsUnmanaged => _unmanaged;
 
-        public CallingConventions CallingConvention
-        {
-            get { return _callingConvention; }
-        }
+        public CallingConventions CallingConvention => _callingConvention;
 
-        public CallingConvention UnmanagedCallingConvention
-        {
-            get { return _unmanagedCallingConvention; }
-        }
+        public CallingConvention UnmanagedCallingConvention => _unmanagedCallingConvention;
 
-        public Type ReturnType
-        {
-            get { return _returnType; }
-        }
+        public Type ReturnType => _returnType;
 
-        public CustomModifiers GetReturnTypeCustomModifiers()
-        {
-            return _customModifiers.GetReturnTypeCustomModifiers();
-        }
+        public CustomModifiers GetReturnTypeCustomModifiers() => _customModifiers.GetReturnTypeCustomModifiers();
 
-        public Type[] ParameterTypes
-        {
-            get { return Util.Copy(_parameterTypes); }
-        }
+        public Type[] ParameterTypes => Util.Copy(_parameterTypes);
 
-        public Type[] OptionalParameterTypes
-        {
-            get { return Util.Copy(_optionalParameterTypes); }
-        }
+        public Type[] OptionalParameterTypes => Util.Copy(_optionalParameterTypes);
 
-        public CustomModifiers GetParameterCustomModifiers(int index)
-        {
-            return _customModifiers.GetParameterCustomModifiers(index);
-        }
+        public CustomModifiers GetParameterCustomModifiers(int index) => _customModifiers.GetParameterCustomModifiers(index);
 
         public bool ContainsMissingType
         {

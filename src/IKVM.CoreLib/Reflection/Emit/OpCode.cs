@@ -1,15 +1,15 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 #nullable enable
 
-using System.Threading;
-using System.Diagnostics.CodeAnalysis;
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 
 namespace IKVM.Reflection.Emit
 {
-    internal readonly struct OpCode : IEquatable<OpCode>
+    readonly struct OpCode : IEquatable<OpCode>
     {
         //
         // Use packed bitfield for flags to avoid code bloat
@@ -35,8 +35,8 @@ namespace IKVM.Reflection.Emit
 
         internal const int StackChangeShift = 28;               // XXXX0000000000000000000000000000
 
-        private readonly OpCodeValues _value;
-        private readonly int _flags;
+        readonly OpCodeValues _value;
+        readonly int _flags;
 
         internal OpCode(OpCodeValues value, int flags)
         {
@@ -62,7 +62,7 @@ namespace IKVM.Reflection.Emit
 
         public short Value => (short)_value;
 
-        private static volatile string[]? s_g_nameCache;
+        static volatile string[]? s_g_nameCache;
 
         public string? Name
         {
@@ -73,7 +73,7 @@ namespace IKVM.Reflection.Emit
 
                 // Create and cache the opcode names lazily. They should be rarely used (only for logging, etc.)
                 // Note that we do not any locks here because of we always get the same names. The last one wins.
-                string[]? nameCache = s_g_nameCache;
+                var nameCache = s_g_nameCache;
                 if (nameCache == null)
                 {
                     nameCache = new string[0x11f];
@@ -82,7 +82,7 @@ namespace IKVM.Reflection.Emit
 
                 OpCodeValues opCodeValue = (OpCodeValues)(ushort)Value;
 
-                int idx = (int)opCodeValue;
+                var idx = (int)opCodeValue;
                 if (idx > 0xFF)
                 {
                     if (idx >= 0xfe00 && idx <= 0xfe1e)
@@ -98,7 +98,7 @@ namespace IKVM.Reflection.Emit
                     }
                 }
 
-                string name = Volatile.Read(ref nameCache[idx]);
+                var name = Volatile.Read(ref nameCache[idx]);
                 if (name != null)
                     return name;
 
