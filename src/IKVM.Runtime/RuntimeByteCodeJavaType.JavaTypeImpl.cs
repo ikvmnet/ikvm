@@ -838,11 +838,21 @@ namespace IKVM.Runtime
                             while (lookup != null)
                             {
                                 var mw = GetMethodWrapperDuringCtor(lookup, methods, ifmethod.Name, ifmethod.Signature);
-                                if (mw == null || (mw.IsMirandaMethod && mw.DeclaringType != wrapper))
+                                if (mw == null)
                                 {
                                     mw = RuntimeMirandaJavaMethod.Create(wrapper, ifmethod);
                                     methods.Add(mw);
                                     baseMethods.Add([ifmethod]);
+                                    break;
+                                }
+
+                                if (mw.IsMirandaMethod && mw.DeclaringType != wrapper)
+                                {
+                                    // start from the interface method the base class resolved, which may be a more specific default method
+                                    var inherited = (RuntimeMirandaJavaMethod)mw;
+                                    var miranda = inherited.Error == null ? RuntimeMirandaJavaMethod.Create(wrapper, inherited.BaseMethod).Update(ifmethod) : RuntimeMirandaJavaMethod.Create(wrapper, ifmethod);
+                                    methods.Add(miranda);
+                                    baseMethods.Add([miranda.BaseMethod]);
                                     break;
                                 }
 

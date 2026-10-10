@@ -12,7 +12,6 @@ namespace IKVM.Tests.Runtime
     {
 
         [TestMethod]
-        [Ignore]
         public void ShouldResolveOverlappingDefaultImplementation()
         {
             var code = @"
