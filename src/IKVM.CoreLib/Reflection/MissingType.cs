@@ -29,13 +29,13 @@ namespace IKVM.Reflection
     sealed class MissingType : Type
     {
 
-        readonly Module module;
-        readonly Type declaringType;
-        readonly string ns;
-        readonly string name;
-        Type[] typeArgs;
-        int token;
-        int flags;
+        readonly Module _module;
+        readonly Type _declaringType;
+        readonly string _ns;
+        readonly string _name;
+        Type[] _typeArgs;
+        int _token;
+        int _flags;
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,10 +46,10 @@ namespace IKVM.Reflection
         /// <param name="name"></param>
         internal MissingType(Module module, Type declaringType, string ns, string name)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.ns = ns;
-            this.name = name;
+            this._module = module;
+            this._declaringType = declaringType;
+            this._ns = ns;
+            this._name = name;
             MarkKnownType(ns, name);
         }
 
@@ -84,17 +84,17 @@ namespace IKVM.Reflection
 
         public override Type DeclaringType
         {
-            get { return declaringType; }
+            get { return _declaringType; }
         }
 
         internal override TypeName TypeName
         {
-            get { return new TypeName(ns, name); }
+            get { return new TypeName(_ns, _name); }
         }
 
         public override string Name
         {
-            get { return TypeNameParser.Escape(name); }
+            get { return TypeNameParser.Escape(_name); }
         }
 
         public override string FullName
@@ -104,12 +104,12 @@ namespace IKVM.Reflection
 
         public override Module Module
         {
-            get { return module; }
+            get { return _module; }
         }
 
         public override int MetadataToken
         {
-            get { return token; }
+            get { return _token; }
         }
 
         protected override bool IsValueTypeImpl
@@ -200,12 +200,12 @@ namespace IKVM.Reflection
 
         internal override Type GetGenericTypeArgument(int index)
         {
-            if (typeArgs == null)
-                typeArgs = new Type[index + 1];
-            else if (typeArgs.Length <= index)
-                Array.Resize(ref typeArgs, index + 1);
+            if (_typeArgs == null)
+                _typeArgs = new Type[index + 1];
+            else if (_typeArgs.Length <= index)
+                Array.Resize(ref _typeArgs, index + 1);
 
-            return typeArgs[index] ?? (typeArgs[index] = new MissingTypeParameter(this, index));
+            return _typeArgs[index] ?? (_typeArgs[index] = new MissingTypeParameter(this, index));
         }
 
         internal override Type BindTypeParameters(IGenericBinder binder)
@@ -215,8 +215,8 @@ namespace IKVM.Reflection
 
         internal override Type SetMetadataTokenForMissing(int token, int flags)
         {
-            this.token = token;
-            this.flags = flags;
+            this._token = token;
+            this._flags = flags;
             return this;
         }
 

@@ -19,22 +19,22 @@ namespace IKVM.Reflection.Emit
     /// </remarks>
     internal readonly struct Label : IEquatable<Label>
     {
-        internal readonly int m_label;
+        readonly int _label;
 
-        internal Label(int label) => m_label = label;
+        internal Label(int label) => _label = label;
 
         /// <summary>
         /// Gets the label unique id assigned by the ILGenerator.
         /// </summary>
-        public int Id => m_label;
+        public int Id => _label;
 
-        public override int GetHashCode() => m_label;
+        public override int GetHashCode() => _label;
 
         public override bool Equals(object? obj) =>
             obj is Label other && Equals(other);
 
         public bool Equals(Label obj) =>
-            obj.m_label == m_label;
+            obj._label == _label;
 
     }
 }

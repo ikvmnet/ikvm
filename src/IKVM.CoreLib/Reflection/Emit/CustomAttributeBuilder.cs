@@ -35,13 +35,13 @@ namespace IKVM.Reflection.Emit
     internal sealed class CustomAttributeBuilder
     {
 
-        readonly ConstructorInfo con;
-        readonly byte[] blob;
-        readonly object[] constructorArgs;
-        readonly PropertyInfo[] namedProperties;
-        readonly object[] propertyValues;
-        readonly FieldInfo[] namedFields;
-        readonly object[] fieldValues;
+        readonly ConstructorInfo _con;
+        readonly byte[] _blob;
+        readonly object[] _constructorArgs;
+        readonly PropertyInfo[] _namedProperties;
+        readonly object[] _propertyValues;
+        readonly FieldInfo[] _namedFields;
+        readonly object[] _fieldValues;
 
         /// <summary>
         /// Initialiezes a new instance.
@@ -50,8 +50,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="blob"></param>
         internal CustomAttributeBuilder(ConstructorInfo con, byte[] blob)
         {
-            this.con = con;
-            this.blob = blob;
+            this._con = con;
+            this._blob = blob;
         }
 
         /// <summary>
@@ -99,12 +99,12 @@ namespace IKVM.Reflection.Emit
         /// <param name="fieldValues"></param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues, FieldInfo[] namedFields, object[] fieldValues)
         {
-            this.con = con;
-            this.constructorArgs = constructorArgs;
-            this.namedProperties = namedProperties;
-            this.propertyValues = propertyValues;
-            this.namedFields = namedFields;
-            this.fieldValues = fieldValues;
+            this._con = con;
+            this._constructorArgs = constructorArgs;
+            this._namedProperties = namedProperties;
+            this._propertyValues = propertyValues;
+            this._namedFields = namedFields;
+            this._fieldValues = fieldValues;
         }
 
         public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, byte[] blob)
@@ -120,9 +120,9 @@ namespace IKVM.Reflection.Emit
         private sealed class BlobWriter
         {
 
-            readonly Assembly assembly;
-            readonly CustomAttributeBuilder cab;
-            readonly BlobBuilder bb;
+            readonly Assembly _assembly;
+            readonly CustomAttributeBuilder _cab;
+            readonly BlobBuilder _bb;
 
             /// <summary>
             /// Initializes a new instance.
@@ -132,9 +132,9 @@ namespace IKVM.Reflection.Emit
             /// <param name="bb"></param>
             internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, BlobBuilder bb)
             {
-                this.assembly = assembly;
-                this.cab = cab;
-                this.bb = bb;
+                this._assembly = assembly;
+                this._cab = cab;
+                this._bb = bb;
             }
 
             internal void WriteCustomAttributeBlob()
@@ -142,9 +142,9 @@ namespace IKVM.Reflection.Emit
                 // prolog
                 WriteUInt16(1);
 
-                var parameterTypes = cab.con.GetParameterTypes();
+                var parameterTypes = _cab._con.GetParameterTypes();
                 for (int i = 0; i < parameterTypes.Length; i++)
-                    WriteFixedArg(parameterTypes[i], cab.constructorArgs[i]);
+                    WriteFixedArg(parameterTypes[i], _cab._constructorArgs[i]);
 
                 WriteNamedArguments(false);
             }
@@ -153,13 +153,13 @@ namespace IKVM.Reflection.Emit
             {
                 // NumNamed
                 int named = 0;
-                if (cab.namedFields != null)
+                if (_cab._namedFields != null)
                 {
-                    named += cab.namedFields.Length;
+                    named += _cab._namedFields.Length;
                 }
-                if (cab.namedProperties != null)
+                if (_cab._namedProperties != null)
                 {
-                    named += cab.namedProperties.Length;
+                    named += _cab._namedProperties.Length;
                 }
                 if (forDeclSecurity)
                 {
@@ -169,18 +169,18 @@ namespace IKVM.Reflection.Emit
                 {
                     WriteUInt16((ushort)named);
                 }
-                if (cab.namedFields != null)
+                if (_cab._namedFields != null)
                 {
-                    for (int i = 0; i < cab.namedFields.Length; i++)
+                    for (int i = 0; i < _cab._namedFields.Length; i++)
                     {
-                        WriteNamedArg(0x53, cab.namedFields[i].FieldType, cab.namedFields[i].Name, cab.fieldValues[i]);
+                        WriteNamedArg(0x53, _cab._namedFields[i].FieldType, _cab._namedFields[i].Name, _cab._fieldValues[i]);
                     }
                 }
-                if (cab.namedProperties != null)
+                if (_cab._namedProperties != null)
                 {
-                    for (int i = 0; i < cab.namedProperties.Length; i++)
+                    for (int i = 0; i < _cab._namedProperties.Length; i++)
                     {
-                        WriteNamedArg(0x54, cab.namedProperties[i].PropertyType, cab.namedProperties[i].Name, cab.propertyValues[i]);
+                        WriteNamedArg(0x54, _cab._namedProperties[i].PropertyType, _cab._namedProperties[i].Name, _cab._propertyValues[i]);
                     }
                 }
             }
@@ -195,22 +195,22 @@ namespace IKVM.Reflection.Emit
 
             void WriteByte(byte value)
             {
-                bb.WriteByte(value);
+                _bb.WriteByte(value);
             }
 
             void WriteUInt16(ushort value)
             {
-                bb.WriteUInt16(value);
+                _bb.WriteUInt16(value);
             }
 
             void WriteInt32(int value)
             {
-                bb.WriteInt32(value);
+                _bb.WriteInt32(value);
             }
 
             void WriteFixedArg(Type type, object value)
             {
-                var u = assembly.Universe;
+                var u = _assembly.Universe;
                 if (type == u.System_String)
                 {
                     WriteString((string)value);
@@ -320,17 +320,17 @@ namespace IKVM.Reflection.Emit
 
             void WriteInt64(long value)
             {
-                bb.WriteInt64(value);
+                _bb.WriteInt64(value);
             }
 
             void WriteSingle(float value)
             {
-                bb.WriteSingle(value);
+                _bb.WriteSingle(value);
             }
 
             void WriteDouble(double value)
             {
-                bb.WriteDouble(value);
+                _bb.WriteDouble(value);
             }
 
             void WriteTypeName(Type type)
@@ -347,8 +347,8 @@ namespace IKVM.Reflection.Emit
 
             void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
             {
-                bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
-                bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.Universe.CoreLib);
+                bool v1 = !_assembly.ManifestModule.__IsMissing && _assembly.ManifestModule.MDStreamVersion < 0x20000;
+                bool includeAssemblyName = type.Assembly != _assembly && (!v1 || type.Assembly != type.Module.Universe.CoreLib);
                 if (isTypeParam && includeAssemblyName)
                 {
                     sb.Append('[');
@@ -403,12 +403,12 @@ namespace IKVM.Reflection.Emit
 
             void WriteString(string val)
             {
-                bb.WriteSerializedString(val);
+                _bb.WriteSerializedString(val);
             }
 
             void WritePackedLen(int len)
             {
-                bb.WriteCompressedInteger(len);
+                _bb.WriteCompressedInteger(len);
             }
 
             void WriteFieldOrPropType(Type type)
@@ -493,13 +493,13 @@ namespace IKVM.Reflection.Emit
 
         internal ConstructorInfo Constructor
         {
-            get { return con; }
+            get { return _con; }
         }
 
         internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
-            if (blob != null)
-                return moduleBuilder.GetOrAddBlob(blob);
+            if (_blob != null)
+                return moduleBuilder.GetOrAddBlob(_blob);
 
             var bb = new BlobBuilder(100);
             new BlobWriter(moduleBuilder.Assembly, this, bb).WriteCustomAttributeBlob();
@@ -508,7 +508,7 @@ namespace IKVM.Reflection.Emit
 
         internal object GetConstructorArgument(int pos)
         {
-            return constructorArgs[pos];
+            return _constructorArgs[pos];
         }
 
         internal T? GetFieldValue<T>(string name) where T : struct
@@ -539,13 +539,13 @@ namespace IKVM.Reflection.Emit
 
         internal object GetFieldValue(string name)
         {
-            if (namedFields != null)
+            if (_namedFields != null)
             {
-                for (int i = 0; i < namedFields.Length; i++)
+                for (int i = 0; i < _namedFields.Length; i++)
                 {
-                    if (namedFields[i].Name == name)
+                    if (_namedFields[i].Name == name)
                     {
-                        return fieldValues[i];
+                        return _fieldValues[i];
                     }
                 }
             }
@@ -554,35 +554,35 @@ namespace IKVM.Reflection.Emit
 
         internal CustomAttributeData ToData(Assembly asm)
         {
-            if (blob != null)
+            if (_blob != null)
             {
-                if (constructorArgs != null)
-                    return new CustomAttributeData(asm, con, (int)constructorArgs[0], blob, -1);
+                if (_constructorArgs != null)
+                    return new CustomAttributeData(asm, _con, (int)_constructorArgs[0], _blob, -1);
 
                 unsafe
                 {
-                    fixed (byte* p = blob)
-                        return new CustomAttributeData(asm, con, new System.Reflection.Metadata.BlobReader(p, blob.Length));
+                    fixed (byte* p = _blob)
+                        return new CustomAttributeData(asm, _con, new System.Reflection.Metadata.BlobReader(p, _blob.Length));
                 }
             }
             else
             {
                 var namedArgs = new List<CustomAttributeNamedArgument>();
 
-                if (namedProperties != null)
-                    for (int i = 0; i < namedProperties.Length; i++)
-                        namedArgs.Add(new CustomAttributeNamedArgument(namedProperties[i], RewrapValue(namedProperties[i].PropertyType, propertyValues[i])));
+                if (_namedProperties != null)
+                    for (int i = 0; i < _namedProperties.Length; i++)
+                        namedArgs.Add(new CustomAttributeNamedArgument(_namedProperties[i], RewrapValue(_namedProperties[i].PropertyType, _propertyValues[i])));
 
-                if (namedFields != null)
-                    for (int i = 0; i < namedFields.Length; i++)
-                        namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], RewrapValue(namedFields[i].FieldType, fieldValues[i])));
+                if (_namedFields != null)
+                    for (int i = 0; i < _namedFields.Length; i++)
+                        namedArgs.Add(new CustomAttributeNamedArgument(_namedFields[i], RewrapValue(_namedFields[i].FieldType, _fieldValues[i])));
 
-                var args = new List<CustomAttributeTypedArgument>(constructorArgs.Length);
+                var args = new List<CustomAttributeTypedArgument>(_constructorArgs.Length);
                 var parameterTypes = Constructor.GetParameterTypes();
-                for (int i = 0; i < constructorArgs.Length; i++)
-                    args.Add(RewrapValue(parameterTypes[i], constructorArgs[i]));
+                for (int i = 0; i < _constructorArgs.Length; i++)
+                    args.Add(RewrapValue(parameterTypes[i], _constructorArgs[i]));
 
-                return new CustomAttributeData(asm.ManifestModule, con, args, namedArgs);
+                return new CustomAttributeData(asm.ManifestModule, _con, args, namedArgs);
             }
         }
 
@@ -620,12 +620,12 @@ namespace IKVM.Reflection.Emit
 
         internal bool HasBlob
         {
-            get { return blob != null; }
+            get { return _blob != null; }
         }
 
         internal CustomAttributeBuilder DecodeBlob(Assembly asm)
         {
-            if (blob == null)
+            if (_blob == null)
             {
                 return this;
             }
@@ -639,7 +639,7 @@ namespace IKVM.Reflection.Emit
         {
             get
             {
-                var attributeType = con.DeclaringType;
+                var attributeType = _con.DeclaringType;
                 if (attributeType.IsConstructedGenericType)
                     return KnownCA.Unknown; // a constructed generic type doesn't have a TypeName and we already know it's not a Known CA
 

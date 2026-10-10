@@ -29,8 +29,8 @@ namespace IKVM.Reflection
     sealed class ConstructorInfoWithReflectedType : ConstructorInfo
     {
 
-        readonly Type reflectedType;
-        readonly ConstructorInfo ctor;
+        readonly Type _reflectedType;
+        readonly ConstructorInfo _ctor;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,24 +40,24 @@ namespace IKVM.Reflection
         internal ConstructorInfoWithReflectedType(Type reflectedType, ConstructorInfo ctor)
         {
             Debug.Assert(reflectedType != ctor.DeclaringType);
-            this.reflectedType = reflectedType;
-            this.ctor = ctor;
+            this._reflectedType = reflectedType;
+            this._ctor = ctor;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as ConstructorInfoWithReflectedType;
-            return other != null && other.reflectedType == reflectedType && other.ctor == ctor;
+            return other != null && other._reflectedType == _reflectedType && other._ctor == _ctor;
         }
 
         public override int GetHashCode()
         {
-            return reflectedType.GetHashCode() ^ ctor.GetHashCode();
+            return _reflectedType.GetHashCode() ^ _ctor.GetHashCode();
         }
 
         internal override MethodInfo GetMethodInfo()
         {
-            return ctor.GetMethodInfo();
+            return _ctor.GetMethodInfo();
         }
 
     }

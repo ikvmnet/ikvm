@@ -31,76 +31,76 @@ namespace IKVM.Reflection.Writer
     sealed class VersionInfo
     {
 
-        AssemblyName name;
-        string fileName;
-        internal string copyright;
-        internal string trademark;
-        internal string product;
-        internal string company;
-        string description;
-        string title;
-        internal string informationalVersion;
-        string fileVersion;
+        AssemblyName _name;
+        string _fileName;
+        string _copyright;
+        string _trademark;
+        string _product;
+        string _company;
+        string _description;
+        string _title;
+        string _informationalVersion;
+        string _fileVersion;
 
         internal void SetName(AssemblyName name)
         {
-            this.name = name;
+            this._name = name;
         }
 
         internal void SetFileName(string assemblyFileName)
         {
-            this.fileName = System.IO.Path.GetFileName(assemblyFileName);
+            this._fileName = System.IO.Path.GetFileName(assemblyFileName);
         }
 
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
             var u = cab.Constructor.Module.Universe;
             var type = cab.Constructor.DeclaringType;
-            if (copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
+            if (_copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
             {
-                copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (trademark == null && type == u.System_Reflection_AssemblyTrademarkAttribute)
+            else if (_trademark == null && type == u.System_Reflection_AssemblyTrademarkAttribute)
             {
-                trademark = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _trademark = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (product == null && type == u.System_Reflection_AssemblyProductAttribute)
+            else if (_product == null && type == u.System_Reflection_AssemblyProductAttribute)
             {
-                product = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _product = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (company == null && type == u.System_Reflection_AssemblyCompanyAttribute)
+            else if (_company == null && type == u.System_Reflection_AssemblyCompanyAttribute)
             {
-                company = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _company = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (description == null && type == u.System_Reflection_AssemblyDescriptionAttribute)
+            else if (_description == null && type == u.System_Reflection_AssemblyDescriptionAttribute)
             {
-                description = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _description = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (title == null && type == u.System_Reflection_AssemblyTitleAttribute)
+            else if (_title == null && type == u.System_Reflection_AssemblyTitleAttribute)
             {
-                title = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _title = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (informationalVersion == null && type == u.System_Reflection_AssemblyInformationalVersionAttribute)
+            else if (_informationalVersion == null && type == u.System_Reflection_AssemblyInformationalVersionAttribute)
             {
-                informationalVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _informationalVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
+            else if (_fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
             {
-                fileVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _fileVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
         }
 
         internal void Write(ByteBuffer bb)
         {
-            if (fileVersion == null)
+            if (_fileVersion == null)
             {
-                if (name.Version != null)
+                if (_name.Version != null)
                 {
-                    fileVersion = name.Version.ToString();
+                    _fileVersion = _name.Version.ToString();
                 }
                 else
                 {
-                    fileVersion = "0.0.0.0";
+                    _fileVersion = "0.0.0.0";
                 }
             }
 
@@ -109,15 +109,15 @@ namespace IKVM.Reflection.Writer
             int lcid = 0x7f;
             try
             {
-                if (name.CultureInfo != null)
-                    lcid = name.CultureInfo.LCID;
+                if (_name.CultureInfo != null)
+                    lcid = _name.CultureInfo.LCID;
             }
             catch (ArgumentException)
             {
                 // AssemblyName.CultureInfo throws an ArgumentException if AssemblyBuilder.__SetAssemblyCulture() was used to specify a non-existing culture
             }
 
-            var filever = ParseVersionRobust(fileVersion);
+            var filever = ParseVersionRobust(_fileVersion);
             var fileVersionMajor = filever.Major;
             var fileVersionMinor = filever.Minor;
             var fileVersionBuild = filever.Build;
@@ -127,9 +127,9 @@ namespace IKVM.Reflection.Writer
             var productVersionMinor = fileVersionMinor;
             var productVersionBuild = fileVersionBuild;
             var productVersionRevision = fileVersionRevision;
-            if (informationalVersion != null)
+            if (_informationalVersion != null)
             {
-                Version productver = ParseVersionRobust(informationalVersion);
+                Version productver = ParseVersionRobust(_informationalVersion);
                 productVersionMajor = productver.Major;
                 productVersionMinor = productver.Minor;
                 productVersionBuild = productver.Build;
@@ -143,16 +143,16 @@ namespace IKVM.Reflection.Writer
             WriteUTF16Z(stringTable, string.Format("{0:x4}{1:x4}", lcid, codepage));
             stringTable.Align(4);
 
-            WriteString(stringTable, "Comments", description);
-            WriteString(stringTable, "CompanyName", company);
-            WriteString(stringTable, "FileDescription", title);
-            WriteString(stringTable, "FileVersion", fileVersion);
-            WriteString(stringTable, "InternalName", name.Name);
-            WriteString(stringTable, "LegalCopyright", copyright);
-            WriteString(stringTable, "LegalTrademarks", trademark);
-            WriteString(stringTable, "OriginalFilename", fileName);
-            WriteString(stringTable, "ProductName", product);
-            WriteString(stringTable, "ProductVersion", informationalVersion);
+            WriteString(stringTable, "Comments", _description);
+            WriteString(stringTable, "CompanyName", _company);
+            WriteString(stringTable, "FileDescription", _title);
+            WriteString(stringTable, "FileVersion", _fileVersion);
+            WriteString(stringTable, "InternalName", _name.Name);
+            WriteString(stringTable, "LegalCopyright", _copyright);
+            WriteString(stringTable, "LegalTrademarks", _trademark);
+            WriteString(stringTable, "OriginalFilename", _fileName);
+            WriteString(stringTable, "ProductName", _product);
+            WriteString(stringTable, "ProductVersion", _informationalVersion);
 
             stringTable.Position = 0;
             stringTable.WriteInt16((short)stringTable.Length);

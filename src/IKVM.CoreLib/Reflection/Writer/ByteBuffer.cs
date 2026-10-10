@@ -38,8 +38,8 @@ namespace IKVM.Reflection.Writer
             return new ByteBuffer(buf, buf.Length);
         }
 
-        byte[] buffer;
-        int pos;
+        byte[] _buffer;
+        int _pos;
         int __length;   // __length is only valid if > pos, otherwise pos is the current length
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="initialCapacity"></param>
         internal ByteBuffer(int initialCapacity)
         {
-            buffer = new byte[initialCapacity];
+            _buffer = new byte[initialCapacity];
         }
 
         /// <summary>
@@ -58,33 +58,33 @@ namespace IKVM.Reflection.Writer
         /// <param name="length"></param>
         private ByteBuffer(byte[] wrap, int length)
         {
-            buffer = wrap;
-            pos = length;
+            _buffer = wrap;
+            _pos = length;
         }
 
         internal int Position
         {
-            get { return pos; }
+            get { return _pos; }
             set
             {
-                if (value > Length || value > buffer.Length)
+                if (value > Length || value > _buffer.Length)
                     throw new ArgumentOutOfRangeException();
 
-                __length = Math.Max(__length, pos);
-                pos = value;
+                __length = Math.Max(__length, _pos);
+                _pos = value;
             }
         }
 
         internal int Length
         {
-            get { return Math.Max(pos, __length); }
+            get { return Math.Max(_pos, __length); }
         }
 
         void Grow(int minGrow)
         {
-            var newbuf = new byte[Math.Max(buffer.Length + minGrow, buffer.Length * 2)];
-            Buffer.BlockCopy(buffer, 0, newbuf, 0, buffer.Length);
-            buffer = newbuf;
+            var newbuf = new byte[Math.Max(_buffer.Length + minGrow, _buffer.Length * 2)];
+            Buffer.BlockCopy(_buffer, 0, newbuf, 0, _buffer.Length);
+            _buffer = newbuf;
         }
 
         /// <summary>
@@ -96,26 +96,26 @@ namespace IKVM.Reflection.Writer
         /// <returns></returns>
         internal int GetInt32AtCurrentPosition()
         {
-            return buffer[pos]
-                + (buffer[pos + 1] << 8)
-                + (buffer[pos + 2] << 16)
-                + (buffer[pos + 3] << 24);
+            return _buffer[_pos]
+                + (_buffer[_pos + 1] << 8)
+                + (_buffer[_pos + 2] << 16)
+                + (_buffer[_pos + 3] << 24);
         }
 
         internal void WriteBytes(byte[] value)
         {
-            if (pos + value.Length > buffer.Length)
+            if (_pos + value.Length > _buffer.Length)
                 Grow(value.Length);
 
-            Buffer.BlockCopy(value, 0, buffer, pos, value.Length);
-            pos += value.Length;
+            Buffer.BlockCopy(value, 0, _buffer, _pos, value.Length);
+            _pos += value.Length;
         }
 
         internal void WriteByte(byte value)
         {
-            if (pos == buffer.Length)
+            if (_pos == _buffer.Length)
                 Grow(1);
-            buffer[pos++] = value;
+            _buffer[_pos++] = value;
         }
 
         internal void WriteUInt16(ushort value)
@@ -125,11 +125,11 @@ namespace IKVM.Reflection.Writer
 
         internal void WriteInt16(short value)
         {
-            if (pos + 2 > buffer.Length)
+            if (_pos + 2 > _buffer.Length)
                 Grow(2);
 
-            buffer[pos++] = (byte)value;
-            buffer[pos++] = (byte)(value >> 8);
+            _buffer[_pos++] = (byte)value;
+            _buffer[_pos++] = (byte)(value >> 8);
         }
 
         internal void WriteUInt32(uint value)
@@ -139,38 +139,38 @@ namespace IKVM.Reflection.Writer
 
         internal void WriteInt32(int value)
         {
-            if (pos + 4 > buffer.Length)
+            if (_pos + 4 > _buffer.Length)
                 Grow(4);
 
-            buffer[pos++] = (byte)value;
-            buffer[pos++] = (byte)(value >> 8);
-            buffer[pos++] = (byte)(value >> 16);
-            buffer[pos++] = (byte)(value >> 24);
+            _buffer[_pos++] = (byte)value;
+            _buffer[_pos++] = (byte)(value >> 8);
+            _buffer[_pos++] = (byte)(value >> 16);
+            _buffer[_pos++] = (byte)(value >> 24);
         }
 
         internal void WriteBuffer(ByteBuffer bb)
         {
-            if (pos + bb.Length > buffer.Length)
+            if (_pos + bb.Length > _buffer.Length)
                 Grow(bb.Length);
 
-            Buffer.BlockCopy(bb.buffer, 0, buffer, pos, bb.Length);
-            pos += bb.Length;
+            Buffer.BlockCopy(bb._buffer, 0, _buffer, _pos, bb.Length);
+            _pos += bb.Length;
         }
 
         internal void Align(int alignment)
         {
-            if (pos + alignment > buffer.Length)
+            if (_pos + alignment > _buffer.Length)
                 Grow(alignment);
-            int newpos = (pos + alignment - 1) & ~(alignment - 1);
-            while (pos < newpos)
-                buffer[pos++] = 0;
+            int newpos = (_pos + alignment - 1) & ~(alignment - 1);
+            while (_pos < newpos)
+                _buffer[_pos++] = 0;
         }
 
         internal byte[] ToArray()
         {
             var len = Length;
             var buf = new byte[len];
-            Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            Buffer.BlockCopy(_buffer, 0, buf, 0, len);
             return buf;
         }
 

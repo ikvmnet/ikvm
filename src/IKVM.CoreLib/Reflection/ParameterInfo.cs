@@ -188,8 +188,8 @@ namespace IKVM.Reflection
     sealed class ParameterInfoWrapper : ParameterInfo
     {
 
-        readonly MemberInfo member;
-        readonly ParameterInfo forward;
+        readonly MemberInfo _member;
+        readonly ParameterInfo _forward;
 
         /// <summary>
         /// Initializes a new instance.
@@ -198,58 +198,58 @@ namespace IKVM.Reflection
         /// <param name="forward"></param>
         internal ParameterInfoWrapper(MemberInfo member, ParameterInfo forward)
         {
-            this.member = member;
-            this.forward = forward;
+            this._member = member;
+            this._forward = forward;
         }
 
         public override string Name
         {
-            get { return forward.Name; }
+            get { return _forward.Name; }
         }
 
         public override Type ParameterType
         {
-            get { return forward.ParameterType; }
+            get { return _forward.ParameterType; }
         }
 
         public override ParameterAttributes Attributes
         {
-            get { return forward.Attributes; }
+            get { return _forward.Attributes; }
         }
 
         public override int Position
         {
-            get { return forward.Position; }
+            get { return _forward.Position; }
         }
 
         public override object RawDefaultValue
         {
-            get { return forward.RawDefaultValue; }
+            get { return _forward.RawDefaultValue; }
         }
 
         public override CustomModifiers __GetCustomModifiers()
         {
-            return forward.__GetCustomModifiers();
+            return _forward.__GetCustomModifiers();
         }
 
         public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
         {
-            return forward.__TryGetFieldMarshal(out fieldMarshal);
+            return _forward.__TryGetFieldMarshal(out fieldMarshal);
         }
 
         public override MemberInfo Member
         {
-            get { return member; }
+            get { return _member; }
         }
 
         public override int MetadataToken
         {
-            get { return forward.MetadataToken; }
+            get { return _forward.MetadataToken; }
         }
 
         public override Module Module
         {
-            get { return member.Module; }
+            get { return _member.Module; }
         }
 
     }

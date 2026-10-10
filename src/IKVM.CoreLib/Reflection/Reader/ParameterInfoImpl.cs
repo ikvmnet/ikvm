@@ -30,9 +30,9 @@ namespace IKVM.Reflection.Reader
     sealed class ParameterInfoImpl : ParameterInfo
     {
 
-        readonly MethodDefImpl method;
-        readonly int position;
-        readonly ParameterHandle handle;
+        readonly MethodDefImpl _method;
+        readonly int _position;
+        readonly ParameterHandle _handle;
 
         /// <summary>
         /// Initializes a new instance.
@@ -42,27 +42,27 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle">The parameter row, or a nil handle for a parameter without one.</param>
         internal ParameterInfoImpl(MethodDefImpl method, int position, ParameterHandle handle)
         {
-            this.method = method;
-            this.position = position;
-            this.handle = handle;
+            this._method = method;
+            this._position = position;
+            this._handle = handle;
         }
 
-        ModuleReader ModuleReader => (ModuleReader)method.Module;
+        ModuleReader ModuleReader => (ModuleReader)_method.Module;
 
-        public override string Name => handle.IsNil ? null : ModuleReader.GetString(ModuleReader.Metadata.GetParameter(handle).Name);
+        public override string Name => _handle.IsNil ? null : ModuleReader.GetString(ModuleReader.Metadata.GetParameter(_handle).Name);
 
-        public override Type ParameterType => position == -1 ? method.MethodSignature.GetReturnType(method) : method.MethodSignature.GetParameterType(method, position);
+        public override Type ParameterType => _position == -1 ? _method.MethodSignature.GetReturnType(_method) : _method.MethodSignature.GetParameterType(_method, _position);
 
-        public override ParameterAttributes Attributes => handle.IsNil ? ParameterAttributes.None : (ParameterAttributes)ModuleReader.Metadata.GetParameter(handle).Attributes;
+        public override ParameterAttributes Attributes => _handle.IsNil ? ParameterAttributes.None : (ParameterAttributes)ModuleReader.Metadata.GetParameter(_handle).Attributes;
 
-        public override int Position => position;
+        public override int Position => _position;
 
         public override object RawDefaultValue
         {
             get
             {
                 if ((Attributes & ParameterAttributes.HasDefault) != 0)
-                    return ModuleReader.GetConstantValue(ModuleReader.Metadata.GetParameter(handle).GetDefaultValue());
+                    return ModuleReader.GetConstantValue(ModuleReader.Metadata.GetParameter(_handle).GetDefaultValue());
 
                 if (TryGetCustomConstant(out var value))
                     return value;
@@ -76,18 +76,18 @@ namespace IKVM.Reflection.Reader
 
         public override CustomModifiers __GetCustomModifiers()
         {
-            return position == -1 ? method.MethodSignature.GetReturnTypeCustomModifiers(method) : method.MethodSignature.GetParameterCustomModifiers(method, position);
+            return _position == -1 ? _method.MethodSignature.GetReturnTypeCustomModifiers(_method) : _method.MethodSignature.GetParameterCustomModifiers(_method, _position);
         }
 
         public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal) => FieldMarshal.ReadFieldMarshal(Module, MetadataToken, out fieldMarshal);
 
         // return the right ConstructorInfo wrapper
-        public override MemberInfo Member => method.Module.ResolveMethod(method.MetadataToken);
+        public override MemberInfo Member => _method.Module.ResolveMethod(_method.MetadataToken);
 
         // like .NET, a parameter without a row in the Param table has token 0x08000000
-        public override int MetadataToken => handle.IsNil ? 0x08000000 : MetadataTokens.GetToken(handle);
+        public override int MetadataToken => _handle.IsNil ? 0x08000000 : MetadataTokens.GetToken(_handle);
 
-        public override Module Module => method.Module;
+        public override Module Module => _method.Module;
 
     }
 

@@ -30,9 +30,9 @@ namespace IKVM.Reflection.Reader
     sealed class GenericTypeParameter : TypeParameterType
     {
 
-        readonly ModuleReader module;
-        readonly GenericParameterHandle handle;
-        readonly GenericParameter definition;
+        readonly ModuleReader _module;
+        readonly GenericParameterHandle _handle;
+        readonly GenericParameter _definition;
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,9 +43,9 @@ namespace IKVM.Reflection.Reader
         internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
-            this.module = module;
-            this.handle = handle;
-            this.definition = module.Metadata.GetGenericParameter(handle);
+            this._module = module;
+            this._handle = handle;
+            this._definition = module.Metadata.GetGenericParameter(handle);
         }
 
         public override bool Equals(object obj) => base.Equals(obj);
@@ -54,34 +54,34 @@ namespace IKVM.Reflection.Reader
 
         public override string Namespace => DeclaringType.Namespace;
 
-        public override string Name => module.GetString(definition.Name);
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override Module Module => module;
+        public override Module Module => _module;
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override int GenericParameterPosition => definition.Index;
+        public override int GenericParameterPosition => _definition.Index;
 
-        public override Type DeclaringType => definition.Parent.Kind == HandleKind.TypeDefinition ? module.ResolveType(MetadataTokens.GetToken(definition.Parent)) : null;
+        public override Type DeclaringType => _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
 
-        public override MethodBase DeclaringMethod => definition.Parent.Kind == HandleKind.MethodDefinition ? module.ResolveMethod(MetadataTokens.GetToken(definition.Parent)) : null;
+        public override MethodBase DeclaringMethod => _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
 
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
-            var handles = definition.GetConstraints();
+            var handles = _definition.GetConstraints();
             var constraints = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
             for (int i = 0; i < constraints.Length; i++)
-                constraints[i] = module.ResolveType(MetadataTokens.GetToken(module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
+                constraints[i] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
 
             return constraints;
         }
 
-        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)definition.Attributes;
+        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_definition.Attributes;
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            return definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
+            return _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
         }
 
         internal override bool IsBaked => true;

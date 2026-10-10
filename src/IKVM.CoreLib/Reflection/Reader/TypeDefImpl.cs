@@ -33,13 +33,13 @@ namespace IKVM.Reflection.Reader
     sealed class TypeDefImpl : TypeInfo
     {
 
-        readonly ModuleReader module;
-        readonly TypeDefinitionHandle handle;
-        readonly TypeDefinition definition;
-        readonly string typeName;
-        readonly string typeNamespace;
+        readonly ModuleReader _module;
+        readonly TypeDefinitionHandle _handle;
+        readonly TypeDefinition _definition;
+        readonly string _typeName;
+        readonly string _typeNamespace;
 
-        Type[] typeArgs;
+        Type[] _typeArgs;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,61 +48,61 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal TypeDefImpl(ModuleReader module, TypeDefinitionHandle handle)
         {
-            this.module = module;
-            this.handle = handle;
-            this.definition = module.Metadata.GetTypeDefinition(handle);
-            this.typeName = module.GetString(definition.Name);
-            this.typeNamespace = module.GetString(definition.Namespace);
-            MarkKnownType(typeNamespace, typeName);
+            this._module = module;
+            this._handle = handle;
+            this._definition = module.Metadata.GetTypeDefinition(handle);
+            this._typeName = module.GetString(_definition.Name);
+            this._typeNamespace = module.GetString(_definition.Namespace);
+            MarkKnownType(_typeNamespace, _typeName);
         }
 
-        public override Type BaseType => definition.BaseType.IsNil ? null : module.ResolveType(MetadataTokens.GetToken(definition.BaseType), this);
+        public override Type BaseType => _definition.BaseType.IsNil ? null : _module.ResolveType(MetadataTokens.GetToken(_definition.BaseType), this);
 
-        public override TypeAttributes Attributes => (TypeAttributes)definition.Attributes;
+        public override TypeAttributes Attributes => (TypeAttributes)_definition.Attributes;
 
         public override EventInfo[] __GetDeclaredEvents()
         {
-            var handles = definition.GetEvents();
+            var handles = _definition.GetEvents();
             var events = new EventInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                events[i++] = new EventInfoImpl(module, this, h);
+                events[i++] = new EventInfoImpl(_module, this, h);
 
             return events;
         }
 
         public override FieldInfo[] __GetDeclaredFields()
         {
-            var handles = definition.GetFields();
+            var handles = _definition.GetFields();
             var fields = new FieldInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                fields[i++] = module.GetFieldAt(this, h);
+                fields[i++] = _module.GetFieldAt(this, h);
 
             return fields;
         }
 
         public override Type[] __GetDeclaredInterfaces()
         {
-            var handles = definition.GetInterfaceImplementations();
+            var handles = _definition.GetInterfaceImplementations();
             if (handles.Count == 0)
                 return Type.EmptyTypes;
 
             var interfaces = new Type[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                interfaces[i++] = module.ResolveType(MetadataTokens.GetToken(module.Metadata.GetInterfaceImplementation(h).Interface), this);
+                interfaces[i++] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetInterfaceImplementation(h).Interface), this);
 
             return interfaces;
         }
 
         public override MethodBase[] __GetDeclaredMethods()
         {
-            var handles = definition.GetMethods();
+            var handles = _definition.GetMethods();
             var methods = new MethodBase[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                methods[i++] = module.GetMethodAt(this, h);
+                methods[i++] = _module.GetMethodAt(this, h);
 
             return methods;
         }
@@ -114,10 +114,10 @@ namespace IKVM.Reflection.Reader
             var bodies = new List<MethodInfo>();
             var declarations = new List<List<MethodInfo>>();
             var index = new Dictionary<MethodInfo, int>();
-            foreach (var h in definition.GetMethodImplementations())
+            foreach (var h in _definition.GetMethodImplementations())
             {
-                var impl = module.Metadata.GetMethodImplementation(h);
-                var body = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(impl.MethodBody), typeArgs, null);
+                var impl = _module.Metadata.GetMethodImplementation(h);
+                var body = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(impl.MethodBody), _typeArgs, null);
                 if (index.TryGetValue(body, out var i) == false)
                 {
                     index.Add(body, i = bodies.Count);
@@ -125,7 +125,7 @@ namespace IKVM.Reflection.Reader
                     declarations.Add(new List<MethodInfo>());
                 }
 
-                declarations[i].Add((MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(impl.MethodDeclaration), typeArgs, null));
+                declarations[i].Add((MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(impl.MethodDeclaration), _typeArgs, null));
             }
 
             var map = new __MethodImplMap();
@@ -140,70 +140,70 @@ namespace IKVM.Reflection.Reader
 
         public override Type[] __GetDeclaredTypes()
         {
-            var handles = definition.GetNestedTypes();
+            var handles = _definition.GetNestedTypes();
             if (handles.Length == 0)
                 return Type.EmptyTypes;
 
             var types = new Type[handles.Length];
             for (int i = 0; i < types.Length; i++)
-                types[i] = module.ResolveType(MetadataTokens.GetToken(handles[i]));
+                types[i] = _module.ResolveType(MetadataTokens.GetToken(handles[i]));
 
             return types;
         }
 
         public override PropertyInfo[] __GetDeclaredProperties()
         {
-            var handles = definition.GetProperties();
+            var handles = _definition.GetProperties();
             var properties = new PropertyInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                properties[i++] = new PropertyInfoImpl(module, this, h);
+                properties[i++] = new PropertyInfoImpl(_module, this, h);
 
             return properties;
         }
 
-        internal override TypeName TypeName => new TypeName(typeNamespace, typeName);
+        internal override TypeName TypeName => new TypeName(_typeNamespace, _typeName);
 
-        public override string Name => TypeNameParser.Escape(typeName);
+        public override string Name => TypeNameParser.Escape(_typeName);
 
         public override string FullName => GetFullName();
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
-            return Util.Copy(typeArgs);
+            return Util.Copy(_typeArgs);
         }
 
         void PopulateGenericArguments()
         {
-            if (typeArgs == null)
+            if (_typeArgs == null)
             {
-                var handles = definition.GetGenericParameters();
+                var handles = _definition.GetGenericParameters();
                 var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
                 for (int i = 0; i < args.Length; i++)
-                    args[i] = new GenericTypeParameter(module, handles[i], Signature.ELEMENT_TYPE_VAR);
+                    args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_VAR);
 
-                typeArgs = args;
+                _typeArgs = args;
             }
         }
 
         internal override Type GetGenericTypeArgument(int index)
         {
             PopulateGenericArguments();
-            return typeArgs[index];
+            return _typeArgs[index];
         }
 
         public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
         {
             PopulateGenericArguments();
-            return new CustomModifiers[typeArgs.Length];
+            return new CustomModifiers[_typeArgs.Length];
         }
 
         public override bool IsGenericType => IsGenericTypeDefinition;
 
-        public override bool IsGenericTypeDefinition => definition.GetGenericParameters().Count > 0;
+        public override bool IsGenericTypeDefinition => _definition.GetGenericParameters().Count > 0;
 
         public override Type GetGenericTypeDefinition()
         {
@@ -238,17 +238,17 @@ namespace IKVM.Reflection.Reader
                 if (!IsNestedByFlags)
                     return null;
 
-                var declaring = definition.GetDeclaringType();
+                var declaring = _definition.GetDeclaringType();
                 if (declaring.IsNil)
                     throw new InvalidOperationException();
 
-                return module.ResolveType(MetadataTokens.GetToken(declaring), null, null);
+                return _module.ResolveType(MetadataTokens.GetToken(declaring), null, null);
             }
         }
 
-        public override Module Module => module;
+        public override Module Module => _module;
 
-        internal override bool IsModulePseudoType => MetadataTokens.GetRowNumber(handle) == 1;
+        internal override bool IsModulePseudoType => MetadataTokens.GetRowNumber(_handle) == 1;
 
         internal override bool IsBaked => true;
 

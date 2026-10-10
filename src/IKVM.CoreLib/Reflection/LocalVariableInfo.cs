@@ -29,9 +29,9 @@ namespace IKVM.Reflection
     internal class LocalVariableInfo
     {
 
-        readonly int index;
-        readonly Type type;
-        readonly bool pinned;
+        readonly int _index;
+        readonly Type _type;
+        readonly bool _pinned;
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,24 +41,24 @@ namespace IKVM.Reflection
         /// <param name="pinned"></param>
         internal LocalVariableInfo(int index, Type type, bool pinned)
         {
-            this.index = index;
-            this.type = type;
-            this.pinned = pinned;
+            this._index = index;
+            this._type = type;
+            this._pinned = pinned;
         }
 
         public int LocalIndex
         {
-            get { return index; }
+            get { return _index; }
         }
 
         public Type LocalType
         {
-            get { return type; }
+            get { return _type; }
         }
 
         public override string ToString()
         {
-            return String.Format(pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", type, index);
+            return String.Format(_pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", _type, _index);
         }
 
     }

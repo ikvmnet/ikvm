@@ -31,7 +31,7 @@ namespace IKVM.Reflection
     {
 
         [NonSerialized]
-        readonly MissingModule module;
+        readonly MissingModule _module;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,7 +40,7 @@ namespace IKVM.Reflection
         internal MissingModuleException(MissingModule module) :
             base("Module from missing assembly '" + module.Assembly.FullName + "' does not support the requested operation.")
         {
-            this.module = module;
+            this._module = module;
         }
 
     }

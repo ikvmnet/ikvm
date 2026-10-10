@@ -29,12 +29,12 @@ namespace IKVM.Reflection.Emit
     internal sealed class ParameterBuilder
     {
 
-        readonly MethodBuilder method;
-        short flags;
-        readonly short sequence;
-        readonly StringHandle nameIndex;
-        readonly string name;
-        int lazyPseudoToken;
+        readonly MethodBuilder _method;
+        short _flags;
+        readonly short _sequence;
+        readonly StringHandle _nameIndex;
+        readonly string _name;
+        int _lazyPseudoToken;
 
         /// <summary>
         /// Initializes a new instance.
@@ -45,27 +45,27 @@ namespace IKVM.Reflection.Emit
         /// <param name="name"></param>
         internal ParameterBuilder(MethodBuilder method, int sequence, ParameterAttributes attribs, string name)
         {
-            this.method = method;
-            this.flags = (short)attribs;
-            this.sequence = (short)sequence;
-            this.nameIndex = name == null ? default : method.ModuleBuilder.GetOrAddString(name);
-            this.name = name;
+            this._method = method;
+            this._flags = (short)attribs;
+            this._sequence = (short)sequence;
+            this._nameIndex = name == null ? default : method.ModuleBuilder.GetOrAddString(name);
+            this._name = name;
         }
 
         internal int PseudoToken
         {
             get
             {
-                if (lazyPseudoToken == 0)
-                    lazyPseudoToken = method.ModuleBuilder.AllocPseudoToken();
+                if (_lazyPseudoToken == 0)
+                    _lazyPseudoToken = _method.ModuleBuilder.AllocPseudoToken();
 
-                return lazyPseudoToken;
+                return _lazyPseudoToken;
             }
         }
 
         public string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         /// <summary>
@@ -73,12 +73,12 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         public int Position
         {
-            get { return sequence; }
+            get { return _sequence; }
         }
 
         public int Attributes
         {
-            get { return flags; }
+            get { return _flags; }
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
@@ -86,36 +86,36 @@ namespace IKVM.Reflection.Emit
             switch (customAttributeBuilder.KnownCA)
             {
                 case KnownCA.InAttribute:
-                    flags |= (short)ParameterAttributes.In;
+                    _flags |= (short)ParameterAttributes.In;
                     break;
                 case KnownCA.OutAttribute:
-                    flags |= (short)ParameterAttributes.Out;
+                    _flags |= (short)ParameterAttributes.Out;
                     break;
                 case KnownCA.OptionalAttribute:
-                    flags |= (short)ParameterAttributes.Optional;
+                    _flags |= (short)ParameterAttributes.Optional;
                     break;
                 case KnownCA.MarshalAsAttribute:
-                    FieldMarshal.SetMarshalAsAttribute(method.ModuleBuilder, PseudoToken, customAttributeBuilder);
-                    flags |= (short)ParameterAttributes.HasFieldMarshal;
+                    FieldMarshal.SetMarshalAsAttribute(_method.ModuleBuilder, PseudoToken, customAttributeBuilder);
+                    _flags |= (short)ParameterAttributes.HasFieldMarshal;
                     break;
                 default:
-                    method.ModuleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
+                    _method.ModuleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
                     break;
             }
         }
 
         internal void WriteMetadata()
         {
-            method.ModuleBuilder.Metadata.AddParameter(
-                (System.Reflection.ParameterAttributes)flags,
-                nameIndex,
-                sequence);
+            _method.ModuleBuilder.Metadata.AddParameter(
+                (System.Reflection.ParameterAttributes)_flags,
+                _nameIndex,
+                _sequence);
         }
 
         internal void FixupToken(int parameterToken)
         {
-            if (lazyPseudoToken != 0)
-                method.ModuleBuilder.RegisterTokenFixup(lazyPseudoToken, parameterToken);
+            if (_lazyPseudoToken != 0)
+                _method.ModuleBuilder.RegisterTokenFixup(_lazyPseudoToken, parameterToken);
         }
 
     }

@@ -29,8 +29,8 @@ namespace IKVM.Reflection
     internal readonly struct CustomAttributeTypedArgument
     {
 
-        readonly Type type;
-        readonly object value;
+        readonly Type _type;
+        readonly object _value;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,8 +39,8 @@ namespace IKVM.Reflection
         /// <param name="value"></param>
         internal CustomAttributeTypedArgument(Type type, object value)
         {
-            this.type = type;
-            this.value = value;
+            this._type = type;
+            this._value = value;
         }
 
         public override bool Equals(object obj)
@@ -50,22 +50,22 @@ namespace IKVM.Reflection
 
         public override int GetHashCode()
         {
-            return type.GetHashCode() ^ 77 * (value == null ? 0 : value.GetHashCode());
+            return _type.GetHashCode() ^ 77 * (_value == null ? 0 : _value.GetHashCode());
         }
 
         public Type ArgumentType
         {
-            get { return type; }
+            get { return _type; }
         }
 
         public Object Value
         {
-            get { return value; }
+            get { return _value; }
         }
 
         public static bool operator ==(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
         {
-            return arg1.type.Equals(arg2.type) && (arg1.value == arg2.value || (arg1.value != null && arg1.value.Equals(arg2.value)));
+            return arg1._type.Equals(arg2._type) && (arg1._value == arg2._value || (arg1._value != null && arg1._value.Equals(arg2._value)));
         }
 
         public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2) => !(arg1 == arg2);

@@ -29,13 +29,13 @@ namespace IKVM.Reflection.Emit
     class ArrayMethod : MethodInfo
     {
 
-        readonly Module module;
-        readonly Type arrayClass;
-        readonly string methodName;
-        readonly CallingConventions callingConvention;
-        readonly Type returnType;
+        readonly Module _module;
+        readonly Type _arrayClass;
+        readonly string _methodName;
+        readonly CallingConventions _callingConvention;
+        readonly Type _returnType;
         protected readonly Type[] parameterTypes;
-        MethodSignature methodSignature;
+        MethodSignature _methodSignature;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,11 +48,11 @@ namespace IKVM.Reflection.Emit
         /// <param name="parameterTypes"></param>
         internal ArrayMethod(Module module, Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
         {
-            this.module = module;
-            this.arrayClass = arrayClass;
-            this.methodName = methodName;
-            this.callingConvention = callingConvention;
-            this.returnType = returnType ?? module.Universe.System_Void;
+            this._module = module;
+            this._arrayClass = arrayClass;
+            this._methodName = methodName;
+            this._callingConvention = callingConvention;
+            this._returnType = returnType ?? module.Universe.System_Void;
             this.parameterTypes = Util.Copy(parameterTypes);
         }
 
@@ -73,7 +73,7 @@ namespace IKVM.Reflection.Emit
 
         internal override int ImportTo(ModuleBuilder module)
         {
-            return module.ImportMethodOrField(arrayClass, methodName, MethodSignature);
+            return module.ImportMethodOrField(_arrayClass, _methodName, MethodSignature);
         }
 
         public override MethodAttributes Attributes
@@ -83,35 +83,35 @@ namespace IKVM.Reflection.Emit
 
         public override CallingConventions CallingConvention
         {
-            get { return callingConvention; }
+            get { return _callingConvention; }
         }
 
         public override Type DeclaringType
         {
-            get { return arrayClass; }
+            get { return _arrayClass; }
         }
 
         internal override MethodSignature MethodSignature
         {
             get
             {
-                if (methodSignature == null)
+                if (_methodSignature == null)
                 {
-                    methodSignature = MethodSignature.MakeFromBuilder(returnType, parameterTypes, new PackedCustomModifiers(), callingConvention, 0);
+                    _methodSignature = MethodSignature.MakeFromBuilder(_returnType, parameterTypes, new PackedCustomModifiers(), _callingConvention, 0);
                 }
-                return methodSignature;
+                return _methodSignature;
             }
         }
 
         public override Module Module
         {
             // FXBUG like .NET, we return the module that GetArrayMethod was called on, not the module associated with the array type
-            get { return module; }
+            get { return _module; }
         }
 
         public override string Name
         {
-            get { return methodName; }
+            get { return _methodName; }
         }
 
         internal override int ParameterCount
@@ -127,7 +127,7 @@ namespace IKVM.Reflection.Emit
 
         public override Type ReturnType
         {
-            get { return returnType; }
+            get { return _returnType; }
         }
 
         internal override int GetCurrentToken()
@@ -137,7 +137,7 @@ namespace IKVM.Reflection.Emit
 
         internal override bool IsBaked
         {
-            get { return arrayClass.IsBaked; }
+            get { return _arrayClass.IsBaked; }
         }
 
     }

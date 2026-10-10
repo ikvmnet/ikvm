@@ -27,11 +27,11 @@ namespace IKVM.Reflection
     sealed class MissingMethod : MethodInfo
     {
 
-        readonly Type declaringType;
-        readonly string name;
-        internal MethodSignature signature;
-        MethodInfo forwarder;
-        Type[] typeArgs;
+        readonly Type _declaringType;
+        readonly string _name;
+        MethodSignature _signature;
+        MethodInfo _forwarder;
+        Type[] _typeArgs;
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,26 +41,26 @@ namespace IKVM.Reflection
         /// <param name="signature"></param>
         internal MissingMethod(Type declaringType, string name, MethodSignature signature)
         {
-            this.declaringType = declaringType;
-            this.name = name;
-            this.signature = signature;
+            this._declaringType = declaringType;
+            this._name = name;
+            this._signature = signature;
         }
 
         MethodInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
 
         MethodInfo TryGetForwarder()
         {
-            if (forwarder == null && !declaringType.__IsMissing)
+            if (_forwarder == null && !_declaringType.__IsMissing)
             {
-                var mb = declaringType.FindMethod(name, signature);
+                var mb = _declaringType.FindMethod(_name, _signature);
                 var ci = mb as ConstructorInfo;
                 if (ci != null)
-                    forwarder = ci.GetMethodInfo();
+                    _forwarder = ci.GetMethodInfo();
                 else
-                    forwarder = (MethodInfo)mb;
+                    _forwarder = (MethodInfo)mb;
             }
 
-            return forwarder;
+            return _forwarder;
         }
 
         public override bool __IsMissing
@@ -70,7 +70,7 @@ namespace IKVM.Reflection
 
         public override Type ReturnType
         {
-            get { return signature.GetReturnType(this); }
+            get { return _signature.GetReturnType(this); }
         }
 
         public override ParameterInfo ReturnParameter
@@ -80,19 +80,19 @@ namespace IKVM.Reflection
 
         internal override MethodSignature MethodSignature
         {
-            get { return signature; }
+            get { return _signature; }
         }
 
         internal override int ParameterCount
         {
-            get { return signature.GetParameterCount(); }
+            get { return _signature.GetParameterCount(); }
         }
 
         sealed class ParameterInfoImpl : ParameterInfo
         {
 
-            readonly MissingMethod method;
-            readonly int index;
+            readonly MissingMethod _method;
+            readonly int _index;
 
             /// <summary>
             /// Initializes a new instance.
@@ -101,13 +101,13 @@ namespace IKVM.Reflection
             /// <param name="index"></param>
             internal ParameterInfoImpl(MissingMethod method, int index)
             {
-                this.method = method;
-                this.index = index;
+                this._method = method;
+                this._index = index;
             }
 
             ParameterInfo Forwarder
             {
-                get { return index == -1 ? method.Forwarder.ReturnParameter : method.Forwarder.GetParameters()[index]; }
+                get { return _index == -1 ? _method.Forwarder.ReturnParameter : _method.Forwarder.GetParameters()[_index]; }
             }
 
             public override string Name
@@ -117,7 +117,7 @@ namespace IKVM.Reflection
 
             public override Type ParameterType
             {
-                get { return index == -1 ? method.signature.GetReturnType(method) : method.signature.GetParameterType(method, index); }
+                get { return _index == -1 ? _method._signature.GetReturnType(_method) : _method._signature.GetParameterType(_method, _index); }
             }
 
             public override ParameterAttributes Attributes
@@ -127,7 +127,7 @@ namespace IKVM.Reflection
 
             public override int Position
             {
-                get { return index; }
+                get { return _index; }
             }
 
             public override object RawDefaultValue
@@ -137,9 +137,9 @@ namespace IKVM.Reflection
 
             public override CustomModifiers __GetCustomModifiers()
             {
-                return index == -1
-                    ? method.signature.GetReturnTypeCustomModifiers(method)
-                    : method.signature.GetParameterCustomModifiers(method, index);
+                return _index == -1
+                    ? _method._signature.GetReturnTypeCustomModifiers(_method)
+                    : _method._signature.GetParameterCustomModifiers(_method, _index);
             }
 
             public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
@@ -149,7 +149,7 @@ namespace IKVM.Reflection
 
             public override MemberInfo Member
             {
-                get { return method; }
+                get { return _method; }
             }
 
             public override int MetadataToken
@@ -159,7 +159,7 @@ namespace IKVM.Reflection
 
             public override Module Module
             {
-                get { return method.Module; }
+                get { return _method.Module; }
             }
 
             public override string ToString()
@@ -171,7 +171,7 @@ namespace IKVM.Reflection
 
         public override ParameterInfo[] GetParameters()
         {
-            var parameters = new ParameterInfo[signature.GetParameterCount()];
+            var parameters = new ParameterInfo[_signature.GetParameterCount()];
             for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = new ParameterInfoImpl(this, i);
 
@@ -180,9 +180,9 @@ namespace IKVM.Reflection
 
         internal override Type[] GetParameterTypes()
         {
-            var parameterTypes = new Type[signature.GetParameterCount()];
+            var parameterTypes = new Type[_signature.GetParameterCount()];
             for (int i = 0; i < parameterTypes.Length; i++)
-                parameterTypes[i] = signature.GetParameterType(i);
+                parameterTypes[i] = _signature.GetParameterType(i);
 
             return parameterTypes;
         }
@@ -199,7 +199,7 @@ namespace IKVM.Reflection
 
         public override CallingConventions CallingConvention
         {
-            get { return signature.CallingConvention; }
+            get { return _signature.CallingConvention; }
         }
 
         internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
@@ -208,36 +208,36 @@ namespace IKVM.Reflection
             if (method != null)
                 return method.ImportTo(module);
 
-            return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
+            return module.ImportMethodOrField(_declaringType, this.Name, this.MethodSignature);
         }
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override Type DeclaringType
         {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+            get { return _declaringType.IsModulePseudoType ? null : _declaringType; }
         }
 
         public override Module Module
         {
-            get { return declaringType.Module; }
+            get { return _declaringType.Module; }
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as MissingMethod;
             return other != null
-                && other.declaringType == declaringType
-                && other.name == name
-                && other.signature.Equals(signature);
+                && other._declaringType == _declaringType
+                && other._name == _name
+                && other._signature.Equals(_signature);
         }
 
         public override int GetHashCode()
         {
-            return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
+            return _declaringType.GetHashCode() ^ _name.GetHashCode() ^ _signature.GetHashCode();
         }
 
         internal override MethodBase BindTypeParameters(Type type)
@@ -260,14 +260,14 @@ namespace IKVM.Reflection
             if (method != null)
                 return Forwarder.GetGenericArguments();
 
-            if (typeArgs == null)
+            if (_typeArgs == null)
             {
-                typeArgs = new Type[signature.GenericParameterCount];
-                for (int i = 0; i < typeArgs.Length; i++)
-                    typeArgs[i] = new MissingTypeParameter(this, i);
+                _typeArgs = new Type[_signature.GenericParameterCount];
+                for (int i = 0; i < _typeArgs.Length; i++)
+                    _typeArgs[i] = new MissingTypeParameter(this, i);
             }
 
-            return Util.Copy(typeArgs);
+            return Util.Copy(_typeArgs);
         }
 
         internal override Type GetGenericMethodArgument(int index)
@@ -288,7 +288,7 @@ namespace IKVM.Reflection
 
         public override bool IsGenericMethodDefinition
         {
-            get { return signature.GenericParameterCount != 0; }
+            get { return _signature.GenericParameterCount != 0; }
         }
 
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
@@ -297,7 +297,7 @@ namespace IKVM.Reflection
             if (method != null)
                 return method.MakeGenericMethod(typeArguments);
 
-            return new GenericMethodInstance(declaringType, this, typeArguments);
+            return new GenericMethodInstance(_declaringType, this, typeArguments);
         }
 
         public override int MetadataToken

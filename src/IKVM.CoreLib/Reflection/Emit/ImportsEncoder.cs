@@ -8,7 +8,7 @@ namespace IKVM.Reflection.Emit
     struct ImportsEncoder
     {
 
-        readonly BlobBuilder writer;
+        readonly BlobBuilder _writer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -17,14 +17,14 @@ namespace IKVM.Reflection.Emit
         /// <exception cref="ArgumentNullException"></exception>
         public ImportsEncoder(BlobBuilder writer)
         {
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            this._writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         public void ImportNamespace(BlobHandle namespaceName)
         {
             // <import> ::= ImportNamespace <target-namespace>
-            writer.WriteByte((byte)ImportDefinitionKind.ImportNamespace);
-            writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
+            _writer.WriteByte((byte)ImportDefinitionKind.ImportNamespace);
+            _writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(namespaceName));
         }
 
     }

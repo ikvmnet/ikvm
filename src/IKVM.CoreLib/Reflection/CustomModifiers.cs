@@ -41,9 +41,9 @@ namespace IKVM.Reflection
         public struct Enumerator : IEnumerator<Entry>
         {
 
-            readonly Type[] types;
-            int index;
-            bool required;
+            readonly Type[] _types;
+            int _index;
+            bool _required;
 
             /// <summary>
             /// Initializes a new instance
@@ -51,39 +51,39 @@ namespace IKVM.Reflection
             /// <param name="types"></param>
             internal Enumerator(Type[] types)
             {
-                this.types = types;
-                this.index = -1;
-                this.required = Initial == MarkerType.ModReq;
+                this._types = types;
+                this._index = -1;
+                this._required = Initial == MarkerType.ModReq;
             }
 
             void System.Collections.IEnumerator.Reset()
             {
-                this.index = -1;
-                this.required = Initial == MarkerType.ModReq;
+                this._index = -1;
+                this._required = Initial == MarkerType.ModReq;
             }
 
-            public Entry Current => new Entry(types[index], required);
+            public Entry Current => new Entry(_types[_index], _required);
 
             public bool MoveNext()
             {
-                if (types == null || index == types.Length)
+                if (_types == null || _index == _types.Length)
                     return false;
 
-                index++;
+                _index++;
 
-                if (index == types.Length)
+                if (_index == _types.Length)
                 {
                     return false;
                 }
-                else if (types[index] == MarkerType.ModOpt)
+                else if (_types[_index] == MarkerType.ModOpt)
                 {
-                    required = false;
-                    index++;
+                    _required = false;
+                    _index++;
                 }
-                else if (types[index] == MarkerType.ModReq)
+                else if (_types[_index] == MarkerType.ModReq)
                 {
-                    required = true;
-                    index++;
+                    _required = true;
+                    _index++;
                 }
 
                 return true;
@@ -99,7 +99,7 @@ namespace IKVM.Reflection
 
         static Type Initial => MarkerType.ModOpt; // note that FromReqOpt assumes that Initial == ModOpt
 
-        readonly Type[] types;
+        readonly Type[] _types;
 
         /// <summary>
         /// Initializes a new instance.
@@ -108,12 +108,12 @@ namespace IKVM.Reflection
         CustomModifiers(Type[] types)
         {
             Debug.Assert(types == null || types.Length != 0);
-            this.types = types;
+            this._types = types;
         }
 
         public Enumerator GetEnumerator()
         {
-            return new Enumerator(types);
+            return new Enumerator(_types);
         }
 
         IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator()
@@ -128,12 +128,12 @@ namespace IKVM.Reflection
 
         public bool IsEmpty
         {
-            get { return types == null; }
+            get { return _types == null; }
         }
 
         public bool Equals(CustomModifiers other)
         {
-            return Util.ArrayEquals(types, other.types);
+            return Util.ArrayEquals(_types, other._types);
         }
 
         public override bool Equals(object obj)
@@ -144,12 +144,12 @@ namespace IKVM.Reflection
 
         public override int GetHashCode()
         {
-            return Util.GetHashCode(types);
+            return Util.GetHashCode(_types);
         }
 
         public override string ToString()
         {
-            if (types == null)
+            if (_types == null)
                 return string.Empty;
 
             var sb = new StringBuilder();
@@ -165,12 +165,12 @@ namespace IKVM.Reflection
 
         public bool ContainsMissingType
         {
-            get { return Type.ContainsMissingType(types); }
+            get { return Type.ContainsMissingType(_types); }
         }
 
         Type[] GetRequiredOrOptional(bool required)
         {
-            if (types == null)
+            if (_types == null)
                 return Type.EmptyTypes;
 
             int count = 0;
@@ -198,20 +198,20 @@ namespace IKVM.Reflection
 
         internal CustomModifiers Bind(IGenericBinder binder)
         {
-            if (types == null)
+            if (_types == null)
                 return this;
 
-            var result = types;
-            for (var i = 0; i < types.Length; i++)
+            var result = _types;
+            for (var i = 0; i < _types.Length; i++)
             {
-                if (types[i] == MarkerType.ModOpt || types[i] == MarkerType.ModReq)
+                if (_types[i] == MarkerType.ModOpt || _types[i] == MarkerType.ModReq)
                     continue;
 
-                var type = types[i].BindTypeParameters(binder);
-                if (!ReferenceEquals(type, types[i]))
+                var type = _types[i].BindTypeParameters(binder);
+                if (!ReferenceEquals(type, _types[i]))
                 {
-                    if (result == types)
-                        result = (Type[])types.Clone();
+                    if (result == _types)
+                        result = (Type[])_types.Clone();
 
                     result[i] = type;
                 }

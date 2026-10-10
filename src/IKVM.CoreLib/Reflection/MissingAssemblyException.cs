@@ -31,7 +31,7 @@ namespace IKVM.Reflection
     {
 
         [NonSerialized]
-        readonly MissingAssembly assembly;
+        readonly MissingAssembly _assembly;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,7 +40,7 @@ namespace IKVM.Reflection
         internal MissingAssemblyException(MissingAssembly assembly) :
             base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
         {
-            this.assembly = assembly;
+            this._assembly = assembly;
         }
 
     }

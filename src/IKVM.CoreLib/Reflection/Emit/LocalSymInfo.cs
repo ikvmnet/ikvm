@@ -11,14 +11,14 @@ namespace IKVM.Reflection.Emit
         // and namespace information with a given active lexical scope.
 
         #region Internal Data Members
-        internal string[] m_strName = null!;  // All these arrys initialized in helper method
-        internal byte[][] m_ubSignature = null!;
-        internal int[] m_iLocalSlot = null!;
-        internal int[] m_iStartOffset = null!;
-        internal int[] m_iEndOffset = null!;
-        internal int m_iLocalSymCount;         // how many entries in the arrays are occupied
-        internal string[] m_namespace = null!;
-        internal int m_iNameSpaceCount;
+        string[] _name = null!;  // All these arrys initialized in helper method
+        byte[][] _signature = null!;
+        int[] _localSlot = null!;
+        int[] _startOffset = null!;
+        int[] _endOffset = null!;
+        int _localSymCount;         // how many entries in the arrays are occupied
+        string[] _namespace = null!;
+        int _nameSpaceCount;
         internal const int InitialSize = 16;
         #endregion
 
@@ -26,8 +26,8 @@ namespace IKVM.Reflection.Emit
         internal LocalSymInfo()
         {
             // initialize data variables
-            m_iLocalSymCount = 0;
-            m_iNameSpaceCount = 0;
+            _localSymCount = 0;
+            _nameSpaceCount = 0;
         }
 
 #endregion
@@ -35,39 +35,39 @@ namespace IKVM.Reflection.Emit
 
         private void EnsureCapacity()
         {
-            if (m_iLocalSymCount == 0)
+            if (_localSymCount == 0)
             {
                 // First time. Allocate the arrays.
-                m_strName = new string[InitialSize];
-                m_ubSignature = new byte[InitialSize][];
-                m_iLocalSlot = new int[InitialSize];
-                m_iStartOffset = new int[InitialSize];
-                m_iEndOffset = new int[InitialSize];
+                _name = new string[InitialSize];
+                _signature = new byte[InitialSize][];
+                _localSlot = new int[InitialSize];
+                _startOffset = new int[InitialSize];
+                _endOffset = new int[InitialSize];
             }
-            else if (m_iLocalSymCount == m_strName.Length)
+            else if (_localSymCount == _name.Length)
             {
                 // the arrays are full. Enlarge the arrays
                 // why aren't we just using lists here?
-                int newSize = checked(m_iLocalSymCount * 2);
+                int newSize = checked(_localSymCount * 2);
                 int[] temp = new int[newSize];
-                Array.Copy(m_iLocalSlot, temp, m_iLocalSymCount);
-                m_iLocalSlot = temp;
+                Array.Copy(_localSlot, temp, _localSymCount);
+                _localSlot = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iStartOffset, temp, m_iLocalSymCount);
-                m_iStartOffset = temp;
+                Array.Copy(_startOffset, temp, _localSymCount);
+                _startOffset = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndOffset, temp, m_iLocalSymCount);
-                m_iEndOffset = temp;
+                Array.Copy(_endOffset, temp, _localSymCount);
+                _endOffset = temp;
 
                 string[] strTemp = new string[newSize];
-                Array.Copy(m_strName, strTemp, m_iLocalSymCount);
-                m_strName = strTemp;
+                Array.Copy(_name, strTemp, _localSymCount);
+                _name = strTemp;
 
                 byte[][] ubTemp = new byte[newSize][];
-                Array.Copy(m_ubSignature, ubTemp, m_iLocalSymCount);
-                m_ubSignature = ubTemp;
+                Array.Copy(_signature, ubTemp, _localSymCount);
+                _signature = ubTemp;
             }
         }
 
@@ -78,34 +78,34 @@ namespace IKVM.Reflection.Emit
         {
             // make sure that arrays are large enough to hold addition info
             EnsureCapacity();
-            m_iStartOffset[m_iLocalSymCount] = startOffset;
-            m_iEndOffset[m_iLocalSymCount] = endOffset;
-            m_iLocalSlot[m_iLocalSymCount] = slot;
-            m_strName[m_iLocalSymCount] = strName;
-            m_ubSignature[m_iLocalSymCount] = signature;
-            checked { m_iLocalSymCount++; }
+            _startOffset[_localSymCount] = startOffset;
+            _endOffset[_localSymCount] = endOffset;
+            _localSlot[_localSymCount] = slot;
+            _name[_localSymCount] = strName;
+            _signature[_localSymCount] = signature;
+            checked { _localSymCount++; }
         }
 
         internal void EmitLocalSymInfo(ISymbolWriter symWriter)
         {
             int i;
 
-            for (i = 0; i < m_iLocalSymCount; i++)
+            for (i = 0; i < _localSymCount; i++)
             {
                 symWriter.DefineLocalVariable(
-                            m_strName[i],
+                            _name[i],
                             System.Reflection.FieldAttributes.PrivateScope,
-                            m_ubSignature[i],
+                            _signature[i],
                             SymAddressKind.ILOffset,
-                            m_iLocalSlot[i],
+                            _localSlot[i],
                             0,          // addr2 is not used yet
                             0,          // addr3 is not used
-                            m_iStartOffset[i],
-                            m_iEndOffset[i]);
+                            _startOffset[i],
+                            _endOffset[i]);
             }
-            for (i = 0; i < m_iNameSpaceCount; i++)
+            for (i = 0; i < _nameSpaceCount; i++)
             {
-                symWriter.UsingNamespace(m_namespace[i]);
+                symWriter.UsingNamespace(_namespace[i]);
             }
         }
 

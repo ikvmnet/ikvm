@@ -34,16 +34,16 @@ namespace IKVM.Reflection.Emit
     internal sealed class GenericTypeParameterBuilder : TypeInfo
     {
 
-        readonly string name;
-        readonly TypeBuilder type;
-        readonly MethodBuilder method;
-        readonly int pseudoIndex;
-        readonly int position;
-        readonly List<int> constraints = new List<int>();
-        int row;
-        int typeToken;
-        Type baseType;
-        GenericParameterAttributes attr;
+        readonly string _name;
+        readonly TypeBuilder _type;
+        readonly MethodBuilder _method;
+        readonly int _pseudoIndex;
+        readonly int _position;
+        readonly List<int> _constraints = new List<int>();
+        int _row;
+        int _typeToken;
+        Type _baseType;
+        GenericParameterAttributes _attr;
 
         /// <summary>
         /// Initializes a new instance.
@@ -78,11 +78,11 @@ namespace IKVM.Reflection.Emit
         GenericTypeParameterBuilder(string name, TypeBuilder type, MethodBuilder method, int position, byte sigElementType) :
             base(sigElementType)
         {
-            this.name = name;
-            this.type = type;
-            this.method = method;
-            this.position = position;
-            this.pseudoIndex = ModuleBuilder.AllocGenericParameterIndex();
+            this._name = name;
+            this._type = type;
+            this._method = method;
+            this._position = position;
+            this._pseudoIndex = ModuleBuilder.AllocGenericParameterIndex();
         }
 
         public override string AssemblyQualifiedName
@@ -97,7 +97,7 @@ namespace IKVM.Reflection.Emit
 
         public override Type BaseType
         {
-            get { return baseType; }
+            get { return _baseType; }
         }
 
         public override Type[] __GetDeclaredInterfaces()
@@ -117,7 +117,7 @@ namespace IKVM.Reflection.Emit
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override string FullName
@@ -132,7 +132,7 @@ namespace IKVM.Reflection.Emit
 
         private ModuleBuilder ModuleBuilder
         {
-            get { return type != null ? type.ModuleBuilder : method.ModuleBuilder; }
+            get { return _type != null ? _type.ModuleBuilder : _method.ModuleBuilder; }
         }
 
         public override Module Module
@@ -142,17 +142,17 @@ namespace IKVM.Reflection.Emit
 
         public override int GenericParameterPosition
         {
-            get { return position; }
+            get { return _position; }
         }
 
         public override Type DeclaringType
         {
-            get { return type; }
+            get { return _type; }
         }
 
         public override MethodBase DeclaringMethod
         {
-            get { return method; }
+            get { return _method; }
         }
 
         public override Type[] GetGenericParameterConstraints()
@@ -165,36 +165,36 @@ namespace IKVM.Reflection.Emit
             get
             {
                 CheckBaked();
-                return attr;
+                return _attr;
             }
         }
 
         internal override void CheckBaked()
         {
-            if (type != null)
+            if (_type != null)
             {
-                type.CheckBaked();
+                _type.CheckBaked();
             }
             else
             {
-                method.CheckBaked();
+                _method.CheckBaked();
             }
         }
 
         void AddConstraint(Type type)
         {
-            constraints.Add(ModuleBuilder.GetTypeTokenForMemberRef(type));
+            _constraints.Add(ModuleBuilder.GetTypeTokenForMemberRef(type));
         }
 
         public void SetBaseTypeConstraint(Type? baseTypeConstraint)
         {
-            this.baseType = baseTypeConstraint;
+            this._baseType = baseTypeConstraint;
             AddConstraint(baseTypeConstraint);
         }
 
         public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
         {
-            this.attr = genericParameterAttributes;
+            this._attr = genericParameterAttributes;
         }
 
         public override int MetadataToken
@@ -202,44 +202,44 @@ namespace IKVM.Reflection.Emit
             get
             {
                 CheckBaked();
-                return ((int)TableIndex.GenericParam << 24) | pseudoIndex;
+                return ((int)TableIndex.GenericParam << 24) | _pseudoIndex;
             }
         }
 
         /// <summary>
         /// Gets the token of the type or method that owns the parameter, which for a method can be a pseudo token.
         /// </summary>
-        internal int OwnerToken => type != null ? type.MetadataToken : method.MetadataToken;
+        internal int OwnerToken => _type != null ? _type.MetadataToken : _method.MetadataToken;
 
-        internal int Position => position;
+        internal int Position => _position;
 
-        internal GenericParameterAttributes GenericParameterAttributesValue => attr;
+        internal GenericParameterAttributes GenericParameterAttributesValue => _attr;
 
         /// <summary>
         /// Gets the tokens of the constraints, in the order they were added.
         /// </summary>
-        internal List<int> Constraints => constraints;
+        internal List<int> Constraints => _constraints;
 
         /// <summary>
         /// Records the row the parameter was written to.
         /// </summary>
         /// <param name="row"></param>
-        internal void SetRow(int row) => this.row = row;
+        internal void SetRow(int row) => this._row = row;
 
         internal override int GetModuleBuilderToken()
         {
-            if (typeToken == 0)
+            if (_typeToken == 0)
             {
                 var spec = new BlobBuilder(5);
                 Signature.WriteTypeSpec(ModuleBuilder, spec, this);
-                typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec));
+                _typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec));
             }
-            return typeToken;
+            return _typeToken;
         }
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            if (type != null)
+            if (_type != null)
             {
                 return binder.BindTypeParameter(this);
             }
@@ -251,12 +251,12 @@ namespace IKVM.Reflection.Emit
 
         internal override int GetCurrentToken()
         {
-            return ((int)TableIndex.GenericParam << 24) | (ModuleBuilder.IsSaved ? row : pseudoIndex);
+            return ((int)TableIndex.GenericParam << 24) | (ModuleBuilder.IsSaved ? _row : _pseudoIndex);
         }
 
         internal override bool IsBaked
         {
-            get { return ((MemberInfo)type ?? method).IsBaked; }
+            get { return ((MemberInfo)_type ?? _method).IsBaked; }
         }
 
     }

@@ -31,11 +31,11 @@ namespace IKVM.Reflection.Writer
     sealed class ResourceDirectoryEntry
     {
 
-        internal readonly OrdinalOrName ordinalOrName;
-        internal readonly List<ResourceDirectoryEntry> entries = new();
-        internal int namedEntries;
+        readonly OrdinalOrName _ordinalOrName;
+        readonly List<ResourceDirectoryEntry> _entries = new();
+        int _namedEntries;
 
-        internal ByteBuffer data;
+        internal ByteBuffer Data;
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,7 +43,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="ordinalOrName"></param>
         internal ResourceDirectoryEntry(OrdinalOrName ordinalOrName)
         {
-            this.ordinalOrName = ordinalOrName;
+            this._ordinalOrName = ordinalOrName;
         }
 
         /// <summary>
@@ -55,15 +55,15 @@ namespace IKVM.Reflection.Writer
             if (other is null)
                 throw new ArgumentNullException(nameof(other));
 
-            this.ordinalOrName = other.ordinalOrName;
-            this.entries = other.entries.Select(i => new ResourceDirectoryEntry(i)).ToList();
-            this.namedEntries = other.namedEntries;
+            this._ordinalOrName = other._ordinalOrName;
+            this._entries = other._entries.Select(i => new ResourceDirectoryEntry(i)).ToList();
+            this._namedEntries = other._namedEntries;
         }
 
         /// <summary>
         /// Gets the number of entries added.
         /// </summary>
-        public int Count => entries.Count;
+        public int Count => _entries.Count;
 
         /// <summary>
         /// Gets the directory entry specified by the given ID.
@@ -74,39 +74,39 @@ namespace IKVM.Reflection.Writer
         {
             get
             {
-                foreach (var entry in entries)
-                    if (entry.ordinalOrName.Equals(id))
+                foreach (var entry in _entries)
+                    if (entry._ordinalOrName.Equals(id))
                         return entry;
 
                 // the entries must be sorted
                 var newEntry = new ResourceDirectoryEntry(id);
                 if (id.Name == null)
                 {
-                    for (var i = namedEntries; i < entries.Count; i++)
+                    for (var i = _namedEntries; i < _entries.Count; i++)
                     {
-                        if (entries[i].ordinalOrName.IsGreaterThan(id))
+                        if (_entries[i]._ordinalOrName.IsGreaterThan(id))
                         {
-                            entries.Insert(i, newEntry);
+                            _entries.Insert(i, newEntry);
                             return newEntry;
                         }
                     }
 
-                    entries.Add(newEntry);
+                    _entries.Add(newEntry);
                     return newEntry;
                 }
                 else
                 {
-                    for (int i = 0; i < namedEntries; i++)
+                    for (int i = 0; i < _namedEntries; i++)
                     {
-                        if (entries[i].ordinalOrName.IsGreaterThan(id))
+                        if (_entries[i]._ordinalOrName.IsGreaterThan(id))
                         {
-                            entries.Insert(i, newEntry);
-                            namedEntries++;
+                            _entries.Insert(i, newEntry);
+                            _namedEntries++;
                             return newEntry;
                         }
                     }
 
-                    entries.Insert(namedEntries++, newEntry);
+                    _entries.Insert(_namedEntries++, newEntry);
                     return newEntry;
                 }
             }
@@ -116,14 +116,14 @@ namespace IKVM.Reflection.Writer
         {
             get
             {
-                if (data != null)
+                if (Data != null)
                 {
                     return 16;
                 }
                 else
                 {
-                    var length = 16 + entries.Count * 8;
-                    foreach (var entry in entries)
+                    var length = 16 + _entries.Count * 8;
+                    foreach (var entry in _entries)
                         length += entry.DirectoryLength;
 
                     return length;
@@ -133,12 +133,12 @@ namespace IKVM.Reflection.Writer
 
         internal void Write(ByteBuffer bb, List<int> linkOffsets)
         {
-            if (entries.Count != 0)
+            if (_entries.Count != 0)
             {
                 var stringTableOffset = DirectoryLength;
                 var strings = new Dictionary<string, int>();
                 var stringTable = new ByteBuffer(16);
-                int offset = 16 + entries.Count * 8;
+                int offset = 16 + _entries.Count * 8;
                 for (int pass = 0; pass < 3; pass++)
                     Write(bb, pass, 0, ref offset, strings, ref stringTableOffset, stringTable);
 
@@ -154,16 +154,16 @@ namespace IKVM.Reflection.Writer
 
         void WriteResourceDataEntries(ByteBuffer bb, List<int> linkOffsets, ref int offset)
         {
-            foreach (var entry in entries)
+            foreach (var entry in _entries)
             {
-                if (entry.data != null)
+                if (entry.Data != null)
                 {
                     linkOffsets.Add(bb.Position);
                     bb.WriteInt32(offset);
-                    bb.WriteInt32(entry.data.Length);
+                    bb.WriteInt32(entry.Data.Length);
                     bb.WriteInt32(0);    // code page
                     bb.WriteInt32(0);    // reserved
-                    offset += (entry.data.Length + 3) & ~3;
+                    offset += (entry.Data.Length + 3) & ~3;
                 }
                 else
                 {
@@ -174,11 +174,11 @@ namespace IKVM.Reflection.Writer
 
         void WriteData(ByteBuffer bb)
         {
-            foreach (var entry in entries)
+            foreach (var entry in _entries)
             {
-                if (entry.data != null)
+                if (entry.Data != null)
                 {
-                    bb.WriteBuffer(entry.data);
+                    bb.WriteBuffer(entry.Data);
                     bb.Align(4);
                 }
                 else
@@ -196,11 +196,11 @@ namespace IKVM.Reflection.Writer
                 bb.WriteInt32(0);    // Characteristics
                 bb.WriteInt32(0);    // Time/Date Stamp
                 bb.WriteInt32(0);    // Version (Major / Minor)
-                bb.WriteUInt16((ushort)namedEntries);
-                bb.WriteUInt16((ushort)(entries.Count - namedEntries));
+                bb.WriteUInt16((ushort)_namedEntries);
+                bb.WriteUInt16((ushort)(_entries.Count - _namedEntries));
             }
 
-            foreach (var entry in entries)
+            foreach (var entry in _entries)
             {
                 if (currentDepth == writeDepth)
                     entry.WriteEntry(bb, ref offset, strings, ref stringTableOffset, stringTable);
@@ -211,13 +211,13 @@ namespace IKVM.Reflection.Writer
 
         void WriteEntry(ByteBuffer bb, ref int offset, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)
         {
-            WriteNameOrOrdinal(bb, ordinalOrName, strings, ref stringTableOffset, stringTable);
-            if (data == null)
+            WriteNameOrOrdinal(bb, _ordinalOrName, strings, ref stringTableOffset, stringTable);
+            if (Data == null)
                 bb.WriteUInt32(0x80000000U | (uint)offset);
             else
                 bb.WriteInt32(offset);
 
-            offset += 16 + entries.Count * 8;
+            offset += 16 + _entries.Count * 8;
         }
 
         static void WriteNameOrOrdinal(ByteBuffer bb, OrdinalOrName id, Dictionary<string, int> strings, ref int stringTableOffset, ByteBuffer stringTable)

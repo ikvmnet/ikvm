@@ -29,13 +29,13 @@ namespace IKVM.Reflection
     internal sealed class __StandAloneMethodSig
     {
 
-        readonly bool unmanaged;
-        readonly CallingConvention unmanagedCallingConvention;
-        readonly CallingConventions callingConvention;
-        readonly Type returnType;
-        readonly Type[] parameterTypes;
-        readonly Type[] optionalParameterTypes;
-        readonly PackedCustomModifiers customModifiers;
+        readonly bool _unmanaged;
+        readonly CallingConvention _unmanagedCallingConvention;
+        readonly CallingConventions _callingConvention;
+        readonly Type _returnType;
+        readonly Type[] _parameterTypes;
+        readonly Type[] _optionalParameterTypes;
+        readonly PackedCustomModifiers _customModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -49,25 +49,25 @@ namespace IKVM.Reflection
         /// <param name="customModifiers"></param>
         internal __StandAloneMethodSig(bool unmanaged, CallingConvention unmanagedCallingConvention, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes, PackedCustomModifiers customModifiers)
         {
-            this.unmanaged = unmanaged;
-            this.unmanagedCallingConvention = unmanagedCallingConvention;
-            this.callingConvention = callingConvention;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-            this.optionalParameterTypes = optionalParameterTypes;
-            this.customModifiers = customModifiers;
+            this._unmanaged = unmanaged;
+            this._unmanagedCallingConvention = unmanagedCallingConvention;
+            this._callingConvention = callingConvention;
+            this._returnType = returnType;
+            this._parameterTypes = parameterTypes;
+            this._optionalParameterTypes = optionalParameterTypes;
+            this._customModifiers = customModifiers;
         }
 
         public bool Equals(__StandAloneMethodSig other)
         {
             return other != null
-                && other.unmanaged == unmanaged
-                && other.unmanagedCallingConvention == unmanagedCallingConvention
-                && other.callingConvention == callingConvention
-                && other.returnType == returnType
-                && Util.ArrayEquals(other.parameterTypes, parameterTypes)
-                && Util.ArrayEquals(other.optionalParameterTypes, optionalParameterTypes)
-                && other.customModifiers.Equals(customModifiers);
+                && other._unmanaged == _unmanaged
+                && other._unmanagedCallingConvention == _unmanagedCallingConvention
+                && other._callingConvention == _callingConvention
+                && other._returnType == _returnType
+                && Util.ArrayEquals(other._parameterTypes, _parameterTypes)
+                && Util.ArrayEquals(other._optionalParameterTypes, _optionalParameterTypes)
+                && other._customModifiers.Equals(_customModifiers);
         }
 
         public override bool Equals(object obj)
@@ -77,58 +77,58 @@ namespace IKVM.Reflection
 
         public override int GetHashCode()
         {
-            return returnType.GetHashCode()
-                ^ Util.GetHashCode(parameterTypes);
+            return _returnType.GetHashCode()
+                ^ Util.GetHashCode(_parameterTypes);
         }
 
         public bool IsUnmanaged
         {
-            get { return unmanaged; }
+            get { return _unmanaged; }
         }
 
         public CallingConventions CallingConvention
         {
-            get { return callingConvention; }
+            get { return _callingConvention; }
         }
 
         public CallingConvention UnmanagedCallingConvention
         {
-            get { return unmanagedCallingConvention; }
+            get { return _unmanagedCallingConvention; }
         }
 
         public Type ReturnType
         {
-            get { return returnType; }
+            get { return _returnType; }
         }
 
         public CustomModifiers GetReturnTypeCustomModifiers()
         {
-            return customModifiers.GetReturnTypeCustomModifiers();
+            return _customModifiers.GetReturnTypeCustomModifiers();
         }
 
         public Type[] ParameterTypes
         {
-            get { return Util.Copy(parameterTypes); }
+            get { return Util.Copy(_parameterTypes); }
         }
 
         public Type[] OptionalParameterTypes
         {
-            get { return Util.Copy(optionalParameterTypes); }
+            get { return Util.Copy(_optionalParameterTypes); }
         }
 
         public CustomModifiers GetParameterCustomModifiers(int index)
         {
-            return customModifiers.GetParameterCustomModifiers(index);
+            return _customModifiers.GetParameterCustomModifiers(index);
         }
 
         public bool ContainsMissingType
         {
             get
             {
-                return returnType.__ContainsMissingType
-                    || Type.ContainsMissingType(parameterTypes)
-                    || Type.ContainsMissingType(optionalParameterTypes)
-                    || customModifiers.ContainsMissingType;
+                return _returnType.__ContainsMissingType
+                    || Type.ContainsMissingType(_parameterTypes)
+                    || Type.ContainsMissingType(_optionalParameterTypes)
+                    || _customModifiers.ContainsMissingType;
             }
         }
 

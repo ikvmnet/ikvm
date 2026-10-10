@@ -31,9 +31,9 @@ namespace IKVM.Reflection
         sealed class ParameterInfoImpl : ParameterInfo
         {
 
-            readonly MethodInfo method;
-            readonly Type type;
-            readonly int pos;
+            readonly MethodInfo _method;
+            readonly Type _type;
+            readonly int _pos;
 
             /// <summary>
             /// Initializes a new instance.
@@ -43,14 +43,14 @@ namespace IKVM.Reflection
             /// <param name="pos"></param>
             internal ParameterInfoImpl(MethodInfo method, Type type, int pos)
             {
-                this.method = method;
-                this.type = type;
-                this.pos = pos;
+                this._method = method;
+                this._type = type;
+                this._pos = pos;
             }
 
             public override Type ParameterType
             {
-                get { return type; }
+                get { return _type; }
             }
 
             public override string Name
@@ -65,7 +65,7 @@ namespace IKVM.Reflection
 
             public override int Position
             {
-                get { return pos; }
+                get { return _pos; }
             }
 
             public override object RawDefaultValue
@@ -86,7 +86,7 @@ namespace IKVM.Reflection
 
             public override MemberInfo Member
             {
-                get { return method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(method) : method; }
+                get { return _method.IsConstructor ? (MethodBase)new ConstructorInfoImpl(_method) : _method; }
             }
 
             public override int MetadataToken
@@ -96,7 +96,7 @@ namespace IKVM.Reflection
 
             public override Module Module
             {
-                get { return method.Module; }
+                get { return _method.Module; }
             }
 
         }

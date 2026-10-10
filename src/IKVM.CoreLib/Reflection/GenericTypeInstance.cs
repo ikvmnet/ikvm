@@ -32,11 +32,11 @@ namespace IKVM.Reflection
     sealed class GenericTypeInstance : TypeInfo
 	{
 
-		private readonly Type type;
-		private readonly Type[] args;
-		private readonly CustomModifiers[] mods;
-		private Type baseType;
-		private int token;
+		private readonly Type _type;
+		private readonly Type[] _args;
+		private readonly CustomModifiers[] _mods;
+		private Type _baseType;
+		private int _token;
 
 		internal static Type Make(Type type, Type[] typeArguments, CustomModifiers[] mods)
 		{
@@ -78,21 +78,21 @@ namespace IKVM.Reflection
 
 		private GenericTypeInstance(Type type, Type[] args, CustomModifiers[] mods)
 		{
-			this.type = type;
-			this.args = args;
-			this.mods = mods;
+			this._type = type;
+			this._args = args;
+			this._mods = mods;
 		}
 
 		public override bool Equals(object o)
 		{
 			GenericTypeInstance gt = o as GenericTypeInstance;
-			return gt != null && gt.type.Equals(type) && Util.ArrayEquals(gt.args, args)
-				&& Util.ArrayEquals(gt.mods, mods);
+			return gt != null && gt._type.Equals(_type) && Util.ArrayEquals(gt._args, _args)
+				&& Util.ArrayEquals(gt._mods, _mods);
 		}
 
 		public override int GetHashCode()
 		{
-			return type.GetHashCode() * 3 ^ Util.GetHashCode(args);
+			return _type.GetHashCode() * 3 ^ Util.GetHashCode(_args);
 		}
 
 		public override string AssemblyQualifiedName
@@ -100,7 +100,7 @@ namespace IKVM.Reflection
 			get
 			{
 				string fn = FullName;
-				return fn == null ? null : fn + ", " + type.Assembly.FullName;
+				return fn == null ? null : fn + ", " + _type.Assembly.FullName;
 			}
 		}
 
@@ -108,25 +108,25 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-				if (baseType == null)
+				if (_baseType == null)
 				{
-					Type rawBaseType = type.BaseType;
+					Type rawBaseType = _type.BaseType;
 					if (rawBaseType == null)
 					{
-						baseType = rawBaseType;
+						_baseType = rawBaseType;
 					}
 					else
 					{
-						baseType = rawBaseType.BindTypeParameters(this);
+						_baseType = rawBaseType.BindTypeParameters(this);
 					}
 				}
-				return baseType;
+				return _baseType;
 			}
 		}
 
 		protected override bool IsValueTypeImpl
 		{
-			get { return type.IsValueType; }
+			get { return _type.IsValueType; }
 		}
 
 		public override bool IsVisible
@@ -135,7 +135,7 @@ namespace IKVM.Reflection
 			{
 				if (base.IsVisible)
 				{
-					foreach (Type arg in args)
+					foreach (Type arg in _args)
 					{
 						if (!arg.IsVisible)
 						{
@@ -150,22 +150,22 @@ namespace IKVM.Reflection
 
 		public override Type DeclaringType
 		{
-			get { return type.DeclaringType; }
+			get { return _type.DeclaringType; }
 		}
 
 		public override TypeAttributes Attributes
 		{
-			get { return type.Attributes; }
+			get { return _type.Attributes; }
 		}
 
 		internal override void CheckBaked()
 		{
-			type.CheckBaked();
+			_type.CheckBaked();
 		}
 
 		public override FieldInfo[] __GetDeclaredFields()
 		{
-			FieldInfo[] fields = type.__GetDeclaredFields();
+			FieldInfo[] fields = _type.__GetDeclaredFields();
 			for (int i = 0; i < fields.Length; i++)
 			{
 				fields[i] = fields[i].BindTypeParameters(this);
@@ -175,7 +175,7 @@ namespace IKVM.Reflection
 
 		public override Type[] __GetDeclaredInterfaces()
 		{
-			Type[] interfaces = type.__GetDeclaredInterfaces();
+			Type[] interfaces = _type.__GetDeclaredInterfaces();
 			for (int i = 0; i < interfaces.Length; i++)
 			{
 				interfaces[i] = interfaces[i].BindTypeParameters(this);
@@ -185,7 +185,7 @@ namespace IKVM.Reflection
 
 		public override MethodBase[] __GetDeclaredMethods()
 		{
-			MethodBase[] methods = type.__GetDeclaredMethods();
+			MethodBase[] methods = _type.__GetDeclaredMethods();
 			for (int i = 0; i < methods.Length; i++)
 			{
 				methods[i] = methods[i].BindTypeParameters(this);
@@ -195,12 +195,12 @@ namespace IKVM.Reflection
 
 		public override Type[] __GetDeclaredTypes()
 		{
-			return type.__GetDeclaredTypes();
+			return _type.__GetDeclaredTypes();
 		}
 
 		public override EventInfo[] __GetDeclaredEvents()
 		{
-			EventInfo[] events = type.__GetDeclaredEvents();
+			EventInfo[] events = _type.__GetDeclaredEvents();
 			for (int i = 0; i < events.Length; i++)
 			{
 				events[i] = events[i].BindTypeParameters(this);
@@ -210,7 +210,7 @@ namespace IKVM.Reflection
 
 		public override PropertyInfo[] __GetDeclaredProperties()
 		{
-			PropertyInfo[] properties = type.__GetDeclaredProperties();
+			PropertyInfo[] properties = _type.__GetDeclaredProperties();
 			for (int i = 0; i < properties.Length; i++)
 			{
 				properties[i] = properties[i].BindTypeParameters(this);
@@ -220,7 +220,7 @@ namespace IKVM.Reflection
 
 		public override __MethodImplMap __GetMethodImplMap()
 		{
-			__MethodImplMap map = type.__GetMethodImplMap();
+			__MethodImplMap map = _type.__GetMethodImplMap();
 			map.TargetType = this;
 			for (int i = 0; i < map.MethodBodies.Length; i++)
 			{
@@ -239,12 +239,12 @@ namespace IKVM.Reflection
 
 		public override string Namespace
 		{
-			get { return type.Namespace; }
+			get { return _type.Namespace; }
 		}
 
 		public override string Name
 		{
-			get { return type.Name; }
+			get { return _type.Name; }
 		}
 
 		public override string FullName
@@ -255,10 +255,10 @@ namespace IKVM.Reflection
 				{
 					return null;
 				}
-				StringBuilder sb = new StringBuilder(this.type.FullName);
+				StringBuilder sb = new StringBuilder(this._type.FullName);
 				sb.Append('[');
 				string sep = "";
-				foreach (Type type in args)
+				foreach (Type type in _args)
 				{
 					sb.Append(sep).Append('[').Append(type.FullName).Append(", ").Append(type.Assembly.FullName.Replace("]", "\\]")).Append(']');
 					sep = ",";
@@ -270,10 +270,10 @@ namespace IKVM.Reflection
 
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder(type.FullName);
+			StringBuilder sb = new StringBuilder(_type.FullName);
 			sb.Append('[');
 			string sep = "";
-			foreach (Type arg in args)
+			foreach (Type arg in _args)
 			{
 				sb.Append(sep);
 				sb.Append(arg);
@@ -285,7 +285,7 @@ namespace IKVM.Reflection
 
 		public override Module Module
 		{
-			get { return type.Module; }
+			get { return _type.Module; }
 		}
 
 		public override bool IsGenericType
@@ -300,29 +300,29 @@ namespace IKVM.Reflection
 
 		public override Type GetGenericTypeDefinition()
 		{
-			return type;
+			return _type;
 		}
 
 		public override Type[] GetGenericArguments()
 		{
-			return Util.Copy(args);
+			return Util.Copy(_args);
 		}
 
 		public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
 		{
-			return mods != null ? (CustomModifiers[])mods.Clone() : new CustomModifiers[args.Length];
+			return _mods != null ? (CustomModifiers[])_mods.Clone() : new CustomModifiers[_args.Length];
 		}
 
 		internal override Type GetGenericTypeArgument(int index)
 		{
-			return args[index];
+			return _args[index];
 		}
 
 		public override bool ContainsGenericParameters
 		{
 			get
 			{
-				foreach (Type type in args)
+				foreach (Type type in _args)
 				{
 					if (type.ContainsGenericParameters)
 					{
@@ -335,33 +335,33 @@ namespace IKVM.Reflection
 
 		protected override bool ContainsMissingTypeImpl
 		{
-			get { return type.__ContainsMissingType || ContainsMissingType(args); }
+			get { return _type.__ContainsMissingType || ContainsMissingType(_args); }
 		}
 
 		internal override int GetModuleBuilderToken()
 		{
-			if (token == 0)
+			if (_token == 0)
 			{
-				token = ((ModuleBuilder)type.Module).ImportType(this);
+				_token = ((ModuleBuilder)_type.Module).ImportType(this);
 			}
-			return token;
+			return _token;
 		}
 
 		internal override Type BindTypeParameters(IGenericBinder binder)
 		{
-			for (int i = 0; i < args.Length; i++)
+			for (int i = 0; i < _args.Length; i++)
 			{
-				Type xarg = args[i].BindTypeParameters(binder);
-				if (!ReferenceEquals(xarg, args[i]))
+				Type xarg = _args[i].BindTypeParameters(binder);
+				if (!ReferenceEquals(xarg, _args[i]))
 				{
-					Type[] xargs = new Type[args.Length];
-					Array.Copy(args, xargs, i);
+					Type[] xargs = new Type[_args.Length];
+					Array.Copy(_args, xargs, i);
 					xargs[i++] = xarg;
-					for (; i < args.Length; i++)
+					for (; i < _args.Length; i++)
 					{
-						xargs[i] = args[i].BindTypeParameters(binder);
+						xargs[i] = _args[i].BindTypeParameters(binder);
 					}
-					return Make(type, xargs, null);
+					return Make(_type, xargs, null);
 				}
 			}
 			return this;
@@ -369,12 +369,12 @@ namespace IKVM.Reflection
 
 		internal override int GetCurrentToken()
 		{
-			return type.GetCurrentToken();
+			return _type.GetCurrentToken();
 		}
 
 		internal override bool IsBaked
 		{
-			get { return type.IsBaked; }
+			get { return _type.IsBaked; }
 		}
 
 	}

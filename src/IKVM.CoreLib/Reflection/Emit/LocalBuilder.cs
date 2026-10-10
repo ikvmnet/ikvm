@@ -7,7 +7,7 @@ namespace IKVM.Reflection.Emit
     internal sealed class LocalBuilder : LocalVariableInfo
     {
 
-        readonly MethodBuilder method;
+        readonly MethodBuilder _method;
 
         /// <summary>
         /// Initializes a new instance.
@@ -18,13 +18,13 @@ namespace IKVM.Reflection.Emit
         internal LocalBuilder(MethodBuilder method, Type localType, int index, bool pinned) :
             base(index, localType, pinned)
         {
-            this.method = method ?? throw new ArgumentNullException(nameof(method));
+            this._method = method ?? throw new ArgumentNullException(nameof(method));
         }
 
         /// <summary>
         /// Gets the method that contains this local.
         /// </summary>
-        internal MethodBuilder Method => method;
+        internal MethodBuilder Method => _method;
 
         /// <summary>
         /// Sets the name of this local variable.
@@ -43,8 +43,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="endOffset"></param>
         public void SetLocalSymInfo(string name, int startOffset, int endOffset)
         {
-            var module = method.ModuleBuilder;
-            if (method.IsTypeCreated())
+            var module = _method.ModuleBuilder;
+            if (_method.IsTypeCreated())
                 throw new InvalidOperationException("Unable to change after type has been created.");
 
             // generate field signature representing type
@@ -52,15 +52,15 @@ namespace IKVM.Reflection.Emit
             signature.AddArgument(LocalType);
             var array = signature.GetSignature();
 
-            int currentActiveScopeIndex = method.GetILGenerator().m_ScopeTree.GetCurrentActiveScopeIndex();
+            int currentActiveScopeIndex = _method.GetILGenerator().ScopeTree.GetCurrentActiveScopeIndex();
             if (currentActiveScopeIndex == -1)
             {
-                method.m_localSymInfo ??= new();
-                method.m_localSymInfo.AddLocalSymInfo(name, array, LocalIndex, startOffset, endOffset);
+                _method.LocalSymInfo ??= new();
+                _method.LocalSymInfo.AddLocalSymInfo(name, array, LocalIndex, startOffset, endOffset);
                 return;
             }
 
-            method.GetILGenerator().m_ScopeTree.AddLocalSymInfoToCurrentScope(name, array, LocalIndex, startOffset, endOffset);
+            _method.GetILGenerator().ScopeTree.AddLocalSymInfoToCurrentScope(name, array, LocalIndex, startOffset, endOffset);
         }
 
     }

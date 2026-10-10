@@ -17,47 +17,47 @@ namespace IKVM.Reflection.Emit
     internal readonly struct ExceptionHandler : IEquatable<ExceptionHandler>
     {
         // Keep in sync with unmanged structure. 
-        internal readonly int m_exceptionClass;
-        internal readonly int m_tryStartOffset;
-        internal readonly int m_tryEndOffset;
-        internal readonly int m_filterOffset;
-        internal readonly int m_handlerStartOffset;
-        internal readonly int m_handlerEndOffset;
-        internal readonly ExceptionHandlingClauseOptions m_kind;
+        readonly int _exceptionClass;
+        readonly int _tryStartOffset;
+        readonly int _tryEndOffset;
+        readonly int _filterOffset;
+        readonly int _handlerStartOffset;
+        readonly int _handlerEndOffset;
+        readonly ExceptionHandlingClauseOptions _kind;
 
         public int ExceptionTypeToken
         {
-            get { return m_exceptionClass; }
+            get { return _exceptionClass; }
         }
 
         public int TryOffset
         {
-            get { return m_tryStartOffset; }
+            get { return _tryStartOffset; }
         }
 
         public int TryLength
         {
-            get { return m_tryEndOffset - m_tryStartOffset; }
+            get { return _tryEndOffset - _tryStartOffset; }
         }
 
         public int FilterOffset
         {
-            get { return m_filterOffset; }
+            get { return _filterOffset; }
         }
 
         public int HandlerOffset
         {
-            get { return m_handlerStartOffset; }
+            get { return _handlerStartOffset; }
         }
 
         public int HandlerLength
         {
-            get { return m_handlerEndOffset - m_handlerStartOffset; }
+            get { return _handlerEndOffset - _handlerStartOffset; }
         }
 
         public ExceptionHandlingClauseOptions Kind
         {
-            get { return m_kind; }
+            get { return _kind; }
         }
 
 #region Constructors
@@ -73,13 +73,13 @@ namespace IKVM.Reflection.Emit
             Debug.Assert(IsValidKind((ExceptionHandlingClauseOptions)kind));
             Debug.Assert(kind != (int)ExceptionHandlingClauseOptions.Clause || (exceptionTypeToken & 0x00FFFFFF) != 0);
 
-            m_tryStartOffset = tryStartOffset;
-            m_tryEndOffset = tryEndOffset;
-            m_filterOffset = filterOffset;
-            m_handlerStartOffset = handlerStartOffset;
-            m_handlerEndOffset = handlerEndOffset;
-            m_kind = (ExceptionHandlingClauseOptions)kind;
-            m_exceptionClass = exceptionTypeToken;
+            _tryStartOffset = tryStartOffset;
+            _tryEndOffset = tryEndOffset;
+            _filterOffset = filterOffset;
+            _handlerStartOffset = handlerStartOffset;
+            _handlerEndOffset = handlerEndOffset;
+            _kind = (ExceptionHandlingClauseOptions)kind;
+            _exceptionClass = exceptionTypeToken;
         }
 
         private static bool IsValidKind(ExceptionHandlingClauseOptions kind)
@@ -103,7 +103,7 @@ namespace IKVM.Reflection.Emit
 
         public override int GetHashCode()
         {
-            return m_exceptionClass ^ m_tryStartOffset ^ m_tryEndOffset ^ m_filterOffset ^ m_handlerStartOffset ^ m_handlerEndOffset ^ (int)m_kind;
+            return _exceptionClass ^ _tryStartOffset ^ _tryEndOffset ^ _filterOffset ^ _handlerStartOffset ^ _handlerEndOffset ^ (int)_kind;
         }
 
         public override bool Equals(Object obj)
@@ -114,13 +114,13 @@ namespace IKVM.Reflection.Emit
         public bool Equals(ExceptionHandler other)
         {
             return
-                other.m_exceptionClass == m_exceptionClass &&
-                other.m_tryStartOffset == m_tryStartOffset &&
-                other.m_tryEndOffset == m_tryEndOffset &&
-                other.m_filterOffset == m_filterOffset &&
-                other.m_handlerStartOffset == m_handlerStartOffset &&
-                other.m_handlerEndOffset == m_handlerEndOffset &&
-                other.m_kind == m_kind;
+                other._exceptionClass == _exceptionClass &&
+                other._tryStartOffset == _tryStartOffset &&
+                other._tryEndOffset == _tryEndOffset &&
+                other._filterOffset == _filterOffset &&
+                other._handlerStartOffset == _handlerStartOffset &&
+                other._handlerEndOffset == _handlerEndOffset &&
+                other._kind == _kind;
         }
 
         #endregion

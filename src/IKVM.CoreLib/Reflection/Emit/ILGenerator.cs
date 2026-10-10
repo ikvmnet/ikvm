@@ -44,38 +44,38 @@ namespace IKVM.Reflection.Emit
         #endregion
 
         #region Internal Data Members
-        private int m_length;
-        private byte[] m_ILStream;
+        private int _length;
+        private byte[] _ilStream;
 
-        private __LabelInfo[]? m_labelList;
-        private int m_labelCount;
+        private __LabelInfo[]? _labelList;
+        private int _labelCount;
 
-        private __FixupData[]? m_fixupData;
+        private __FixupData[]? _fixupData;
 
-        private int m_fixupCount;
+        private int _fixupCount;
 
-        private int[]? m_RelocFixupList;
-        private int m_RelocFixupCount;
+        private int[]? _relocFixupList;
+        private int _relocFixupCount;
 
-        private int m_exceptionCount;
-        private int m_currExcStackCount;
-        private __ExceptionInfo[]? m_exceptions;           // This is the list of all of the exceptions in this ILStream.
-        private __ExceptionInfo[]? m_currExcStack;         // This is the stack of exceptions which we're currently in.
+        private int _exceptionCount;
+        private int _currExcStackCount;
+        private __ExceptionInfo[]? _exceptions;           // This is the list of all of the exceptions in this ILStream.
+        private __ExceptionInfo[]? _currExcStack;         // This is the stack of exceptions which we're currently in.
 
-        internal ScopeTree m_ScopeTree;                 // this variable tracks all debugging scope information
-        internal LineNumberInfo m_LineNumberInfo;       // this variable tracks all line number information
+        internal ScopeTree ScopeTree;                 // this variable tracks all debugging scope information
+        internal LineNumberInfo LineNumberInfo;       // this variable tracks all line number information
 
-        internal MethodBuilder m_methodBuilder;
-        internal int m_localCount;
-        internal SignatureHelper m_localSignature;
+        MethodBuilder _methodBuilder;
+        internal int LocalCount;
+        internal SignatureHelper LocalSignature;
 
-        private int m_curDepth; // Current stack depth, with -1 meaning unknown.
-        private int m_targetDepth; // Stack depth at a target of the previous instruction (when it is branching).
-        private int m_maxDepth; // Running max of the stack depth.
+        private int _curDepth; // Current stack depth, with -1 meaning unknown.
+        private int _targetDepth; // Stack depth at a target of the previous instruction (when it is branching).
+        private int _maxDepth; // Running max of the stack depth.
 
         // Adjustment to add to m_maxDepth for incorrect/invalid IL. For example, when branch instructions
         // with different stack depths target the same label.
-        private long m_depthAdjustment;
+        private long _depthAdjustment;
 
 #endregion
 #region Constructor
@@ -85,15 +85,15 @@ namespace IKVM.Reflection.Emit
             Debug.Assert(methodBuilder != null);
             Debug.Assert(methodBuilder is MethodBuilder);
 
-            m_ILStream = new byte[Math.Max(size, DefaultSize)];
+            _ilStream = new byte[Math.Max(size, DefaultSize)];
 
             // initialize the scope tree
-            m_ScopeTree = new ScopeTree();
-            m_LineNumberInfo = new LineNumberInfo();
-            m_methodBuilder = methodBuilder;
+            ScopeTree = new ScopeTree();
+            LineNumberInfo = new LineNumberInfo();
+            _methodBuilder = methodBuilder;
 
             // initialize local signature
-            m_localSignature = SignatureHelper.GetLocalVarSigHelper(methodBuilder.ModuleBuilder);
+            LocalSignature = SignatureHelper.GetLocalVarSigHelper(methodBuilder.ModuleBuilder);
         }
 
         #endregion
@@ -101,16 +101,16 @@ namespace IKVM.Reflection.Emit
         #region Internal Members
         internal virtual void RecordTokenFixup()
         {
-            if (m_RelocFixupList == null)
+            if (_relocFixupList == null)
             {
-                m_RelocFixupList = new int[DefaultFixupArraySize];
+                _relocFixupList = new int[DefaultFixupArraySize];
             }
-            else if (m_RelocFixupList.Length <= m_RelocFixupCount)
+            else if (_relocFixupList.Length <= _relocFixupCount)
             {
-                m_RelocFixupList = EnlargeArray(m_RelocFixupList);
+                _relocFixupList = EnlargeArray(_relocFixupList);
             }
 
-            m_RelocFixupList[m_RelocFixupCount++] = m_length;
+            _relocFixupList[_relocFixupCount++] = _length;
         }
 
         internal void InternalEmit(OpCode opcode)
@@ -118,12 +118,12 @@ namespace IKVM.Reflection.Emit
             short opcodeValue = opcode.Value;
             if (opcode.Size != 1)
             {
-                BinaryPrimitives.WriteInt16BigEndian(m_ILStream.AsSpan(m_length), opcodeValue);
-                m_length += 2;
+                BinaryPrimitives.WriteInt16BigEndian(_ilStream.AsSpan(_length), opcodeValue);
+                _length += 2;
             }
             else
             {
-                m_ILStream[m_length++] = (byte)opcodeValue;
+                _ilStream[_length++] = (byte)opcodeValue;
             }
 
             UpdateStackSize(opcode, opcode.StackChange());
@@ -136,41 +136,41 @@ namespace IKVM.Reflection.Emit
             // requirements for the function.  stackchange specifies the amount
             // by which the stacksize needs to be updated.
 
-            if (m_curDepth < 0)
+            if (_curDepth < 0)
             {
                 // Current depth is "unknown". We get here when:
                 // * this is unreachable code.
                 // * the client uses explicit numeric offsets rather than Labels.
-                m_curDepth = 0;
+                _curDepth = 0;
             }
 
-            m_curDepth += stackchange;
-            if (m_curDepth < 0)
+            _curDepth += stackchange;
+            if (_curDepth < 0)
             {
                 // Stack underflow. Assume our previous depth computation was flawed.
-                m_depthAdjustment -= m_curDepth;
-                m_curDepth = 0;
+                _depthAdjustment -= _curDepth;
+                _curDepth = 0;
             }
-            else if (m_maxDepth < m_curDepth)
-                m_maxDepth = m_curDepth;
-            Debug.Assert(m_depthAdjustment >= 0);
-            Debug.Assert(m_curDepth >= 0);
+            else if (_maxDepth < _curDepth)
+                _maxDepth = _curDepth;
+            Debug.Assert(_depthAdjustment >= 0);
+            Debug.Assert(_curDepth >= 0);
 
             // Record the stack depth at a "target" of this instruction.
-            m_targetDepth = m_curDepth;
+            _targetDepth = _curDepth;
 
             // If the current instruction can't fall through, set the depth to unknown.
             if (opcode.EndsUncondJmpBlk())
-                m_curDepth = -1;
+                _curDepth = -1;
         }
 
         private int GetMethodToken(MethodBase method, Type[]? optionalParameterTypes, bool useMethodDef)
         {
             var mi = method is ConstructorInfo ctor ? ctor.GetMethodInfo() : (MethodInfo)method;
             if (optionalParameterTypes == null || optionalParameterTypes.Length == 0)
-                return m_methodBuilder.ModuleBuilder.GetMethodTokenForIL(mi).Token;
+                return _methodBuilder.ModuleBuilder.GetMethodTokenForIL(mi).Token;
             else
-                return m_methodBuilder.ModuleBuilder.__GetMethodToken(mi, optionalParameterTypes, null).Token;
+                return _methodBuilder.ModuleBuilder.__GetMethodToken(mi, optionalParameterTypes, null).Token;
         }
 
         internal SignatureHelper GetMemberRefSignature(
@@ -179,7 +179,7 @@ namespace IKVM.Reflection.Emit
             Type[]? parameterTypes,
             Type[]? optionalParameterTypes)
         {
-            var sig = SignatureHelper.GetMethodSigHelper(m_methodBuilder.Module, call, returnType);
+            var sig = SignatureHelper.GetMethodSigHelper(_methodBuilder.Module, call, returnType);
             sig.AddArguments(parameterTypes, null, null);
             if (optionalParameterTypes != null && optionalParameterTypes.Length != 0)
             {
@@ -195,45 +195,45 @@ namespace IKVM.Reflection.Emit
             // BakeByteArray is an internal function designed to be called by MethodBuilder to do
             // all of the fixups and return a new byte array representing the byte stream with labels resolved, etc.
 
-            if (m_currExcStackCount != 0)
+            if (_currExcStackCount != 0)
             {
                 throw new ArgumentException("The IL Generator cannot be used while there are unclosed exceptions.");
             }
 
-            if (m_length == 0)
+            if (_length == 0)
                 return null;
 
             // Allocate space for the new array.
-            byte[] newBytes = new byte[m_length];
+            byte[] newBytes = new byte[_length];
 
             // Copy the data from the old array
-            Array.Copy(m_ILStream, newBytes, m_length);
+            Array.Copy(_ilStream, newBytes, _length);
 
             // Do the fixups.
             // This involves iterating over all of the labels and
             // replacing them with their proper values.
-            for (int i = 0; i < m_fixupCount; i++)
+            for (int i = 0; i < _fixupCount; i++)
             {
-                __FixupData fixupData = m_fixupData![i];
-                int updateAddr = GetLabelPos(fixupData.m_fixupLabel) - (fixupData.m_fixupPos + fixupData.m_fixupInstSize);
+                __FixupData fixupData = _fixupData![i];
+                int updateAddr = GetLabelPos(fixupData.FixupLabel) - (fixupData.FixupPos + fixupData.FixupInstSize);
 
                 // Handle single byte instructions
                 // Throw an exception if they're trying to store a jump in a single byte instruction that doesn't fit.
-                if (fixupData.m_fixupInstSize == 1)
+                if (fixupData.FixupInstSize == 1)
                 {
                     // Verify that our one-byte arg will fit into a Signed Byte.
                     if (updateAddr < sbyte.MinValue || updateAddr > sbyte.MaxValue)
                     {
-                        throw new NotSupportedException(string.Format("Illegal one-byte branch at position: {0}. Requested branch was: {1}.", fixupData.m_fixupPos, updateAddr));
+                        throw new NotSupportedException(string.Format("Illegal one-byte branch at position: {0}. Requested branch was: {1}.", fixupData.FixupPos, updateAddr));
                     }
 
                     // Place the one-byte arg
-                    newBytes[fixupData.m_fixupPos] = (byte)updateAddr;
+                    newBytes[fixupData.FixupPos] = (byte)updateAddr;
                 }
                 else
                 {
                     // Place the four-byte arg
-                    BinaryPrimitives.WriteInt32LittleEndian(newBytes.AsSpan(fixupData.m_fixupPos), updateAddr);
+                    BinaryPrimitives.WriteInt32LittleEndian(newBytes.AsSpan(fixupData.FixupPos), updateAddr);
                 }
             }
             return newBytes;
@@ -241,18 +241,18 @@ namespace IKVM.Reflection.Emit
 
         internal __ExceptionInfo[]? GetExceptions()
         {
-            if (m_currExcStackCount != 0)
+            if (_currExcStackCount != 0)
             {
                 throw new NotSupportedException("The IL Generator cannot be used while there are unclosed exceptions.");
             }
 
-            if (m_exceptionCount == 0)
+            if (_exceptionCount == 0)
             {
                 return null;
             }
 
-            var temp = new __ExceptionInfo[m_exceptionCount];
-            Array.Copy(m_exceptions!, temp, m_exceptionCount);
+            var temp = new __ExceptionInfo[_exceptionCount];
+            Array.Copy(_exceptions!, temp, _exceptionCount);
             SortExceptions(temp);
             return temp;
         }
@@ -260,7 +260,7 @@ namespace IKVM.Reflection.Emit
         internal void EnsureCapacity(int size)
         {
             // Guarantees an array capable of holding at least size elements.
-            if (m_length + size >= m_ILStream.Length)
+            if (_length + size >= _ilStream.Length)
             {
                 IncreaseCapacity(size);
             }
@@ -268,16 +268,16 @@ namespace IKVM.Reflection.Emit
 
         private void IncreaseCapacity(int size)
         {
-            byte[] temp = new byte[Math.Max(m_ILStream.Length * 2, m_length + size)];
-            Array.Copy(m_ILStream, temp, m_ILStream.Length);
-            m_ILStream = temp;
+            byte[] temp = new byte[Math.Max(_ilStream.Length * 2, _length + size)];
+            Array.Copy(_ilStream, temp, _ilStream.Length);
+            _ilStream = temp;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PutInteger4(int value)
         {
-            BinaryPrimitives.WriteInt32LittleEndian(m_ILStream.AsSpan(m_length), value);
-            m_length += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(_ilStream.AsSpan(_length), value);
+            _length += 4;
         }
 
         private int GetLabelPos(Label lbl)
@@ -287,10 +287,10 @@ namespace IKVM.Reflection.Emit
 
             int index = lbl.Id;
 
-            if (index < 0 || index >= m_labelCount || m_labelList is null)
+            if (index < 0 || index >= _labelCount || _labelList is null)
                 throw new ArgumentException("Bad label in ILGenerator.");
 
-            int pos = m_labelList[index].m_pos;
+            int pos = _labelList[index].Pos;
             if (pos < 0)
                 throw new ArgumentException("Bad label content in ILGenerator.");
 
@@ -302,28 +302,28 @@ namespace IKVM.Reflection.Emit
             // Notes the label, position, and instruction size of a new fixup.  Expands
             // all of the fixup arrays as appropriate.
 
-            if (m_fixupData == null)
+            if (_fixupData == null)
             {
-                m_fixupData = new __FixupData[DefaultFixupArraySize];
+                _fixupData = new __FixupData[DefaultFixupArraySize];
             }
-            else if (m_fixupData.Length <= m_fixupCount)
+            else if (_fixupData.Length <= _fixupCount)
             {
-                m_fixupData = EnlargeArray(m_fixupData);
+                _fixupData = EnlargeArray(_fixupData);
             }
 
-            m_fixupData[m_fixupCount++] = new __FixupData
+            _fixupData[_fixupCount++] = new __FixupData
             {
-                m_fixupPos = pos,
-                m_fixupLabel = lbl,
-                m_fixupInstSize = instSize
+                FixupPos = pos,
+                FixupLabel = lbl,
+                FixupInstSize = instSize
             };
 
             int labelIndex = lbl.Id;
-            if (labelIndex < 0 || labelIndex >= m_labelCount || m_labelList is null)
+            if (labelIndex < 0 || labelIndex >= _labelCount || _labelList is null)
                 throw new ArgumentException("Bad label in ILGenerator.");
 
-            int depth = m_labelList[labelIndex].m_depth;
-            int targetDepth = m_targetDepth;
+            int depth = _labelList[labelIndex].Depth;
+            int targetDepth = _targetDepth;
             Debug.Assert(depth >= -1);
             Debug.Assert(targetDepth >= -1);
             if (depth < targetDepth)
@@ -331,16 +331,16 @@ namespace IKVM.Reflection.Emit
                 // Either unknown depth for this label or this branch location has a larger depth than previously recorded.
                 // In the latter case, the IL is (likely) invalid, but we just compensate for it.
                 if (depth >= 0)
-                    m_depthAdjustment += targetDepth - depth;
-                m_labelList[labelIndex].m_depth = targetDepth;
+                    _depthAdjustment += targetDepth - depth;
+                _labelList[labelIndex].Depth = targetDepth;
             }
         }
 
         internal int GetMaxStackSize()
         {
             // Limit the computed max stack to 2^16 - 1, since the value is mod`ed by 2^16 by other code.
-            Debug.Assert(m_depthAdjustment >= 0);
-            return (int)Math.Min(ushort.MaxValue, m_maxDepth + m_depthAdjustment);
+            Debug.Assert(_depthAdjustment >= 0);
+            return (int)Math.Min(ushort.MaxValue, _maxDepth + _depthAdjustment);
         }
 
         private static void SortExceptions(__ExceptionInfo[] exceptions)
@@ -367,14 +367,14 @@ namespace IKVM.Reflection.Emit
 
         internal int[]? GetTokenFixups()
         {
-            if (m_RelocFixupCount == 0)
+            if (_relocFixupCount == 0)
             {
-                Debug.Assert(m_RelocFixupList == null);
+                Debug.Assert(_relocFixupList == null);
                 return null;
             }
 
-            int[] narrowTokens = new int[m_RelocFixupCount];
-            Array.Copy(m_RelocFixupList!, narrowTokens, m_RelocFixupCount);
+            int[] narrowTokens = new int[_relocFixupCount];
+            Array.Copy(_relocFixupList!, narrowTokens, _relocFixupCount);
             return narrowTokens;
         }
         #endregion
@@ -392,7 +392,7 @@ namespace IKVM.Reflection.Emit
         {
             EnsureCapacity(4);
             InternalEmit(opcode);
-            m_ILStream[m_length++] = arg;
+            _ilStream[_length++] = arg;
         }
 
         public void Emit(OpCode opcode, short arg)
@@ -400,8 +400,8 @@ namespace IKVM.Reflection.Emit
             // Puts opcode onto the stream of instructions followed by arg
             EnsureCapacity(5);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt16LittleEndian(m_ILStream.AsSpan(m_length), arg);
-            m_length += 2;
+            BinaryPrimitives.WriteInt16LittleEndian(_ilStream.AsSpan(_length), arg);
+            _length += 2;
         }
 
         public void Emit(OpCode opcode, int arg)
@@ -535,7 +535,7 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.ModuleBuilder;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.ModuleBuilder;
             SignatureHelper sig = GetMemberRefSignature(callingConvention,
                 returnType,
                 parameterTypes,
@@ -569,7 +569,7 @@ namespace IKVM.Reflection.Emit
             int stackchange = 0;
             int cParams = 0;
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
 
             if (parameterTypes != null)
             {
@@ -622,7 +622,7 @@ namespace IKVM.Reflection.Emit
             InternalEmit(opcode);
 
             // Push the return value if there is one.
-            if (methodInfo.ReturnType != m_methodBuilder.ModuleBuilder.Universe.System_Void)
+            if (methodInfo.ReturnType != _methodBuilder.ModuleBuilder.Universe.System_Void)
                 stackchange++;
             // Pop the parameters.
             Type[] parameters = methodInfo.GetParameterTypes();
@@ -689,7 +689,7 @@ namespace IKVM.Reflection.Emit
             // by cls.  The location of cls is recorded so that the token can be
             // patched if necessary when persisting the module to a PE.
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
             bool getGenericDefinition = (opcode == OpCodes.Ldtoken && cls != null && cls.IsGenericTypeDefinition);
             int tempVal = getGenericDefinition ? modBuilder.GetTypeToken(cls).Token : modBuilder.GetTypeTokenForMemberRef(cls);
 
@@ -703,16 +703,16 @@ namespace IKVM.Reflection.Emit
         {
             EnsureCapacity(11);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt64LittleEndian(m_ILStream.AsSpan(m_length), arg);
-            m_length += 8;
+            BinaryPrimitives.WriteInt64LittleEndian(_ilStream.AsSpan(_length), arg);
+            _length += 8;
         }
 
         public void Emit(OpCode opcode, float arg)
         {
             EnsureCapacity(7);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt32LittleEndian(m_ILStream.AsSpan(m_length), SingleToInt32Bits(arg));
-            m_length += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(_ilStream.AsSpan(_length), SingleToInt32Bits(arg));
+            _length += 4;
         }
 
         /// <summary>
@@ -734,8 +734,8 @@ namespace IKVM.Reflection.Emit
         {
             EnsureCapacity(11);
             InternalEmit(opcode);
-            BinaryPrimitives.WriteInt64LittleEndian(m_ILStream.AsSpan(m_length), BitConverter.DoubleToInt64Bits(arg));
-            m_length += 8;
+            BinaryPrimitives.WriteInt64LittleEndian(_ilStream.AsSpan(_length), BitConverter.DoubleToInt64Bits(arg));
+            _length += 8;
         }
 
         public void Emit(OpCode opcode, Label label)
@@ -755,12 +755,12 @@ namespace IKVM.Reflection.Emit
             InternalEmit(opcode);
             if (OpCodes.TakesSingleByteArgument(opcode))
             {
-                AddFixup(label, m_length++, 1);
+                AddFixup(label, _length++, 1);
             }
             else
             {
-                AddFixup(label, m_length, 4);
-                m_length += 4;
+                AddFixup(label, _length, 4);
+                _length += 4;
             }
         }
 
@@ -782,14 +782,14 @@ namespace IKVM.Reflection.Emit
             PutInteger4(count);
             for (remaining = count * 4, i = 0; remaining > 0; remaining -= 4, i++)
             {
-                AddFixup(labels[i], m_length, remaining);
-                m_length += 4;
+                AddFixup(labels[i], _length, remaining);
+                _length += 4;
             }
         }
 
         public void Emit(OpCode opcode, FieldInfo field)
         {
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
             int tempVal = modBuilder.GetFieldToken(field).Token;
             EnsureCapacity(7);
             InternalEmit(opcode);
@@ -803,7 +803,7 @@ namespace IKVM.Reflection.Emit
             // represented by str.  The location of str is recorded for future
             // fixups if the module is persisted to a PE.
 
-            ModuleBuilder modBuilder = (ModuleBuilder)m_methodBuilder.Module;
+            ModuleBuilder modBuilder = (ModuleBuilder)_methodBuilder.Module;
             int tempVal = modBuilder.GetStringConstant(str).Token;
             EnsureCapacity(7);
             InternalEmit(opcode);
@@ -817,7 +817,7 @@ namespace IKVM.Reflection.Emit
 
             // Puts the opcode onto the IL stream followed by the information for local variable local.
             int tempVal = local.LocalIndex;
-            if (local.Method != m_methodBuilder)
+            if (local.Method != _methodBuilder)
             {
                 throw new ArgumentException("Local passed in does not belong to this ILGenerator.", nameof(local));
             }
@@ -880,8 +880,8 @@ namespace IKVM.Reflection.Emit
 
             if (!OpCodes.TakesSingleByteArgument(opcode))
             {
-                BinaryPrimitives.WriteInt16LittleEndian(m_ILStream.AsSpan(m_length), (short)tempVal);
-                m_length += 2;
+                BinaryPrimitives.WriteInt16LittleEndian(_ilStream.AsSpan(_length), (short)tempVal);
+                _length += 2;
             }
             else
             {
@@ -890,7 +890,7 @@ namespace IKVM.Reflection.Emit
                 {
                     throw new InvalidOperationException("Opcodes using a short-form index cannot address a local position over 255.");
                 }
-                m_ILStream[m_length++] = (byte)tempVal;
+                _ilStream[_length++] = (byte)tempVal;
             }
         }
 
@@ -912,44 +912,44 @@ namespace IKVM.Reflection.Emit
             // EndExceptionBlock
 
             // Delay init
-            m_exceptions ??= new __ExceptionInfo[DefaultExceptionArraySize];
-            m_currExcStack ??= new __ExceptionInfo[DefaultExceptionArraySize];
+            _exceptions ??= new __ExceptionInfo[DefaultExceptionArraySize];
+            _currExcStack ??= new __ExceptionInfo[DefaultExceptionArraySize];
 
-            if (m_exceptionCount >= m_exceptions.Length)
+            if (_exceptionCount >= _exceptions.Length)
             {
-                m_exceptions = EnlargeArray(m_exceptions);
+                _exceptions = EnlargeArray(_exceptions);
             }
 
-            if (m_currExcStackCount >= m_currExcStack.Length)
+            if (_currExcStackCount >= _currExcStack.Length)
             {
-                m_currExcStack = EnlargeArray(m_currExcStack);
+                _currExcStack = EnlargeArray(_currExcStack);
             }
 
             Label endLabel = DefineLabel(0);
-            __ExceptionInfo exceptionInfo = new __ExceptionInfo(m_length, endLabel);
+            __ExceptionInfo exceptionInfo = new __ExceptionInfo(_length, endLabel);
 
             // add the exception to the tracking list
-            m_exceptions[m_exceptionCount++] = exceptionInfo;
+            _exceptions[_exceptionCount++] = exceptionInfo;
 
             // Make this exception the current active exception
-            m_currExcStack[m_currExcStackCount++] = exceptionInfo;
+            _currExcStack[_currExcStackCount++] = exceptionInfo;
 
             // Stack depth for "try" starts at zero.
-            m_curDepth = 0;
+            _curDepth = 0;
 
             return endLabel;
         }
 
         public void EndExceptionBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
 
             // Pop the current exception block
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
-            m_currExcStack[--m_currExcStackCount] = null!;
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
+            _currExcStack[--_currExcStackCount] = null!;
 
             Label endLabel = current.GetEndLabel();
             int state = current.GetCurrentState();
@@ -972,26 +972,26 @@ namespace IKVM.Reflection.Emit
             // Check if we've already set this label.
             // The only reason why we might have set this is if we have a finally block.
 
-            Label label = m_labelList![endLabel.GetLabelValue()].m_pos != -1
-                ? current.m_finallyEndLabel
+            Label label = _labelList![endLabel.GetLabelValue()].Pos != -1
+                ? current.FinallyEndLabel
                 : endLabel;
 
             MarkLabel(label);
 
-            current.Done(m_length);
+            current.Done(_length);
         }
 
         public void BeginCatchBlock(Type? exceptionType)
         {
-            Debug.Assert(ModuleBuilder.IsPseudoToken(m_methodBuilder.ModuleBuilder.GetTypeTokenForMemberRef(exceptionType)) == false);
+            Debug.Assert(ModuleBuilder.IsPseudoToken(_methodBuilder.ModuleBuilder.GetTypeTokenForMemberRef(exceptionType)) == false);
 
             // Begins a catch block.  Emits a branch instruction to the end of the current exception block.
 
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
 
             if (current.GetCurrentState() == __ExceptionInfo.State_Filter)
             {
@@ -1011,36 +1011,36 @@ namespace IKVM.Reflection.Emit
                 Emit(OpCodes.Leave, current.GetEndLabel());
             }
 
-            current.MarkCatchAddr(m_length, exceptionType);
+            current.MarkCatchAddr(_length, exceptionType);
 
             // Stack depth for "catch" starts at one.
-            m_curDepth = 1;
+            _curDepth = 1;
         }
 
         public void BeginFaultBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
 
             // emit the leave for the clause before this one.
             Emit(OpCodes.Leave, current.GetEndLabel());
 
-            current.MarkFaultAddr(m_length);
+            current.MarkFaultAddr(_length);
 
             // Stack depth for "fault" starts at zero.
-            m_curDepth = 0;
+            _curDepth = 0;
         }
 
         public void BeginFinallyBlock()
         {
-            if (m_currExcStackCount == 0)
+            if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");
             }
-            __ExceptionInfo current = m_currExcStack![m_currExcStackCount - 1];
+            __ExceptionInfo current = _currExcStack![_currExcStackCount - 1];
             int state = current.GetCurrentState();
             Label endLabel = current.GetEndLabel();
             int catchEndAddr = 0;
@@ -1048,7 +1048,7 @@ namespace IKVM.Reflection.Emit
             {
                 // generate leave for any preceding catch clause
                 Emit(OpCodes.Leave, endLabel);
-                catchEndAddr = m_length;
+                catchEndAddr = _length;
             }
 
             MarkLabel(endLabel);
@@ -1059,11 +1059,11 @@ namespace IKVM.Reflection.Emit
             // generate leave for try clause
             Emit(OpCodes.Leave, finallyEndLabel);
             if (catchEndAddr == 0)
-                catchEndAddr = m_length;
-            current.MarkFinallyAddr(m_length, catchEndAddr);
+                catchEndAddr = _length;
+            current.MarkFinallyAddr(_length, catchEndAddr);
 
             // Stack depth for "finally" starts at zero.
-            m_curDepth = 0;
+            _curDepth = 0;
         }
 
         #endregion
@@ -1083,15 +1083,15 @@ namespace IKVM.Reflection.Emit
             Debug.Assert(depth >= -1);
 
             // Delay init the label array in case we dont use it
-            m_labelList ??= new __LabelInfo[DefaultLabelArraySize];
+            _labelList ??= new __LabelInfo[DefaultLabelArraySize];
 
-            if (m_labelCount >= m_labelList.Length)
+            if (_labelCount >= _labelList.Length)
             {
-                m_labelList = EnlargeArray(m_labelList);
+                _labelList = EnlargeArray(_labelList);
             }
-            m_labelList[m_labelCount].m_pos = -1;
-            m_labelList[m_labelCount].m_depth = depth;
-            return new Label(m_labelCount++);
+            _labelList[_labelCount].Pos = -1;
+            _labelList[_labelCount].Depth = depth;
+            return new Label(_labelCount++);
         }
 
         public void MarkLabel(Label loc)
@@ -1102,19 +1102,19 @@ namespace IKVM.Reflection.Emit
             int labelIndex = loc.Id;
 
             // This should only happen if a label from another generator is used with this one.
-            if (m_labelList is null || labelIndex < 0 || labelIndex >= m_labelList.Length)
+            if (_labelList is null || labelIndex < 0 || labelIndex >= _labelList.Length)
             {
                 throw new ArgumentException("Invalid Label.");
             }
 
-            if (m_labelList[labelIndex].m_pos != -1)
+            if (_labelList[labelIndex].Pos != -1)
             {
                 throw new ArgumentException("Label defined multiple times.");
             }
 
-            m_labelList[labelIndex].m_pos = m_length;
+            _labelList[labelIndex].Pos = _length;
 
-            int depth = m_labelList[labelIndex].m_depth;
+            int depth = _labelList[labelIndex].Depth;
             if (depth < 0)
             {
                 // Unknown depth for this label, indicating that it hasn't been used yet.
@@ -1123,22 +1123,22 @@ namespace IKVM.Reflection.Emit
                 // discover them. That is, here we assume a depth of zero. If a (later) branch to this label
                 // has a positive stack depth, we'll record that as the new depth and add the delta into
                 // m_depthAdjustment.
-                if (m_curDepth < 0)
-                    m_curDepth = 0;
-                m_labelList[labelIndex].m_depth = m_curDepth;
+                if (_curDepth < 0)
+                    _curDepth = 0;
+                _labelList[labelIndex].Depth = _curDepth;
             }
-            else if (depth < m_curDepth)
+            else if (depth < _curDepth)
             {
                 // A branch location with smaller stack targets this label. In this case, the IL is
                 // invalid, but we just compensate for it.
-                m_depthAdjustment += m_curDepth - depth;
-                m_labelList[labelIndex].m_depth = m_curDepth;
+                _depthAdjustment += _curDepth - depth;
+                _labelList[labelIndex].Depth = _curDepth;
             }
-            else if (depth > m_curDepth)
+            else if (depth > _curDepth)
             {
                 // Either the current depth is unknown, or a branch location with larger stack targets
                 // this label, so the IL is invalid. In either case, just adjust the current depth.
-                m_curDepth = depth;
+                _curDepth = depth;
             }
         }
 
@@ -1156,7 +1156,7 @@ namespace IKVM.Reflection.Emit
             // Declare a local of type "local". The current active lexical scope
             // will be the scope that local will live.
 
-            if (m_methodBuilder is not MethodBuilder methodBuilder)
+            if (_methodBuilder is not MethodBuilder methodBuilder)
                 throw new NotSupportedException();
 
             if (methodBuilder.IsTypeCreated())
@@ -1174,19 +1174,19 @@ namespace IKVM.Reflection.Emit
             }
 
             // add the localType to local signature
-            m_localSignature.AddArgument(localType, pinned);
+            LocalSignature.AddArgument(localType, pinned);
 
-            return new LocalBuilder(m_methodBuilder, localType, m_localCount++, pinned);
+            return new LocalBuilder(_methodBuilder, localType, LocalCount++, pinned);
         }
 
         public void BeginScope()
         {
-            m_ScopeTree.AddScopeInfo(ScopeAction.Open, m_length);
+            ScopeTree.AddScopeInfo(ScopeAction.Open, _length);
         }
 
         public void EndScope()
         {
-            m_ScopeTree.AddScopeInfo(ScopeAction.Close, m_length);
+            ScopeTree.AddScopeInfo(ScopeAction.Close, _length);
         }
 
         public virtual void MarkSequencePoint(
@@ -1201,10 +1201,10 @@ namespace IKVM.Reflection.Emit
                 throw new ArgumentOutOfRangeException("startLine");
             }
             Contract.EndContractBlock();
-            m_LineNumberInfo.AddLineNumberInfo(document, m_length, startLine, startColumn, endLine, endColumn);
+            LineNumberInfo.AddLineNumberInfo(document, _length, startLine, startColumn, endLine, endColumn);
         }
 
-        public int ILOffset => m_length;
+        public int ILOffset => _length;
 
         public void Emit(OpCode opcode, sbyte arg) => Emit(opcode, (byte)arg);
 
@@ -1215,16 +1215,16 @@ namespace IKVM.Reflection.Emit
 
     internal struct __LabelInfo
     {
-        internal int m_pos; // Position in the il stream, with -1 meaning unknown.
-        internal int m_depth; // Stack depth, with -1 meaning unknown.
+        internal int Pos; // Position in the il stream, with -1 meaning unknown.
+        internal int Depth; // Stack depth, with -1 meaning unknown.
     }
 
     internal struct __FixupData
     {
-        internal Label m_fixupLabel;
-        internal int m_fixupPos;
+        internal Label FixupLabel;
+        internal int FixupPos;
 
-        internal int m_fixupInstSize;
+        internal int FixupInstSize;
     }
 
     internal sealed class __ExceptionInfo
@@ -1241,33 +1241,33 @@ namespace IKVM.Reflection.Emit
         internal const int State_Fault = 4;
         internal const int State_Done = 5;
 
-        internal int m_startAddr;
-        internal int[] m_filterAddr;
-        internal int[] m_catchAddr;
-        internal int[] m_catchEndAddr;
-        internal int[] m_type;
-        internal Type[] m_catchClass;
-        internal Label m_endLabel;
-        internal Label m_finallyEndLabel;
-        internal int m_endAddr;
-        internal int m_endFinally;
-        internal int m_currentCatch;
+        int _startAddr;
+        int[] _filterAddr;
+        int[] _catchAddr;
+        int[] _catchEndAddr;
+        int[] _type;
+        Type[] _catchClass;
+        Label _endLabel;
+        internal Label FinallyEndLabel;
+        int _endAddr;
+        int _endFinally;
+        int _currentCatch;
 
-        private int m_currentState;
+        private int _currentState;
 
         internal __ExceptionInfo(int startAddr, Label endLabel)
         {
-            m_startAddr = startAddr;
-            m_endAddr = -1;
-            m_filterAddr = new int[4];
-            m_catchAddr = new int[4];
-            m_catchEndAddr = new int[4];
-            m_catchClass = new Type[4];
-            m_currentCatch = 0;
-            m_endLabel = endLabel;
-            m_type = new int[4];
-            m_endFinally = -1;
-            m_currentState = State_Try;
+            _startAddr = startAddr;
+            _endAddr = -1;
+            _filterAddr = new int[4];
+            _catchAddr = new int[4];
+            _catchEndAddr = new int[4];
+            _catchClass = new Type[4];
+            _currentCatch = 0;
+            _endLabel = endLabel;
+            _type = new int[4];
+            _endFinally = -1;
+            _currentState = State_Try;
         }
 
         private void MarkHelper(
@@ -1276,139 +1276,139 @@ namespace IKVM.Reflection.Emit
             Type? catchClass,             // catch exception type
             int type)                   // kind of clause
         {
-            int currentCatch = m_currentCatch;
-            if (currentCatch >= m_catchAddr.Length)
+            int currentCatch = _currentCatch;
+            if (currentCatch >= _catchAddr.Length)
             {
-                m_filterAddr = ILGenerator.EnlargeArray(m_filterAddr);
-                m_catchAddr = ILGenerator.EnlargeArray(m_catchAddr);
-                m_catchEndAddr = ILGenerator.EnlargeArray(m_catchEndAddr);
-                m_catchClass = ILGenerator.EnlargeArray(m_catchClass);
-                m_type = ILGenerator.EnlargeArray(m_type);
+                _filterAddr = ILGenerator.EnlargeArray(_filterAddr);
+                _catchAddr = ILGenerator.EnlargeArray(_catchAddr);
+                _catchEndAddr = ILGenerator.EnlargeArray(_catchEndAddr);
+                _catchClass = ILGenerator.EnlargeArray(_catchClass);
+                _type = ILGenerator.EnlargeArray(_type);
             }
             if (type == Filter)
             {
-                m_type[currentCatch] = type;
-                m_filterAddr[currentCatch] = catchorfilterAddr;
-                m_catchAddr[currentCatch] = -1;
+                _type[currentCatch] = type;
+                _filterAddr[currentCatch] = catchorfilterAddr;
+                _catchAddr[currentCatch] = -1;
                 if (currentCatch > 0)
                 {
-                    Debug.Assert(m_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-                    m_catchEndAddr[currentCatch - 1] = catchorfilterAddr;
+                    Debug.Assert(_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+                    _catchEndAddr[currentCatch - 1] = catchorfilterAddr;
                 }
             }
             else
             {
                 // catch or Fault clause
-                m_catchClass[currentCatch] = catchClass!;
-                if (m_type[currentCatch] != Filter)
+                _catchClass[currentCatch] = catchClass!;
+                if (_type[currentCatch] != Filter)
                 {
-                    m_type[currentCatch] = type;
+                    _type[currentCatch] = type;
                 }
-                m_catchAddr[currentCatch] = catchorfilterAddr;
+                _catchAddr[currentCatch] = catchorfilterAddr;
                 if (currentCatch > 0)
                 {
-                    if (m_type[currentCatch] != Filter)
+                    if (_type[currentCatch] != Filter)
                     {
-                        Debug.Assert(m_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-                        m_catchEndAddr[currentCatch - 1] = catchEndAddr;
+                        Debug.Assert(_catchEndAddr[currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+                        _catchEndAddr[currentCatch - 1] = catchEndAddr;
                     }
                 }
-                m_catchEndAddr[currentCatch] = -1;
-                m_currentCatch++;
+                _catchEndAddr[currentCatch] = -1;
+                _currentCatch++;
             }
 
-            if (m_endAddr == -1)
+            if (_endAddr == -1)
             {
-                m_endAddr = catchorfilterAddr;
+                _endAddr = catchorfilterAddr;
             }
         }
 
         internal void MarkFaultAddr(int faultAddr)
         {
-            m_currentState = State_Fault;
+            _currentState = State_Fault;
             MarkHelper(faultAddr, faultAddr, null, Fault);
         }
 
         internal void MarkCatchAddr(int catchAddr, Type? catchException)
         {
-            m_currentState = State_Catch;
+            _currentState = State_Catch;
             MarkHelper(catchAddr, catchAddr, catchException, None);
         }
 
         internal void MarkFinallyAddr(int finallyAddr, int endCatchAddr)
         {
-            if (m_endFinally != -1)
+            if (_endFinally != -1)
             {
                 throw new ArgumentException("Exception blocks may have at most one finally clause.");
             }
 
-            m_currentState = State_Finally;
-            m_endFinally = finallyAddr;
+            _currentState = State_Finally;
+            _endFinally = finallyAddr;
             MarkHelper(finallyAddr, endCatchAddr, null, Finally);
         }
 
         internal void Done(int endAddr)
         {
-            Debug.Assert(m_currentCatch > 0, "m_currentCatch > 0");
-            Debug.Assert(m_catchAddr[m_currentCatch - 1] > 0, "m_catchAddr[m_currentCatch-1] > 0");
-            Debug.Assert(m_catchEndAddr[m_currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
-            m_catchEndAddr[m_currentCatch - 1] = endAddr;
-            m_currentState = State_Done;
+            Debug.Assert(_currentCatch > 0, "m_currentCatch > 0");
+            Debug.Assert(_catchAddr[_currentCatch - 1] > 0, "m_catchAddr[m_currentCatch-1] > 0");
+            Debug.Assert(_catchEndAddr[_currentCatch - 1] == -1, "m_catchEndAddr[m_currentCatch-1] == -1");
+            _catchEndAddr[_currentCatch - 1] = endAddr;
+            _currentState = State_Done;
         }
 
         internal int GetStartAddress()
         {
-            return m_startAddr;
+            return _startAddr;
         }
 
         internal int GetEndAddress()
         {
-            return m_endAddr;
+            return _endAddr;
         }
 
         internal int GetFinallyEndAddress()
         {
-            return m_endFinally;
+            return _endFinally;
         }
 
         internal Label GetEndLabel()
         {
-            return m_endLabel;
+            return _endLabel;
         }
 
         internal int[] GetFilterAddresses()
         {
-            return m_filterAddr;
+            return _filterAddr;
         }
 
         internal int[] GetCatchAddresses()
         {
-            return m_catchAddr;
+            return _catchAddr;
         }
 
         internal int[] GetCatchEndAddresses()
         {
-            return m_catchEndAddr;
+            return _catchEndAddr;
         }
 
         internal Type[] GetCatchClass()
         {
-            return m_catchClass;
+            return _catchClass;
         }
 
         internal int GetNumberOfCatches()
         {
-            return m_currentCatch;
+            return _currentCatch;
         }
 
         internal int[] GetExceptionTypes()
         {
-            return m_type;
+            return _type;
         }
 
         internal void SetFinallyEndLabel(Label lbl)
         {
-            m_finallyEndLabel = lbl;
+            FinallyEndLabel = lbl;
         }
 
         // Specifies whether exc is an inner exception for "this".  The way
@@ -1422,16 +1422,16 @@ namespace IKVM.Reflection.Emit
         internal bool IsInner(__ExceptionInfo exc)
         {
             Debug.Assert(exc != null);
-            Debug.Assert(m_currentCatch > 0, "m_currentCatch > 0");
-            Debug.Assert(exc.m_currentCatch > 0, "exc.m_currentCatch > 0");
+            Debug.Assert(_currentCatch > 0, "m_currentCatch > 0");
+            Debug.Assert(exc._currentCatch > 0, "exc.m_currentCatch > 0");
 
-            int exclast = exc.m_currentCatch - 1;
-            int last = m_currentCatch - 1;
+            int exclast = exc._currentCatch - 1;
+            int last = _currentCatch - 1;
 
-            if (exc.m_catchEndAddr[exclast] < m_catchEndAddr[last])
+            if (exc._catchEndAddr[exclast] < _catchEndAddr[last])
                 return true;
 
-            if (exc.m_catchEndAddr[exclast] != m_catchEndAddr[last])
+            if (exc._catchEndAddr[exclast] != _catchEndAddr[last])
                 return false;
             Debug.Assert(exc.GetEndAddress() != GetEndAddress(),
                 "exc.GetEndAddress() != GetEndAddress()");
@@ -1446,7 +1446,7 @@ namespace IKVM.Reflection.Emit
         // 4 indicates Done
         internal int GetCurrentState()
         {
-            return m_currentState;
+            return _currentState;
         }
     }
 
@@ -1467,8 +1467,8 @@ namespace IKVM.Reflection.Emit
         internal ScopeTree()
         {
             // initialize data variables
-            m_iOpenScopeCount = 0;
-            m_iCount = 0;
+            OpenScopeCount = 0;
+            _count = 0;
         }
 
         /// <summary>
@@ -1478,16 +1478,16 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         internal int GetCurrentActiveScopeIndex()
         {
-            if (m_iCount == 0)
+            if (_count == 0)
             {
                 return -1;
             }
 
-            int i = m_iCount - 1;
+            int i = _count - 1;
 
-            for (int cClose = 0; cClose > 0 || m_ScopeActions[i] == ScopeAction.Close; i--)
+            for (int cClose = 0; cClose > 0 || _scopeActions[i] == ScopeAction.Close; i--)
             {
-                cClose += (sbyte)m_ScopeActions[i];
+                cClose += (sbyte)_scopeActions[i];
             }
 
             return i;
@@ -1501,13 +1501,13 @@ namespace IKVM.Reflection.Emit
             int endOffset)
         {
             int i = GetCurrentActiveScopeIndex();
-            m_localSymInfos[i] ??= new LocalSymInfo();
-            m_localSymInfos[i]!.AddLocalSymInfo(strName, signature, slot, startOffset, endOffset);
+            _localSymInfos[i] ??= new LocalSymInfo();
+            _localSymInfos[i]!.AddLocalSymInfo(strName, signature, slot, startOffset, endOffset);
         }
 
         internal void AddScopeInfo(ScopeAction sa, int iOffset)
         {
-            if (sa == ScopeAction.Close && m_iOpenScopeCount <= 0)
+            if (sa == ScopeAction.Close && OpenScopeCount <= 0)
             {
                 throw new ArgumentException("Non-matching symbol scope.");
             }
@@ -1515,12 +1515,12 @@ namespace IKVM.Reflection.Emit
             // make sure that arrays are large enough to hold addition info
             EnsureCapacity();
 
-            m_ScopeActions[m_iCount] = sa;
-            m_iOffsets[m_iCount] = iOffset;
-            m_localSymInfos[m_iCount] = null;
-            checked { m_iCount++; }
+            _scopeActions[_count] = sa;
+            _offsets[_count] = iOffset;
+            _localSymInfos[_count] = null;
+            checked { _count++; }
 
-            m_iOpenScopeCount += -(sbyte)sa;
+            OpenScopeCount += -(sbyte)sa;
         }
 
         /// <summary>
@@ -1528,57 +1528,57 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         internal void EnsureCapacity()
         {
-            if (m_iCount == 0)
+            if (_count == 0)
             {
                 // First time. Allocate the arrays.
-                m_iOffsets = new int[InitialSize];
-                m_ScopeActions = new ScopeAction[InitialSize];
-                m_localSymInfos = new LocalSymInfo[InitialSize];
+                _offsets = new int[InitialSize];
+                _scopeActions = new ScopeAction[InitialSize];
+                _localSymInfos = new LocalSymInfo[InitialSize];
             }
-            else if (m_iCount == m_iOffsets.Length)
+            else if (_count == _offsets.Length)
             {
                 // the arrays are full. Enlarge the arrays
                 // It would probably be simpler to just use Lists here.
-                int newSize = checked(m_iCount * 2);
+                int newSize = checked(_count * 2);
                 int[] temp = new int[newSize];
-                Array.Copy(m_iOffsets, temp, m_iCount);
-                m_iOffsets = temp;
+                Array.Copy(_offsets, temp, _count);
+                _offsets = temp;
 
                 ScopeAction[] tempSA = new ScopeAction[newSize];
-                Array.Copy(m_ScopeActions, tempSA, m_iCount);
-                m_ScopeActions = tempSA;
+                Array.Copy(_scopeActions, tempSA, _count);
+                _scopeActions = tempSA;
 
                 LocalSymInfo[] tempLSI = new LocalSymInfo[newSize];
-                Array.Copy(m_localSymInfos, tempLSI, m_iCount);
-                m_localSymInfos = tempLSI;
+                Array.Copy(_localSymInfos, tempLSI, _count);
+                _localSymInfos = tempLSI;
             }
         }
         internal void EmitScopeTree(ISymbolWriter symWriter)
         {
             int i;
-            for (i = 0; i < m_iCount; i++)
+            for (i = 0; i < _count; i++)
             {
-                if (m_ScopeActions != null && m_ScopeActions[i] == ScopeAction.Open)
+                if (_scopeActions != null && _scopeActions[i] == ScopeAction.Open)
                 {
-                    symWriter.OpenScope(m_iOffsets[i]);
+                    symWriter.OpenScope(_offsets[i]);
                 }
                 else
                 {
-                    symWriter.CloseScope(m_iOffsets[i]);
+                    symWriter.CloseScope(_offsets[i]);
                 }
-                if (m_localSymInfos != null && m_localSymInfos[i] != null)
+                if (_localSymInfos != null && _localSymInfos[i] != null)
                 {
-                    m_localSymInfos[i]!.EmitLocalSymInfo(symWriter);
+                    _localSymInfos[i]!.EmitLocalSymInfo(symWriter);
                 }
             }
         }
 
-        internal int[] m_iOffsets = null!;                 // array of offsets
-        internal ScopeAction[] m_ScopeActions = null!;             // array of scope actions
-        internal int m_iCount;                   // how many entries in the arrays are occupied
-        internal int m_iOpenScopeCount;          // keep track how many scopes are open
+        int[] _offsets = null!;                 // array of offsets
+        ScopeAction[] _scopeActions = null!;             // array of scope actions
+        int _count;                   // how many entries in the arrays are occupied
+        internal int OpenScopeCount;          // keep track how many scopes are open
         internal const int InitialSize = 16;
-        internal LocalSymInfo?[] m_localSymInfos = null!;            // keep track debugging local information
+        LocalSymInfo?[] _localSymInfos = null!;            // keep track debugging local information
     }
 
     /***************************
@@ -1591,8 +1591,8 @@ namespace IKVM.Reflection.Emit
         internal LineNumberInfo()
         {
             // initialize data variables
-            m_DocumentCount = 0;
-            m_iLastFound = 0;
+            _documentCount = 0;
+            _lastFound = 0;
         }
 
         internal void AddLineNumberInfo(
@@ -1608,8 +1608,8 @@ namespace IKVM.Reflection.Emit
             // make sure that arrays are large enough to hold addition info
             i = FindDocument(document);
 
-            Contract.Assert(i < m_DocumentCount, "Bad document look up!");
-            m_Documents[i].AddLineNumberInfo(document, iOffset, iStartLine, iStartColumn, iEndLine, iEndColumn);
+            Contract.Assert(i < _documentCount, "Bad document look up!");
+            _documents[i].AddLineNumberInfo(document, iOffset, iStartLine, iStartColumn, iEndLine, iEndColumn);
         }
 
         // Find a REDocument representing document. If we cannot find one, we will add a new entry into
@@ -1620,24 +1620,24 @@ namespace IKVM.Reflection.Emit
 
             // This is an optimization. The chance that the previous line is coming from the same
             // document is very high.
-            if (m_iLastFound < m_DocumentCount && m_Documents[m_iLastFound].m_document == document)
-                return m_iLastFound;
+            if (_lastFound < _documentCount && _documents[_lastFound].Document == document)
+                return _lastFound;
 
-            for (i = 0; i < m_DocumentCount; i++)
+            for (i = 0; i < _documentCount; i++)
             {
-                if (m_Documents[i].m_document == document)
+                if (_documents[i].Document == document)
                 {
-                    m_iLastFound = i;
-                    return m_iLastFound;
+                    _lastFound = i;
+                    return _lastFound;
                 }
             }
 
             // cannot find an existing document so add one to the array                                       
             EnsureCapacity();
-            m_iLastFound = m_DocumentCount;
-            m_Documents[m_iLastFound] = new REDocument(document);
-            checked { m_DocumentCount++; }
-            return m_iLastFound;
+            _lastFound = _documentCount;
+            _documents[_lastFound] = new REDocument(document);
+            checked { _documentCount++; }
+            return _lastFound;
         }
 
         /**************************
@@ -1647,30 +1647,30 @@ namespace IKVM.Reflection.Emit
         **************************/
         private void EnsureCapacity()
         {
-            if (m_DocumentCount == 0)
+            if (_documentCount == 0)
             {
                 // First time. Allocate the arrays.
-                m_Documents = new REDocument[InitialSize];
+                _documents = new REDocument[InitialSize];
             }
-            else if (m_DocumentCount == m_Documents.Length)
+            else if (_documentCount == _documents.Length)
             {
                 // the arrays are full. Enlarge the arrays
-                REDocument[] temp = new REDocument[m_DocumentCount * 2];
-                Array.Copy(m_Documents, temp, m_DocumentCount);
-                m_Documents = temp;
+                REDocument[] temp = new REDocument[_documentCount * 2];
+                Array.Copy(_documents, temp, _documentCount);
+                _documents = temp;
             }
         }
 
         internal void EmitLineNumberInfo(ISymbolWriter symWriter)
         {
-            for (int i = 0; i < m_DocumentCount; i++)
-                m_Documents[i].EmitLineNumberInfo(symWriter);
+            for (int i = 0; i < _documentCount; i++)
+                _documents[i].EmitLineNumberInfo(symWriter);
         }
 
-        private int m_DocumentCount;         // how many documents that we have right now
-        private REDocument[] m_Documents;             // array of documents
+        private int _documentCount;         // how many documents that we have right now
+        private REDocument[] _documents;             // array of documents
         private const int InitialSize = 16;
-        private int m_iLastFound;
+        private int _lastFound;
     }
 
     /***************************
@@ -1683,8 +1683,8 @@ namespace IKVM.Reflection.Emit
         internal REDocument(ISymbolDocumentWriter document)
         {
             // initialize data variables
-            m_iLineNumberCount = 0;
-            m_document = document;
+            _lineNumberCount = 0;
+            Document = document;
         }
 
         internal void AddLineNumberInfo(
@@ -1695,17 +1695,17 @@ namespace IKVM.Reflection.Emit
             int iEndLine,
             int iEndColumn)
         {
-            Contract.Assert(document == m_document, "Bad document look up!");
+            Contract.Assert(document == Document, "Bad document look up!");
 
             // make sure that arrays are large enough to hold addition info
             EnsureCapacity();
 
-            m_iOffsets[m_iLineNumberCount] = iOffset;
-            m_iLines[m_iLineNumberCount] = iStartLine;
-            m_iColumns[m_iLineNumberCount] = iStartColumn;
-            m_iEndLines[m_iLineNumberCount] = iEndLine;
-            m_iEndColumns[m_iLineNumberCount] = iEndColumn;
-            checked { m_iLineNumberCount++; }
+            _offsets[_lineNumberCount] = iOffset;
+            _lines[_lineNumberCount] = iStartLine;
+            _columns[_lineNumberCount] = iStartColumn;
+            _endLines[_lineNumberCount] = iEndLine;
+            _endColumns[_lineNumberCount] = iEndColumn;
+            checked { _lineNumberCount++; }
         }
 
         /**************************
@@ -1715,39 +1715,39 @@ namespace IKVM.Reflection.Emit
         **************************/
         private void EnsureCapacity()
         {
-            if (m_iLineNumberCount == 0)
+            if (_lineNumberCount == 0)
             {
                 // First time. Allocate the arrays.
-                m_iOffsets = new int[InitialSize];
-                m_iLines = new int[InitialSize];
-                m_iColumns = new int[InitialSize];
-                m_iEndLines = new int[InitialSize];
-                m_iEndColumns = new int[InitialSize];
+                _offsets = new int[InitialSize];
+                _lines = new int[InitialSize];
+                _columns = new int[InitialSize];
+                _endLines = new int[InitialSize];
+                _endColumns = new int[InitialSize];
             }
-            else if (m_iLineNumberCount == m_iOffsets.Length)
+            else if (_lineNumberCount == _offsets.Length)
             {
                 // the arrays are full. Enlarge the arrays
                 // It would probably be simpler to just use Lists here
-                int newSize = checked(m_iLineNumberCount * 2);
+                int newSize = checked(_lineNumberCount * 2);
                 int[] temp = new int[newSize];
-                Array.Copy(m_iOffsets, temp, m_iLineNumberCount);
-                m_iOffsets = temp;
+                Array.Copy(_offsets, temp, _lineNumberCount);
+                _offsets = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iLines, temp, m_iLineNumberCount);
-                m_iLines = temp;
+                Array.Copy(_lines, temp, _lineNumberCount);
+                _lines = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iColumns, temp, m_iLineNumberCount);
-                m_iColumns = temp;
+                Array.Copy(_columns, temp, _lineNumberCount);
+                _columns = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndLines, temp, m_iLineNumberCount);
-                m_iEndLines = temp;
+                Array.Copy(_endLines, temp, _lineNumberCount);
+                _endLines = temp;
 
                 temp = new int[newSize];
-                Array.Copy(m_iEndColumns, temp, m_iLineNumberCount);
-                m_iEndColumns = temp;
+                Array.Copy(_endColumns, temp, _lineNumberCount);
+                _endColumns = temp;
             }
         }
 
@@ -1759,34 +1759,34 @@ namespace IKVM.Reflection.Emit
             int[] iEndLinesTemp;
             int[] iEndColumnsTemp;
 
-            if (m_iLineNumberCount == 0)
+            if (_lineNumberCount == 0)
                 return;
             // reduce the array size to be exact
-            iOffsetsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iOffsets, iOffsetsTemp, m_iLineNumberCount);
+            iOffsetsTemp = new int[_lineNumberCount];
+            Array.Copy(_offsets, iOffsetsTemp, _lineNumberCount);
 
-            iLinesTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iLines, iLinesTemp, m_iLineNumberCount);
+            iLinesTemp = new int[_lineNumberCount];
+            Array.Copy(_lines, iLinesTemp, _lineNumberCount);
 
-            iColumnsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iColumns, iColumnsTemp, m_iLineNumberCount);
+            iColumnsTemp = new int[_lineNumberCount];
+            Array.Copy(_columns, iColumnsTemp, _lineNumberCount);
 
-            iEndLinesTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iEndLines, iEndLinesTemp, m_iLineNumberCount);
+            iEndLinesTemp = new int[_lineNumberCount];
+            Array.Copy(_endLines, iEndLinesTemp, _lineNumberCount);
 
-            iEndColumnsTemp = new int[m_iLineNumberCount];
-            Array.Copy(m_iEndColumns, iEndColumnsTemp, m_iLineNumberCount);
+            iEndColumnsTemp = new int[_lineNumberCount];
+            Array.Copy(_endColumns, iEndColumnsTemp, _lineNumberCount);
 
-            symWriter.DefineSequencePoints(m_document, iOffsetsTemp, iLinesTemp, iColumnsTemp, iEndLinesTemp, iEndColumnsTemp);
+            symWriter.DefineSequencePoints(Document, iOffsetsTemp, iLinesTemp, iColumnsTemp, iEndLinesTemp, iEndColumnsTemp);
         }
 
-        private int[] m_iOffsets;                 // array of offsets
-        private int[] m_iLines;                   // array of offsets
-        private int[] m_iColumns;                 // array of offsets
-        private int[] m_iEndLines;                // array of offsets
-        private int[] m_iEndColumns;              // array of offsets
-        internal ISymbolDocumentWriter m_document;       // The ISymbolDocumentWriter that this REDocument is tracking.
-        private int m_iLineNumberCount;         // how many entries in the arrays are occupied
+        private int[] _offsets;                 // array of offsets
+        private int[] _lines;                   // array of offsets
+        private int[] _columns;                 // array of offsets
+        private int[] _endLines;                // array of offsets
+        private int[] _endColumns;              // array of offsets
+        internal ISymbolDocumentWriter Document;       // The ISymbolDocumentWriter that this REDocument is tracking.
+        private int _lineNumberCount;         // how many entries in the arrays are occupied
         private const int InitialSize = 16;
     }       // end of REDocument
 

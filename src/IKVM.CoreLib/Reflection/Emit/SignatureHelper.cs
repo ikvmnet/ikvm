@@ -40,7 +40,7 @@ namespace IKVM.Reflection.Emit
         sealed class Lazy : SignatureHelper
         {
 
-            readonly List<Type> args = new List<Type>();
+            readonly List<Type> _args = new List<Type>();
 
             /// <summary>
             /// Initializes a new instance.
@@ -59,27 +59,27 @@ namespace IKVM.Reflection.Emit
             internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
                 var bb = new BlobBuilder(16);
-                Signature.WriteSignatureHelper(module, bb, type, argumentCount, args);
+                Signature.WriteSignatureHelper(module, bb, type, argumentCount, _args);
                 return bb;
             }
 
             public override void AddSentinel()
             {
-                args.Add(MarkerType.Sentinel);
+                _args.Add(MarkerType.Sentinel);
             }
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
                 if (pinned)
-                    args.Add(MarkerType.Pinned);
+                    _args.Add(MarkerType.Pinned);
 
                 foreach (var mod in customModifiers)
                 {
-                    args.Add(mod.IsRequired ? MarkerType.ModReq : MarkerType.ModOpt);
-                    args.Add(mod.Type);
+                    _args.Add(mod.IsRequired ? MarkerType.ModReq : MarkerType.ModOpt);
+                    _args.Add(mod.Type);
                 }
 
-                args.Add(argument);
+                _args.Add(argument);
                 argumentCount++;
             }
 
@@ -88,9 +88,9 @@ namespace IKVM.Reflection.Emit
         sealed class Eager : SignatureHelper
         {
 
-            readonly ModuleBuilder module;
-            readonly BlobBuilder arguments = new BlobBuilder(16);
-            readonly Type returnType;
+            readonly ModuleBuilder _module;
+            readonly BlobBuilder _arguments = new BlobBuilder(16);
+            readonly Type _returnType;
 
             /// <summary>
             /// Initializes a new instance.
@@ -101,8 +101,8 @@ namespace IKVM.Reflection.Emit
             internal Eager(ModuleBuilder module, byte type, Type returnType) :
                 base(type)
             {
-                this.module = module;
-                this.returnType = returnType;
+                this._module = module;
+                this._returnType = returnType;
             }
 
             public override byte[] GetSignature()
@@ -113,32 +113,32 @@ namespace IKVM.Reflection.Emit
             internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
                 // the argument count precedes the arguments but is only known once they have all been added
-                var bb = new BlobBuilder(16 + arguments.Count);
+                var bb = new BlobBuilder(16 + _arguments.Count);
                 bb.WriteByte(type);
                 if (type != Signature.FIELD)
                     bb.WriteCompressedInteger(argumentCount);
 
-                arguments.WriteContentTo(bb);
+                _arguments.WriteContentTo(bb);
                 return bb;
             }
 
             public override void AddSentinel()
             {
-                arguments.WriteByte(Signature.SENTINEL);
+                _arguments.WriteByte(Signature.SENTINEL);
             }
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
                 if (pinned)
-                    arguments.WriteByte(Signature.ELEMENT_TYPE_PINNED);
+                    _arguments.WriteByte(Signature.ELEMENT_TYPE_PINNED);
 
                 foreach (var mod in customModifiers)
                 {
-                    arguments.WriteByte(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
-                    Signature.WriteTypeSpec(module, arguments, mod.Type);
+                    _arguments.WriteByte(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
+                    Signature.WriteTypeSpec(_module, _arguments, mod.Type);
                 }
 
-                Signature.WriteTypeSpec(module, arguments, argument ?? module.Universe.System_Void);
+                Signature.WriteTypeSpec(_module, _arguments, argument ?? _module.Universe.System_Void);
                 argumentCount++;
             }
         }

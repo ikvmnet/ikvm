@@ -32,15 +32,15 @@ namespace IKVM.Reflection.Emit
     internal sealed class PropertyBuilder : PropertyInfo
     {
 
-        readonly TypeBuilder typeBuilder;
-        readonly string name;
-        PropertyAttributes attributes;
-        PropertySignature sig;
-        MethodBuilder getter;
-        MethodBuilder setter;
-        readonly List<Accessor> accessors = new List<Accessor>();
-        int lazyPseudoToken;
-        bool patchCallingConvention;
+        readonly TypeBuilder _typeBuilder;
+        readonly string _name;
+        PropertyAttributes _attributes;
+        PropertySignature _sig;
+        MethodBuilder _getter;
+        MethodBuilder _setter;
+        readonly List<Accessor> _accessors = new List<Accessor>();
+        int _lazyPseudoToken;
+        bool _patchCallingConvention;
 
         struct Accessor
         {
@@ -60,88 +60,88 @@ namespace IKVM.Reflection.Emit
         /// <param name="patchCallingConvention"></param>
         internal PropertyBuilder(TypeBuilder typeBuilder, string name, PropertyAttributes attributes, PropertySignature sig, bool patchCallingConvention)
         {
-            this.typeBuilder = typeBuilder;
-            this.name = name;
-            this.attributes = attributes;
-            this.sig = sig;
-            this.patchCallingConvention = patchCallingConvention;
+            this._typeBuilder = typeBuilder;
+            this._name = name;
+            this._attributes = attributes;
+            this._sig = sig;
+            this._patchCallingConvention = patchCallingConvention;
         }
 
         internal override PropertySignature PropertySignature
         {
-            get { return sig; }
+            get { return _sig; }
         }
 
         public void SetGetMethod(MethodBuilder mdBuilder)
         {
-            getter = mdBuilder;
+            _getter = mdBuilder;
             Accessor acc;
             acc.Semantics = (short)System.Reflection.MethodSemanticsAttributes.Getter;
             acc.Method = mdBuilder;
-            accessors.Add(acc);
+            _accessors.Add(acc);
         }
 
         public void SetSetMethod(MethodBuilder mdBuilder)
         {
-            setter = mdBuilder;
+            _setter = mdBuilder;
             Accessor acc;
             acc.Semantics = (short)System.Reflection.MethodSemanticsAttributes.Setter;
             acc.Method = mdBuilder;
-            accessors.Add(acc);
+            _accessors.Add(acc);
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             if (customBuilder.KnownCA == KnownCA.SpecialNameAttribute)
             {
-                attributes |= PropertyAttributes.SpecialName;
+                _attributes |= PropertyAttributes.SpecialName;
             }
             else
             {
-                if (lazyPseudoToken == 0)
-                    lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
+                if (_lazyPseudoToken == 0)
+                    _lazyPseudoToken = _typeBuilder.ModuleBuilder.AllocPseudoToken();
 
-                typeBuilder.ModuleBuilder.SetCustomAttribute(lazyPseudoToken, customBuilder);
+                _typeBuilder.ModuleBuilder.SetCustomAttribute(_lazyPseudoToken, customBuilder);
             }
         }
 
         public override object GetRawConstantValue()
         {
-            if (lazyPseudoToken != 0)
-                return typeBuilder.ModuleBuilder.GetConstant(lazyPseudoToken);
+            if (_lazyPseudoToken != 0)
+                return _typeBuilder.ModuleBuilder.GetConstant(_lazyPseudoToken);
 
             throw new InvalidOperationException();
         }
 
         public override PropertyAttributes Attributes
         {
-            get { return attributes; }
+            get { return _attributes; }
         }
 
         public override bool CanRead
         {
-            get { return getter != null; }
+            get { return _getter != null; }
         }
 
         public override bool CanWrite
         {
-            get { return setter != null; }
+            get { return _setter != null; }
         }
 
         public override MethodInfo GetGetMethod(bool nonPublic)
         {
-            return nonPublic || (getter != null && getter.IsPublic) ? getter : null;
+            return nonPublic || (_getter != null && _getter.IsPublic) ? _getter : null;
         }
 
         public override MethodInfo GetSetMethod(bool nonPublic)
         {
-            return nonPublic || (setter != null && setter.IsPublic) ? setter : null;
+            return nonPublic || (_setter != null && _setter.IsPublic) ? _setter : null;
         }
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
             var list = new List<MethodInfo>();
-            foreach (var acc in accessors)
+            foreach (var acc in _accessors)
                 AddAccessor(list, nonPublic, acc.Method);
 
             return list.ToArray();
@@ -155,40 +155,40 @@ namespace IKVM.Reflection.Emit
 
         public override Type DeclaringType
         {
-            get { return typeBuilder; }
+            get { return _typeBuilder; }
         }
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override Module Module
         {
-            get { return typeBuilder.Module; }
+            get { return _typeBuilder.Module; }
         }
 
         internal void Bake()
         {
-            if (patchCallingConvention)
-                sig.HasThis = !this.IsStatic;
+            if (_patchCallingConvention)
+                _sig.HasThis = !this.IsStatic;
 
-            var token = typeBuilder.ModuleBuilder.AddProperty(attributes, name, sig);
+            var token = _typeBuilder.ModuleBuilder.AddProperty(_attributes, _name, _sig);
 
-            if (lazyPseudoToken == 0)
-                lazyPseudoToken = token;
+            if (_lazyPseudoToken == 0)
+                _lazyPseudoToken = token;
             else
-                typeBuilder.ModuleBuilder.RegisterTokenFixup(lazyPseudoToken, token);
+                _typeBuilder.ModuleBuilder.RegisterTokenFixup(_lazyPseudoToken, token);
 
-            foreach (var acc in accessors)
-                typeBuilder.ModuleBuilder.AddMethodSemantics(acc.Semantics, acc.Method.MetadataToken, token);
+            foreach (var acc in _accessors)
+                _typeBuilder.ModuleBuilder.AddMethodSemantics(acc.Semantics, acc.Method.MetadataToken, token);
         }
 
         internal override bool IsPublic
         {
             get
             {
-                foreach (var acc in accessors)
+                foreach (var acc in _accessors)
                     if (acc.Method.IsPublic)
                         return true;
 
@@ -200,7 +200,7 @@ namespace IKVM.Reflection.Emit
         {
             get
             {
-                foreach (var acc in accessors)
+                foreach (var acc in _accessors)
                     if ((acc.Method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private)
                         return true;
 
@@ -212,7 +212,7 @@ namespace IKVM.Reflection.Emit
         {
             get
             {
-                foreach (var acc in accessors)
+                foreach (var acc in _accessors)
                     if (acc.Method.IsStatic)
                         return true;
 
@@ -222,23 +222,23 @@ namespace IKVM.Reflection.Emit
 
         internal override bool IsBaked
         {
-            get { return typeBuilder.IsBaked; }
+            get { return _typeBuilder.IsBaked; }
         }
 
         internal override int GetCurrentToken()
         {
-            if (typeBuilder.ModuleBuilder.IsSaved && ModuleBuilder.IsPseudoToken(lazyPseudoToken))
-                return typeBuilder.ModuleBuilder.ResolvePseudoToken(lazyPseudoToken);
+            if (_typeBuilder.ModuleBuilder.IsSaved && ModuleBuilder.IsPseudoToken(_lazyPseudoToken))
+                return _typeBuilder.ModuleBuilder.ResolvePseudoToken(_lazyPseudoToken);
             else
-                return lazyPseudoToken;
+                return _lazyPseudoToken;
         }
 
         public override int MetadataToken
         {
             get
             {
-                if (lazyPseudoToken == 0)
-                    lazyPseudoToken = typeBuilder.ModuleBuilder.AllocPseudoToken();
+                if (_lazyPseudoToken == 0)
+                    _lazyPseudoToken = _typeBuilder.ModuleBuilder.AllocPseudoToken();
 
                 return GetCurrentToken();
             }

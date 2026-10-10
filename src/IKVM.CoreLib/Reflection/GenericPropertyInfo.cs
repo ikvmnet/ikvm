@@ -27,8 +27,8 @@ namespace IKVM.Reflection
     sealed class GenericPropertyInfo : PropertyInfo
     {
 
-        readonly Type typeInstance;
-        readonly PropertyInfo property;
+        readonly Type _typeInstance;
+        readonly PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -37,34 +37,34 @@ namespace IKVM.Reflection
         /// <param name="property"></param>
         internal GenericPropertyInfo(Type typeInstance, PropertyInfo property)
         {
-            this.typeInstance = typeInstance;
-            this.property = property;
+            this._typeInstance = typeInstance;
+            this._property = property;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as GenericPropertyInfo;
-            return other != null && other.typeInstance == typeInstance && other.property == property;
+            return other != null && other._typeInstance == _typeInstance && other._property == _property;
         }
 
         public override int GetHashCode()
         {
-            return typeInstance.GetHashCode() * 537 + property.GetHashCode();
+            return _typeInstance.GetHashCode() * 537 + _property.GetHashCode();
         }
 
         public override PropertyAttributes Attributes
         {
-            get { return property.Attributes; }
+            get { return _property.Attributes; }
         }
 
         public override bool CanRead
         {
-            get { return property.CanRead; }
+            get { return _property.CanRead; }
         }
 
         public override bool CanWrite
         {
-            get { return property.CanWrite; }
+            get { return _property.CanWrite; }
         }
 
         private MethodInfo Wrap(MethodInfo method)
@@ -72,22 +72,22 @@ namespace IKVM.Reflection
             if (method == null)
                 return null;
 
-            return new GenericMethodInstance(typeInstance, method, null);
+            return new GenericMethodInstance(_typeInstance, method, null);
         }
 
         public override MethodInfo GetGetMethod(bool nonPublic)
         {
-            return Wrap(property.GetGetMethod(nonPublic));
+            return Wrap(_property.GetGetMethod(nonPublic));
         }
 
         public override MethodInfo GetSetMethod(bool nonPublic)
         {
-            return Wrap(property.GetSetMethod(nonPublic));
+            return Wrap(_property.GetSetMethod(nonPublic));
         }
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            var accessors = property.GetAccessors(nonPublic);
+            var accessors = _property.GetAccessors(nonPublic);
             for (int i = 0; i < accessors.Length; i++)
                 accessors[i] = Wrap(accessors[i]);
 
@@ -96,62 +96,62 @@ namespace IKVM.Reflection
 
         public override object GetRawConstantValue()
         {
-            return property.GetRawConstantValue();
+            return _property.GetRawConstantValue();
         }
 
         internal override bool IsPublic
         {
-            get { return property.IsPublic; }
+            get { return _property.IsPublic; }
         }
 
         internal override bool IsNonPrivate
         {
-            get { return property.IsNonPrivate; }
+            get { return _property.IsNonPrivate; }
         }
 
         internal override bool IsStatic
         {
-            get { return property.IsStatic; }
+            get { return _property.IsStatic; }
         }
 
         internal override PropertySignature PropertySignature
         {
-            get { return property.PropertySignature.ExpandTypeParameters(typeInstance); }
+            get { return _property.PropertySignature.ExpandTypeParameters(_typeInstance); }
         }
 
         public override string Name
         {
-            get { return property.Name; }
+            get { return _property.Name; }
         }
 
         public override Type DeclaringType
         {
-            get { return typeInstance; }
+            get { return _typeInstance; }
         }
 
         public override Module Module
         {
-            get { return typeInstance.Module; }
+            get { return _typeInstance.Module; }
         }
 
         public override int MetadataToken
         {
-            get { return property.MetadataToken; }
+            get { return _property.MetadataToken; }
         }
 
         internal override PropertyInfo BindTypeParameters(Type type)
         {
-            return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
+            return new GenericPropertyInfo(_typeInstance.BindTypeParameters(type), _property);
         }
 
         internal override bool IsBaked
         {
-            get { return property.IsBaked; }
+            get { return _property.IsBaked; }
         }
 
         internal override int GetCurrentToken()
         {
-            return property.GetCurrentToken();
+            return _property.GetCurrentToken();
         }
 
     }

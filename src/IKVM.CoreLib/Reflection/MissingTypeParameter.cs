@@ -27,8 +27,8 @@ namespace IKVM.Reflection
     sealed class MissingTypeParameter : IKVM.Reflection.Reader.TypeParameterType
     {
 
-        readonly MemberInfo owner;
-        readonly int index;
+        readonly MemberInfo _owner;
+        readonly int _index;
 
         /// <summary>
         /// Initializes a new instance.
@@ -61,13 +61,13 @@ namespace IKVM.Reflection
         MissingTypeParameter(MemberInfo owner, int index, byte sigElementType) :
             base(sigElementType)
         {
-            this.owner = owner;
-            this.index = index;
+            this._owner = owner;
+            this._index = index;
         }
 
         public override Module Module
         {
-            get { return owner.Module; }
+            get { return _owner.Module; }
         }
 
         public override string Name
@@ -77,22 +77,22 @@ namespace IKVM.Reflection
 
         public override int GenericParameterPosition
         {
-            get { return index; }
+            get { return _index; }
         }
 
         public override MethodBase DeclaringMethod
         {
-            get { return owner as MethodBase; }
+            get { return _owner as MethodBase; }
         }
 
         public override Type DeclaringType
         {
-            get { return owner as Type; }
+            get { return _owner as Type; }
         }
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            if (owner is MethodBase)
+            if (_owner is MethodBase)
                 return binder.BindMethodParameter(this);
             else
                 return binder.BindTypeParameter(this);
@@ -100,7 +100,7 @@ namespace IKVM.Reflection
 
         internal override bool IsBaked
         {
-            get { return owner.IsBaked; }
+            get { return _owner.IsBaked; }
         }
 
     }

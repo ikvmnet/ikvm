@@ -31,9 +31,9 @@ namespace IKVM.Reflection.Reader
     sealed class AssemblyReader : Assembly
     {
 
-        readonly string location;
-        readonly ModuleReader manifestModule;
-        readonly Module[] externalModules;
+        readonly string _location;
+        readonly ModuleReader _manifestModule;
+        readonly Module[] _externalModules;
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,30 +43,30 @@ namespace IKVM.Reflection.Reader
         internal AssemblyReader(string location, ModuleReader manifestModule) :
             base(manifestModule.Universe)
         {
-            this.location = location;
-            this.manifestModule = manifestModule;
-            externalModules = new Module[manifestModule.FileCount];
+            this._location = location;
+            this._manifestModule = manifestModule;
+            _externalModules = new Module[manifestModule.FileCount];
         }
 
         public override string Location
         {
-            get { return location ?? ""; }
+            get { return _location ?? ""; }
         }
 
         public override AssemblyName GetName()
         {
-            var definition = manifestModule.Metadata.GetAssemblyDefinition();
+            var definition = _manifestModule.Metadata.GetAssemblyDefinition();
             var flags = (int)definition.Flags;
 
             var name = new AssemblyName();
-            name.Name = manifestModule.GetString(definition.Name);
+            name.Name = _manifestModule.GetString(definition.Name);
             name.Version = definition.Version;
-            name.SetPublicKey(definition.PublicKey.IsNil == false ? manifestModule.GetBlobCopy(definition.PublicKey) : Array.Empty<byte>());
-            name.CultureName = definition.Culture.IsNil == false ? manifestModule.GetString(definition.Culture) : "";
+            name.SetPublicKey(definition.PublicKey.IsNil == false ? _manifestModule.GetBlobCopy(definition.PublicKey) : Array.Empty<byte>());
+            name.CultureName = definition.Culture.IsNil == false ? _manifestModule.GetString(definition.Culture) : "";
             name.HashAlgorithm = (AssemblyHashAlgorithm)(int)definition.HashAlgorithm;
             name.CodeBase = CodeBase;
 
-            manifestModule.GetPEKind(out var peKind, out var machine);
+            _manifestModule.GetPEKind(out var peKind, out var machine);
 
             switch (machine)
             {
@@ -99,8 +99,8 @@ namespace IKVM.Reflection.Reader
 
         public override Type[] GetTypes()
         {
-            if (externalModules.Length == 0)
-                return manifestModule.GetTypes();
+            if (_externalModules.Length == 0)
+                return _manifestModule.GetTypes();
 
             var list = new List<Type>();
             foreach (var module in GetModules(false))
@@ -111,9 +111,9 @@ namespace IKVM.Reflection.Reader
 
         internal override Type FindType(TypeName typeName)
         {
-            var type = manifestModule.FindType(typeName);
-            for (int i = 0; type == null && i < externalModules.Length; i++)
-                if (manifestModule.FileContainsMetadata(i))
+            var type = _manifestModule.FindType(typeName);
+            for (int i = 0; type == null && i < _externalModules.Length; i++)
+                if (_manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindType(typeName);
 
             return type;
@@ -121,9 +121,9 @@ namespace IKVM.Reflection.Reader
 
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            var type = manifestModule.FindTypeIgnoreCase(lowerCaseName);
-            for (int i = 0; type == null && i < externalModules.Length; i++)
-                if (manifestModule.FileContainsMetadata(i))
+            var type = _manifestModule.FindTypeIgnoreCase(lowerCaseName);
+            for (int i = 0; type == null && i < _externalModules.Length; i++)
+                if (_manifestModule.FileContainsMetadata(i))
                     type = GetModule(i).FindTypeIgnoreCase(lowerCaseName);
 
             return type;
@@ -131,19 +131,19 @@ namespace IKVM.Reflection.Reader
 
         public override string ImageRuntimeVersion
         {
-            get { return manifestModule.__ImageRuntimeVersion; }
+            get { return _manifestModule.__ImageRuntimeVersion; }
         }
 
         public override Module ManifestModule
         {
-            get { return manifestModule; }
+            get { return _manifestModule; }
         }
 
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
             List<Module> list = new List<Module>();
-            list.Add(manifestModule);
-            foreach (Module m in externalModules)
+            list.Add(_manifestModule);
+            foreach (Module m in _externalModules)
             {
                 if (m != null)
                 {
@@ -155,17 +155,17 @@ namespace IKVM.Reflection.Reader
 
         public override Module[] GetModules(bool getResourceModules)
         {
-            if (externalModules.Length == 0)
+            if (_externalModules.Length == 0)
             {
-                return new Module[] { manifestModule };
+                return new Module[] { _manifestModule };
             }
             else
             {
                 List<Module> list = new List<Module>();
-                list.Add(manifestModule);
-                for (int i = 0; i < manifestModule.FileCount; i++)
+                list.Add(_manifestModule);
+                for (int i = 0; i < _manifestModule.FileCount; i++)
                 {
-                    if (getResourceModules || manifestModule.FileContainsMetadata(i))
+                    if (getResourceModules || _manifestModule.FileContainsMetadata(i))
                     {
                         list.Add(GetModule(i));
                     }
@@ -176,8 +176,8 @@ namespace IKVM.Reflection.Reader
 
         public override Module GetModule(string name)
         {
-            if (name.Equals(manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
-                return manifestModule;
+            if (name.Equals(_manifestModule.ScopeName, StringComparison.OrdinalIgnoreCase))
+                return _manifestModule;
 
             var index = GetModuleIndex(name);
             if (index != -1)
@@ -188,8 +188,8 @@ namespace IKVM.Reflection.Reader
 
         int GetModuleIndex(string name)
         {
-            for (int i = 0; i < manifestModule.FileCount; i++)
-                if (name.Equals(manifestModule.GetFileName(i), StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < _manifestModule.FileCount; i++)
+                if (name.Equals(_manifestModule.GetFileName(i), StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
@@ -197,18 +197,18 @@ namespace IKVM.Reflection.Reader
 
         Module GetModule(int index)
         {
-            if (externalModules[index] != null)
-                return externalModules[index];
+            if (_externalModules[index] != null)
+                return _externalModules[index];
 
-            return LoadModule(index, null, manifestModule.GetFileName(index));
+            return LoadModule(index, null, _manifestModule.GetFileName(index));
         }
 
         private Module LoadModule(int index, byte[] rawModule, string name)
         {
-            var location = name == null ? null : Path.Combine(Path.GetDirectoryName(this.location), name);
-            if (manifestModule.FileContainsMetadata(index) == false)
+            var location = name == null ? null : Path.Combine(Path.GetDirectoryName(this._location), name);
+            if (_manifestModule.FileContainsMetadata(index) == false)
             {
-                return externalModules[index] = new ResourceModule(manifestModule, index, location);
+                return _externalModules[index] = new ResourceModule(_manifestModule, index, location);
             }
             else
             {
@@ -232,43 +232,43 @@ namespace IKVM.Reflection.Reader
                         }
 
                         if (Universe.MissingMemberResolution)
-                            return externalModules[index] = new MissingModule(this, index);
+                            return _externalModules[index] = new MissingModule(this, index);
 
                         throw;
                     }
                 }
-                return externalModules[index] = new ModuleReader(this, manifestModule.Universe, new MemoryStream(rawModule), location, false);
+                return _externalModules[index] = new ModuleReader(this, _manifestModule.Universe, new MemoryStream(rawModule), location, false);
             }
         }
 
         public override MethodInfo EntryPoint
         {
-            get { return manifestModule.GetEntryPoint(); }
+            get { return _manifestModule.GetEntryPoint(); }
         }
 
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
         {
-            return manifestModule.GetManifestResourceInfo(resourceName);
+            return _manifestModule.GetManifestResourceInfo(resourceName);
         }
 
         public override Stream GetManifestResourceStream(string resourceName)
         {
-            return manifestModule.GetManifestResourceStream(resourceName);
+            return _manifestModule.GetManifestResourceStream(resourceName);
         }
 
         public override AssemblyName[] GetReferencedAssemblies()
         {
-            return manifestModule.__GetReferencedAssemblies();
+            return _manifestModule.__GetReferencedAssemblies();
         }
 
         internal string Name
         {
-            get { return manifestModule.GetString(manifestModule.Metadata.GetAssemblyDefinition().Name); }
+            get { return _manifestModule.GetString(_manifestModule.Metadata.GetAssemblyDefinition().Name); }
         }
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {
-            return CustomAttributeData.GetCustomAttributesImpl(null, manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
+            return CustomAttributeData.GetCustomAttributesImpl(null, _manifestModule, 0x20000001, attributeType) ?? CustomAttributeData.EmptyList;
         }
     }
 

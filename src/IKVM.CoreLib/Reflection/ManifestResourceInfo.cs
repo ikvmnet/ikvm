@@ -32,8 +32,8 @@ namespace IKVM.Reflection
     internal sealed class ManifestResourceInfo
     {
 
-        readonly ModuleReader module;
-        readonly EntityHandle implementation;
+        readonly ModuleReader _module;
+        readonly EntityHandle _implementation;
 
         /// <summary>
         /// Initializes a new instance.
@@ -42,13 +42,13 @@ namespace IKVM.Reflection
         /// <param name="implementation">The Implementation of the ManifestResource row, nil for a resource embedded in the module.</param>
         internal ManifestResourceInfo(ModuleReader module, EntityHandle implementation)
         {
-            this.module = module;
-            this.implementation = implementation;
+            this._module = module;
+            this._implementation = implementation;
         }
 
-        public Assembly ReferencedAssembly => implementation.Kind == HandleKind.AssemblyReference && implementation.IsNil == false ? module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1) : null;
+        public Assembly ReferencedAssembly => _implementation.Kind == HandleKind.AssemblyReference && _implementation.IsNil == false ? _module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
-        public string FileName => implementation.Kind == HandleKind.AssemblyFile && implementation.IsNil == false ? module.GetFileName(MetadataTokens.GetRowNumber(implementation) - 1) : null;
+        public string FileName => _implementation.Kind == HandleKind.AssemblyFile && _implementation.IsNil == false ? _module.GetFileName(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
     }
 

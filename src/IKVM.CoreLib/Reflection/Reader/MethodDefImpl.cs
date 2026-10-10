@@ -31,14 +31,14 @@ namespace IKVM.Reflection.Reader
     sealed class MethodDefImpl : MethodInfo
     {
 
-        readonly ModuleReader module;
-        readonly MethodDefinitionHandle handle;
-        readonly MethodDefinition definition;
-        readonly TypeDefImpl declaringType;
-        MethodSignature lazyMethodSignature;
-        ParameterInfo returnParameter;
-        ParameterInfo[] parameters;
-        Type[] typeArgs;
+        readonly ModuleReader _module;
+        readonly MethodDefinitionHandle _handle;
+        readonly MethodDefinition _definition;
+        readonly TypeDefImpl _declaringType;
+        MethodSignature _lazyMethodSignature;
+        ParameterInfo _returnParameter;
+        ParameterInfo[] _parameters;
+        Type[] _typeArgs;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,36 +48,36 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal MethodDefImpl(ModuleReader module, TypeDefImpl declaringType, MethodDefinitionHandle handle)
         {
-            this.module = module;
-            this.handle = handle;
-            this.definition = module.Metadata.GetMethodDefinition(handle);
-            this.declaringType = declaringType;
+            this._module = module;
+            this._handle = handle;
+            this._definition = module.Metadata.GetMethodDefinition(handle);
+            this._declaringType = declaringType;
         }
 
         public override CallingConventions CallingConvention => MethodSignature.CallingConvention;
 
-        public override MethodAttributes Attributes => (MethodAttributes)definition.Attributes;
+        public override MethodAttributes Attributes => (MethodAttributes)_definition.Attributes;
 
-        public override MethodImplAttributes GetMethodImplementationFlags() => (MethodImplAttributes)definition.ImplAttributes;
+        public override MethodImplAttributes GetMethodImplementationFlags() => (MethodImplAttributes)_definition.ImplAttributes;
 
         public override ParameterInfo[] GetParameters()
         {
             PopulateParameters();
-            return (ParameterInfo[])parameters.Clone();
+            return (ParameterInfo[])_parameters.Clone();
         }
 
         void PopulateParameters()
         {
-            if (parameters == null)
+            if (_parameters == null)
             {
                 var array = new ParameterInfo[MethodSignature.GetParameterCount()];
 
                 // sequence 0 is the return parameter; parameters without a row get one without metadata
-                foreach (var h in definition.GetParameters())
+                foreach (var h in _definition.GetParameters())
                 {
-                    var position = module.Metadata.GetParameter(h).SequenceNumber - 1;
+                    var position = _module.Metadata.GetParameter(h).SequenceNumber - 1;
                     if (position == -1)
-                        returnParameter = new ParameterInfoImpl(this, position, h);
+                        _returnParameter = new ParameterInfoImpl(this, position, h);
                     else if (position < array.Length)
                         array[position] = new ParameterInfoImpl(this, position, h);
                 }
@@ -85,8 +85,8 @@ namespace IKVM.Reflection.Reader
                 for (int i = 0; i < array.Length; i++)
                     array[i] ??= new ParameterInfoImpl(this, i, default);
 
-                returnParameter ??= new ParameterInfoImpl(this, -1, default);
-                parameters = array;
+                _returnParameter ??= new ParameterInfoImpl(this, -1, default);
+                _parameters = array;
             }
         }
 
@@ -106,45 +106,45 @@ namespace IKVM.Reflection.Reader
             get
             {
                 PopulateParameters();
-                return returnParameter;
+                return _returnParameter;
             }
         }
 
         public override Type ReturnType => MethodSignature.GetReturnType(this);
 
-        public override Type DeclaringType => declaringType.IsModulePseudoType ? null : declaringType;
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override string Name => module.GetString(definition.Name);
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override bool IsGenericMethodDefinition => definition.GetGenericParameters().Count > 0;
+        public override bool IsGenericMethodDefinition => _definition.GetGenericParameters().Count > 0;
 
         public override bool IsGenericMethod => IsGenericMethodDefinition;
 
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
-            return Util.Copy(typeArgs);
+            return Util.Copy(_typeArgs);
         }
 
         void PopulateGenericArguments()
         {
-            if (typeArgs == null)
+            if (_typeArgs == null)
             {
-                var handles = definition.GetGenericParameters();
+                var handles = _definition.GetGenericParameters();
                 var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
                 for (int i = 0; i < args.Length; i++)
-                    args[i] = new GenericTypeParameter(module, handles[i], Signature.ELEMENT_TYPE_MVAR);
+                    args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_MVAR);
 
-                typeArgs = args;
+                _typeArgs = args;
             }
         }
 
         internal override Type GetGenericMethodArgument(int index)
         {
             PopulateGenericArguments();
-            return typeArgs[index];
+            return _typeArgs[index];
         }
 
         public override MethodInfo GetGenericMethodDefinition()
@@ -152,13 +152,13 @@ namespace IKVM.Reflection.Reader
             return IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
         }
 
-        public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(declaringType, this, typeArguments);
+        public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(_declaringType, this, typeArguments);
 
-        public override Module Module => module;
+        public override Module Module => _module;
 
-        internal override MethodSignature MethodSignature => lazyMethodSignature ??= MethodSignature.ReadSig(module, module.GetBlobReader(definition.Signature), this);
+        internal override MethodSignature MethodSignature => _lazyMethodSignature ??= MethodSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), this);
 
-        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(declaringType, Name, MethodSignature);
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, MethodSignature);
 
         internal override int GetCurrentToken() => MetadataToken;
 

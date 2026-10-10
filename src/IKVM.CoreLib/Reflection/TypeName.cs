@@ -34,16 +34,16 @@ namespace IKVM.Reflection
 
         public static bool operator ==(TypeName o1, TypeName o2)
         {
-            return o1.ns == o2.ns && o1.name == o2.name;
+            return o1._ns == o2._ns && o1._name == o2._name;
         }
 
         public static bool operator !=(TypeName o1, TypeName o2)
         {
-            return o1.ns != o2.ns || o1.name != o2.name;
+            return o1._ns != o2._ns || o1._name != o2._name;
         }
 
-        readonly string ns;
-        readonly string name;
+        readonly string _ns;
+        readonly string _name;
 
         /// <summary>
         /// Initializes a new instance.
@@ -53,15 +53,15 @@ namespace IKVM.Reflection
         /// <exception cref="ArgumentNullException"></exception>
         internal TypeName(string ns, string name)
         {
-            this.ns = ns;
-            this.name = name ?? throw new ArgumentNullException("name");
+            this._ns = ns;
+            this._name = name ?? throw new ArgumentNullException("name");
         }
 
-        internal string Name => name;
+        internal string Name => _name;
 
-        internal string Namespace => ns;
+        internal string Namespace => _ns;
 
-        public override int GetHashCode() => ns == null ? name.GetHashCode() : ns.GetHashCode() * 37 + name.GetHashCode();
+        public override int GetHashCode() => _ns == null ? _name.GetHashCode() : _ns.GetHashCode() * 37 + _name.GetHashCode();
 
         public override bool Equals(object obj)
         {
@@ -71,7 +71,7 @@ namespace IKVM.Reflection
 
         public override string ToString()
         {
-            return ns == null ? name : ns + "." + name;
+            return _ns == null ? _name : _ns + "." + _name;
         }
 
         bool IEquatable<TypeName>.Equals(TypeName other)
@@ -81,16 +81,16 @@ namespace IKVM.Reflection
 
         internal bool Matches(string fullName)
         {
-            if (ns == null)
-                return name == fullName;
+            if (_ns == null)
+                return _name == fullName;
 
-            if (ns.Length + 1 + name.Length == fullName.Length)
-                return fullName.StartsWith(ns, StringComparison.Ordinal) && fullName[ns.Length] == '.' && fullName.EndsWith(name, StringComparison.Ordinal);
+            if (_ns.Length + 1 + _name.Length == fullName.Length)
+                return fullName.StartsWith(_ns, StringComparison.Ordinal) && fullName[_ns.Length] == '.' && fullName.EndsWith(_name, StringComparison.Ordinal);
 
             return false;
         }
 
-        internal TypeName ToLowerInvariant() => new TypeName(ns?.ToLowerInvariant(), name.ToLowerInvariant());
+        internal TypeName ToLowerInvariant() => new TypeName(_ns?.ToLowerInvariant(), _name.ToLowerInvariant());
 
         internal static TypeName Split(string name)
         {

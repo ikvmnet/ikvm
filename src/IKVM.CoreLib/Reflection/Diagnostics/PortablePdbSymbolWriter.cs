@@ -21,14 +21,14 @@ namespace IKVM.Reflection.Diagnostics
         protected sealed class Document : ISymbolDocumentWriter
         {
 
-            readonly string url;
-            readonly Guid language;
-            readonly Guid languageVendor;
-            readonly Guid documentType;
+            readonly string _url;
+            readonly Guid _language;
+            readonly Guid _languageVendor;
+            readonly Guid _documentType;
 
-            Guid algorithmId;
-            byte[] checksum;
-            byte[] source;
+            Guid _algorithmId;
+            byte[] _checksum;
+            byte[] _source;
 
             /// <summary>
             /// Initializes a new instance.
@@ -39,10 +39,10 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="documentType"></param>
             internal Document(string url, Guid language, Guid languageVendor, Guid documentType)
             {
-                this.url = url;
-                this.language = language;
-                this.languageVendor = languageVendor;
-                this.documentType = documentType;
+                this._url = url;
+                this._language = language;
+                this._languageVendor = languageVendor;
+                this._documentType = documentType;
             }
 
             /// <summary>
@@ -52,8 +52,8 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="checksum"></param>
             public void SetCheckSum(Guid algorithmId, byte[] checksum)
             {
-                this.algorithmId = algorithmId;
-                this.checksum = checksum;
+                this._algorithmId = algorithmId;
+                this._checksum = checksum;
             }
 
             /// <summary>
@@ -62,29 +62,29 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="source"></param>
             public void SetSource(byte[] source)
             {
-                this.source = source;
+                this._source = source;
             }
 
             /// <summary>
             /// Gets the URL of the document.
             /// </summary>
 
-            public string Url => url;
+            public string Url => _url;
 
             /// <summary>
             /// Gets the language of the document.
             /// </summary>
-            public Guid Language => language;
+            public Guid Language => _language;
 
             /// <summary>
             /// Gets the checksum algorithm ID.
             /// </summary>
-            public Guid AlgorithmId => algorithmId;
+            public Guid AlgorithmId => _algorithmId;
 
             /// <summary>
             /// Gets the checksum.
             /// </summary>
-            public byte[] Checksum => checksum;
+            public byte[] Checksum => _checksum;
 
         }
 
@@ -94,14 +94,14 @@ namespace IKVM.Reflection.Diagnostics
         protected readonly struct LocalVar
         {
 
-            readonly System.Reflection.FieldAttributes attributes;
-            readonly byte[] signature;
-            readonly SymAddressKind addrKind;
-            readonly int addr1;
-            readonly int addr2;
-            readonly int addr3;
-            readonly int startOffset;
-            readonly int endOffset;
+            readonly System.Reflection.FieldAttributes _attributes;
+            readonly byte[] _signature;
+            readonly SymAddressKind _addrKind;
+            readonly int _addr1;
+            readonly int _addr2;
+            readonly int _addr3;
+            readonly int _startOffset;
+            readonly int _endOffset;
 
             /// <summary>
             /// Initializes a new instance.
@@ -116,20 +116,20 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="endOffset"></param>
             internal LocalVar(System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
             {
-                this.attributes = attributes;
-                this.signature = signature;
-                this.addrKind = addrKind;
-                this.addr1 = addr1;
-                this.addr2 = addr2;
-                this.addr3 = addr3;
-                this.startOffset = startOffset;
-                this.endOffset = endOffset;
+                this._attributes = attributes;
+                this._signature = signature;
+                this._addrKind = addrKind;
+                this._addr1 = addr1;
+                this._addr2 = addr2;
+                this._addr3 = addr3;
+                this._startOffset = startOffset;
+                this._endOffset = endOffset;
             }
 
             /// <summary>
             /// Gets the first address.
             /// </summary>
-            public int Address1 => addr1;
+            public int Address1 => _addr1;
 
         }
 
@@ -139,7 +139,7 @@ namespace IKVM.Reflection.Diagnostics
         protected sealed class Scope
         {
 
-            internal int startOffset;
+            int _startOffset;
             internal int endOffset;
             internal List<Scope> scopes;
             internal Dictionary<string, LocalVar> locals;
@@ -151,13 +151,13 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="startOffset"></param>
             internal Scope(int startOffset)
             {
-                this.startOffset = startOffset;
+                this._startOffset = startOffset;
             }
 
             /// <summary>
             /// Gets the start offset.
             /// </summary>
-            public int StartOffset => startOffset;
+            public int StartOffset => _startOffset;
 
             /// <summary>
             /// Gets the end offset.
@@ -187,11 +187,11 @@ namespace IKVM.Reflection.Diagnostics
         protected sealed class Method
         {
 
-            readonly int token;
-            readonly StandaloneSignatureHandle localSignatureHandle;
+            readonly int _token;
+            readonly StandaloneSignatureHandle _localSignatureHandle;
             internal List<SequencePoint> sequencePoints;
             internal List<Scope> scopes;
-            internal Stack<Scope> scopeStack;
+            internal Stack<Scope> ScopeStack;
 
             /// <summary>
             /// Initializes a new instance.
@@ -200,19 +200,19 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="localSignatureHandle"></param>
             internal Method(int token, StandaloneSignatureHandle localSignatureHandle)
             {
-                this.token = token;
-                this.localSignatureHandle = localSignatureHandle;
+                this._token = token;
+                this._localSignatureHandle = localSignatureHandle;
             }
 
             /// <summary>
             /// Gets the token of the method.
             /// </summary>
-            public int Token => token;
+            public int Token => _token;
 
             /// <summary>
             /// Gets the local variable signature.
             /// </summary>
-            public StandaloneSignatureHandle LocalSignatureHandle => localSignatureHandle;
+            public StandaloneSignatureHandle LocalSignatureHandle => _localSignatureHandle;
 
             /// <summary>
             /// Gets the sequence points.
@@ -232,12 +232,12 @@ namespace IKVM.Reflection.Diagnostics
         protected readonly struct SequencePoint
         {
 
-            readonly Document document;
-            readonly int[] offsets;
-            readonly int[] lines;
-            readonly int[] columns;
-            readonly int[] endLines;
-            readonly int[] endColumns;
+            readonly Document _document;
+            readonly int[] _offsets;
+            readonly int[] _lines;
+            readonly int[] _columns;
+            readonly int[] _endLines;
+            readonly int[] _endColumns;
 
             /// <summary>
             /// Initializes a new instance.
@@ -249,51 +249,51 @@ namespace IKVM.Reflection.Diagnostics
             /// <param name="endColumns"></param>
             internal SequencePoint(Document document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
             {
-                this.document = document;
-                this.offsets = offsets;
-                this.lines = lines;
-                this.columns = columns;
-                this.endLines = endLines;
-                this.endColumns = endColumns;
+                this._document = document;
+                this._offsets = offsets;
+                this._lines = lines;
+                this._columns = columns;
+                this._endLines = endLines;
+                this._endColumns = endColumns;
             }
 
             /// <summary>
             /// Gets the document.
             /// </summary>
-            public Document Document => document;
+            public Document Document => _document;
 
             /// <summary>
             /// Gets the offsets.
             /// </summary>
-            public int[] Offsets => offsets;
+            public int[] Offsets => _offsets;
 
             /// <summary>
             /// Gets the lines
             /// </summary>
-            public int[] Lines => lines;
+            public int[] Lines => _lines;
 
             /// <summary>
             /// Gets the columns.
             /// </summary>
-            public int[] Columns => columns;
+            public int[] Columns => _columns;
 
             /// <summary>
             /// Gets the line endings.
             /// </summary>
-            public int[] EndLines => endLines;
+            public int[] EndLines => _endLines;
 
             /// <summary>
             /// Gets the column endings.
             /// </summary>
-            public int[] EndColumns => endColumns;
+            public int[] EndColumns => _endColumns;
 
         }
 
-        readonly ModuleBuilder module;
-        Dictionary<string, Document> documents;
-        List<Method> methods;
-        Method currentMethod;
-        int userEntryPoint;
+        readonly ModuleBuilder _module;
+        Dictionary<string, Document> _documents;
+        List<Method> _methods;
+        Method _currentMethod;
+        int _userEntryPoint;
 
         /// <summary>
         /// Initializes a new instance.
@@ -301,7 +301,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <param name="module"></param>
         public PortablePdbSymbolWriter(ModuleBuilder module)
         {
-            this.module = module ?? throw new ArgumentNullException(nameof(module));
+            this._module = module ?? throw new ArgumentNullException(nameof(module));
         }
 
         /// <inheritdoc />
@@ -313,9 +313,9 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            documents ??= new();
-            if (documents.TryGetValue(url, out var doc) == false)
-                documents.Add(url, doc = new Document(url, language, languageVendor, documentType));
+            _documents ??= new();
+            if (_documents.TryGetValue(url, out var doc) == false)
+                _documents.Add(url, doc = new Document(url, language, languageVendor, documentType));
 
             return doc;
         }
@@ -330,7 +330,7 @@ namespace IKVM.Reflection.Diagnostics
         public virtual void OpenMethod(SymbolToken method)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
-            currentMethod = new Method(method.GetToken(), default);
+            _currentMethod = new Method(method.GetToken(), default);
         }
 
         /// <summary>
@@ -341,45 +341,45 @@ namespace IKVM.Reflection.Diagnostics
         public virtual void OpenMethod(SymbolToken method, StandaloneSignatureHandle localSignatureHandle)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
-            currentMethod = new Method(method.GetToken(), localSignatureHandle);
+            _currentMethod = new Method(method.GetToken(), localSignatureHandle);
         }
 
         /// <inheritdoc />
         public virtual void DefineSequencePoints(ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
             if (document is not Document doc)
                 throw new InvalidOperationException("Document not obtained from symbol writer.");
 
             var sequencePoint = new SequencePoint(doc, offsets, lines, columns, endLines, endColumns);
-            currentMethod.sequencePoints ??= new();
-            currentMethod.sequencePoints.Add(sequencePoint);
+            _currentMethod.sequencePoints ??= new();
+            _currentMethod.sequencePoints.Add(sequencePoint);
         }
 
         /// <inheritdoc />
         public virtual int OpenScope(int startOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
             var scope = new Scope(startOffset);
 
-            if (currentMethod.scopeStack == null || currentMethod.scopeStack.Count == 0)
+            if (_currentMethod.ScopeStack == null || _currentMethod.ScopeStack.Count == 0)
             {
-                currentMethod.scopes ??= new();
-                currentMethod.scopes.Add(scope);
+                _currentMethod.scopes ??= new();
+                _currentMethod.scopes.Add(scope);
             }
             else
             {
-                var thisScope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
+                var thisScope = _currentMethod.ScopeStack != null ? _currentMethod.ScopeStack.Peek() : null;
                 thisScope.scopes ??= new();
                 thisScope.scopes.Add(scope);
             }
 
-            currentMethod.scopeStack ??= new();
-            currentMethod.scopeStack.Push(scope);
+            _currentMethod.ScopeStack ??= new();
+            _currentMethod.ScopeStack.Push(scope);
 
             return 0;
         }
@@ -387,10 +387,10 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual void UsingNamespace(string fullName)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
+            var scope = _currentMethod.ScopeStack != null ? _currentMethod.ScopeStack.Peek() : null;
             if (scope == null)
                 throw new InvalidOperationException("No open scope.");
 
@@ -401,10 +401,10 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
+            var scope = _currentMethod.ScopeStack != null ? _currentMethod.ScopeStack.Peek() : null;
             if (scope == null)
                 throw new InvalidOperationException("No open scope.");
 
@@ -415,10 +415,10 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual void CloseScope(int endOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Pop() : null;
+            var scope = _currentMethod.ScopeStack != null ? _currentMethod.ScopeStack.Pop() : null;
             if (scope == null)
                 throw new InvalidOperationException("No open scope.");
 
@@ -428,12 +428,12 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public virtual void CloseMethod()
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            methods ??= new();
-            methods.Add(currentMethod);
-            currentMethod = null;
+            _methods ??= new();
+            _methods.Add(_currentMethod);
+            _currentMethod = null;
         }
 
         /// <inheritdoc />
@@ -453,14 +453,14 @@ namespace IKVM.Reflection.Diagnostics
             metadata.GetOrAddString("");
             metadata.GetOrAddUserString("");
 
-            if (methods != null)
+            if (_methods != null)
             {
                 var documentCache = new Dictionary<Document, DocumentHandle>();
-                foreach (var method in methods)
+                foreach (var method in _methods)
                     WriteMethod(metadata, method, documentCache);
             }
 
-            userEntryPoint = this.userEntryPoint;
+            userEntryPoint = this._userEntryPoint;
         }
 
         /// <summary>
@@ -689,7 +689,7 @@ namespace IKVM.Reflection.Diagnostics
         /// <inheritdoc />
         public void SetUserEntryPoint(SymbolToken entryMethod)
         {
-            this.userEntryPoint = entryMethod.GetToken();
+            this._userEntryPoint = entryMethod.GetToken();
         }
 
         #endregion

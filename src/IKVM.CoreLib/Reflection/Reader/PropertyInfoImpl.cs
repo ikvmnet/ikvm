@@ -31,16 +31,16 @@ namespace IKVM.Reflection.Reader
     sealed class PropertyInfoImpl : PropertyInfo
     {
 
-        readonly ModuleReader module;
-        readonly Type declaringType;
-        readonly PropertyDefinitionHandle handle;
-        readonly PropertyDefinition definition;
+        readonly ModuleReader _module;
+        readonly Type _declaringType;
+        readonly PropertyDefinitionHandle _handle;
+        readonly PropertyDefinition _definition;
 
-        PropertySignature sig;
-        bool isPublic;
-        bool isNonPrivate;
-        bool isStatic;
-        bool flagsCached;
+        PropertySignature _sig;
+        bool _isPublic;
+        bool _isNonPrivate;
+        bool _isStatic;
+        bool _flagsCached;
 
         /// <summary>
         /// Initializes a new instance.
@@ -50,33 +50,33 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal PropertyInfoImpl(ModuleReader module, Type declaringType, PropertyDefinitionHandle handle)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.handle = handle;
-            this.definition = module.Metadata.GetPropertyDefinition(handle);
+            this._module = module;
+            this._declaringType = declaringType;
+            this._handle = handle;
+            this._definition = module.Metadata.GetPropertyDefinition(handle);
         }
 
-        public override bool Equals(object obj) => obj is PropertyInfoImpl other && other.DeclaringType == declaringType && other.handle == handle;
+        public override bool Equals(object obj) => obj is PropertyInfoImpl other && other.DeclaringType == _declaringType && other._handle == _handle;
 
-        public override int GetHashCode() => declaringType.GetHashCode() * 77 + MetadataTokens.GetRowNumber(handle);
+        public override int GetHashCode() => _declaringType.GetHashCode() * 77 + MetadataTokens.GetRowNumber(_handle);
 
-        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(definition.Signature), declaringType);
+        internal override PropertySignature PropertySignature => _sig ??= PropertySignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
 
-        public override PropertyAttributes Attributes => (PropertyAttributes)definition.Attributes;
+        public override PropertyAttributes Attributes => (PropertyAttributes)_definition.Attributes;
 
-        public override object GetRawConstantValue() => module.GetConstantValue(definition.GetDefaultValue());
+        public override object GetRawConstantValue() => _module.GetConstantValue(_definition.GetDefaultValue());
 
         public override bool CanRead => GetGetMethod(true) != null;
 
         public override bool CanWrite => GetSetMethod(true) != null;
 
-        public override MethodInfo GetGetMethod(bool nonPublic) => Accessor(definition.GetAccessors().Getter, nonPublic);
+        public override MethodInfo GetGetMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Getter, nonPublic);
 
-        public override MethodInfo GetSetMethod(bool nonPublic) => Accessor(definition.GetAccessors().Setter, nonPublic);
+        public override MethodInfo GetSetMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Setter, nonPublic);
 
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            var accessors = definition.GetAccessors();
+            var accessors = _definition.GetAccessors();
             var list = new List<MethodInfo>();
             Add(accessors.Getter);
             Add(accessors.Setter);
@@ -97,26 +97,26 @@ namespace IKVM.Reflection.Reader
             if (h.IsNil)
                 return null;
 
-            var method = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(h));
+            var method = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(h));
             return nonPublic || method.IsPublic ? method : null;
         }
 
-        public override Type DeclaringType => declaringType;
+        public override Type DeclaringType => _declaringType;
 
-        public override Module Module => module;
+        public override Module Module => _module;
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override string Name => module.GetString(definition.Name);
+        public override string Name => _module.GetString(_definition.Name);
 
         internal override bool IsPublic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isPublic;
+                return _isPublic;
             }
         }
 
@@ -124,10 +124,10 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isNonPrivate;
+                return _isNonPrivate;
             }
         }
 
@@ -135,10 +135,10 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isStatic;
+                return _isStatic;
             }
         }
 
@@ -146,12 +146,12 @@ namespace IKVM.Reflection.Reader
         {
             foreach (var method in GetAccessors(true))
             {
-                isPublic |= method.IsPublic;
-                isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
-                isStatic |= method.IsStatic;
+                _isPublic |= method.IsPublic;
+                _isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                _isStatic |= method.IsStatic;
             }
 
-            flagsCached = true;
+            _flagsCached = true;
         }
 
         internal override bool IsBaked => true;

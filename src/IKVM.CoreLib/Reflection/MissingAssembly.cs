@@ -29,7 +29,7 @@ namespace IKVM.Reflection
     sealed class MissingAssembly : Assembly
     {
 
-        readonly MissingModule module;
+        readonly MissingModule _module;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,7 +39,7 @@ namespace IKVM.Reflection
         internal MissingAssembly(Universe universe, string name) :
             base(universe)
         {
-            module = new MissingModule(this, -1);
+            _module = new MissingModule(this, -1);
             fullName = name;
         }
 
@@ -60,7 +60,7 @@ namespace IKVM.Reflection
 
         public override Module ManifestModule
         {
-            get { return module; }
+            get { return _module; }
         }
 
         public override MethodInfo EntryPoint

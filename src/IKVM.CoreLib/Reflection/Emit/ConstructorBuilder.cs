@@ -30,7 +30,7 @@ namespace IKVM.Reflection.Emit
     internal sealed class ConstructorBuilder : ConstructorInfo
     {
 
-        readonly MethodBuilder methodBuilder;
+        readonly MethodBuilder _methodBuilder;
 
         /// <summary>
         /// Initializes a new instance.
@@ -38,28 +38,28 @@ namespace IKVM.Reflection.Emit
         /// <param name="mb"></param>
         internal ConstructorBuilder(MethodBuilder mb)
         {
-            this.methodBuilder = mb;
+            this._methodBuilder = mb;
         }
 
         public override bool Equals(object obj)
         {
             ConstructorBuilder other = obj as ConstructorBuilder;
-            return other != null && other.methodBuilder.Equals(methodBuilder);
+            return other != null && other._methodBuilder.Equals(_methodBuilder);
         }
 
         public override int GetHashCode()
         {
-            return methodBuilder.GetHashCode();
+            return _methodBuilder.GetHashCode();
         }
 
         public ILGenerator GetILGenerator()
         {
-            return methodBuilder.GetILGenerator();
+            return _methodBuilder.GetILGenerator();
         }
 
         internal override MethodInfo GetMethodInfo()
         {
-            return methodBuilder;
+            return _methodBuilder;
         }
 
     }

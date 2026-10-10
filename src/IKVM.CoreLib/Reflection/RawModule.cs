@@ -31,9 +31,9 @@ namespace IKVM.Reflection
     internal sealed class RawModule : IDisposable
     {
 
-        readonly ModuleReader module;
-        readonly bool isManifestModule;
-        bool imported;
+        readonly ModuleReader _module;
+        readonly bool _isManifestModule;
+        bool _imported;
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,18 +41,18 @@ namespace IKVM.Reflection
         /// <param name="module"></param>
         internal RawModule(ModuleReader module)
         {
-            this.module = module;
-            this.isManifestModule = module.Assembly != null;
+            this._module = module;
+            this._isManifestModule = module.Assembly != null;
         }
 
         public string Location
         {
-            get { return module.FullyQualifiedName; }
+            get { return _module.FullyQualifiedName; }
         }
 
         public bool IsManifestModule
         {
-            get { return isManifestModule; }
+            get { return _isManifestModule; }
         }
 
         void CheckManifestModule()
@@ -64,27 +64,27 @@ namespace IKVM.Reflection
         public AssemblyName GetAssemblyName()
         {
             CheckManifestModule();
-            return module.Assembly.GetName();
+            return _module.Assembly.GetName();
         }
 
         public AssemblyName[] GetReferencedAssemblies()
         {
-            return module.__GetReferencedAssemblies();
+            return _module.__GetReferencedAssemblies();
         }
 
         public void Dispose()
         {
-            if (!imported)
-                module.Dispose();
+            if (!_imported)
+                _module.Dispose();
         }
 
         internal AssemblyReader ToAssembly()
         {
-            if (imported)
+            if (_imported)
                 throw new InvalidOperationException();
 
-            imported = true;
-            return (AssemblyReader)module.Assembly;
+            _imported = true;
+            return (AssemblyReader)_module.Assembly;
         }
 
     }

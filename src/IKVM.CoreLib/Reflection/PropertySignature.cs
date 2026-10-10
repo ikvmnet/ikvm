@@ -32,10 +32,10 @@ namespace IKVM.Reflection
     sealed class PropertySignature : Signature
     {
 
-        CallingConventions callingConvention;
-        readonly Type propertyType;
-        readonly Type[] parameterTypes;
-        readonly PackedCustomModifiers customModifiers;
+        CallingConventions _callingConvention;
+        readonly Type _propertyType;
+        readonly Type[] _parameterTypes;
+        readonly PackedCustomModifiers _customModifiers;
 
         internal static PropertySignature Create(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
@@ -51,28 +51,28 @@ namespace IKVM.Reflection
         /// <param name="customModifiers"></param>
         PropertySignature(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
-            this.callingConvention = callingConvention;
-            this.propertyType = propertyType;
-            this.parameterTypes = parameterTypes;
-            this.customModifiers = customModifiers;
+            this._callingConvention = callingConvention;
+            this._propertyType = propertyType;
+            this._parameterTypes = parameterTypes;
+            this._customModifiers = customModifiers;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as PropertySignature;
             return other != null
-                && other.propertyType.Equals(propertyType)
-                && other.customModifiers.Equals(customModifiers);
+                && other._propertyType.Equals(_propertyType)
+                && other._customModifiers.Equals(_customModifiers);
         }
 
         public override int GetHashCode()
         {
-            return propertyType.GetHashCode() ^ customModifiers.GetHashCode();
+            return _propertyType.GetHashCode() ^ _customModifiers.GetHashCode();
         }
 
         internal int ParameterCount
         {
-            get { return parameterTypes.Length; }
+            get { return _parameterTypes.Length; }
         }
 
         internal bool HasThis
@@ -80,65 +80,65 @@ namespace IKVM.Reflection
             set
             {
                 if (value)
-                    callingConvention |= CallingConventions.HasThis;
+                    _callingConvention |= CallingConventions.HasThis;
                 else
-                    callingConvention &= ~CallingConventions.HasThis;
+                    _callingConvention &= ~CallingConventions.HasThis;
             }
         }
 
         internal Type PropertyType
         {
-            get { return propertyType; }
+            get { return _propertyType; }
         }
 
         internal CustomModifiers GetCustomModifiers()
         {
-            return customModifiers.GetReturnTypeCustomModifiers();
+            return _customModifiers.GetReturnTypeCustomModifiers();
         }
 
         internal PropertySignature ExpandTypeParameters(Type declaringType)
         {
-            return new PropertySignature(callingConvention, propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, parameterTypes), customModifiers.Bind(declaringType));
+            return new PropertySignature(_callingConvention, _propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, _parameterTypes), _customModifiers.Bind(declaringType));
         }
 
         internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
             var flags = PROPERTY;
-            if ((callingConvention & CallingConventions.HasThis) != 0)
+            if ((_callingConvention & CallingConventions.HasThis) != 0)
                 flags |= HASTHIS;
-            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+            if ((_callingConvention & CallingConventions.ExplicitThis) != 0)
                 flags |= EXPLICITTHIS;
-            if ((callingConvention & CallingConventions.VarArgs) != 0)
+            if ((_callingConvention & CallingConventions.VarArgs) != 0)
                 flags |= VARARG;
 
             bb.WriteByte(flags);
-            bb.WriteCompressedInteger(parameterTypes == null ? 0 : parameterTypes.Length);
-            WriteCustomModifiers(module, bb, customModifiers.GetReturnTypeCustomModifiers());
-            WriteType(module, bb, propertyType);
+            bb.WriteCompressedInteger(_parameterTypes == null ? 0 : _parameterTypes.Length);
+            WriteCustomModifiers(module, bb, _customModifiers.GetReturnTypeCustomModifiers());
+            WriteType(module, bb, _propertyType);
 
-            if (parameterTypes != null)
+            if (_parameterTypes != null)
             {
-                for (var i = 0; i < parameterTypes.Length; i++)
+                for (var i = 0; i < _parameterTypes.Length; i++)
                 {
-                    WriteCustomModifiers(module, bb, customModifiers.GetParameterCustomModifiers(i));
-                    WriteType(module, bb, parameterTypes[i]);
+                    WriteCustomModifiers(module, bb, _customModifiers.GetParameterCustomModifiers(i));
+                    WriteType(module, bb, _parameterTypes[i]);
                 }
             }
         }
 
         internal Type GetParameter(int parameter)
         {
-            return parameterTypes[parameter];
+            return _parameterTypes[parameter];
         }
 
         internal CustomModifiers GetParameterCustomModifiers(int parameter)
         {
-            return customModifiers.GetParameterCustomModifiers(parameter);
+            return _customModifiers.GetParameterCustomModifiers(parameter);
         }
 
         internal bool MatchParameterTypes(Type[] types)
         {
-            return Util.ArrayEquals(types, parameterTypes);
+            return Util.ArrayEquals(types, _parameterTypes);
         }
 
         internal static PropertySignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)

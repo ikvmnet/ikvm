@@ -68,9 +68,9 @@ namespace IKVM.Reflection
         sealed class ParameterInfoImpl : ParameterInfo
         {
 
-            readonly PropertyInfo property;
-            readonly int parameter;
-            readonly ParameterInfo accessor;
+            readonly PropertyInfo _property;
+            readonly int _parameter;
+            readonly ParameterInfo _accessor;
 
             /// <summary>
             /// Initializes a new instance.
@@ -80,37 +80,37 @@ namespace IKVM.Reflection
             /// <param name="accessor">The matching accessor parameter, or <c>null</c> if the property has no accessor.</param>
             internal ParameterInfoImpl(PropertyInfo property, int parameter, ParameterInfo accessor)
             {
-                this.property = property;
-                this.parameter = parameter;
-                this.accessor = accessor;
+                this._property = property;
+                this._parameter = parameter;
+                this._accessor = accessor;
             }
 
-            public override string Name => accessor?.Name;
+            public override string Name => _accessor?.Name;
 
-            public override Type ParameterType => property.PropertySignature.GetParameter(parameter);
+            public override Type ParameterType => _property.PropertySignature.GetParameter(_parameter);
 
-            public override ParameterAttributes Attributes => accessor?.Attributes ?? ParameterAttributes.None;
+            public override ParameterAttributes Attributes => _accessor?.Attributes ?? ParameterAttributes.None;
 
-            public override int Position => parameter;
+            public override int Position => _parameter;
 
-            public override object RawDefaultValue => accessor != null ? accessor.RawDefaultValue : throw new InvalidOperationException();
+            public override object RawDefaultValue => _accessor != null ? _accessor.RawDefaultValue : throw new InvalidOperationException();
 
-            public override CustomModifiers __GetCustomModifiers() => property.PropertySignature.GetParameterCustomModifiers(parameter);
+            public override CustomModifiers __GetCustomModifiers() => _property.PropertySignature.GetParameterCustomModifiers(_parameter);
 
             public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
             {
-                if (accessor != null)
-                    return accessor.__TryGetFieldMarshal(out fieldMarshal);
+                if (_accessor != null)
+                    return _accessor.__TryGetFieldMarshal(out fieldMarshal);
 
                 fieldMarshal = new FieldMarshal();
                 return false;
             }
 
-            public override MemberInfo Member => property;
+            public override MemberInfo Member => _property;
 
-            public override int MetadataToken => accessor?.MetadataToken ?? 0x08000000;
+            public override int MetadataToken => _accessor?.MetadataToken ?? 0x08000000;
 
-            public override Module Module => property.Module;
+            public override Module Module => _property.Module;
 
         }
 

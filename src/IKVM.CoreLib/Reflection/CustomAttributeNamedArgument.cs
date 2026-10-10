@@ -27,8 +27,8 @@ namespace IKVM.Reflection
     internal readonly struct CustomAttributeNamedArgument
     {
 
-        readonly MemberInfo member;
-        readonly CustomAttributeTypedArgument value;
+        readonly MemberInfo _member;
+        readonly CustomAttributeTypedArgument _value;
 
         /// <summary>
         /// Initializes a new instance.
@@ -37,8 +37,8 @@ namespace IKVM.Reflection
         /// <param name="value"></param>
         internal CustomAttributeNamedArgument(MemberInfo member, CustomAttributeTypedArgument value)
         {
-            this.member = member;
-            this.value = value;
+            this._member = member;
+            this._value = value;
         }
 
         public override bool Equals(object obj)
@@ -48,32 +48,32 @@ namespace IKVM.Reflection
 
         public override int GetHashCode()
         {
-            return member.GetHashCode() ^ 53 * value.GetHashCode();
+            return _member.GetHashCode() ^ 53 * _value.GetHashCode();
         }
 
         public MemberInfo MemberInfo
         {
-            get { return member; }
+            get { return _member; }
         }
 
         public CustomAttributeTypedArgument TypedValue
         {
-            get { return value; }
+            get { return _value; }
         }
 
         public bool IsField
         {
-            get { return member.MemberType == MemberTypes.Field; }
+            get { return _member.MemberType == MemberTypes.Field; }
         }
 
         public string MemberName
         {
-            get { return member.Name; }
+            get { return _member.Name; }
         }
 
         public static bool operator ==(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2)
         {
-            return arg1.member.Equals(arg2.member) && arg1.value == arg2.value;
+            return arg1._member.Equals(arg2._member) && arg1._value == arg2._value;
         }
 
         public static bool operator !=(CustomAttributeNamedArgument arg1, CustomAttributeNamedArgument arg2) => !(arg1 == arg2);

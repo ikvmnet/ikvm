@@ -31,8 +31,8 @@ namespace IKVM.Reflection
     sealed class MissingModule : NonPEModule
     {
 
-        readonly Assembly assembly;
-        readonly int index;
+        readonly Assembly _assembly;
+        readonly int _index;
 
         /// <summary>
         /// Initializes a new instance.
@@ -42,8 +42,8 @@ namespace IKVM.Reflection
         internal MissingModule(Assembly assembly, int index) :
             base(assembly.Universe)
         {
-            this.assembly = assembly;
-            this.index = index;
+            this._assembly = assembly;
+            this._index = index;
         }
 
         public override int MDStreamVersion
@@ -53,7 +53,7 @@ namespace IKVM.Reflection
 
         public override Assembly Assembly
         {
-            get { return assembly; }
+            get { return _assembly; }
         }
 
         public override string FullyQualifiedName
@@ -65,10 +65,10 @@ namespace IKVM.Reflection
         {
             get
             {
-                if (index == -1)
+                if (_index == -1)
                     throw new MissingModuleException(this);
 
-                return ((Reader.ModuleReader)assembly.ManifestModule).GetFileName(index);
+                return ((Reader.ModuleReader)_assembly.ManifestModule).GetFileName(_index);
             }
         }
 

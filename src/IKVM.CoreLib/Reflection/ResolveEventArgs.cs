@@ -29,8 +29,8 @@ namespace IKVM.Reflection
     internal sealed class ResolveEventArgs : EventArgs
     {
 
-        readonly string name;
-        readonly Assembly requestingAssembly;
+        readonly string _name;
+        readonly Assembly _requestingAssembly;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,18 +39,18 @@ namespace IKVM.Reflection
         /// <param name="requestingAssembly"></param>
         public ResolveEventArgs(string name, Assembly requestingAssembly)
         {
-            this.name = name;
-            this.requestingAssembly = requestingAssembly;
+            this._name = name;
+            this._requestingAssembly = requestingAssembly;
         }
 
         public string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public Assembly RequestingAssembly
         {
-            get { return requestingAssembly; }
+            get { return _requestingAssembly; }
         }
 
     }

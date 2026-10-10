@@ -33,11 +33,11 @@ namespace IKVM.Reflection
     static class Fusion
     {
 
-        static readonly Version FrameworkVersion = new Version(4, 0, 0, 0);
-        static readonly Version FrameworkVersionNext = new Version(5, 0, 0, 0);
-        static readonly Version SilverlightVersion = new Version(2, 0, 5, 0);
-        static readonly Version SilverlightVersionMinimum = new Version(2, 0, 0, 0);
-        static readonly Version SilverlightVersionMaximum = new Version(5, 9, 0, 0);
+        static readonly Version s_frameworkVersion = new Version(4, 0, 0, 0);
+        static readonly Version s_frameworkVersionNext = new Version(5, 0, 0, 0);
+        static readonly Version s_silverlightVersion = new Version(2, 0, 5, 0);
+        static readonly Version s_silverlightVersionMinimum = new Version(2, 0, 0, 0);
+        static readonly Version s_silverlightVersionMaximum = new Version(5, 9, 0, 0);
 
         const string PublicKeyTokenEcma = "b77a5c561934e089";
         const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
@@ -185,13 +185,13 @@ namespace IKVM.Reflection
             if (version1 != null && (remappedPublicKeyToken1 = GetRemappedPublicKeyToken(ref name1, version1)) != null)
             {
                 name1.PublicKeyToken = remappedPublicKeyToken1;
-                version1 = FrameworkVersion;
+                version1 = s_frameworkVersion;
             }
 
             if ((remappedPublicKeyToken2 = GetRemappedPublicKeyToken(ref name2, version2)) != null)
             {
                 name2.PublicKeyToken = remappedPublicKeyToken2;
-                version2 = FrameworkVersion;
+                version2 = s_frameworkVersion;
             }
 
             if (name1.Retargetable.GetValueOrDefault())
@@ -230,12 +230,12 @@ namespace IKVM.Reflection
             if (IsFrameworkAssembly(name1))
             {
                 fxUnified |= !fxVersionMatch;
-                version1 = FrameworkVersion;
+                version1 = s_frameworkVersion;
             }
-            if (IsFrameworkAssembly(name2) && version2 < FrameworkVersionNext)
+            if (IsFrameworkAssembly(name2) && version2 < s_frameworkVersionNext)
             {
                 fxUnified |= !fxVersionMatch;
-                version2 = FrameworkVersion;
+                version2 = s_frameworkVersion;
             }
 
             if (IsStrongNamed(name2))
@@ -418,13 +418,13 @@ namespace IKVM.Reflection
 
         static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name, Version version)
         {
-            if (name.Retargetable.GetValueOrDefault() && version < SilverlightVersion)
+            if (name.Retargetable.GetValueOrDefault() && version < s_silverlightVersion)
                 return null;
 
             if (name.PublicKeyToken == "ddd0da4d3e678217" && name.Name == "System.ComponentModel.DataAnnotations" && name.Retargetable.GetValueOrDefault())
                 return PublicKeyTokenWinFX;
 
-            if (SilverlightVersionMinimum <= version && version <= SilverlightVersionMaximum)
+            if (s_silverlightVersionMinimum <= version && version <= s_silverlightVersionMaximum)
             {
                 switch (name.PublicKeyToken)
                 {

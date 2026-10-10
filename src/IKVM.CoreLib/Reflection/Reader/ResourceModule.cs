@@ -30,9 +30,9 @@ namespace IKVM.Reflection.Reader
     sealed class ResourceModule : NonPEModule
     {
 
-        readonly ModuleReader manifest;
-        readonly int index;
-        readonly string location;
+        readonly ModuleReader _manifest;
+        readonly int _index;
+        readonly string _location;
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,9 +43,9 @@ namespace IKVM.Reflection.Reader
         internal ResourceModule(ModuleReader manifest, int index, string location) : 
             base(manifest.Universe)
         {
-            this.manifest = manifest;
-            this.index = index;
-            this.location = location;
+            this._manifest = manifest;
+            this._index = index;
+            this._location = location;
         }
 
         public override int MDStreamVersion
@@ -60,22 +60,22 @@ namespace IKVM.Reflection.Reader
 
         public override Assembly Assembly
         {
-            get { return manifest.Assembly; }
+            get { return _manifest.Assembly; }
         }
 
         public override string FullyQualifiedName
         {
-            get { return location ?? "<Unknown>"; }
+            get { return _location ?? "<Unknown>"; }
         }
 
         public override string Name
         {
-            get { return location == null ? "<Unknown>" : System.IO.Path.GetFileName(location); }
+            get { return _location == null ? "<Unknown>" : System.IO.Path.GetFileName(_location); }
         }
 
         public override string ScopeName
         {
-            get { return manifest.GetFileName(index); }
+            get { return _manifest.GetFileName(_index); }
         }
 
         public override Guid ModuleVersionId

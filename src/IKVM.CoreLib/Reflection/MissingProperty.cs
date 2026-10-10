@@ -28,9 +28,9 @@ namespace IKVM.Reflection
     sealed class MissingProperty : PropertyInfo
     {
 
-        readonly Type declaringType;
-        readonly string name;
-        readonly PropertySignature signature;
+        readonly Type _declaringType;
+        readonly string _name;
+        readonly PropertySignature _signature;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,9 +40,9 @@ namespace IKVM.Reflection
         /// <param name="signature"></param>
         internal MissingProperty(Type declaringType, string name, PropertySignature signature)
         {
-            this.declaringType = declaringType;
-            this.name = name;
-            this.signature = signature;
+            this._declaringType = declaringType;
+            this._name = name;
+            this._signature = signature;
         }
 
         public override PropertyAttributes Attributes
@@ -97,27 +97,27 @@ namespace IKVM.Reflection
 
         internal override PropertySignature PropertySignature
         {
-            get { return signature; }
+            get { return _signature; }
         }
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override Type DeclaringType
         {
-            get { return declaringType; }
+            get { return _declaringType; }
         }
 
         public override Module Module
         {
-            get { return declaringType.Module; }
+            get { return _declaringType.Module; }
         }
 
         internal override bool IsBaked
         {
-            get { return declaringType.IsBaked; }
+            get { return _declaringType.IsBaked; }
         }
 
         internal override int GetCurrentToken()

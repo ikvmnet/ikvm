@@ -113,13 +113,13 @@ namespace IKVM.Reflection.Reader
 
         }
 
-        static readonly DummyModule module = new DummyModule();
+        static readonly DummyModule s_module = new DummyModule();
 
-        readonly int position;
+        readonly int _position;
 
         internal static Type Make(int position)
         {
-            return module.Universe.CanonicalizeType(new UnboundGenericMethodParameter(position));
+            return s_module.Universe.CanonicalizeType(new UnboundGenericMethodParameter(position));
         }
 
         /// <summary>
@@ -129,18 +129,18 @@ namespace IKVM.Reflection.Reader
         UnboundGenericMethodParameter(int position) :
             base(Signature.ELEMENT_TYPE_MVAR)
         {
-            this.position = position;
+            this._position = position;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as UnboundGenericMethodParameter;
-            return other != null && other.position == position;
+            return other != null && other._position == _position;
         }
 
         public override int GetHashCode()
         {
-            return position;
+            return _position;
         }
 
         public override string Namespace
@@ -160,12 +160,12 @@ namespace IKVM.Reflection.Reader
 
         public override Module Module
         {
-            get { return module; }
+            get { return s_module; }
         }
 
         public override int GenericParameterPosition
         {
-            get { return position; }
+            get { return _position; }
         }
 
         public override Type DeclaringType

@@ -27,7 +27,7 @@ namespace IKVM.Reflection
     sealed class ConstructorInfoImpl : ConstructorInfo
     {
 
-        readonly MethodInfo method;
+        readonly MethodInfo _method;
 
         /// <summary>
         /// Initializes a new instance.
@@ -35,23 +35,23 @@ namespace IKVM.Reflection
         /// <param name="method"></param>
         internal ConstructorInfoImpl(MethodInfo method)
         {
-            this.method = method;
+            this._method = method;
         }
 
         public override bool Equals(object obj)
         {
             ConstructorInfoImpl other = obj as ConstructorInfoImpl;
-            return other != null && other.method.Equals(method);
+            return other != null && other._method.Equals(_method);
         }
 
         public override int GetHashCode()
         {
-            return method.GetHashCode();
+            return _method.GetHashCode();
         }
 
         internal override MethodInfo GetMethodInfo()
         {
-            return method;
+            return _method;
         }
 
     }

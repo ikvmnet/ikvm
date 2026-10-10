@@ -29,8 +29,8 @@ namespace IKVM.Reflection
     sealed class FunctionPointerType : TypeInfo
     {
 
-        readonly Universe universe;
-        readonly __StandAloneMethodSig sig;
+        readonly Universe _universe;
+        readonly __StandAloneMethodSig _sig;
 
         internal static Type Make(Universe universe, __StandAloneMethodSig sig)
         {
@@ -45,26 +45,26 @@ namespace IKVM.Reflection
         FunctionPointerType(Universe universe, __StandAloneMethodSig sig) :
             base(Signature.ELEMENT_TYPE_FNPTR)
         {
-            this.universe = universe;
-            this.sig = sig;
+            this._universe = universe;
+            this._sig = sig;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as FunctionPointerType;
             return other != null
-                && other.universe == universe
-                && other.sig.Equals(sig);
+                && other._universe == _universe
+                && other._sig.Equals(_sig);
         }
 
         public override int GetHashCode()
         {
-            return sig.GetHashCode();
+            return _sig.GetHashCode();
         }
 
         public override __StandAloneMethodSig __MethodSignature
         {
-            get { return sig; }
+            get { return _sig; }
         }
 
         public override Type BaseType
@@ -94,7 +94,7 @@ namespace IKVM.Reflection
 
         internal override Universe Universe
         {
-            get { return universe; }
+            get { return _universe; }
         }
 
         public override string ToString()
@@ -104,7 +104,7 @@ namespace IKVM.Reflection
 
         protected override bool ContainsMissingTypeImpl
         {
-            get { return sig.ContainsMissingType; }
+            get { return _sig.ContainsMissingType; }
         }
 
         internal override bool IsBaked

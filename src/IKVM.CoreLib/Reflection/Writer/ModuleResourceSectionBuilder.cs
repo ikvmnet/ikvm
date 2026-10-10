@@ -20,14 +20,14 @@ namespace IKVM.Reflection.Writer
         const int RT_VERSION = 16;
         const int RT_MANIFEST = 24;
 
-        readonly ResourceDirectoryEntry root;
+        readonly ResourceDirectoryEntry _root;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public ModuleResourceSectionBuilder()
         {
-            root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
+            _root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
         }
 
         /// <summary>
@@ -39,13 +39,13 @@ namespace IKVM.Reflection.Writer
             if (other is null)
                 throw new ArgumentNullException(nameof(other));
 
-            root = new ResourceDirectoryEntry(other.root);
+            _root = new ResourceDirectoryEntry(other._root);
         }
 
         /// <summary>
         /// Gets the number of entries in the root of the builder.
         /// </summary>
-        public int Count => root.Count;
+        public int Count => _root.Count;
 
         /// <summary>
         /// Adds a VersionInfo structure.
@@ -53,7 +53,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="versionInfo"></param>
         internal void AddVersionInfo(ByteBuffer versionInfo)
         {
-            root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].data = versionInfo;
+            _root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
         }
 
         /// <summary>
@@ -99,10 +99,10 @@ namespace IKVM.Reflection.Writer
 
                 var icon = new byte[dwBytesInRes];
                 Buffer.BlockCopy(iconFile, (int)dwImageOffset, icon, 0, icon.Length);
-                root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].data = ByteBuffer.Wrap(icon);
+                _root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(icon);
             }
 
-            root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].data = group;
+            _root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace IKVM.Reflection.Writer
         /// <param name="resourceID"></param>
         internal void AddManifest(byte[] manifest, ushort resourceID)
         {
-            root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].data = ByteBuffer.Wrap(manifest);
+            _root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
         }
 
         /// <inheritdoc />
@@ -120,7 +120,7 @@ namespace IKVM.Reflection.Writer
         {
             var bb = new ByteBuffer(1024);
             var linkOffsets = new List<int>();
-            root.Write(bb, linkOffsets);
+            _root.Write(bb, linkOffsets);
 
             foreach (int offset in linkOffsets)
             {

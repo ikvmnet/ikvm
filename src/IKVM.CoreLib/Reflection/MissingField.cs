@@ -26,10 +26,10 @@ namespace IKVM.Reflection
     sealed class MissingField : FieldInfo
     {
 
-        readonly Type declaringType;
-        readonly string name;
-        readonly FieldSignature signature;
-        FieldInfo forwarder;
+        readonly Type _declaringType;
+        readonly string _name;
+        readonly FieldSignature _signature;
+        FieldInfo _forwarder;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,19 +39,19 @@ namespace IKVM.Reflection
         /// <param name="signature"></param>
         internal MissingField(Type declaringType, string name, FieldSignature signature)
         {
-            this.declaringType = declaringType;
-            this.name = name;
-            this.signature = signature;
+            this._declaringType = declaringType;
+            this._name = name;
+            this._signature = signature;
         }
 
         FieldInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
 
         FieldInfo TryGetForwarder()
         {
-            if (forwarder == null && !declaringType.__IsMissing)
-                forwarder = declaringType.FindField(name, signature);
+            if (_forwarder == null && !_declaringType.__IsMissing)
+                _forwarder = _declaringType.FindField(_name, _signature);
 
-            return forwarder;
+            return _forwarder;
         }
 
         public override bool __IsMissing
@@ -76,7 +76,7 @@ namespace IKVM.Reflection
 
         internal override FieldSignature FieldSignature
         {
-            get { return signature; }
+            get { return _signature; }
         }
 
         internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
@@ -85,22 +85,22 @@ namespace IKVM.Reflection
             if (field != null)
                 return field.ImportTo(module);
 
-            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
+            return module.ImportMethodOrField(_declaringType, this.Name, this.FieldSignature);
         }
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override Type DeclaringType
         {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+            get { return _declaringType.IsModulePseudoType ? null : _declaringType; }
         }
 
         public override Module Module
         {
-            get { return declaringType.Module; }
+            get { return _declaringType.Module; }
         }
 
         internal override FieldInfo BindTypeParameters(Type type)
@@ -121,14 +121,14 @@ namespace IKVM.Reflection
         {
             var other = obj as MissingField;
             return other != null
-                && other.declaringType == declaringType
-                && other.name == name
-                && other.signature.Equals(signature);
+                && other._declaringType == _declaringType
+                && other._name == _name
+                && other._signature.Equals(_signature);
         }
 
         public override int GetHashCode()
         {
-            return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
+            return _declaringType.GetHashCode() ^ _name.GetHashCode() ^ _signature.GetHashCode();
         }
 
         public override string ToString()

@@ -31,7 +31,7 @@ namespace IKVM.Reflection
     {
 
         [NonSerialized]
-        readonly MemberInfo member;
+        readonly MemberInfo _member;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,12 +40,12 @@ namespace IKVM.Reflection
         internal MissingMemberException(MemberInfo member) :
             base("Member '" + member + "' is a missing member and does not support the requested operation.")
         {
-            this.member = member;
+            this._member = member;
         }
 
         public MemberInfo MemberInfo
         {
-            get { return member; }
+            get { return _member; }
         }
 
     }

@@ -91,14 +91,14 @@ namespace IKVM.Reflection
 		 * 
 		 */
 
-        readonly Module module;
-        readonly CustomAttributeHandle customAttribute;
-        readonly int declSecurityIndex;
-        readonly byte[] declSecurityBlob;
+        readonly Module _module;
+        readonly CustomAttributeHandle _customAttribute;
+        readonly int _declSecurityIndex;
+        readonly byte[] _declSecurityBlob;
 
-        ConstructorInfo lazyConstructor;
-        IList<CustomAttributeTypedArgument> lazyConstructorArguments;
-        IList<CustomAttributeNamedArgument> lazyNamedArguments;
+        ConstructorInfo _lazyConstructor;
+        IList<CustomAttributeTypedArgument> _lazyConstructorArguments;
+        IList<CustomAttributeNamedArgument> _lazyNamedArguments;
 
         /// <summary>
         /// Initializes a new instance.
@@ -107,9 +107,9 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(ModuleReader module, CustomAttributeHandle handle)
         {
-            this.module = module ?? throw new ArgumentNullException(nameof(module));
-            this.customAttribute = handle;
-            this.declSecurityIndex = -1;
+            this._module = module ?? throw new ArgumentNullException(nameof(module));
+            this._customAttribute = handle;
+            this._declSecurityIndex = -1;
         }
 
         /// <summary>
@@ -145,15 +145,15 @@ namespace IKVM.Reflection
         /// <exception cref="ArgumentNullException"></exception>
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
-            this.module = module ?? throw new ArgumentNullException(nameof(module));
-            this.declSecurityIndex = -1;
-            this.lazyConstructor = constructor;
+            this._module = module ?? throw new ArgumentNullException(nameof(module));
+            this._declSecurityIndex = -1;
+            this._lazyConstructor = constructor;
 
-            lazyConstructorArguments = constructorArgs.AsReadOnly();
+            _lazyConstructorArguments = constructorArgs.AsReadOnly();
             if (namedArguments == null)
-                this.lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
+                this._lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
             else
-                this.lazyNamedArguments = namedArguments.AsReadOnly();
+                this._lazyNamedArguments = namedArguments.AsReadOnly();
         }
 
         /// <summary>
@@ -165,22 +165,22 @@ namespace IKVM.Reflection
         /// <exception cref="BadImageFormatException"></exception>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, BlobReader br)
         {
-            this.module = asm.ManifestModule;
-            this.declSecurityIndex = -1;
-            this.lazyConstructor = constructor;
+            this._module = asm.ManifestModule;
+            this._declSecurityIndex = -1;
+            this._lazyConstructor = constructor;
             if (br.RemainingBytes == 0)
             {
                 // it's legal to have an empty blob
-                lazyConstructorArguments = Array.Empty<CustomAttributeTypedArgument>();
-                lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
+                _lazyConstructorArguments = Array.Empty<CustomAttributeTypedArgument>();
+                _lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
             }
             else
             {
                 if (br.ReadUInt16() != 1)
                     throw new BadImageFormatException();
 
-                lazyConstructorArguments = ReadConstructorArguments(module, ref br, constructor);
-                lazyNamedArguments = ReadNamedArguments(module, ref br, br.ReadUInt16(), constructor.DeclaringType, true);
+                _lazyConstructorArguments = ReadConstructorArguments(_module, ref br, constructor);
+                _lazyNamedArguments = ReadNamedArguments(_module, ref br, br.ReadUInt16(), constructor.DeclaringType, true);
             }
         }
 
@@ -272,14 +272,14 @@ namespace IKVM.Reflection
         /// <param name="index"></param>
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob, int index)
         {
-            this.module = asm.ManifestModule;
-            this.declSecurityIndex = index;
-            this.lazyConstructor = constructor;
+            this._module = asm.ManifestModule;
+            this._declSecurityIndex = index;
+            this._lazyConstructor = constructor;
 
             var list = new List<CustomAttributeTypedArgument>();
             list.Add(new CustomAttributeTypedArgument(constructor.Module.Universe.System_Security_Permissions_SecurityAction, securityAction));
-            this.lazyConstructorArguments = list.AsReadOnly();
-            this.declSecurityBlob = blob;
+            this._lazyConstructorArguments = list.AsReadOnly();
+            this._declSecurityBlob = blob;
         }
 
         static Type ReadFieldOrPropType(Module context, ref BlobReader br)
@@ -482,10 +482,10 @@ namespace IKVM.Reflection
         {
             get
             {
-                if (lazyConstructor == null)
-                    lazyConstructor = (ConstructorInfo)module.ResolveMethod(MetadataTokens.GetToken(((ModuleReader)module).Metadata.GetCustomAttribute(customAttribute).Constructor));
+                if (_lazyConstructor == null)
+                    _lazyConstructor = (ConstructorInfo)_module.ResolveMethod(MetadataTokens.GetToken(((ModuleReader)_module).Metadata.GetCustomAttribute(_customAttribute).Constructor));
 
-                return lazyConstructor;
+                return _lazyConstructor;
             }
         }
 
@@ -493,10 +493,10 @@ namespace IKVM.Reflection
         {
             get
             {
-                if (lazyConstructorArguments == null)
+                if (_lazyConstructorArguments == null)
                     LazyParseArguments(false);
 
-                return lazyConstructorArguments;
+                return _lazyConstructorArguments;
             }
         }
 
@@ -504,9 +504,9 @@ namespace IKVM.Reflection
         {
             get
             {
-                if (lazyNamedArguments == null)
+                if (_lazyNamedArguments == null)
                 {
-                    if (customAttribute.IsNil == false)
+                    if (_customAttribute.IsNil == false)
                     {
                         // 1) Unresolved Custom Attribute
                         LazyParseArguments(true);
@@ -516,36 +516,36 @@ namespace IKVM.Reflection
                         // 5) Unresolved declarative security
                         unsafe
                         {
-                            fixed (byte* p = declSecurityBlob)
+                            fixed (byte* p = _declSecurityBlob)
                             {
-                                var br = new BlobReader(p, declSecurityBlob.Length);
+                                var br = new BlobReader(p, _declSecurityBlob.Length);
                                 // LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
-                                lazyNamedArguments = ReadNamedArguments(module, ref br, br.ReadCompressedInteger(), Constructor.DeclaringType, true);
+                                _lazyNamedArguments = ReadNamedArguments(_module, ref br, br.ReadCompressedInteger(), Constructor.DeclaringType, true);
                             }
                         }
                     }
                 }
 
-                return lazyNamedArguments;
+                return _lazyNamedArguments;
             }
         }
 
         void LazyParseArguments(bool requireNameArguments)
         {
-            var br = module.GetBlobReader(((ModuleReader)module).Metadata.GetCustomAttribute(customAttribute).Value);
+            var br = _module.GetBlobReader(((ModuleReader)_module).Metadata.GetCustomAttribute(_customAttribute).Value);
             if (br.RemainingBytes == 0)
             {
                 // it's legal to have an empty blob
-                lazyConstructorArguments = Array.Empty<CustomAttributeTypedArgument>();
-                lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
+                _lazyConstructorArguments = Array.Empty<CustomAttributeTypedArgument>();
+                _lazyNamedArguments = Array.Empty<CustomAttributeNamedArgument>();
             }
             else
             {
                 if (br.ReadUInt16() != 1)
                     throw new BadImageFormatException();
 
-                lazyConstructorArguments = ReadConstructorArguments(module, ref br, Constructor);
-                lazyNamedArguments = ReadNamedArguments(module, ref br, br.ReadUInt16(), Constructor.DeclaringType, requireNameArguments);
+                _lazyConstructorArguments = ReadConstructorArguments(_module, ref br, Constructor);
+                _lazyNamedArguments = ReadNamedArguments(_module, ref br, br.ReadUInt16(), Constructor.DeclaringType, requireNameArguments);
             }
         }
 

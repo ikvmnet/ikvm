@@ -31,14 +31,14 @@ namespace IKVM.Reflection.Reader
     sealed class EventInfoImpl : EventInfo
     {
 
-        readonly ModuleReader module;
-        readonly Type declaringType;
-        readonly EventDefinitionHandle handle;
-        readonly EventDefinition definition;
-        bool isPublic;
-        bool isNonPrivate;
-        bool isStatic;
-        bool flagsCached;
+        readonly ModuleReader _module;
+        readonly Type _declaringType;
+        readonly EventDefinitionHandle _handle;
+        readonly EventDefinition _definition;
+        bool _isPublic;
+        bool _isNonPrivate;
+        bool _isStatic;
+        bool _flagsCached;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,28 +48,28 @@ namespace IKVM.Reflection.Reader
         /// <param name="handle"></param>
         internal EventInfoImpl(ModuleReader module, Type declaringType, EventDefinitionHandle handle)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.handle = handle;
-            this.definition = module.Metadata.GetEventDefinition(handle);
+            this._module = module;
+            this._declaringType = declaringType;
+            this._handle = handle;
+            this._definition = module.Metadata.GetEventDefinition(handle);
         }
 
-        public override bool Equals(object obj) => obj is EventInfoImpl other && other.declaringType == declaringType && other.handle == handle;
+        public override bool Equals(object obj) => obj is EventInfoImpl other && other._declaringType == _declaringType && other._handle == _handle;
 
-        public override int GetHashCode() => declaringType.GetHashCode() * 123 + MetadataTokens.GetRowNumber(handle);
+        public override int GetHashCode() => _declaringType.GetHashCode() * 123 + MetadataTokens.GetRowNumber(_handle);
 
-        public override EventAttributes Attributes => (EventAttributes)definition.Attributes;
+        public override EventAttributes Attributes => (EventAttributes)_definition.Attributes;
 
-        public override MethodInfo GetAddMethod(bool nonPublic) => Accessor(definition.GetAccessors().Adder, nonPublic);
+        public override MethodInfo GetAddMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Adder, nonPublic);
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic) => Accessor(definition.GetAccessors().Raiser, nonPublic);
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Raiser, nonPublic);
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic) => Accessor(definition.GetAccessors().Remover, nonPublic);
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Remover, nonPublic);
 
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
             var list = new List<MethodInfo>();
-            foreach (var h in definition.GetAccessors().Others)
+            foreach (var h in _definition.GetAccessors().Others)
                 if (Accessor(h, nonPublic) is { } m)
                     list.Add(m);
 
@@ -81,13 +81,13 @@ namespace IKVM.Reflection.Reader
             if (h.IsNil)
                 return null;
 
-            var method = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(h));
+            var method = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(h));
             return nonPublic || method.IsPublic ? method : null;
         }
 
         IEnumerable<MethodInfo> AllAccessors()
         {
-            var accessors = definition.GetAccessors();
+            var accessors = _definition.GetAccessors();
             foreach (var h in new[] { accessors.Adder, accessors.Remover, accessors.Raiser })
                 if (Accessor(h, true) is { } m)
                     yield return m;
@@ -97,24 +97,24 @@ namespace IKVM.Reflection.Reader
                     yield return m;
         }
 
-        public override Type EventHandlerType => module.ResolveType(MetadataTokens.GetToken(definition.Type), declaringType);
+        public override Type EventHandlerType => _module.ResolveType(MetadataTokens.GetToken(_definition.Type), _declaringType);
 
-        public override string Name => module.GetString(definition.Name);
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override Type DeclaringType => declaringType;
+        public override Type DeclaringType => _declaringType;
 
-        public override Module Module => module;
+        public override Module Module => _module;
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
         internal override bool IsPublic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isPublic;
+                return _isPublic;
             }
         }
 
@@ -122,10 +122,10 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isNonPrivate;
+                return _isNonPrivate;
             }
         }
 
@@ -133,10 +133,10 @@ namespace IKVM.Reflection.Reader
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isStatic;
+                return _isStatic;
             }
         }
 
@@ -144,12 +144,12 @@ namespace IKVM.Reflection.Reader
         {
             foreach (var method in AllAccessors())
             {
-                isPublic |= method.IsPublic;
-                isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
-                isStatic |= method.IsStatic;
+                _isPublic |= method.IsPublic;
+                _isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                _isStatic |= method.IsStatic;
             }
 
-            flagsCached = true;
+            _flagsCached = true;
         }
 
         internal override bool IsBaked => true;

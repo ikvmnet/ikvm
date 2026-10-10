@@ -31,8 +31,8 @@ namespace IKVM.Reflection
     internal sealed class StrongNameKeyPair
     {
 
-        readonly byte[] keyPairArray;
-        readonly string keyPairContainer;
+        readonly byte[] _keyPairArray;
+        readonly string _keyPairContainer;
 
         /// <summary>
         /// Initializes a new instance.
@@ -48,7 +48,7 @@ namespace IKVM.Reflection
             if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
                 throw new NotSupportedException("IKVM.Reflection does not support key containers when running on Mono");
 
-            this.keyPairContainer = keyPairContainer;
+            this._keyPairContainer = keyPairContainer;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace IKVM.Reflection
             if (keyPairArray == null)
                 throw new ArgumentNullException("keyPairArray");
 
-            this.keyPairArray = (byte[])keyPairArray.Clone();
+            this._keyPairArray = (byte[])keyPairArray.Clone();
         }
 
         public byte[] PublicKey
@@ -92,19 +92,19 @@ namespace IKVM.Reflection
         {
             try
             {
-                if (keyPairArray != null)
+                if (_keyPairArray != null)
                 {
                     var rsa = RSA.Create();
                     // we import from parameters, as using ImportCspBlob
                     // causes the exception "KeySet not found" when signing a hash later.
-                    rsa.ImportParameters(RSAParametersFromByteArray(keyPairArray));
+                    rsa.ImportParameters(RSAParametersFromByteArray(_keyPairArray));
                     return rsa;
                 }
                 else
                 {
 #if NETFRAMEWORK
                     var parm = new CspParameters();
-                    parm.KeyContainerName = keyPairContainer;
+                    parm.KeyContainerName = _keyPairContainer;
 
                     // MONOBUG Mono doesn't like it when Flags or KeyNumber are set
                     if (Universe.MonoRuntime == false)
@@ -216,7 +216,7 @@ namespace IKVM.Reflection
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         byte[] MonoGetPublicKey()
         {
-            return keyPairArray != null ? new System.Reflection.StrongNameKeyPair(keyPairArray).PublicKey : new System.Reflection.StrongNameKeyPair(keyPairContainer).PublicKey;
+            return _keyPairArray != null ? new System.Reflection.StrongNameKeyPair(_keyPairArray).PublicKey : new System.Reflection.StrongNameKeyPair(_keyPairContainer).PublicKey;
         }
 
     }

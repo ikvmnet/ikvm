@@ -31,8 +31,8 @@ namespace IKVM.Reflection.Emit
     sealed class ManifestModule : NonPEModule
     {
 
-        readonly AssemblyBuilder assembly;
-        readonly Guid guid = Guid.NewGuid();
+        readonly AssemblyBuilder _assembly;
+        readonly Guid _guid = Guid.NewGuid();
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,12 +41,12 @@ namespace IKVM.Reflection.Emit
         internal ManifestModule(AssemblyBuilder assembly) :
             base(assembly.Universe)
         {
-            this.assembly = assembly;
+            this._assembly = assembly;
         }
 
-        public override int MDStreamVersion => assembly.mdStreamVersion;
+        public override int MDStreamVersion => _assembly.MdStreamVersion;
 
-        public override Assembly Assembly => assembly;
+        public override Assembly Assembly => _assembly;
 
         internal override Type FindType(TypeName typeName) => null;
 
@@ -57,11 +57,11 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        public override string FullyQualifiedName => Path.Combine(assembly.dir, "RefEmit_InMemoryManifestModule");
+        public override string FullyQualifiedName => Path.Combine(_assembly.Dir, "RefEmit_InMemoryManifestModule");
 
         public override string Name => "<In Memory Module>";
 
-        public override Guid ModuleVersionId => guid;
+        public override Guid ModuleVersionId => _guid;
 
         public override string ScopeName => "RefEmit_InMemoryManifestModule";
 

@@ -32,8 +32,8 @@ namespace IKVM.Reflection
     sealed class FieldSignature : Signature
     {
 
-        readonly Type fieldType;
-        readonly CustomModifiers mods;
+        readonly Type _fieldType;
+        readonly CustomModifiers _mods;
 
         internal static FieldSignature Create(Type fieldType, CustomModifiers customModifiers)
         {
@@ -47,38 +47,38 @@ namespace IKVM.Reflection
         /// <param name="mods"></param>
         private FieldSignature(Type fieldType, CustomModifiers mods)
         {
-            this.fieldType = fieldType;
-            this.mods = mods;
+            this._fieldType = fieldType;
+            this._mods = mods;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as FieldSignature;
             return other != null
-                && other.fieldType.Equals(fieldType)
-                && other.mods.Equals(mods);
+                && other._fieldType.Equals(_fieldType)
+                && other._mods.Equals(_mods);
         }
 
         public override int GetHashCode()
         {
-            return fieldType.GetHashCode() ^ mods.GetHashCode();
+            return _fieldType.GetHashCode() ^ _mods.GetHashCode();
         }
 
         internal Type FieldType
         {
-            get { return fieldType; }
+            get { return _fieldType; }
         }
 
         internal CustomModifiers GetCustomModifiers()
         {
-            return mods;
+            return _mods;
         }
 
         internal FieldSignature ExpandTypeParameters(Type declaringType)
         {
             return new FieldSignature(
-                fieldType.BindTypeParameters(declaringType),
-                mods.Bind(declaringType));
+                _fieldType.BindTypeParameters(declaringType),
+                _mods.Bind(declaringType));
         }
 
         internal static FieldSignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
@@ -94,8 +94,8 @@ namespace IKVM.Reflection
         internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
             bb.WriteByte(FIELD);
-            WriteCustomModifiers(module, bb, mods);
-            WriteType(module, bb, fieldType);
+            WriteCustomModifiers(module, bb, _mods);
+            WriteType(module, bb, _fieldType);
         }
 
     }

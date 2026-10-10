@@ -37,16 +37,16 @@ namespace IKVM.Reflection
         ICloneable
     {
 
-        string name;
-        string culture;
-        Version version;
-        byte[] publicKeyToken;
-        byte[] publicKey;
-        StrongNameKeyPair keyPair;
-        AssemblyNameFlags flags;
-        AssemblyHashAlgorithm hashAlgorithm;
-        string codeBase;
-        internal byte[] hash;
+        string _name;
+        string _culture;
+        Version _version;
+        byte[] _publicKeyToken;
+        byte[] _publicKey;
+        StrongNameKeyPair _keyPair;
+        AssemblyNameFlags _flags;
+        AssemblyHashAlgorithm _hashAlgorithm;
+        string _codeBase;
+        internal byte[] Hash;
 
         /// <summary>
         /// Initializes a new instance.
@@ -76,36 +76,36 @@ namespace IKVM.Reflection
                     throw new FileLoadException();
             }
 
-            if (!ParseVersion(parsed.Version, parsed.Retargetable.HasValue, out version))
+            if (!ParseVersion(parsed.Version, parsed.Retargetable.HasValue, out _version))
                 throw new FileLoadException();
 
-            name = parsed.Name;
+            _name = parsed.Name;
             if (parsed.Culture != null)
             {
                 if (parsed.Culture.Equals("neutral", StringComparison.OrdinalIgnoreCase))
-                    culture = "";
+                    _culture = "";
                 else if (parsed.Culture == "")
                     throw new FileLoadException();
                 else
-                    culture = new CultureInfo(parsed.Culture).Name;
+                    _culture = new CultureInfo(parsed.Culture).Name;
             }
 
             if (parsed.PublicKeyToken != null)
             {
                 if (parsed.PublicKeyToken.Equals("null", StringComparison.OrdinalIgnoreCase))
-                    publicKeyToken = Array.Empty<byte>();
+                    _publicKeyToken = Array.Empty<byte>();
                 else if (parsed.PublicKeyToken.Length != 16)
                     throw new FileLoadException();
                 else
-                    publicKeyToken = ParseKey(parsed.PublicKeyToken);
+                    _publicKeyToken = ParseKey(parsed.PublicKeyToken);
             }
 
             if (parsed.Retargetable.HasValue)
             {
-                if (parsed.Culture == null || parsed.PublicKeyToken == null || version == null)
+                if (parsed.Culture == null || parsed.PublicKeyToken == null || _version == null)
                     throw new FileLoadException();
                 if (parsed.Retargetable.Value)
-                    flags |= AssemblyNameFlags.Retargetable;
+                    _flags |= AssemblyNameFlags.Retargetable;
             }
 
             ProcessorArchitecture = parsed.ProcessorArchitecture;
@@ -148,104 +148,104 @@ namespace IKVM.Reflection
 
         public string Name
         {
-            get => name;
-            set => name = value;
+            get => _name;
+            set => _name = value;
         }
 
         public CultureInfo CultureInfo
         {
-            get => culture == null ? null : new CultureInfo(culture);
-            set => culture = value?.Name;
+            get => _culture == null ? null : new CultureInfo(_culture);
+            set => _culture = value?.Name;
         }
 
         public string CultureName
         {
-            get => culture;
-            set => culture = value;
+            get => _culture;
+            set => _culture = value;
         }
 
         public Version Version
         {
-            get => version;
-            set => version = value;
+            get => _version;
+            set => _version = value;
         }
 
         public StrongNameKeyPair KeyPair
         {
-            get => keyPair;
-            set => keyPair = value;
+            get => _keyPair;
+            set => _keyPair = value;
         }
 
         public string CodeBase
         {
-            get => codeBase;
-            set => codeBase = value;
+            get => _codeBase;
+            set => _codeBase = value;
         }
 
         public ProcessorArchitecture ProcessorArchitecture
         {
-            get => (ProcessorArchitecture)(((int)flags & 0x70) >> 4);
+            get => (ProcessorArchitecture)(((int)_flags & 0x70) >> 4);
             set
             {
                 if (value >= ProcessorArchitecture.None && value <= ProcessorArchitecture.Arm64)
-                    flags = (flags & ~(AssemblyNameFlags)0x70) | (AssemblyNameFlags)((int)value << 4);
+                    _flags = (_flags & ~(AssemblyNameFlags)0x70) | (AssemblyNameFlags)((int)value << 4);
             }
         }
 
         public AssemblyNameFlags Flags
         {
-            get => flags & (AssemblyNameFlags)~0xEF0;
-            set => flags = (flags & (AssemblyNameFlags)0xEF0) | (value & (AssemblyNameFlags)~0xEF0);
+            get => _flags & (AssemblyNameFlags)~0xEF0;
+            set => _flags = (_flags & (AssemblyNameFlags)0xEF0) | (value & (AssemblyNameFlags)~0xEF0);
         }
 
         public AssemblyContentType ContentType
         {
-            get => (AssemblyContentType)(((int)flags & 0xE00) >> 9);
+            get => (AssemblyContentType)(((int)_flags & 0xE00) >> 9);
             set
             {
                 if (value >= AssemblyContentType.Default && value <= AssemblyContentType.WindowsRuntime)
-                    flags = (flags & ~(AssemblyNameFlags)0xE00) | (AssemblyNameFlags)((int)value << 9);
+                    _flags = (_flags & ~(AssemblyNameFlags)0xE00) | (AssemblyNameFlags)((int)value << 9);
             }
         }
 
         public byte[] GetPublicKey()
         {
-            return publicKey;
+            return _publicKey;
         }
 
         public void SetPublicKey(byte[] publicKey)
         {
-            this.publicKey = publicKey;
-            flags = (flags & ~AssemblyNameFlags.PublicKey) | (publicKey == null ? 0 : AssemblyNameFlags.PublicKey);
+            this._publicKey = publicKey;
+            _flags = (_flags & ~AssemblyNameFlags.PublicKey) | (publicKey == null ? 0 : AssemblyNameFlags.PublicKey);
         }
 
         public byte[] GetPublicKeyToken()
         {
-            if (publicKeyToken == null && publicKey != null)
+            if (_publicKeyToken == null && _publicKey != null)
             {
                 // note that GetPublicKeyToken() has a side effect in this case, because we retain this token even after the public key subsequently gets changed
-                publicKeyToken = ComputePublicKeyToken(publicKey);
+                _publicKeyToken = ComputePublicKeyToken(_publicKey);
             }
 
-            return publicKeyToken;
+            return _publicKeyToken;
         }
 
         public void SetPublicKeyToken(byte[] publicKeyToken)
         {
-            this.publicKeyToken = publicKeyToken;
+            this._publicKeyToken = publicKeyToken;
         }
 
         public AssemblyHashAlgorithm HashAlgorithm
         {
-            get => hashAlgorithm;
-            set => hashAlgorithm = value;
+            get => _hashAlgorithm;
+            set => _hashAlgorithm = value;
         }
 
         public string FullName
         {
             get
             {
-                if (name == null)
+                if (_name == null)
                     return "";
 
                 ushort versionMajor = 0xFFFF;
@@ -253,19 +253,19 @@ namespace IKVM.Reflection
                 ushort versionBuild = 0xFFFF;
                 ushort versionRevision = 0xFFFF;
 
-                if (version != null)
+                if (_version != null)
                 {
-                    versionMajor = (ushort)version.Major;
-                    versionMinor = (ushort)version.Minor;
-                    versionBuild = (ushort)version.Build;
-                    versionRevision = (ushort)version.Revision;
+                    versionMajor = (ushort)_version.Major;
+                    versionMinor = (ushort)_version.Minor;
+                    versionBuild = (ushort)_version.Build;
+                    versionRevision = (ushort)_version.Revision;
                 }
 
-                var publicKeyToken = this.publicKeyToken;
-                if ((publicKeyToken == null || publicKeyToken.Length == 0) && publicKey != null)
-                    publicKeyToken = ComputePublicKeyToken(publicKey);
+                var publicKeyToken = this._publicKeyToken;
+                if ((publicKeyToken == null || publicKeyToken.Length == 0) && _publicKey != null)
+                    publicKeyToken = ComputePublicKeyToken(_publicKey);
 
-                return GetFullName(name, versionMajor, versionMinor, versionBuild, versionRevision, culture, publicKeyToken, (int)flags);
+                return GetFullName(_name, versionMajor, versionMinor, versionBuild, versionRevision, _culture, publicKeyToken, (int)_flags);
             }
         }
 
@@ -392,8 +392,8 @@ namespace IKVM.Reflection
         public object Clone()
         {
             var copy = (AssemblyName)MemberwiseClone();
-            copy.publicKey = Copy(publicKey);
-            copy.publicKeyToken = Copy(publicKeyToken);
+            copy._publicKey = Copy(_publicKey);
+            copy._publicKeyToken = Copy(_publicKeyToken);
             return copy;
         }
 
@@ -438,8 +438,8 @@ namespace IKVM.Reflection
 
         internal AssemblyNameFlags RawFlags
         {
-            get => flags;
-            set => flags = value;
+            get => _flags;
+            set => _flags = value;
         }
 
         static bool ParseVersion(string str, bool mustBeComplete, out Version version)

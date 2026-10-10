@@ -35,34 +35,34 @@ namespace IKVM.Reflection.Emit
 
         internal const int StackChangeShift = 28;               // XXXX0000000000000000000000000000
 
-        private readonly OpCodeValues m_value;
-        private readonly int m_flags;
+        private readonly OpCodeValues _value;
+        private readonly int _flags;
 
         internal OpCode(OpCodeValues value, int flags)
         {
-            m_value = value;
-            m_flags = flags;
+            _value = value;
+            _flags = flags;
         }
 
         internal bool EndsUncondJmpBlk() =>
-            (m_flags & EndsUncondJmpBlkFlag) != 0;
+            (_flags & EndsUncondJmpBlkFlag) != 0;
 
         internal int StackChange() =>
-            m_flags >> StackChangeShift;
+            _flags >> StackChangeShift;
 
-        public OperandType OperandType => (OperandType)(m_flags & OperandTypeMask);
+        public OperandType OperandType => (OperandType)(_flags & OperandTypeMask);
 
-        public FlowControl FlowControl => (FlowControl)((m_flags >> FlowControlShift) & FlowControlMask);
+        public FlowControl FlowControl => (FlowControl)((_flags >> FlowControlShift) & FlowControlMask);
 
-        public StackBehaviour StackBehaviourPop => (StackBehaviour)((m_flags >> StackBehaviourPopShift) & StackBehaviourMask);
+        public StackBehaviour StackBehaviourPop => (StackBehaviour)((_flags >> StackBehaviourPopShift) & StackBehaviourMask);
 
-        public StackBehaviour StackBehaviourPush => (StackBehaviour)((m_flags >> StackBehaviourPushShift) & StackBehaviourMask);
+        public StackBehaviour StackBehaviourPush => (StackBehaviour)((_flags >> StackBehaviourPushShift) & StackBehaviourMask);
 
-        public int Size => (m_flags >> SizeShift) & SizeMask;
+        public int Size => (_flags >> SizeShift) & SizeMask;
 
-        public short Value => (short)m_value;
+        public short Value => (short)_value;
 
-        private static volatile string[]? g_nameCache;
+        private static volatile string[]? s_g_nameCache;
 
         public string? Name
         {
@@ -73,11 +73,11 @@ namespace IKVM.Reflection.Emit
 
                 // Create and cache the opcode names lazily. They should be rarely used (only for logging, etc.)
                 // Note that we do not any locks here because of we always get the same names. The last one wins.
-                string[]? nameCache = g_nameCache;
+                string[]? nameCache = s_g_nameCache;
                 if (nameCache == null)
                 {
                     nameCache = new string[0x11f];
-                    g_nameCache = nameCache;
+                    s_g_nameCache = nameCache;
                 }
 
                 OpCodeValues opCodeValue = (OpCodeValues)(ushort)Value;

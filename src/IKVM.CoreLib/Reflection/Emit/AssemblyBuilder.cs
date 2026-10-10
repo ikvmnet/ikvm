@@ -37,30 +37,30 @@ namespace IKVM.Reflection.Emit
     internal sealed class AssemblyBuilder : Assembly
     {
 
-        readonly string name;
-        ushort majorVersion;
-        ushort minorVersion;
-        ushort buildVersion;
-        ushort revisionVersion;
-        string culture;
-        AssemblyNameFlags flags;
-        AssemblyHashAlgorithm hashAlgorithm;
-        StrongNameKeyPair keyPair;
-        byte[] publicKey;
-        internal readonly string dir;
-        PEFileKinds fileKind = PEFileKinds.Dll;
-        MethodInfo entryPoint;
-        VersionInfo versionInfo;
-        byte[] win32icon;
-        byte[] win32manifest;
-        string imageRuntimeVersion;
-        internal int mdStreamVersion = 0x20000;
-        Module pseudoManifestModule;
-        readonly List<ResourceFile> resourceFiles = new List<ResourceFile>();
-        readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
-        readonly List<Module> addedModules = new List<Module>();
-        readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-        readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
+        readonly string _name;
+        ushort _majorVersion;
+        ushort _minorVersion;
+        ushort _buildVersion;
+        ushort _revisionVersion;
+        string _culture;
+        AssemblyNameFlags _flags;
+        AssemblyHashAlgorithm _hashAlgorithm;
+        StrongNameKeyPair _keyPair;
+        byte[] _publicKey;
+        internal readonly string Dir;
+        PEFileKinds _fileKind = PEFileKinds.Dll;
+        MethodInfo _entryPoint;
+        VersionInfo _versionInfo;
+        byte[] _win32icon;
+        byte[] _win32manifest;
+        string _imageRuntimeVersion;
+        internal int MdStreamVersion = 0x20000;
+        Module _pseudoManifestModule;
+        readonly List<ResourceFile> _resourceFiles = new List<ResourceFile>();
+        readonly List<ModuleBuilder> _modules = new List<ModuleBuilder>();
+        readonly List<Module> _addedModules = new List<Module>();
+        readonly List<CustomAttributeBuilder> _customAttributes = new List<CustomAttributeBuilder>();
+        readonly List<TypeForwarder> _typeForwarders = new List<TypeForwarder>();
 
         readonly struct TypeForwarder
         {
@@ -100,38 +100,38 @@ namespace IKVM.Reflection.Emit
         internal AssemblyBuilder(Universe universe, AssemblyName name, string dir, IEnumerable<CustomAttributeBuilder> customAttributes) :
             base(universe)
         {
-            this.name = name.Name;
+            this._name = name.Name;
             SetVersionHelper(name.Version);
             if (!string.IsNullOrEmpty(name.CultureName))
             {
-                this.culture = name.CultureName;
+                this._culture = name.CultureName;
             }
 
-            this.flags = name.RawFlags;
-            this.hashAlgorithm = name.HashAlgorithm;
-            if (this.hashAlgorithm == AssemblyHashAlgorithm.None)
-                this.hashAlgorithm = AssemblyHashAlgorithm.SHA1;
+            this._flags = name.RawFlags;
+            this._hashAlgorithm = name.HashAlgorithm;
+            if (this._hashAlgorithm == AssemblyHashAlgorithm.None)
+                this._hashAlgorithm = AssemblyHashAlgorithm.SHA1;
 
-            this.keyPair = name.KeyPair;
-            if (this.keyPair != null)
+            this._keyPair = name.KeyPair;
+            if (this._keyPair != null)
             {
-                this.publicKey = this.keyPair.PublicKey;
+                this._publicKey = this._keyPair.PublicKey;
             }
             else
             {
                 var publicKey = name.GetPublicKey();
                 if (publicKey != null && publicKey.Length != 0)
-                    this.publicKey = (byte[])publicKey.Clone();
+                    this._publicKey = (byte[])publicKey.Clone();
             }
 
-            this.dir = dir ?? ".";
+            this.Dir = dir ?? ".";
             if (customAttributes != null)
-                this.customAttributes.AddRange(customAttributes);
+                this._customAttributes.AddRange(customAttributes);
 
             if (universe.HasCoreLib && !universe.CoreLib.__IsMissing && universe.CoreLib.ImageRuntimeVersion != null)
-                this.imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
+                this._imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
             else
-                this.imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
+                this._imageRuntimeVersion = TypeUtil.GetAssembly(typeof(object)).ImageRuntimeVersion;
 
             universe.RegisterDynamicAssembly(this);
         }
@@ -140,17 +140,17 @@ namespace IKVM.Reflection.Emit
         {
             if (version == null)
             {
-                majorVersion = 0;
-                minorVersion = 0;
-                buildVersion = 0;
-                revisionVersion = 0;
+                _majorVersion = 0;
+                _minorVersion = 0;
+                _buildVersion = 0;
+                _revisionVersion = 0;
             }
             else
             {
-                majorVersion = (ushort)version.Major;
-                minorVersion = (ushort)version.Minor;
-                buildVersion = version.Build == -1 ? (ushort)0 : (ushort)version.Build;
-                revisionVersion = version.Revision == -1 ? (ushort)0 : (ushort)version.Revision;
+                _majorVersion = (ushort)version.Major;
+                _minorVersion = (ushort)version.Minor;
+                _buildVersion = version.Build == -1 ? (ushort)0 : (ushort)version.Build;
+                _revisionVersion = version.Revision == -1 ? (ushort)0 : (ushort)version.Revision;
             }
         }
 
@@ -170,25 +170,25 @@ namespace IKVM.Reflection.Emit
         public void __SetAssemblyCulture(string cultureName)
         {
             AssemblyName oldName = GetName();
-            this.culture = cultureName;
+            this._culture = cultureName;
             Rename(oldName);
         }
 
         internal string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override AssemblyName GetName()
         {
             AssemblyName n = new AssemblyName();
-            n.Name = name;
-            n.Version = new Version(majorVersion, minorVersion, buildVersion, revisionVersion);
-            n.CultureName = culture ?? "";
-            n.HashAlgorithm = hashAlgorithm;
-            n.RawFlags = flags;
-            n.SetPublicKey(publicKey != null ? (byte[])publicKey.Clone() : Array.Empty<byte>());
-            n.KeyPair = keyPair;
+            n.Name = _name;
+            n.Version = new Version(_majorVersion, _minorVersion, _buildVersion, _revisionVersion);
+            n.CultureName = _culture ?? "";
+            n.HashAlgorithm = _hashAlgorithm;
+            n.RawFlags = _flags;
+            n.SetPublicKey(_publicKey != null ? (byte[])_publicKey.Clone() : Array.Empty<byte>());
+            n.KeyPair = _keyPair;
             return n;
         }
 
@@ -208,13 +208,13 @@ namespace IKVM.Reflection.Emit
         {
             var module = new ModuleBuilder(this, name, fileName);
             module.SetSymWriter(emitSymbolInfo ? Universe.CreateSymbolWriter(module) : null);
-            modules.Add(module);
+            _modules.Add(module);
             return module;
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
-            customAttributes.Add(customBuilder);
+            _customAttributes.Add(customBuilder);
         }
 
         public void __AddTypeForwarder(Type type)
@@ -224,13 +224,13 @@ namespace IKVM.Reflection.Emit
 
         public void __AddTypeForwarder(Type type, bool includeNested)
         {
-            typeForwarders.Add(new TypeForwarder(type, includeNested));
+            _typeForwarders.Add(new TypeForwarder(type, includeNested));
         }
 
         public void SetEntryPoint(MethodInfo entryMethod, PEFileKinds fileKind)
         {
-            this.entryPoint = entryMethod;
-            this.fileKind = fileKind;
+            this._entryPoint = entryMethod;
+            this._fileKind = fileKind;
         }
 
         /// <summary>
@@ -266,13 +266,13 @@ namespace IKVM.Reflection.Emit
             ModuleBuilder manifestModule = null;
 
             // finalize and populate all modules
-            foreach (var moduleBuilder in modules)
+            foreach (var moduleBuilder in _modules)
             {
                 moduleBuilder.SetIsSaved();
                 moduleBuilder.PopulatePropertyTables();
 
                 // is this the default manifest module?
-                if (manifestModule == null && string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
+                if (manifestModule == null && string.Compare(moduleBuilder.FileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
                     manifestModule = moduleBuilder;
             }
 
@@ -281,72 +281,72 @@ namespace IKVM.Reflection.Emit
 
             // the assembly row goes on the manifest module
             manifestModule.Metadata.AddAssembly(
-                manifestModule.GetOrAddString(name),
-                new Version(majorVersion, minorVersion, buildVersion, revisionVersion),
-                culture != null ? manifestModule.GetOrAddString(culture) : default,
-                publicKey != null ? manifestModule.GetOrAddBlob(publicKey) : default,
-                (System.Reflection.AssemblyFlags)(publicKey != null ? flags | AssemblyNameFlags.PublicKey : flags & ~AssemblyNameFlags.PublicKey),
-                (System.Reflection.AssemblyHashAlgorithm)hashAlgorithm);
+                manifestModule.GetOrAddString(_name),
+                new Version(_majorVersion, _minorVersion, _buildVersion, _revisionVersion),
+                _culture != null ? manifestModule.GetOrAddString(_culture) : default,
+                _publicKey != null ? manifestModule.GetOrAddBlob(_publicKey) : default,
+                (System.Reflection.AssemblyFlags)(_publicKey != null ? _flags | AssemblyNameFlags.PublicKey : _flags & ~AssemblyNameFlags.PublicKey),
+                (System.Reflection.AssemblyHashAlgorithm)_hashAlgorithm);
 
             // final copy of manifest module native resources
-            var nativeResources = manifestModule.nativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.nativeResources) : new ModuleResourceSectionBuilder();
+            var nativeResources = manifestModule.NativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.NativeResources) : new ModuleResourceSectionBuilder();
 
             // version info specified on assembly: insert into manifest module
-            if (versionInfo != null)
+            if (_versionInfo != null)
             {
-                versionInfo.SetName(GetName());
-                versionInfo.SetFileName(assemblyFileName);
-                foreach (var cab in customAttributes)
+                _versionInfo.SetName(GetName());
+                _versionInfo.SetFileName(assemblyFileName);
+                foreach (var cab in _customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
                     if (cab.HasBlob == false)
-                        versionInfo.SetAttribute(this, cab);
+                        _versionInfo.SetAttribute(this, cab);
                 }
 
                 var versionInfoData = new ByteBuffer(512);
-                versionInfo.Write(versionInfoData);
+                _versionInfo.Write(versionInfoData);
                 nativeResources.AddVersionInfo(versionInfoData);
             }
 
             // win32 icon specified on assembly: insert into manifest module
-            if (win32icon != null)
-                nativeResources.AddIcon(win32icon);
+            if (_win32icon != null)
+                nativeResources.AddIcon(_win32icon);
 
             // win32 manifest specified on assembly: insert into manifest module
-            if (win32manifest != null)
-                nativeResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
+            if (_win32manifest != null)
+                nativeResources.AddManifest(_win32manifest, _fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 
             // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
-            foreach (var cab in customAttributes)
+            foreach (var cab in _customAttributes)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
 
 
-            foreach (var fwd in typeForwarders)
+            foreach (var fwd in _typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
 
             // add resource files for assembly to manifest module
-            foreach (var resfile in resourceFiles)
+            foreach (var resfile in _resourceFiles)
             {
                 var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
                 manifestModule.AddManifestResource(resfile.Attributes, resfile.Name, MetadataTokens.GetToken(fileToken), 0);
             }
 
             // write each non-manifest module
-            foreach (var module in modules)
+            foreach (var module in _modules)
             {
                 module.FillAssemblyRefTable();
 
                 if (module != manifestModule)
                 {
                     var fileToken = default(AssemblyFileHandle);
-                    if (entryPoint != null && entryPoint.Module == module)
+                    if (_entryPoint != null && _entryPoint.Module == module)
                     {
                         throw new NotSupportedException("Multi-module assemblies cannot have an entry point in a module other than the manifest module.");
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, module, fileKind, portableExecutableKind, imageFileMachine, module.nativeResources, default);
-                        fileToken = AddFile(manifestModule, module.fileName, 0 /*ContainsMetaData*/);
+                        ModuleWriter.WriteModule(null, null, module, _fileKind, portableExecutableKind, imageFileMachine, module.NativeResources, default);
+                        fileToken = AddFile(manifestModule, module.FileName, 0 /*ContainsMetaData*/);
                     }
 
                     module.ExportTypes(fileToken, manifestModule);
@@ -354,21 +354,21 @@ namespace IKVM.Reflection.Emit
             }
 
             // import existing modules
-            foreach (var module in addedModules)
+            foreach (var module in _addedModules)
             {
                 var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
                 module.ExportTypes(fileToken, manifestModule);
             }
 
             // finally, write the manifest module
-            ModuleWriter.WriteModule(keyPair, publicKey, manifestModule, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, peStream, null, pdbStream);
         }
 
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
             var fullPath = fileName;
-            if (dir != null)
-                fullPath = Path.Combine(dir, fileName);
+            if (Dir != null)
+                fullPath = Path.Combine(Dir, fileName);
 
             using var sha1 = SHA1.Create();
             using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
@@ -388,41 +388,41 @@ namespace IKVM.Reflection.Emit
             resfile.Name = name;
             resfile.FileName = fileName;
             resfile.Attributes = attribs;
-            resourceFiles.Add(resfile);
+            _resourceFiles.Add(resfile);
         }
 
         public void DefineVersionInfoResource()
         {
-            if (versionInfo != null)
+            if (_versionInfo != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
-            versionInfo = new VersionInfo();
+            _versionInfo = new VersionInfo();
         }
 
         public void __DefineIconResource(byte[] iconFile)
         {
-            if (win32icon != null)
+            if (_win32icon != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
-            win32icon = (byte[])iconFile.Clone();
+            _win32icon = (byte[])iconFile.Clone();
         }
 
         public void __DefineManifestResource(byte[] manifest)
         {
-            if (win32manifest != null)
+            if (_win32manifest != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
-            win32manifest = (byte[])manifest.Clone();
+            _win32manifest = (byte[])manifest.Clone();
         }
 
         public override Type[] GetTypes()
         {
             var list = new List<Type>();
 
-            foreach (var module in modules)
+            foreach (var module in _modules)
                 module.GetTypesImpl(list);
 
-            foreach (var module in addedModules)
+            foreach (var module in _addedModules)
                 module.GetTypesImpl(list);
 
             return list.ToArray();
@@ -430,14 +430,14 @@ namespace IKVM.Reflection.Emit
 
         internal override Type FindType(TypeName typeName)
         {
-            foreach (var mb in modules)
+            foreach (var mb in _modules)
             {
                 var type = mb.FindType(typeName);
                 if (type != null)
                     return type;
             }
 
-            foreach (Module module in addedModules)
+            foreach (Module module in _addedModules)
             {
                 var type = module.FindType(typeName);
                 if (type != null)
@@ -449,14 +449,14 @@ namespace IKVM.Reflection.Emit
 
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
-            foreach (var mb in modules)
+            foreach (var mb in _modules)
             {
                 var type = mb.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
                     return type;
             }
 
-            foreach (Module module in addedModules)
+            foreach (Module module in _addedModules)
             {
                 var type = module.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
@@ -468,12 +468,12 @@ namespace IKVM.Reflection.Emit
 
         public override string ImageRuntimeVersion
         {
-            get { return imageRuntimeVersion; }
+            get { return _imageRuntimeVersion; }
         }
 
-        public override Module ManifestModule => pseudoManifestModule ??= new ManifestModule(this);
+        public override Module ManifestModule => _pseudoManifestModule ??= new ManifestModule(this);
 
-        public override MethodInfo EntryPoint => entryPoint;
+        public override MethodInfo EntryPoint => _entryPoint;
 
         public override AssemblyName[] GetReferencedAssemblies() => Array.Empty<AssemblyName>();
 
@@ -486,11 +486,11 @@ namespace IKVM.Reflection.Emit
         {
             var list = new List<Module>();
 
-            foreach (var module in modules)
+            foreach (var module in _modules)
                 if (getResourceModules || !module.IsResource())
                     list.Add(module);
 
-            foreach (var module in addedModules)
+            foreach (var module in _addedModules)
                 if (getResourceModules || !module.IsResource())
                     list.Add(module);
 
@@ -499,11 +499,11 @@ namespace IKVM.Reflection.Emit
 
         public override Module GetModule(string name)
         {
-            foreach (var module in modules)
+            foreach (var module in _modules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return module;
 
-            foreach (var module in addedModules)
+            foreach (var module in _addedModules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return module;
 
@@ -523,7 +523,7 @@ namespace IKVM.Reflection.Emit
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
         {
             var list = new List<CustomAttributeData>();
-            foreach (var cab in customAttributes)
+            foreach (var cab in _customAttributes)
                 if (attributeType == null || attributeType.IsAssignableFrom(cab.Constructor.DeclaringType))
                     list.Add(cab.ToData(this));
 

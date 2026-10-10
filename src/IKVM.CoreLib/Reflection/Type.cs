@@ -34,7 +34,7 @@ namespace IKVM.Reflection
         public static readonly Type[] EmptyTypes = Array.Empty<Type>();
         protected readonly Type underlyingType;
         protected TypeFlags typeFlags;
-        byte sigElementType;    // only used if (__IsBuiltIn || HasElementType || __IsFunctionPointer || IsGenericParameter)
+        byte _sigElementType;    // only used if (__IsBuiltIn || HasElementType || __IsFunctionPointer || IsGenericParameter)
 
         [Flags]
         protected enum TypeFlags : ushort
@@ -95,7 +95,7 @@ namespace IKVM.Reflection
         internal Type(byte sigElementType) :
             this()
         {
-            this.sigElementType = sigElementType;
+            this._sigElementType = sigElementType;
         }
 
         public static Binder DefaultBinder
@@ -185,27 +185,27 @@ namespace IKVM.Reflection
 
         public bool IsArray
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_ARRAY || sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_ARRAY || _sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
 
         public bool IsSZArray
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_SZARRAY; }
         }
 
         public bool IsByRef
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_BYREF; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_BYREF; }
         }
 
         public bool IsPointer
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_PTR; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_PTR; }
         }
 
         public bool IsFunctionPointer
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_FNPTR; }
         }
 
         public bool IsValueType
@@ -228,7 +228,7 @@ namespace IKVM.Reflection
 
         public bool IsGenericParameter
         {
-            get { return sigElementType == Signature.ELEMENT_TYPE_VAR || sigElementType == Signature.ELEMENT_TYPE_MVAR; }
+            get { return _sigElementType == Signature.ELEMENT_TYPE_VAR || _sigElementType == Signature.ELEMENT_TYPE_MVAR; }
         }
 
         public virtual int GenericParameterPosition
@@ -1098,9 +1098,9 @@ namespace IKVM.Reflection
             get
             {
                 return __IsBuiltIn
-                    && ((sigElementType >= Signature.ELEMENT_TYPE_BOOLEAN && sigElementType <= Signature.ELEMENT_TYPE_R8)
-                        || sigElementType == Signature.ELEMENT_TYPE_I
-                        || sigElementType == Signature.ELEMENT_TYPE_U);
+                    && ((_sigElementType >= Signature.ELEMENT_TYPE_BOOLEAN && _sigElementType <= Signature.ELEMENT_TYPE_R8)
+                        || _sigElementType == Signature.ELEMENT_TYPE_I
+                        || _sigElementType == Signature.ELEMENT_TYPE_U);
             }
         }
 
@@ -1119,7 +1119,7 @@ namespace IKVM.Reflection
             {
                 // this property can only be called after __IsBuiltIn, HasElementType, __IsFunctionPointer or IsGenericParameter returned true
                 System.Diagnostics.Debug.Assert((typeFlags & TypeFlags.BuiltIn) != 0 || HasElementType || IsFunctionPointer || IsGenericParameter);
-                return sigElementType;
+                return _sigElementType;
             }
         }
 
@@ -1158,7 +1158,7 @@ namespace IKVM.Reflection
             if (this == builtIn)
             {
                 typeFlags |= TypeFlags.BuiltIn;
-                this.sigElementType = elementType;
+                this._sigElementType = elementType;
                 return true;
             }
 

@@ -32,14 +32,14 @@ namespace IKVM.Reflection.Emit
     internal sealed class FieldBuilder : FieldInfo
     {
 
-        readonly TypeBuilder type;
-        readonly string name;
-        readonly int pseudoToken;
-        FieldAttributes attributes;
-        readonly FieldSignature signature;
-        int offset = -1;
+        readonly TypeBuilder _type;
+        readonly string _name;
+        readonly int _pseudoToken;
+        FieldAttributes _attributes;
+        readonly FieldSignature _signature;
+        int _offset = -1;
 
-        BlobHandle signatureBlobHandle;
+        BlobHandle _signatureBlobHandle;
 
         /// <summary>
         /// Initializes a new instance.
@@ -51,39 +51,39 @@ namespace IKVM.Reflection.Emit
         /// <param name="attributes"></param>
         internal FieldBuilder(TypeBuilder type, string name, Type fieldType, CustomModifiers customModifiers, FieldAttributes attributes)
         {
-            this.type = type;
-            this.name = name;
-            this.attributes = attributes;
-            this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
-            this.signature = FieldSignature.Create(fieldType, customModifiers);
+            this._type = type;
+            this._name = name;
+            this._attributes = attributes;
+            this._pseudoToken = type.ModuleBuilder.AllocPseudoToken();
+            this._signature = FieldSignature.Create(fieldType, customModifiers);
 
             // create signature blob
             var buf = new BlobBuilder(5);
-            signature.Write(type.ModuleBuilder, buf);
-            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf);
+            _signature.Write(type.ModuleBuilder, buf);
+            _signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf);
         }
 
         public void SetConstant(object defaultValue)
         {
-            attributes |= FieldAttributes.HasDefault;
-            type.ModuleBuilder.AddConstant(pseudoToken, defaultValue);
+            _attributes |= FieldAttributes.HasDefault;
+            _type.ModuleBuilder.AddConstant(_pseudoToken, defaultValue);
         }
 
         public override object GetRawConstantValue()
         {
-            if (!type.IsCreated())
+            if (!_type.IsCreated())
             {
                 // the .NET FieldBuilder doesn't support this method
                 // (since we dont' have a different FieldInfo object after baking, we will support it once we're baked)
                 throw new NotSupportedException();
             }
 
-            return type.ModuleBuilder.GetConstant(GetCurrentToken());
+            return _type.ModuleBuilder.GetConstant(GetCurrentToken());
         }
 
         public override bool __TryGetFieldOffset(out int offset)
         {
-            return (offset = this.offset) != -1;
+            return (offset = this._offset) != -1;
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -94,85 +94,85 @@ namespace IKVM.Reflection.Emit
                     SetOffset((int)customBuilder.DecodeBlob(Module.Assembly).GetConstructorArgument(0));
                     break;
                 case KnownCA.MarshalAsAttribute:
-                    FieldMarshal.SetMarshalAsAttribute(type.ModuleBuilder, pseudoToken, customBuilder);
-                    attributes |= FieldAttributes.HasFieldMarshal;
+                    FieldMarshal.SetMarshalAsAttribute(_type.ModuleBuilder, _pseudoToken, customBuilder);
+                    _attributes |= FieldAttributes.HasFieldMarshal;
                     break;
                 case KnownCA.NonSerializedAttribute:
-                    attributes |= FieldAttributes.NotSerialized;
+                    _attributes |= FieldAttributes.NotSerialized;
                     break;
                 case KnownCA.SpecialNameAttribute:
-                    attributes |= FieldAttributes.SpecialName;
+                    _attributes |= FieldAttributes.SpecialName;
                     break;
                 default:
-                    type.ModuleBuilder.SetCustomAttribute(pseudoToken, customBuilder);
+                    _type.ModuleBuilder.SetCustomAttribute(_pseudoToken, customBuilder);
                     break;
             }
         }
 
         public void SetOffset(int iOffset)
         {
-            offset = iOffset;
+            _offset = iOffset;
         }
 
         public override FieldAttributes Attributes
         {
-            get { return attributes; }
+            get { return _attributes; }
         }
 
         public override Type DeclaringType
         {
-            get { return type.IsModulePseudoType ? null : type; }
+            get { return _type.IsModulePseudoType ? null : _type; }
         }
 
         public override string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public override int MetadataToken
         {
-            get { return pseudoToken; }
+            get { return _pseudoToken; }
         }
 
         public override Module Module
         {
-            get { return type.Module; }
+            get { return _type.Module; }
         }
 
         internal void WriteFieldRecords()
         {
-            type.ModuleBuilder.Metadata.AddFieldDefinition(
-                (System.Reflection.FieldAttributes)attributes,
-                type.ModuleBuilder.GetOrAddString(name),
-                signatureBlobHandle);
+            _type.ModuleBuilder.Metadata.AddFieldDefinition(
+                (System.Reflection.FieldAttributes)_attributes,
+                _type.ModuleBuilder.GetOrAddString(_name),
+                _signatureBlobHandle);
         }
 
         internal void FixupToken(int token)
         {
-            type.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
+            _type.ModuleBuilder.RegisterTokenFixup(_pseudoToken, token);
         }
 
         internal override FieldSignature FieldSignature
         {
-            get { return signature; }
+            get { return _signature; }
         }
 
         internal override int ImportTo(ModuleBuilder other)
         {
-            return other.ImportMethodOrField(type, name, signature);
+            return other.ImportMethodOrField(_type, _name, _signature);
         }
 
         internal override int GetCurrentToken()
         {
-            if (type.ModuleBuilder.IsSaved)
-                return type.ModuleBuilder.ResolvePseudoToken(pseudoToken);
+            if (_type.ModuleBuilder.IsSaved)
+                return _type.ModuleBuilder.ResolvePseudoToken(_pseudoToken);
             else
-                return pseudoToken;
+                return _pseudoToken;
         }
 
         internal override bool IsBaked
         {
-            get { return type.IsBaked; }
+            get { return _type.IsBaked; }
         }
 
     }

@@ -28,7 +28,7 @@ namespace IKVM.Reflection
     {
 
         // element 0 is the return type, the rest are the parameters
-        readonly CustomModifiers[] customModifiers;
+        readonly CustomModifiers[] _customModifiers;
 
         /// <summary>
         /// Initializes a new instance.
@@ -36,12 +36,12 @@ namespace IKVM.Reflection
         /// <param name="customModifiers"></param>
         private PackedCustomModifiers(CustomModifiers[] customModifiers)
         {
-            this.customModifiers = customModifiers;
+            this._customModifiers = customModifiers;
         }
 
         public override int GetHashCode()
         {
-            return Util.GetHashCode(customModifiers);
+            return Util.GetHashCode(_customModifiers);
         }
 
         public override bool Equals(object obj)
@@ -52,33 +52,33 @@ namespace IKVM.Reflection
 
         internal bool Equals(PackedCustomModifiers other)
         {
-            return Util.ArrayEquals(customModifiers, other.customModifiers);
+            return Util.ArrayEquals(_customModifiers, other._customModifiers);
         }
 
         internal CustomModifiers GetReturnTypeCustomModifiers()
         {
-            if (customModifiers == null)
+            if (_customModifiers == null)
                 return new CustomModifiers();
 
-            return customModifiers[0];
+            return _customModifiers[0];
         }
 
         internal CustomModifiers GetParameterCustomModifiers(int index)
         {
-            if (customModifiers == null)
+            if (_customModifiers == null)
                 return new CustomModifiers();
 
-            return customModifiers[index + 1];
+            return _customModifiers[index + 1];
         }
 
         internal PackedCustomModifiers Bind(IGenericBinder binder)
         {
-            if (customModifiers == null)
+            if (_customModifiers == null)
                 return new PackedCustomModifiers();
 
-            var expanded = new CustomModifiers[customModifiers.Length];
-            for (int i = 0; i < customModifiers.Length; i++)
-                expanded[i] = customModifiers[i].Bind(binder);
+            var expanded = new CustomModifiers[_customModifiers.Length];
+            for (int i = 0; i < _customModifiers.Length; i++)
+                expanded[i] = _customModifiers[i].Bind(binder);
 
             return new PackedCustomModifiers(expanded);
         }
@@ -87,9 +87,9 @@ namespace IKVM.Reflection
         {
             get
             {
-                if (customModifiers != null)
-                    for (int i = 0; i < customModifiers.Length; i++)
-                        if (customModifiers[i].ContainsMissingType)
+                if (_customModifiers != null)
+                    for (int i = 0; i < _customModifiers.Length; i++)
+                        if (_customModifiers[i].ContainsMissingType)
                             return true;
 
                 return false;

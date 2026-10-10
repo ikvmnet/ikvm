@@ -34,20 +34,20 @@ namespace IKVM.Reflection
     internal abstract class Module : ICustomAttributeProvider
     {
 
-        readonly Universe universe;
+        readonly Universe _universe;
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="universe"></param>
         internal Module(Universe universe)
         {
-            this.universe = universe;
+            this._universe = universe;
         }
 
         /// <summary>
         /// Gets the universe of types this module belongs to.
         /// </summary>
-        public Universe Universe => universe;
+        public Universe Universe => _universe;
 
         public FieldInfo GetField(string name)
         {
@@ -236,8 +236,8 @@ namespace IKVM.Reflection
         internal sealed class GenericContext : IGenericContext
         {
 
-            readonly Type[] genericTypeArguments;
-            readonly Type[] genericMethodArguments;
+            readonly Type[] _genericTypeArguments;
+            readonly Type[] _genericMethodArguments;
 
             /// <summary>
             /// Initializes a new instance.
@@ -246,18 +246,18 @@ namespace IKVM.Reflection
             /// <param name="genericMethodArguments"></param>
             internal GenericContext(Type[] genericTypeArguments, Type[] genericMethodArguments)
             {
-                this.genericTypeArguments = genericTypeArguments;
-                this.genericMethodArguments = genericMethodArguments;
+                this._genericTypeArguments = genericTypeArguments;
+                this._genericMethodArguments = genericMethodArguments;
                 }
 
                 public Type GetGenericTypeArgument(int index)
                 {
-                    return genericTypeArguments[index];
+                    return _genericTypeArguments[index];
                 }
 
                 public Type GetGenericMethodArgument(int index)
                 {
-                    return genericMethodArguments[index];
+                    return _genericMethodArguments[index];
                 }
 
         }

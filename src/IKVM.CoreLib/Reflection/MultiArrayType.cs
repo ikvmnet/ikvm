@@ -27,9 +27,9 @@ namespace IKVM.Reflection
     sealed class MultiArrayType : ElementHolderType
     {
 
-        readonly int rank;
-        readonly int[] sizes;
-        readonly int[] lobounds;
+        readonly int _rank;
+        readonly int[] _sizes;
+        readonly int[] _lobounds;
 
         internal static Type Make(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods)
         {
@@ -47,9 +47,9 @@ namespace IKVM.Reflection
         MultiArrayType(Type type, int rank, int[] sizes, int[] lobounds, CustomModifiers mods) :
             base(type, mods, Signature.ELEMENT_TYPE_ARRAY)
         {
-            this.rank = rank;
-            this.sizes = sizes;
-            this.lobounds = lobounds;
+            this._rank = rank;
+            this._sizes = sizes;
+            this._lobounds = lobounds;
         }
 
         public override Type BaseType
@@ -60,10 +60,10 @@ namespace IKVM.Reflection
         public override MethodBase[] __GetDeclaredMethods()
         {
             var int32 = Module.Universe.System_Int32;
-            var setArgs = new Type[rank + 1];
-            var getArgs = new Type[rank];
-            var ctorArgs = new Type[rank * 2];
-            for (int i = 0; i < rank; i++)
+            var setArgs = new Type[_rank + 1];
+            var getArgs = new Type[_rank];
+            var ctorArgs = new Type[_rank * 2];
+            for (int i = 0; i < _rank; i++)
             {
                 setArgs[i] = int32;
                 getArgs[i] = int32;
@@ -71,7 +71,7 @@ namespace IKVM.Reflection
                 ctorArgs[i * 2 + 1] = int32;
             }
 
-            setArgs[rank] = elementType;
+            setArgs[_rank] = elementType;
 
             return new MethodBase[]
             {
@@ -90,26 +90,26 @@ namespace IKVM.Reflection
 
         public override int GetArrayRank()
         {
-            return rank;
+            return _rank;
         }
 
         public override int[] __GetArraySizes()
         {
-            return Util.Copy(sizes);
+            return Util.Copy(_sizes);
         }
 
         public override int[] __GetArrayLowerBounds()
         {
-            return Util.Copy(lobounds);
+            return Util.Copy(_lobounds);
         }
 
         public override bool Equals(object o)
         {
             var at = o as MultiArrayType;
             return EqualsHelper(at)
-                && at.rank == rank
-                && ArrayEquals(at.sizes, sizes)
-                && ArrayEquals(at.lobounds, lobounds);
+                && at._rank == _rank
+                && ArrayEquals(at._sizes, _sizes)
+                && ArrayEquals(at._lobounds, _lobounds);
         }
 
         static bool ArrayEquals(int[] i1, int[] i2)
@@ -128,20 +128,20 @@ namespace IKVM.Reflection
 
         public override int GetHashCode()
         {
-            return elementType.GetHashCode() * 9 + rank;
+            return elementType.GetHashCode() * 9 + _rank;
         }
 
         internal override string GetSuffix()
         {
-            if (rank == 1)
+            if (_rank == 1)
                 return "[*]";
             else
-                return "[" + new string(',', rank - 1) + "]";
+                return "[" + new string(',', _rank - 1) + "]";
         }
 
         protected override Type Wrap(Type type, CustomModifiers mods)
         {
-            return Make(type, rank, sizes, lobounds, mods);
+            return Make(type, _rank, _sizes, _lobounds, mods);
         }
 
     }

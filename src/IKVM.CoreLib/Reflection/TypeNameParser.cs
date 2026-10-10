@@ -36,11 +36,11 @@ namespace IKVM.Reflection
         const short BYREF = -2;
         const short POINTER = -3;
 
-        readonly string name;
-        readonly string[] nested;
-        readonly string assemblyName;
-        readonly short[] modifiers;
-        readonly TypeNameParser[] genericParameters;
+        readonly string _name;
+        readonly string[] _nested;
+        readonly string _assemblyName;
+        readonly short[] _modifiers;
+        readonly TypeNameParser[] _genericParameters;
 
         internal static string Escape(string name)
         {
@@ -114,34 +114,34 @@ namespace IKVM.Reflection
 
         TypeNameParser(ref Parser parser, bool withAssemblyName)
         {
-            var genericParameter = parser.pos != 0;
-            name = parser.NextNamePart();
+            var genericParameter = parser.Pos != 0;
+            _name = parser.NextNamePart();
 
-            nested = null;
-            parser.ParseNested(ref nested);
+            _nested = null;
+            parser.ParseNested(ref _nested);
 
-            genericParameters = null;
-            parser.ParseGenericParameters(ref genericParameters);
+            _genericParameters = null;
+            parser.ParseGenericParameters(ref _genericParameters);
 
-            modifiers = null;
-            parser.ParseModifiers(ref modifiers);
+            _modifiers = null;
+            parser.ParseModifiers(ref _modifiers);
 
-            assemblyName = null;
+            _assemblyName = null;
             if (withAssemblyName)
-                parser.ParseAssemblyName(genericParameter, ref assemblyName);
+                parser.ParseAssemblyName(genericParameter, ref _assemblyName);
         }
 
-        internal readonly bool Error => name == null;
+        internal readonly bool Error => _name == null;
 
-        internal readonly string FirstNamePart => name;
+        internal readonly string FirstNamePart => _name;
 
-        internal readonly string AssemblyName => assemblyName;
+        internal readonly string AssemblyName => _assemblyName;
 
         private struct Parser
         {
 
-            readonly string typeName;
-            internal int pos;
+            readonly string _typeName;
+            internal int Pos;
 
             /// <summary>
             /// Initializes a new instance.
@@ -149,26 +149,26 @@ namespace IKVM.Reflection
             /// <param name="typeName"></param>
             internal Parser(string typeName)
             {
-                this.typeName = typeName;
-                this.pos = 0;
+                this._typeName = typeName;
+                this.Pos = 0;
             }
 
             void Check(bool condition)
             {
                 if (!condition)
-                    throw new ArgumentException("Invalid type name '" + typeName + "'");
+                    throw new ArgumentException("Invalid type name '" + _typeName + "'");
             }
 
             void Consume(char c)
             {
-                Check(pos < typeName.Length && typeName[pos++] == c);
+                Check(Pos < _typeName.Length && _typeName[Pos++] == c);
             }
 
             bool TryConsume(char c)
             {
-                if (pos < typeName.Length && typeName[pos] == c)
+                if (Pos < _typeName.Length && _typeName[Pos] == c)
                 {
-                    pos++;
+                    Pos++;
                     return true;
                 }
                 else
@@ -181,14 +181,14 @@ namespace IKVM.Reflection
             {
                 SkipWhiteSpace();
 
-                int start = pos;
-                for (; pos < typeName.Length; pos++)
+                int start = Pos;
+                for (; Pos < _typeName.Length; Pos++)
                 {
-                    var c = typeName[pos];
+                    var c = _typeName[Pos];
                     if (c == '\\')
                     {
-                        pos++;
-                        Check(pos < typeName.Length && SpecialChars.IndexOf(typeName[pos]) != -1);
+                        Pos++;
+                        Check(Pos < _typeName.Length && SpecialChars.IndexOf(_typeName[Pos]) != -1);
                     }
                     else if (SpecialChars.IndexOf(c) != -1)
                     {
@@ -196,11 +196,11 @@ namespace IKVM.Reflection
                     }
                 }
 
-                Check(pos - start != 0);
-                if (start == 0 && pos == typeName.Length)
-                    return typeName;
+                Check(Pos - start != 0);
+                if (start == 0 && Pos == _typeName.Length)
+                    return _typeName;
                 else
-                    return typeName.Substring(start, pos - start);
+                    return _typeName.Substring(start, Pos - start);
             }
 
             internal void ParseNested(ref string[] nested)
@@ -211,7 +211,7 @@ namespace IKVM.Reflection
 
             internal void ParseGenericParameters(ref TypeNameParser[] genericParameters)
             {
-                int saved = pos;
+                int saved = Pos;
                 if (TryConsume('['))
                 {
                     SkipWhiteSpace();
@@ -219,7 +219,7 @@ namespace IKVM.Reflection
                     if (TryConsume(']') || TryConsume('*') || TryConsume(','))
                     {
                         // it's not a generic parameter list, but an array instead
-                        pos = saved;
+                        Pos = saved;
                         return;
                     }
 
@@ -247,20 +247,20 @@ namespace IKVM.Reflection
 
             internal void ParseModifiers(ref short[] modifiers)
             {
-                while (pos < typeName.Length)
+                while (Pos < _typeName.Length)
                 {
-                    switch (typeName[pos])
+                    switch (_typeName[Pos])
                     {
                         case '*':
-                            pos++;
+                            Pos++;
                             Add(ref modifiers, POINTER);
                             break;
                         case '&':
-                            pos++;
+                            Pos++;
                             Add(ref modifiers, BYREF);
                             break;
                         case '[':
-                            pos++;
+                            Pos++;
                             Add(ref modifiers, ParseArray());
                             Consume(']');
                             break;
@@ -274,9 +274,9 @@ namespace IKVM.Reflection
 
             internal void ParseAssemblyName(bool genericParameter, ref string assemblyName)
             {
-                if (pos < typeName.Length)
+                if (Pos < _typeName.Length)
                 {
-                    if (typeName[pos] == ']' && genericParameter)
+                    if (_typeName[Pos] == ']' && genericParameter)
                     {
                         // ok
                     }
@@ -287,15 +287,15 @@ namespace IKVM.Reflection
 
                         if (genericParameter)
                         {
-                            int start = pos;
-                            while (pos < typeName.Length)
+                            int start = Pos;
+                            while (Pos < _typeName.Length)
                             {
-                                char c = typeName[pos];
+                                char c = _typeName[Pos];
                                 if (c == '\\')
                                 {
-                                    pos++;
+                                    Pos++;
                                     // a backslash itself is not legal in an assembly name, so we don't need to check for an escaped backslash
-                                    Check(pos < typeName.Length && typeName[pos++] == ']');
+                                    Check(Pos < _typeName.Length && _typeName[Pos++] == ']');
                                 }
                                 else if (c == ']')
                                 {
@@ -303,16 +303,16 @@ namespace IKVM.Reflection
                                 }
                                 else
                                 {
-                                    pos++;
+                                    Pos++;
                                 }
                             }
-                            Check(pos < typeName.Length && typeName[pos] == ']');
-                            assemblyName = typeName.Substring(start, pos - start).Replace("\\]", "]");
+                            Check(Pos < _typeName.Length && _typeName[Pos] == ']');
+                            assemblyName = _typeName.Substring(start, Pos - start).Replace("\\]", "]");
                         }
                         else
                         {
                             // only when an assembly name is used in a generic type parameter, will it be escaped
-                            assemblyName = typeName.Substring(pos);
+                            assemblyName = _typeName.Substring(Pos);
                         }
                         Check(assemblyName.Length != 0);
                     }
@@ -326,16 +326,16 @@ namespace IKVM.Reflection
             short ParseArray()
             {
                 SkipWhiteSpace();
-                Check(pos < typeName.Length);
+                Check(Pos < _typeName.Length);
 
-                var c = typeName[pos];
+                var c = _typeName[Pos];
                 if (c == ']')
                 {
                     return SZARRAY;
                 }
                 else if (c == '*')
                 {
-                    pos++;
+                    Pos++;
                     SkipWhiteSpace();
                     return 1;
                 }
@@ -355,8 +355,8 @@ namespace IKVM.Reflection
 
             void SkipWhiteSpace()
             {
-                while (pos < typeName.Length && Char.IsWhiteSpace(typeName[pos]))
-                    pos++;
+                while (Pos < _typeName.Length && Char.IsWhiteSpace(_typeName[Pos]))
+                    Pos++;
             }
 
             static void Add<T>(ref T[] array, T elem)
@@ -375,12 +375,12 @@ namespace IKVM.Reflection
         internal Type GetType(Universe universe, Module context, bool throwOnError, string originalName, bool resolve, bool ignoreCase)
         {
             Debug.Assert(!resolve || !ignoreCase);
-            var name = TypeName.Split(this.name);
+            var name = TypeName.Split(this._name);
 
             Type type;
-            if (assemblyName != null)
+            if (_assemblyName != null)
             {
-                Assembly asm = universe.Load(assemblyName, context, throwOnError);
+                Assembly asm = universe.Load(_assemblyName, context, throwOnError);
                 if (asm == null)
                 {
                     return null;
@@ -463,10 +463,10 @@ namespace IKVM.Reflection
                 return null;
             }
 
-            if (nested != null)
+            if (_nested != null)
             {
                 Type outer;
-                foreach (string nest in nested)
+                foreach (string nest in _nested)
                 {
                     outer = type;
                     var name = TypeName.Split(TypeNameParser.Unescape(nest));
@@ -483,12 +483,12 @@ namespace IKVM.Reflection
                 }
             }
 
-            if (genericParameters != null)
+            if (_genericParameters != null)
             {
-                var typeArgs = new Type[genericParameters.Length];
+                var typeArgs = new Type[_genericParameters.Length];
                 for (int i = 0; i < typeArgs.Length; i++)
                 {
-                    typeArgs[i] = genericParameters[i].GetType(type.Assembly.Universe, context, throwOnError, originalName, resolve, ignoreCase);
+                    typeArgs[i] = _genericParameters[i].GetType(type.Assembly.Universe, context, throwOnError, originalName, resolve, ignoreCase);
                     if (typeArgs[i] == null)
                         return null;
                 }
@@ -496,9 +496,9 @@ namespace IKVM.Reflection
                 type = type.MakeGenericType(typeArgs);
             }
 
-            if (modifiers != null)
+            if (_modifiers != null)
             {
-                foreach (var modifier in modifiers)
+                foreach (var modifier in _modifiers)
                 {
                     type = modifier switch
                     {

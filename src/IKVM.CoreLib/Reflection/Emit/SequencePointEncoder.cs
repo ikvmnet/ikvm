@@ -12,13 +12,13 @@ namespace IKVM.Reflection.Emit
     struct SequencePointEncoder
     {
 
-        readonly BlobBuilder writer;
+        readonly BlobBuilder _writer;
 
-        bool localSignatureEncoded = false;
-        bool sequencePointEncoded = false;
-        int prevOffset = -1;
-        int prevNonHiddenStartLine = -1;
-        int prevNonHiddenStartColumn = -1;
+        bool _localSignatureEncoded = false;
+        bool _sequencePointEncoded = false;
+        int _prevOffset = -1;
+        int _prevNonHiddenStartLine = -1;
+        int _prevNonHiddenStartColumn = -1;
 
         /// <summary>
         /// initializes a new instance.
@@ -26,7 +26,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="writer"></param>
         public SequencePointEncoder(BlobBuilder writer)
         {
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            this._writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         /// <summary>
@@ -37,15 +37,15 @@ namespace IKVM.Reflection.Emit
         /// <param name="previousDocument".
         public void LocalSignature(StandaloneSignatureHandle localSignature)
         {
-            if (localSignatureEncoded)
+            if (_localSignatureEncoded)
                 throw new InvalidOperationException("Local Signature already encoded.");
-            if (sequencePointEncoded)
+            if (_sequencePointEncoded)
                 throw new InvalidOperationException("Sequence point already encoded.");
 
             // write local signature
-            writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(localSignature));
+            _writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(localSignature));
 
-            localSignatureEncoded = true;
+            _localSignatureEncoded = true;
         }
 
         /// <summary>
@@ -61,33 +61,33 @@ namespace IKVM.Reflection.Emit
         /// <exception cref="InvalidOperationException"></exception>
         public void SequencePoint(DocumentHandle document, int offset, int startLine, int startColumn, int endLine, int endColumn, ref DocumentHandle previousDocument)
         {
-            if (localSignatureEncoded == false)
+            if (_localSignatureEncoded == false)
                 throw new InvalidOperationException("Local signature not already encoded.");
-            if (offset <= prevOffset)
+            if (offset <= _prevOffset)
                 throw new ArgumentException("Subsequent sequence points must appear at an offset greater than the previous sequence point.");
 
             // document passed, and different from previous, write new document-record
             if (document.IsNil == false && document != previousDocument)
             {
                 // this isn't the initial header document, but a document-record, which requires a zero IL offset
-                if (sequencePointEncoded)
-                    writer.WriteCompressedInteger(0);
+                if (_sequencePointEncoded)
+                    _writer.WriteCompressedInteger(0);
 
-                writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(document));
+                _writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(document));
                 previousDocument = document;
             }
 
             // IL offset or delta IL offset
-            if (prevOffset == -1)
-                writer.WriteCompressedInteger(offset);
+            if (_prevOffset == -1)
+                _writer.WriteCompressedInteger(offset);
             else
-                writer.WriteCompressedInteger(offset - prevOffset);
+                _writer.WriteCompressedInteger(offset - _prevOffset);
 
             // hidden or non-hidden sequence point
             if (startLine == System.Reflection.Metadata.SequencePoint.HiddenLine)
             {
-                writer.WriteCompressedInteger(0);
-                writer.WriteCompressedInteger(0);
+                _writer.WriteCompressedInteger(0);
+                _writer.WriteCompressedInteger(0);
             }
             else
             {
@@ -96,31 +96,31 @@ namespace IKVM.Reflection.Emit
                 Debug.Assert(startLine == System.Reflection.Metadata.SequencePoint.HiddenLine || deltaLines > 0 || deltaColumns > 0);
 
                 // write change in lines; then change in columns (signed if change in lines)
-                writer.WriteCompressedInteger(deltaLines);
+                _writer.WriteCompressedInteger(deltaLines);
                 if (deltaLines == 0)
-                    writer.WriteCompressedInteger(deltaColumns);
+                    _writer.WriteCompressedInteger(deltaColumns);
                 else
-                    writer.WriteCompressedSignedInteger(deltaColumns);
+                    _writer.WriteCompressedSignedInteger(deltaColumns);
 
                 // delta start lines & columns
-                if (prevNonHiddenStartLine == -1)
+                if (_prevNonHiddenStartLine == -1)
                 {
-                    Debug.Assert(prevNonHiddenStartColumn == -1);
-                    writer.WriteCompressedInteger(startLine);
-                    writer.WriteCompressedInteger(startColumn);
+                    Debug.Assert(_prevNonHiddenStartColumn == -1);
+                    _writer.WriteCompressedInteger(startLine);
+                    _writer.WriteCompressedInteger(startColumn);
                 }
                 else
                 {
-                    writer.WriteCompressedSignedInteger(startLine - prevNonHiddenStartLine);
-                    writer.WriteCompressedSignedInteger(startColumn - prevNonHiddenStartColumn);
+                    _writer.WriteCompressedSignedInteger(startLine - _prevNonHiddenStartLine);
+                    _writer.WriteCompressedSignedInteger(startColumn - _prevNonHiddenStartColumn);
                 }
 
-                prevNonHiddenStartLine = startLine;
-                prevNonHiddenStartColumn = startColumn;
+                _prevNonHiddenStartLine = startLine;
+                _prevNonHiddenStartColumn = startColumn;
             }
 
-            prevOffset = offset;
-            sequencePointEncoded = true;
+            _prevOffset = offset;
+            _sequencePointEncoded = true;
         }
 
     }

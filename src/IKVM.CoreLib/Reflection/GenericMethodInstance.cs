@@ -31,10 +31,10 @@ namespace IKVM.Reflection
     sealed class GenericMethodInstance : MethodInfo
     {
 
-        readonly Type declaringType;
-        readonly MethodInfo method;
-        readonly Type[] methodArgs;
-        MethodSignature lazyMethodSignature;
+        readonly Type _declaringType;
+        readonly MethodInfo _method;
+        readonly Type[] _methodArgs;
+        MethodSignature _lazyMethodSignature;
 
         /// <summary>
         /// Initializes a new instance.
@@ -45,38 +45,38 @@ namespace IKVM.Reflection
         internal GenericMethodInstance(Type declaringType, MethodInfo method, Type[] methodArgs)
         {
             System.Diagnostics.Debug.Assert(method is not GenericMethodInstance);
-            this.declaringType = declaringType;
-            this.method = method;
-            this.methodArgs = methodArgs;
+            this._declaringType = declaringType;
+            this._method = method;
+            this._methodArgs = methodArgs;
         }
 
         public override bool Equals(object obj)
         {
             var other = obj as GenericMethodInstance;
             return other != null
-                && other.method.Equals(method)
-                && other.declaringType.Equals(declaringType)
-                && Util.ArrayEquals(other.methodArgs, methodArgs);
+                && other._method.Equals(_method)
+                && other._declaringType.Equals(_declaringType)
+                && Util.ArrayEquals(other._methodArgs, _methodArgs);
         }
 
         public override int GetHashCode()
         {
-            return declaringType.GetHashCode() * 33 ^ method.GetHashCode() ^ Util.GetHashCode(methodArgs);
+            return _declaringType.GetHashCode() * 33 ^ _method.GetHashCode() ^ Util.GetHashCode(_methodArgs);
         }
 
         public override Type ReturnType
         {
-            get { return method.ReturnType.BindTypeParameters(this); }
+            get { return _method.ReturnType.BindTypeParameters(this); }
         }
 
         public override ParameterInfo ReturnParameter
         {
-            get { return new GenericParameterInfoImpl(this, method.ReturnParameter); }
+            get { return new GenericParameterInfoImpl(this, _method.ReturnParameter); }
         }
 
         public override ParameterInfo[] GetParameters()
         {
-            var parameters = method.GetParameters();
+            var parameters = _method.GetParameters();
             for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = new GenericParameterInfoImpl(this, parameters[i]);
 
@@ -85,77 +85,77 @@ namespace IKVM.Reflection
 
         internal override Type[] GetParameterTypes()
         {
-            var parameterTypes = method.GetParameterTypes();
+            var parameterTypes = _method.GetParameterTypes();
             for (int i = 0; i < parameterTypes.Length; i++)
-                parameterTypes[i] = parameterTypes[i].BindTypeParameters(method);
+                parameterTypes[i] = parameterTypes[i].BindTypeParameters(_method);
 
             return parameterTypes;
         }
 
         internal override int ParameterCount
         {
-            get { return method.ParameterCount; }
+            get { return _method.ParameterCount; }
         }
 
         public override CallingConventions CallingConvention
         {
-            get { return method.CallingConvention; }
+            get { return _method.CallingConvention; }
         }
 
         public override MethodAttributes Attributes
         {
-            get { return method.Attributes; }
+            get { return _method.Attributes; }
         }
 
         public override MethodImplAttributes GetMethodImplementationFlags()
         {
-            return method.GetMethodImplementationFlags();
+            return _method.GetMethodImplementationFlags();
         }
 
         public override string Name
         {
-            get { return method.Name; }
+            get { return _method.Name; }
         }
 
         public override Type DeclaringType
         {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
+            get { return _declaringType.IsModulePseudoType ? null : _declaringType; }
         }
 
         public override Module Module
         {
-            get { return method.Module; }
+            get { return _method.Module; }
         }
 
         public override int MetadataToken
         {
-            get { return method.MetadataToken; }
+            get { return _method.MetadataToken; }
         }
 
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
         {
-            return new GenericMethodInstance(declaringType, method, typeArguments);
+            return new GenericMethodInstance(_declaringType, _method, typeArguments);
         }
 
         public override bool IsGenericMethod
         {
-            get { return method.IsGenericMethod; }
+            get { return _method.IsGenericMethod; }
         }
 
         public override bool IsGenericMethodDefinition
         {
-            get { return method.IsGenericMethodDefinition && methodArgs == null; }
+            get { return _method.IsGenericMethodDefinition && _methodArgs == null; }
         }
 
         public override bool ContainsGenericParameters
         {
             get
             {
-                if (declaringType.ContainsGenericParameters)
+                if (_declaringType.ContainsGenericParameters)
                     return true;
 
-                if (methodArgs != null)
-                    foreach (var type in methodArgs)
+                if (_methodArgs != null)
+                    foreach (var type in _methodArgs)
                         if (type.ContainsGenericParameters)
                             return true;
 
@@ -169,10 +169,10 @@ namespace IKVM.Reflection
             {
                 if (IsGenericMethodDefinition)
                     return this;
-                else if (declaringType.IsConstructedGenericType)
-                    return new GenericMethodInstance(declaringType, method, null);
+                else if (_declaringType.IsConstructedGenericType)
+                    return new GenericMethodInstance(_declaringType, _method, null);
                 else
-                    return method;
+                    return _method;
             }
 
             throw new InvalidOperationException();
@@ -180,48 +180,48 @@ namespace IKVM.Reflection
 
         public override Type[] GetGenericArguments()
         {
-            if (methodArgs == null)
-                return method.GetGenericArguments();
+            if (_methodArgs == null)
+                return _method.GetGenericArguments();
             else
-                return (Type[])methodArgs.Clone();
+                return (Type[])_methodArgs.Clone();
         }
 
         internal override Type GetGenericMethodArgument(int index)
         {
-            if (methodArgs == null)
-                return method.GetGenericMethodArgument(index);
+            if (_methodArgs == null)
+                return _method.GetGenericMethodArgument(index);
             else
-                return methodArgs[index];
+                return _methodArgs[index];
         }
 
 
         internal override int ImportTo(Emit.ModuleBuilder module)
         {
-            if (methodArgs == null)
-                return module.ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+            if (_methodArgs == null)
+                return module.ImportMethodOrField(_declaringType, _method.Name, _method.MethodSignature);
             else
-                return module.ImportMethodSpec(declaringType, method, methodArgs);
+                return module.ImportMethodSpec(_declaringType, _method, _methodArgs);
         }
 
         internal override MethodSignature MethodSignature
         {
-            get { return lazyMethodSignature ?? (lazyMethodSignature = method.MethodSignature.Bind(declaringType, methodArgs)); }
+            get { return _lazyMethodSignature ?? (_lazyMethodSignature = _method.MethodSignature.Bind(_declaringType, _methodArgs)); }
         }
 
         internal override MethodBase BindTypeParameters(Type type)
         {
-            System.Diagnostics.Debug.Assert(methodArgs == null);
-            return new GenericMethodInstance(declaringType.BindTypeParameters(type), method, null);
+            System.Diagnostics.Debug.Assert(_methodArgs == null);
+            return new GenericMethodInstance(_declaringType.BindTypeParameters(type), _method, null);
         }
 
         internal override int GetCurrentToken()
         {
-            return method.GetCurrentToken();
+            return _method.GetCurrentToken();
         }
 
         internal override bool IsBaked
         {
-            get { return method.IsBaked; }
+            get { return _method.IsBaked; }
         }
 
     }

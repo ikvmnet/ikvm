@@ -31,7 +31,7 @@ namespace IKVM.Reflection
     internal abstract class Assembly : ICustomAttributeProvider
     {
 
-        readonly Universe universe;
+        readonly Universe _universe;
         protected string fullName;  // AssemblyBuilder needs access to this field to clear it when the name changes
         protected List<ModuleResolveEventHandler> resolvers;
 
@@ -41,13 +41,13 @@ namespace IKVM.Reflection
         /// <param name="universe"></param>
         internal Assembly(Universe universe)
         {
-            this.universe = universe ?? throw new ArgumentNullException(nameof(universe));
+            this._universe = universe ?? throw new ArgumentNullException(nameof(universe));
         }
 
         /// <summary>
         /// Gets the universe of types that holds this assembly.
         /// </summary>
-        public Universe Universe => universe;
+        public Universe Universe => _universe;
 
         public sealed override string ToString()
         {
@@ -78,7 +78,7 @@ namespace IKVM.Reflection
         // - ResolveType can return a MissingType
         internal Type ResolveType(Module requester, TypeName typeName)
         {
-            return FindType(typeName) ?? universe.GetMissingTypeOrThrow(requester, this.ManifestModule, null, typeName);
+            return FindType(typeName) ?? _universe.GetMissingTypeOrThrow(requester, this.ManifestModule, null, typeName);
         }
 
         public string FullName

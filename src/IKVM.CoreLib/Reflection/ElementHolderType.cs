@@ -30,8 +30,8 @@ namespace IKVM.Reflection
     {
 
         protected readonly Type elementType;
-        int token;
-        readonly CustomModifiers mods;
+        int _token;
+        readonly CustomModifiers _mods;
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,19 +43,19 @@ namespace IKVM.Reflection
             base(sigElementType)
         {
             this.elementType = elementType;
-            this.mods = mods;
+            this._mods = mods;
         }
 
         protected bool EqualsHelper(ElementHolderType other)
         {
             return other != null
                 && other.elementType.Equals(elementType)
-                && other.mods.Equals(mods);
+                && other._mods.Equals(_mods);
         }
 
         public override CustomModifiers __GetCustomModifiers()
         {
-            return mods;
+            return _mods;
         }
 
         public sealed override string Name
@@ -90,10 +90,10 @@ namespace IKVM.Reflection
 
         internal sealed override int GetModuleBuilderToken()
         {
-            if (token == 0)
-                token = ((ModuleBuilder)elementType.Module).ImportType(this);
+            if (_token == 0)
+                _token = ((ModuleBuilder)elementType.Module).ImportType(this);
 
-            return token;
+            return _token;
         }
 
         public sealed override bool ContainsGenericParameters
@@ -116,7 +116,7 @@ namespace IKVM.Reflection
                 while (type.HasElementType)
                     type = type.GetElementType();
 
-                return type.__ContainsMissingType || mods.ContainsMissingType;
+                return type.__ContainsMissingType || _mods.ContainsMissingType;
             }
         }
 
@@ -128,8 +128,8 @@ namespace IKVM.Reflection
         internal sealed override Type BindTypeParameters(IGenericBinder binder)
         {
             var type = elementType.BindTypeParameters(binder);
-            var mods = this.mods.Bind(binder);
-            if (ReferenceEquals(type, elementType) && mods.Equals(this.mods))
+            var mods = this._mods.Bind(binder);
+            if (ReferenceEquals(type, elementType) && mods.Equals(this._mods))
                 return this;
 
             return Wrap(type, mods);
