@@ -253,23 +253,10 @@ namespace IKVM.Reflection.Emit
     /// <seealso topic='IL Instruction Set Specification'/>
     internal class OpCodes
     {
-        private OpCodes()
-        {
-        }
 
         public static readonly OpCode Nop = new OpCode(OpCodeValues.Nop,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Break = new OpCode(OpCodeValues.Break,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Break << OpCode.FlowControlShift) |
             ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
             ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
             ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
@@ -637,17 +624,6 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Jmp = new OpCode(OpCodeValues.Jmp,
-            ((int)OperandType.InlineMethod) |
-            ((int)FlowControl.Call << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            OpCode.EndsUncondJmpBlkFlag |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Call = new OpCode(OpCodeValues.Call,
             ((int)OperandType.InlineMethod) |
             ((int)FlowControl.Call << OpCode.FlowControlShift) |
@@ -688,126 +664,6 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.SizeShift) |
             OpCode.EndsUncondJmpBlkFlag |
             (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Brfalse_S = new OpCode(OpCodeValues.Brfalse_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Brtrue_S = new OpCode(OpCodeValues.Brtrue_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Beq_S = new OpCode(OpCodeValues.Beq_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Bge_S = new OpCode(OpCodeValues.Bge_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Bgt_S = new OpCode(OpCodeValues.Bgt_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Ble_S = new OpCode(OpCodeValues.Ble_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Blt_S = new OpCode(OpCodeValues.Blt_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Bne_Un_S = new OpCode(OpCodeValues.Bne_Un_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Bge_Un_S = new OpCode(OpCodeValues.Bge_Un_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Bgt_Un_S = new OpCode(OpCodeValues.Bgt_Un_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Ble_Un_S = new OpCode(OpCodeValues.Ble_Un_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Blt_Un_S = new OpCode(OpCodeValues.Blt_Un_S,
-            ((int)OperandType.ShortInlineBrTarget) |
-            ((int)FlowControl.Cond_Branch << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Macro << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
         );
 
         public static readonly OpCode Br = new OpCode(OpCodeValues.Br,
@@ -1001,32 +857,12 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Ldind_U4 = new OpCode(OpCodeValues.Ldind_U4,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Ldind_I8 = new OpCode(OpCodeValues.Ldind_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
             ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
             ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
             ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Ldind_I = new OpCode(OpCodeValues.Ldind_I,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
             (1 << OpCode.SizeShift) |
             (0 << OpCode.StackChangeShift)
         );
@@ -1371,16 +1207,6 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Cpobj = new OpCode(OpCodeValues.Cpobj,
-            ((int)OperandType.InlineType) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Ldobj = new OpCode(OpCodeValues.Ldobj,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1427,16 +1253,6 @@ namespace IKVM.Reflection.Emit
             ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
             ((int)StackBehaviour.Popref << OpCode.StackBehaviourPopShift) |
             ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_R_Un = new OpCode(OpCodeValues.Conv_R_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushr8 << OpCode.StackBehaviourPushShift) |
             (1 << OpCode.SizeShift) |
             (0 << OpCode.StackChangeShift)
         );
@@ -1532,106 +1348,6 @@ namespace IKVM.Reflection.Emit
             (-2 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Conv_Ovf_I1_Un = new OpCode(OpCodeValues.Conv_Ovf_I1_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I2_Un = new OpCode(OpCodeValues.Conv_Ovf_I2_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I4_Un = new OpCode(OpCodeValues.Conv_Ovf_I4_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I8_Un = new OpCode(OpCodeValues.Conv_Ovf_I8_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U1_Un = new OpCode(OpCodeValues.Conv_Ovf_U1_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U2_Un = new OpCode(OpCodeValues.Conv_Ovf_U2_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U4_Un = new OpCode(OpCodeValues.Conv_Ovf_U4_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U8_Un = new OpCode(OpCodeValues.Conv_Ovf_U8_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I_Un = new OpCode(OpCodeValues.Conv_Ovf_I_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U_Un = new OpCode(OpCodeValues.Conv_Ovf_U_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Box = new OpCode(OpCodeValues.Box,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -1722,32 +1438,12 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Ldelem_U4 = new OpCode(OpCodeValues.Ldelem_U4,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popref_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Ldelem_I8 = new OpCode(OpCodeValues.Ldelem_I8,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
             ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
             ((int)StackBehaviour.Popref_popi << OpCode.StackBehaviourPopShift) |
             ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Ldelem_I = new OpCode(OpCodeValues.Ldelem_I,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popref_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
             (1 << OpCode.SizeShift) |
             (-1 << OpCode.StackChangeShift)
         );
@@ -1780,16 +1476,6 @@ namespace IKVM.Reflection.Emit
             ((int)StackBehaviour.Pushref << OpCode.StackBehaviourPushShift) |
             (1 << OpCode.SizeShift) |
             (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Stelem_I = new OpCode(OpCodeValues.Stelem_I,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popref_popi_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-3 << OpCode.StackChangeShift)
         );
 
         public static readonly OpCode Stelem_I1 = new OpCode(OpCodeValues.Stelem_I1,
@@ -1882,122 +1568,12 @@ namespace IKVM.Reflection.Emit
             (-3 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Unbox_Any = new OpCode(OpCodeValues.Unbox_Any,
-            ((int)OperandType.InlineType) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Objmodel << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popref << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I1 = new OpCode(OpCodeValues.Conv_Ovf_I1,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U1 = new OpCode(OpCodeValues.Conv_Ovf_U1,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I2 = new OpCode(OpCodeValues.Conv_Ovf_I2,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U2 = new OpCode(OpCodeValues.Conv_Ovf_U2,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Conv_Ovf_I4 = new OpCode(OpCodeValues.Conv_Ovf_I4,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
             ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
             ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
             ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U4 = new OpCode(OpCodeValues.Conv_Ovf_U4,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_I8 = new OpCode(OpCodeValues.Conv_Ovf_I8,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U8 = new OpCode(OpCodeValues.Conv_Ovf_U8,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Refanyval = new OpCode(OpCodeValues.Refanyval,
-            ((int)OperandType.InlineType) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Ckfinite = new OpCode(OpCodeValues.Ckfinite,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushr8 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Mkrefany = new OpCode(OpCodeValues.Mkrefany,
-            ((int)OperandType.InlineType) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
             (1 << OpCode.SizeShift) |
             (0 << OpCode.StackChangeShift)
         );
@@ -2042,86 +1618,6 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Conv_Ovf_I = new OpCode(OpCodeValues.Conv_Ovf_I,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_Ovf_U = new OpCode(OpCodeValues.Conv_Ovf_U,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Add_Ovf = new OpCode(OpCodeValues.Add_Ovf,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Add_Ovf_Un = new OpCode(OpCodeValues.Add_Ovf_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Mul_Ovf = new OpCode(OpCodeValues.Mul_Ovf,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Mul_Ovf_Un = new OpCode(OpCodeValues.Mul_Ovf_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Sub_Ovf = new OpCode(OpCodeValues.Sub_Ovf,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Sub_Ovf_Un = new OpCode(OpCodeValues.Sub_Ovf_Un,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1_pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push1 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-1 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Endfinally = new OpCode(OpCodeValues.Endfinally,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Return << OpCode.FlowControlShift) |
@@ -2153,116 +1649,6 @@ namespace IKVM.Reflection.Emit
             (1 << OpCode.SizeShift) |
             OpCode.EndsUncondJmpBlkFlag |
             (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Stind_I = new OpCode(OpCodeValues.Stind_I,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (-2 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Conv_U = new OpCode(OpCodeValues.Conv_U,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix7 = new OpCode(OpCodeValues.Prefix7,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix6 = new OpCode(OpCodeValues.Prefix6,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix5 = new OpCode(OpCodeValues.Prefix5,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix4 = new OpCode(OpCodeValues.Prefix4,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix3 = new OpCode(OpCodeValues.Prefix3,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix2 = new OpCode(OpCodeValues.Prefix2,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefix1 = new OpCode(OpCodeValues.Prefix1,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Prefixref = new OpCode(OpCodeValues.Prefixref,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Nternal << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (1 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Arglist = new OpCode(OpCodeValues.Arglist,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (1 << OpCode.StackChangeShift)
         );
 
         public static readonly OpCode Ceq = new OpCode(OpCodeValues.Ceq,
@@ -2395,16 +1781,6 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Localloc = new OpCode(OpCodeValues.Localloc,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Endfilter = new OpCode(OpCodeValues.Endfilter,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Return << OpCode.FlowControlShift) |
@@ -2436,16 +1812,6 @@ namespace IKVM.Reflection.Emit
             (0 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Tailcall = new OpCode(OpCodeValues.Tail_,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Prefix << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Initobj = new OpCode(OpCodeValues.Initobj,
             ((int)OperandType.InlineType) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
@@ -2456,27 +1822,7 @@ namespace IKVM.Reflection.Emit
             (-1 << OpCode.StackChangeShift)
         );
 
-        public static readonly OpCode Constrained = new OpCode(OpCodeValues.Constrained_,
-            ((int)OperandType.InlineType) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Prefix << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
         public static readonly OpCode Cpblk = new OpCode(OpCodeValues.Cpblk,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Popi_popi_popi << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (-3 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Initblk = new OpCode(OpCodeValues.Initblk,
             ((int)OperandType.InlineNone) |
             ((int)FlowControl.Next << OpCode.FlowControlShift) |
             ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
@@ -2506,27 +1852,6 @@ namespace IKVM.Reflection.Emit
             (2 << OpCode.SizeShift) |
             (1 << OpCode.StackChangeShift)
         );
-
-        public static readonly OpCode Refanytype = new OpCode(OpCodeValues.Refanytype,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Next << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Primitive << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop1 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Pushi << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
-        public static readonly OpCode Readonly = new OpCode(OpCodeValues.Readonly_,
-            ((int)OperandType.InlineNone) |
-            ((int)FlowControl.Meta << OpCode.FlowControlShift) |
-            ((int)OpCodeType.Prefix << OpCode.OpCodeTypeShift) |
-            ((int)StackBehaviour.Pop0 << OpCode.StackBehaviourPopShift) |
-            ((int)StackBehaviour.Push0 << OpCode.StackBehaviourPushShift) |
-            (2 << OpCode.SizeShift) |
-            (0 << OpCode.StackChangeShift)
-        );
-
 
         public static bool TakesSingleByteArgument(OpCode inst)
         {

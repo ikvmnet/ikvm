@@ -28,11 +28,6 @@ namespace IKVM.Reflection
 
     internal interface ICustomAttributeProvider
 	{
-
-		bool IsDefined(Type attributeType, bool inherit);
-
-		IList<CustomAttributeData> __GetCustomAttributes(Type attributeType, bool inherit);
-
 	}
 
 }

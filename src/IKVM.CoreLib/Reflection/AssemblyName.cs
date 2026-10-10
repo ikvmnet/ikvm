@@ -45,7 +45,6 @@ namespace IKVM.Reflection
         StrongNameKeyPair keyPair;
         AssemblyNameFlags flags;
         AssemblyHashAlgorithm hashAlgorithm;
-        AssemblyVersionCompatibility versionCompatibility = AssemblyVersionCompatibility.SameMachine;
         string codeBase;
         internal byte[] hash;
 
@@ -54,7 +53,6 @@ namespace IKVM.Reflection
         /// </summary>
         public AssemblyName()
         {
-
         }
 
         /// <summary>
@@ -184,17 +182,6 @@ namespace IKVM.Reflection
             set => codeBase = value;
         }
 
-        public string EscapedCodeBase
-        {
-            get
-            {
-                // HACK use the real AssemblyName to escape the codebase
-                var tmp = new System.Reflection.AssemblyName();
-                tmp.CodeBase = codeBase;
-                return tmp.EscapedCodeBase;
-            }
-        }
-
         public ProcessorArchitecture ProcessorArchitecture
         {
             get => (ProcessorArchitecture)(((int)flags & 0x70) >> 4);
@@ -209,12 +196,6 @@ namespace IKVM.Reflection
         {
             get => flags & (AssemblyNameFlags)~0xEF0;
             set => flags = (flags & (AssemblyNameFlags)0xEF0) | (value & (AssemblyNameFlags)~0xEF0);
-        }
-
-        public AssemblyVersionCompatibility VersionCompatibility
-        {
-            get => versionCompatibility;
-            set => versionCompatibility = value;
         }
 
         public AssemblyContentType ContentType
@@ -259,8 +240,6 @@ namespace IKVM.Reflection
             get => hashAlgorithm;
             set => hashAlgorithm = value;
         }
-
-        public byte[] __Hash => hash;
 
         public string FullName
         {
@@ -421,12 +400,6 @@ namespace IKVM.Reflection
         static byte[] Copy(byte[] b)
         {
             return b == null || b.Length == 0 ? b : (byte[])b.Clone();
-        }
-
-        public static bool ReferenceMatchesDefinition(AssemblyName reference, AssemblyName definition)
-        {
-            // HACK use the real AssemblyName to implement the (broken) ReferenceMatchesDefinition method
-            return System.Reflection.AssemblyName.ReferenceMatchesDefinition(new System.Reflection.AssemblyName(reference.FullName), new System.Reflection.AssemblyName(definition.FullName));
         }
 
         /// <summary>

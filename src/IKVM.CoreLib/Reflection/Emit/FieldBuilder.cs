@@ -57,12 +57,11 @@ namespace IKVM.Reflection.Emit
             this.attributes = attributes;
             this.pseudoToken = type.ModuleBuilder.AllocPseudoToken();
             this.signature = FieldSignature.Create(fieldType, customModifiers);
-            this.type.ModuleBuilder.FieldTable.AddVirtualRecord();
 
             // create signature blob
-            var buf = new ByteBuffer(5);
+            var buf = new BlobBuilder(5);
             signature.Write(type.ModuleBuilder, buf);
-            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf.ToArray());
+            signatureBlobHandle = type.ModuleBuilder.GetOrAddBlob(buf);
         }
 
         public void SetConstant(object defaultValue)
@@ -80,17 +79,12 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            return type.Module.ConstantTable.GetRawConstantValue(type.Module, GetCurrentToken());
+            return type.ModuleBuilder.GetConstant(GetCurrentToken());
         }
 
         public override bool __TryGetFieldOffset(out int offset)
         {
             return (offset = this.offset) != -1;
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -146,11 +140,6 @@ namespace IKVM.Reflection.Emit
             get { return type.Module; }
         }
 
-        public FieldToken GetToken()
-        {
-            return new FieldToken(pseudoToken);
-        }
-
         internal void WriteFieldRecords()
         {
             type.ModuleBuilder.Metadata.AddFieldDefinition(
@@ -161,14 +150,6 @@ namespace IKVM.Reflection.Emit
 
         internal void FixupToken(int token)
         {
-            if (offset > -1)
-            {
-                var rec = new FieldLayoutTable.Record();
-                rec.Offset = offset;
-                rec.Field = pseudoToken;
-                type.ModuleBuilder.FieldLayoutTable.AddRecord(rec);
-            }
-
             type.ModuleBuilder.RegisterTokenFixup(pseudoToken, token);
         }
 

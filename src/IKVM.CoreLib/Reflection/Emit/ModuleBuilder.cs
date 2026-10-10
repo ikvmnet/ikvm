@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Resources;
@@ -59,7 +60,6 @@ namespace IKVM.Reflection.Emit
             internal ResourceWriterRecord(string name, Stream stream, ResourceAttributes attributes) :
                 this(name, null, stream, attributes)
             {
-
             }
 
             /// <summary>
@@ -76,8 +76,6 @@ namespace IKVM.Reflection.Emit
                 this.stream = stream;
                 this.attributes = attributes;
             }
-
-            internal readonly int GetLength() => 4 + (int)stream.Length;
 
             /// <summary>
             /// Writes the resource to the resource stream.
@@ -100,13 +98,7 @@ namespace IKVM.Reflection.Emit
                 while ((length = stream.Read(buffer, 0, buffer.Length)) != 0)
                     module.resourceStream.WriteBytes(buffer, 0, length);
 
-                // add the resource record
-                var rec = new ManifestResourceTable.Record();
-                rec.Offset = offset;
-                rec.Flags = (int)attributes;
-                rec.Name = module.GetOrAddString(name);
-                rec.Implementation = 0;
-                module.ManifestResourceTable.AddRecord(rec);
+                module.AddManifestResource(attributes, name, 0, offset);
             }
 
             internal readonly void Close()
@@ -116,23 +108,129 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        internal struct VTableFixups
+        /// <summary>
+        /// A custom attribute set on this module. The parent and constructor can be pseudo tokens until the module is
+        /// written.
+        /// </summary>
+        struct CustomAttributeRow
         {
 
-            internal uint initializedDataOffset;
-            internal ushort count;
-            internal ushort type;
-
-            internal readonly int SlotWidth => (type & 0x02) == 0 ? 4 : 8;
+            internal int Parent;
+            internal int Constructor;
+            internal BlobHandle Value;
+            internal CustomAttributeBuilder Builder;
 
         }
 
-        struct InterfaceImplCustomAttribute
+        /// <summary>
+        /// A constant of a field, parameter or property. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        /// <summary>
+        /// A reference to a type. The resolution scope can be a pseudo token for an assembly reference until the module is
+        /// written.
+        /// </summary>
+        struct TypeRefRow
         {
 
-            internal int type;
-            internal int interfaceType;
-            internal int pseudoToken;
+            internal int ResolutionScope;
+            internal StringHandle Namespace;
+            internal StringHandle Name;
+
+        }
+
+        /// <summary>
+        /// A reference to a field or method. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct MemberRefRow
+        {
+
+            internal int Class;
+            internal StringHandle Name;
+            internal BlobHandle Signature;
+
+        }
+
+        /// <summary>
+        /// An instantiation of a generic method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSpecRow
+        {
+
+            internal int Method;
+            internal BlobHandle Instantiation;
+
+        }
+
+        /// <summary>
+        /// A type exported from or forwarded by the assembly. The implementation can be a pseudo token for an assembly
+        /// reference until the module is written.
+        /// </summary>
+        struct ExportedTypeRow
+        {
+
+            internal TypeAttributes Flags;
+            internal int TypeDefId;
+            internal StringHandle Name;
+            internal StringHandle Namespace;
+            internal int Implementation;
+
+        }
+
+        /// <summary>
+        /// A manifest resource, embedded at an offset or stored in a file.
+        /// </summary>
+        struct ManifestResourceRow
+        {
+
+            internal ResourceAttributes Flags;
+            internal StringHandle Name;
+            internal int Implementation;
+            internal int Offset;
+
+        }
+
+        /// <summary>
+        /// Associates an accessor method with a property. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct MethodSemanticsRow
+        {
+
+            internal int Association;
+            internal short Semantics;
+            internal int Method;
+
+        }
+
+        struct ConstantRow
+        {
+
+            internal int Parent;
+            internal object Value;
+
+        }
+
+        /// <summary>
+        /// A marshalling descriptor of a field or parameter. The parent can be a pseudo token until the module is written.
+        /// </summary>
+        struct FieldMarshalRow
+        {
+
+            internal int Parent;
+            internal byte[] NativeType;
+
+        }
+
+        /// <summary>
+        /// The P/Invoke import of a method. The method can be a pseudo token until the module is written.
+        /// </summary>
+        struct ImplMapRow
+        {
+
+            internal int Method;
+            internal ImplMapFlags Flags;
+            internal string ImportName;
+            internal string ImportScope;
+            internal ModuleReferenceHandle ImportScopeHandle;
 
         }
 
@@ -206,7 +304,6 @@ namespace IKVM.Reflection.Emit
 
         }
 
-        static readonly bool usePublicKeyAssemblyReference = false;
 
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
@@ -215,10 +312,8 @@ namespace IKVM.Reflection.Emit
         readonly AssemblyBuilder asm;
         Guid mvid;
         ReservedBlob<GuidHandle> mvidFixup;
-        uint timestamp;
         ulong imageBaseAddress = 0;
         uint fileAlignment = 0;
-        ulong stackReserve = 0;
         DllCharacteristics dllCharacteristics = DllCharacteristics.DynamicBase | DllCharacteristics.NoSEH | DllCharacteristics.NXCompat | DllCharacteristics.TerminalServerAware;
         internal readonly string moduleName;
         internal readonly string fileName;
@@ -226,21 +321,35 @@ namespace IKVM.Reflection.Emit
         readonly List<TypeBuilder> types = new List<TypeBuilder>();
         readonly Dictionary<Type, int> typeTokens = new Dictionary<Type, int>();
         readonly Dictionary<Type, int> memberRefTypeTokens = new Dictionary<Type, int>();
-        internal readonly List<int> tokenFixupOffsets = new List<int>();
-        internal readonly BlobBuilder initializedDataStream = new BlobBuilder(512);
         internal ModuleResourceSectionBuilder nativeResources;
         readonly Dictionary<MemberRefKey, int> importedMemberRefs = new Dictionary<MemberRefKey, int>();
         readonly Dictionary<MethodSpecKey, int> importedMethodSpecs = new Dictionary<MethodSpecKey, int>();
         readonly Dictionary<Assembly, int> referencedAssemblies = new Dictionary<Assembly, int>();
-        List<AssemblyName> referencedAssemblyNames;
         int nextPseudoToken = -1;
+        int typeCount;
+        int propertyCount;
+        int genericParameterCount;
         readonly List<int> resolvedTokens = new List<int>();
         ISymbolWriter symbolWriter;
 
-        internal readonly Dictionary<StringHandle, string> strings = new();
-        internal readonly Dictionary<BlobHandle, BlobBuilder> blobs = new();
-        List<InterfaceImplCustomAttribute> interfaceImplCustomAttributes;
         readonly List<ResourceWriterRecord> resourceWriters = new List<ResourceWriterRecord>();
+        readonly List<CustomAttributeRow> customAttributes = new List<CustomAttributeRow>();
+        readonly List<TypeRefRow> typeRefs = new List<TypeRefRow>();
+        readonly List<MemberRefRow> memberRefs = new List<MemberRefRow>();
+        readonly Dictionary<(int Class, StringHandle Name, BlobHandle Signature), int> memberRefTokens = new Dictionary<(int, StringHandle, BlobHandle), int>();
+        readonly List<MethodSpecRow> methodSpecs = new List<MethodSpecRow>();
+        readonly Dictionary<(int Method, BlobHandle Instantiation), int> methodSpecTokens = new Dictionary<(int, BlobHandle), int>();
+        readonly Dictionary<BlobHandle, int> standAloneSignatureTokens = new Dictionary<BlobHandle, int>();
+        readonly Dictionary<StringHandle, ModuleReferenceHandle> moduleRefs = new Dictionary<StringHandle, ModuleReferenceHandle>();
+        readonly Dictionary<(StringHandle Name, Version Version, StringHandle Culture, BlobHandle PublicKeyOrToken, int Flags), AssemblyReferenceHandle> assemblyRefs = new Dictionary<(StringHandle, Version, StringHandle, BlobHandle, int), AssemblyReferenceHandle>();
+        readonly List<ExportedTypeRow> exportedTypes = new List<ExportedTypeRow>();
+        readonly Dictionary<(int Implementation, StringHandle Name, StringHandle Namespace), int> exportedTypeTokens = new Dictionary<(int, StringHandle, StringHandle), int>();
+        readonly List<ManifestResourceRow> manifestResources = new List<ManifestResourceRow>();
+        bool referencesWritten;
+        readonly List<MethodSemanticsRow> methodSemantics = new List<MethodSemanticsRow>();
+        readonly List<ConstantRow> constants = new List<ConstantRow>();
+        readonly List<FieldMarshalRow> fieldMarshals = new List<FieldMarshalRow>();
+        readonly List<ImplMapRow> implMaps = new List<ImplMapRow>();
         bool saved;
 
         /// <summary>
@@ -263,15 +372,13 @@ namespace IKVM.Reflection.Emit
             this.moduleName = moduleName;
             this.fileName = fileName;
 
+            // the image gets its real module version id when it is written; until then report a provisional one
             if (Universe.Deterministic == false)
-            {
-                __PEHeaderTimeDateStamp = DateTime.UtcNow;
                 mvid = Guid.NewGuid();
-            }
 
             // add module
             mvidFixup = metadata.ReserveGuid();
-            ModuleTable.Add(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
+            metadata.AddModule(0, GetOrAddString(moduleName), mvidFixup.Handle, default, default);
 
             // <Module> must be the first record in the TypeDef table
             moduleType = new TypeBuilder(this, null, "<Module>");
@@ -294,11 +401,6 @@ namespace IKVM.Reflection.Emit
         internal MethodBodyStreamEncoder MethodBodyEncoder => methodBodyEncoder;
 
         /// <summary>
-        /// Gets a reference to the <see cref="BlobBuilder"/> for the initialized data stream.
-        /// </summary>
-        internal BlobBuilder InitializedDataStream => initializedDataStream;
-
-        /// <summary>
         /// Gets a reference to the <see cref="BlobBuilder"/> for the resource stream.
         /// </summary>
         internal BlobBuilder ResourceStream => resourceStream;
@@ -308,71 +410,21 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal StringHandle GetOrAddString(string value)
-        {
-            var h = metadata.GetOrAddString(value);
-            strings[h] = value;
-            return h;
-        }
-
-        /// <summary>
-        /// Gets the string value of the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override string GetString(StringHandle handle) => strings.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
+        internal StringHandle GetOrAddString(string value) => metadata.GetOrAddString(value);
 
         /// <summary>
         /// Gets a new blob handle from the metadata.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(BlobBuilder value)
-        {
-            var h = metadata.GetOrAddBlob(value);
-            blobs[h] = value;
-            return h;
-        }
+        internal BlobHandle GetOrAddBlob(BlobBuilder value) => metadata.GetOrAddBlob(value);
 
         /// <summary>
         /// Gets a new blob handle from the metadata.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal BlobHandle GetOrAddBlob(byte[] value)
-        {
-            var b = new BlobBuilder();
-            b.WriteBytes(value);
-            return GetOrAddBlob(b);
-        }
-
-        /// <summary>
-        /// Gets a new blob handle from the metadata.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        internal BlobHandle GetOrAddBlobUTF8(string value)
-        {
-            return metadata.GetOrAddBlobUTF8(value);
-        }
-
-        /// <summary>
-        /// Gets the blob value of the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal BlobBuilder GetBlob(BlobHandle handle) => blobs.TryGetValue(handle, out var value) ? value : throw new InvalidOperationException();
-
-        /// <summary>
-        /// Gets a <see cref="ByteReader"/> for the the specified handle.
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        internal override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            var b = GetBlob(handle).ToArray();
-            return new ByteReader(b, 0, b.Length);
-        }
+        internal BlobHandle GetOrAddBlob(byte[] value) => metadata.GetOrAddBlob(value);
 
         /// <summary>
         /// Sets the active symbol writer.
@@ -383,16 +435,16 @@ namespace IKVM.Reflection.Emit
             this.symbolWriter = writer;
         }
 
-        internal void PopulatePropertyAndEventTables()
+        internal void PopulatePropertyTables()
         {
             // LAMESPEC the PropertyMap and EventMap tables are not required to be sorted by the CLI spec,
             // but .NET sorts them and Mono requires them to be sorted, so we have to populate the
             // tables in the right order
             foreach (var type in types)
-                type.PopulatePropertyAndEventTables();
+                type.PopulatePropertyTable();
         }
 
-        internal void WriteTypeDefTable()
+        void WriteTypeDefTable()
         {
             int fieldList = 1;
             int methodList = 1;
@@ -400,20 +452,20 @@ namespace IKVM.Reflection.Emit
                 type.WriteTypeDefRecord(ref fieldList, ref methodList);
         }
 
-        internal void WriteMethodDefTable()
+        void WriteMethodDefTable()
         {
             int paramList = 1;
             foreach (var type in types)
                 type.WriteMethodDefRecords(ref paramList);
         }
 
-        internal void WriteParamTable()
+        void WriteParamTable()
         {
             foreach (var type in types)
                 type.WriteParamRecords();
         }
 
-        internal void WriteFieldTable()
+        void WriteFieldTable()
         {
             foreach (var type in types)
                 type.WriteFieldRecords();
@@ -422,6 +474,88 @@ namespace IKVM.Reflection.Emit
         internal int AllocPseudoToken()
         {
             return nextPseudoToken--;
+        }
+
+        /// <summary>
+        /// Allocates the TypeDef token of a new type. Types are written in the order they are defined.
+        /// </summary>
+        /// <returns></returns>
+        internal int AllocTypeToken()
+        {
+            return MetadataTokens.GetToken(MetadataTokens.TypeDefinitionHandle(++typeCount));
+        }
+
+        /// <summary>
+        /// Gets the number of properties written so far.
+        /// </summary>
+        internal int PropertyCount => propertyCount;
+
+        /// <summary>
+        /// Writes a property definition, returning its token. Properties are written type by type while the module is
+        /// being saved, which keeps each type's properties contiguous.
+        /// </summary>
+        /// <param name="attributes"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal int AddProperty(PropertyAttributes attributes, string name, PropertySignature signature)
+        {
+            var h = metadata.AddProperty((System.Reflection.PropertyAttributes)attributes, GetOrAddString(name), GetSignatureBlobIndex(signature));
+            Debug.Assert(MetadataTokens.GetRowNumber(h) == propertyCount + 1);
+            propertyCount++;
+            return MetadataTokens.GetToken(h);
+        }
+
+        /// <summary>
+        /// Records an accessor of a property.
+        /// </summary>
+        /// <param name="semantics"></param>
+        /// <param name="methodToken"></param>
+        /// <param name="association"></param>
+        internal void AddMethodSemantics(short semantics, int methodToken, int association)
+        {
+            methodSemantics.Add(new MethodSemanticsRow() { Semantics = semantics, Method = methodToken, Association = association });
+        }
+
+        /// <summary>
+        /// Allocates the provisional index a generic parameter reports as its token until the module is written.
+        /// </summary>
+        /// <returns></returns>
+        internal int AllocGenericParameterIndex()
+        {
+            return ++genericParameterCount;
+        }
+
+        /// <summary>
+        /// Writes the tables that describe the structure of the types: layouts, interface implementations, method
+        /// overrides, nesting, field layouts, generic parameters and their constraints, all of which the metadata
+        /// requires to be added in sorted order.
+        /// </summary>
+        void WriteTypeStructure()
+        {
+            foreach (var type in types)
+                type.WriteStructure();
+
+            // generic parameters are sorted by their owner, a TypeOrMethodDef coded index, and then by number
+            var parameters = new List<GenericTypeParameterBuilder>();
+            foreach (var type in types)
+                type.CollectGenericParameters(parameters);
+
+            var keys = new Dictionary<GenericTypeParameterBuilder, int>(parameters.Count);
+            foreach (var p in parameters)
+                keys[p] = GenericParamTable.EncodeOwner(ResolvePseudoToken(p.OwnerToken));
+
+            var sorted = parameters.OrderBy(p => keys[p]).ThenBy(p => p.Position).ToList();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var p = sorted[i];
+                p.SetRow(i + 1);
+                metadata.AddGenericParameter(MetadataTokens.EntityHandle(ResolvePseudoToken(p.OwnerToken)), (System.Reflection.GenericParameterAttributes)p.GenericParameterAttributesValue, GetOrAddString(p.Name), p.Position);
+            }
+
+            for (int i = 0; i < sorted.Count; i++)
+                foreach (var constraint in sorted[i].Constraints)
+                    metadata.AddGenericParameterConstraint(MetadataTokens.GenericParameterHandle(i + 1), MetadataTokens.EntityHandle(constraint));
         }
 
         public TypeBuilder DefineType(string name)
@@ -437,16 +571,6 @@ namespace IKVM.Reflection.Emit
         public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent)
         {
             return DefineType(name, attr, parent, PackingSize.Unspecified, 0);
-        }
-
-        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, int typesize)
-        {
-            return DefineType(name, attr, parent, PackingSize.Unspecified, typesize);
-        }
-
-        public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, PackingSize packsize)
-        {
-            return DefineType(name, attr, parent, packsize, 0);
         }
 
         public TypeBuilder DefineType(string name, TypeAttributes attr, Type parent, Type[] interfaces)
@@ -489,62 +613,9 @@ namespace IKVM.Reflection.Emit
             return typeBuilder;
         }
 
-        public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
-        {
-            var tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, Universe.System_Enum);
-            var fb = tb.DefineField("value__", underlyingType, FieldAttributes.Public | FieldAttributes.SpecialName | FieldAttributes.RTSpecialName);
-            return new EnumBuilder(tb, fb);
-        }
-
-        public FieldBuilder __DefineField(string name, Type type, CustomModifiers customModifiers, FieldAttributes attributes)
-        {
-            return moduleType.__DefineField(name, type, customModifiers, attributes);
-        }
-
-        [Obsolete("Please use __DefineField(string, Type, CustomModifiers, FieldAttributes) instead.")]
-        public FieldBuilder __DefineField(string name, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
-        {
-            return moduleType.DefineField(name, type, requiredCustomModifiers, optionalCustomModifiers, attributes);
-        }
-
-        public ConstructorBuilder __DefineModuleInitializer(MethodAttributes visibility)
-        {
-            return moduleType.DefineConstructor(visibility | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, Type.EmptyTypes);
-        }
-
-        public FieldBuilder DefineUninitializedData(string name, int size, FieldAttributes attributes)
-        {
-            return moduleType.DefineUninitializedData(name, size, attributes);
-        }
-
-        public FieldBuilder DefineInitializedData(string name, byte[] data, FieldAttributes attributes)
-        {
-            return moduleType.DefineInitializedData(name, data, attributes);
-        }
-
         public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, Type returnType, Type[] parameterTypes)
         {
             return moduleType.DefineMethod(name, attributes, returnType, parameterTypes);
-        }
-
-        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return moduleType.DefineMethod(name, attributes, callingConvention, returnType, parameterTypes);
-        }
-
-        public MethodBuilder DefineGlobalMethod(string name, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            return moduleType.DefineMethod(name, attributes, callingConvention, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-        }
-
-        public MethodBuilder DefinePInvokeMethod(string name, string dllName, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
-        {
-            return moduleType.DefinePInvokeMethod(name, dllName, attributes, callingConvention, returnType, parameterTypes, nativeCallConv, nativeCharSet);
-        }
-
-        public MethodBuilder DefinePInvokeMethod(string name, string dllName, string entryName, MethodAttributes attributes, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, CallingConvention nativeCallConv, CharSet nativeCharSet)
-        {
-            return moduleType.DefinePInvokeMethod(name, dllName, entryName, attributes, callingConvention, returnType, parameterTypes, nativeCallConv, nativeCharSet);
         }
 
         public void CreateGlobalFunctions()
@@ -569,37 +640,42 @@ namespace IKVM.Reflection.Emit
 
         int ExportType(Type type)
         {
-            var rec = new ExportedTypeTable.Record();
-            if (asm.ImageRuntimeVersion == "v2.0.50727")
-            {
-                // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
-                rec.TypeDefId = type.MetadataToken;
-            }
+            var row = new ExportedTypeRow();
 
-            SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
+            // HACK we should *not* set the TypeDefId in this case, but 2.0 and 3.5 peverify gives a warning if it is missing (4.5 doesn't)
+            if (asm.ImageRuntimeVersion == "v2.0.50727")
+                row.TypeDefId = type.MetadataToken;
+
+            SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
             if (type.IsNested)
             {
-                rec.Flags = 0;
-                rec.Implementation = ExportType(type.DeclaringType);
+                row.Flags = 0;
+                row.Implementation = ExportType(type.DeclaringType);
             }
             else
             {
-                rec.Flags = 0x00200000; // CorTypeAttr.tdForwarder
-                rec.Implementation = ImportAssemblyRef(type.Assembly);
+                row.Flags = (TypeAttributes)0x00200000; // CorTypeAttr.tdForwarder
+                row.Implementation = ImportAssemblyRef(type.Assembly);
             }
 
-            return 0x27000000 | ExportedTypeTable.FindOrAddRecord(rec);
+            var key = (row.Implementation, row.Name, row.Namespace);
+            if (exportedTypeTokens.TryGetValue(key, out var token) == false)
+                exportedTypeTokens.Add(key, token = AddExportedType(row));
+
+            return token;
+        }
+
+        int AddExportedType(ExportedTypeRow row)
+        {
+            CheckReferencesNotWritten();
+            exportedTypes.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.ExportedTypeHandle(exportedTypes.Count));
         }
 
         void SetTypeNameAndTypeNamespace(TypeName name, out StringHandle typeName, out StringHandle typeNamespace)
         {
             typeName = GetOrAddString(name.Name);
             typeNamespace = name.Namespace == null ? default : GetOrAddString(name.Namespace);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -609,97 +685,50 @@ namespace IKVM.Reflection.Emit
 
         internal void SetCustomAttribute(int token, CustomAttributeBuilder customBuilder)
         {
-            var rec = new CustomAttributeTable.Record();
-            rec.Parent = token;
-            rec.Constructor = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
-            rec.Value = customBuilder.WriteBlob(this);
-            CustomAttributeTable.AddRecord(rec);
-        }
-
-        void AddDeclSecurityRecord(int token, int action, BlobHandle blob)
-        {
-            var rec = new DeclSecurityTable.Record();
-            rec.Action = (short)action;
-            rec.Parent = token;
-            rec.PermissionSet = blob;
-            DeclSecurityTable.AddRecord(rec);
-        }
-
-        internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-        {
-            AddDeclSecurityRecord(token, (int)securityAction, GetOrAddBlob(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
-        }
-
-        internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
-        {
-            var ordered = new Dictionary<int, List<CustomAttributeBuilder>>();
-            foreach (var cab in declarativeSecurity)
+            customAttributes.Add(new CustomAttributeRow()
             {
-                int action;
-                // check for HostProtectionAttribute without SecurityAction
-                if (cab.ConstructorArgumentCount == 0)
-                {
-                    action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
-                }
-                else
-                {
-                    action = (int)cab.GetConstructorArgument(0);
-                }
-
-                if (cab.IsLegacyDeclSecurity)
-                {
-                    AddDeclSecurityRecord(token, action, cab.WriteLegacyDeclSecurityBlob(this));
-                    continue;
-                }
-
-                if (!ordered.TryGetValue(action, out var list))
-                {
-                    list = new List<CustomAttributeBuilder>();
-                    ordered.Add(action, list);
-                }
-
-                list.Add(cab);
-            }
-
-            foreach (KeyValuePair<int, List<CustomAttributeBuilder>> kv in ordered)
-                AddDeclSecurityRecord(token, kv.Key, WriteDeclSecurityBlob(kv.Value));
+                Parent = token,
+                Constructor = GetConstructorToken(customBuilder.Constructor).Token,
+                Value = customBuilder.WriteBlob(this),
+                Builder = customBuilder,
+            });
         }
 
-        BlobHandle WriteDeclSecurityBlob(List<CustomAttributeBuilder> list)
+        /// <summary>
+        /// Adds the custom attributes set on the given token that are assignable to <paramref name="attributeType"/>, or
+        /// all of them if it is <c>null</c>.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="token"></param>
+        /// <param name="attributeType"></param>
+        /// <returns></returns>
+        internal List<CustomAttributeData> GetCustomAttributes(List<CustomAttributeData> list, int token, Type attributeType)
         {
-            var namedArgs = new ByteBuffer(100);
-            var bb = new ByteBuffer(list.Count * 100);
-            bb.Write((byte)'.');
-            bb.WriteCompressedUInt(list.Count);
-            foreach (var cab in list)
-            {
-                bb.Write(cab.Constructor.DeclaringType.AssemblyQualifiedName);
-                namedArgs.Clear();
-                cab.WriteNamedArgumentsForDeclSecurity(this, namedArgs);
-                bb.WriteCompressedUInt(namedArgs.Length);
-                bb.Write(namedArgs);
-            }
+            foreach (var row in customAttributes)
+                if (row.Parent == token && (attributeType == null || attributeType.IsAssignableFrom(row.Builder.Constructor.DeclaringType)))
+                    (list ??= new List<CustomAttributeData>()).Add(row.Builder.ToData(asm));
 
-            return GetOrAddBlob(bb.ToArray());
+            return list;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the custom attributes and adds them to the metadata, which sorts them.
+        /// </summary>
+        void WriteCustomAttributes()
+        {
+            for (int i = 0; i < customAttributes.Count; i++)
+            {
+                var row = customAttributes[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                row.Constructor = ResolvePseudoToken(row.Constructor);
+                customAttributes[i] = row;
+                metadata.AddCustomAttribute(MetadataTokens.EntityHandle(row.Parent), MetadataTokens.EntityHandle(row.Constructor), row.Value);
+            }
         }
 
         public void DefineManifestResource(string name, Stream stream, ResourceAttributes attribute)
         {
             resourceWriters.Add(new ResourceWriterRecord(name, stream, attribute));
-        }
-
-        public IResourceWriter DefineResource(string name, string description)
-        {
-            return DefineResource(name, description, ResourceAttributes.Public);
-        }
-
-        public IResourceWriter DefineResource(string name, string description, ResourceAttributes attribute)
-        {
-            // FXBUG we ignore the description, because there is no such thing
-            var mem = new MemoryStream();
-            var rw = new ResourceWriter(mem);
-            resourceWriters.Add(new ResourceWriterRecord(name, rw, mem, attribute));
-            return rw;
         }
 
         /// <summary>
@@ -753,66 +782,9 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Sets the user entry point.
-        /// </summary>
-        /// <param name="entryPoint"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public void SetUserEntryPoint(MethodInfo entryPoint)
-        {
-            // Set the user entry point. Compiler may generate startup stub before calling user main.
-            // The startup stub will be the entry point. While the user "main" will be the user entry
-            // point so that debugger will not step into the compiler entry point.
-
-            if (entryPoint == null)
-                throw new ArgumentNullException("entryPoint");
-
-            // Cannot set entry point when it is not a debug module
-            if (symbolWriter == null)
-                throw new InvalidOperationException("Not a debug ModuleBuilder.");
-
-            if (entryPoint.DeclaringType != null)
-            {
-                if (!entryPoint.Module.Equals(this))
-                {
-                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
-                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
-                }
-            }
-            else
-            {
-                // unfortunately this check is missing for global function passed in as RuntimeMethodInfo. 
-                // The problem is that Reflection does not 
-                // allow us to get the containing module giving a global function
-                MethodBuilder mb = entryPoint as MethodBuilder;
-                if (mb != null && mb.ModuleBuilder != this)
-                {
-                    // you cannot pass in a MethodInfo that is not contained by this ModuleBuilder
-                    throw new InvalidOperationException("The argument passed in was not from the same ModuleBuilder.");
-                }
-            }
-
-            // get the metadata token value and create the SymbolStore's token value class
-            SymbolToken tkMethod = new SymbolToken(GetMethodToken(entryPoint).Token);
-
-            // set the UserEntryPoint
-            symbolWriter.SetUserEntryPoint(tkMethod);
-        }
-
-        public int __GetAssemblyToken(Assembly assembly)
-        {
-            return ImportAssemblyRef(assembly);
-        }
-
-        public TypeToken GetTypeToken(string name)
-        {
-            return new TypeToken(GetType(name, true, false).MetadataToken);
-        }
-
         public TypeToken GetTypeToken(Type type)
         {
-            if (type.Module == this && !asm.IsWindowsRuntime)
+            if (type.Module == this)
                 return new TypeToken(type.GetModuleBuilderToken());
             else
                 return new TypeToken(ImportType(type));
@@ -828,16 +800,16 @@ namespace IKVM.Reflection.Emit
             {
                 if (memberRefTypeTokens.TryGetValue(type, out var token) == false)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
+                    token = AddTypeSpec(GetOrAddBlob(spec));
                     memberRefTypeTokens.Add(type, token);
                 }
                 return token;
             }
             else if (type.IsModulePseudoType)
             {
-                return MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleRefTable.FindOrAddRecord(GetOrAddString(type.Module.ScopeName))));
+                return MetadataTokens.GetToken(GetModuleRef(type.Module.ScopeName));
             }
             else
             {
@@ -876,21 +848,21 @@ namespace IKVM.Reflection.Emit
                 return new MethodToken(method.ImportTo(this));
         }
 
-        public MethodToken GetMethodToken(MethodInfo method, IEnumerable<Type> optionalParameterTypes)
-        {
-            return __GetMethodToken(method, Util.ToArray(optionalParameterTypes), null);
-        }
-
         public MethodToken __GetMethodToken(MethodInfo method, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
-            var sig = new ByteBuffer(16);
+            var sig = new BlobBuilder(16);
             method.MethodSignature.WriteMethodRef(this, sig, optionalParameterTypes, customModifiers);
 
-            var record = new MemberRefTable.Record();
-            record.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
-            record.Name = GetOrAddString(method.Name);
-            record.Signature = GetOrAddBlob(sig.ToArray());
-            return new MethodToken(MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.FindOrAddRecord(record))));
+            var row = new MemberRefRow();
+            row.Class = method.Module == this ? method.MetadataToken : GetTypeTokenForMemberRef(method.DeclaringType ?? method.Module.GetModuleType());
+            row.Name = GetOrAddString(method.Name);
+            row.Signature = GetOrAddBlob(sig);
+
+            var key = (row.Class, row.Name, row.Signature);
+            if (memberRefTokens.TryGetValue(key, out var token) == false)
+                memberRefTokens.Add(key, token = AddMemberRef(row));
+
+            return new MethodToken(token);
         }
 
         // when we refer to a method on a generic type definition in the IL stream,
@@ -906,24 +878,9 @@ namespace IKVM.Reflection.Emit
                 return GetMethodToken(method);
         }
 
-        internal int GetMethodTokenWinRT(MethodInfo method)
-        {
-            return asm.IsWindowsRuntime ? method.ImportTo(this) : GetMethodToken(method).Token;
-        }
-
         public MethodToken GetConstructorToken(ConstructorInfo constructor)
         {
             return GetMethodToken(constructor.GetMethodInfo());
-        }
-
-        public MethodToken GetConstructorToken(ConstructorInfo constructor, IEnumerable<Type> optionalParameterTypes)
-        {
-            return GetMethodToken(constructor.GetMethodInfo(), optionalParameterTypes);
-        }
-
-        public MethodToken __GetConstructorToken(ConstructorInfo constructor, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
-        {
-            return __GetMethodToken(constructor.GetMethodInfo(), optionalParameterTypes, customModifiers);
         }
 
         internal int ImportMethodOrField(Type declaringType, string name, Signature sig)
@@ -931,13 +888,13 @@ namespace IKVM.Reflection.Emit
             var key = new MemberRefKey(declaringType, name, sig);
             if (!importedMemberRefs.TryGetValue(key, out var token))
             {
-                var rec = new MemberRefTable.Record();
-                rec.Class = GetTypeTokenForMemberRef(declaringType);
-                rec.Name = GetOrAddString(name);
-                var bb = new ByteBuffer(16);
+                var row = new MemberRefRow();
+                row.Class = GetTypeTokenForMemberRef(declaringType);
+                row.Name = GetOrAddString(name);
+                var bb = new BlobBuilder(16);
                 sig.Write(this, bb);
-                rec.Signature = GetOrAddBlob(bb.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(MemberRefTable.AddRecord(rec)));
+                row.Signature = GetOrAddBlob(bb);
+                token = AddMemberRef(row);
                 importedMemberRefs.Add(key, token);
             }
 
@@ -946,28 +903,31 @@ namespace IKVM.Reflection.Emit
 
         internal int ImportMethodSpec(Type declaringType, MethodInfo method, Type[] genericParameters)
         {
-            Debug.Assert(method.__IsMissing || method.GetMethodOnTypeDefinition() == method);
 
             var key = new MethodSpecKey(declaringType, method.Name, method.MethodSignature, genericParameters);
             if (!importedMethodSpecs.TryGetValue(key, out var token))
             {
-                var rec = new MethodSpecTable.Record();
-                var mb = method as MethodBuilder;
-                if (mb != null && mb.ModuleBuilder == this && !declaringType.IsGenericType)
-                {
-                    rec.Method = mb.MetadataToken;
-                }
+                var row = new MethodSpecRow();
+
+                // 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance (in other words
+                // the method and type have already been decoupled by the caller), so import it with the declaring type
+                if (method is MethodBuilder mb && mb.ModuleBuilder == this && !declaringType.IsGenericType)
+                    row.Method = mb.MetadataToken;
                 else
+                    row.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+
+                var spec = new BlobBuilder(10);
+                Signature.WriteMethodSpec(this, spec, genericParameters);
+                row.Instantiation = GetOrAddBlob(spec);
+
+                var rowKey = (row.Method, row.Instantiation);
+                if (methodSpecTokens.TryGetValue(rowKey, out token) == false)
                 {
-                    // we're calling ImportMethodOrField directly here, because 'method' may be a MethodDef on a generic TypeDef and 'declaringType' the type instance
-                    // (in order words the method and type have already been decoupled by the caller)
-                    rec.Method = ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+                    CheckReferencesNotWritten();
+                    methodSpecs.Add(row);
+                    methodSpecTokens.Add(rowKey, token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(methodSpecs.Count)));
                 }
 
-                var spec = new ByteBuffer(10);
-                Signature.WriteMethodSpec(this, spec, genericParameters);
-                rec.Instantiation = GetOrAddBlob(spec.ToArray());
-                token = MetadataTokens.GetToken(MetadataTokens.MethodSpecificationHandle(MethodSpecTable.FindOrAddRecord(rec)));
                 importedMethodSpecs.Add(key, token);
             }
 
@@ -980,22 +940,21 @@ namespace IKVM.Reflection.Emit
             {
                 if (type.HasElementType || type.IsConstructedGenericType || type.IsFunctionPointer)
                 {
-                    var spec = new ByteBuffer(5);
+                    var spec = new BlobBuilder(5);
                     Signature.WriteTypeSpec(this, spec, type);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(TypeSpecTable.AddRecord(GetOrAddBlob(spec.ToArray()))));
+                    token = AddTypeSpec(GetOrAddBlob(spec));
                 }
                 else
                 {
-                    var rec = new TypeRefTable.Record();
+                    int scope;
                     if (type.IsNested)
-                        rec.ResolutionScope = GetTypeToken(type.DeclaringType).Token;
+                        scope = GetTypeToken(type.DeclaringType).Token;
                     else if (type.Module == this)
-                        rec.ResolutionScope = 1;
+                        scope = 1;
                     else
-                        rec.ResolutionScope = ImportAssemblyRef(type.Assembly);
+                        scope = ImportAssemblyRef(type.Assembly);
 
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-                    token = MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(TypeRefTable.AddRecord(rec)));
+                    token = AddTypeRef(scope, type.TypeName);
                 }
 
                 typeTokens.Add(type, token);
@@ -1021,55 +980,127 @@ namespace IKVM.Reflection.Emit
         {
             foreach (var kv in referencedAssemblies)
                 if (IsPseudoToken(kv.Value))
-                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName(), false));
+                    RegisterTokenFixup(kv.Value, FindOrAddAssemblyRef(kv.Key.GetName()));
         }
 
-        private int FindOrAddAssemblyRef(AssemblyName name, bool alwaysAdd)
+        int FindOrAddAssemblyRef(AssemblyName name)
         {
-            var rec = new AssemblyRefTable.Record();
-            var ver = name.Version ?? new Version(0, 0, 0, 0);
-            rec.MajorVersion = (ushort)ver.Major;
-            rec.MinorVersion = (ushort)ver.Minor;
-            rec.BuildNumber = (ushort)ver.Build;
-            rec.RevisionNumber = (ushort)ver.Revision;
-            rec.Flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
+            var version = name.Version ?? new Version(0, 0, 0, 0);
+            var flags = (int)(name.Flags & ~AssemblyNameFlags.PublicKey);
             const AssemblyNameFlags afPA_Specified = (AssemblyNameFlags)0x0080;
             const AssemblyNameFlags afPA_Mask = (AssemblyNameFlags)0x0070;
             if ((name.RawFlags & afPA_Specified) != 0)
-            {
-                rec.Flags |= (int)(name.RawFlags & afPA_Mask);
-            }
+                flags |= (int)(name.RawFlags & afPA_Mask);
             if (name.ContentType == AssemblyContentType.WindowsRuntime)
-            {
-                rec.Flags |= 0x0200;
-            }
-            byte[] publicKeyOrToken = null;
-            if (usePublicKeyAssemblyReference)
-            {
-                publicKeyOrToken = name.GetPublicKey();
-            }
-            if (publicKeyOrToken == null || publicKeyOrToken.Length == 0)
-            {
-                publicKeyOrToken = name.GetPublicKeyToken() ?? Array.Empty<byte>();
-            }
-            else
-            {
-                const int PublicKey = 0x0001;
-                rec.Flags |= PublicKey;
-            }
-            rec.PublicKeyOrToken = GetOrAddBlob(publicKeyOrToken);
-            rec.Name = GetOrAddString(name.Name);
-            rec.Culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
-            if (name.hash != null)
-            {
-                rec.HashValue = GetOrAddBlob(name.hash);
-            }
-            else
-            {
-                rec.HashValue = default;
-            }
+                flags |= 0x0200;
 
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyReferenceHandle(alwaysAdd ? AssemblyRefTable.AddRecord(rec) : AssemblyRefTable.FindOrAddRecord(rec)));
+            var publicKeyOrToken = GetOrAddBlob(name.GetPublicKeyToken() ?? Array.Empty<byte>());
+            var nameHandle = GetOrAddString(name.Name);
+            var culture = name.CultureName == null ? default : GetOrAddString(name.CultureName);
+
+            // references that differ only in their hash are the same reference
+            var key = (nameHandle, version, culture, publicKeyOrToken, flags);
+            if (assemblyRefs.TryGetValue(key, out var handle) == false)
+                assemblyRefs.Add(key, handle = metadata.AddAssemblyReference(nameHandle, version, culture, publicKeyOrToken, (System.Reflection.AssemblyFlags)flags, name.hash != null ? GetOrAddBlob(name.hash) : default));
+
+            return MetadataTokens.GetToken(handle);
+        }
+
+        /// <summary>
+        /// Adds a type specification, returning its token. Type specifications refer to nothing that is resolved later, so
+        /// they are written immediately.
+        /// </summary>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal int AddTypeSpec(BlobHandle signature)
+        {
+            return MetadataTokens.GetToken(metadata.AddTypeSpecification(signature));
+        }
+
+        /// <summary>
+        /// Gets the stand alone signature with the given blob, adding it if needed.
+        /// </summary>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        internal StandaloneSignatureHandle GetStandAloneSignature(BlobHandle signature)
+        {
+            if (standAloneSignatureTokens.TryGetValue(signature, out var token) == false)
+                standAloneSignatureTokens.Add(signature, token = MetadataTokens.GetToken(metadata.AddStandaloneSignature(signature)));
+
+            return MetadataTokens.StandaloneSignatureHandle(MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(token)));
+        }
+
+        /// <summary>
+        /// Gets the module reference with the given name, adding it if needed.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        ModuleReferenceHandle GetModuleRef(string name)
+        {
+            var handle = name == null ? default : GetOrAddString(name);
+            if (moduleRefs.TryGetValue(handle, out var moduleRef) == false)
+                moduleRefs.Add(handle, moduleRef = metadata.AddModuleReference(handle));
+
+            return moduleRef;
+        }
+
+        int AddTypeRef(int resolutionScope, TypeName name)
+        {
+            CheckReferencesNotWritten();
+            var row = new TypeRefRow() { ResolutionScope = resolutionScope };
+            SetTypeNameAndTypeNamespace(name, out row.Name, out row.Namespace);
+            typeRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.TypeReferenceHandle(typeRefs.Count));
+        }
+
+        int AddMemberRef(MemberRefRow row)
+        {
+            CheckReferencesNotWritten();
+            memberRefs.Add(row);
+            return MetadataTokens.GetToken(MetadataTokens.MemberReferenceHandle(memberRefs.Count));
+        }
+
+        /// <summary>
+        /// Records a manifest resource.
+        /// </summary>
+        /// <param name="flags"></param>
+        /// <param name="name"></param>
+        /// <param name="implementation"></param>
+        /// <param name="offset"></param>
+        internal void AddManifestResource(ResourceAttributes flags, string name, int implementation, int offset)
+        {
+            CheckReferencesNotWritten();
+            manifestResources.Add(new ManifestResourceRow() { Flags = flags, Name = GetOrAddString(name), Implementation = implementation, Offset = offset });
+        }
+
+        void CheckReferencesNotWritten()
+        {
+            if (referencesWritten)
+                throw new InvalidOperationException("A reference was added after the references of the module were written.");
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the type, member and method references, exported types and manifest resources and
+        /// adds them to the metadata, in the order they were created so their tokens stay valid.
+        /// </summary>
+        void WriteReferences()
+        {
+            referencesWritten = true;
+
+            foreach (var row in typeRefs)
+                metadata.AddTypeReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.ResolutionScope)), row.Namespace, row.Name);
+
+            foreach (var row in memberRefs)
+                metadata.AddMemberReference(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Class)), row.Name, row.Signature);
+
+            foreach (var row in methodSpecs)
+                metadata.AddMethodSpecification(MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)), row.Instantiation);
+
+            foreach (var row in exportedTypes)
+                metadata.AddExportedType((System.Reflection.TypeAttributes)row.Flags, row.Namespace, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), row.TypeDefId);
+
+            foreach (var row in manifestResources)
+                metadata.AddManifestResource((System.Reflection.ManifestResourceAttributes)row.Flags, row.Name, MetadataTokens.EntityHandle(ResolvePseudoToken(row.Implementation)), (uint)row.Offset);
         }
 
         internal void RegisterTokenFixup(int pseudoToken, int realToken)
@@ -1106,21 +1137,14 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         internal void WriteMetadata()
         {
-            foreach (var table in GetTables())
-                if (table != null)
-                    table.Write(this);
-        }
-
-        static int StringToPaddedUTF8Length(string str)
-        {
-            return (System.Text.Encoding.UTF8.GetByteCount(str) + 4) & ~3;
-        }
-
-        static byte[] StringToPaddedUTF8(string str)
-        {
-            byte[] buf = new byte[(System.Text.Encoding.UTF8.GetByteCount(str) + 4) & ~3];
-            System.Text.Encoding.UTF8.GetBytes(str, 0, str.Length, buf, 0);
-            return buf;
+            WriteTypeDefTable();
+            WriteFieldTable();
+            WriteMethodDefTable();
+            WriteParamTable();
+            WriteTypeStructure();
+            WriteMemberData();
+            WriteReferences();
+            WriteCustomAttributes();
         }
 
         internal override void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule)
@@ -1136,19 +1160,13 @@ namespace IKVM.Reflection.Emit
             {
                 if (type.IsModulePseudoType == false && IsVisible(type))
                 {
-                    var rec = new ExportedTypeTable.Record();
-                    rec.Flags = (int)type.Attributes;
+                    var row = new ExportedTypeRow();
+                    row.Flags = type.Attributes;
                     // LAMESPEC ECMA says that TypeDefId is a row index, but it should be a token
-                    rec.TypeDefId = type.MetadataToken;
-                    SetTypeNameAndTypeNamespace(type.TypeName, out rec.TypeName, out rec.TypeNamespace);
-
-                    if (type.IsNested)
-                        rec.Implementation = MetadataTokens.GetToken(declaringTypes[type.DeclaringType]);
-                    else
-                        rec.Implementation = MetadataTokens.GetToken(fileToken);
-
-                    var exportTypeToken = MetadataTokens.ExportedTypeHandle(ExportedTypeTable.AddRecord(rec));
-                    declaringTypes.Add(type, exportTypeToken);
+                    row.TypeDefId = type.MetadataToken;
+                    SetTypeNameAndTypeNamespace(type.TypeName, out row.Name, out row.Namespace);
+                    row.Implementation = type.IsNested ? MetadataTokens.GetToken(declaringTypes[type.DeclaringType]) : MetadataTokens.GetToken(fileToken);
+                    declaringTypes.Add(type, (ExportedTypeHandle)MetadataTokens.EntityHandle(AddExportedType(row)));
                 }
             }
         }
@@ -1159,97 +1177,145 @@ namespace IKVM.Reflection.Emit
             return type.IsPublic || ((type.IsNestedFamily || type.IsNestedFamORAssem || type.IsNestedPublic) && IsVisible(type.DeclaringType));
         }
 
-        internal void AddConstant(int parentToken, object defaultValue)
+        /// <summary>
+        /// Records the constant value of a field, parameter or property.
+        /// </summary>
+        /// <param name="parentToken"></param>
+        /// <param name="value"></param>
+        /// <exception cref="ArgumentException">The value is not of a type a constant can have.</exception>
+        internal void AddConstant(int parentToken, object value)
         {
-            var rec = new ConstantTable.Record();
-            rec.Parent = parentToken;
-            var val = new ByteBuffer(16);
-            if (defaultValue == null)
+            // metadata has no DateTime constants; like .NET, store the ticks
+            if (value is DateTime dateTime)
+                value = dateTime.Ticks;
+            else if (value is not (null or bool or char or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or string))
+                throw new ArgumentException("Unsupported constant type.", nameof(value));
+
+            constants.Add(new ConstantRow() { Parent = parentToken, Value = value });
+        }
+
+        /// <summary>
+        /// Gets the constant value recorded for the given token.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">No constant was recorded.</exception>
+        internal object GetConstant(int token)
+        {
+            foreach (var row in constants)
+                if (row.Parent == token)
+                    return row.Value;
+
+            throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Records the marshalling descriptor of a field or parameter.
+        /// </summary>
+        /// <param name="parentToken"></param>
+        /// <param name="nativeType"></param>
+        internal void AddFieldMarshal(int parentToken, byte[] nativeType)
+        {
+            fieldMarshals.Add(new FieldMarshalRow() { Parent = parentToken, NativeType = nativeType });
+        }
+
+        /// <summary>
+        /// Gets the marshalling descriptor recorded for the given token.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="nativeType"></param>
+        /// <returns></returns>
+        internal bool TryGetFieldMarshal(int token, out byte[] nativeType)
+        {
+            foreach (var row in fieldMarshals)
             {
-                rec.Type = Signature.ELEMENT_TYPE_CLASS;
-                val.Write((int)0);
-            }
-            else if (defaultValue is bool boolValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_BOOLEAN;
-                val.Write(boolValue ? (byte)1 : (byte)0);
-            }
-            else if (defaultValue is char charValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_CHAR;
-                val.Write(charValue);
-            }
-            else if (defaultValue is sbyte sbyteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I1;
-                val.Write(sbyteValue);
-            }
-            else if (defaultValue is byte byteValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U1;
-                val.Write(byteValue);
-            }
-            else if (defaultValue is short shortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I2;
-                val.Write(shortValue);
-            }
-            else if (defaultValue is ushort ushortValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U2;
-                val.Write(ushortValue);
-            }
-            else if (defaultValue is int intValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I4;
-                val.Write(intValue);
-            }
-            else if (defaultValue is uint uintValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U4;
-                val.Write(uintValue);
-            }
-            else if (defaultValue is long longValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(longValue);
-            }
-            else if (defaultValue is ulong ulongValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_U8;
-                val.Write(ulongValue);
-            }
-            else if (defaultValue is float floatValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R4;
-                val.Write(floatValue);
-            }
-            else if (defaultValue is double doubleValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_R8;
-                val.Write(doubleValue);
-            }
-            else if (defaultValue is string stringValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_STRING;
-                foreach (var c in stringValue)
-                    val.Write(c);
-            }
-            else if (defaultValue is DateTime dateTimeValue)
-            {
-                rec.Type = Signature.ELEMENT_TYPE_I8;
-                val.Write(dateTimeValue.Ticks);
-            }
-            else
-            {
-                throw new ArgumentException();
+                if (row.Parent == token)
+                {
+                    nativeType = row.NativeType;
+                    return true;
+                }
             }
 
-            // encode index into blobs, as well as pass along value, since SRME does not have an AddConstant override that takes a handle
-            // final blob should be deduplicated, leading to the same index value on write
-            rec.Offset = GetOrAddBlob(val.ToArray());
-            rec.Value = defaultValue;
-            ConstantTable.AddRecord(rec);
+            nativeType = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Records the P/Invoke import of a method.
+        /// </summary>
+        /// <param name="methodToken"></param>
+        /// <param name="flags"></param>
+        /// <param name="importName"></param>
+        /// <param name="importScope"></param>
+        internal void AddImplMap(int methodToken, ImplMapFlags flags, string importName, string importScope)
+        {
+            implMaps.Add(new ImplMapRow()
+            {
+                Method = methodToken,
+                Flags = flags,
+                ImportName = importName,
+                ImportScope = importScope,
+                ImportScopeHandle = GetModuleRef(importScope),
+            });
+        }
+
+        /// <summary>
+        /// Gets the P/Invoke import recorded for the given method token.
+        /// </summary>
+        internal bool TryGetImplMap(int token, out ImplMapFlags flags, out string importName, out string importScope)
+        {
+            foreach (var row in implMaps)
+            {
+                if (row.Method == token)
+                {
+                    flags = row.Flags;
+                    importName = row.ImportName;
+                    importScope = row.ImportScope;
+                    return true;
+                }
+            }
+
+            flags = 0;
+            importName = null;
+            importScope = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves the pseudo tokens of the constants, marshalling descriptors and P/Invoke imports and adds them to the
+        /// metadata. The metadata sorts the Constant and FieldMarshal tables, but requires ImplMap to be added in order.
+        /// </summary>
+        void WriteMemberData()
+        {
+            foreach (var row in methodSemantics)
+                metadata.AddMethodSemantics(MetadataTokens.EntityHandle(row.Association), (System.Reflection.MethodSemanticsAttributes)row.Semantics, (MethodDefinitionHandle)MetadataTokens.EntityHandle(ResolvePseudoToken(row.Method)));
+
+            for (int i = 0; i < constants.Count; i++)
+            {
+                var row = constants[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                constants[i] = row;
+                metadata.AddConstant(MetadataTokens.EntityHandle(row.Parent), row.Value);
+            }
+
+            for (int i = 0; i < fieldMarshals.Count; i++)
+            {
+                var row = fieldMarshals[i];
+                row.Parent = ResolvePseudoToken(row.Parent);
+                fieldMarshals[i] = row;
+                metadata.AddMarshallingDescriptor(MetadataTokens.EntityHandle(row.Parent), metadata.GetOrAddBlob(row.NativeType));
+            }
+
+            for (int i = 0; i < implMaps.Count; i++)
+            {
+                var row = implMaps[i];
+                row.Method = ResolvePseudoToken(row.Method);
+                implMaps[i] = row;
+            }
+
+            implMaps.Sort((x, y) => x.Method.CompareTo(y.Method));
+            foreach (var row in implMaps)
+                metadata.AddMethodImport((MethodDefinitionHandle)MetadataTokens.EntityHandle(row.Method), (System.Reflection.MethodImportAttributes)row.Flags, GetOrAddString(row.ImportName), row.ImportScopeHandle);
         }
 
         ModuleBuilder ITypeOwner.ModuleBuilder
@@ -1318,11 +1384,6 @@ namespace IKVM.Reflection.Emit
 
         public override string Name => fileName;
 
-        internal Guid GetModuleVersionIdOrEmpty()
-        {
-            return mvid;
-        }
-
         internal ReservedBlob<GuidHandle> GetModuleVersionIdFixup()
         {
             return mvidFixup;
@@ -1340,38 +1401,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public void __SetModuleVersionId(Guid guid)
-        {
-            if (guid == Guid.Empty && Universe.Deterministic)
-            {
-                // if you want to use Guid.Empty, don't set UniverseOptions.DeterministicOutput
-                throw new ArgumentOutOfRangeException();
-            }
-            mvid = guid;
-        }
-
-        internal uint GetTimeDateStamp()
-        {
-            return timestamp;
-        }
-
-        public DateTime __PEHeaderTimeDateStamp
-        {
-            get { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(timestamp); }
-            set
-            {
-                if (value < new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) || value > new DateTime(2106, 2, 7, 6, 28, 15, DateTimeKind.Utc))
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-                timestamp = (uint)(value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-            }
-        }
-
-        public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Records the module version id the image was written with.
+        /// </summary>
+        /// <param name="value"></param>
+        internal void SetModuleVersionId(Guid value) => mvid = value;
 
         public override string ScopeName
         {
@@ -1387,30 +1421,6 @@ namespace IKVM.Reflection.Emit
             return symbolWriter;
         }
 
-        /// <summary>
-        /// Defines an unmanaged embedded resource given an opaque binary large object (BLOB) of bytes.
-        /// </summary>
-        /// <param name="resource"></param>
-        public void DefineUnmanagedResource(byte[] resource)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Defines an unmanaged resource given the name of Win32 resource file.
-        /// </summary>
-        /// <param name="resourceFileName"></param>
-        public void DefineUnmanagedResource(string resourceFileName)
-        {
-            nativeResources = new ModuleResourceSectionBuilder();
-            nativeResources.ImportWin32ResourceFile(System.IO.File.ReadAllBytes(resourceFileName));
-        }
-
-        public bool IsTransient()
-        {
-            return false;
-        }
-
         public StringToken GetStringConstant(string str)
         {
             return new StringToken(MetadataTokens.GetHeapOffset(metadata.GetOrAddUserString(str)) | (0x70 << 24));
@@ -1418,34 +1428,7 @@ namespace IKVM.Reflection.Emit
 
         public SignatureToken GetSignatureToken(SignatureHelper sigHelper)
         {
-            return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(sigHelper.GetSignature(this).ToArray())) | (StandAloneSigTable.Index << 24));
-        }
-
-        public SignatureToken GetSignatureToken(byte[] sigBytes, int sigLength)
-        {
-            var bb = new BlobBuilder();
-            bb.WriteBytes(sigBytes, 0, sigLength);
-            return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
-        }
-
-        public unsafe SignatureToken GetSignatureToken(Span<byte> sigBytes)
-        {
-            fixed (byte* b = sigBytes)
-            {
-                var bb = new BlobBuilder();
-                bb.WriteBytes(b, sigBytes.Length);
-                return new SignatureToken(StandAloneSigTable.FindOrAddRecord(GetOrAddBlob(bb)) | (StandAloneSigTable.Index << 24));
-            }
-        }
-
-        public MethodInfo GetArrayMethod(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return new ArrayMethod(this, arrayClass, methodName, callingConvention, returnType, parameterTypes);
-        }
-
-        public MethodToken GetArrayMethodToken(Type arrayClass, string methodName, CallingConventions callingConvention, Type returnType, Type[] parameterTypes)
-        {
-            return GetMethodToken(GetArrayMethod(arrayClass, methodName, callingConvention, returnType, parameterTypes));
+            return new SignatureToken(MetadataTokens.GetToken(GetStandAloneSignature(GetOrAddBlob(sigHelper.GetSignature(this)))));
         }
 
         internal override Type GetModuleType()
@@ -1455,9 +1438,9 @@ namespace IKVM.Reflection.Emit
 
         internal BlobHandle GetSignatureBlobIndex(Signature sig)
         {
-            var bb = new ByteBuffer(16);
+            var bb = new BlobBuilder(16);
             sig.Write(this, bb);
-            return GetOrAddBlob(bb.ToArray());
+            return GetOrAddBlob(bb);
         }
 
         // non-standard API
@@ -1467,31 +1450,10 @@ namespace IKVM.Reflection.Emit
             set { imageBaseAddress = value; }
         }
 
-        protected override ulong GetImageBaseImpl()
-        {
-            return imageBaseAddress;
-        }
-
-        public new ulong __StackReserve
-        {
-            get { return stackReserve; }
-            set { stackReserve = value; }
-        }
-
-        protected override ulong GetStackReserveImpl()
-        {
-            return stackReserve;
-        }
-
         public new uint __FileAlignment
         {
             get { return fileAlignment; }
             set { fileAlignment = value; }
-        }
-
-        protected override uint GetFileAlignmentImpl()
-        {
-            return fileAlignment;
         }
 
         public new DllCharacteristics __DllCharacteristics
@@ -1500,22 +1462,14 @@ namespace IKVM.Reflection.Emit
             set { dllCharacteristics = value; }
         }
 
-        protected override DllCharacteristics GetDllCharacteristicsImpl()
-        {
-            return dllCharacteristics;
-        }
-
         public override int MDStreamVersion
         {
             get { return asm.mdStreamVersion; }
         }
 
-        private int AddTypeRefByName(int resolutionScope, string ns, string name)
+        int AddTypeRefByName(int resolutionScope, string ns, string name)
         {
-            TypeRefTable.Record rec = new TypeRefTable.Record();
-            rec.ResolutionScope = resolutionScope;
-            SetTypeNameAndTypeNamespace(new TypeName(ns, name), out rec.TypeName, out rec.TypeNamespace);
-            return 0x01000000 | this.TypeRefTable.AddRecord(rec);
+            return AddTypeRef(resolutionScope, new TypeName(ns, name));
         }
 
         /// <summary>
@@ -1526,17 +1480,6 @@ namespace IKVM.Reflection.Emit
         public void __Save(PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             __Save(null, null, portableExecutableKind, imageFileMachine);
-        }
-
-        /// <summary>
-        /// Saves the module to the specified stream.
-        /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        public void __Save(Stream peStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
-            __Save(peStream, null, portableExecutableKind, imageFileMachine);
         }
 
         /// <summary>
@@ -1567,7 +1510,7 @@ namespace IKVM.Reflection.Emit
                 throw new ArgumentException("PDB stream must support write.", nameof(pdbStream));
 
             SetIsSaved();
-            PopulatePropertyAndEventTables();
+            PopulatePropertyTables();
 
             var attributes = asm.GetCustomAttributesData(null);
             if (attributes.Count > 0)
@@ -1609,62 +1552,6 @@ namespace IKVM.Reflection.Emit
             ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, nativeResources, default, null, peStream, null, pdbStream);
         }
 
-        public void __AddAssemblyReference(AssemblyName assemblyName)
-        {
-            __AddAssemblyReference(assemblyName, null);
-        }
-
-        public void __AddAssemblyReference(AssemblyName assemblyName, Assembly assembly)
-        {
-            referencedAssemblyNames ??= new List<AssemblyName>();
-            referencedAssemblyNames.Add((AssemblyName)assemblyName.Clone());
-            var token = FindOrAddAssemblyRef(assemblyName, true);
-            if (assembly != null)
-                referencedAssemblies.Add(assembly, token);
-        }
-
-        public override AssemblyName[] __GetReferencedAssemblies()
-        {
-            var list = new List<AssemblyName>();
-            if (referencedAssemblyNames != null)
-                foreach (var name in referencedAssemblyNames)
-                    if (list.Contains(name) == false)
-                        list.Add(name);
-
-            foreach (var asm in referencedAssemblies.Keys)
-            {
-                var name = asm.GetName();
-                if (list.Contains(name) == false)
-                    list.Add(name);
-            }
-
-            return list.ToArray();
-        }
-
-        public void __AddModuleReference(string module)
-        {
-            ModuleRefTable.FindOrAddRecord(module == null ? default : GetOrAddString(module));
-        }
-
-        public override string[] __GetReferencedModules()
-        {
-            var arr = new string[ModuleRefTable.RowCount];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = GetString(ModuleRefTable.records[i]);
-
-            return arr;
-        }
-
-        public override Type[] __GetReferencedTypes()
-        {
-            var list = new List<Type>();
-            foreach (var kv in typeTokens)
-                if (kv.Value >> 24 == TypeRefTable.Index)
-                    list.Add(kv.Key);
-
-            return list.ToArray();
-        }
-
         public override Type[] __GetExportedTypes()
         {
             throw new NotImplementedException();
@@ -1672,69 +1559,8 @@ namespace IKVM.Reflection.Emit
 
         public int __AddModule(int flags, string name, byte[] hash)
         {
-            var file = new FileTable.Record();
-            file.Flags = flags;
-            file.Name = GetOrAddString(name);
-            file.HashValue = GetOrAddBlob(hash);
-            return MetadataTokens.GetToken(MetadataTokens.AssemblyFileHandle(FileTable.AddRecord(file)));
-        }
-
-        public int __AddManifestResource(int offset, ResourceAttributes flags, string name, int implementation)
-        {
-            var res = new ManifestResourceTable.Record();
-            res.Offset = offset;
-            res.Flags = (int)flags;
-            res.Name = GetOrAddString(name);
-            res.Implementation = implementation;
-            return MetadataTokens.GetToken(MetadataTokens.ManifestResourceHandle(ManifestResourceTable.AddRecord(res)));
-        }
-
-        public void __SetCustomAttributeFor(int token, CustomAttributeBuilder customBuilder)
-        {
-            SetCustomAttribute(token, customBuilder);
-        }
-
-        internal void SetInterfaceImplementationCustomAttribute(TypeBuilder typeBuilder, Type interfaceType, CustomAttributeBuilder cab)
-        {
-            // NOTE since interfaceimpls are extremely common and custom attributes on them are extremely rare,
-            // we store (and resolve) the custom attributes in such away as to avoid impacting the common case performance
-            interfaceImplCustomAttributes ??= new List<InterfaceImplCustomAttribute>();
-
-            var rec = new InterfaceImplCustomAttribute();
-            rec.type = typeBuilder.MetadataToken;
-
-            var token = GetTypeToken(interfaceType).Token;
-            token = (token >> 24) switch
-            {
-                TypeDefTable.Index => (token & 0xFFFFFF) << 2 | 0,
-                TypeRefTable.Index => (token & 0xFFFFFF) << 2 | 1,
-                TypeSpecTable.Index => (token & 0xFFFFFF) << 2 | 2,
-                _ => throw new InvalidOperationException(),
-            };
-
-            rec.interfaceType = token;
-            rec.pseudoToken = AllocPseudoToken();
-            interfaceImplCustomAttributes.Add(rec);
-
-            SetCustomAttribute(rec.pseudoToken, cab);
-        }
-
-        internal void ResolveInterfaceImplPseudoTokens()
-        {
-            if (interfaceImplCustomAttributes != null)
-            {
-                foreach (var rec in interfaceImplCustomAttributes)
-                {
-                    for (int i = 0; i < InterfaceImplTable.records.Length; i++)
-                    {
-                        if (InterfaceImplTable.records[i].Class == rec.type && InterfaceImplTable.records[i].Interface == rec.interfaceType)
-                        {
-                            RegisterTokenFixup(rec.pseudoToken, MetadataTokens.GetToken(MetadataTokens.InterfaceImplementationHandle(i + 1)));
-                            break;
-                        }
-                    }
-                }
-            }
+            const int ContainsNoMetaData = 0x0001;
+            return MetadataTokens.GetToken(metadata.AddAssemblyFile(GetOrAddString(name), GetOrAddBlob(hash), (flags & ContainsNoMetaData) == 0));
         }
 
         internal void FixupPseudoToken(ref int token)

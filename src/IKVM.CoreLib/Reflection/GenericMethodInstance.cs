@@ -132,20 +132,6 @@ namespace IKVM.Reflection
             get { return method.MetadataToken; }
         }
 
-        public override MethodBody GetMethodBody()
-        {
-            var md = method as IKVM.Reflection.Reader.MethodDefImpl;
-            if (md != null)
-                return md.GetMethodBody(this);
-
-            throw new NotSupportedException();
-        }
-
-        public override int __MethodRVA
-        {
-            get { return method.__MethodRVA; }
-        }
-
         public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
         {
             return new GenericMethodInstance(declaringType, method, typeArguments);
@@ -192,11 +178,6 @@ namespace IKVM.Reflection
             throw new InvalidOperationException();
         }
 
-        public override MethodBase __GetMethodOnTypeDefinition()
-        {
-            return method;
-        }
-
         public override Type[] GetGenericArguments()
         {
             if (methodArgs == null)
@@ -213,15 +194,6 @@ namespace IKVM.Reflection
                 return methodArgs[index];
         }
 
-        internal override int GetGenericMethodArgumentCount()
-        {
-            return method.GetGenericMethodArgumentCount();
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return method.GetMethodOnTypeDefinition();
-        }
 
         internal override int ImportTo(Emit.ModuleBuilder module)
         {
@@ -240,20 +212,6 @@ namespace IKVM.Reflection
         {
             System.Diagnostics.Debug.Assert(methodArgs == null);
             return new GenericMethodInstance(declaringType.BindTypeParameters(type), method, null);
-        }
-
-        internal override bool HasThis
-        {
-            get { return method.HasThis; }
-        }
-
-        public override MethodInfo[] __GetMethodImpls()
-        {
-            var methods = method.__GetMethodImpls();
-            for (int i = 0; i < methods.Length; i++)
-                methods[i] = (MethodInfo)methods[i].BindTypeParameters(declaringType);
-
-            return methods;
         }
 
         internal override int GetCurrentToken()

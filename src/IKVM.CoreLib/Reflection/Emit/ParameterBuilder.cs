@@ -63,10 +63,6 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public MethodInfo Method => method;
-
-        public Module Module => method.Module;
-
         public string Name
         {
             get { return name; }
@@ -83,26 +79,6 @@ namespace IKVM.Reflection.Emit
         public int Attributes
         {
             get { return flags; }
-        }
-
-        public bool IsIn
-        {
-            get { return (flags & (short)ParameterAttributes.In) != 0; }
-        }
-
-        public bool IsOut
-        {
-            get { return (flags & (short)ParameterAttributes.Out) != 0; }
-        }
-
-        public bool IsOptional
-        {
-            get { return (flags & (short)ParameterAttributes.Optional) != 0; }
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         public void SetCustomAttribute(CustomAttributeBuilder customAttributeBuilder)
@@ -126,12 +102,6 @@ namespace IKVM.Reflection.Emit
                     method.ModuleBuilder.SetCustomAttribute(PseudoToken, customAttributeBuilder);
                     break;
             }
-        }
-
-        public void SetConstant(object defaultValue)
-        {
-            flags |= (short)ParameterAttributes.HasDefault;
-            method.ModuleBuilder.AddConstant(PseudoToken, defaultValue);
         }
 
         internal void WriteMetadata()

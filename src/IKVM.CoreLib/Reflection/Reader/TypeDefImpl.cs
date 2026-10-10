@@ -316,20 +316,6 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            foreach (int i in module.ClassLayoutTable.Filter(MetadataToken))
-            {
-                packingSize = module.ClassLayoutTable.records[i].PackingSize;
-                typeSize = module.ClassLayoutTable.records[i].ClassSize;
-                return true;
-            }
-
-            packingSize = 0;
-            typeSize = 0;
-            return false;
-        }
-
         public override Module Module
         {
             get { return module; }

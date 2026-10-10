@@ -97,37 +97,7 @@ namespace IKVM.Reflection
             throw new MissingModuleException(this);
         }
 
-        public override void __GetDataDirectoryEntry(int index, out int rva, out int length)
-        {
-            throw new MissingModuleException(this);
-        }
-
-        public override IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
-        {
-            throw new MissingModuleException(this);
-        }
-
-        public override long __RelativeVirtualAddressToFileOffset(int rva)
-        {
-            throw new MissingModuleException(this);
-        }
-
-        public override __StandAloneMethodSig __ResolveStandAloneMethodSig(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            throw new MissingModuleException(this);
-        }
-
-        public override int __Subsystem
-        {
-            get { throw new MissingModuleException(this); }
-        }
-
         internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
-        {
-            throw new MissingModuleException(this);
-        }
-
-        public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
         {
             throw new MissingModuleException(this);
         }
@@ -150,20 +120,6 @@ namespace IKVM.Reflection
         protected override Exception ArgumentOutOfRangeException()
         {
             return new MissingModuleException(this);
-        }
-
-        public override byte[] __ModuleHash
-        {
-            get
-            {
-                if (index == -1)
-                    throw new MissingModuleException(this);
-                if (assembly.ManifestModule.FileTable.records[index].HashValue.IsNil)
-                    return null;
-
-                var br = assembly.ManifestModule.GetBlobReader(assembly.ManifestModule.FileTable.records[index].HashValue);
-                return br.ReadBytes(br.Length);
-            }
         }
 
     }

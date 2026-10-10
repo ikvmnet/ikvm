@@ -69,11 +69,6 @@ namespace IKVM.Reflection
             return SetReflectedType(eventInfo.GetOtherMethods(nonPublic), reflectedType);
         }
 
-        public override MethodInfo[] __GetMethods()
-        {
-            return SetReflectedType(eventInfo.__GetMethods(), reflectedType);
-        }
-
         public override Type EventHandlerType
         {
             get { return eventInfo.EventHandlerType; }
@@ -112,11 +107,6 @@ namespace IKVM.Reflection
         public override Type DeclaringType
         {
             get { return eventInfo.DeclaringType; }
-        }
-
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
         }
 
         public override bool Equals(object obj)

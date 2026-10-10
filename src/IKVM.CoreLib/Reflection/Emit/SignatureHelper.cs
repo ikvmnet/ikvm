@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Writer;
 
@@ -48,12 +49,6 @@ namespace IKVM.Reflection.Emit
             internal Lazy(byte type) :
                 base(type)
             {
-
-            }
-
-            internal override Type ReturnType
-            {
-                get { return args[0]; }
             }
 
             public override byte[] GetSignature()
@@ -61,9 +56,9 @@ namespace IKVM.Reflection.Emit
                 throw new NotSupportedException();
             }
 
-            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
-                var bb = new ByteBuffer(16);
+                var bb = new BlobBuilder(16);
                 Signature.WriteSignatureHelper(module, bb, type, argumentCount, args);
                 return bb;
             }
@@ -94,7 +89,7 @@ namespace IKVM.Reflection.Emit
         {
 
             readonly ModuleBuilder module;
-            readonly ByteBuffer bb = new ByteBuffer(16);
+            readonly BlobBuilder arguments = new BlobBuilder(16);
             readonly Type returnType;
 
             /// <summary>
@@ -108,15 +103,6 @@ namespace IKVM.Reflection.Emit
             {
                 this.module = module;
                 this.returnType = returnType;
-
-                bb.Write(type);
-                if (type != Signature.FIELD)
-                    bb.Write((byte)0); // space for parameterCount
-            }
-
-            internal override Type ReturnType
-            {
-                get { return returnType; }
             }
 
             public override byte[] GetSignature()
@@ -124,35 +110,35 @@ namespace IKVM.Reflection.Emit
                 return GetSignature(null).ToArray();
             }
 
-            internal override ByteBuffer GetSignature(ModuleBuilder module)
+            internal override BlobBuilder GetSignature(ModuleBuilder module)
             {
+                // the argument count precedes the arguments but is only known once they have all been added
+                var bb = new BlobBuilder(16 + arguments.Count);
+                bb.WriteByte(type);
                 if (type != Signature.FIELD)
-                {
-                    bb.Position = 1;
-                    bb.Insert(MetadataWriter.GetCompressedUIntLength(argumentCount) - bb.GetCompressedUIntLength());
-                    bb.WriteCompressedUInt(argumentCount);
-                }
+                    bb.WriteCompressedInteger(argumentCount);
 
+                arguments.WriteContentTo(bb);
                 return bb;
             }
 
             public override void AddSentinel()
             {
-                bb.Write(Signature.SENTINEL);
+                arguments.WriteByte(Signature.SENTINEL);
             }
 
             public override void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers)
             {
                 if (pinned)
-                    bb.Write(Signature.ELEMENT_TYPE_PINNED);
+                    arguments.WriteByte(Signature.ELEMENT_TYPE_PINNED);
 
                 foreach (var mod in customModifiers)
                 {
-                    bb.Write(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
-                    Signature.WriteTypeSpec(module, bb, mod.Type);
+                    arguments.WriteByte(mod.IsRequired ? Signature.ELEMENT_TYPE_CMOD_REQD : Signature.ELEMENT_TYPE_CMOD_OPT);
+                    Signature.WriteTypeSpec(module, arguments, mod.Type);
                 }
 
-                Signature.WriteTypeSpec(module, bb, argument ?? module.Universe.System_Void);
+                Signature.WriteTypeSpec(module, arguments, argument ?? module.Universe.System_Void);
                 argumentCount++;
             }
         }
@@ -166,21 +152,6 @@ namespace IKVM.Reflection.Emit
             this.type = type;
         }
 
-        internal bool HasThis
-        {
-            get { return (type & Signature.HASTHIS) != 0; }
-        }
-
-        internal abstract Type ReturnType
-        {
-            get;
-        }
-
-        internal int ArgumentCount 
-        {
-            get { return argumentCount; }
-        }
-
         private static SignatureHelper Create(Module mod, byte type, Type returnType)
         {
             return mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
@@ -191,51 +162,9 @@ namespace IKVM.Reflection.Emit
             return Create(mod, Signature.FIELD, null);
         }
 
-        public static SignatureHelper GetLocalVarSigHelper()
-        {
-            return new Lazy(Signature.LOCAL_SIG);
-        }
-
         public static SignatureHelper GetLocalVarSigHelper(Module mod)
         {
             return Create(mod, Signature.LOCAL_SIG, null);
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] parameterTypes)
-        {
-            var sig = Create(mod, Signature.PROPERTY, returnType);
-            sig.AddArgument(returnType);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, null, null);
-            return sig;
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            return GetPropertySigHelper(mod, CallingConventions.Standard, returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers, parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-        }
-
-        public static SignatureHelper GetPropertySigHelper(Module mod, CallingConventions callingConvention, Type returnType, Type[] requiredReturnTypeCustomModifiers, Type[] optionalReturnTypeCustomModifiers, Type[] parameterTypes, Type[][] requiredParameterTypeCustomModifiers, Type[][] optionalParameterTypeCustomModifiers)
-        {
-            var type = Signature.PROPERTY;
-            if ((callingConvention & CallingConventions.HasThis) != 0)
-                type |= Signature.HASTHIS;
-
-            var sig = Create(mod, type, returnType);
-            sig.AddArgument(returnType, requiredReturnTypeCustomModifiers, optionalReturnTypeCustomModifiers);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, requiredParameterTypeCustomModifiers, optionalParameterTypeCustomModifiers);
-            return sig;
-        }
-
-        public static SignatureHelper GetMethodSigHelper(CallingConvention unmanagedCallingConvention, Type returnType)
-        {
-            return GetMethodSigHelper(null, unmanagedCallingConvention, returnType);
-        }
-
-        public static SignatureHelper GetMethodSigHelper(CallingConventions callingConvention, Type returnType)
-        {
-            return GetMethodSigHelper(null, callingConvention, returnType);
         }
 
         public static SignatureHelper GetMethodSigHelper(Module mod, CallingConvention unmanagedCallConv, Type returnType)
@@ -274,18 +203,9 @@ namespace IKVM.Reflection.Emit
             return sig;
         }
 
-        public static SignatureHelper GetMethodSigHelper(Module mod, Type returnType, Type[] parameterTypes)
-        {
-            var sig = Create(mod, 0, returnType);
-            sig.AddArgument(returnType);
-            sig.argumentCount = 0;
-            sig.AddArguments(parameterTypes, null, null);
-            return sig;
-        }
-
         public abstract byte[] GetSignature();
 
-        internal abstract ByteBuffer GetSignature(ModuleBuilder module);
+        internal abstract BlobBuilder GetSignature(ModuleBuilder module);
 
         public abstract void AddSentinel();
 
@@ -297,11 +217,6 @@ namespace IKVM.Reflection.Emit
         public void AddArgument(Type argument, bool pinned)
         {
             __AddArgument(argument, pinned, new CustomModifiers());
-        }
-
-        public void AddArgument(Type argument, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers)
-        {
-            __AddArgument(argument, false, CustomModifiers.FromReqOpt(requiredCustomModifiers, optionalCustomModifiers));
         }
 
         public abstract void __AddArgument(Type argument, bool pinned, CustomModifiers customModifiers);

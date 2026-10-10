@@ -68,10 +68,7 @@ namespace IKVM.Reflection
             return arg1.type.Equals(arg2.type) && (arg1.value == arg2.value || (arg1.value != null && arg1.value.Equals(arg2.value)));
         }
 
-        public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2)
-        {
-            return !(arg1 == arg2);
-        }
+        public static bool operator !=(CustomAttributeTypedArgument arg1, CustomAttributeTypedArgument arg2) => !(arg1 == arg2);
 
     }
 

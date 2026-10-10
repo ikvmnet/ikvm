@@ -52,7 +52,7 @@ namespace IKVM.Reflection.Reader
 
         public override FieldAttributes Attributes
         {
-            get { return (FieldAttributes)module.FieldTable.records[index].Flags; }
+            get { return (FieldAttributes)(ushort)module.FieldTable.records[index].Flags; }
         }
 
         public override Type DeclaringType

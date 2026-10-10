@@ -57,7 +57,7 @@ namespace IKVM.Reflection.Reader
                 if (type == MarkerType.LazyResolveInProgress)
                 {
                     var typeName = module.GetTypeName(module.ExportedTypeTable.records[index].TypeNamespace, module.ExportedTypeTable.records[index].TypeName);
-                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName).SetCyclicTypeForwarder();
+                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName);
                 }
                 else if (type == null)
                 {
@@ -106,7 +106,7 @@ namespace IKVM.Reflection.Reader
         internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped) :
             base(universe)
         {
-            this.stream = universe != null && universe.MetadataOnly ? null : stream;
+            this.stream = stream;
             this.location = location;
             Read(stream, mapped);
 
@@ -152,11 +152,6 @@ namespace IKVM.Reflection.Reader
                         break;
                 }
             }
-        }
-
-        internal void SetAssembly(Assembly assembly)
-        {
-            this.assembly = assembly;
         }
 
         static StreamHeader[] ReadStreamHeaders(BinaryReader br, out string version)
@@ -245,7 +240,7 @@ namespace IKVM.Reflection.Reader
 
         internal Stream GetStream()
         {
-            return stream ?? throw new InvalidOperationException("Operation not available when UniverseOptions.MetadataOnly is enabled.");
+            return stream;
         }
 
         internal override void GetTypesImpl(List<Type> list)
@@ -457,7 +452,6 @@ namespace IKVM.Reflection.Reader
                     {
                         return Universe
                             .GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
-                            .SetCyclicTypeSpec()
                             .SetMetadataTokenForMissing(metadataToken, 0);
                     }
 
@@ -719,41 +713,6 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override Type[] __ResolveOptionalParameterTypes(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments, out CustomModifiers[] customModifiers)
-        {
-            int index = (metadataToken & 0xFFFFFF) - 1;
-            if (index < 0)
-            {
-                throw TokenOutOfRangeException(metadataToken);
-            }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
-            {
-                var sig = MemberRefTable.records[index].Signature;
-                return Signature.ReadOptionalParameterTypes(this, GetBlobReader(sig), new GenericContext(genericTypeArguments, genericMethodArguments), out customModifiers);
-            }
-            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDefTable.RowCount)
-            {
-                // for convenience, we support passing a MethodDef token as well, because in some places
-                // it makes sense to have a vararg method that is referred to by its methoddef (e.g. ldftn).
-                // Note that MethodSpec doesn't make sense, because generic methods cannot be vararg.
-                customModifiers = Array.Empty<CustomModifiers>();
-                return Type.EmptyTypes;
-            }
-            else
-            {
-                throw TokenOutOfRangeException(metadataToken);
-            }
-        }
-
-        public override CustomModifiers __ResolveTypeSpecCustomModifiers(int typeSpecToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            int index = (typeSpecToken & 0xFFFFFF) - 1;
-            if (typeSpecToken >> 24 != TypeSpecTable.Index || index < 0 || index >= TypeSpecTable.RowCount)
-                throw TokenOutOfRangeException(typeSpecToken);
-
-            return CustomModifiers.Read(this, ByteReader.FromBlob(blobHeap, TypeSpecTable.records[index]), new GenericContext(genericTypeArguments, genericMethodArguments));
-        }
-
         public override string ScopeName
         {
             get { return GetString(ModuleTable.records[0].Name); }
@@ -896,30 +855,12 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override __StandAloneMethodSig __ResolveStandAloneMethodSig(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
-        {
-            int index = (metadataToken & 0xFFFFFF) - 1;
-            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSigTable.RowCount)
-                return MethodSignature.ReadStandAloneMethodSig(this, GetStandAloneSig(index), new GenericContext(genericTypeArguments, genericMethodArguments));
-            else
-                throw TokenOutOfRangeException(metadataToken);
-        }
-
         internal MethodInfo GetEntryPoint()
         {
             if (cliHeader.EntryPointToken != 0 && (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0)
                 return (MethodInfo)ResolveMethod((int)cliHeader.EntryPointToken);
 
             return null;
-        }
-
-        internal string[] GetManifestResourceNames()
-        {
-            var names = new string[ManifestResourceTable.records.Length];
-            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
-                names[i] = GetString(ManifestResourceTable.records[i].Name);
-
-            return names;
         }
 
         internal ManifestResourceInfo GetManifestResourceInfo(string resourceName)
@@ -988,7 +929,7 @@ namespace IKVM.Reflection.Reader
             return null;
         }
 
-        public override AssemblyName[] __GetReferencedAssemblies()
+        public AssemblyName[] __GetReferencedAssemblies()
         {
             var list = new List<AssemblyName>();
             for (int i = 0; i < AssemblyRefTable.records.Length; i++)
@@ -1030,33 +971,6 @@ namespace IKVM.Reflection.Reader
             return list.ToArray();
         }
 
-        public override void __ResolveReferencedAssemblies(Assembly[] assemblies)
-        {
-            assemblyRefs ??= new Assembly[AssemblyRefTable.RowCount];
-
-            for (int i = 0; i < assemblies.Length; i++)
-                if (assemblyRefs[i] == null)
-                    assemblyRefs[i] = assemblies[i];
-        }
-
-        public override string[] __GetReferencedModules()
-        {
-            var arr = new string[this.ModuleRefTable.RowCount];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = GetString(ModuleRefTable.records[i]);
-
-            return arr;
-        }
-
-        public override Type[] __GetReferencedTypes()
-        {
-            var arr = new Type[TypeRefTable.RowCount];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = ResolveType((TypeRefTable.Index << 24) + i + 1);
-
-            return arr;
-        }
-
         public override Type[] __GetExportedTypes()
         {
             var arr = new Type[ExportedTypeTable.RowCount];
@@ -1092,7 +1006,7 @@ namespace IKVM.Reflection.Reader
             return moduleType;
         }
 
-        public override string __ImageRuntimeVersion
+        public string __ImageRuntimeVersion
         {
             get { return imageRuntimeVersion; }
         }
@@ -1102,41 +1016,7 @@ namespace IKVM.Reflection.Reader
             get { return metadataStreamVersion; }
         }
 
-        public override void __GetDataDirectoryEntry(int index, out int rva, out int length)
-        {
-            peFile.GetDataDirectoryEntry(index, out rva, out length);
-        }
-
-        public override long __RelativeVirtualAddressToFileOffset(int rva)
-        {
-            return peFile.RvaToFileOffset((uint)rva);
-        }
-
-        public override bool __GetSectionInfo(int rva, out string name, out int characteristics, out int virtualAddress, out int virtualSize, out int pointerToRawData, out int sizeOfRawData)
-        {
-            return peFile.GetSectionInfo(rva, out name, out characteristics, out virtualAddress, out virtualSize, out pointerToRawData, out sizeOfRawData);
-        }
-
-        public override int __ReadDataFromRVA(int rva, byte[] data, int offset, int length)
-        {
-            SeekRVA(rva);
-
-            var totalBytesRead = 0;
-            while (length > 0)
-            {
-                var read = stream.Read(data, offset, length);
-                if (read == 0)
-                    break; // C++ assemblies can have fields that have an RVA that lies outside of the file
-
-                offset += read;
-                length -= read;
-                totalBytesRead += read;
-            }
-
-            return totalBytesRead;
-        }
-
-        public override void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
+        public void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
         {
             peKind = 0;
             if ((cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_ILONLY) != 0)
@@ -1162,45 +1042,6 @@ namespace IKVM.Reflection.Reader
             machine = (ImageFileMachine)peFile.FileHeader.Machine;
         }
 
-        public override int __Subsystem
-        {
-            get { return peFile.OptionalHeader.Subsystem; }
-        }
-
-        public override IList<CustomAttributeData> __GetPlaceholderAssemblyCustomAttributes(bool multiple, bool security)
-        {
-            TypeName typeName;
-            switch ((multiple ? 1 : 0) + (security ? 2 : 0))
-            {
-                case 0:
-                    typeName = new TypeName("System.Runtime.CompilerServices", "AssemblyAttributesGoHere");
-                    break;
-                case 1:
-                    typeName = new TypeName("System.Runtime.CompilerServices", "AssemblyAttributesGoHereM");
-                    break;
-                case 2:
-                    typeName = new TypeName("System.Runtime.CompilerServices", "AssemblyAttributesGoHereS");
-                    break;
-                case 3:
-                default:
-                    typeName = new TypeName("System.Runtime.CompilerServices", "AssemblyAttributesGoHereSM");
-                    break;
-            }
-
-            var list = new List<CustomAttributeData>();
-            for (int i = 0; i < CustomAttributeTable.records.Length; i++)
-            {
-                if ((CustomAttributeTable.records[i].Parent >> 24) == TypeRefTable.Index)
-                {
-                    var index = (CustomAttributeTable.records[i].Parent & 0xFFFFFF) - 1;
-                    if (typeName == GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName))
-                        list.Add(new CustomAttributeData(this, i));
-                }
-            }
-
-            return list;
-        }
-
         internal override void Dispose()
         {
             stream?.Dispose();
@@ -1210,41 +1051,6 @@ namespace IKVM.Reflection.Reader
         {
             PopulateTypeDef();
             manifestModule.ExportTypes(typeDefs, fileToken);
-        }
-
-        protected override ulong GetImageBaseImpl()
-        {
-            return peFile.OptionalHeader.ImageBase;
-        }
-
-        protected override ulong GetStackReserveImpl()
-        {
-            return peFile.OptionalHeader.SizeOfStackReserve;
-        }
-
-        protected override uint GetFileAlignmentImpl()
-        {
-            return peFile.OptionalHeader.FileAlignment;
-        }
-
-        protected override DllCharacteristics GetDllCharacteristicsImpl()
-        {
-            return (DllCharacteristics)peFile.OptionalHeader.DllCharacteristics;
-        }
-
-        public override int __EntryPointRVA
-        {
-            get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) != 0 ? (int)cliHeader.EntryPointToken : 0; }
-        }
-
-        public override int __EntryPointToken
-        {
-            get { return (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0 ? (int)cliHeader.EntryPointToken : 0; }
-        }
-
-        public override System.Security.Cryptography.X509Certificates.X509Certificate GetSignerCertificate()
-        {
-            return Authenticode.GetSignerCertificate(GetStream());
         }
 
     }

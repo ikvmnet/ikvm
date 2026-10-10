@@ -83,15 +83,6 @@ namespace IKVM.Reflection.Reader
             get { throw new NotSupportedException(); }
         }
 
-        public override byte[] __ModuleHash
-        {
-            get
-            {
-                var blob = manifest.FileTable.records[index].HashValue;
-                return blob.IsNil ? Array.Empty<byte>() : manifest.GetBlobCopy(blob);
-            }
-        }
-
         internal override Type FindType(TypeName typeName)
         {
             return null;

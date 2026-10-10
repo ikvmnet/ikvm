@@ -209,23 +209,6 @@ namespace IKVM.Reflection.Reader
             return BitConverter.Int64BitsToDouble(ReadInt64());
         }
 
-        internal ByteReader Slice(int length)
-        {
-            if (end - pos < length)
-                throw new BadImageFormatException();
-
-            var br = new ByteReader(buffer, pos, length);
-            pos += length;
-            return br;
-        }
-
-        // NOTE this method only works if the original offset was aligned and for alignments that are a power of 2
-        internal void Align(int alignment)
-        {
-            alignment--;
-            pos = (pos + alignment) & ~alignment;
-        }
-
     }
 
 }

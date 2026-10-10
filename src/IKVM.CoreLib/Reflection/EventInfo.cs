@@ -34,7 +34,6 @@ namespace IKVM.Reflection
         /// </summary>
         protected EventInfo()
 		{
-
 		}
 
 		public sealed override MemberTypes MemberType
@@ -51,8 +50,6 @@ namespace IKVM.Reflection
 		public abstract MethodInfo GetRemoveMethod(bool nonPublic);
 
 		public abstract MethodInfo[] GetOtherMethods(bool nonPublic);
-
-		public abstract MethodInfo[] __GetMethods();
 
 		public abstract Type EventHandlerType { get; }
 

@@ -57,32 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddInterfaceImplementation(
-                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Class),
-                    MetadataTokens.EntityHandle(records[i].Interface));
-
-                Debug.Assert(h == MetadataTokens.InterfaceImplementationHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                module.FixupPseudoToken(ref records[i].Class);
-                module.FixupPseudoToken(ref records[i].Interface);
-            }
-
-            // LAMESPEC the CLI spec says that InterfaceImpl should be sorted by { Class, Interface },
-            // but it appears to only be necessary to sort by Class (and csc emits InterfaceImpl records in
-            // source file order, so to be able to support round tripping, we need to retain ordering as well).
-            Sort();
-        }
-
     }
 
 }

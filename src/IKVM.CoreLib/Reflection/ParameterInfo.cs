@@ -34,7 +34,6 @@ namespace IKVM.Reflection
         /// </summary>
         public ParameterInfo()
         {
-
         }
 
         public sealed override bool Equals(object obj)
@@ -113,9 +112,60 @@ namespace IKVM.Reflection
             get { return (Attributes & ParameterAttributes.Optional) != 0; }
         }
 
-        public bool HasDefaultValue
+        /// <summary>
+        /// Gets whether the parameter has a default value. Like System.Reflection, a <see cref="decimal"/> or
+        /// <see cref="System.DateTime"/> default recorded as a custom constant attribute counts.
+        /// </summary>
+        public bool HasDefaultValue => (Attributes & ParameterAttributes.HasDefault) != 0 || TryGetCustomConstant(out _);
+
+        /// <summary>
+        /// Attempts to read a default value that the compiler recorded as a DecimalConstantAttribute or
+        /// DateTimeConstantAttribute, because metadata constants cannot hold those types.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        internal bool TryGetCustomConstant(out object value)
         {
-            get { return (Attributes & ParameterAttributes.HasDefault) != 0; }
+            var universe = Module.Universe;
+            var type = ParameterType;
+
+            if (type == universe.System_Decimal && universe.System_Runtime_CompilerServices_DecimalConstantAttribute is { } decimalConstant)
+            {
+                foreach (var cad in CustomAttributeData.__GetCustomAttributes(this, decimalConstant, false))
+                {
+                    var args = cad.ConstructorArguments;
+                    if (args.Count != 5 || args[0].ArgumentType != universe.System_Byte || args[1].ArgumentType != universe.System_Byte)
+                        continue;
+
+                    // the constructor takes the 96 bit integer either as signed or as unsigned ints
+                    if (args[2].ArgumentType == universe.System_Int32 && args[3].ArgumentType == universe.System_Int32 && args[4].ArgumentType == universe.System_Int32)
+                    {
+                        value = new decimal((int)args[4].Value, (int)args[3].Value, (int)args[2].Value, (byte)args[1].Value != 0, (byte)args[0].Value);
+                        return true;
+                    }
+
+                    if (args[2].ArgumentType == universe.System_UInt32 && args[3].ArgumentType == universe.System_UInt32 && args[4].ArgumentType == universe.System_UInt32)
+                    {
+                        value = new decimal(unchecked((int)(uint)args[4].Value), unchecked((int)(uint)args[3].Value), unchecked((int)(uint)args[2].Value), (byte)args[1].Value != 0, (byte)args[0].Value);
+                        return true;
+                    }
+                }
+            }
+            else if (type == universe.System_DateTime && universe.System_Runtime_CompilerServices_DateTimeConstantAttribute is { } dateTimeConstant)
+            {
+                foreach (var cad in CustomAttributeData.__GetCustomAttributes(this, dateTimeConstant, false))
+                {
+                    var args = cad.ConstructorArguments;
+                    if (args.Count == 1 && args[0].ArgumentType == universe.System_Int64)
+                    {
+                        value = new System.DateTime((long)args[0].Value);
+                        return true;
+                    }
+                }
+            }
+
+            value = null;
+            return false;
         }
 
         public bool IsDefined(Type attributeType, bool inherit)
@@ -133,10 +183,6 @@ namespace IKVM.Reflection
             return CustomAttributeData.GetCustomAttributes(this);
         }
 
-        public IEnumerable<CustomAttributeData> CustomAttributes
-        {
-            get { return GetCustomAttributesData(); }
-        }
     }
 
     sealed class ParameterInfoWrapper : ParameterInfo

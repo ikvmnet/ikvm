@@ -26,24 +26,6 @@ namespace IKVM.Reflection
 
     internal readonly struct ParameterModifier
     {
-
-        readonly bool[] values;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="parameterCount"></param>
-        public ParameterModifier(int parameterCount)
-        {
-            values = new bool[parameterCount];
-        }
-
-        public bool this[int index]
-        {
-            get => values[index];
-            set => values[index] = value;
-        }
-
     }
 
 }

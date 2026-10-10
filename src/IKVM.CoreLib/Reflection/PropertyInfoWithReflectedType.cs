@@ -125,11 +125,6 @@ namespace IKVM.Reflection
             get { return property.DeclaringType; }
         }
 
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
-        }
-
         public override bool Equals(object obj)
         {
             var other = obj as PropertyInfoWithReflectedType;

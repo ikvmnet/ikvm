@@ -1,0 +1,3074 @@
+assembly IKVM.Reflection.Tests.Fixture 1.0.0.0
+  customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Int32 Int32 1, System.String "assembly")
+  customattribute System.Diagnostics.DebuggableAttribute(System.Diagnostics.DebuggableAttribute/DebuggingModes Int32 2)
+  customattribute System.Reflection.AssemblyCompanyAttribute(System.String "IKVM")
+  customattribute System.Reflection.AssemblyCopyrightAttribute(System.String "IKVM")
+  customattribute System.Reflection.AssemblyFileVersionAttribute(System.String "1.0.0.0")
+  customattribute System.Reflection.AssemblyInformationalVersionAttribute(System.String "1.0.0")
+  customattribute System.Reflection.AssemblyMetadataAttribute(System.String "RepositoryUrl", System.String "https://github.com/ikvmnet/ikvm.git")
+  customattribute System.Reflection.AssemblyProductAttribute(System.String "IKVM.Reflection.Tests.Fixture")
+  customattribute System.Reflection.AssemblyTitleAttribute(System.String "IKVM.Reflection.Tests.Fixture")
+  customattribute System.Runtime.CompilerServices.CompilationRelaxationsAttribute(System.Int32 Int32 8)
+  customattribute System.Runtime.CompilerServices.RuntimeCompatibilityAttribute() property WrapNonExceptionThrows = System.Boolean true
+  customattribute System.Runtime.Versioning.TargetFrameworkAttribute(System.String ".NETFramework,Version=v4.7.2") property FrameworkDisplayName = System.String ".NET Framework 4.7.2"
+  module IKVM.Reflection.Tests.Fixture.dll
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+    customattribute System.Runtime.CompilerServices.RefSafetyRulesAttribute(System.Int32 Int32 11)
+    customattribute System.Security.UnverifiableCodeAttribute()
+type IKVM.Reflection.Tests.Fixture.AbstractClass
+  attributes 0x100081
+  kind class abstract
+  name AbstractClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.AbstractClass
+  base System.Object
+  method .ctor()
+    attributes 0x1884
+    implementation 0x0
+    callingconvention 0x21
+  method AbstractMethod() : System.Void
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::AbstractMethod() : System.Void
+  method InternalMethod() : System.Void
+    attributes 0x3C3
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::InternalMethod() : System.Void
+  method NonVirtualMethod() : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+  method OverloadedMethod(System.Int32) : System.Int32
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.Int32) : System.Int32
+    parameter 0 value : System.Int32
+      attributes 0x0
+  method OverloadedMethod(System.String) : System.Int32
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.String) : System.Int32
+    parameter 0 value : System.String
+      attributes 0x0
+  method PrivateMethod() : System.Void
+    attributes 0x81
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+  method ProtectedInternalMethod() : System.Void
+    attributes 0x1C5
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::ProtectedInternalMethod() : System.Void
+  method VirtualMethod() : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethod() : System.Void
+  method VirtualMethodToHide() : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToHide() : System.Void
+  method VirtualMethodToSeal() : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToSeal() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::AbstractMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::NonVirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.String) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToHide() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToSeal() : System.Void
+type IKVM.Reflection.Tests.Fixture.AttributedClass
+  attributes 0x100001
+  kind class
+  name AttributedClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.AttributedClass
+  base System.Object
+  customattribute IKVM.Reflection.Tests.Fixture.NotInheritedAttribute()
+  customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute() property ArrayProperty = System.String[] [System.String "x", System.String null] property EnumProperty = IKVM.Reflection.Tests.Fixture.PlainEnum Int32 1 field IntField = System.Int32 Int32 1 field ObjectField = System.String "object" property TypeProperty = System.Type typeof(IKVM.Reflection.Tests.Fixture.PlainStruct)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(IKVM.Reflection.Tests.Fixture.FlagsEnum UInt32 3)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(IKVM.Reflection.Tests.Fixture.PlainEnum Int32 1)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(IKVM.Reflection.Tests.Fixture.PlainEnum Int32 10)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Boolean true, System.Byte Byte 1, System.SByte SByte -1, System.Char 'c' (99), System.Int16 Int16 -2, System.UInt16 UInt16 2, System.Int32 Int32 -3, System.UInt32 UInt32 3, System.Int64 Int64 -4, System.UInt64 UInt64 4, System.Single float 0x3FC00000, System.Double double 0x4004000000000000, System.String "s")
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Int32 Int32 1)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Int32[] [System.Int32 Int32 1, System.Int32 Int32 2, System.Int32 Int32 3])
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Object[] [System.Int32 Int32 1, System.String "two", System.Type typeof(System.Int32), IKVM.Reflection.Tests.Fixture.PlainEnum Int32 0, System.String null, System.Int32[] [System.Int32 Int32 1]])
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.String "boxed")
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.String null)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.String[] [System.String "a", System.String "b", System.String "c"])
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type null)
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(IKVM.Reflection.Tests.Fixture.GenericClass`1))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1<System.String,IKVM.Reflection.Tests.Fixture.PlainEnum>))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Int32>))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(IKVM.Reflection.Tests.Fixture.Outer/Nested/DeeplyNested))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(IKVM.Reflection.Tests.Fixture.PlainClass))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(System.Int32[,]))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(System.Int32[]))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type typeof(System.String))
+  customattribute IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute(System.Type[] [System.Type typeof(System.Int32), System.Type typeof(System.String)])
+  field <Property>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Event : System.EventHandler
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Field : System.Int32
+    attributes 0x6
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  method GenericMethod<T>() : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    genericparameter 0 T 0x0
+      customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  method Method(System.Int32) : System.Int32
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+      customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+    parameter 0 parameter : System.Int32
+      attributes 0x0
+      customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  method add_Event(System.EventHandler) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Property() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Event(System.EventHandler) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Property(System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  property Property : System.Int32
+    attributes 0x0
+    get get_Property() : System.Int32
+    set set_Property(System.Int32) : System.Void
+    accessor get_Property() : System.Int32
+    accessor set_Property(System.Int32) : System.Void
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  event Event : System.EventHandler
+    attributes 0x0
+    add add_Event(System.EventHandler) : System.Void
+    remove remove_Event(System.EventHandler) : System.Void
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  visible Constructor IKVM.Reflection.Tests.Fixture.AttributedClass::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.AttributedClass::Event : System.EventHandler
+  visible Field IKVM.Reflection.Tests.Fixture.AttributedClass::Field : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::GenericMethod<T>() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::Method(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::add_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::get_Property() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::remove_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::set_Property(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.AttributedClass::Property : System.Int32
+type IKVM.Reflection.Tests.Fixture.ByteEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name ByteEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ByteEnum
+  base System.Enum
+  underlying System.Byte
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.ByteEnum
+    attributes 0x8056
+    constant Byte 1
+  field B : IKVM.Reflection.Tests.Fixture.ByteEnum
+    attributes 0x8056
+    constant Byte 255
+  field value__ : System.Byte
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.ByteEnum::A : IKVM.Reflection.Tests.Fixture.ByteEnum
+  visible Field IKVM.Reflection.Tests.Fixture.ByteEnum::B : IKVM.Reflection.Tests.Fixture.ByteEnum
+  visible Field IKVM.Reflection.Tests.Fixture.ByteEnum::value__ : System.Byte
+type IKVM.Reflection.Tests.Fixture.ClosedGenericBase
+  attributes 0x100001
+  kind class
+  name ClosedGenericBase namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ClosedGenericBase
+  base IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.ClosedGenericBase::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::ArrayField : System.String[]
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::Field : System.String
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::ListField : System.Collections.Generic.List`1<System.String>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::GenericMethod<TMethod>(System.String,!!0:TMethod) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::GenericMethodWithConstraint<TMethod>() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::Method(System.String) : System.String
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::get_Property() : System.String
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::set_Property(System.String) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.GenericClass`1<System.String>::Property : System.String
+type IKVM.Reflection.Tests.Fixture.Constants
+  attributes 0x100181
+  kind class abstract sealed
+  name Constants namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Constants
+  base System.Object
+  field Bool : System.Boolean
+    attributes 0x8056
+    constant true
+  field Byte : System.Byte
+    attributes 0x8056
+    constant Byte 255
+  field Char : System.Char
+    attributes 0x8056
+    constant 'c' (99)
+  field Decimal : System.Decimal
+    attributes 0x36
+    customattribute System.Runtime.CompilerServices.DecimalConstantAttribute(System.Byte Byte 1, System.Byte Byte 0, System.UInt32 UInt32 0, System.UInt32 UInt32 0, System.UInt32 UInt32 15)
+  field Double : System.Double
+    attributes 0x8056
+    constant double 0xFFF8000000000000
+  field DoubleInfinity : System.Double
+    attributes 0x8056
+    constant double 0x7FF0000000000000
+  field EmptyString : System.String
+    attributes 0x8056
+    constant ""
+  field Enum : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x8056
+    constant Int32 10
+  field Flags : IKVM.Reflection.Tests.Fixture.FlagsEnum
+    attributes 0x8056
+    constant UInt32 3
+  field Float : System.Single
+    attributes 0x8056
+    constant float 0x3FC00000
+  field Int : System.Int32
+    attributes 0x8056
+    constant Int32 -2147483648
+  field Long : System.Int64
+    attributes 0x8056
+    constant Int64 -9223372036854775808
+  field NullObject : System.Object
+    attributes 0x8056
+    constant null
+  field NullString : System.String
+    attributes 0x8056
+    constant null
+  field SByte : System.SByte
+    attributes 0x8056
+    constant SByte -128
+  field Short : System.Int16
+    attributes 0x8056
+    constant Int16 -32768
+  field String : System.String
+    attributes 0x8056
+    constant "string"
+  field UInt : System.UInt32
+    attributes 0x8056
+    constant UInt32 4294967295
+  field ULong : System.UInt64
+    attributes 0x8056
+    constant UInt64 18446744073709551615
+  field UShort : System.UInt16
+    attributes 0x8056
+    constant UInt16 65535
+  method .cctor()
+    attributes 0x1891
+    implementation 0x0
+    callingconvention 0x1
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Bool : System.Boolean
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Byte : System.Byte
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Char : System.Char
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Decimal : System.Decimal
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Double : System.Double
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::DoubleInfinity : System.Double
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::EmptyString : System.String
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Enum : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Flags : IKVM.Reflection.Tests.Fixture.FlagsEnum
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Float : System.Single
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Int : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Long : System.Int64
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::NullObject : System.Object
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::NullString : System.String
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::SByte : System.SByte
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::Short : System.Int16
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::String : System.String
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::UInt : System.UInt32
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::ULong : System.UInt64
+  visible Field IKVM.Reflection.Tests.Fixture.Constants::UShort : System.UInt16
+type IKVM.Reflection.Tests.Fixture.DelegateWithRef
+  attributes 0x101
+  kind class sealed serializable
+  name DelegateWithRef namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.DelegateWithRef
+  base System.MulticastDelegate
+  interface System.ICloneable
+  interface System.Runtime.Serialization.ISerializable
+  method .ctor(System.Object,System.IntPtr)
+    attributes 0x1886
+    implementation 0x3
+    callingconvention 0x21
+    parameter 0 object : System.Object
+      attributes 0x0
+    parameter 1 method : System.IntPtr
+      attributes 0x0
+  method BeginInvoke(System.Int32&,System.String&,System.AsyncCallback,System.Object) : System.IAsyncResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.IAsyncResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.DelegateWithRef::BeginInvoke(System.Int32&,System.String&,System.AsyncCallback,System.Object) : System.IAsyncResult
+    parameter 0 value : System.Int32&
+      attributes 0x0
+    parameter 1 result : System.String&
+      attributes 0x2
+    parameter 2 callback : System.AsyncCallback
+      attributes 0x0
+    parameter 3 object : System.Object
+      attributes 0x0
+  method EndInvoke(System.Int32&,System.String&,System.IAsyncResult) : System.Int32
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.DelegateWithRef::EndInvoke(System.Int32&,System.String&,System.IAsyncResult) : System.Int32
+    parameter 0 value : System.Int32&
+      attributes 0x0
+    parameter 1 result : System.String&
+      attributes 0x2
+    parameter 2 __result : System.IAsyncResult
+      attributes 0x0
+  method Invoke(System.Int32&,System.String&) : System.Int32
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.DelegateWithRef::Invoke(System.Int32&,System.String&) : System.Int32
+    parameter 0 value : System.Int32&
+      attributes 0x0
+    parameter 1 result : System.String&
+      attributes 0x2
+  visible Constructor IKVM.Reflection.Tests.Fixture.DelegateWithRef::.ctor(System.Object,System.IntPtr)
+  visible Method IKVM.Reflection.Tests.Fixture.DelegateWithRef::BeginInvoke(System.Int32&,System.String&,System.AsyncCallback,System.Object) : System.IAsyncResult
+  visible Method IKVM.Reflection.Tests.Fixture.DelegateWithRef::EndInvoke(System.Int32&,System.String&,System.IAsyncResult) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.DelegateWithRef::Invoke(System.Int32&,System.String&) : System.Int32
+type IKVM.Reflection.Tests.Fixture.DerivedClass
+  attributes 0x100001
+  kind class
+  name DerivedClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.DerivedClass
+  base IKVM.Reflection.Tests.Fixture.AbstractClass
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method AbstractMethod() : System.Void
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::AbstractMethod() : System.Void
+  method OverloadedMethod(System.Int32) : System.Int32
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.Int32) : System.Int32
+    parameter 0 value : System.Int32
+      attributes 0x0
+  method ProtectedInternalMethod() : System.Void
+    attributes 0xC5
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::ProtectedInternalMethod() : System.Void
+  method VirtualMethod() : System.Void
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethod() : System.Void
+  method VirtualMethodToHide() : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethodToHide() : System.Void
+  method VirtualMethodToSeal() : System.Void
+    attributes 0xE6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToSeal() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.DerivedClass::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::NonVirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.String) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToHide() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::AbstractMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::OverloadedMethod(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethodToHide() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethodToSeal() : System.Void
+type IKVM.Reflection.Tests.Fixture.DerivedEvents
+  attributes 0x100001
+  kind class
+  name DerivedEvents namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.DerivedEvents
+  base IKVM.Reflection.Tests.Fixture.Events
+  field Virtual : System.EventHandler
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method add_Virtual(System.EventHandler) : System.Void
+    attributes 0x8C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Events::add_Virtual(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Virtual(System.EventHandler) : System.Void
+    attributes 0x8C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Events::remove_Virtual(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  event Virtual : System.EventHandler
+    attributes 0x0
+    add add_Virtual(System.EventHandler) : System.Void
+    remove remove_Virtual(System.EventHandler) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.DerivedEvents::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.DerivedEvents::Virtual : System.EventHandler
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Custom : System.Action
+  visible Event IKVM.Reflection.Tests.Fixture.Events::FieldLike : System.EventHandler
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Generic : System.EventHandler`1<System.EventArgs>
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Static : System.Action
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedEvents::add_Virtual(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedEvents::remove_Virtual(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Custom(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_FieldLike(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Static(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Custom(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_FieldLike(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Static(System.Action) : System.Void
+type IKVM.Reflection.Tests.Fixture.DerivedProperties
+  attributes 0x100001
+  kind class
+  name DerivedProperties namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.DerivedProperties
+  base IKVM.Reflection.Tests.Fixture.Properties
+  field <ReadWrite>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method get_ReadWrite() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Virtual() : System.Int32
+    attributes 0x8C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Properties::get_Virtual() : System.Int32
+  method set_ReadWrite(System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  property ReadWrite : System.Int32
+    attributes 0x0
+    get get_ReadWrite() : System.Int32
+    set set_ReadWrite(System.Int32) : System.Void
+    accessor get_ReadWrite() : System.Int32
+    accessor set_ReadWrite(System.Int32) : System.Void
+  property Virtual : System.Int32
+    attributes 0x0
+    get get_Virtual() : System.Int32
+    accessor get_Virtual() : System.Int32
+  visible Constructor IKVM.Reflection.Tests.Fixture.DerivedProperties::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedProperties::get_ReadWrite() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedProperties::get_Virtual() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedProperties::set_ReadWrite(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_InitOnly() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Item(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Item(System.String,System.Int32) : System.String
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_PrivateSetter() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_ReadOnly() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_ReadWrite() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_RefReadOnlyReturning() : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_RefReturning() : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Static() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_InitOnly(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Item(System.Int32,System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_ReadWrite(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Static(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Virtual(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_WriteOnly(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.DerivedProperties::ReadWrite : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.DerivedProperties::Virtual : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::InitOnly : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Item : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Item : System.String
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::PrivateSetter : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::ReadOnly : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::RefReadOnlyReturning : System.Int32&
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::RefReturning : System.Int32&
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Static : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::WriteOnly : System.Int32
+type IKVM.Reflection.Tests.Fixture.Events
+  attributes 0x100001
+  kind class
+  name Events namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Events
+  base System.Object
+  field FieldLike : System.EventHandler
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Generic : System.EventHandler`1<System.EventArgs>
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Static : System.Action
+    attributes 0x11
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Virtual : System.EventHandler
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method add_Custom(System.Action) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Action
+      attributes 0x0
+  method add_FieldLike(System.EventHandler) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method add_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler`1<System.EventArgs>
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method add_Static(System.Action) : System.Void
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Action
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method add_Virtual(System.EventHandler) : System.Void
+    attributes 0x9C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Events::add_Virtual(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Custom(System.Action) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Action
+      attributes 0x0
+  method remove_FieldLike(System.EventHandler) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.EventHandler`1<System.EventArgs>
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Static(System.Action) : System.Void
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Action
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Virtual(System.EventHandler) : System.Void
+    attributes 0x9C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Events::remove_Virtual(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  event Custom : System.Action
+    attributes 0x0
+    add add_Custom(System.Action) : System.Void
+    remove remove_Custom(System.Action) : System.Void
+  event FieldLike : System.EventHandler
+    attributes 0x0
+    add add_FieldLike(System.EventHandler) : System.Void
+    remove remove_FieldLike(System.EventHandler) : System.Void
+  event Generic : System.EventHandler`1<System.EventArgs>
+    attributes 0x0
+    add add_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+    remove remove_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+  event Static : System.Action
+    attributes 0x0
+    add add_Static(System.Action) : System.Void
+    remove remove_Static(System.Action) : System.Void
+  event Virtual : System.EventHandler
+    attributes 0x0
+    add add_Virtual(System.EventHandler) : System.Void
+    remove remove_Virtual(System.EventHandler) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.Events::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Custom : System.Action
+  visible Event IKVM.Reflection.Tests.Fixture.Events::FieldLike : System.EventHandler
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Generic : System.EventHandler`1<System.EventArgs>
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Static : System.Action
+  visible Event IKVM.Reflection.Tests.Fixture.Events::Virtual : System.EventHandler
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Custom(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_FieldLike(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Static(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::add_Virtual(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Custom(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_FieldLike(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Generic(System.EventHandler`1<System.EventArgs>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Static(System.Action) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Events::remove_Virtual(System.EventHandler) : System.Void
+type IKVM.Reflection.Tests.Fixture.ExplicitImplementation
+  attributes 0x100001
+  kind class
+  name ExplicitImplementation namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ExplicitImplementation
+  base System.Object
+  interface IKVM.Reflection.Tests.Fixture.IPlainInterface
+  interface System.IDisposable
+  field <IKVM.Reflection.Tests.Fixture.IPlainInterface.Property>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method IKVM.Reflection.Tests.Fixture.IPlainInterface.Method() : System.Void
+    attributes 0x1E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::IKVM.Reflection.Tests.Fixture.IPlainInterface.Method() : System.Void
+  method IKVM.Reflection.Tests.Fixture.IPlainInterface.add_Event(System.EventHandler) : System.Void
+    attributes 0x9E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::IKVM.Reflection.Tests.Fixture.IPlainInterface.add_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+  method IKVM.Reflection.Tests.Fixture.IPlainInterface.get_Property() : System.Int32
+    attributes 0x9E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::IKVM.Reflection.Tests.Fixture.IPlainInterface.get_Property() : System.Int32
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method IKVM.Reflection.Tests.Fixture.IPlainInterface.remove_Event(System.EventHandler) : System.Void
+    attributes 0x9E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::IKVM.Reflection.Tests.Fixture.IPlainInterface.remove_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+  method IKVM.Reflection.Tests.Fixture.IPlainInterface.set_Property(System.Int32) : System.Void
+    attributes 0x9E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::IKVM.Reflection.Tests.Fixture.IPlainInterface.set_Property(System.Int32) : System.Void
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method System.IDisposable.Dispose() : System.Void
+    attributes 0x1E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ExplicitImplementation::System.IDisposable.Dispose() : System.Void
+  property IKVM.Reflection.Tests.Fixture.IPlainInterface.Property : System.Int32
+    attributes 0x0
+    get IKVM.Reflection.Tests.Fixture.IPlainInterface.get_Property() : System.Int32
+    set IKVM.Reflection.Tests.Fixture.IPlainInterface.set_Property(System.Int32) : System.Void
+    accessor IKVM.Reflection.Tests.Fixture.IPlainInterface.get_Property() : System.Int32
+    accessor IKVM.Reflection.Tests.Fixture.IPlainInterface.set_Property(System.Int32) : System.Void
+  event IKVM.Reflection.Tests.Fixture.IPlainInterface.Event : System.EventHandler
+    attributes 0x0
+    add IKVM.Reflection.Tests.Fixture.IPlainInterface.add_Event(System.EventHandler) : System.Void
+    remove IKVM.Reflection.Tests.Fixture.IPlainInterface.remove_Event(System.EventHandler) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.ExplicitImplementation::.ctor()
+type IKVM.Reflection.Tests.Fixture.Fields
+  attributes 0x100001
+  kind class
+  name Fields namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Fields
+  base System.Object
+  field Array : System.Int32[]
+    attributes 0x6
+  field Const : System.Int32
+    attributes 0x8056
+    constant Int32 1
+  field Dynamic : System.Object
+    attributes 0x6
+    customattribute System.Runtime.CompilerServices.DynamicAttribute()
+  field Instance : System.Int32
+    attributes 0x6
+  field Internal : System.Int32
+    attributes 0x3
+  field JaggedArray : System.Int32[][]
+    attributes 0x6
+  field MultiDimensionalArray : System.Int32[,]
+    attributes 0x6
+  field NamedTuple : System.ValueTuple`2<System.Int32,System.String>
+    attributes 0x6
+    customattribute System.Runtime.CompilerServices.TupleElementNamesAttribute(System.String[] [System.String "First", System.String "Second"])
+  field Nullable : System.Nullable`1<System.Int32>
+    attributes 0x6
+  field Object : System.Object
+    attributes 0x6
+  field Pointer : System.Int32*
+    attributes 0x6
+  field PointerToPointer : System.Int32**
+    attributes 0x6
+  field Private : System.Int32
+    attributes 0x1
+  field PrivateProtected : System.Int32
+    attributes 0x2
+  field Protected : System.Int32
+    attributes 0x4
+  field ProtectedInternal : System.Int32
+    attributes 0x5
+  field ReadOnly : System.Int32
+    attributes 0x26
+  field Static : System.Int32
+    attributes 0x16
+  field StaticReadOnly : System.Int32
+    attributes 0x36
+  field Tuple : System.ValueTuple`2<System.Int32,System.String>
+    attributes 0x6
+  field VoidPointer : System.Void*
+    attributes 0x6
+  field Volatile : System.Int32
+    attributes 0x6
+    modreq System.Runtime.CompilerServices.IsVolatile
+  method .cctor()
+    attributes 0x1891
+    implementation 0x0
+    callingconvention 0x1
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Fields::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Array : System.Int32[]
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Const : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Dynamic : System.Object
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Instance : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::JaggedArray : System.Int32[][]
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::MultiDimensionalArray : System.Int32[,]
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::NamedTuple : System.ValueTuple`2<System.Int32,System.String>
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Nullable : System.Nullable`1<System.Int32>
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Object : System.Object
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Pointer : System.Int32*
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::PointerToPointer : System.Int32**
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::ReadOnly : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Static : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::StaticReadOnly : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Tuple : System.ValueTuple`2<System.Int32,System.String>
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::VoidPointer : System.Void*
+  visible Field IKVM.Reflection.Tests.Fixture.Fields::Volatile : System.Int32
+type IKVM.Reflection.Tests.Fixture.FlagsEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name FlagsEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.FlagsEnum
+  base System.Enum
+  underlying System.UInt32
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  customattribute System.FlagsAttribute()
+  field All : IKVM.Reflection.Tests.Fixture.FlagsEnum
+    attributes 0x8056
+    constant UInt32 4294967295
+  field None : IKVM.Reflection.Tests.Fixture.FlagsEnum
+    attributes 0x8056
+    constant UInt32 0
+  field One : IKVM.Reflection.Tests.Fixture.FlagsEnum
+    attributes 0x8056
+    constant UInt32 1
+  field Two : IKVM.Reflection.Tests.Fixture.FlagsEnum
+    attributes 0x8056
+    constant UInt32 2
+  field value__ : System.UInt32
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.FlagsEnum::All : IKVM.Reflection.Tests.Fixture.FlagsEnum
+  visible Field IKVM.Reflection.Tests.Fixture.FlagsEnum::None : IKVM.Reflection.Tests.Fixture.FlagsEnum
+  visible Field IKVM.Reflection.Tests.Fixture.FlagsEnum::One : IKVM.Reflection.Tests.Fixture.FlagsEnum
+  visible Field IKVM.Reflection.Tests.Fixture.FlagsEnum::Two : IKVM.Reflection.Tests.Fixture.FlagsEnum
+  visible Field IKVM.Reflection.Tests.Fixture.FlagsEnum::value__ : System.UInt32
+type IKVM.Reflection.Tests.Fixture.GenericAttributed`1
+  attributes 0x100001
+  kind class generic
+  name GenericAttributed`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericAttributed`1
+  base System.Object
+  genericparameter 0 T 0x0
+    customattribute IKVM.Reflection.Tests.Fixture.PlainAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericAttributed`1::.ctor()
+type IKVM.Reflection.Tests.Fixture.GenericClassWithTwoParameters`2
+  attributes 0x100001
+  kind class generic
+  name GenericClassWithTwoParameters`2 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericClassWithTwoParameters`2
+  base System.Collections.Generic.Dictionary`2<!0:TKey,!1:TValue>
+  interface System.Collections.Generic.ICollection`1<System.Collections.Generic.KeyValuePair`2<!0:TKey,!1:TValue>>
+  interface System.Collections.Generic.IDictionary`2<!0:TKey,!1:TValue>
+  interface System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<!0:TKey,!1:TValue>>
+  interface System.Collections.Generic.IReadOnlyCollection`1<System.Collections.Generic.KeyValuePair`2<!0:TKey,!1:TValue>>
+  interface System.Collections.Generic.IReadOnlyDictionary`2<!0:TKey,!1:TValue>
+  interface System.Collections.ICollection
+  interface System.Collections.IDictionary
+  interface System.Collections.IEnumerable
+  interface System.Runtime.Serialization.IDeserializationCallback
+  interface System.Runtime.Serialization.ISerializable
+  genericparameter 0 TKey 0x0
+  genericparameter 1 TValue 0x0
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericClassWithTwoParameters`2::.ctor()
+type IKVM.Reflection.Tests.Fixture.GenericClass`1
+  attributes 0x100001
+  kind class generic
+  name GenericClass`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericClass`1
+  base System.Object
+  genericparameter 0 T 0x0
+  nested IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1
+  nested IKVM.Reflection.Tests.Fixture.GenericClass`1/NestedInGeneric
+  field <Property>k__BackingField : !0:T
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field ArrayField : !0:T[]
+    attributes 0x6
+  field Field : !0:T
+    attributes 0x6
+  field ListField : System.Collections.Generic.List`1<!0:T>
+    attributes 0x6
+  method .ctor(!0:T)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : !0:T
+      attributes 0x0
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method GenericMethod<TMethod>(!0:T,!!0:TMethod) : !!0:TMethod
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : !!0:TMethod
+      attributes 0x0
+    genericparameter 0 TMethod 0x0
+    parameter 0 value : !0:T
+      attributes 0x0
+    parameter 1 other : !!0:TMethod
+      attributes 0x0
+  method GenericMethodWithConstraint<TMethod>() : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    genericparameter 0 TMethod 0x0
+      constraint !0:T
+  method Method(!0:T) : !0:T
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : !0:T
+      attributes 0x0
+    parameter 0 value : !0:T
+      attributes 0x0
+  method get_Property() : !0:T
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : !0:T
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Property(!0:T) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : !0:T
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  property Property : !0:T
+    attributes 0x0
+    get get_Property() : !0:T
+    set set_Property(!0:T) : System.Void
+    accessor get_Property() : !0:T
+    accessor set_Property(!0:T) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericClass`1::.ctor(!0:T)
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericClass`1::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1::ArrayField : !0:T[]
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1::Field : !0:T
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1::ListField : System.Collections.Generic.List`1<!0:T>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1::GenericMethod<TMethod>(!0:T,!!0:TMethod) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1::GenericMethodWithConstraint<TMethod>() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1::Method(!0:T) : !0:T
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1::get_Property() : !0:T
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1::set_Property(!0:T) : System.Void
+  visible NestedType IKVM.Reflection.Tests.Fixture.GenericClass`1::IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1
+  visible NestedType IKVM.Reflection.Tests.Fixture.GenericClass`1::IKVM.Reflection.Tests.Fixture.GenericClass`1/NestedInGeneric
+  visible Property IKVM.Reflection.Tests.Fixture.GenericClass`1::Property : !0:T
+type IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1
+  attributes 0x100002
+  kind class nested generic
+  name GenericNestedInGeneric`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericClass`1+GenericNestedInGeneric`1
+  declaring IKVM.Reflection.Tests.Fixture.GenericClass`1
+  base System.Object
+  genericparameter 0 T 0x0
+  genericparameter 1 TNested 0x0
+  field InnerField : !1:TNested
+    attributes 0x6
+  field Map : System.Collections.Generic.Dictionary`2<!0:T,!1:TNested>
+    attributes 0x6
+  field OuterField : !0:T
+    attributes 0x6
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1::InnerField : !1:TNested
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1::Map : System.Collections.Generic.Dictionary`2<!0:T,!1:TNested>
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1/GenericNestedInGeneric`1::OuterField : !0:T
+type IKVM.Reflection.Tests.Fixture.GenericClass`1/NestedInGeneric
+  attributes 0x100002
+  kind class nested generic
+  name NestedInGeneric namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericClass`1+NestedInGeneric
+  declaring IKVM.Reflection.Tests.Fixture.GenericClass`1
+  base System.Object
+  genericparameter 0 T 0x0
+  field Field : !0:T
+    attributes 0x6
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericClass`1/NestedInGeneric::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1/NestedInGeneric::Field : !0:T
+type IKVM.Reflection.Tests.Fixture.GenericConstraints`8
+  attributes 0x100001
+  kind class generic
+  name GenericConstraints`8 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericConstraints`8
+  base System.Object
+  genericparameter 0 TClass 0x4
+  genericparameter 1 TStruct 0x18
+    constraint System.ValueType
+  genericparameter 2 TNew 0x10
+  genericparameter 3 TInterface 0x0
+    constraint System.IComparable`1<!3:TInterface>
+    constraint System.IDisposable
+  genericparameter 4 TBase 0x0
+    constraint IKVM.Reflection.Tests.Fixture.PlainClass
+  genericparameter 5 TDerived 0x0
+    constraint !4:TBase
+  genericparameter 6 TUnmanaged 0x18
+    constraint System.ValueType
+    customattribute System.Runtime.CompilerServices.IsUnmanagedAttribute()
+  genericparameter 7 TNotNull 0x0
+    customattribute System.Runtime.CompilerServices.NullableAttribute(System.Byte Byte 1)
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericConstraints`8::.ctor()
+type IKVM.Reflection.Tests.Fixture.GenericDelegate`2
+  attributes 0x101
+  kind class sealed generic serializable
+  name GenericDelegate`2 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericDelegate`2
+  base System.MulticastDelegate
+  interface System.ICloneable
+  interface System.Runtime.Serialization.ISerializable
+  genericparameter 0 T 0x2
+  genericparameter 1 TResult 0x1
+  method .ctor(System.Object,System.IntPtr)
+    attributes 0x1886
+    implementation 0x3
+    callingconvention 0x21
+    parameter 0 object : System.Object
+      attributes 0x0
+    parameter 1 method : System.IntPtr
+      attributes 0x0
+  method BeginInvoke(!0:T,System.AsyncCallback,System.Object) : System.IAsyncResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.IAsyncResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericDelegate`2::BeginInvoke(!0:T,System.AsyncCallback,System.Object) : System.IAsyncResult
+    parameter 0 arg : !0:T
+      attributes 0x0
+    parameter 1 callback : System.AsyncCallback
+      attributes 0x0
+    parameter 2 object : System.Object
+      attributes 0x0
+  method EndInvoke(System.IAsyncResult) : !1:TResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : !1:TResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericDelegate`2::EndInvoke(System.IAsyncResult) : !1:TResult
+    parameter 0 result : System.IAsyncResult
+      attributes 0x0
+  method Invoke(!0:T) : !1:TResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : !1:TResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericDelegate`2::Invoke(!0:T) : !1:TResult
+    parameter 0 arg : !0:T
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericDelegate`2::.ctor(System.Object,System.IntPtr)
+  visible Method IKVM.Reflection.Tests.Fixture.GenericDelegate`2::BeginInvoke(!0:T,System.AsyncCallback,System.Object) : System.IAsyncResult
+  visible Method IKVM.Reflection.Tests.Fixture.GenericDelegate`2::EndInvoke(System.IAsyncResult) : !1:TResult
+  visible Method IKVM.Reflection.Tests.Fixture.GenericDelegate`2::Invoke(!0:T) : !1:TResult
+type IKVM.Reflection.Tests.Fixture.GenericMethods
+  attributes 0x100181
+  kind class abstract sealed
+  name GenericMethods namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericMethods
+  base System.Object
+  method ByRef<T>(!!0:T&,!!0:T&,!!0:T&) : System.Void
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+    genericparameter 0 T 0x0
+    parameter 0 value : !!0:T&
+      attributes 0x0
+    parameter 1 result : !!0:T&
+      attributes 0x2
+    parameter 2 input : !!0:T&
+      attributes 0x1
+      customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  method Constrained<T>(!!0:T) : System.Void
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+    genericparameter 0 T 0x18
+      constraint System.IComparable`1<!!0:T>
+      constraint System.ValueType
+    parameter 0 value : !!0:T
+      attributes 0x0
+  method Convert<TIn,TOut>(!!0:TIn,System.Func`2<!!0:TIn,!!1:TOut>) : !!1:TOut
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : !!1:TOut
+      attributes 0x0
+    genericparameter 0 TIn 0x0
+    genericparameter 1 TOut 0x0
+    parameter 0 value : !!0:TIn
+      attributes 0x0
+    parameter 1 converter : System.Func`2<!!0:TIn,!!1:TOut>
+      attributes 0x0
+  method Identity<T>(!!0:T) : !!0:T
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : !!0:T
+      attributes 0x0
+    genericparameter 0 T 0x0
+    parameter 0 value : !!0:T
+      attributes 0x0
+  method MakeArray<T>(System.Int32) : !!0:T[]
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : !!0:T[]
+      attributes 0x0
+    genericparameter 0 T 0x0
+    parameter 0 length : System.Int32
+      attributes 0x0
+  method Nested<TKey,TValue>() : System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<!!0:TKey,System.Collections.Generic.List`1<!!1:TValue>>>
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<!!0:TKey,System.Collections.Generic.List`1<!!1:TValue>>>
+      attributes 0x0
+    genericparameter 0 TKey 0x0
+    genericparameter 1 TValue 0x0
+  method Overloaded(System.Int32) : System.Int32
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Int32
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+  method Overloaded<T1,T2>(!!0:T1,!!1:T2) : System.Int32
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Int32
+      attributes 0x0
+    genericparameter 0 T1 0x0
+    genericparameter 1 T2 0x0
+    parameter 0 value1 : !!0:T1
+      attributes 0x0
+    parameter 1 value2 : !!1:T2
+      attributes 0x0
+  method Overloaded<T>(!!0:T) : System.Int32
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Int32
+      attributes 0x0
+    genericparameter 0 T 0x0
+    parameter 0 value : !!0:T
+      attributes 0x0
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::ByRef<T>(!!0:T&,!!0:T&,!!0:T&) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Constrained<T>(!!0:T) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Convert<TIn,TOut>(!!0:TIn,System.Func`2<!!0:TIn,!!1:TOut>) : !!1:TOut
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Identity<T>(!!0:T) : !!0:T
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::MakeArray<T>(System.Int32) : !!0:T[]
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Nested<TKey,TValue>() : System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<!!0:TKey,System.Collections.Generic.List`1<!!1:TValue>>>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Overloaded(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Overloaded<T1,T2>(!!0:T1,!!1:T2) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.GenericMethods::Overloaded<T>(!!0:T) : System.Int32
+type IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1
+  attributes 0x100081
+  kind class abstract generic
+  name GenericVirtualBase`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1
+  base System.Object
+  genericparameter 0 T 0x0
+  method .ctor()
+    attributes 0x1884
+    implementation 0x0
+    callingconvention 0x21
+  method Generic<TMethod>(!0:T) : !!0:TMethod
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : !!0:TMethod
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Generic<TMethod>(!0:T) : !!0:TMethod
+    genericparameter 0 TMethod 0x0
+    parameter 0 value : !0:T
+      attributes 0x0
+  method Get() : !0:T
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : !0:T
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Get() : !0:T
+  method Set(!0:T) : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Set(!0:T) : System.Void
+    parameter 0 value : !0:T
+      attributes 0x0
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Generic<TMethod>(!0:T) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Get() : !0:T
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1::Set(!0:T) : System.Void
+type IKVM.Reflection.Tests.Fixture.GenericVirtualDerived
+  attributes 0x100001
+  kind class
+  name GenericVirtualDerived namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericVirtualDerived
+  base IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<System.Int32>
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method Generic<TMethod>(System.Int32) : !!0:TMethod
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : !!0:TMethod
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<System.Int32>::Generic<TMethod>(System.Int32) : !!0:TMethod
+    genericparameter 0 TMethod 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+  method Get() : System.Int32
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<System.Int32>::Get() : System.Int32
+  method Set(System.Int32) : System.Void
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<System.Int32>::Set(System.Int32) : System.Void
+    parameter 0 value : System.Int32
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericVirtualDerived::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualDerived::Generic<TMethod>(System.Int32) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualDerived::Get() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualDerived::Set(System.Int32) : System.Void
+type IKVM.Reflection.Tests.Fixture.GenericVirtualDerivedOpen`1
+  attributes 0x100001
+  kind class generic
+  name GenericVirtualDerivedOpen`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.GenericVirtualDerivedOpen`1
+  base IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<!0:T[]>
+  genericparameter 0 T 0x0
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method Generic<TMethod>(!0:T[]) : !!0:TMethod
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : !!0:TMethod
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<!0:T[]>::Generic<TMethod>(!0:T[]) : !!0:TMethod
+    genericparameter 0 TMethod 0x0
+    parameter 0 value : !0:T[]
+      attributes 0x0
+  method Get() : !0:T[]
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : !0:T[]
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<!0:T[]>::Get() : !0:T[]
+  visible Constructor IKVM.Reflection.Tests.Fixture.GenericVirtualDerivedOpen`1::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualBase`1<!0:T[]>::Set(!0:T[]) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualDerivedOpen`1::Generic<TMethod>(!0:T[]) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericVirtualDerivedOpen`1::Get() : !0:T[]
+type IKVM.Reflection.Tests.Fixture.IComInterface
+  attributes 0x1010A1
+  kind interface abstract
+  name IComInterface namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.IComInterface
+  customattribute System.Runtime.InteropServices.GuidAttribute(System.String "00000000-0000-0000-C000-000000000046")
+  customattribute System.Runtime.InteropServices.InterfaceTypeAttribute(System.Runtime.InteropServices.ComInterfaceType Int32 1)
+  method Method(System.Int32[],System.Object) : System.Int32
+    attributes 0x5C6
+    implementation 0x80
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IComInterface::Method(System.Int32[],System.Object) : System.Int32
+    parameter 0 values : System.Int32[]
+      attributes 0x2003
+    parameter 1 value : System.Object
+      attributes 0x2000
+  visible Method IKVM.Reflection.Tests.Fixture.IComInterface::Method(System.Int32[],System.Object) : System.Int32
+type IKVM.Reflection.Tests.Fixture.IDerivedInterface
+  attributes 0x1000A1
+  kind interface abstract
+  name IDerivedInterface namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.IDerivedInterface
+  interface IKVM.Reflection.Tests.Fixture.IPlainInterface
+  interface System.Collections.IEnumerable
+  method DerivedMethod() : System.Void
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IDerivedInterface::DerivedMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.IDerivedInterface::DerivedMethod() : System.Void
+type IKVM.Reflection.Tests.Fixture.IPlainInterface
+  attributes 0x1000A1
+  kind interface abstract
+  name IPlainInterface namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.IPlainInterface
+  method Method() : System.Void
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IPlainInterface::Method() : System.Void
+  method add_Event(System.EventHandler) : System.Void
+    attributes 0xDC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IPlainInterface::add_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Property() : System.Int32
+    attributes 0xDC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IPlainInterface::get_Property() : System.Int32
+  method remove_Event(System.EventHandler) : System.Void
+    attributes 0xDC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IPlainInterface::remove_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Property(System.Int32) : System.Void
+    attributes 0xDC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IPlainInterface::set_Property(System.Int32) : System.Void
+    parameter 0 value : System.Int32
+      attributes 0x0
+  property Property : System.Int32
+    attributes 0x0
+    get get_Property() : System.Int32
+    set set_Property(System.Int32) : System.Void
+    accessor get_Property() : System.Int32
+    accessor set_Property(System.Int32) : System.Void
+  event Event : System.EventHandler
+    attributes 0x0
+    add add_Event(System.EventHandler) : System.Void
+    remove remove_Event(System.EventHandler) : System.Void
+  visible Event IKVM.Reflection.Tests.Fixture.IPlainInterface::Event : System.EventHandler
+  visible Method IKVM.Reflection.Tests.Fixture.IPlainInterface::Method() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.IPlainInterface::add_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.IPlainInterface::get_Property() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.IPlainInterface::remove_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.IPlainInterface::set_Property(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.IPlainInterface::Property : System.Int32
+type IKVM.Reflection.Tests.Fixture.IVariant`2
+  attributes 0x1000A1
+  kind interface abstract generic
+  name IVariant`2 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.IVariant`2
+  genericparameter 0 TIn 0x2
+  genericparameter 1 TOut 0x1
+  method Convert(!0:TIn) : !1:TOut
+    attributes 0x5C6
+    implementation 0x0
+    callingconvention 0x21
+    return : !1:TOut
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.IVariant`2::Convert(!0:TIn) : !1:TOut
+    parameter 0 value : !0:TIn
+      attributes 0x0
+  visible Method IKVM.Reflection.Tests.Fixture.IVariant`2::Convert(!0:TIn) : !1:TOut
+type IKVM.Reflection.Tests.Fixture.ImplicitImplementation
+  attributes 0x100001
+  kind class
+  name ImplicitImplementation namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ImplicitImplementation
+  base System.Object
+  interface IKVM.Reflection.Tests.Fixture.IDerivedInterface
+  interface IKVM.Reflection.Tests.Fixture.IPlainInterface
+  interface System.Collections.IEnumerable
+  field <Property>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Event : System.EventHandler
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method DerivedMethod() : System.Void
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::DerivedMethod() : System.Void
+  method GetEnumerator() : System.Collections.IEnumerator
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Collections.IEnumerator
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::GetEnumerator() : System.Collections.IEnumerator
+  method Method() : System.Void
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Method() : System.Void
+  method add_Event(System.EventHandler) : System.Void
+    attributes 0x9E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::add_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Property() : System.Int32
+    attributes 0x9E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::get_Property() : System.Int32
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method remove_Event(System.EventHandler) : System.Void
+    attributes 0x9E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::remove_Event(System.EventHandler) : System.Void
+    parameter 0 value : System.EventHandler
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Property(System.Int32) : System.Void
+    attributes 0x9E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ImplicitImplementation::set_Property(System.Int32) : System.Void
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  property Property : System.Int32
+    attributes 0x0
+    get get_Property() : System.Int32
+    set set_Property(System.Int32) : System.Void
+    accessor get_Property() : System.Int32
+    accessor set_Property(System.Int32) : System.Void
+  event Event : System.EventHandler
+    attributes 0x0
+    add add_Event(System.EventHandler) : System.Void
+    remove remove_Event(System.EventHandler) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.ImplicitImplementation::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Event : System.EventHandler
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::DerivedMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::GetEnumerator() : System.Collections.IEnumerator
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Method() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::add_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::get_Property() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::remove_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::set_Property(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Property : System.Int32
+type IKVM.Reflection.Tests.Fixture.InheritedAttributes
+  attributes 0x100001
+  kind class
+  name InheritedAttributes namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.InheritedAttributes
+  base IKVM.Reflection.Tests.Fixture.AttributedClass
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.InheritedAttributes::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.AttributedClass::Event : System.EventHandler
+  visible Field IKVM.Reflection.Tests.Fixture.AttributedClass::Field : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::GenericMethod<T>() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::Method(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::add_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::get_Property() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::remove_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AttributedClass::set_Property(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.AttributedClass::Property : System.Int32
+type IKVM.Reflection.Tests.Fixture.LongEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name LongEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.LongEnum
+  base System.Enum
+  underlying System.Int64
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.LongEnum
+    attributes 0x8056
+    constant Int64 -9223372036854775808
+  field B : IKVM.Reflection.Tests.Fixture.LongEnum
+    attributes 0x8056
+    constant Int64 9223372036854775807
+  field value__ : System.Int64
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.LongEnum::A : IKVM.Reflection.Tests.Fixture.LongEnum
+  visible Field IKVM.Reflection.Tests.Fixture.LongEnum::B : IKVM.Reflection.Tests.Fixture.LongEnum
+  visible Field IKVM.Reflection.Tests.Fixture.LongEnum::value__ : System.Int64
+type IKVM.Reflection.Tests.Fixture.Methods
+  attributes 0x100001
+  kind class
+  name Methods namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Methods
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method ArrayParameters(System.Int32[],System.Int32[,],System.Int32[][],System.Int32[,,]) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Int32[]
+      attributes 0x0
+    parameter 1 b : System.Int32[,]
+      attributes 0x0
+    parameter 2 c : System.Int32[][]
+      attributes 0x0
+    parameter 3 d : System.Int32[,,]
+      attributes 0x0
+  method NoInlining() : System.Void
+    attributes 0x86
+    implementation 0x8
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+  method NoParameters() : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+  method Optional(System.Int32,System.String,System.Object,IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Int32
+      attributes 0x1010
+      default Int32 1
+    parameter 1 b : System.String
+      attributes 0x1010
+      default "b"
+    parameter 2 c : System.Object
+      attributes 0x1010
+      default null
+    parameter 3 d : IKVM.Reflection.Tests.Fixture.PlainEnum
+      attributes 0x1010
+      default Int32 1
+  method OptionalDateTime(System.DateTime) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.DateTime
+      attributes 0x10
+      default DateTime 01/01/2000 00:00:00
+      customattribute System.Runtime.CompilerServices.DateTimeConstantAttribute(System.Int64 Int64 630822816000000000)
+  method OptionalDecimal(System.Decimal) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Decimal
+      attributes 0x10
+      default Decimal 1.5
+      customattribute System.Runtime.CompilerServices.DecimalConstantAttribute(System.Byte Byte 1, System.Byte Byte 0, System.UInt32 UInt32 0, System.UInt32 UInt32 0, System.UInt32 UInt32 15)
+  method OptionalNullable(System.Nullable`1<System.Int32>,System.Nullable`1<System.Int32>) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Nullable`1<System.Int32>
+      attributes 0x1010
+      default null
+    parameter 1 b : System.Nullable`1<System.Int32>
+      attributes 0x1010
+      default Int32 1
+  method Parameters(System.Int32,System.String,System.Object) : System.Int32
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    parameter 0 a : System.Int32
+      attributes 0x0
+    parameter 1 b : System.String
+      attributes 0x0
+    parameter 2 c : System.Object
+      attributes 0x0
+  method Params(System.Object[]) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 values : System.Object[]
+      attributes 0x0
+      customattribute System.ParamArrayAttribute()
+  method PointerParameters(System.Int32*,System.Void*,System.Int32**) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Int32*
+      attributes 0x0
+    parameter 1 b : System.Void*
+      attributes 0x0
+    parameter 2 c : System.Int32**
+      attributes 0x0
+  method RefParameters(System.Int32&,System.Int32&,System.Int32&) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Int32&
+      attributes 0x0
+    parameter 1 b : System.Int32&
+      attributes 0x2
+    parameter 2 c : System.Int32&
+      attributes 0x1
+      customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  method RefReadOnlyReturn(System.Int32&) : System.Int32&
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32&
+      attributes 0x0
+      modreq System.Runtime.InteropServices.InAttribute
+      customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+    parameter 0 a : System.Int32&
+      attributes 0x1
+      customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  method RefReturn(System.Int32&) : System.Int32&
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32&
+      attributes 0x0
+    parameter 0 a : System.Int32&
+      attributes 0x0
+  method StaticMethod() : System.Void
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+  method Synchronized() : System.Void
+    attributes 0x86
+    implementation 0x20
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+  method VarArgs(System.Int32,...) : System.Void
+    attributes 0x86
+    implementation 0x0
+    callingconvention 0x22
+    return : System.Void
+      attributes 0x0
+    parameter 0 a : System.Int32
+      attributes 0x0
+  method VirtualMethod() : System.Void
+    attributes 0x1C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Methods::VirtualMethod() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.Methods::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::ArrayParameters(System.Int32[],System.Int32[,],System.Int32[][],System.Int32[,,]) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::NoInlining() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::NoParameters() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::Optional(System.Int32,System.String,System.Object,IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::OptionalDateTime(System.DateTime) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::OptionalDecimal(System.Decimal) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::OptionalNullable(System.Nullable`1<System.Int32>,System.Nullable`1<System.Int32>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::Parameters(System.Int32,System.String,System.Object) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::Params(System.Object[]) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::PointerParameters(System.Int32*,System.Void*,System.Int32**) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::RefParameters(System.Int32&,System.Int32&,System.Int32&) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::RefReadOnlyReturn(System.Int32&) : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::RefReturn(System.Int32&) : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::StaticMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::Synchronized() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::VarArgs(System.Int32,...) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Methods::VirtualMethod() : System.Void
+type IKVM.Reflection.Tests.Fixture.MostDerivedClass
+  attributes 0x100101
+  kind class sealed
+  name MostDerivedClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.MostDerivedClass
+  base IKVM.Reflection.Tests.Fixture.DerivedClass
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method VirtualMethod() : System.Void
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethod() : System.Void
+  method VirtualMethodToHide() : System.Void
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethodToHide() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.MostDerivedClass::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::NonVirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::OverloadedMethod(System.String) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.AbstractClass::VirtualMethodToHide() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::AbstractMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::OverloadedMethod(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.DerivedClass::VirtualMethodToSeal() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.MostDerivedClass::VirtualMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.MostDerivedClass::VirtualMethodToHide() : System.Void
+type IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation
+  attributes 0x100001
+  kind class
+  name MultipleGenericInterfaceImplementation namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation
+  base System.Object
+  interface System.IComparable`1<IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation>
+  interface System.IEquatable`1<System.Int32>
+  interface System.IEquatable`1<System.String>
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method CompareTo(IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation) : System.Int32
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::CompareTo(IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation) : System.Int32
+    parameter 0 other : IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation
+      attributes 0x0
+  method Equals(System.Int32) : System.Boolean
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Boolean
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::Equals(System.Int32) : System.Boolean
+    parameter 0 other : System.Int32
+      attributes 0x0
+  method System.IEquatable<System.String>.Equals(System.String) : System.Boolean
+    attributes 0x1E1
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Boolean
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::System.IEquatable<System.String>.Equals(System.String) : System.Boolean
+    parameter 0 other : System.String
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::CompareTo(IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.MultipleGenericInterfaceImplementation::Equals(System.Int32) : System.Boolean
+type IKVM.Reflection.Tests.Fixture.NotInheritedAttribute
+  attributes 0x100101
+  kind class sealed
+  name NotInheritedAttribute namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.NotInheritedAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute System.AttributeUsageAttribute(System.AttributeTargets Int32 32767) property AllowMultiple = System.Boolean false property Inherited = System.Boolean false
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.NotInheritedAttribute::.ctor()
+type IKVM.Reflection.Tests.Fixture.ObsoleteClass
+  attributes 0x100001
+  kind class
+  name ObsoleteClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ObsoleteClass
+  base System.Object
+  customattribute System.ObsoleteAttribute(System.String "obsolete", System.Boolean true)
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.ObsoleteClass::.ctor()
+type IKVM.Reflection.Tests.Fixture.OpenGenericBase`1
+  attributes 0x100001
+  kind class generic
+  name OpenGenericBase`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.OpenGenericBase`1
+  base IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>
+  interface IKVM.Reflection.Tests.Fixture.IVariant`2<!0:T,!0:T>
+  interface System.IEquatable`1<!0:T>
+  genericparameter 0 T 0x0
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method Convert(!0:T) : !0:T
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : !0:T
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.OpenGenericBase`1::Convert(!0:T) : !0:T
+    parameter 0 value : !0:T
+      attributes 0x0
+  method Equals(!0:T) : System.Boolean
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Boolean
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.OpenGenericBase`1::Equals(!0:T) : System.Boolean
+    parameter 0 other : !0:T
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.OpenGenericBase`1::.ctor()
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::ArrayField : System.Collections.Generic.List`1<!0:T>[]
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::Field : System.Collections.Generic.List`1<!0:T>
+  visible Field IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::ListField : System.Collections.Generic.List`1<System.Collections.Generic.List`1<!0:T>>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::GenericMethod<TMethod>(System.Collections.Generic.List`1<!0:T>,!!0:TMethod) : !!0:TMethod
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::GenericMethodWithConstraint<TMethod>() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::Method(System.Collections.Generic.List`1<!0:T>) : System.Collections.Generic.List`1<!0:T>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::get_Property() : System.Collections.Generic.List`1<!0:T>
+  visible Method IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::set_Property(System.Collections.Generic.List`1<!0:T>) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.OpenGenericBase`1::Convert(!0:T) : !0:T
+  visible Method IKVM.Reflection.Tests.Fixture.OpenGenericBase`1::Equals(!0:T) : System.Boolean
+  visible Property IKVM.Reflection.Tests.Fixture.GenericClass`1<System.Collections.Generic.List`1<!0:T>>::Property : System.Collections.Generic.List`1<!0:T>
+type IKVM.Reflection.Tests.Fixture.Operators
+  attributes 0x100001
+  kind class
+  name Operators namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Operators
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method Equals(System.Object) : System.Boolean
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Boolean
+      attributes 0x0
+    basedefinition System.Object::Equals(System.Object) : System.Boolean
+    parameter 0 obj : System.Object
+      attributes 0x0
+  method GetHashCode() : System.Int32
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition System.Object::GetHashCode() : System.Int32
+  method op_Addition(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : IKVM.Reflection.Tests.Fixture.Operators
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+    parameter 0 a : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+    parameter 1 b : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+  method op_Equality(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : System.Boolean
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Boolean
+      attributes 0x0
+    parameter 0 a : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+    parameter 1 b : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+  method op_Explicit(System.Int32) : IKVM.Reflection.Tests.Fixture.Operators
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+    parameter 0 a : System.Int32
+      attributes 0x0
+  method op_Implicit(IKVM.Reflection.Tests.Fixture.Operators) : System.Int32
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Int32
+      attributes 0x0
+    parameter 0 a : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+  method op_Inequality(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : System.Boolean
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Boolean
+      attributes 0x0
+    parameter 0 a : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+    parameter 1 b : IKVM.Reflection.Tests.Fixture.Operators
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.Operators::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::Equals(System.Object) : System.Boolean
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::GetHashCode() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::op_Addition(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : IKVM.Reflection.Tests.Fixture.Operators
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::op_Equality(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : System.Boolean
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::op_Explicit(System.Int32) : IKVM.Reflection.Tests.Fixture.Operators
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::op_Implicit(IKVM.Reflection.Tests.Fixture.Operators) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Operators::op_Inequality(IKVM.Reflection.Tests.Fixture.Operators,IKVM.Reflection.Tests.Fixture.Operators) : System.Boolean
+type IKVM.Reflection.Tests.Fixture.Outer
+  attributes 0x100001
+  kind class
+  name Outer namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer
+  base System.Object
+  nested IKVM.Reflection.Tests.Fixture.Outer/INestedInterface
+  nested IKVM.Reflection.Tests.Fixture.Outer/InternalNested
+  nested IKVM.Reflection.Tests.Fixture.Outer/Nested
+  nested IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate
+  nested IKVM.Reflection.Tests.Fixture.Outer/NestedEnum
+  nested IKVM.Reflection.Tests.Fixture.Outer/NestedStruct
+  nested IKVM.Reflection.Tests.Fixture.Outer/PrivateNested
+  nested IKVM.Reflection.Tests.Fixture.Outer/ProtectedNested
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer::.ctor()
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer::IKVM.Reflection.Tests.Fixture.Outer/INestedInterface
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer::IKVM.Reflection.Tests.Fixture.Outer/Nested
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer::IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer::IKVM.Reflection.Tests.Fixture.Outer/NestedEnum
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer::IKVM.Reflection.Tests.Fixture.Outer/NestedStruct
+type IKVM.Reflection.Tests.Fixture.Outer/INestedInterface
+  attributes 0x1000A2
+  kind interface abstract nested
+  name INestedInterface namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+INestedInterface
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+type IKVM.Reflection.Tests.Fixture.Outer/InternalNested
+  attributes 0x100005
+  kind class nested
+  name InternalNested namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+InternalNested
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/InternalNested::.ctor()
+type IKVM.Reflection.Tests.Fixture.Outer/Nested
+  attributes 0x100002
+  kind class nested
+  name Nested namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+Nested
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.Object
+  nested IKVM.Reflection.Tests.Fixture.Outer/Nested/DeeplyNested
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/Nested::.ctor()
+  visible NestedType IKVM.Reflection.Tests.Fixture.Outer/Nested::IKVM.Reflection.Tests.Fixture.Outer/Nested/DeeplyNested
+type IKVM.Reflection.Tests.Fixture.Outer/Nested/DeeplyNested
+  attributes 0x100002
+  kind class nested
+  name DeeplyNested namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+Nested+DeeplyNested
+  declaring IKVM.Reflection.Tests.Fixture.Outer/Nested
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/Nested/DeeplyNested::.ctor()
+type IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate
+  attributes 0x102
+  kind class sealed nested serializable
+  name NestedDelegate namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+NestedDelegate
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.MulticastDelegate
+  interface System.ICloneable
+  interface System.Runtime.Serialization.ISerializable
+  method .ctor(System.Object,System.IntPtr)
+    attributes 0x1886
+    implementation 0x3
+    callingconvention 0x21
+    parameter 0 object : System.Object
+      attributes 0x0
+    parameter 1 method : System.IntPtr
+      attributes 0x0
+  method BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.IAsyncResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+    parameter 0 callback : System.AsyncCallback
+      attributes 0x0
+    parameter 1 object : System.Object
+      attributes 0x0
+  method EndInvoke(System.IAsyncResult) : System.Void
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::EndInvoke(System.IAsyncResult) : System.Void
+    parameter 0 result : System.IAsyncResult
+      attributes 0x0
+  method Invoke() : System.Void
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::Invoke() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::.ctor(System.Object,System.IntPtr)
+  visible Method IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+  visible Method IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::EndInvoke(System.IAsyncResult) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Outer/NestedDelegate::Invoke() : System.Void
+type IKVM.Reflection.Tests.Fixture.Outer/NestedEnum
+  attributes 0x102
+  kind valuetype enum sealed nested serializable
+  name NestedEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+NestedEnum
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.Enum
+  underlying System.Int32
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.Outer/NestedEnum
+    attributes 0x8056
+    constant Int32 0
+  field value__ : System.Int32
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.Outer/NestedEnum::A : IKVM.Reflection.Tests.Fixture.Outer/NestedEnum
+  visible Field IKVM.Reflection.Tests.Fixture.Outer/NestedEnum::value__ : System.Int32
+type IKVM.Reflection.Tests.Fixture.Outer/NestedStruct
+  attributes 0x10010A
+  kind valuetype sealed nested
+  name NestedStruct namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+NestedStruct
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.ValueType
+type IKVM.Reflection.Tests.Fixture.Outer/PrivateNested
+  attributes 0x100003
+  kind class nested
+  name PrivateNested namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+PrivateNested
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/PrivateNested::.ctor()
+type IKVM.Reflection.Tests.Fixture.Outer/ProtectedNested
+  attributes 0x100004
+  kind class nested
+  name ProtectedNested namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Outer+ProtectedNested
+  declaring IKVM.Reflection.Tests.Fixture.Outer
+  base System.Object
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.Outer/ProtectedNested::.ctor()
+type IKVM.Reflection.Tests.Fixture.PInvoke
+  attributes 0x100181
+  kind class abstract sealed
+  name PInvoke namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PInvoke
+  base System.Object
+  method MessageBeep(System.UInt32,System.Int32) : System.Boolean
+    attributes 0x2096
+    implementation 0x80
+    callingconvention 0x1
+    return : System.Boolean
+      attributes 0x2000
+    parameter 0 type : System.UInt32
+      attributes 0x2000
+    parameter 1 ignored : System.Int32
+      attributes 0x10
+  method TickCount() : System.UInt32
+    attributes 0x2096
+    implementation 0x80
+    callingconvention 0x1
+    return : System.UInt32
+      attributes 0x0
+  visible Method IKVM.Reflection.Tests.Fixture.PInvoke::MessageBeep(System.UInt32,System.Int32) : System.Boolean
+  visible Method IKVM.Reflection.Tests.Fixture.PInvoke::TickCount() : System.UInt32
+type IKVM.Reflection.Tests.Fixture.PlainAttribute
+  attributes 0x100101
+  kind class sealed
+  name PlainAttribute namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PlainAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute System.AttributeUsageAttribute(System.AttributeTargets Int32 32767) property AllowMultiple = System.Boolean true property Inherited = System.Boolean true
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor IKVM.Reflection.Tests.Fixture.PlainAttribute::.ctor()
+type IKVM.Reflection.Tests.Fixture.PlainClass
+  attributes 0x1
+  kind class
+  name PlainClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PlainClass
+  base System.Object
+  method .cctor()
+    attributes 0x1891
+    implementation 0x0
+    callingconvention 0x1
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method .ctor(System.Int32)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : System.Int32
+      attributes 0x0
+  method Finalize() : System.Void
+    attributes 0xC4
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition System.Object::Finalize() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.PlainClass::.ctor()
+  visible Constructor IKVM.Reflection.Tests.Fixture.PlainClass::.ctor(System.Int32)
+type IKVM.Reflection.Tests.Fixture.PlainDelegate
+  attributes 0x101
+  kind class sealed serializable
+  name PlainDelegate namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PlainDelegate
+  base System.MulticastDelegate
+  interface System.ICloneable
+  interface System.Runtime.Serialization.ISerializable
+  method .ctor(System.Object,System.IntPtr)
+    attributes 0x1886
+    implementation 0x3
+    callingconvention 0x21
+    parameter 0 object : System.Object
+      attributes 0x0
+    parameter 1 method : System.IntPtr
+      attributes 0x0
+  method BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.IAsyncResult
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.PlainDelegate::BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+    parameter 0 callback : System.AsyncCallback
+      attributes 0x0
+    parameter 1 object : System.Object
+      attributes 0x0
+  method EndInvoke(System.IAsyncResult) : System.Void
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.PlainDelegate::EndInvoke(System.IAsyncResult) : System.Void
+    parameter 0 result : System.IAsyncResult
+      attributes 0x0
+  method Invoke() : System.Void
+    attributes 0x1C6
+    implementation 0x3
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.PlainDelegate::Invoke() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.PlainDelegate::.ctor(System.Object,System.IntPtr)
+  visible Method IKVM.Reflection.Tests.Fixture.PlainDelegate::BeginInvoke(System.AsyncCallback,System.Object) : System.IAsyncResult
+  visible Method IKVM.Reflection.Tests.Fixture.PlainDelegate::EndInvoke(System.IAsyncResult) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.PlainDelegate::Invoke() : System.Void
+type IKVM.Reflection.Tests.Fixture.PlainEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name PlainEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PlainEnum
+  base System.Enum
+  underlying System.Int32
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x8056
+    constant Int32 0
+  field B : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x8056
+    constant Int32 1
+  field C : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x8056
+    constant Int32 10
+  field value__ : System.Int32
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.PlainEnum::A : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Field IKVM.Reflection.Tests.Fixture.PlainEnum::B : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Field IKVM.Reflection.Tests.Fixture.PlainEnum::C : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Field IKVM.Reflection.Tests.Fixture.PlainEnum::value__ : System.Int32
+type IKVM.Reflection.Tests.Fixture.PlainStruct
+  attributes 0x100109
+  kind valuetype sealed
+  name PlainStruct namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PlainStruct
+  base System.ValueType
+  field Field : System.Int32
+    attributes 0x6
+  method .ctor(System.Int32)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 field : System.Int32
+      attributes 0x0
+  method ToString() : System.String
+    attributes 0xC6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.String
+      attributes 0x0
+    basedefinition System.Object::ToString() : System.String
+  visible Constructor IKVM.Reflection.Tests.Fixture.PlainStruct::.ctor(System.Int32)
+  visible Field IKVM.Reflection.Tests.Fixture.PlainStruct::Field : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.PlainStruct::ToString() : System.String
+type IKVM.Reflection.Tests.Fixture.Properties
+  attributes 0x100001
+  kind class
+  name Properties namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.Properties
+  base System.Object
+  customattribute System.Reflection.DefaultMemberAttribute(System.String "Item")
+  field <InitOnly>k__BackingField : System.Int32
+    attributes 0x21
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <PrivateSetter>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <ReadOnly>k__BackingField : System.Int32
+    attributes 0x21
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <ReadWrite>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <Static>k__BackingField : System.Int32
+    attributes 0x11
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <Virtual>k__BackingField : System.Int32
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method get_InitOnly() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Item(System.Int32) : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    parameter 0 index : System.Int32
+      attributes 0x0
+  method get_Item(System.String,System.Int32) : System.String
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.String
+      attributes 0x0
+    parameter 0 key : System.String
+      attributes 0x0
+    parameter 1 index : System.Int32
+      attributes 0x0
+  method get_PrivateSetter() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_ReadOnly() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_ReadWrite() : System.Int32
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_RefReadOnlyReturning() : System.Int32&
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32&
+      attributes 0x0
+      modreq System.Runtime.InteropServices.InAttribute
+      customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  method get_RefReturning() : System.Int32&
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32&
+      attributes 0x0
+  method get_Static() : System.Int32
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_Virtual() : System.Int32
+    attributes 0x9C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Properties::get_Virtual() : System.Int32
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_InitOnly(System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+      modreq System.Runtime.CompilerServices.IsExternalInit
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Item(System.Int32,System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 index : System.Int32
+      attributes 0x0
+    parameter 1 value : System.Int32
+      attributes 0x0
+  method set_PrivateSetter(System.Int32) : System.Void
+    attributes 0x881
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_ReadWrite(System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Static(System.Int32) : System.Void
+    attributes 0x896
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_Virtual(System.Int32) : System.Void
+    attributes 0x9C6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.Properties::set_Virtual(System.Int32) : System.Void
+    parameter 0 value : System.Int32
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_WriteOnly(System.Int32) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Int32
+      attributes 0x0
+  property InitOnly : System.Int32
+    attributes 0x0
+    get get_InitOnly() : System.Int32
+    set set_InitOnly(System.Int32) : System.Void
+    accessor get_InitOnly() : System.Int32
+    accessor set_InitOnly(System.Int32) : System.Void
+  property Item : System.Int32
+    attributes 0x0
+    index 0 index : System.Int32
+    get get_Item(System.Int32) : System.Int32
+    set set_Item(System.Int32,System.Int32) : System.Void
+    accessor get_Item(System.Int32) : System.Int32
+    accessor set_Item(System.Int32,System.Int32) : System.Void
+  property Item : System.String
+    attributes 0x0
+    index 0 key : System.String
+    index 1 index : System.Int32
+    get get_Item(System.String,System.Int32) : System.String
+    accessor get_Item(System.String,System.Int32) : System.String
+  property PrivateSetter : System.Int32
+    attributes 0x0
+    get get_PrivateSetter() : System.Int32
+    set set_PrivateSetter(System.Int32) : System.Void
+    accessor get_PrivateSetter() : System.Int32
+    accessor set_PrivateSetter(System.Int32) : System.Void
+  property ReadOnly : System.Int32
+    attributes 0x0
+    get get_ReadOnly() : System.Int32
+    accessor get_ReadOnly() : System.Int32
+  property ReadWrite : System.Int32
+    attributes 0x0
+    get get_ReadWrite() : System.Int32
+    set set_ReadWrite(System.Int32) : System.Void
+    accessor get_ReadWrite() : System.Int32
+    accessor set_ReadWrite(System.Int32) : System.Void
+  property RefReadOnlyReturning : System.Int32&
+    attributes 0x0
+    modreq System.Runtime.InteropServices.InAttribute
+    get get_RefReadOnlyReturning() : System.Int32&
+    accessor get_RefReadOnlyReturning() : System.Int32&
+    customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  property RefReturning : System.Int32&
+    attributes 0x0
+    get get_RefReturning() : System.Int32&
+    accessor get_RefReturning() : System.Int32&
+  property Static : System.Int32
+    attributes 0x0
+    get get_Static() : System.Int32
+    set set_Static(System.Int32) : System.Void
+    accessor get_Static() : System.Int32
+    accessor set_Static(System.Int32) : System.Void
+  property Virtual : System.Int32
+    attributes 0x0
+    get get_Virtual() : System.Int32
+    set set_Virtual(System.Int32) : System.Void
+    accessor get_Virtual() : System.Int32
+    accessor set_Virtual(System.Int32) : System.Void
+  property WriteOnly : System.Int32
+    attributes 0x0
+    set set_WriteOnly(System.Int32) : System.Void
+    accessor set_WriteOnly(System.Int32) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.Properties::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_InitOnly() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Item(System.Int32) : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Item(System.String,System.Int32) : System.String
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_PrivateSetter() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_ReadOnly() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_ReadWrite() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_RefReadOnlyReturning() : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_RefReturning() : System.Int32&
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Static() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::get_Virtual() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_InitOnly(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Item(System.Int32,System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_ReadWrite(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Static(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_Virtual(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.Properties::set_WriteOnly(System.Int32) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::InitOnly : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Item : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Item : System.String
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::PrivateSetter : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::ReadOnly : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::ReadWrite : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::RefReadOnlyReturning : System.Int32&
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::RefReturning : System.Int32&
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Static : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::Virtual : System.Int32
+  visible Property IKVM.Reflection.Tests.Fixture.Properties::WriteOnly : System.Int32
+type IKVM.Reflection.Tests.Fixture.PseudoAttributes
+  attributes 0x112111
+  kind valuetype sealed serializable
+  name PseudoAttributes namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.PseudoAttributes
+  base System.ValueType
+  field A : System.Int32
+    attributes 0x6
+  field B : System.String
+    attributes 0x1006
+  field C : System.Int32
+    attributes 0x86
+  visible Field IKVM.Reflection.Tests.Fixture.PseudoAttributes::A : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.PseudoAttributes::B : System.String
+  visible Field IKVM.Reflection.Tests.Fixture.PseudoAttributes::C : System.Int32
+type IKVM.Reflection.Tests.Fixture.ReadOnlyStruct
+  attributes 0x100109
+  kind valuetype sealed
+  name ReadOnlyStruct namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ReadOnlyStruct
+  base System.ValueType
+  customattribute System.Runtime.CompilerServices.IsReadOnlyAttribute()
+  field Field : System.Int32
+    attributes 0x26
+  method .ctor(System.Int32)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 field : System.Int32
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.ReadOnlyStruct::.ctor(System.Int32)
+  visible Field IKVM.Reflection.Tests.Fixture.ReadOnlyStruct::Field : System.Int32
+type IKVM.Reflection.Tests.Fixture.RefStruct
+  attributes 0x100109
+  kind valuetype sealed
+  name RefStruct namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.RefStruct
+  base System.ValueType
+  customattribute System.ObsoleteAttribute(System.String "Types with embedded references are not supported in this version of your compiler.", System.Boolean true)
+  customattribute System.Runtime.CompilerServices.IsByRefLikeAttribute()
+  field Field : System.Int32
+    attributes 0x6
+  visible Field IKVM.Reflection.Tests.Fixture.RefStruct::Field : System.Int32
+type IKVM.Reflection.Tests.Fixture.ReimplementingClass
+  attributes 0x100001
+  kind class
+  name ReimplementingClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ReimplementingClass
+  base IKVM.Reflection.Tests.Fixture.ImplicitImplementation
+  interface IKVM.Reflection.Tests.Fixture.IDerivedInterface
+  interface IKVM.Reflection.Tests.Fixture.IPlainInterface
+  interface System.Collections.IEnumerable
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method Method() : System.Void
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.ReimplementingClass::Method() : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.ReimplementingClass::.ctor()
+  visible Event IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Event : System.EventHandler
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::DerivedMethod() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::GetEnumerator() : System.Collections.IEnumerator
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Method() : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::add_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::get_Property() : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::remove_Event(System.EventHandler) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ImplicitImplementation::set_Property(System.Int32) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.ReimplementingClass::Method() : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.ImplicitImplementation::Property : System.Int32
+type IKVM.Reflection.Tests.Fixture.SByteEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name SByteEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.SByteEnum
+  base System.Enum
+  underlying System.SByte
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.SByteEnum
+    attributes 0x8056
+    constant SByte -128
+  field B : IKVM.Reflection.Tests.Fixture.SByteEnum
+    attributes 0x8056
+    constant SByte 127
+  field value__ : System.SByte
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.SByteEnum::A : IKVM.Reflection.Tests.Fixture.SByteEnum
+  visible Field IKVM.Reflection.Tests.Fixture.SByteEnum::B : IKVM.Reflection.Tests.Fixture.SByteEnum
+  visible Field IKVM.Reflection.Tests.Fixture.SByteEnum::value__ : System.SByte
+type IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1
+  attributes 0x100001
+  kind class generic
+  name SelfReferencingGeneric`1 namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1
+  base System.Object
+  interface System.IComparable`1<IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1>
+  genericparameter 0 T 0x0
+    constraint IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method CompareTo(IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1) : System.Int32
+    attributes 0x1E6
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Int32
+      attributes 0x0
+    basedefinition IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1::CompareTo(IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1) : System.Int32
+    parameter 0 other : IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1
+      attributes 0x0
+  visible Constructor IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1::.ctor()
+  visible Method IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1::CompareTo(IKVM.Reflection.Tests.Fixture.SelfReferencingGeneric`1) : System.Int32
+type IKVM.Reflection.Tests.Fixture.SequentialPacked
+  attributes 0x100109
+  kind valuetype sealed
+  name SequentialPacked namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.SequentialPacked
+  base System.ValueType
+  field A : System.Byte
+    attributes 0x6
+  field B : System.Int32
+    attributes 0x6
+  visible Field IKVM.Reflection.Tests.Fixture.SequentialPacked::A : System.Byte
+  visible Field IKVM.Reflection.Tests.Fixture.SequentialPacked::B : System.Int32
+type IKVM.Reflection.Tests.Fixture.ShortEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name ShortEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ShortEnum
+  base System.Enum
+  underlying System.Int16
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.ShortEnum
+    attributes 0x8056
+    constant Int16 -1
+  field value__ : System.Int16
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.ShortEnum::A : IKVM.Reflection.Tests.Fixture.ShortEnum
+  visible Field IKVM.Reflection.Tests.Fixture.ShortEnum::value__ : System.Int16
+type IKVM.Reflection.Tests.Fixture.StaticClass
+  attributes 0x100181
+  kind class abstract sealed
+  name StaticClass namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.StaticClass
+  base System.Object
+  field Value : System.Int32
+    attributes 0x16
+  method Method() : System.Void
+    attributes 0x96
+    implementation 0x0
+    callingconvention 0x1
+    return : System.Void
+      attributes 0x0
+  visible Field IKVM.Reflection.Tests.Fixture.StaticClass::Value : System.Int32
+  visible Method IKVM.Reflection.Tests.Fixture.StaticClass::Method() : System.Void
+type IKVM.Reflection.Tests.Fixture.ULongEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name ULongEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.ULongEnum
+  base System.Enum
+  underlying System.UInt64
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.ULongEnum
+    attributes 0x8056
+    constant UInt64 18446744073709551615
+  field value__ : System.UInt64
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.ULongEnum::A : IKVM.Reflection.Tests.Fixture.ULongEnum
+  visible Field IKVM.Reflection.Tests.Fixture.ULongEnum::value__ : System.UInt64
+type IKVM.Reflection.Tests.Fixture.UShortEnum
+  attributes 0x101
+  kind valuetype enum sealed serializable
+  name UShortEnum namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.UShortEnum
+  base System.Enum
+  underlying System.UInt16
+  interface System.IComparable
+  interface System.IConvertible
+  interface System.IFormattable
+  field A : IKVM.Reflection.Tests.Fixture.UShortEnum
+    attributes 0x8056
+    constant UInt16 65535
+  field value__ : System.UInt16
+    attributes 0x606
+  visible Field IKVM.Reflection.Tests.Fixture.UShortEnum::A : IKVM.Reflection.Tests.Fixture.UShortEnum
+  visible Field IKVM.Reflection.Tests.Fixture.UShortEnum::value__ : System.UInt16
+type IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute
+  attributes 0x100101
+  kind class sealed
+  name WithArgumentsAttribute namespace IKVM.Reflection.Tests.Fixture fullname IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute System.AttributeUsageAttribute(System.AttributeTargets Int32 32767) property AllowMultiple = System.Boolean true
+  field <ArrayProperty>k__BackingField : System.String[]
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <EnumProperty>k__BackingField : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field <TypeProperty>k__BackingField : System.Type
+    attributes 0x1
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field IntField : System.Int32
+    attributes 0x6
+  field ObjectField : System.Object
+    attributes 0x6
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  method .ctor(IKVM.Reflection.Tests.Fixture.FlagsEnum)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : IKVM.Reflection.Tests.Fixture.FlagsEnum
+      attributes 0x0
+  method .ctor(IKVM.Reflection.Tests.Fixture.PlainEnum)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : IKVM.Reflection.Tests.Fixture.PlainEnum
+      attributes 0x0
+  method .ctor(System.Boolean,System.Byte,System.SByte,System.Char,System.Int16,System.UInt16,System.Int32,System.UInt32,System.Int64,System.UInt64,System.Single,System.Double,System.String)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 a : System.Boolean
+      attributes 0x0
+    parameter 1 b : System.Byte
+      attributes 0x0
+    parameter 2 c : System.SByte
+      attributes 0x0
+    parameter 3 d : System.Char
+      attributes 0x0
+    parameter 4 e : System.Int16
+      attributes 0x0
+    parameter 5 f : System.UInt16
+      attributes 0x0
+    parameter 6 g : System.Int32
+      attributes 0x0
+    parameter 7 h : System.UInt32
+      attributes 0x0
+    parameter 8 i : System.Int64
+      attributes 0x0
+    parameter 9 j : System.UInt64
+      attributes 0x0
+    parameter 10 k : System.Single
+      attributes 0x0
+    parameter 11 l : System.Double
+      attributes 0x0
+    parameter 12 m : System.String
+      attributes 0x0
+  method .ctor(System.Int32,System.String)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : System.Int32
+      attributes 0x0
+    parameter 1 text : System.String
+      attributes 0x0
+  method .ctor(System.Int32[])
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 values : System.Int32[]
+      attributes 0x0
+  method .ctor(System.Object)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 value : System.Object
+      attributes 0x0
+  method .ctor(System.Object[])
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 values : System.Object[]
+      attributes 0x0
+  method .ctor(System.String[])
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 values : System.String[]
+      attributes 0x0
+      customattribute System.ParamArrayAttribute()
+  method .ctor(System.Type)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 type : System.Type
+      attributes 0x0
+  method .ctor(System.Type[])
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 values : System.Type[]
+      attributes 0x0
+  method get_ArrayProperty() : System.String[]
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.String[]
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_EnumProperty() : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : IKVM.Reflection.Tests.Fixture.PlainEnum
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method get_TypeProperty() : System.Type
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Type
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_ArrayProperty(System.String[]) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.String[]
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_EnumProperty(IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : IKVM.Reflection.Tests.Fixture.PlainEnum
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method set_TypeProperty(System.Type) : System.Void
+    attributes 0x886
+    implementation 0x0
+    callingconvention 0x21
+    return : System.Void
+      attributes 0x0
+    parameter 0 value : System.Type
+      attributes 0x0
+    customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  property ArrayProperty : System.String[]
+    attributes 0x0
+    get get_ArrayProperty() : System.String[]
+    set set_ArrayProperty(System.String[]) : System.Void
+    accessor get_ArrayProperty() : System.String[]
+    accessor set_ArrayProperty(System.String[]) : System.Void
+  property EnumProperty : IKVM.Reflection.Tests.Fixture.PlainEnum
+    attributes 0x0
+    get get_EnumProperty() : IKVM.Reflection.Tests.Fixture.PlainEnum
+    set set_EnumProperty(IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+    accessor get_EnumProperty() : IKVM.Reflection.Tests.Fixture.PlainEnum
+    accessor set_EnumProperty(IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+  property TypeProperty : System.Type
+    attributes 0x0
+    get get_TypeProperty() : System.Type
+    set set_TypeProperty(System.Type) : System.Void
+    accessor get_TypeProperty() : System.Type
+    accessor set_TypeProperty(System.Type) : System.Void
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor()
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(IKVM.Reflection.Tests.Fixture.FlagsEnum)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(IKVM.Reflection.Tests.Fixture.PlainEnum)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Boolean,System.Byte,System.SByte,System.Char,System.Int16,System.UInt16,System.Int32,System.UInt32,System.Int64,System.UInt64,System.Single,System.Double,System.String)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Int32,System.String)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Int32[])
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Object)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Object[])
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.String[])
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Type)
+  visible Constructor IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::.ctor(System.Type[])
+  visible Field IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::IntField : System.Int32
+  visible Field IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::ObjectField : System.Object
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::get_ArrayProperty() : System.String[]
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::get_EnumProperty() : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::get_TypeProperty() : System.Type
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::set_ArrayProperty(System.String[]) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::set_EnumProperty(IKVM.Reflection.Tests.Fixture.PlainEnum) : System.Void
+  visible Method IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::set_TypeProperty(System.Type) : System.Void
+  visible Property IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::ArrayProperty : System.String[]
+  visible Property IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::EnumProperty : IKVM.Reflection.Tests.Fixture.PlainEnum
+  visible Property IKVM.Reflection.Tests.Fixture.WithArgumentsAttribute::TypeProperty : System.Type
+type Microsoft.CodeAnalysis.EmbeddedAttribute
+  attributes 0x100100
+  kind class sealed
+  name EmbeddedAttribute namespace Microsoft.CodeAnalysis fullname Microsoft.CodeAnalysis.EmbeddedAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute Microsoft.CodeAnalysis.EmbeddedAttribute()
+  customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor Microsoft.CodeAnalysis.EmbeddedAttribute::.ctor()
+type System.Runtime.CompilerServices.IsExternalInit
+  attributes 0x100180
+  kind class abstract sealed
+  name IsExternalInit namespace System.Runtime.CompilerServices fullname System.Runtime.CompilerServices.IsExternalInit
+  base System.Object
+type System.Runtime.CompilerServices.IsUnmanagedAttribute
+  attributes 0x100100
+  kind class sealed
+  name IsUnmanagedAttribute namespace System.Runtime.CompilerServices fullname System.Runtime.CompilerServices.IsUnmanagedAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute Microsoft.CodeAnalysis.EmbeddedAttribute()
+  customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  method .ctor()
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+  visible Constructor System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor()
+type System.Runtime.CompilerServices.NullableAttribute
+  attributes 0x100100
+  kind class sealed
+  name NullableAttribute namespace System.Runtime.CompilerServices fullname System.Runtime.CompilerServices.NullableAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute Microsoft.CodeAnalysis.EmbeddedAttribute()
+  customattribute System.AttributeUsageAttribute(System.AttributeTargets Int32 27524) property AllowMultiple = System.Boolean false property Inherited = System.Boolean false
+  customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field NullableFlags : System.Byte[]
+    attributes 0x26
+  method .ctor(System.Byte)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 <null> : System.Byte
+      attributes 0x0
+  method .ctor(System.Byte[])
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 <null> : System.Byte[]
+      attributes 0x0
+  visible Constructor System.Runtime.CompilerServices.NullableAttribute::.ctor(System.Byte)
+  visible Constructor System.Runtime.CompilerServices.NullableAttribute::.ctor(System.Byte[])
+  visible Field System.Runtime.CompilerServices.NullableAttribute::NullableFlags : System.Byte[]
+type System.Runtime.CompilerServices.RefSafetyRulesAttribute
+  attributes 0x100100
+  kind class sealed
+  name RefSafetyRulesAttribute namespace System.Runtime.CompilerServices fullname System.Runtime.CompilerServices.RefSafetyRulesAttribute
+  base System.Attribute
+  interface System.Runtime.InteropServices._Attribute
+  customattribute Microsoft.CodeAnalysis.EmbeddedAttribute()
+  customattribute System.AttributeUsageAttribute(System.AttributeTargets Int32 2) property AllowMultiple = System.Boolean false property Inherited = System.Boolean false
+  customattribute System.Runtime.CompilerServices.CompilerGeneratedAttribute()
+  field Version : System.Int32
+    attributes 0x26
+  method .ctor(System.Int32)
+    attributes 0x1886
+    implementation 0x0
+    callingconvention 0x21
+    parameter 0 <null> : System.Int32
+      attributes 0x0
+  visible Constructor System.Runtime.CompilerServices.RefSafetyRulesAttribute::.ctor(System.Int32)
+  visible Field System.Runtime.CompilerServices.RefSafetyRulesAttribute::Version : System.Int32

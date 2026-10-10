@@ -22,19 +22,6 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="localType"></param>
-        /// <param name="index"></param>
-        /// <param name="pinned"></param>
-        /// <param name="customModifiers"></param>
-        internal LocalBuilder(MethodBuilder method, Type localType, int index, bool pinned, CustomModifiers customModifiers) :
-            base(index, localType, pinned, customModifiers)
-        {
-            this.method = method ?? throw new ArgumentNullException(nameof(method));
-        }
-
-        /// <summary>
         /// Gets the method that contains this local.
         /// </summary>
         internal MethodBuilder Method => method;

@@ -55,24 +55,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddNestedType(
-                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].NestedClass),
-                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].EnclosingClass));
-        }
-
-        internal List<int> GetNestedClasses(int enclosingClass)
-        {
-            var nestedClasses = new List<int>();
-            for (int i = 0; i < rowCount; i++)
-                if (records[i].EnclosingClass == enclosingClass)
-                    nestedClasses.Add(records[i].NestedClass);
-
-            return nestedClasses;
-        }
-
     }
 
 }

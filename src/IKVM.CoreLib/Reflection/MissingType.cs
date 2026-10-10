@@ -36,8 +36,6 @@ namespace IKVM.Reflection
         Type[] typeArgs;
         int token;
         int flags;
-        bool cyclicTypeForwarder;
-        bool cyclicTypeSpec;
 
         /// <summary>
         /// Initializes a new instance.
@@ -125,12 +123,7 @@ namespace IKVM.Reflection
                     case TypeFlags.NotValueType:
                         return false;
                     default:
-                        if (module.Universe.ResolveMissingTypeIsValueType(this))
-                            typeFlags |= TypeFlags.ValueType;
-                        else
-                            typeFlags |= TypeFlags.NotValueType;
-
-                        return (typeFlags & TypeFlags.ValueType) != 0;
+                        throw new MissingMemberException(this);
                 }
             }
         }
@@ -195,11 +188,6 @@ namespace IKVM.Reflection
             throw new MissingMemberException(this);
         }
 
-        public override bool __GetLayout(out int packingSize, out int typeSize)
-        {
-            throw new MissingMemberException(this);
-        }
-
         public override bool IsGenericType
         {
             get { throw new MissingMemberException(this); }
@@ -232,37 +220,9 @@ namespace IKVM.Reflection
             return this;
         }
 
-        internal override Type SetCyclicTypeForwarder()
-        {
-            this.cyclicTypeForwarder = true;
-            return this;
-        }
-
-        internal override Type SetCyclicTypeSpec()
-        {
-            this.cyclicTypeSpec = true;
-            return this;
-        }
-
         internal override bool IsBaked
         {
             get { throw new MissingMemberException(this); }
-        }
-
-        public override bool __IsTypeForwarder
-        {
-            // CorTypeAttr.tdForwarder
-            get { return (flags & 0x00200000) != 0; }
-        }
-
-        public override bool __IsCyclicTypeForwarder
-        {
-            get { return cyclicTypeForwarder; }
-        }
-
-        public override bool __IsCyclicTypeSpec
-        {
-            get { return cyclicTypeSpec; }
         }
 
     }

@@ -61,28 +61,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                // check that blob handle ends up the same
-                var b = module.Metadata.GetOrAddConstantBlob(records[i].Value);
-                Debug.Assert(b == records[i].Offset);
-
-                // insert constant, and allow reencoding; should use same blob
-                var h = module.Metadata.AddConstant(MetadataTokens.EntityHandle(records[i].Parent), records[i].Value);
-                Debug.Assert(h == MetadataTokens.ConstantHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.FixupPseudoToken(ref records[i].Parent);
-
-            Sort();
-        }
-
         internal static int EncodeHasConstant(int token) => (token >> 24) switch
         {
             FieldTable.Index => (token & 0xFFFFFF) << 2 | 0,

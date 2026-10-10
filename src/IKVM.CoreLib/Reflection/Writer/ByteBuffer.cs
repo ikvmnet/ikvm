@@ -39,11 +39,6 @@ namespace IKVM.Reflection.Writer
             return new ByteBuffer(buf, buf.Length);
         }
 
-        internal static ByteBuffer Wrap(byte[] buf, int length)
-        {
-            return new ByteBuffer(buf, length);
-        }
-
         byte[] buffer;
         int pos;
         int __length;   // __length is only valid if > pos, otherwise pos is the current length
@@ -132,18 +127,6 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <remarks>
-        /// This does not advance the position.
-        /// </remarks>
-        /// <returns></returns>
-        internal byte GetByteAtCurrentPosition()
-        {
-            return buffer[pos];
-        }
-
-        /// <summary>
         /// Return the number of bytes that the compressed int at the current position takes
         /// </summary>
         /// <returns></returns>
@@ -157,7 +140,7 @@ namespace IKVM.Reflection.Writer
             };
         }
 
-        internal void Write(byte[] value)
+        internal void WriteBytes(byte[] value)
         {
             if (pos + value.Length > buffer.Length)
                 Grow(value.Length);
@@ -166,24 +149,24 @@ namespace IKVM.Reflection.Writer
             pos += value.Length;
         }
 
-        internal void Write(byte value)
+        internal void WriteByte(byte value)
         {
             if (pos == buffer.Length)
                 Grow(1);
             buffer[pos++] = value;
         }
 
-        internal void Write(sbyte value)
+        internal void WriteSByte(sbyte value)
         {
-            Write((byte)value);
+            WriteByte((byte)value);
         }
 
-        internal void Write(ushort value)
+        internal void WriteUInt16(ushort value)
         {
-            Write((short)value);
+            WriteInt16((short)value);
         }
 
-        internal void Write(short value)
+        internal void WriteInt16(short value)
         {
             if (pos + 2 > buffer.Length)
                 Grow(2);
@@ -192,12 +175,12 @@ namespace IKVM.Reflection.Writer
             buffer[pos++] = (byte)(value >> 8);
         }
 
-        internal void Write(uint value)
+        internal void WriteUInt32(uint value)
         {
-            Write((int)value);
+            WriteInt32((int)value);
         }
 
-        internal void Write(int value)
+        internal void WriteInt32(int value)
         {
             if (pos + 4 > buffer.Length)
                 Grow(4);
@@ -208,12 +191,12 @@ namespace IKVM.Reflection.Writer
             buffer[pos++] = (byte)(value >> 24);
         }
 
-        internal void Write(ulong value)
+        internal void WriteUInt64(ulong value)
         {
-            Write((long)value);
+            WriteInt64((long)value);
         }
 
-        internal void Write(long value)
+        internal void WriteInt64(long value)
         {
             if (pos + 8 > buffer.Length)
                 Grow(8);
@@ -227,138 +210,84 @@ namespace IKVM.Reflection.Writer
             buffer[pos++] = (byte)(value >> 56);
         }
 
-        internal void Write(float value)
+        internal void WriteSingle(float value)
         {
-            Write(SingleConverter.SingleToInt32Bits(value));
+            WriteInt32(SingleConverter.SingleToInt32Bits(value));
         }
 
-        internal void Write(double value)
+        internal void WriteDouble(double value)
         {
-            Write(BitConverter.DoubleToInt64Bits(value));
+            WriteInt64(BitConverter.DoubleToInt64Bits(value));
         }
 
-        internal void Write(string str)
+        internal void WriteSerializedString(string str)
         {
             if (str == null)
             {
-                Write((byte)0xFF);
+                WriteByte((byte)0xFF);
             }
             else
             {
                 var buf = Encoding.UTF8.GetBytes(str);
-                WriteCompressedUInt(buf.Length);
-                Write(buf);
+                WriteCompressedInteger(buf.Length);
+                WriteBytes(buf);
             }
         }
 
-        internal void WriteCompressedUInt(int value)
+        internal void WriteCompressedInteger(int value)
         {
             if (value <= 0x7F)
             {
-                Write((byte)value);
+                WriteByte((byte)value);
             }
             else if (value <= 0x3FFF)
             {
-                Write((byte)(0x80 | (value >> 8)));
-                Write((byte)value);
+                WriteByte((byte)(0x80 | (value >> 8)));
+                WriteByte((byte)value);
             }
             else
             {
-                Write((byte)(0xC0 | (value >> 24)));
-                Write((byte)(value >> 16));
-                Write((byte)(value >> 8));
-                Write((byte)value);
+                WriteByte((byte)(0xC0 | (value >> 24)));
+                WriteByte((byte)(value >> 16));
+                WriteByte((byte)(value >> 8));
+                WriteByte((byte)value);
             }
         }
 
-        internal void WriteCompressedInt(int value)
+        internal void WriteCompressedSignedInteger(int value)
         {
             if (value >= 0)
             {
-                WriteCompressedUInt(value << 1);
+                WriteCompressedInteger(value << 1);
             }
             else if (value >= -64)
             {
                 value = ((value << 1) & 0x7F) | 1;
-                Write((byte)value);
+                WriteByte((byte)value);
             }
             else if (value >= -8192)
             {
                 value = ((value << 1) & 0x3FFF) | 1;
-                Write((byte)(0x80 | (value >> 8)));
-                Write((byte)value);
+                WriteByte((byte)(0x80 | (value >> 8)));
+                WriteByte((byte)value);
             }
             else
             {
                 value = ((value << 1) & 0x1FFFFFFF) | 1;
-                Write((byte)(0xC0 | (value >> 24)));
-                Write((byte)(value >> 16));
-                Write((byte)(value >> 8));
-                Write((byte)value);
+                WriteByte((byte)(0xC0 | (value >> 24)));
+                WriteByte((byte)(value >> 16));
+                WriteByte((byte)(value >> 8));
+                WriteByte((byte)value);
             }
         }
 
-        internal void Write(ByteBuffer bb)
+        internal void WriteBuffer(ByteBuffer bb)
         {
             if (pos + bb.Length > buffer.Length)
                 Grow(bb.Length);
 
             Buffer.BlockCopy(bb.buffer, 0, buffer, pos, bb.Length);
             pos += bb.Length;
-        }
-
-        /// <summary>
-        /// Writes the specified blob builder blobs to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="blobs"></param>
-        internal void Write(BlobBuilder blobBuilder)
-        {
-            Write(blobBuilder.GetBlobs());
-        }
-
-        /// <summary>
-        /// Writes the specified blobs to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="blobs"></param>
-        internal void Write(IEnumerable<Blob> blobs)
-        {
-            foreach (var blob in blobs)
-                Write(blob.GetBytes());
-        }
-
-        /// <summary>
-        /// Writes the specified array segment to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="bytes"></param>
-        internal void Write(ArraySegment<byte> bytes)
-        {
-            Write(bytes.AsSpan());
-        }
-
-        /// <summary>
-        /// Writes the specified span to the <see cref="ByteBuffer"/>.
-        /// </summary>
-        /// <param name="span"></param>
-        internal void Write(ReadOnlySpan<byte> span)
-        {
-            // grow the internal buffer
-            if (pos + span.Length > buffer.Length)
-                Grow(span.Length);
-
-            // copy the span to the newly allocated space
-            span.CopyTo(buffer.AsSpan().Slice(pos, span.Length));
-            pos += span.Length;
-        }
-
-        internal void WriteTo(System.IO.Stream stream)
-        {
-            stream.Write(buffer, 0, this.Length);
-        }
-
-        internal void Clear()
-        {
-            pos = 0;
-            __length = 0;
         }
 
         internal void Align(int alignment)
@@ -375,13 +304,13 @@ namespace IKVM.Reflection.Writer
             switch (token >> 24)
             {
                 case TypeDefTable.Index:
-                    WriteCompressedUInt((token & 0xFFFFFF) << 2 | 0);
+                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 0);
                     break;
                 case TypeRefTable.Index:
-                    WriteCompressedUInt((token & 0xFFFFFF) << 2 | 1);
+                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 1);
                     break;
                 case TypeSpecTable.Index:
-                    WriteCompressedUInt((token & 0xFFFFFF) << 2 | 2);
+                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 2);
                     break;
                 default:
                     throw new InvalidOperationException();
@@ -394,28 +323,6 @@ namespace IKVM.Reflection.Writer
             var buf = new byte[len];
             Buffer.BlockCopy(buffer, 0, buf, 0, len);
             return buf;
-        }
-
-        internal bool Match(int pos, ByteBuffer bb2, int pos2, int len)
-        {
-            for (int i = 0; i < len; i++)
-                if (buffer[pos + i] != bb2.buffer[pos2 + i])
-                    return false;
-
-            return true;
-        }
-
-        internal int Hash()
-        {
-            int hash = 0;
-            int len = Length;
-            for (int i = 0; i < len; i++)
-            {
-                hash *= 37;
-                hash ^= buffer[i];
-            }
-
-            return hash;
         }
 
     }

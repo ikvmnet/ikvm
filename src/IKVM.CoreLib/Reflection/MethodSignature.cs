@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -345,18 +346,18 @@ namespace IKVM.Reflection
             return Util.ArrayEquals(types, parameterTypes);
         }
 
-        internal override void Write(ModuleBuilder module, ByteBuffer bb)
+        internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
             WriteImpl(module, bb, parameterTypes.Length);
         }
 
-        internal void WriteMethodRef(ModuleBuilder module, ByteBuffer bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
+        internal void WriteMethodRef(ModuleBuilder module, BlobBuilder bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
             WriteImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
 
             if (optionalParameterTypes.Length > 0)
             {
-                bb.Write(SENTINEL);
+                bb.WriteByte(SENTINEL);
                 for (int i = 0; i < optionalParameterTypes.Length; i++)
                 {
                     WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
@@ -365,7 +366,7 @@ namespace IKVM.Reflection
             }
         }
 
-        void WriteImpl(ModuleBuilder module, ByteBuffer bb, int parameterCount)
+        void WriteImpl(ModuleBuilder module, BlobBuilder bb, int parameterCount)
         {
             byte first;
 
@@ -389,12 +390,12 @@ namespace IKVM.Reflection
             if ((callingConvention & CallingConventions.ExplicitThis) != 0)
                 first |= EXPLICITTHIS;
 
-            bb.Write(first);
+            bb.WriteByte(first);
 
             if (genericParamCount > 0)
-                bb.WriteCompressedUInt(genericParamCount);
+                bb.WriteCompressedInteger(genericParamCount);
 
-            bb.WriteCompressedUInt(parameterCount);
+            bb.WriteCompressedInteger(parameterCount);
             // RetType
             WriteCustomModifiers(module, bb, modifiers.GetReturnTypeCustomModifiers());
             WriteType(module, bb, returnType);

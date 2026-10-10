@@ -197,16 +197,6 @@ namespace IKVM.Reflection
             return Forwarder.GetMethodImplementationFlags();
         }
 
-        public override MethodBody GetMethodBody()
-        {
-            return Forwarder.GetMethodBody();
-        }
-
-        public override int __MethodRVA
-        {
-            get { return Forwarder.__MethodRVA; }
-        }
-
         public override CallingConventions CallingConvention
         {
             get { return signature.CallingConvention; }
@@ -285,25 +275,11 @@ namespace IKVM.Reflection
             return GetGenericArguments()[index];
         }
 
-        internal override int GetGenericMethodArgumentCount()
-        {
-            return Forwarder.GetGenericMethodArgumentCount();
-        }
-
         public override MethodInfo GetGenericMethodDefinition()
         {
             return Forwarder.GetGenericMethodDefinition();
         }
 
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return Forwarder.GetMethodOnTypeDefinition();
-        }
-
-        internal override bool HasThis
-        {
-            get { return (signature.CallingConvention & (CallingConventions.HasThis | CallingConventions.ExplicitThis)) == CallingConventions.HasThis; }
-        }
 
         public override bool IsGenericMethod
         {

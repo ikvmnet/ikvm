@@ -338,11 +338,6 @@ namespace IKVM.Reflection
 			get { return type.__ContainsMissingType || ContainsMissingType(args); }
 		}
 
-		public override bool __GetLayout(out int packingSize, out int typeSize)
-		{
-			return type.__GetLayout(out packingSize, out typeSize);
-		}
-
 		internal override int GetModuleBuilderToken()
 		{
 			if (token == 0)

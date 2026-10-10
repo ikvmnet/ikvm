@@ -53,25 +53,6 @@ namespace IKVM.Reflection.Reader
             this.declaringType = declaringType;
         }
 
-        public override MethodBody GetMethodBody()
-        {
-            return GetMethodBody(this);
-        }
-
-        internal MethodBody GetMethodBody(IGenericContext context)
-        {
-            if ((GetMethodImplementationFlags() & MethodImplAttributes.CodeTypeMask) != MethodImplAttributes.IL)
-                return null; // method is not IL
-
-            var rva = module.MethodDefTable.records[index].RVA;
-            return rva == 0 ? null : new MethodBody(module, rva, context);
-        }
-
-        public override int __MethodRVA
-        {
-            get { return module.MethodDefTable.records[index].RVA; }
-        }
-
         public override CallingConventions CallingConvention
         {
             get { return MethodSignature.CallingConvention; }
@@ -79,12 +60,12 @@ namespace IKVM.Reflection.Reader
 
         public override MethodAttributes Attributes
         {
-            get { return (MethodAttributes)module.MethodDefTable.records[index].Flags; }
+            get { return (MethodAttributes)(ushort)module.MethodDefTable.records[index].Flags; }
         }
 
         public override MethodImplAttributes GetMethodImplementationFlags()
         {
-            return (MethodImplAttributes)module.MethodDefTable.records[index].ImplFlags;
+            return (MethodImplAttributes)(ushort)module.MethodDefTable.records[index].ImplFlags;
         }
 
         public override ParameterInfo[] GetParameters()
@@ -214,12 +195,6 @@ namespace IKVM.Reflection.Reader
             return typeArgs[index];
         }
 
-        internal override int GetGenericMethodArgumentCount()
-        {
-            PopulateGenericArguments();
-            return typeArgs.Length;
-        }
-
         public override MethodInfo GetGenericMethodDefinition()
         {
             return IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
@@ -243,24 +218,6 @@ namespace IKVM.Reflection.Reader
         internal override int ImportTo(Emit.ModuleBuilder module)
         {
             return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
-        }
-
-        public override MethodInfo[] __GetMethodImpls()
-        {
-            Type[] typeArgs = null;
-            List<MethodInfo> list = null;
-
-            foreach (var i in module.MethodImplTable.Filter(declaringType.MetadataToken))
-            {
-                if (module.MethodImplTable.records[i].MethodBody == this.MetadataToken)
-                {
-                    typeArgs ??= declaringType.GetGenericArguments();
-                    list ??= new List<MethodInfo>();
-                    list.Add((MethodInfo)module.ResolveMethod(module.MethodImplTable.records[i].MethodDeclaration, typeArgs, null));
-                }
-            }
-
-            return Util.ToArray(list, Array.Empty<MethodInfo>());
         }
 
         internal override int GetCurrentToken()

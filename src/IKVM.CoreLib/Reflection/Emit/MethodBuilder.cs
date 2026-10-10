@@ -55,7 +55,6 @@ namespace IKVM.Reflection.Emit
         List<ParameterBuilder> parameters;
         ILGenerator m_ilGenerator;
         GenericTypeParameterBuilder[] gtpb;
-        List<CustomAttributeBuilder> declarativeSecurity;
         MethodSignature methodSignature;
         CallingConventions callingConvention;
         bool initLocals = true;
@@ -101,11 +100,6 @@ namespace IKVM.Reflection.Emit
                 throw new InvalidOperationException();
 
             return m_ilGenerator ??= new ILGenerator(this, streamSize);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         private void SetDllImportPseudoCustomAttribute(CustomAttributeBuilder customBuilder)
@@ -201,12 +195,7 @@ namespace IKVM.Reflection.Emit
             if (setLastError.HasValue && setLastError.Value)
                 flags |= SupportsLastError;
 
-            var rec = new ImplMapTable.Record();
-            rec.MappingFlags = flags;
-            rec.MemberForwarded = pseudoToken;
-            rec.ImportName = ModuleBuilder.GetOrAddString(entryName ?? name);
-            rec.ImportScope = MetadataTokens.GetToken(MetadataTokens.ModuleReferenceHandle(ModuleBuilder.ModuleRefTable.FindOrAddRecord(dllName == null ? default : ModuleBuilder.GetOrAddString(dllName))));
-            ModuleBuilder.ImplMapTable.AddRecord(rec);
+            ModuleBuilder.AddImplMap(pseudoToken, (ImplMapFlags)(ushort)flags, entryName ?? name, dllName);
         }
 
         void SetMethodImplAttribute(CustomAttributeBuilder customBuilder)
@@ -263,19 +252,6 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
-        {
-            attributes |= MethodAttributes.HasSecurity;
-            declarativeSecurity ??= new List<CustomAttributeBuilder>();
-            declarativeSecurity.Add(customBuilder);
-        }
-
-        public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-        {
-            this.ModuleBuilder.AddDeclarativeSecurity(pseudoToken, securityAction, permissionSet);
-            this.attributes |= MethodAttributes.HasSecurity;
-        }
-
         public void SetImplementationFlags(MethodImplAttributes attributes)
         {
             implFlags = attributes;
@@ -285,7 +261,6 @@ namespace IKVM.Reflection.Emit
         {
             parameters ??= new List<ParameterBuilder>();
 
-            ModuleBuilder.ParamTable.AddVirtualRecord();
             var pb = new ParameterBuilder(this, position, attributes, strParamName);
             if (parameters.Count == 0 || position >= parameters[parameters.Count - 1].Position)
             {
@@ -312,26 +287,9 @@ namespace IKVM.Reflection.Emit
                 throw new InvalidOperationException("The method signature can not be modified after it has been used.");
         }
 
-        public void SetParameters(params Type[] parameterTypes)
-        {
-            CheckSig();
-            this.parameterTypes = Util.Copy(parameterTypes);
-        }
-
-        public void SetReturnType(Type returnType)
-        {
-            CheckSig();
-            this.returnType = returnType ?? this.Module.Universe.System_Void;
-        }
-
         public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
         {
             SetSignature(returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeOptionalCustomModifiers, returnTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers, parameterTypeRequiredCustomModifiers, Util.NullSafeLength(parameterTypes)));
-        }
-
-        public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            SetSignature(returnType, parameterTypes, PackedCustomModifiers.CreateFromExternal(returnTypeCustomModifiers, parameterTypeCustomModifiers, Util.NullSafeLength(parameterTypes)));
         }
 
         private void SetSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
@@ -341,6 +299,11 @@ namespace IKVM.Reflection.Emit
             this.parameterTypes = Util.Copy(parameterTypes);
             this.customModifiers = customModifiers;
         }
+
+        /// <summary>
+        /// Gets the generic parameters defined on the method, or <c>null</c>.
+        /// </summary>
+        internal GenericTypeParameterBuilder[] GenericParameters => gtpb;
 
         public GenericTypeParameterBuilder[] DefineGenericParameters(params string[] names)
         {
@@ -378,11 +341,6 @@ namespace IKVM.Reflection.Emit
             return gtpb[index];
         }
 
-        internal override int GetGenericMethodArgumentCount()
-        {
-            return gtpb == null ? 0 : gtpb.Length;
-        }
-
         public override Type ReturnType
         {
             get { return returnType; }
@@ -396,17 +354,6 @@ namespace IKVM.Reflection.Emit
         public override MethodAttributes Attributes
         {
             get { return attributes; }
-        }
-
-        public void __SetAttributes(MethodAttributes attributes)
-        {
-            this.attributes = attributes;
-        }
-
-        public void __SetCallingConvention(CallingConventions callingConvention)
-        {
-            this.callingConvention = callingConvention;
-            this.methodSignature = null;
         }
 
         public override MethodImplAttributes GetMethodImplementationFlags()
@@ -478,7 +425,7 @@ namespace IKVM.Reflection.Emit
                 {
                     var pb = ParameterBuilder;
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.HasDefault) != 0)
-                        return method.ModuleBuilder.ConstantTable.GetRawConstantValue(method.ModuleBuilder, pb.PseudoToken);
+                        return method.ModuleBuilder.GetConstant(pb.PseudoToken);
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
                         return Missing.Value;
 
@@ -572,72 +519,6 @@ namespace IKVM.Reflection.Emit
             get { return type.Module; }
         }
 
-        public Module GetModule()
-        {
-            return type.Module;
-        }
-
-        public MethodToken GetToken()
-        {
-            return new MethodToken(pseudoToken);
-        }
-
-        public override MethodBody GetMethodBody()
-        {
-            throw new NotSupportedException();
-        }
-
-        public override int __MethodRVA
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public bool InitLocals
-        {
-            get { return initLocals; }
-            set { initLocals = value; }
-        }
-
-        public void CreateMethodBody(byte[] il, int count)
-        {
-            if (il == null)
-                throw new NotSupportedException();
-            if (il.Length != count)
-                Array.Resize(ref il, count);
-
-            SetMethodBody(il, 16, null, null, null);
-        }
-
-        /// <summary>
-        /// Throws an exception if this method should not have a method body.
-        /// </summary>
-        /// <exception cref="InvalidOperationException"></exception>
-        void ThrowIfShouldNotHaveBody()
-        {
-            if ((implFlags & MethodImplAttributes.CodeTypeMask) != MethodImplAttributes.IL ||
-                (implFlags & MethodImplAttributes.Unmanaged) != 0 ||
-                (attributes & MethodAttributes.PinvokeImpl) != 0 ||
-                /*m_isDllImport*/ false)
-                throw new InvalidOperationException("Method body should not exist.");
-        }
-
-        /// <summary>
-        /// Creates the body of the method by using a specified byte array of Microsoft intermediate language (MSIL) instructions.
-        /// </summary>
-        /// <param name="il"></param>
-        /// <param name="maxStack"></param>
-        /// <param name="localSignature"></param>
-        /// <param name="exceptionHandlers"></param>
-        /// <param name="tokenFixups"></param>
-        public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
-        {
-            if (IsBaked)
-                throw new InvalidOperationException("Method already has a body.");
-
-            ThrowIfShouldNotHaveBody();
-            SetMethodBody(il, maxStack, localSignature, exceptionHandlers?.ToArray(), tokenFixups?.ToArray());
-        }
-
         /// <summary>
         /// Sets the method body to the specified IL and exception information. Space in the module IL blob is reserved and later filled in after tokens are resolved.
         /// </summary>
@@ -666,12 +547,12 @@ namespace IKVM.Reflection.Emit
                 if (m_ilGenerator.m_ScopeTree.m_iOpenScopeCount != 0)
                     throw new InvalidOperationException("Local variable scope was not properly closed.");
 
-                // save information from the ILGenerator
-                SetMethodBody(m_ilGenerator.BakeByteArray(), m_ilGenerator.GetMaxStackSize(), m_ilGenerator.m_localSignature.GetSignature(), GetExceptions(m_ilGenerator.GetExceptions()), m_ilGenerator.GetTokenFixups());
+                // save information from the ILGenerator; a local signature must have at least one local, and without one
+                // the body can use a tiny header
+                var localSignature = m_ilGenerator.m_localCount > 0 ? m_ilGenerator.m_localSignature.GetSignature() : null;
+                SetMethodBody(m_ilGenerator.BakeByteArray(), m_ilGenerator.GetMaxStackSize(), localSignature, GetExceptions(m_ilGenerator.GetExceptions()), m_ilGenerator.GetTokenFixups());
             }
 
-            if (declarativeSecurity != null)
-                ModuleBuilder.AddDeclarativeSecurity(pseudoToken, declarativeSecurity);
         }
 
         /// <summary>
@@ -770,7 +651,7 @@ namespace IKVM.Reflection.Emit
             {
                 var buf = new BlobBuilder();
                 buf.WriteBytes(m_localSignature);
-                localSignatureHandle = MetadataTokens.StandaloneSignatureHandle(ModuleBuilder.StandAloneSigTable.FindOrAddRecord(ModuleBuilder.GetOrAddBlob(buf)));
+                localSignatureHandle = ModuleBuilder.GetStandAloneSignature(ModuleBuilder.GetOrAddBlob(buf));
             }
 
             // write the body to the metadata

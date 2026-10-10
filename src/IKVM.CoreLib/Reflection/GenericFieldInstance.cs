@@ -87,11 +87,6 @@ namespace IKVM.Reflection
             return field.__TryGetFieldOffset(out offset);
         }
 
-        public override FieldInfo __GetFieldOnTypeDefinition()
-        {
-            return field;
-        }
-
         internal override FieldSignature FieldSignature
         {
             get { return field.FieldSignature.ExpandTypeParameters(declaringType); }

@@ -35,7 +35,6 @@ namespace IKVM.Reflection.Emit
     internal sealed class CustomAttributeBuilder
     {
 
-        internal static readonly ConstructorInfo LegacyPermissionSet = new ConstructorBuilder(null);
         readonly ConstructorInfo con;
         readonly byte[] blob;
         readonly object[] constructorArgs;
@@ -59,24 +58,10 @@ namespace IKVM.Reflection.Emit
         /// Initializes a new instance.
         /// </summary>
         /// <param name="con"></param>
-        /// <param name="securityAction"></param>
-        /// <param name="blob"></param>
-        private CustomAttributeBuilder(ConstructorInfo con, int securityAction, byte[] blob)
-        {
-            this.con = con;
-            this.blob = blob;
-            this.constructorArgs = new object[] { securityAction };
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="con"></param>
         /// <param name="constructorArgs"></param>
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs) :
             this(con, constructorArgs, null, null, null, null)
         {
-
         }
 
         /// <summary>
@@ -89,7 +74,6 @@ namespace IKVM.Reflection.Emit
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, FieldInfo[] namedFields, object[] fieldValues) :
             this(con, constructorArgs, null, null, namedFields, fieldValues)
         {
-
         }
 
         /// <summary>
@@ -102,7 +86,6 @@ namespace IKVM.Reflection.Emit
         public CustomAttributeBuilder(ConstructorInfo con, object[] constructorArgs, PropertyInfo[] namedProperties, object[] propertyValues) :
             this(con, constructorArgs, namedProperties, propertyValues, null, null)
         {
-
         }
 
         /// <summary>
@@ -129,11 +112,6 @@ namespace IKVM.Reflection.Emit
             return new CustomAttributeBuilder(con, blob);
         }
 
-        public static CustomAttributeBuilder __FromBlob(ConstructorInfo con, int securityAction, byte[] blob)
-        {
-            return new CustomAttributeBuilder(con, securityAction, blob);
-        }
-
         public static CustomAttributeTypedArgument __MakeTypedArgument(Type type, object value)
         {
             return new CustomAttributeTypedArgument(type, value);
@@ -144,7 +122,7 @@ namespace IKVM.Reflection.Emit
 
             readonly Assembly assembly;
             readonly CustomAttributeBuilder cab;
-            readonly ByteBuffer bb;
+            readonly BlobBuilder bb;
 
             /// <summary>
             /// Initializes a new instance.
@@ -152,7 +130,7 @@ namespace IKVM.Reflection.Emit
             /// <param name="assembly"></param>
             /// <param name="cab"></param>
             /// <param name="bb"></param>
-            internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, ByteBuffer bb)
+            internal BlobWriter(Assembly assembly, CustomAttributeBuilder cab, BlobBuilder bb)
             {
                 this.assembly = assembly;
                 this.cab = cab;
@@ -217,17 +195,17 @@ namespace IKVM.Reflection.Emit
 
             void WriteByte(byte value)
             {
-                bb.Write(value);
+                bb.WriteByte(value);
             }
 
             void WriteUInt16(ushort value)
             {
-                bb.Write(value);
+                bb.WriteUInt16(value);
             }
 
             void WriteInt32(int value)
             {
-                bb.Write(value);
+                bb.WriteInt32(value);
             }
 
             void WriteFixedArg(Type type, object value)
@@ -342,17 +320,17 @@ namespace IKVM.Reflection.Emit
 
             void WriteInt64(long value)
             {
-                bb.Write(value);
+                bb.WriteInt64(value);
             }
 
             void WriteSingle(float value)
             {
-                bb.Write(value);
+                bb.WriteSingle(value);
             }
 
             void WriteDouble(double value)
             {
-                bb.Write(value);
+                bb.WriteDouble(value);
             }
 
             void WriteTypeName(Type type)
@@ -425,12 +403,12 @@ namespace IKVM.Reflection.Emit
 
             void WriteString(string val)
             {
-                bb.Write(val);
+                bb.WriteSerializedString(val);
             }
 
             void WritePackedLen(int len)
             {
-                bb.WriteCompressedUInt(len);
+                bb.WriteCompressedInteger(len);
             }
 
             void WriteFieldOrPropType(Type type)
@@ -520,29 +498,17 @@ namespace IKVM.Reflection.Emit
 
         internal BlobHandle WriteBlob(ModuleBuilder moduleBuilder)
         {
-            ByteBuffer bb;
             if (blob != null)
-            {
-                bb = ByteBuffer.Wrap(blob);
-            }
-            else
-            {
-                bb = new ByteBuffer(100);
-                var bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
-                bw.WriteCustomAttributeBlob();
-            }
+                return moduleBuilder.GetOrAddBlob(blob);
 
-            return moduleBuilder.GetOrAddBlob(bb.ToArray());
+            var bb = new BlobBuilder(100);
+            new BlobWriter(moduleBuilder.Assembly, this, bb).WriteCustomAttributeBlob();
+            return moduleBuilder.GetOrAddBlob(bb);
         }
 
         internal object GetConstructorArgument(int pos)
         {
             return constructorArgs[pos];
-        }
-
-        internal int ConstructorArgumentCount
-        {
-            get { return constructorArgs == null ? 0 : constructorArgs.Length; }
         }
 
         internal T? GetFieldValue<T>(string name) where T : struct
@@ -584,46 +550,6 @@ namespace IKVM.Reflection.Emit
                 }
             }
             return null;
-        }
-
-        internal bool IsLegacyDeclSecurity
-        {
-            get
-            {
-                return ReferenceEquals(con, LegacyPermissionSet)
-                    || (con.DeclaringType == con.Module.Universe.System_Security_Permissions_PermissionSetAttribute
-                        && blob == null
-                        && (namedFields == null || namedFields.Length == 0)
-                        && namedProperties != null
-                        && namedProperties.Length == 1
-                        && namedProperties[0].Name == "XML"
-                        && propertyValues[0] is string);
-            }
-        }
-
-        internal BlobHandle WriteLegacyDeclSecurityBlob(ModuleBuilder moduleBuilder)
-        {
-            if (blob != null)
-            {
-                return moduleBuilder.GetOrAddBlob(blob);
-            }
-            else
-            {
-                return moduleBuilder.GetOrAddBlob(Encoding.Unicode.GetBytes((string)propertyValues[0]));
-            }
-        }
-
-        internal void WriteNamedArgumentsForDeclSecurity(ModuleBuilder moduleBuilder, ByteBuffer bb)
-        {
-            if (blob != null)
-            {
-                bb.Write(blob);
-            }
-            else
-            {
-                var bw = new BlobWriter(moduleBuilder.Assembly, this, bb);
-                bw.WriteNamedArguments(true);
-            }
         }
 
         internal CustomAttributeData ToData(Assembly asm)
@@ -703,14 +629,6 @@ namespace IKVM.Reflection.Emit
             {
                 return ToData(asm).__ToBuilder();
             }
-        }
-
-        internal byte[] GetBlob(Assembly asm)
-        {
-            var bb = new ByteBuffer(100);
-            var bw = new BlobWriter(asm, this, bb);
-            bw.WriteCustomAttributeBlob();
-            return bb.ToArray();
         }
 
         internal KnownCA KnownCA

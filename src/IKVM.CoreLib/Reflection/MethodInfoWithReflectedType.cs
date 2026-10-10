@@ -91,19 +91,9 @@ namespace IKVM.Reflection
             return method.GetMethodImplementationFlags();
         }
 
-        public override MethodBody GetMethodBody()
-        {
-            return method.GetMethodBody();
-        }
-
         public override CallingConventions CallingConvention
         {
             get { return method.CallingConvention; }
-        }
-
-        public override int __MethodRVA
-        {
-            get { return method.__MethodRVA; }
         }
 
         public override Type ReturnType
@@ -131,30 +121,11 @@ namespace IKVM.Reflection
             return method.ToString();
         }
 
-        public override MethodInfo[] __GetMethodImpls()
-        {
-            return method.__GetMethodImpls();
-        }
-
         internal override Type GetGenericMethodArgument(int index)
         {
             return method.GetGenericMethodArgument(index);
         }
 
-        internal override int GetGenericMethodArgumentCount()
-        {
-            return method.GetGenericMethodArgumentCount();
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return method.GetMethodOnTypeDefinition();
-        }
-
-        internal override bool HasThis
-        {
-            get { return method.HasThis; }
-        }
 
         public override Module Module
         {
@@ -166,11 +137,6 @@ namespace IKVM.Reflection
             get { return method.DeclaringType; }
         }
 
-        public override Type ReflectedType
-        {
-            get { return reflectedType; }
-        }
-
         public override string Name
         {
             get { return method.Name; }
@@ -179,11 +145,6 @@ namespace IKVM.Reflection
         internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
         {
             return method.ImportTo(module);
-        }
-
-        public override MethodBase __GetMethodOnTypeDefinition()
-        {
-            return method.__GetMethodOnTypeDefinition();
         }
 
         public override bool __IsMissing

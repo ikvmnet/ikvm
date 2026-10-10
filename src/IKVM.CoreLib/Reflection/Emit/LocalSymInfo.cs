@@ -29,22 +29,9 @@ namespace IKVM.Reflection.Emit
             m_iLocalSymCount = 0;
             m_iNameSpaceCount = 0;
         }
-        #endregion
 
-        #region Private Members
-        private void EnsureCapacityNamespace()
-        {
-            if (m_iNameSpaceCount == 0)
-            {
-                m_namespace = new string[InitialSize];
-            }
-            else if (m_iNameSpaceCount == m_namespace.Length)
-            {
-                string[] strTemp = new string[checked(m_iNameSpaceCount * 2)];
-                Array.Copy(m_namespace, strTemp, m_iNameSpaceCount);
-                m_namespace = strTemp;
-            }
-        }
+#endregion
+#region Private Members
 
         private void EnsureCapacity()
         {
@@ -99,12 +86,6 @@ namespace IKVM.Reflection.Emit
             checked { m_iLocalSymCount++; }
         }
 
-        internal void AddUsingNamespace(string strNamespace)
-        {
-            EnsureCapacityNamespace();
-            m_namespace[m_iNameSpaceCount] = strNamespace;
-            checked { m_iNameSpaceCount++; }
-        }
         internal void EmitLocalSymInfo(ISymbolWriter symWriter)
         {
             int i;

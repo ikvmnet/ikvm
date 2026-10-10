@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 namespace IKVM.Reflection.Emit
 {
 
-
     /// <summary>
     /// Describes exception handler in a method body.
     /// </summary>
@@ -61,81 +60,7 @@ namespace IKVM.Reflection.Emit
             get { return m_kind; }
         }
 
-        #region Constructors
-
-        /// <summary>
-        /// Creates a description of an exception handler.
-        /// </summary>
-        /// <param name="tryOffset">The offset of the first instruction protected by this handler.</param>
-        /// <param name="tryLength">The number of bytes protected by this handler.</param>
-        /// <param name="filterOffset">The filter code begins at the specified offset and ends at the first instruction of the handler block. Specify 0 if not applicable (this is not a filter handler).</param>
-        /// <param name="handlerOffset">The offset of the first instruction of this handler.</param>
-        /// <param name="handlerLength">The number of bytes of the handler.</param>
-        /// <param name="kind">The kind of handler, the handler might be a catch handler, filter handler, fault handler, or finally handler.</param>
-        /// <param name="exceptionTypeToken">The token of the exception type handled by this handler. Specify 0 if not applicable (this is finally handler).</param>
-        /// <exception cref="ArgumentOutOfRangeException">
-        /// Some of the instruction offset is negative, 
-        /// the end offset of specified range is less than its start offset,
-        /// or <paramref name="kind"/> has an invalid value.
-        /// </exception>
-        public ExceptionHandler(int tryOffset, int tryLength, int filterOffset, int handlerOffset, int handlerLength,
-            ExceptionHandlingClauseOptions kind, int exceptionTypeToken)
-        {
-            if (tryOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException("tryOffset", string.Format("Non-negative number required."));
-            }
-
-            if (tryLength < 0)
-            {
-                throw new ArgumentOutOfRangeException("tryLength", string.Format("Non-negative number required."));
-            }
-
-            if (filterOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException("filterOffset", string.Format("Non-negative number required."));
-            }
-
-            if (handlerOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException("handlerOffset", string.Format("Non-negative number required."));
-            }
-
-            if (handlerLength < 0)
-            {
-                throw new ArgumentOutOfRangeException("handlerLength", string.Format("Non-negative number required."));
-            }
-
-            if ((long)tryOffset + tryLength > Int32.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException("tryLength", string.Format("Valid values are between {0} and {1}, inclusive.", 0, Int32.MaxValue - tryOffset));
-            }
-
-            if ((long)handlerOffset + handlerLength > Int32.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException("handlerLength", string.Format("Valid values are between {0} and {1}, inclusive.", 0, Int32.MaxValue - handlerOffset));
-            }
-
-            // Other tokens migth also be invalid. We only check nil tokens as the implementation (SectEH_Emit in corhlpr.cpp) requires it,
-            // and we can't check for valid tokens until the module is baked.
-            if (kind == ExceptionHandlingClauseOptions.Clause && (exceptionTypeToken & 0x00FFFFFF) == 0)
-            {
-                throw new ArgumentException(string.Format("Token {0:x} is not a valid Type token.", exceptionTypeToken), "exceptionTypeToken");
-            }
-
-            if (!IsValidKind(kind))
-            {
-                throw new ArgumentOutOfRangeException("kind", string.Format("Enum value was out of legal range."));
-            }
-
-            m_tryStartOffset = tryOffset;
-            m_tryEndOffset = tryOffset + tryLength;
-            m_filterOffset = filterOffset;
-            m_handlerStartOffset = handlerOffset;
-            m_handlerEndOffset = handlerOffset + handlerLength;
-            m_kind = kind;
-            m_exceptionClass = exceptionTypeToken;
-        }
+#region Constructors
 
         internal ExceptionHandler(int tryStartOffset, int tryEndOffset, int filterOffset, int handlerStartOffset, int handlerEndOffset,
             int kind, int exceptionTypeToken)
@@ -196,16 +121,6 @@ namespace IKVM.Reflection.Emit
                 other.m_handlerStartOffset == m_handlerStartOffset &&
                 other.m_handlerEndOffset == m_handlerEndOffset &&
                 other.m_kind == m_kind;
-        }
-
-        public static bool operator ==(ExceptionHandler left, ExceptionHandler right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(ExceptionHandler left, ExceptionHandler right)
-        {
-            return !left.Equals(right);
         }
 
         #endregion

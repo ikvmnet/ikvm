@@ -61,7 +61,7 @@ namespace IKVM.Reflection.Reader
 
         internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.PropertyTable.records[index].Type), declaringType);
 
-        public override PropertyAttributes Attributes => (PropertyAttributes)module.PropertyTable.records[index].Flags;
+        public override PropertyAttributes Attributes => (PropertyAttributes)(ushort)module.PropertyTable.records[index].Flags;
 
         public override object GetRawConstantValue() => module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
 

@@ -54,25 +54,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddTypeReference(
-                    MetadataTokens.EntityHandle(records[i].ResolutionScope),
-                    records[i].TypeNamespace,
-                    records[i].TypeName);
-
-                Debug.Assert(h == MetadataTokens.TypeReferenceHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].ResolutionScope);
-        }
-
     }
 
 }

@@ -51,25 +51,6 @@ namespace IKVM.Reflection.Metadata
 
         internal const int Index = 0x23;
 
-        internal int FindOrAddRecord(Record rec)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                // note that we ignore HashValue here!
-                if (records[i].Name == rec.Name &&
-                    records[i].MajorVersion == rec.MajorVersion &&
-                    records[i].MinorVersion == rec.MinorVersion &&
-                    records[i].BuildNumber == rec.BuildNumber &&
-                    records[i].RevisionNumber == rec.RevisionNumber &&
-                    records[i].Flags == rec.Flags &&
-                    records[i].PublicKeyOrToken == rec.PublicKeyOrToken &&
-                    records[i].Culture == rec.Culture)
-                    return i + 1;
-            }
-
-            return AddRecord(rec);
-        }
-
         internal override void Read(IKVM.Reflection.Reader.MetadataReader mr)
         {
             for (int i = 0; i < records.Length; i++)
@@ -83,22 +64,6 @@ namespace IKVM.Reflection.Metadata
                 records[i].Name = MetadataTokens.StringHandle(mr.ReadStringIndex());
                 records[i].Culture = MetadataTokens.StringHandle(mr.ReadStringIndex());
                 records[i].HashValue = MetadataTokens.BlobHandle(mr.ReadBlobIndex());
-            }
-        }
-
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddAssemblyReference(
-                    records[i].Name,
-                    new Version(records[i].MajorVersion, records[i].MinorVersion, records[i].BuildNumber, records[i].RevisionNumber),
-                    records[i].Culture,
-                    records[i].PublicKeyOrToken,
-                    (System.Reflection.AssemblyFlags)records[i].Flags,
-                    records[i].HashValue);
-
-                Debug.Assert(h == MetadataTokens.AssemblyReferenceHandle(i + 1));
             }
         }
 

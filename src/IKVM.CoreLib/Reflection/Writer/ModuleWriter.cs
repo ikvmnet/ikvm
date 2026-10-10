@@ -257,6 +257,7 @@ namespace IKVM.Reflection.Writer
             var mvidId = new BlobWriter(module.GetModuleVersionIdFixup().Content);
             mvidId.WriteGuid(peContentId.Guid);
             Debug.Assert(mvidId.RemainingBytes == 0);
+            module.SetModuleVersionId(peContentId.Guid);
 
             // strong name specified, sign the blobs
             if (keyPair != null)
@@ -290,24 +291,6 @@ namespace IKVM.Reflection.Writer
             module.FixupMethodBodyTokens();
 
             // fixup content in tables
-            module.TypeRefTable.Fixup(module);
-            module.MethodImplTable.Fixup(module);
-            module.MethodSemanticsTable.Fixup(module);
-            module.InterfaceImplTable.Fixup(module);
-            module.ResolveInterfaceImplPseudoTokens();
-            module.MemberRefTable.Fixup(module);
-            module.ConstantTable.Fixup(module);
-            module.FieldMarshalTable.Fixup(module);
-            module.DeclSecurityTable.Fixup(module);
-            module.GenericParamTable.Fixup(module);
-            module.CustomAttributeTable.Fixup(module);
-            module.FieldLayoutTable.Fixup(module);
-            module.FieldRVATable.Fixup(module);
-            module.ImplMapTable.Fixup(module);
-            module.ExportedTypeTable.Fixup(module);
-            module.ManifestResourceTable.Fixup(module);
-            module.MethodSpecTable.Fixup(module);
-            module.GenericParamConstraint.Fixup(module);
 
             // close the symbol writer which may cause entries in the module table
             module.GetSymWriter()?.Close();

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -35,7 +35,6 @@ namespace IKVM.Reflection
         /// </summary>
         internal PropertyInfo()
         {
-
         }
 
         public sealed override MemberTypes MemberType => MemberTypes.Property;
@@ -62,81 +61,73 @@ namespace IKVM.Reflection
 
         internal abstract PropertySignature PropertySignature { get; }
 
+        /// <summary>
+        /// An index parameter of a property. Like System.Reflection, name, attributes, default value, custom attributes
+        /// and marshaling come from the matching parameter of an accessor when there is one.
+        /// </summary>
         sealed class ParameterInfoImpl : ParameterInfo
         {
 
             readonly PropertyInfo property;
             readonly int parameter;
+            readonly ParameterInfo accessor;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="property"></param>
             /// <param name="parameter"></param>
-            internal ParameterInfoImpl(PropertyInfo property, int parameter)
+            /// <param name="accessor">The matching accessor parameter, or <c>null</c> if the property has no accessor.</param>
+            internal ParameterInfoImpl(PropertyInfo property, int parameter, ParameterInfo accessor)
             {
                 this.property = property;
                 this.parameter = parameter;
+                this.accessor = accessor;
             }
 
-            public override string Name
-            {
-                get { return null; }
-            }
+            public override string Name => accessor?.Name;
 
-            public override Type ParameterType
-            {
-                get { return property.PropertySignature.GetParameter(parameter); }
-            }
+            public override Type ParameterType => property.PropertySignature.GetParameter(parameter);
 
-            public override ParameterAttributes Attributes
-            {
-                get { return ParameterAttributes.None; }
-            }
+            public override ParameterAttributes Attributes => accessor?.Attributes ?? ParameterAttributes.None;
 
-            public override int Position
-            {
-                get { return parameter; }
-            }
+            public override int Position => parameter;
 
-            public override object RawDefaultValue
-            {
-                get { throw new InvalidOperationException(); }
-            }
+            public override object RawDefaultValue => accessor != null ? accessor.RawDefaultValue : throw new InvalidOperationException();
 
-            public override CustomModifiers __GetCustomModifiers()
-            {
-                return property.PropertySignature.GetParameterCustomModifiers(parameter);
-            }
+            public override CustomModifiers __GetCustomModifiers() => property.PropertySignature.GetParameterCustomModifiers(parameter);
 
             public override bool __TryGetFieldMarshal(out FieldMarshal fieldMarshal)
             {
+                if (accessor != null)
+                    return accessor.__TryGetFieldMarshal(out fieldMarshal);
+
                 fieldMarshal = new FieldMarshal();
                 return false;
             }
 
-            public override MemberInfo Member
-            {
-                get { return property; }
-            }
+            public override MemberInfo Member => property;
 
-            public override int MetadataToken
-            {
-                get { return 0x08000000; }
-            }
+            public override int MetadataToken => accessor?.MetadataToken ?? 0x08000000;
 
-            public override Module Module
-            {
-                get { return property.Module; }
-            }
+            public override Module Module => property.Module;
 
         }
 
         public virtual ParameterInfo[] GetIndexParameters()
         {
-            var parameters = new ParameterInfo[PropertySignature.ParameterCount];
+            var count = PropertySignature.ParameterCount;
+            if (count == 0)
+                return [];
+
+            // the getter has the index parameters; the setter has them followed by the value
+            var accessors = GetGetMethod(true)?.GetParameters() ?? GetSetMethod(true)?.GetParameters();
+            if (accessors != null && accessors.Length < count)
+                accessors = null;
+
+            var parameters = new ParameterInfo[count];
             for (var i = 0; i < parameters.Length; i++)
-                parameters[i] = new ParameterInfoImpl(this, i);
+                parameters[i] = new ParameterInfoImpl(this, i, accessors?[i]);
 
             return parameters;
         }
@@ -189,11 +180,6 @@ namespace IKVM.Reflection
         public MethodInfo[] GetAccessors()
         {
             return GetAccessors(false);
-        }
-
-        public CallingConventions __CallingConvention
-        {
-            get { return this.PropertySignature.CallingConvention; }
         }
 
         internal virtual PropertyInfo BindTypeParameters(Type type)

@@ -147,7 +147,7 @@ namespace IKVM.Reflection.Writer
                 stringTable.Align(4);
                 offset += stringTable.Length;
                 WriteResourceDataEntries(bb, linkOffsets, ref offset);
-                bb.Write(stringTable);
+                bb.WriteBuffer(stringTable);
                 WriteData(bb);
             }
         }
@@ -159,10 +159,10 @@ namespace IKVM.Reflection.Writer
                 if (entry.data != null)
                 {
                     linkOffsets.Add(bb.Position);
-                    bb.Write(offset);
-                    bb.Write(entry.data.Length);
-                    bb.Write(0);    // code page
-                    bb.Write(0);    // reserved
+                    bb.WriteInt32(offset);
+                    bb.WriteInt32(entry.data.Length);
+                    bb.WriteInt32(0);    // code page
+                    bb.WriteInt32(0);    // reserved
                     offset += (entry.data.Length + 3) & ~3;
                 }
                 else
@@ -178,7 +178,7 @@ namespace IKVM.Reflection.Writer
             {
                 if (entry.data != null)
                 {
-                    bb.Write(entry.data);
+                    bb.WriteBuffer(entry.data);
                     bb.Align(4);
                 }
                 else
@@ -193,11 +193,11 @@ namespace IKVM.Reflection.Writer
             if (currentDepth == writeDepth)
             {
                 // directory header
-                bb.Write(0);    // Characteristics
-                bb.Write(0);    // Time/Date Stamp
-                bb.Write(0);    // Version (Major / Minor)
-                bb.Write((ushort)namedEntries);
-                bb.Write((ushort)(entries.Count - namedEntries));
+                bb.WriteInt32(0);    // Characteristics
+                bb.WriteInt32(0);    // Time/Date Stamp
+                bb.WriteInt32(0);    // Version (Major / Minor)
+                bb.WriteUInt16((ushort)namedEntries);
+                bb.WriteUInt16((ushort)(entries.Count - namedEntries));
             }
 
             foreach (var entry in entries)
@@ -213,9 +213,9 @@ namespace IKVM.Reflection.Writer
         {
             WriteNameOrOrdinal(bb, ordinalOrName, strings, ref stringTableOffset, stringTable);
             if (data == null)
-                bb.Write(0x80000000U | (uint)offset);
+                bb.WriteUInt32(0x80000000U | (uint)offset);
             else
-                bb.Write(offset);
+                bb.WriteInt32(offset);
 
             offset += 16 + entries.Count * 8;
         }
@@ -224,7 +224,7 @@ namespace IKVM.Reflection.Writer
         {
             if (id.Name == null)
             {
-                bb.Write((int)id.Ordinal);
+                bb.WriteInt32((int)id.Ordinal);
             }
             else
             {
@@ -233,12 +233,12 @@ namespace IKVM.Reflection.Writer
                     stringOffset = stringTableOffset;
                     strings.Add(id.Name, stringOffset);
                     stringTableOffset += id.Name.Length * 2 + 2;
-                    stringTable.Write((ushort)id.Name.Length);
+                    stringTable.WriteUInt16((ushort)id.Name.Length);
                     foreach (var c in id.Name)
-                        stringTable.Write((short)c);
+                        stringTable.WriteInt16((short)c);
                 }
 
-                bb.Write(0x80000000U | (uint)stringOffset);
+                bb.WriteUInt32(0x80000000U | (uint)stringOffset);
             }
         }
 

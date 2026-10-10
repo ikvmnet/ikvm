@@ -57,19 +57,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddAssemblyFile(
-                    records[i].Name,
-                    records[i].HashValue,
-                    (records[i].Flags & ContainsNoMetaData) != 0);
-
-                Debug.Assert(h == MetadataTokens.AssemblyFileHandle(i + 1));
-            }
-        }
-
     }
 
 }

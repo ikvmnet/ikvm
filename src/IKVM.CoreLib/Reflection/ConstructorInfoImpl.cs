@@ -54,11 +54,6 @@ namespace IKVM.Reflection
             return method;
         }
 
-        internal override MethodInfo GetMethodOnTypeDefinition()
-        {
-            return method.GetMethodOnTypeDefinition();
-        }
-
     }
 
 }

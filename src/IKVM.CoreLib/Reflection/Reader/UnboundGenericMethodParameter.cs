@@ -39,7 +39,6 @@ namespace IKVM.Reflection.Reader
             internal DummyModule() :
                 base(new Universe())
             {
-
             }
 
             protected override Exception NotSupportedException()
@@ -180,11 +179,6 @@ namespace IKVM.Reflection.Reader
         }
 
         public override Type[] GetGenericParameterConstraints()
-        {
-            throw new InvalidOperationException();
-        }
-
-        public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
         {
             throw new InvalidOperationException();
         }

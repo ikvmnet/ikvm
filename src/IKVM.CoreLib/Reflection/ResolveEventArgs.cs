@@ -36,16 +36,6 @@ namespace IKVM.Reflection
         /// Initializes a new instance.
         /// </summary>
         /// <param name="name"></param>
-        public ResolveEventArgs(string name) :
-            this(name, null)
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="name"></param>
         /// <param name="requestingAssembly"></param>
         public ResolveEventArgs(string name, Assembly requestingAssembly)
         {

@@ -29,33 +29,6 @@ namespace IKVM.Reflection
     [Serializable]
     internal sealed class FileFormatLimitationExceededException : InvalidOperationException
     {
-
-        public const int META_E_STRINGSPACE_FULL = unchecked((int)0x80131198);
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="hresult"></param>
-        public FileFormatLimitationExceededException(string message, int hresult) :
-            base(message)
-        {
-            HResult = hresult;
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        FileFormatLimitationExceededException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
-            base(info, context)
-        {
-
-        }
-
-        public int ErrorCode => HResult;
-
     }
 
 }

@@ -40,8 +40,6 @@ namespace IKVM.Reflection.Metadata
 
         internal abstract void Read(MetadataReader mr);
 
-        internal abstract void Write(ModuleBuilder module);
-
     }
 
     abstract class Table<T> : Table
@@ -63,16 +61,6 @@ namespace IKVM.Reflection.Metadata
 
             records[rowCount++] = newRecord;
             return rowCount;
-        }
-
-        internal int AddVirtualRecord()
-        {
-            return ++rowCount;
-        }
-
-        internal override void Write(ModuleBuilder module)
-        {
-
         }
 
     }

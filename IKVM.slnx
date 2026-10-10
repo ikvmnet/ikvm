@@ -108,6 +108,8 @@
     <Project Path="src/IKVM.NET.Sdk.Tests/IKVM.NET.Sdk.Tests.csproj" />
     <Project Path="src/IKVM.NET.Sdk/IKVM.NET.Sdk.msbuildproj" Type="C#" />
     <Project Path="src/IKVM.OpenJDK.Tests/IKVM.OpenJDK.Tests.csproj" />
+    <Project Path="src/IKVM.Reflection.Tests.Dump/IKVM.Reflection.Tests.Dump.csproj" />
+    <Project Path="src/IKVM.Reflection.Tests.Fixture/IKVM.Reflection.Tests.Fixture.csproj" />
     <Project Path="src/IKVM.Reflection.Tests/IKVM.Reflection.Tests.csproj" />
     <Project Path="src/IKVM.Runtime-ref/IKVM.Runtime-ref.csproj" />
     <Project Path="src/IKVM.Runtime/IKVM.Runtime.csproj" />

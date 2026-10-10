@@ -56,81 +56,84 @@ namespace IKVM.Reflection
         {
             fm = new FieldMarshal();
 
+            if (module is ModuleBuilder builder)
+                return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, new ByteReader(nativeType, 0, nativeType.Length), out fm);
+
             foreach (var i in module.FieldMarshalTable.Filter(token))
-            {
-                var blob = module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType);
-
-                fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
-                switch (fm.UnmanagedType)
-                {
-                    case UnmanagedType.LPArray:
-                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
-                        if (fm.ArraySubType == NATIVE_TYPE_MAX)
-                            fm.ArraySubType = null;
-
-                        if (blob.Length != 0)
-                        {
-                            fm.SizeParamIndex = (short)blob.ReadCompressedUInt();
-                            if (blob.Length != 0)
-                            {
-                                fm.SizeConst = blob.ReadCompressedUInt();
-                                if (blob.Length != 0 && blob.ReadCompressedUInt() == 0)
-                                    fm.SizeParamIndex = null;
-                            }
-                        }
-                        break;
-                    case UnmanagedType.SafeArray:
-                        if (blob.Length != 0)
-                        {
-                            fm.SafeArraySubType = (VarEnum)blob.ReadCompressedUInt();
-                            if (blob.Length != 0)
-                                fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
-                        }
-                        break;
-                    case UnmanagedType.ByValArray:
-                        fm.SizeConst = blob.ReadCompressedUInt();
-                        if (blob.Length != 0)
-                            fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType.ByValTStr:
-                        fm.SizeConst = blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType.Interface:
-                    case UnmanagedType.IDispatch:
-                    case UnmanagedType.IUnknown:
-                        if (blob.Length != 0)
-                            fm.IidParameterIndex = blob.ReadCompressedUInt();
-                        break;
-                    case UnmanagedType_CustomMarshaler:
-                        {
-                            blob.ReadCompressedUInt();
-                            blob.ReadCompressedUInt();
-                            fm.MarshalType = ReadString(blob);
-                            fm.MarshalCookie = ReadString(blob);
-
-                            var parser = TypeNameParser.Parse(fm.MarshalType, false);
-                            if (!parser.Error)
-                                fm.MarshalTypeRef = parser.GetType(module.Universe, module, false, fm.MarshalType, false, false);
-                            break;
-                        }
-                }
-
-                return true;
-            }
+                return Decode(module, module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType), out fm);
 
             return false;
+        }
+
+        static bool Decode(Module module, ByteReader blob, out FieldMarshal fm)
+        {
+            fm = new FieldMarshal();
+
+            fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
+            switch (fm.UnmanagedType)
+            {
+                case UnmanagedType.LPArray:
+                    fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    if (fm.ArraySubType == NATIVE_TYPE_MAX)
+                        fm.ArraySubType = null;
+
+                    if (blob.Length != 0)
+                    {
+                        fm.SizeParamIndex = (short)blob.ReadCompressedUInt();
+                        if (blob.Length != 0)
+                        {
+                            fm.SizeConst = blob.ReadCompressedUInt();
+                            if (blob.Length != 0 && blob.ReadCompressedUInt() == 0)
+                                fm.SizeParamIndex = null;
+                        }
+                    }
+                    break;
+                case UnmanagedType.SafeArray:
+                    if (blob.Length != 0)
+                    {
+                        fm.SafeArraySubType = (VarEnum)blob.ReadCompressedUInt();
+                        if (blob.Length != 0)
+                            fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
+                    }
+                    break;
+                case UnmanagedType.ByValArray:
+                    fm.SizeConst = blob.ReadCompressedUInt();
+                    if (blob.Length != 0)
+                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType.ByValTStr:
+                    fm.SizeConst = blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType.Interface:
+                case UnmanagedType.IDispatch:
+                case UnmanagedType.IUnknown:
+                    if (blob.Length != 0)
+                        fm.IidParameterIndex = blob.ReadCompressedUInt();
+                    break;
+                case UnmanagedType_CustomMarshaler:
+                    {
+                        blob.ReadCompressedUInt();
+                        blob.ReadCompressedUInt();
+                        fm.MarshalType = ReadString(blob);
+                        fm.MarshalCookie = ReadString(blob);
+
+                        var parser = TypeNameParser.Parse(fm.MarshalType, false);
+                        if (!parser.Error)
+                            fm.MarshalTypeRef = parser.GetType(module.Universe, module, false, fm.MarshalType, false, false);
+                        break;
+                    }
+            }
+
+            return true;
         }
 
         internal static void SetMarshalAsAttribute(ModuleBuilder module, int token, CustomAttributeBuilder attribute)
         {
             attribute = attribute.DecodeBlob(module.Assembly);
-            var rec = new FieldMarshalTable.Record();
-            rec.Parent = token;
-            rec.NativeType = WriteMarshallingDescriptor(module, attribute);
-            module.FieldMarshalTable.AddRecord(rec);
+            module.AddFieldMarshal(token, WriteMarshallingDescriptor(module, attribute));
         }
 
-        static BlobHandle WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
+        static byte[] WriteMarshallingDescriptor(ModuleBuilder module, CustomAttributeBuilder attribute)
         {
             var val = attribute.GetConstructorArgument(0);
             var unmanagedType = val switch
@@ -140,32 +143,32 @@ namespace IKVM.Reflection
                 _ => (UnmanagedType)val,
             };
 
-            var bb = new ByteBuffer(5);
-            bb.WriteCompressedUInt((int)unmanagedType);
+            var bb = new BlobBuilder(5);
+            bb.WriteCompressedInteger((int)unmanagedType);
 
             switch (unmanagedType)
             {
                 case UnmanagedType.LPArray:
                     {
                         var arraySubType = attribute.GetFieldValue<UnmanagedType>("ArraySubType") ?? NATIVE_TYPE_MAX;
-                        bb.WriteCompressedUInt((int)arraySubType);
+                        bb.WriteCompressedInteger((int)arraySubType);
 
                         var sizeParamIndex = attribute.GetFieldValue<short>("SizeParamIndex");
                         var sizeConst = attribute.GetFieldValue<int>("SizeConst");
                         if (sizeParamIndex != null)
                         {
-                            bb.WriteCompressedUInt(sizeParamIndex.Value);
+                            bb.WriteCompressedInteger(sizeParamIndex.Value);
                             if (sizeConst != null)
                             {
-                                bb.WriteCompressedUInt(sizeConst.Value);
-                                bb.WriteCompressedUInt(1); // flag that says that SizeParamIndex was specified
+                                bb.WriteCompressedInteger(sizeConst.Value);
+                                bb.WriteCompressedInteger(1); // flag that says that SizeParamIndex was specified
                             }
                         }
                         else if (sizeConst != null)
                         {
-                            bb.WriteCompressedUInt(0); // SizeParamIndex
-                            bb.WriteCompressedUInt(sizeConst.Value);
-                            bb.WriteCompressedUInt(0); // flag that says that SizeParamIndex was not specified
+                            bb.WriteCompressedInteger(0); // SizeParamIndex
+                            bb.WriteCompressedInteger(sizeConst.Value);
+                            bb.WriteCompressedInteger(0); // flag that says that SizeParamIndex was not specified
                         }
 
                         break;
@@ -175,7 +178,7 @@ namespace IKVM.Reflection
                         var safeArraySubType = attribute.GetFieldValue<VarEnum>("SafeArraySubType");
                         if (safeArraySubType != null)
                         {
-                            bb.WriteCompressedUInt((int)safeArraySubType);
+                            bb.WriteCompressedInteger((int)safeArraySubType);
                             var safeArrayUserDefinedSubType = (Type)attribute.GetFieldValue("SafeArrayUserDefinedSubType");
                             if (safeArrayUserDefinedSubType != null)
                                 WriteType(module, bb, safeArrayUserDefinedSubType);
@@ -185,15 +188,15 @@ namespace IKVM.Reflection
                     }
                 case UnmanagedType.ByValArray:
                     {
-                        bb.WriteCompressedUInt(attribute.GetFieldValue<int>("SizeConst") ?? 1);
+                        bb.WriteCompressedInteger(attribute.GetFieldValue<int>("SizeConst") ?? 1);
                         var arraySubType = attribute.GetFieldValue<UnmanagedType>("ArraySubType");
                         if (arraySubType != null)
-                            bb.WriteCompressedUInt((int)arraySubType);
+                            bb.WriteCompressedInteger((int)arraySubType);
 
                         break;
                     }
                 case UnmanagedType.ByValTStr:
-                    bb.WriteCompressedUInt(attribute.GetFieldValue<int>("SizeConst").Value);
+                    bb.WriteCompressedInteger(attribute.GetFieldValue<int>("SizeConst").Value);
                     break;
                 case UnmanagedType.Interface:
                 case UnmanagedType.IDispatch:
@@ -201,14 +204,14 @@ namespace IKVM.Reflection
                     {
                         var iidParameterIndex = attribute.GetFieldValue<int>("IidParameterIndex");
                         if (iidParameterIndex != null)
-                            bb.WriteCompressedUInt(iidParameterIndex.Value);
+                            bb.WriteCompressedInteger(iidParameterIndex.Value);
 
                         break;
                     }
                 case UnmanagedType_CustomMarshaler:
                     {
-                        bb.WriteCompressedUInt(0);
-                        bb.WriteCompressedUInt(0);
+                        bb.WriteCompressedInteger(0);
+                        bb.WriteCompressedInteger(0);
                         var marshalType = (string)attribute.GetFieldValue("MarshalType");
                         if (marshalType != null)
                             WriteString(bb, marshalType);
@@ -220,7 +223,7 @@ namespace IKVM.Reflection
                     }
             }
 
-            return module.GetOrAddBlob(bb.ToArray());
+            return bb.ToArray();
         }
 
         static Type ReadType(Module module, ByteReader br)
@@ -232,7 +235,7 @@ namespace IKVM.Reflection
             return module.Assembly.GetType(str) ?? module.Universe.GetType(str, true);
         }
 
-        static void WriteType(Module module, ByteBuffer bb, Type type)
+        static void WriteType(Module module, BlobBuilder bb, Type type)
         {
             WriteString(bb, type.Assembly == module.Assembly ? type.FullName : type.AssemblyQualifiedName);
         }
@@ -242,11 +245,11 @@ namespace IKVM.Reflection
             return Encoding.UTF8.GetString(br.ReadBytes(br.ReadCompressedUInt()));
         }
 
-        static void WriteString(ByteBuffer bb, string str)
+        static void WriteString(BlobBuilder bb, string str)
         {
             var buf = Encoding.UTF8.GetBytes(str);
-            bb.WriteCompressedUInt(buf.Length);
-            bb.Write(buf);
+            bb.WriteCompressedInteger(buf.Length);
+            bb.WriteBytes(buf);
         }
 
     }

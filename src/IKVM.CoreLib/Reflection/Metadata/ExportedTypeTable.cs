@@ -58,40 +58,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddExportedType(
-                    (System.Reflection.TypeAttributes)records[i].Flags,
-                    records[i].TypeNamespace,
-                    records[i].TypeName,
-                    MetadataTokens.EntityHandle(records[i].Implementation),
-                    records[i].TypeDefId);
-
-                Debug.Assert(h == MetadataTokens.ExportedTypeHandle(i + 1));
-            }
-        }
-
-        internal int FindOrAddRecord(Record rec)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                if (records[i].Implementation == rec.Implementation &&
-                    records[i].TypeName == rec.TypeName &&
-                    records[i].TypeNamespace == rec.TypeNamespace)
-                    return i + 1;
-            }
-
-            return AddRecord(rec);
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Implementation);
-        }
-
     }
 
 }

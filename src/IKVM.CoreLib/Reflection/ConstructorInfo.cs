@@ -37,7 +37,6 @@ namespace IKVM.Reflection
         /// </summary>
         internal ConstructorInfo()
 		{
-
 		}
 
 		public sealed override string ToString()
@@ -52,29 +51,14 @@ namespace IKVM.Reflection
 			return new ConstructorInfoImpl((MethodInfo)GetMethodInfo().BindTypeParameters(type));
 		}
 
-		public sealed override MethodBase __GetMethodOnTypeDefinition()
-		{
-			return new ConstructorInfoImpl((MethodInfo)GetMethodInfo().__GetMethodOnTypeDefinition());
-		}
-
 		public sealed override MemberTypes MemberType
 		{
 			get { return MemberTypes.Constructor; }
 		}
 
-		public sealed override int __MethodRVA
-		{
-			get { return GetMethodInfo().__MethodRVA; }
-		}
-
 		public sealed override bool ContainsGenericParameters
 		{
 			get { return GetMethodInfo().ContainsGenericParameters; }
-		}
-
-		public ParameterInfo __ReturnParameter
-		{
-			get { return new ParameterInfoWrapper(this, GetMethodInfo().ReturnParameter); }
 		}
 
 		public sealed override ParameterInfo[] GetParameters()
@@ -124,11 +108,6 @@ namespace IKVM.Reflection
 		public sealed override Module Module
 		{
 			get { return GetMethodInfo().Module; }
-		}
-
-		public sealed override MethodBody GetMethodBody()
-		{
-			return GetMethodInfo().GetMethodBody();
 		}
 
 		public sealed override bool __IsMissing

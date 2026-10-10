@@ -93,11 +93,6 @@ namespace IKVM.Reflection
             throw new MissingAssemblyException(this);
         }
 
-        public override string[] GetManifestResourceNames()
-        {
-            throw new MissingAssemblyException(this);
-        }
-
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
         {
             throw new MissingAssemblyException(this);

@@ -36,9 +36,6 @@ namespace IKVM.Reflection.Emit
         public bool Equals(Label obj) =>
             obj.m_label == m_label;
 
-        public static bool operator ==(Label a, Label b) => a.Equals(b);
-
-        public static bool operator !=(Label a, Label b) => !(a == b);
     }
 }
 

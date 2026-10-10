@@ -56,14 +56,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddEventMap(
-                    (TypeDefinitionHandle)MetadataTokens.EntityHandle(records[i].Parent),
-                    (EventDefinitionHandle)MetadataTokens.EntityHandle(records[i].EventList));
-        }
-
     }
 
 }

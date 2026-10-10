@@ -22,7 +22,9 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
@@ -36,8 +38,10 @@ namespace IKVM.Reflection.Emit
         readonly string name;
         readonly TypeBuilder type;
         readonly MethodBuilder method;
-        readonly int paramPseudoIndex;
+        readonly int pseudoIndex;
         readonly int position;
+        readonly List<int> constraints = new List<int>();
+        int row;
         int typeToken;
         Type baseType;
         GenericParameterAttributes attr;
@@ -51,7 +55,6 @@ namespace IKVM.Reflection.Emit
         internal GenericTypeParameterBuilder(string name, TypeBuilder type, int position) :
             this(name, type, null, position, Signature.ELEMENT_TYPE_VAR)
         {
-
         }
 
         /// <summary>
@@ -63,7 +66,6 @@ namespace IKVM.Reflection.Emit
         internal GenericTypeParameterBuilder(string name, MethodBuilder method, int position) :
             this(name, null, method, position, Signature.ELEMENT_TYPE_MVAR)
         {
-
         }
 
         /// <summary>
@@ -81,12 +83,7 @@ namespace IKVM.Reflection.Emit
             this.type = type;
             this.method = method;
             this.position = position;
-            var rec = new GenericParamTable.Record();
-            rec.Number = (short)position;
-            rec.Flags = 0;
-            rec.Owner = type != null ? type.MetadataToken : method.MetadataToken;
-            rec.Name = ModuleBuilder.GetOrAddString(name);
-            paramPseudoIndex = ModuleBuilder.GenericParamTable.AddRecord(rec);
+            this.pseudoIndex = ModuleBuilder.AllocGenericParameterIndex();
         }
 
         public override string AssemblyQualifiedName
@@ -164,11 +161,6 @@ namespace IKVM.Reflection.Emit
             throw new NotImplementedException();
         }
 
-        public override CustomModifiers[] __GetGenericParameterConstraintCustomModifiers()
-        {
-            throw new NotImplementedException();
-        }
-
         public override GenericParameterAttributes GenericParameterAttributes
         {
             get
@@ -190,12 +182,9 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void AddConstraint(Type type)
+        void AddConstraint(Type type)
         {
-            var rec = new GenericParamConstraintTable.Record();
-            rec.Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(paramPseudoIndex));
-            rec.Constraint = ModuleBuilder.GetTypeTokenForMemberRef(type);
-            this.ModuleBuilder.GenericParamConstraint.AddRecord(rec);
+            constraints.Add(ModuleBuilder.GetTypeTokenForMemberRef(type));
         }
 
         public void SetBaseTypeConstraint(Type? baseTypeConstraint)
@@ -204,29 +193,9 @@ namespace IKVM.Reflection.Emit
             AddConstraint(baseTypeConstraint);
         }
 
-        public void SetInterfaceConstraints(params Type[] interfaceConstraints)
-        {
-            foreach (Type type in interfaceConstraints)
-            {
-                AddConstraint(type);
-            }
-        }
-
         public void SetGenericParameterAttributes(GenericParameterAttributes genericParameterAttributes)
         {
             this.attr = genericParameterAttributes;
-            // for now we'll back patch the table
-            this.ModuleBuilder.GenericParamTable.PatchAttribute(paramPseudoIndex, genericParameterAttributes);
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            this.ModuleBuilder.SetCustomAttribute((GenericParamTable.Index << 24) | paramPseudoIndex, customBuilder);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
         }
 
         public override int MetadataToken
@@ -234,17 +203,37 @@ namespace IKVM.Reflection.Emit
             get
             {
                 CheckBaked();
-                return (GenericParamTable.Index << 24) | paramPseudoIndex;
+                return (GenericParamTable.Index << 24) | pseudoIndex;
             }
         }
+
+        /// <summary>
+        /// Gets the token of the type or method that owns the parameter, which for a method can be a pseudo token.
+        /// </summary>
+        internal int OwnerToken => type != null ? type.MetadataToken : method.MetadataToken;
+
+        internal int Position => position;
+
+        internal GenericParameterAttributes GenericParameterAttributesValue => attr;
+
+        /// <summary>
+        /// Gets the tokens of the constraints, in the order they were added.
+        /// </summary>
+        internal List<int> Constraints => constraints;
+
+        /// <summary>
+        /// Records the row the parameter was written to.
+        /// </summary>
+        /// <param name="row"></param>
+        internal void SetRow(int row) => this.row = row;
 
         internal override int GetModuleBuilderToken()
         {
             if (typeToken == 0)
             {
-                var spec = new ByteBuffer(5);
+                var spec = new BlobBuilder(5);
                 Signature.WriteTypeSpec(ModuleBuilder, spec, this);
-                typeToken = MetadataTokens.GetToken(MetadataTokens.TypeSpecificationHandle(ModuleBuilder.TypeSpecTable.AddRecord(ModuleBuilder.GetOrAddBlob(spec.ToArray()))));
+                typeToken = ModuleBuilder.AddTypeSpec(ModuleBuilder.GetOrAddBlob(spec));
             }
             return typeToken;
         }
@@ -263,14 +252,7 @@ namespace IKVM.Reflection.Emit
 
         internal override int GetCurrentToken()
         {
-            if (ModuleBuilder.IsSaved)
-            {
-                return (GenericParamTable.Index << 24) | Module.GenericParamTable.GetIndexFixup()[paramPseudoIndex - 1] + 1;
-            }
-            else
-            {
-                return (GenericParamTable.Index << 24) | paramPseudoIndex;
-            }
+            return (GenericParamTable.Index << 24) | (ModuleBuilder.IsSaved ? row : pseudoIndex);
         }
 
         internal override bool IsBaked

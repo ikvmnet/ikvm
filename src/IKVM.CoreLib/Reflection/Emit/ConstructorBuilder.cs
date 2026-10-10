@@ -52,97 +52,12 @@ namespace IKVM.Reflection.Emit
             return methodBuilder.GetHashCode();
         }
 
-        public void __SetSignature(Type returnType, CustomModifiers returnTypeCustomModifiers, Type[] parameterTypes, CustomModifiers[] parameterTypeCustomModifiers)
-        {
-            methodBuilder.__SetSignature(returnType, returnTypeCustomModifiers, parameterTypes, parameterTypeCustomModifiers);
-        }
-
-        [Obsolete("Please use __SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
-        public void __SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
-        {
-            methodBuilder.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers, parameterTypeOptionalCustomModifiers);
-        }
-
-        public ParameterBuilder DefineParameter(int position, ParameterAttributes attributes, string strParamName)
-        {
-            return methodBuilder.DefineParameter(position, attributes, strParamName);
-        }
-
-        public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
-        {
-            methodBuilder.SetCustomAttribute(customBuilder);
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            methodBuilder.SetCustomAttribute(con, binaryAttribute);
-        }
-
-        public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
-        {
-            methodBuilder.__AddDeclarativeSecurity(customBuilder);
-        }
-
-        public void AddDeclarativeSecurity(System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
-        {
-            methodBuilder.AddDeclarativeSecurity(securityAction, permissionSet);
-        }
-
-        public void SetImplementationFlags(MethodImplAttributes attributes)
-        {
-            methodBuilder.SetImplementationFlags(attributes);
-        }
-
         public ILGenerator GetILGenerator()
         {
             return methodBuilder.GetILGenerator();
         }
 
-        public ILGenerator GetILGenerator(int streamSize)
-        {
-            return methodBuilder.GetILGenerator(streamSize);
-        }
-
-        public Type ReturnType
-        {
-            get { return methodBuilder.ReturnType; }
-        }
-
-        public Module GetModule()
-        {
-            return methodBuilder.GetModule();
-        }
-
-        public MethodToken GetToken()
-        {
-            return methodBuilder.GetToken();
-        }
-
-        public bool InitLocals
-        {
-            get { return methodBuilder.InitLocals; }
-            set { methodBuilder.InitLocals = value; }
-        }
-
-        /// <summary>
-        /// Creates the body of the constructor by using a specified byte array of Microsoft intermediate language (MSIL) instructions.
-        /// </summary>
-        /// <param name="il"></param>
-        /// <param name="maxStack"></param>
-        /// <param name="localSignature"></param>
-        /// <param name="exceptionHandlers"></param>
-        /// <param name="tokenFixups"></param>
-        public void SetMethodBody(byte[] il, int maxStack, byte[] localSignature, IEnumerable<ExceptionHandler> exceptionHandlers, IEnumerable<int> tokenFixups)
-        {
-            methodBuilder.SetMethodBody(il, maxStack, localSignature, exceptionHandlers, tokenFixups);
-        }
-
         internal override MethodInfo GetMethodInfo()
-        {
-            return methodBuilder;
-        }
-
-        internal override MethodInfo GetMethodOnTypeDefinition()
         {
             return methodBuilder;
         }

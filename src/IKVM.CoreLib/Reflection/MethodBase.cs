@@ -32,7 +32,6 @@ namespace IKVM.Reflection
 		/// </summary>
 		internal MethodBase()
 		{
-
 		}
 
 		internal abstract MethodSignature MethodSignature { get; }
@@ -43,9 +42,7 @@ namespace IKVM.Reflection
 
 		public abstract MethodAttributes Attributes { get; }
 		public abstract MethodImplAttributes GetMethodImplementationFlags();
-		public abstract MethodBody GetMethodBody();
 		public abstract CallingConventions CallingConvention { get; }
-		public abstract int __MethodRVA { get; }
 
 		public bool IsConstructor
 		{
@@ -145,15 +142,6 @@ namespace IKVM.Reflection
 		{
 			get { return IsGenericMethodDefinition; }
 		}
-
-		public virtual MethodBase __GetMethodOnTypeDefinition()
-		{
-			return this;
-		}
-
-		// This goes to the (uninstantiated) MethodInfo on the (uninstantiated) Type. For constructors
-		// it also has the effect of removing the ConstructorInfo wrapper and returning the underlying MethodInfo.
-		internal abstract MethodInfo GetMethodOnTypeDefinition();
 
 		internal abstract int ImportTo(Emit.ModuleBuilder module);
 

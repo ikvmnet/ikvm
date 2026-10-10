@@ -1,0 +1,30 @@
+<!-- the identity below must win over the version the build passes as global properties, or snapshots change with it -->
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="Version;AssemblyVersion;FileVersion;InformationalVersion;PackageVersion">
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <LangVersion>13</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Nullable>disable</Nullable>
+        <IsPackable>false</IsPackable>
+        <Deterministic>true</Deterministic>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS0067;CS0169;CS0414;CS0649;CS0618;CS8500</NoWarn>
+
+        <!-- fixed code generation so snapshots do not change between Debug and Release -->
+        <Optimize>true</Optimize>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+
+        <!-- fixed identity so snapshots do not change with the repository version, see TreatAsLocalProperty above -->
+        <Version>1.0.0</Version>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <FileVersion>1.0.0.0</FileVersion>
+        <InformationalVersion>1.0.0</InformationalVersion>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <Company>IKVM</Company>
+        <Product>IKVM.Reflection.Tests.Fixture</Product>
+        <Copyright>IKVM</Copyright>
+        <Authors>IKVM</Authors>
+    </PropertyGroup>
+</Project>

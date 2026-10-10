@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 /*
   Copyright (C) 2009 Jeroen Frijters
 
@@ -90,9 +91,9 @@ namespace IKVM.Reflection
             return new FieldSignature(fieldType, mods);
         }
 
-        internal override void Write(ModuleBuilder module, ByteBuffer bb)
+        internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
-            bb.Write(FIELD);
+            bb.WriteByte(FIELD);
             WriteCustomModifiers(module, bb, mods);
             WriteType(module, bb, fieldType);
         }

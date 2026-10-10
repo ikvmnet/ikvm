@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 /*
   Copyright (C) 2009-2011 Jeroen Frijters
 
@@ -100,7 +101,7 @@ namespace IKVM.Reflection
             return new PropertySignature(callingConvention, propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, parameterTypes), customModifiers.Bind(declaringType));
         }
 
-        internal override void Write(ModuleBuilder module, ByteBuffer bb)
+        internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
             var flags = PROPERTY;
             if ((callingConvention & CallingConventions.HasThis) != 0)
@@ -110,8 +111,8 @@ namespace IKVM.Reflection
             if ((callingConvention & CallingConventions.VarArgs) != 0)
                 flags |= VARARG;
 
-            bb.Write(flags);
-            bb.WriteCompressedUInt(parameterTypes == null ? 0 : parameterTypes.Length);
+            bb.WriteByte(flags);
+            bb.WriteCompressedInteger(parameterTypes == null ? 0 : parameterTypes.Length);
             WriteCustomModifiers(module, bb, customModifiers.GetReturnTypeCustomModifiers());
             WriteType(module, bb, propertyType);
 
@@ -133,11 +134,6 @@ namespace IKVM.Reflection
         internal CustomModifiers GetParameterCustomModifiers(int parameter)
         {
             return customModifiers.GetParameterCustomModifiers(parameter);
-        }
-
-        internal CallingConventions CallingConvention
-        {
-            get { return callingConvention; }
         }
 
         internal bool MatchParameterTypes(Type[] types)

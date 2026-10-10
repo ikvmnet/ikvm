@@ -35,7 +35,6 @@ namespace IKVM.Reflection
         /// </summary>
         public BadImageFormatException()
         {
-
         }
 
         /// <summary>
@@ -45,29 +44,6 @@ namespace IKVM.Reflection
         public BadImageFormatException(string message) :
             base(message)
         {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="inner"></param>
-        public BadImageFormatException(string message, Exception inner) :
-            base(message, inner)
-        {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        BadImageFormatException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) :
-            base(info, context)
-        {
-
         }
 
     }

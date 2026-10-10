@@ -56,27 +56,6 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-            {
-                var h = module.Metadata.AddGenericParameterConstraint(
-                    (GenericParameterHandle)MetadataTokens.EntityHandle(records[i].Owner),
-                    MetadataTokens.EntityHandle(records[i].Constraint));
-
-                Debug.Assert(h == MetadataTokens.GenericParameterConstraintHandle(i + 1));
-            }
-        }
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            var fixups = moduleBuilder.GenericParamTable.GetIndexFixup();
-            for (int i = 0; i < rowCount; i++)
-                records[i].Owner = MetadataTokens.GetToken(MetadataTokens.GenericParameterHandle(fixups[MetadataTokens.GetRowNumber(MetadataTokens.EntityHandle(records[i].Owner)) - 1] + 1));
-
-            Sort();
-        }
-
     }
 
 }

@@ -66,29 +66,12 @@ namespace IKVM.Reflection.Metadata
             }
         }
 
-        internal override void Write(ModuleBuilder module)
-        {
-            for (int i = 0; i < rowCount; i++)
-                module.Metadata.AddMethodSemantics(
-                    MetadataTokens.EntityHandle(records[i].Association),
-                    (System.Reflection.MethodSemanticsAttributes)records[i].Semantics,
-                    MetadataTokens.MethodDefinitionHandle(records[i].Method));
-        }
-
         static internal int EncodeHasSemantics(int token) => (token >> 24) switch
         {
             EventTable.Index => (token & 0xFFFFFF) << 1 | 0,
             PropertyTable.Index => (token & 0xFFFFFF) << 1 | 1,
             _ => throw new InvalidOperationException(),
         };
-
-        internal void Fixup(ModuleBuilder moduleBuilder)
-        {
-            for (int i = 0; i < rowCount; i++)
-                moduleBuilder.FixupPseudoToken(ref records[i].Method);
-
-            Sort();
-        }
 
         internal MethodInfo GetMethod(Module module, int token, bool nonPublic, short semantics)
         {

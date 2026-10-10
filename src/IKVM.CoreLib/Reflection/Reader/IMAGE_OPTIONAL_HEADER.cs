@@ -37,9 +37,6 @@ namespace IKVM.Reflection.Reader
 		public const WORD IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b;
 		public const WORD IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b;
 
-		public const WORD IMAGE_SUBSYSTEM_WINDOWS_GUI = 2;
-		public const WORD IMAGE_SUBSYSTEM_WINDOWS_CUI = 3;
-
 		public WORD Magic;
 		public BYTE MajorLinkerVersion;
 		public BYTE MinorLinkerVersion;

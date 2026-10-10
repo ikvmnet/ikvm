@@ -21,17 +21,6 @@ namespace IKVM.Reflection.Extensions
         }
 
         /// <summary>
-        /// Appens the array segments to the hash.
-        /// </summary>
-        /// <param name="hash"></param>
-        /// <param name="blobs"></param>
-        public static void AppendData(this IncrementalHash hash, IEnumerable<ArraySegment<byte>> blobs)
-        {
-            foreach (var blob in blobs)
-                AppendData(hash, blob);
-        }
-
-        /// <summary>
         /// Appends the array segment to the hash.
         /// </summary>
         /// <param name="hash"></param>

@@ -54,7 +54,6 @@ namespace IKVM.Reflection.Emit
         VersionInfo versionInfo;
         byte[] win32icon;
         byte[] win32manifest;
-        byte[] win32resources;
         string imageRuntimeVersion;
         internal int mdStreamVersion = 0x20000;
         Module pseudoManifestModule;
@@ -62,7 +61,6 @@ namespace IKVM.Reflection.Emit
         readonly List<ModuleBuilder> modules = new List<ModuleBuilder>();
         readonly List<Module> addedModules = new List<Module>();
         readonly List<CustomAttributeBuilder> customAttributes = new List<CustomAttributeBuilder>();
-        readonly List<CustomAttributeBuilder> declarativeSecurity = new List<CustomAttributeBuilder>();
         readonly List<TypeForwarder> typeForwarders = new List<TypeForwarder>();
 
         readonly struct TypeForwarder
@@ -90,7 +88,6 @@ namespace IKVM.Reflection.Emit
             internal string Name;
             internal string FileName;
             internal ResourceAttributes Attributes;
-            internal ResourceWriter Writer;
 
         }
 
@@ -178,52 +175,6 @@ namespace IKVM.Reflection.Emit
             Rename(oldName);
         }
 
-        public void __SetAssemblyKeyPair(StrongNameKeyPair keyPair)
-        {
-            AssemblyName oldName = GetName();
-            this.keyPair = keyPair;
-            if (keyPair != null)
-            {
-                this.publicKey = keyPair.PublicKey;
-            }
-            Rename(oldName);
-        }
-
-        // this is used in combination with delay signing
-        public void __SetAssemblyPublicKey(byte[] publicKey)
-        {
-            AssemblyName oldName = GetName();
-            this.publicKey = publicKey == null ? null : (byte[])publicKey.Clone();
-            Rename(oldName);
-        }
-
-        public void __SetAssemblyAlgorithmId(AssemblyHashAlgorithm hashAlgorithm)
-        {
-            this.hashAlgorithm = hashAlgorithm;
-        }
-
-        [Obsolete("Use __AssemblyFlags property instead.")]
-        public void __SetAssemblyFlags(AssemblyNameFlags flags)
-        {
-            this.__AssemblyFlags = flags;
-        }
-
-        protected override AssemblyNameFlags GetAssemblyFlags()
-        {
-            return flags;
-        }
-
-        public new AssemblyNameFlags __AssemblyFlags
-        {
-            get { return flags; }
-            set
-            {
-                AssemblyName oldName = GetName();
-                this.flags = value;
-                Rename(oldName);
-            }
-        }
-
         internal string Name
         {
             get { return name; }
@@ -248,17 +199,6 @@ namespace IKVM.Reflection.Emit
         }
 
         /// <summary>
-        /// Defines a persistable dynamic module with the given name that will be saved to the specified file. No symbol information is emitted.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
-        public ModuleBuilder DefineDynamicModule(string name, string fileName)
-        {
-            return DefineDynamicModule(name, fileName, false);
-        }
-
-        /// <summary>
         /// Defines a persistable dynamic module, specifying the module name, the name of the file to which the module will be saved, and whether symbol information should be emitted using the default symbol writer.
         /// </summary>
         /// <param name="name"></param>
@@ -273,28 +213,9 @@ namespace IKVM.Reflection.Emit
             return module;
         }
 
-        public ModuleBuilder GetDynamicModule(string name)
-        {
-            foreach (var module in modules)
-                if (module.Name == name)
-                    return module;
-
-            return null;
-        }
-
-        public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
-        {
-            SetCustomAttribute(new CustomAttributeBuilder(con, binaryAttribute));
-        }
-
         public void SetCustomAttribute(CustomAttributeBuilder customBuilder)
         {
             customAttributes.Add(customBuilder);
-        }
-
-        public void __AddDeclarativeSecurity(CustomAttributeBuilder customBuilder)
-        {
-            declarativeSecurity.Add(customBuilder);
         }
 
         public void __AddTypeForwarder(Type type)
@@ -307,52 +228,10 @@ namespace IKVM.Reflection.Emit
             typeForwarders.Add(new TypeForwarder(type, includeNested));
         }
 
-        public void SetEntryPoint(MethodInfo entryMethod)
-        {
-            SetEntryPoint(entryMethod, PEFileKinds.ConsoleApplication);
-        }
-
         public void SetEntryPoint(MethodInfo entryMethod, PEFileKinds fileKind)
         {
             this.entryPoint = entryMethod;
             this.fileKind = fileKind;
-        }
-
-        /// <summary>
-        /// Saves the single module assembly to the specified stream.
-        /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="NotSupportedException"></exception>
-        public void __Save(Stream peStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
-            if (modules.Count != 1)
-                throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
-
-            __Save(peStream, null, portableExecutableKind, imageFileMachine);
-        }
-
-        /// <summary>
-        /// Saves the single module assembly and it's symbols to the specified streams.
-        /// </summary>
-        /// <param name="peStream"></param>
-        /// <param name="pdbStream"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="NotSupportedException"></exception>
-        public void __Save(Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
-        {
-            if (peStream.CanWrite == false)
-                throw new ArgumentException("Stream must support write.", nameof(peStream));
-            if (pdbStream != null && pdbStream.CanWrite == false)
-                throw new ArgumentException("Stream must support write.", nameof(pdbStream));
-            if (modules.Count != 1)
-                throw new NotSupportedException("Saving to a stream is only supported for single module assemblies.");
-
-            SaveImpl(modules[0].fileName, peStream, pdbStream, portableExecutableKind, imageFileMachine);
         }
 
         /// <summary>
@@ -391,7 +270,7 @@ namespace IKVM.Reflection.Emit
             foreach (var moduleBuilder in modules)
             {
                 moduleBuilder.SetIsSaved();
-                moduleBuilder.PopulatePropertyAndEventTables();
+                moduleBuilder.PopulatePropertyTables();
 
                 // is this the default manifest module?
                 if (manifestModule == null && string.Compare(moduleBuilder.fileName, assemblyFileName, StringComparison.OrdinalIgnoreCase) == 0)
@@ -401,29 +280,14 @@ namespace IKVM.Reflection.Emit
             // generate new manifest module
             manifestModule ??= DefineDynamicModule("RefEmit_OnDiskManifestModule", assemblyFileName, false);
 
-            // assembly record goes on manifest module
-            var assemblyRecord = new AssemblyTable.Record();
-            assemblyRecord.HashAlgId = (int)hashAlgorithm;
-            assemblyRecord.Name = manifestModule.GetOrAddString(name);
-            assemblyRecord.MajorVersion = majorVersion;
-            assemblyRecord.MinorVersion = minorVersion;
-            assemblyRecord.BuildNumber = buildVersion;
-            assemblyRecord.RevisionNumber = revisionVersion;
-
-            if (publicKey != null)
-            {
-                assemblyRecord.PublicKey = manifestModule.GetOrAddBlob(publicKey);
-                assemblyRecord.Flags = (int)(flags | AssemblyNameFlags.PublicKey);
-            }
-            else
-            {
-                assemblyRecord.Flags = (int)(flags & ~AssemblyNameFlags.PublicKey);
-            }
-
-            if (culture != null)
-                assemblyRecord.Culture = manifestModule.GetOrAddString(culture);
-
-            manifestModule.AssemblyTable.AddRecord(assemblyRecord);
+            // the assembly row goes on the manifest module
+            manifestModule.Metadata.AddAssembly(
+                manifestModule.GetOrAddString(name),
+                new Version(majorVersion, minorVersion, buildVersion, revisionVersion),
+                culture != null ? manifestModule.GetOrAddString(culture) : default,
+                publicKey != null ? manifestModule.GetOrAddBlob(publicKey) : default,
+                (System.Reflection.AssemblyFlags)(publicKey != null ? flags | AssemblyNameFlags.PublicKey : flags & ~AssemblyNameFlags.PublicKey),
+                (System.Reflection.AssemblyHashAlgorithm)hashAlgorithm);
 
             // final copy of manifest module native resources
             var nativeResources = manifestModule.nativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.nativeResources) : new ModuleResourceSectionBuilder();
@@ -436,7 +300,7 @@ namespace IKVM.Reflection.Emit
                 foreach (var cab in customAttributes)
                 {
                     // .NET doesn't support copying blob custom attributes into the version info
-                    if (cab.HasBlob == false || Universe.DecodeVersionInfoAttributeBlobs)
+                    if (cab.HasBlob == false)
                         versionInfo.SetAttribute(this, cab);
                 }
 
@@ -453,14 +317,10 @@ namespace IKVM.Reflection.Emit
             if (win32manifest != null)
                 nativeResources.AddManifest(win32manifest, fileKind == PEFileKinds.Dll ? (ushort)2 : (ushort)1);
 
-            if (win32resources != null)
-                nativeResources.ImportWin32ResourceFile(win32resources);
-
             // we intentionally don't filter out the version info (pseudo) custom attributes (to be compatible with .NET)
             foreach (var cab in customAttributes)
                 manifestModule.SetCustomAttribute(0x20000001, cab);
 
-            manifestModule.AddDeclarativeSecurity(0x20000001, declarativeSecurity);
 
             foreach (var fwd in typeForwarders)
                 manifestModule.AddTypeForwarder(fwd.Type, fwd.IncludeNested);
@@ -468,19 +328,8 @@ namespace IKVM.Reflection.Emit
             // add resource files for assembly to manifest module
             foreach (var resfile in resourceFiles)
             {
-                if (resfile.Writer != null)
-                {
-                    resfile.Writer.Generate();
-                    resfile.Writer.Close();
-                }
-
                 var fileToken = AddFile(manifestModule, resfile.FileName, 1 /*ContainsNoMetaData*/);
-                var rec = new ManifestResourceTable.Record();
-                rec.Offset = 0;
-                rec.Flags = (int)resfile.Attributes;
-                rec.Name = manifestModule.GetOrAddString(resfile.Name);
-                rec.Implementation = MetadataTokens.GetToken(fileToken);
-                manifestModule.ManifestResourceTable.AddRecord(rec);
+                manifestModule.AddManifestResource(resfile.Attributes, resfile.Name, MetadataTokens.GetToken(fileToken), 0);
             }
 
             // write each non-manifest module
@@ -543,53 +392,17 @@ namespace IKVM.Reflection.Emit
             resourceFiles.Add(resfile);
         }
 
-        public IResourceWriter DefineResource(string name, string description, string fileName)
-        {
-            return DefineResource(name, description, fileName, ResourceAttributes.Public);
-        }
-
-        public IResourceWriter DefineResource(string name, string description, string fileName, ResourceAttributes attribute)
-        {
-            // FXBUG we ignore the description, because there is no such thing
-
-            var fullPath = fileName;
-            if (dir != null)
-                fullPath = Path.Combine(dir, fileName);
-
-            var rw = new ResourceWriter(fullPath);
-            var resfile = new ResourceFile();
-            resfile.Name = name;
-            resfile.FileName = fileName;
-            resfile.Attributes = attribute;
-            resfile.Writer = rw;
-            resourceFiles.Add(resfile);
-            return rw;
-        }
-
         public void DefineVersionInfoResource()
         {
-            if (versionInfo != null || win32resources != null)
+            if (versionInfo != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             versionInfo = new VersionInfo();
-        }
-
-        public void DefineVersionInfoResource(string product, string productVersion, string company, string copyright, string trademark)
-        {
-            if (versionInfo != null || win32resources != null)
-                throw new ArgumentException("Native resource has already been defined.");
-
-            versionInfo = new VersionInfo();
-            versionInfo.product = product;
-            versionInfo.informationalVersion = productVersion;
-            versionInfo.company = company;
-            versionInfo.copyright = copyright;
-            versionInfo.trademark = trademark;
         }
 
         public void __DefineIconResource(byte[] iconFile)
         {
-            if (win32icon != null || win32resources != null)
+            if (win32icon != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             win32icon = (byte[])iconFile.Clone();
@@ -597,28 +410,10 @@ namespace IKVM.Reflection.Emit
 
         public void __DefineManifestResource(byte[] manifest)
         {
-            if (win32manifest != null || win32resources != null)
+            if (win32manifest != null)
                 throw new ArgumentException("Native resource has already been defined.");
 
             win32manifest = (byte[])manifest.Clone();
-        }
-
-        public void __DefineUnmanagedResource(byte[] resource)
-        {
-            if (versionInfo != null || win32icon != null || win32manifest != null || win32resources != null)
-                throw new ArgumentException("Native resource has already been defined.");
-
-            // The standard .NET DefineUnmanagedResource(byte[]) is useless, because it embeds "resource" (as-is) as the .rsrc section,
-            // but it doesn't set the PE file Resource Directory entry to point to it. That's why we have a renamed version, which behaves
-            // like DefineUnmanagedResource(string).
-            win32resources = (byte[])resource.Clone();
-        }
-
-        public void DefineUnmanagedResource(string resourceFileName)
-        {
-            // This method reads the specified resource file (Win32 .res file) and converts it into the appropriate format and embeds it in the .rsrc section,
-            // also setting the Resource Directory entry.
-            __DefineUnmanagedResource(File.ReadAllBytes(resourceFileName));
         }
 
         public override Type[] GetTypes()
@@ -677,12 +472,6 @@ namespace IKVM.Reflection.Emit
             get { return imageRuntimeVersion; }
         }
 
-        public void __SetImageRuntimeVersion(string imageRuntimeVersion, int mdStreamVersion)
-        {
-            this.imageRuntimeVersion = imageRuntimeVersion;
-            this.mdStreamVersion = mdStreamVersion;
-        }
-
         public override Module ManifestModule => pseudoManifestModule ??= new ManifestModule(this);
 
         public override MethodInfo EntryPoint => entryPoint;
@@ -722,19 +511,7 @@ namespace IKVM.Reflection.Emit
             return null;
         }
 
-        public Module __AddModule(RawModule module)
-        {
-            Module mod = module.ToModule(this);
-            addedModules.Add(mod);
-            return mod;
-        }
-
         public override ManifestResourceInfo GetManifestResourceInfo(string resourceName)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override string[] GetManifestResourceNames()
         {
             throw new NotSupportedException();
         }
@@ -742,21 +519,6 @@ namespace IKVM.Reflection.Emit
         public override Stream GetManifestResourceStream(string resourceName)
         {
             throw new NotSupportedException();
-        }
-
-        public override bool IsDynamic
-        {
-            get { return true; }
-        }
-
-        public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
-        {
-            return new Universe().DefineDynamicAssembly(name, access);
-        }
-
-        public static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
-        {
-            return new Universe().DefineDynamicAssembly(name, access, assemblyAttributes);
         }
 
         internal override IList<CustomAttributeData> GetCustomAttributesData(Type attributeType)
@@ -767,11 +529,6 @@ namespace IKVM.Reflection.Emit
                     list.Add(cab.ToData(this));
 
             return list;
-        }
-
-        internal bool IsWindowsRuntime
-        {
-            get { return (flags & (AssemblyNameFlags)0x200) != 0; }
         }
 
     }
