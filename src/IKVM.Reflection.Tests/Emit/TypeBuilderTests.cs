@@ -1,5 +1,9 @@
-﻿using System.Linq;
-using System;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 
 using FluentAssertions;
 
@@ -52,7 +56,7 @@ namespace IKVM.Reflection.Tests.Emit
             valueProperty.SetSetMethod(setValueMethod);
 
             var execMethod = type.DefineMethod("Exec", MethodAttributes.Public, objectType, [u.Import(typeof(string[]))]);
-            execMethod.DefineParameter(0, ParameterAttributes.None, "args");
+            execMethod.DefineParameter(1, ParameterAttributes.None, "args");
             var execMethodIL = execMethod.GetILGenerator();
             execMethodIL.Emit(OpCodes.Ldnull);
             execMethodIL.Emit(OpCodes.Ret);
@@ -72,7 +76,7 @@ namespace IKVM.Reflection.Tests.Emit
 
         /// <summary>
         /// Checks that an interface and a class that implements it with an explicit method override are written
-        /// to the saved assembly.
+        /// to the saved assembly, with the override's body and declaration the right way round.
         /// </summary>
         /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
@@ -86,11 +90,11 @@ namespace IKVM.Reflection.Tests.Emit
             var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
 
             var ifaceType = module.DefineType("Iface", TypeAttributes.Interface);
-            var ifaceMethod = ifaceType.DefineMethod("Method", MethodAttributes.Abstract, objectType, Type.EmptyTypes);
+            var ifaceMethod = ifaceType.DefineMethod("Method", InterfaceMethod, objectType, Type.EmptyTypes);
 
             var implType = module.DefineType("Impl", TypeAttributes.Public, null, [ifaceType]);
-            var implMethod = implType.DefineMethod("Method", MethodAttributes.Public, objectType, Type.EmptyTypes);
-            implType.DefineMethodOverride(ifaceMethod, implMethod);
+            var implMethod = implType.DefineMethod("Method", ImplementationMethod, objectType, Type.EmptyTypes);
+            implType.DefineMethodOverride(implMethod, ifaceMethod);
 
             var il = implMethod.GetILGenerator();
             il.Emit(OpCodes.Ldnull);
@@ -109,6 +113,8 @@ namespace IKVM.Reflection.Tests.Emit
             t.IsClass.Should().BeTrue();
             t.GetInterfaces().Should().Contain(i);
             t.GetMethod("Method").Should().NotBeNull().And.Return(u.LoadContextType("System.Object"));
+
+            ReadMethodImpls(u, "Test.dll").Should().Equal(("Impl", "Impl.Method", "Iface.Method"));
         }
 
         /// <summary>
@@ -168,25 +174,25 @@ namespace IKVM.Reflection.Tests.Emit
             var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
 
             var iface1Type = module.DefineType("Iface1", TypeAttributes.Interface);
-            var iface1Method = iface1Type.DefineMethod("Method1", MethodAttributes.Abstract, objectType, Type.EmptyTypes);
+            var iface1Method = iface1Type.DefineMethod("Method1", InterfaceMethod, objectType, Type.EmptyTypes);
 
             var iface2Type = module.DefineType("Iface2", TypeAttributes.Interface);
-            var iface2Method = iface2Type.DefineMethod("Method2", MethodAttributes.Abstract, objectType, Type.EmptyTypes);
+            var iface2Method = iface2Type.DefineMethod("Method2", InterfaceMethod, objectType, Type.EmptyTypes);
 
             var impl1Type = module.DefineType("Impl1", TypeAttributes.Public, null, [iface1Type]);
-            var impl1Method = impl1Type.DefineMethod("Method1", MethodAttributes.Public, objectType, Type.EmptyTypes);
+            var impl1Method = impl1Type.DefineMethod("Method1", ImplementationMethod, objectType, Type.EmptyTypes);
             var il1 = impl1Method.GetILGenerator();
             il1.Emit(OpCodes.Ldnull);
             il1.Emit(OpCodes.Ret);
 
             var impl2Type = module.DefineType("Impl2", TypeAttributes.Public, null, [iface2Type]);
-            var impl2Method = impl2Type.DefineMethod("Method2", MethodAttributes.Public, objectType, Type.EmptyTypes);
+            var impl2Method = impl2Type.DefineMethod("Method2", ImplementationMethod, objectType, Type.EmptyTypes);
             var il2 = impl2Method.GetILGenerator();
             il2.Emit(OpCodes.Ldnull);
             il2.Emit(OpCodes.Ret);
 
-            impl2Type.DefineMethodOverride(iface2Method, impl2Method);
-            impl1Type.DefineMethodOverride(iface1Method, impl1Method);
+            impl2Type.DefineMethodOverride(impl2Method, iface2Method);
+            impl1Type.DefineMethodOverride(impl1Method, iface1Method);
 
             iface1Type.CreateType();
             iface2Type.CreateType();
@@ -205,6 +211,41 @@ namespace IKVM.Reflection.Tests.Emit
             t2.GetInterfaces().Should().ContainSingle().Which.Should().BeSameAs(i2);
             t1.GetMethod("Method1").Should().NotBeNull().And.Return(u.LoadContextType("System.Object"));
             t2.GetMethod("Method2").Should().NotBeNull().And.Return(u.LoadContextType("System.Object"));
+
+            ReadMethodImpls(u, "Test.dll").Should().Equal(("Impl1", "Impl1.Method1", "Iface1.Method1"), ("Impl2", "Impl2.Method2", "Iface2.Method2"));
+        }
+
+        /// <summary>
+        /// The attributes of an interface method that classes implement.
+        /// </summary>
+        const MethodAttributes InterfaceMethod = MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.HideBySig;
+
+        /// <summary>
+        /// The attributes of a method that implements an interface method through an explicit override.
+        /// </summary>
+        const MethodAttributes ImplementationMethod = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot | MethodAttributes.HideBySig;
+
+        /// <summary>
+        /// Reads the MethodImpl rows of a saved assembly, in table order.
+        /// </summary>
+        /// <param name="u">The universe the assembly was saved from.</param>
+        /// <param name="fileName">The file name of the assembly in <see cref="TestUniverse.TempPath"/>.</param>
+        /// <returns>For each row, the implementing type and the body and declaration as <c>Type.Method</c>.</returns>
+        static (string Type, string Body, string Declaration)[] ReadMethodImpls(TestUniverse u, string fileName)
+        {
+            using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, fileName)));
+            var md = pe.GetMetadataReader();
+
+            string Name(EntityHandle handle)
+            {
+                var method = md.GetMethodDefinition((MethodDefinitionHandle)handle);
+                return md.GetString(md.GetTypeDefinition(method.GetDeclaringType()).Name) + "." + md.GetString(method.Name);
+            }
+
+            return Enumerable.Range(1, md.GetTableRowCount(TableIndex.MethodImpl))
+                .Select(i => md.GetMethodImplementation(MetadataTokens.MethodImplementationHandle(i)))
+                .Select(m => (md.GetString(md.GetTypeDefinition(m.Type).Name), Name(m.MethodBody), Name(m.MethodDeclaration)))
+                .ToArray();
         }
 
     }

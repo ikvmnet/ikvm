@@ -261,7 +261,7 @@ namespace IKVM.Reflection.Tests.Emit
             var map = type.__GetMethodImplMap();
             for (int i = 0; i < map.MethodDeclarations.Length; i++)
                 foreach (var declaration in map.MethodDeclarations[i])
-                    _types[type].DefineMethodOverride((MethodInfo)MapMethod(declaration), _methods[map.MethodBodies[i]]);
+                    _types[type].DefineMethodOverride(_methods[map.MethodBodies[i]], (MethodInfo)MapMethod(declaration));
         }
 
         /// <summary>
