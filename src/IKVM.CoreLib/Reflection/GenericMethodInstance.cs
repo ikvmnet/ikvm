@@ -104,7 +104,7 @@ namespace IKVM.Reflection
         {
             var parameterTypes = _method.GetParameterTypes();
             for (var i = 0; i < parameterTypes.Length; i++)
-                parameterTypes[i] = parameterTypes[i].BindTypeParameters(_method);
+                parameterTypes[i] = parameterTypes[i].BindTypeParameters(this);
 
             return parameterTypes;
         }
