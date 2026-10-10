@@ -29,7 +29,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Resources;
 using System.Security.Cryptography;
 
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit

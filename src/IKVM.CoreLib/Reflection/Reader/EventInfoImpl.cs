@@ -21,7 +21,9 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
@@ -31,7 +33,8 @@ namespace IKVM.Reflection.Reader
 
         readonly ModuleReader module;
         readonly Type declaringType;
-        readonly int index;
+        readonly EventDefinitionHandle handle;
+        readonly EventDefinition definition;
         bool isPublic;
         bool isNonPrivate;
         bool isStatic;
@@ -42,74 +45,67 @@ namespace IKVM.Reflection.Reader
         /// </summary>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal EventInfoImpl(ModuleReader module, Type declaringType, int index)
+        /// <param name="handle"></param>
+        internal EventInfoImpl(ModuleReader module, Type declaringType, EventDefinitionHandle handle)
         {
             this.module = module;
             this.declaringType = declaringType;
-            this.index = index;
+            this.handle = handle;
+            this.definition = module.Metadata.GetEventDefinition(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            var other = obj as EventInfoImpl;
-            return other != null && other.declaringType == declaringType && other.index == index;
-        }
+        public override bool Equals(object obj) => obj is EventInfoImpl other && other.declaringType == declaringType && other.handle == handle;
 
-        public override int GetHashCode()
-        {
-            return declaringType.GetHashCode() * 123 + index;
-        }
+        public override int GetHashCode() => declaringType.GetHashCode() * 123 + MetadataTokens.GetRowNumber(handle);
 
-        public override EventAttributes Attributes
-        {
-            get { return (EventAttributes)(ushort)module.EventTable.records[index].EventFlags; }
-        }
+        public override EventAttributes Attributes => (EventAttributes)definition.Attributes;
 
-        public override MethodInfo GetAddMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.AddOn);
-        }
+        public override MethodInfo GetAddMethod(bool nonPublic) => Accessor(definition.GetAccessors().Adder, nonPublic);
 
-        public override MethodInfo GetRaiseMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Fire);
-        }
+        public override MethodInfo GetRaiseMethod(bool nonPublic) => Accessor(definition.GetAccessors().Raiser, nonPublic);
 
-        public override MethodInfo GetRemoveMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.RemoveOn);
-        }
+        public override MethodInfo GetRemoveMethod(bool nonPublic) => Accessor(definition.GetAccessors().Remover, nonPublic);
 
         public override MethodInfo[] GetOtherMethods(bool nonPublic)
         {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Other);
+            var list = new List<MethodInfo>();
+            foreach (var h in definition.GetAccessors().Others)
+                if (Accessor(h, nonPublic) is { } m)
+                    list.Add(m);
+
+            return list.ToArray();
         }
 
-        public override Type EventHandlerType
+        MethodInfo Accessor(MethodDefinitionHandle h, bool nonPublic)
         {
-            get { return module.ResolveType(module.EventTable.records[index].EventType, declaringType); }
+            if (h.IsNil)
+                return null;
+
+            var method = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(h));
+            return nonPublic || method.IsPublic ? method : null;
         }
 
-        public override string Name
+        IEnumerable<MethodInfo> AllAccessors()
         {
-            get { return module.GetString(module.EventTable.records[index].Name); }
+            var accessors = definition.GetAccessors();
+            foreach (var h in new[] { accessors.Adder, accessors.Remover, accessors.Raiser })
+                if (Accessor(h, true) is { } m)
+                    yield return m;
+
+            foreach (var h in accessors.Others)
+                if (Accessor(h, true) is { } m)
+                    yield return m;
         }
 
-        public override Type DeclaringType
-        {
-            get { return declaringType; }
-        }
+        public override Type EventHandlerType => module.ResolveType(MetadataTokens.GetToken(definition.Type), declaringType);
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        public override string Name => module.GetString(definition.Name);
 
-        public override int MetadataToken
-        {
-            get { return (EventTable.Index << 24) + index + 1; }
-        }
+        public override Type DeclaringType => declaringType;
+
+        public override Module Module => module;
+
+        public override int MetadataToken => MetadataTokens.GetToken(handle);
 
         internal override bool IsPublic
         {
@@ -146,19 +142,19 @@ namespace IKVM.Reflection.Reader
 
         void ComputeFlags()
         {
-            module.MethodSemanticsTable.ComputeFlags(module, this.MetadataToken, out isPublic, out isNonPrivate, out isStatic);
+            foreach (var method in AllAccessors())
+            {
+                isPublic |= method.IsPublic;
+                isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                isStatic |= method.IsStatic;
+            }
+
             flagsCached = true;
         }
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        internal override int GetCurrentToken() => MetadataToken;
 
     }
 

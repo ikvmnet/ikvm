@@ -11,13 +11,6 @@ namespace IKVM.Reflection.Writer
     {
 
         /// <summary>
-        /// Appends the content of another builder.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="other"></param>
-        public static void WriteBuffer(this BlobBuilder builder, BlobBuilder other) => other.WriteContentTo(builder);
-
-        /// <summary>
         /// Writes a TypeDef, TypeRef or TypeSpec token as a compressed TypeDefOrRefOrSpecEncoded coded index.
         /// </summary>
         /// <param name="builder"></param>

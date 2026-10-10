@@ -33,7 +33,6 @@ using System.Resources;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Impl;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
@@ -304,7 +303,6 @@ namespace IKVM.Reflection.Emit
 
         }
 
-
         readonly MetadataBuilder metadata;
         readonly BlobBuilder ilStream;
         readonly MethodBodyStreamEncoder methodBodyEncoder;
@@ -543,7 +541,7 @@ namespace IKVM.Reflection.Emit
 
             var keys = new Dictionary<GenericTypeParameterBuilder, int>(parameters.Count);
             foreach (var p in parameters)
-                keys[p] = GenericParamTable.EncodeOwner(ResolvePseudoToken(p.OwnerToken));
+                keys[p] = CodedIndex.TypeOrMethodDef(MetadataTokens.EntityHandle(ResolvePseudoToken(p.OwnerToken)));
 
             var sorted = parameters.OrderBy(p => keys[p]).ThenBy(p => p.Position).ToList();
             for (int i = 0; i < sorted.Count; i++)
@@ -1325,7 +1323,7 @@ namespace IKVM.Reflection.Emit
 
         internal override Type ResolveType(int metadataToken, IGenericContext context)
         {
-            if (metadataToken >> 24 != TypeDefTable.Index)
+            if (metadataToken >> 24 != (int)TableIndex.TypeDef)
             {
                 throw new NotImplementedException();
             }
@@ -1339,7 +1337,7 @@ namespace IKVM.Reflection.Emit
                 throw new NotImplementedException();
             }
             // this method is inefficient, but since it isn't used we don't care
-            if ((metadataToken >> 24) == MemberRefTable.Index)
+            if ((metadataToken >> 24) == (int)TableIndex.MemberRef)
             {
                 foreach (KeyValuePair<MemberRefKey, int> kv in importedMemberRefs)
                 {
@@ -1561,12 +1559,6 @@ namespace IKVM.Reflection.Emit
         {
             const int ContainsNoMetaData = 0x0001;
             return MetadataTokens.GetToken(metadata.AddAssemblyFile(GetOrAddString(name), GetOrAddBlob(hash), (flags & ContainsNoMetaData) == 0));
-        }
-
-        internal void FixupPseudoToken(ref int token)
-        {
-            if (IsPseudoToken(token))
-                token = ResolvePseudoToken(token);
         }
 
         internal void SetIsSaved()

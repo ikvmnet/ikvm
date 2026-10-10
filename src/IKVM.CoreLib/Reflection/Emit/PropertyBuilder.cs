@@ -25,7 +25,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {
@@ -77,7 +76,7 @@ namespace IKVM.Reflection.Emit
         {
             getter = mdBuilder;
             Accessor acc;
-            acc.Semantics = MethodSemanticsTable.Getter;
+            acc.Semantics = (short)System.Reflection.MethodSemanticsAttributes.Getter;
             acc.Method = mdBuilder;
             accessors.Add(acc);
         }
@@ -86,7 +85,7 @@ namespace IKVM.Reflection.Emit
         {
             setter = mdBuilder;
             Accessor acc;
-            acc.Semantics = MethodSemanticsTable.Setter;
+            acc.Semantics = (short)System.Reflection.MethodSemanticsAttributes.Setter;
             acc.Method = mdBuilder;
             accessors.Add(acc);
         }

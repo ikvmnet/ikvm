@@ -81,13 +81,13 @@ namespace IKVM.Reflection
                 mods.Bind(declaringType));
         }
 
-        internal static FieldSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static FieldSignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
         {
             if (br.ReadByte() != FIELD)
                 throw new BadImageFormatException();
 
-            var mods = CustomModifiers.Read(module, br, context);
-            var fieldType = ReadType(module, br, context);
+            var mods = CustomModifiers.Read(module, ref br, context);
+            var fieldType = ReadType(module, ref br, context);
             return new FieldSignature(fieldType, mods);
         }
 

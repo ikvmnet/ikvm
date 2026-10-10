@@ -21,7 +21,9 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
@@ -31,47 +33,22 @@ namespace IKVM.Reflection
     {
 
         readonly ModuleReader module;
-        readonly int index;
+        readonly EntityHandle implementation;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="module"></param>
-        /// <param name="index"></param>
-        internal ManifestResourceInfo(ModuleReader module, int index)
+        /// <param name="implementation">The Implementation of the ManifestResource row, nil for a resource embedded in the module.</param>
+        internal ManifestResourceInfo(ModuleReader module, EntityHandle implementation)
         {
             this.module = module;
-            this.index = index;
+            this.implementation = implementation;
         }
 
-        public Assembly ReferencedAssembly
-        {
-            get
-            {
-                var implementation = module.ManifestResourceTable.records[index].Implementation;
-                if ((implementation >> 24) == AssemblyRefTable.Index)
-                    return module.ResolveAssemblyRef((implementation & 0xFFFFFF) - 1);
+        public Assembly ReferencedAssembly => implementation.Kind == HandleKind.AssemblyReference && implementation.IsNil == false ? module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1) : null;
 
-                return null;
-            }
-        }
-
-        public string FileName
-        {
-            get
-            {
-                var implementation = module.ManifestResourceTable.records[index].Implementation;
-                if ((implementation >> 24) == FileTable.Index)
-                {
-                    if ((implementation & 0xFFFFFF) == 0)
-                        return null;
-                    else
-                        return module.GetString(module.FileTable.records[(implementation & 0xFFFFFF) - 1].Name);
-                }
-
-                return null;
-            }
-        }
+        public string FileName => implementation.Kind == HandleKind.AssemblyFile && implementation.IsNil == false ? module.GetFileName(MetadataTokens.GetRowNumber(implementation) - 1) : null;
 
     }
 
