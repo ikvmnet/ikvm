@@ -201,10 +201,8 @@ namespace IKVM.Reflection
                 result = AssemblyComparisonResult.NonEquivalent;
                 return false;
             }
-            if (partial && name1.Culture == null)
-            {
-            }
-            else if (!name1.Culture.Equals(name2.Culture, StringComparison.OrdinalIgnoreCase))
+            // a partial name without a culture matches any culture
+            if ((partial == false || name1.Culture != null) && !name1.Culture.Equals(name2.Culture, StringComparison.OrdinalIgnoreCase))
             {
                 result = AssemblyComparisonResult.NonEquivalent;
                 return false;

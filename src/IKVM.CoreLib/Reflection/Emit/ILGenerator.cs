@@ -1222,8 +1222,6 @@ namespace IKVM.Reflection.Emit
         /// <exception cref="ArgumentNullException"><paramref name="exceptionType"/> is <see langword="null"/> and the catch block does not follow a filter block.</exception>
         public void BeginCatchBlock(Type? exceptionType)
         {
-            Debug.Assert(ModuleBuilder.IsPseudoToken(_methodBuilder.ModuleBuilder.GetTypeTokenForMemberRef(exceptionType)) == false);
-
             if (_currExcStackCount == 0)
             {
                 throw new NotSupportedException("Not currently in an exception block.");

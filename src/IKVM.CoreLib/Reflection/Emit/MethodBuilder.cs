@@ -515,6 +515,11 @@ namespace IKVM.Reflection.Emit
                     var pb = ParameterBuilder;
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.HasDefault) != 0)
                         return _method.ModuleBuilder.GetConstant(pb.PseudoToken);
+
+                    // decimal and DateTime defaults are recorded as custom attributes, as the reader reports them
+                    if (pb != null && TryGetCustomConstant(out var value))
+                        return value;
+
                     if (pb != null && (pb.Attributes & (int)ParameterAttributes.Optional) != 0)
                         return Missing.Value;
 

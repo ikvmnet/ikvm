@@ -219,8 +219,10 @@ namespace IKVM.Reflection.Emit
         /// <param name="baseTypeConstraint">The <see cref="Type"/> that must be inherited by any type that is to be substituted for the type parameter.</param>
         public void SetBaseTypeConstraint(Type? baseTypeConstraint)
         {
+            // as in System.Reflection.Emit, null means the parameter has no base type constraint
             _baseType = baseTypeConstraint;
-            AddConstraint(baseTypeConstraint);
+            if (baseTypeConstraint != null)
+                AddConstraint(baseTypeConstraint);
         }
 
         /// <summary>
