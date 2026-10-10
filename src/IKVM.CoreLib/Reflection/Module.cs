@@ -502,16 +502,6 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Adds the public types of this module to the ExportedType table of <paramref name="manifestModule"/>, when this
-        /// module is a non-manifest module of an assembly being built.
-        /// </summary>
-        /// <param name="handle">The File table handle of this module in the manifest module.</param>
-        /// <param name="manifestModule">The manifest module of the assembly.</param>
-        internal virtual void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
-        {
-        }
-
-        /// <summary>
         /// Gets a string from the string heap of this module.
         /// </summary>
         /// <param name="handle">The handle of the string.</param>

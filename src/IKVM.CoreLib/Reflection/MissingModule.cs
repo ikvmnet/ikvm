@@ -119,15 +119,6 @@ namespace IKVM.Reflection
         internal override void GetTypesImpl(List<Type> list) => throw new MissingModuleException(this);
 
         /// <summary>
-        /// Not available for a missing module.
-        /// </summary>
-        /// <param name="handle">The File table row of the module in the manifest being written.</param>
-        /// <param name="manifestModule">The manifest module the types would be exported to.</param>
-        /// <exception cref="MissingModuleException">Always thrown.</exception>
-        internal override void ExportTypes(AssemblyFileHandle handle, IKVM.Reflection.Emit.ModuleBuilder manifestModule) =>
-            throw new MissingModuleException(this);
-
-        /// <summary>
         /// Gets a value indicating whether the module is missing, which is always <see langword="true"/>.
         /// </summary>
         public override bool __IsMissing => true;

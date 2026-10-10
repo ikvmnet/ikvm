@@ -83,12 +83,6 @@ namespace IKVM.Reflection.Emit
         readonly List<ResourceFile> _resourceFiles = [];
         readonly List<ModuleBuilder> _modules = [];
 
-        /// <summary>
-        /// Existing modules that belong to the assembly in addition to the modules defined with
-        /// <see cref="DefineDynamicModule"/>.
-        /// </summary>
-        readonly List<Module> _addedModules = [];
-
         readonly List<CustomAttributeBuilder> _customAttributes = [];
         readonly List<TypeForwarder> _typeForwarders = [];
 
@@ -215,11 +209,10 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Clears the cached full name and re-registers the assembly with the universe under its new name.
         /// </summary>
-        /// <param name="oldName">The name the assembly was registered under.</param>
-        void Rename(AssemblyName oldName)
+        void Rename()
         {
             fullName = null;
-            Universe.RenameAssembly(this, oldName);
+            Universe.RenameAssembly(this);
         }
 
         /// <summary>
@@ -228,9 +221,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="version">The new version, or <see langword="null"/> for 0.0.0.0.</param>
         public void __SetAssemblyVersion(Version version)
         {
-            AssemblyName oldName = GetName();
             SetVersionHelper(version);
-            Rename(oldName);
+            Rename();
         }
 
         /// <summary>
@@ -239,9 +231,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="cultureName">The name of the new culture, or <see langword="null"/> for the invariant culture.</param>
         public void __SetAssemblyCulture(string cultureName)
         {
-            AssemblyName oldName = GetName();
             _culture = cultureName;
-            Rename(oldName);
+            Rename();
         }
 
         /// <summary>
@@ -372,7 +363,7 @@ namespace IKVM.Reflection.Emit
                 (System.Reflection.AssemblyHashAlgorithm)_hashAlgorithm);
 
             // final copy of manifest module native resources
-            var nativeResources = manifestModule.NativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.NativeResources) : new ModuleResourceSectionBuilder();
+            var nativeResources = new ModuleResourceSectionBuilder();
 
             // version info specified on assembly: insert into manifest module
             if (_versionInfo != null)
@@ -427,19 +418,12 @@ namespace IKVM.Reflection.Emit
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, module, _fileKind, portableExecutableKind, imageFileMachine, module.NativeResources, default);
+                        ModuleWriter.WriteModule(null, null, module, _fileKind, portableExecutableKind, imageFileMachine, null, default);
                         fileToken = AddFile(manifestModule, module.FileName, 0 /*ContainsMetaData*/);
                     }
 
                     module.ExportTypes(fileToken, manifestModule);
                 }
-            }
-
-            // import existing modules
-            foreach (var module in _addedModules)
-            {
-                var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
-                module.ExportTypes(fileToken, manifestModule);
             }
 
             // finally, write the manifest module
@@ -537,9 +521,6 @@ namespace IKVM.Reflection.Emit
             foreach (var module in _modules)
                 module.GetTypesImpl(list);
 
-            foreach (var module in _addedModules)
-                module.GetTypesImpl(list);
-
             return list.ToArray();
         }
 
@@ -553,13 +534,6 @@ namespace IKVM.Reflection.Emit
                     return type;
             }
 
-            foreach (Module module in _addedModules)
-            {
-                var type = module.FindType(typeName);
-                if (type != null)
-                    return type;
-            }
-
             return null;
         }
 
@@ -569,13 +543,6 @@ namespace IKVM.Reflection.Emit
             foreach (var mb in _modules)
             {
                 var type = mb.FindTypeIgnoreCase(lowerCaseName);
-                if (type != null)
-                    return type;
-            }
-
-            foreach (Module module in _addedModules)
-            {
-                var type = module.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
                     return type;
             }
@@ -616,10 +583,6 @@ namespace IKVM.Reflection.Emit
                 if (getResourceModules || !module.IsResource())
                     list.Add(module);
 
-            foreach (var module in _addedModules)
-                if (getResourceModules || !module.IsResource())
-                    list.Add(module);
-
             return list.ToArray();
         }
 
@@ -631,10 +594,6 @@ namespace IKVM.Reflection.Emit
         public override Module GetModule(string name)
         {
             foreach (var module in _modules)
-                if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                    return module;
-
-            foreach (var module in _addedModules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return module;
 

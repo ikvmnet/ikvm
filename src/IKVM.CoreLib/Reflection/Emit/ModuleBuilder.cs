@@ -355,12 +355,6 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         readonly Dictionary<Type, int> _memberRefTypeTokens = [];
 
-        /// <summary>
-        /// The Win32 resources (version information, icons, manifest) to write to the image, or
-        /// <see langword="null"/> if there are none.
-        /// </summary>
-        internal ModuleResourceSectionBuilder NativeResources;
-
         readonly Dictionary<MemberRefKey, int> _importedMemberRefs = [];
         readonly Dictionary<MethodSpecKey, int> _importedMethodSpecs = [];
         readonly Dictionary<Assembly, int> _referencedAssemblies = [];
@@ -1421,7 +1415,7 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="fileToken">The File row of this module in the manifest module.</param>
         /// <param name="manifestModule">The manifest module of the assembly.</param>
-        internal override void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule) =>
+        internal void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule) =>
             manifestModule.ExportTypes(_types.ToArray(), fileToken);
 
         /// <summary>
@@ -1881,7 +1875,7 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, NativeResources, default, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, null, default, null, peStream, null, pdbStream);
         }
 
         /// <inheritdoc />

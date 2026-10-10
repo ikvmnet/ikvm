@@ -1083,9 +1083,7 @@ namespace IKVM.Reflection
                         {
                             if (mi.IsVirtual)
                             {
-                                if (baseMethods == null)
-                                    baseMethods = [];
-                                else if (baseMethods.Contains(mi.GetBaseDefinition()))
+                                if (baseMethods.Contains(mi.GetBaseDefinition()))
                                     continue;
 
                                 baseMethods.Add(mi.GetBaseDefinition());
@@ -2481,9 +2479,8 @@ namespace IKVM.Reflection
         /// Does nothing for other types.
         /// </summary>
         /// <param name="token">The metadata token to record.</param>
-        /// <param name="flags">The type attributes to record.</param>
         /// <returns>This instance.</returns>
-        internal virtual Type SetMetadataTokenForMissing(int token, int flags) => this;
+        internal virtual Type SetMetadataTokenForMissing(int token) => this;
 
         /// <summary>
         /// Marks a type whose namespace and name match a built-in type, <c>System.Enum</c> or <c>System.ValueType</c>

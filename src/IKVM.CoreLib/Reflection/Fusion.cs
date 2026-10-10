@@ -85,14 +85,13 @@ namespace IKVM.Reflection
         /// Compares two assembly identities using the native CompareAssemblyIdentity function of fusion.dll, which is
         /// only available on the .NET Framework on Windows.
         /// </summary>
-        /// <param name="coreLibName">The simple name of the core library. Not used by the native implementation.</param>
         /// <param name="assemblyIdentity1">The display name of the reference assembly.</param>
         /// <param name="unified1"><see langword="true"/> if the version of <paramref name="assemblyIdentity1"/> has been unified by the application.</param>
         /// <param name="assemblyIdentity2">The display name of the definition assembly.</param>
         /// <param name="unified2"><see langword="true"/> if the version of <paramref name="assemblyIdentity2"/> has been unified by the application.</param>
         /// <param name="result">When this method returns, describes how the identities compare.</param>
         /// <returns><see langword="true"/> if the identities are equivalent; otherwise, <see langword="false"/>.</returns>
-        internal static bool CompareAssemblyIdentityNative(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
+        internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             Marshal.ThrowExceptionForHR(CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out var equivalent, out result));
             return equivalent;

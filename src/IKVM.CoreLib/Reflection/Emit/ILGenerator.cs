@@ -130,7 +130,6 @@ namespace IKVM.Reflection.Emit
         /// <param name="size">The initial size of the IL stream, in bytes. Values smaller than the default size are raised to it.</param>
         internal ILGenerator(MethodBuilder methodBuilder, int size)
         {
-            Debug.Assert(methodBuilder != null);
             Debug.Assert(methodBuilder is not null);
 
             _ilStream = new byte[Math.Max(size, DefaultSize)];
@@ -228,9 +227,8 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="method">The method or constructor.</param>
         /// <param name="optionalParameterTypes">The types of the optional arguments of a varargs call, or <see langword="null"/>.</param>
-        /// <param name="useMethodDef">Whether a generic method definition rather than an instantiation is wanted. Not currently used.</param>
         /// <returns>The token of the method, which may be a pseudo token.</returns>
-        int GetMethodToken(MethodBase method, Type[]? optionalParameterTypes, bool useMethodDef)
+        int GetMethodToken(MethodBase method, Type[]? optionalParameterTypes)
         {
             var mi = method is ConstructorInfo ctor ? ctor.GetMethodInfo() : (MethodInfo)method;
             if (optionalParameterTypes == null || optionalParameterTypes.Length == 0)
@@ -661,8 +659,7 @@ namespace IKVM.Reflection.Emit
                 //   1. A generic method definition: Foo`1
                 //   2. A generic method definition instantiated over its own generic arguments: Foo`1<!!0>
                 // in RefEmit, we always want 1 for Ld* opcodes and 2 for Call* and Newobj
-                var useMethodDef = opcode.Equals(OpCodes.Ldtoken) || opcode.Equals(OpCodes.Ldftn) || opcode.Equals(OpCodes.Ldvirtftn);
-                var tk = GetMethodToken(meth, null, useMethodDef);
+                var tk = GetMethodToken(meth, null);
 
                 EnsureCapacity(7);
                 InternalEmit(opcode);
@@ -794,7 +791,7 @@ namespace IKVM.Reflection.Emit
                 throw new ArgumentException("The specified opcode cannot be passed to EmitCall.", nameof(opcode));
 
             var stackchange = 0;
-            var tk = GetMethodToken(methodInfo, optionalParameterTypes, false);
+            var tk = GetMethodToken(methodInfo, optionalParameterTypes);
 
             EnsureCapacity(7);
             InternalEmit(opcode);
@@ -833,8 +830,7 @@ namespace IKVM.Reflection.Emit
 
             var stackchange = 0;
 
-            // constructors cannot be generic so the value of useMethodDef doesn't matter
-            var tk = GetMethodToken(con, null, true);
+            var tk = GetMethodToken(con, null);
 
             EnsureCapacity(7);
             InternalEmit(opcode);
@@ -1421,10 +1417,7 @@ namespace IKVM.Reflection.Emit
         /// <exception cref="ArgumentNullException"><paramref name="localType"/> is <see langword="null"/>.</exception>
         public LocalBuilder DeclareLocal(Type localType, bool pinned)
         {
-            if (_methodBuilder is not MethodBuilder methodBuilder)
-                throw new NotSupportedException();
-
-            if (methodBuilder.IsTypeCreated())
+            if (_methodBuilder.IsTypeCreated())
             {
                 // cannot change method after its containing type has been created
                 throw new InvalidOperationException("Unable to change after type has been created.");
@@ -1433,7 +1426,7 @@ namespace IKVM.Reflection.Emit
             if (localType is null)
                 throw new ArgumentNullException(nameof(localType));
 
-            if (methodBuilder.IsBaked)
+            if (_methodBuilder.IsBaked)
             {
                 throw new InvalidOperationException("Type definition of the method is complete.");
             }

@@ -310,7 +310,7 @@ namespace IKVM.Reflection.Reader
                     {
                         return Universe
                             .GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
-                            .SetMetadataTokenForMissing(metadataToken, 0);
+                            .SetMetadataTokenForMissing(metadataToken);
                     }
 
                     throw new BadImageFormatException("Cyclic TypeSpec " + metadataToken.ToString("X"));
@@ -978,16 +978,15 @@ namespace IKVM.Reflection.Reader
             var typeName = GetTypeName(exported.Namespace, exported.Name);
             var implementation = exported.Implementation;
             var token = exported.GetTypeDefinitionId();
-            var flags = (int)exported.Attributes;
             switch (implementation.Kind)
             {
                 case HandleKind.AssemblyReference:
-                    return ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1).ResolveType(this, typeName).SetMetadataTokenForMissing(token, flags);
+                    return ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1).ResolveType(this, typeName).SetMetadataTokenForMissing(token);
                 case HandleKind.ExportedType:
-                    return ResolveExportedType(MetadataTokens.GetRowNumber(implementation) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token, flags);
+                    return ResolveExportedType(MetadataTokens.GetRowNumber(implementation) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token);
                 case HandleKind.AssemblyFile:
                     var module = _assembly.GetModule(GetString(_metadata.GetAssemblyFile((AssemblyFileHandle)implementation).Name));
-                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
+                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token);
                 default:
                     throw new BadImageFormatException();
             }
@@ -1102,17 +1101,6 @@ namespace IKVM.Reflection.Reader
             _pe.Dispose();
 
             _stream?.Dispose();
-        }
-
-        /// <summary>
-        /// Adds ExportedType rows for the types of this module to the manifest module of an assembly being built.
-        /// </summary>
-        /// <param name="fileToken">The File row of this module in the manifest.</param>
-        /// <param name="manifestModule">The manifest module being built.</param>
-        internal override void ExportTypes(AssemblyFileHandle fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
-        {
-            PopulateTypeDef();
-            manifestModule.ExportTypes(_typeDefs, fileToken);
         }
 
     }

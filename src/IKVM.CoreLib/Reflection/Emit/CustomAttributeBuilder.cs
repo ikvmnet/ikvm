@@ -170,16 +170,13 @@ namespace IKVM.Reflection.Emit
                 for (var i = 0; i < parameterTypes.Length; i++)
                     WriteFixedArg(parameterTypes[i], _cab._constructorArgs[i]);
 
-                WriteNamedArguments(false);
+                WriteNamedArguments();
             }
 
             /// <summary>
             /// Writes the count of named arguments followed by each named field and property argument.
             /// </summary>
-            /// <param name="forDeclSecurity"><see langword="true"/> to write the count as a compressed integer, as in a
-            /// declarative security blob; <see langword="false"/> to write it as a 16-bit integer, as in a custom
-            /// attribute blob.</param>
-            internal void WriteNamedArguments(bool forDeclSecurity)
+            void WriteNamedArguments()
             {
                 // NumNamed
                 var named = 0;
@@ -191,14 +188,7 @@ namespace IKVM.Reflection.Emit
                 {
                     named += _cab._namedProperties.Length;
                 }
-                if (forDeclSecurity)
-                {
-                    WritePackedLen(named);
-                }
-                else
-                {
-                    WriteUInt16((ushort)named);
-                }
+                WriteUInt16((ushort)named);
                 if (_cab._namedFields != null)
                 {
                     for (var i = 0; i < _cab._namedFields.Length; i++)
@@ -477,12 +467,6 @@ namespace IKVM.Reflection.Emit
             void WriteString(string val) => _bb.WriteSerializedString(val);
 
             /// <summary>
-            /// Writes a compressed unsigned integer.
-            /// </summary>
-            /// <param name="len">The value to write.</param>
-            void WritePackedLen(int len) => _bb.WriteCompressedInteger(len);
-
-            /// <summary>
             /// Writes the FieldOrPropType encoding of a type, as used for named arguments and boxed values.
             /// </summary>
             /// <param name="type">The type to encode.</param>
@@ -660,9 +644,6 @@ namespace IKVM.Reflection.Emit
         {
             if (_blob != null)
             {
-                if (_constructorArgs != null)
-                    return new CustomAttributeData(asm, _con, (int)_constructorArgs[0], _blob, -1);
-
                 unsafe
                 {
                     fixed (byte* p = _blob)

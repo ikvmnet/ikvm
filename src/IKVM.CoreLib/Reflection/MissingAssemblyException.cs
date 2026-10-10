@@ -34,9 +34,6 @@ namespace IKVM.Reflection
     sealed class MissingAssemblyException : InvalidOperationException
     {
 
-        [NonSerialized]
-        readonly MissingAssembly _assembly;
-
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -44,7 +41,6 @@ namespace IKVM.Reflection
         internal MissingAssemblyException(MissingAssembly assembly) :
             base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
         {
-            _assembly = assembly;
         }
 
     }

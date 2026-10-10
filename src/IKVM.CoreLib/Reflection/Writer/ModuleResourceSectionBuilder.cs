@@ -33,19 +33,6 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Initializes a new instance, importing the resources from the specified builder.
-        /// </summary>
-        /// <param name="other">The builder whose resource tree is copied.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
-        public ModuleResourceSectionBuilder(ModuleResourceSectionBuilder other)
-        {
-            if (other is null)
-                throw new ArgumentNullException(nameof(other));
-
-            _root = new ResourceDirectoryEntry(other._root);
-        }
-
-        /// <summary>
         /// Gets the number of entries in the root of the builder.
         /// </summary>
         public int Count => _root.Count;

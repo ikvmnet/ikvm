@@ -20,8 +20,6 @@ namespace IKVM.Reflection.Emit
         int[] _startOffset = null!;
         int[] _endOffset = null!;
         int _localSymCount; // how many entries in the arrays are occupied
-        readonly string[] _namespace = null!;
-        readonly int _nameSpaceCount;
 
         /// <summary>
         /// The initial capacity of the per-local arrays.
@@ -38,7 +36,6 @@ namespace IKVM.Reflection.Emit
         internal LocalSymInfo()
         {
             _localSymCount = 0;
-            _nameSpaceCount = 0;
         }
 
         #endregion
@@ -131,10 +128,6 @@ namespace IKVM.Reflection.Emit
                             0,          // addr3 is not used
                             _startOffset[i],
                             _endOffset[i]);
-            }
-            for (i = 0; i < _nameSpaceCount; i++)
-            {
-                symWriter.UsingNamespace(_namespace[i]);
             }
         }
 
