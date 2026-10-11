@@ -26,34 +26,40 @@ using System;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// Identifies an entry in a Win32 resource directory, either by a numeric ordinal or by a name.
+    /// </summary>
+    /// <param name="Ordinal">The numeric identifier of the entry, or 0xFFFF when the entry is identified by name.</param>
+    /// <param name="Name">The name of the entry, or <see langword="null"/> when the entry is identified by ordinal.</param>
     readonly record struct OrdinalOrName(ushort Ordinal, string Name)
     {
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance that identifies an entry by ordinal.
         /// </summary>
-        /// <param name="ordinal"></param>
-        internal OrdinalOrName(ushort ordinal) : 
+        /// <param name="ordinal">The numeric identifier of the entry.</param>
+        internal OrdinalOrName(ushort ordinal) :
             this(ordinal, null)
         {
 
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance that identifies an entry by name.
         /// </summary>
-        /// <param name="name"></param>
-        internal OrdinalOrName(string name) : 
+        /// <param name="name">The name of the entry.</param>
+        internal OrdinalOrName(string name) :
             this(0xFFFF, name)
         {
 
         }
 
         /// <summary>
-        /// Returns whether or not this ordinal is greater than the other ordinal.
+        /// Returns whether this identifier sorts after another one. Names are compared case-insensitively; ordinals
+        /// are compared numerically.
         /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
+        /// <param name="other">The identifier to compare with.</param>
+        /// <returns><see langword="true"/> if this identifier sorts after <paramref name="other"/>; otherwise <see langword="false"/>.</returns>
         internal readonly bool IsGreaterThan(OrdinalOrName other)
         {
             if (Name != null)
@@ -62,16 +68,15 @@ namespace IKVM.Reflection.Writer
                 return Ordinal > other.Ordinal;
         }
 
-        public readonly bool Equals(OrdinalOrName other)
-        {
-            return Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
-        }
+        /// <summary>
+        /// Returns whether this identifier is equal to another one, comparing the names case-insensitively.
+        /// </summary>
+        /// <param name="other">The identifier to compare with.</param>
+        /// <returns><see langword="true"/> if both identifiers have the same ordinal and name; otherwise <see langword="false"/>.</returns>
+        public readonly bool Equals(OrdinalOrName other) => Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
 
         /// <inheritdoc />
-        public override readonly int GetHashCode()
-        {
-            return Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
-        }
+        public override readonly int GetHashCode() => Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
 
     }
 

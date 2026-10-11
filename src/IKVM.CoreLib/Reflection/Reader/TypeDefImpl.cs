@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -30,83 +30,96 @@ using System.Text;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a type defined in the TypeDef table of a module that was read from a file.
+    /// </summary>
     sealed class TypeDefImpl : TypeInfo
     {
 
-        readonly ModuleReader module;
-        readonly TypeDefinitionHandle handle;
-        readonly TypeDefinition definition;
-        readonly string typeName;
-        readonly string typeNamespace;
+        readonly ModuleReader _module;
+        readonly TypeDefinitionHandle _handle;
+        readonly TypeDefinition _definition;
+        readonly string _typeName;
+        readonly string _typeNamespace;
 
-        Type[] typeArgs;
+        Type[] _typeArgs;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="handle"></param>
+        /// <param name="module">The module that defines the type.</param>
+        /// <param name="handle">The handle of the type's TypeDef row.</param>
         internal TypeDefImpl(ModuleReader module, TypeDefinitionHandle handle)
         {
-            this.module = module;
-            this.handle = handle;
-            this.definition = module.Metadata.GetTypeDefinition(handle);
-            this.typeName = module.GetString(definition.Name);
-            this.typeNamespace = module.GetString(definition.Namespace);
-            MarkKnownType(typeNamespace, typeName);
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetTypeDefinition(handle);
+            _typeName = module.GetString(_definition.Name);
+            _typeNamespace = module.GetString(_definition.Namespace);
+            MarkKnownType(_typeNamespace, _typeName);
         }
 
-        public override Type BaseType => definition.BaseType.IsNil ? null : module.ResolveType(MetadataTokens.GetToken(definition.BaseType), this);
+        /// <summary>
+        /// Gets the type from which the current type directly inherits, or <see langword="null"/> if the type has no
+        /// base type, as is the case for <see cref="object"/>, interfaces and the &lt;Module&gt; pseudo type.
+        /// </summary>
+        public override Type BaseType => _definition.BaseType.IsNil ? null : _module.ResolveType(MetadataTokens.GetToken(_definition.BaseType), this);
 
-        public override TypeAttributes Attributes => (TypeAttributes)definition.Attributes;
+        /// <inheritdoc />
+        public override TypeAttributes Attributes => (TypeAttributes)_definition.Attributes;
 
+        /// <inheritdoc />
         public override EventInfo[] __GetDeclaredEvents()
         {
-            var handles = definition.GetEvents();
+            var handles = _definition.GetEvents();
             var events = new EventInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                events[i++] = new EventInfoImpl(module, this, h);
+                events[i++] = new EventInfoImpl(_module, this, h);
 
             return events;
         }
 
+        /// <inheritdoc />
         public override FieldInfo[] __GetDeclaredFields()
         {
-            var handles = definition.GetFields();
+            var handles = _definition.GetFields();
             var fields = new FieldInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                fields[i++] = module.GetFieldAt(this, h);
+                fields[i++] = _module.GetFieldAt(this, h);
 
             return fields;
         }
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredInterfaces()
         {
-            var handles = definition.GetInterfaceImplementations();
+            var handles = _definition.GetInterfaceImplementations();
             if (handles.Count == 0)
                 return Type.EmptyTypes;
 
             var interfaces = new Type[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                interfaces[i++] = module.ResolveType(MetadataTokens.GetToken(module.Metadata.GetInterfaceImplementation(h).Interface), this);
+                interfaces[i++] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetInterfaceImplementation(h).Interface), this);
 
             return interfaces;
         }
 
+        /// <inheritdoc />
         public override MethodBase[] __GetDeclaredMethods()
         {
-            var handles = definition.GetMethods();
+            var handles = _definition.GetMethods();
             var methods = new MethodBase[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                methods[i++] = module.GetMethodAt(this, h);
+                methods[i++] = _module.GetMethodAt(this, h);
 
             return methods;
         }
 
+        /// <inheritdoc />
         public override __MethodImplMap __GetMethodImplMap()
         {
             PopulateGenericArguments();
@@ -114,105 +127,140 @@ namespace IKVM.Reflection.Reader
             var bodies = new List<MethodInfo>();
             var declarations = new List<List<MethodInfo>>();
             var index = new Dictionary<MethodInfo, int>();
-            foreach (var h in definition.GetMethodImplementations())
+            foreach (var h in _definition.GetMethodImplementations())
             {
-                var impl = module.Metadata.GetMethodImplementation(h);
-                var body = (MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(impl.MethodBody), typeArgs, null);
+                var impl = _module.Metadata.GetMethodImplementation(h);
+                var body = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(impl.MethodBody), _typeArgs, null);
                 if (index.TryGetValue(body, out var i) == false)
                 {
                     index.Add(body, i = bodies.Count);
                     bodies.Add(body);
-                    declarations.Add(new List<MethodInfo>());
+                    declarations.Add([]);
                 }
 
-                declarations[i].Add((MethodInfo)module.ResolveMethod(MetadataTokens.GetToken(impl.MethodDeclaration), typeArgs, null));
+                declarations[i].Add((MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(impl.MethodDeclaration), _typeArgs, null));
             }
 
-            var map = new __MethodImplMap();
-            map.TargetType = this;
-            map.MethodBodies = bodies.ToArray();
-            map.MethodDeclarations = new MethodInfo[declarations.Count][];
+            var map = new __MethodImplMap
+            {
+                TargetType = this,
+                MethodBodies = bodies.ToArray(),
+                MethodDeclarations = new MethodInfo[declarations.Count][]
+            };
             for (var i = 0; i < map.MethodDeclarations.Length; i++)
                 map.MethodDeclarations[i] = declarations[i].ToArray();
 
             return map;
         }
 
+        /// <inheritdoc />
         public override Type[] __GetDeclaredTypes()
         {
-            var handles = definition.GetNestedTypes();
+            var handles = _definition.GetNestedTypes();
             if (handles.Length == 0)
                 return Type.EmptyTypes;
 
             var types = new Type[handles.Length];
-            for (int i = 0; i < types.Length; i++)
-                types[i] = module.ResolveType(MetadataTokens.GetToken(handles[i]));
+            for (var i = 0; i < types.Length; i++)
+                types[i] = _module.ResolveType(MetadataTokens.GetToken(handles[i]));
 
             return types;
         }
 
+        /// <inheritdoc />
         public override PropertyInfo[] __GetDeclaredProperties()
         {
-            var handles = definition.GetProperties();
+            var handles = _definition.GetProperties();
             var properties = new PropertyInfo[handles.Count];
             var i = 0;
             foreach (var h in handles)
-                properties[i++] = new PropertyInfoImpl(module, this, h);
+                properties[i++] = new PropertyInfoImpl(_module, this, h);
 
             return properties;
         }
 
-        internal override TypeName TypeName => new TypeName(typeNamespace, typeName);
+        /// <inheritdoc />
+        internal override TypeName TypeName => new(_typeNamespace, _typeName);
 
-        public override string Name => TypeNameParser.Escape(typeName);
+        /// <summary>
+        /// Gets the name of the type, escaped as in a type name string.
+        /// </summary>
+        public override string Name => TypeNameParser.Escape(_typeName);
 
+        /// <inheritdoc />
         public override string FullName => GetFullName();
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
+        /// <summary>
+        /// Returns the generic type parameters of the type definition.
+        /// </summary>
+        /// <returns>A copy of the array of generic type parameters, or an empty array if the type is not generic.</returns>
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
-            return Util.Copy(typeArgs);
+            return Util.Copy(_typeArgs);
         }
 
+        /// <summary>
+        /// Creates the generic type parameters of the type definition on first use.
+        /// </summary>
         void PopulateGenericArguments()
         {
-            if (typeArgs == null)
+            if (_typeArgs == null)
             {
-                var handles = definition.GetGenericParameters();
+                var handles = _definition.GetGenericParameters();
                 var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
-                for (int i = 0; i < args.Length; i++)
-                    args[i] = new GenericTypeParameter(module, handles[i], Signature.ELEMENT_TYPE_VAR);
+                for (var i = 0; i < args.Length; i++)
+                    args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_VAR);
 
-                typeArgs = args;
+                _typeArgs = args;
             }
         }
 
+        /// <inheritdoc />
         internal override Type GetGenericTypeArgument(int index)
         {
             PopulateGenericArguments();
-            return typeArgs[index];
+            return _typeArgs[index];
         }
 
+        /// <summary>
+        /// Returns the custom modifiers of the generic arguments. The generic parameters of a type definition have no
+        /// custom modifiers, so every element is empty.
+        /// </summary>
+        /// <returns>An array of empty custom modifiers, one for each generic type parameter.</returns>
         public override CustomModifiers[] __GetGenericArgumentsCustomModifiers()
         {
             PopulateGenericArguments();
-            return new CustomModifiers[typeArgs.Length];
+            return new CustomModifiers[_typeArgs.Length];
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the current type is a generic type. A type definition is generic exactly
+        /// when it is a generic type definition.
+        /// </summary>
         public override bool IsGenericType => IsGenericTypeDefinition;
 
-        public override bool IsGenericTypeDefinition => definition.GetGenericParameters().Count > 0;
+        /// <inheritdoc />
+        public override bool IsGenericTypeDefinition => _definition.GetGenericParameters().Count > 0;
 
-        public override Type GetGenericTypeDefinition()
-        {
-            return IsGenericTypeDefinition ? (Type)this : throw new InvalidOperationException();
-        }
+        /// <summary>
+        /// Returns a <see cref="Type"/> object that represents a generic type definition from which the current generic
+        /// type can be constructed.
+        /// </summary>
+        /// <returns>The current type, which is its own generic type definition.</returns>
+        /// <exception cref="InvalidOperationException">The current type is not a generic type.</exception>
+        public override Type GetGenericTypeDefinition() => IsGenericTypeDefinition ? (Type)this : throw new InvalidOperationException();
 
+        /// <summary>
+        /// Returns the full name of the type followed by its generic type parameters in brackets, if it has any.
+        /// </summary>
+        /// <returns>A string that represents the current type.</returns>
         public override string ToString()
         {
-            var sb = new StringBuilder(this.FullName);
+            var sb = new StringBuilder(FullName);
             var sep = "[";
 
             foreach (var arg in GetGenericArguments())
@@ -228,30 +276,50 @@ namespace IKVM.Reflection.Reader
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the type is nested, determined from its visibility flags alone, so that it
+        /// can be evaluated without resolving the declaring type.
+        /// </summary>
         internal bool IsNestedByFlags => (Attributes & TypeAttributes.VisibilityMask & ~TypeAttributes.Public) != 0;
 
+        /// <summary>
+        /// Gets the type that declares the current nested type, or <see langword="null"/> if the type is not nested.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The type has nested visibility but no NestedClass row.</exception>
         public override Type DeclaringType
         {
             get
             {
-                // note that we cannot use Type.IsNested for this, because that calls DeclaringType
+                // we cannot use Type.IsNested for this, because that calls DeclaringType
                 if (!IsNestedByFlags)
                     return null;
 
-                var declaring = definition.GetDeclaringType();
+                var declaring = _definition.GetDeclaringType();
                 if (declaring.IsNil)
                     throw new InvalidOperationException();
 
-                return module.ResolveType(MetadataTokens.GetToken(declaring), null, null);
+                return _module.ResolveType(MetadataTokens.GetToken(declaring), null, null);
             }
         }
 
-        public override Module Module => module;
+        /// <inheritdoc />
+        public override Module Module => _module;
 
-        internal override bool IsModulePseudoType => MetadataTokens.GetRowNumber(handle) == 1;
+        /// <summary>
+        /// Gets a value indicating whether this is the &lt;Module&gt; pseudo type, which is always the first row of the
+        /// TypeDef table.
+        /// </summary>
+        internal override bool IsModulePseudoType => MetadataTokens.GetRowNumber(_handle) == 1;
 
+        /// <summary>
+        /// Gets a value indicating whether the type is complete. A type read from a file is always complete.
+        /// </summary>
         internal override bool IsBaked => true;
 
+        /// <summary>
+        /// Gets a value indicating whether the type is a value type: it derives from <see cref="ValueType"/> or
+        /// <see cref="Enum"/> and is not one of those two types itself. The result is cached in the type flags.
+        /// </summary>
         protected override bool IsValueTypeImpl
         {
             get

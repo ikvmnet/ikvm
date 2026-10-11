@@ -26,96 +26,101 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a function pointer type (ELEMENT_TYPE_FNPTR) described by a stand-alone method signature.
+    /// </summary>
     sealed class FunctionPointerType : TypeInfo
     {
 
-        readonly Universe universe;
-        readonly __StandAloneMethodSig sig;
+        readonly Universe _universe;
+        readonly __StandAloneMethodSig _sig;
 
-        internal static Type Make(Universe universe, __StandAloneMethodSig sig)
-        {
-            return universe.CanonicalizeType(new FunctionPointerType(universe, sig));
-        }
+        /// <summary>
+        /// Gets the canonical function pointer type for the specified signature.
+        /// </summary>
+        /// <param name="universe">The universe the type belongs to.</param>
+        /// <param name="sig">The signature of the function the pointer points to.</param>
+        /// <returns>The canonical instance of the function pointer type.</returns>
+        internal static Type Make(Universe universe, __StandAloneMethodSig sig) => universe.CanonicalizeType(new FunctionPointerType(universe, sig));
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="universe"></param>
-        /// <param name="sig"></param>
+        /// <param name="universe">The universe the type belongs to.</param>
+        /// <param name="sig">The signature of the function the pointer points to.</param>
         FunctionPointerType(Universe universe, __StandAloneMethodSig sig) :
             base(Signature.ELEMENT_TYPE_FNPTR)
         {
-            this.universe = universe;
-            this.sig = sig;
+            _universe = universe;
+            _sig = sig;
         }
 
+        /// <summary>
+        /// Returns whether the specified object is a function pointer type in the same universe with an equal signature.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an equal function pointer type; otherwise <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as FunctionPointerType;
             return other != null
-                && other.universe == universe
-                && other.sig.Equals(sig);
+                && other._universe == _universe
+                && other._sig.Equals(_sig);
         }
 
-        public override int GetHashCode()
-        {
-            return sig.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _sig.GetHashCode();
 
-        public override __StandAloneMethodSig __MethodSignature
-        {
-            get { return sig; }
-        }
+        /// <summary>
+        /// Gets the signature of the function the pointer points to.
+        /// </summary>
+        public override __StandAloneMethodSig __MethodSignature => _sig;
 
-        public override Type BaseType
-        {
-            get { return null; }
-        }
+        /// <summary>
+        /// Gets the base type, which is always <see langword="null"/> for a function pointer.
+        /// </summary>
+        public override Type BaseType => null;
 
-        public override TypeAttributes Attributes
-        {
-            get { return 0; }
-        }
+        /// <summary>
+        /// Gets the attributes of the type, which are always empty for a function pointer.
+        /// </summary>
+        public override TypeAttributes Attributes => 0;
 
-        public override string Name
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a function pointer has no name.</exception>
+        public override string Name => throw new InvalidOperationException();
 
-        public override string FullName
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a function pointer has no name.</exception>
+        public override string FullName => throw new InvalidOperationException();
 
-        public override Module Module
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a function pointer belongs to no module.</exception>
+        public override Module Module => throw new InvalidOperationException();
 
-        internal override Universe Universe
-        {
-            get { return universe; }
-        }
+        /// <inheritdoc />
+        internal override Universe Universe => _universe;
 
-        public override string ToString()
-        {
-            return "<FunctionPtr>";
-        }
+        /// <summary>
+        /// Returns a placeholder string for the function pointer type.
+        /// </summary>
+        /// <returns>The string <c>&lt;FunctionPtr&gt;</c>.</returns>
+        public override string ToString() => "<FunctionPtr>";
 
-        protected override bool ContainsMissingTypeImpl
-        {
-            get { return sig.ContainsMissingType; }
-        }
+        /// <summary>
+        /// Gets whether the function pointer's signature refers to a missing type.
+        /// </summary>
+        protected override bool ContainsMissingTypeImpl => _sig.ContainsMissingType;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <summary>
+        /// Gets whether the type is complete, which is always the case for a function pointer.
+        /// </summary>
+        internal override bool IsBaked => true;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { return false; }
-        }
+        /// <summary>
+        /// Gets whether the type is a value type, which is never the case for a function pointer.
+        /// </summary>
+        protected override bool IsValueTypeImpl => false;
 
     }
 

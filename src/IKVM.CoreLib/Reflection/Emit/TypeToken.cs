@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -25,8 +25,12 @@
 namespace IKVM.Reflection.Emit
 {
 
-    internal readonly record struct TypeToken(int Token)
-	{
-	}
+    /// <summary>
+    /// Represents the metadata token that identifies a type.
+    /// </summary>
+    /// <param name="Token">The metadata token value.</param>
+    readonly record struct TypeToken(int Token)
+    {
+    }
 
 }

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,63 +27,79 @@ using System.Reflection.Metadata.Ecma335;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a generic type or method parameter defined in the GenericParam table of a module that was read from a file.
+    /// </summary>
     sealed class GenericTypeParameter : TypeParameterType
     {
 
-        readonly ModuleReader module;
-        readonly GenericParameterHandle handle;
-        readonly GenericParameter definition;
+        readonly ModuleReader _module;
+        readonly GenericParameterHandle _handle;
+        readonly GenericParameter _definition;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="handle"></param>
-        /// <param name="sigElementType"></param>
+        /// <param name="module">The module that defines the generic parameter.</param>
+        /// <param name="handle">The handle of the generic parameter in the GenericParam table.</param>
+        /// <param name="sigElementType">The signature element type: <c>ELEMENT_TYPE_VAR</c> for a type parameter or <c>ELEMENT_TYPE_MVAR</c> for a method parameter.</param>
         internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
-            this.module = module;
-            this.handle = handle;
-            this.definition = module.Metadata.GetGenericParameter(handle);
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetGenericParameter(handle);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj) => base.Equals(obj);
 
+        /// <inheritdoc />
         public override int GetHashCode() => base.GetHashCode();
 
+        /// <inheritdoc />
         public override string Namespace => DeclaringType.Namespace;
 
-        public override string Name => module.GetString(definition.Name);
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override Module Module => module;
+        /// <inheritdoc />
+        public override Module Module => _module;
 
-        public override int MetadataToken => MetadataTokens.GetToken(handle);
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override int GenericParameterPosition => definition.Index;
+        /// <inheritdoc />
+        public override int GenericParameterPosition => _definition.Index;
 
-        public override Type DeclaringType => definition.Parent.Kind == HandleKind.TypeDefinition ? module.ResolveType(MetadataTokens.GetToken(definition.Parent)) : null;
+        /// <inheritdoc />
+        public override Type DeclaringType =>
+            _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
 
-        public override MethodBase DeclaringMethod => definition.Parent.Kind == HandleKind.MethodDefinition ? module.ResolveMethod(MetadataTokens.GetToken(definition.Parent)) : null;
+        /// <inheritdoc />
+        public override MethodBase DeclaringMethod =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
 
+        /// <inheritdoc />
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
-            var handles = definition.GetConstraints();
+            var handles = _definition.GetConstraints();
             var constraints = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
-            for (int i = 0; i < constraints.Length; i++)
-                constraints[i] = module.ResolveType(MetadataTokens.GetToken(module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
+            for (var i = 0; i < constraints.Length; i++)
+                constraints[i] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
 
             return constraints;
         }
 
-        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)definition.Attributes;
+        /// <inheritdoc />
+        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_definition.Attributes;
 
-        internal override Type BindTypeParameters(IGenericBinder binder)
-        {
-            return definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
-        }
+        /// <inheritdoc />
+        internal override Type BindTypeParameters(IGenericBinder binder) =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
 
+        /// <inheritdoc />
         internal override bool IsBaked => true;
 
     }

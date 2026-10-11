@@ -26,13 +26,23 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Specifies the attributes for manifest resources.
+    /// </summary>
     [Flags]
-    internal enum ResourceAttributes
-	{
+    enum ResourceAttributes
+    {
 
-		Public = 1,
-		Private = 2,
+        /// <summary>
+        /// Specifies that the resource is exported from the assembly.
+        /// </summary>
+        Public = 1,
 
-	}
+        /// <summary>
+        /// Specifies that the resource is private to the assembly.
+        /// </summary>
+        Private = 2,
+
+    }
 
 }

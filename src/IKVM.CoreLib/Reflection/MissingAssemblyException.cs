@@ -26,21 +26,25 @@ using System;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when an operation is attempted on a <see cref="MissingAssembly"/> that cannot be
+    /// performed without the assembly's actual metadata.
+    /// </summary>
     [Serializable]
-    internal sealed class MissingAssemblyException : InvalidOperationException
+    sealed class MissingAssemblyException : InvalidOperationException
     {
 
         [NonSerialized]
-        readonly MissingAssembly assembly;
+        readonly MissingAssembly _assembly;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="assembly"></param>
+        /// <param name="assembly">The missing assembly on which the operation was attempted.</param>
         internal MissingAssemblyException(MissingAssembly assembly) :
             base("Assembly '" + assembly.FullName + "' is a missing assembly and does not support the requested operation.")
         {
-            this.assembly = assembly;
+            _assembly = assembly;
         }
 
     }

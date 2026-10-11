@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -12,9 +12,16 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="ILGenerator"/>.
+    /// </summary>
     public class ILGeneratorTests
     {
 
+        /// <summary>
+        /// Checks that a try/catch block is written as an exception handling clause with its catch type.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanEmitTryCatch(string tfm)
@@ -40,6 +47,11 @@ namespace IKVM.Reflection.Tests.Emit
             body.ExceptionHandlingClauses.Should().ContainSingle().Which.CatchType!.FullName.Should().Be("System.Exception");
         }
 
+        /// <summary>
+        /// Checks that a <c>calli</c> with a managed calling convention writes a matching stand-alone method
+        /// signature.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanEmitManagedCalli(string tfm)
@@ -50,6 +62,11 @@ namespace IKVM.Reflection.Tests.Emit
             ReadStandAloneSignatures(u, file).Should().Equal("default(String) : Int32");
         }
 
+        /// <summary>
+        /// Checks that a <c>calli</c> with an unmanaged calling convention writes a matching stand-alone method
+        /// signature.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanEmitUnmanagedCalli(string tfm)
@@ -61,8 +78,8 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
-        /// A reference to a method with function pointers in its signature, as the importer makes when it calls such a
-        /// .NET method with function pointers enabled, must reproduce the signature.
+        /// Checks that a reference to a method with function pointers in its signature, as the importer makes when it
+        /// calls such a .NET method with function pointers enabled, reproduces the signature.
         /// </summary>
         [Fact]
         public void CanEmitCallToMethodWithFunctionPointers()
@@ -93,10 +110,11 @@ namespace IKVM.Reflection.Tests.Emit
         }
 
         /// <summary>
-        /// A method that declares no locals gets no local signature, which the metadata requires to have at least one
-        /// element and which would also prevent a tiny method header. A method with locals keeps its signature.
+        /// Checks that a method that declares no locals gets no local signature, which the metadata requires to have at
+        /// least one element and which would also prevent a tiny method header, and that a method with locals keeps its
+        /// signature.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void EmitsLocalSignatureOnlyForLocals(string tfm)
@@ -120,12 +138,20 @@ namespace IKVM.Reflection.Tests.Emit
 
             using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, "Test.dll")));
             var md = pe.GetMetadataReader();
+            // reads the body of the named method
             MethodBodyBlock Body(string name) => pe.GetMethodBody(md.MethodDefinitions.Select(md.GetMethodDefinition).Single(i => md.GetString(i.Name) == name).RelativeVirtualAddress);
             Body("Without").LocalSignature.IsNil.Should().BeTrue();
             Body("Without").Size.Should().Be(2, "a method without locals fits a tiny header");
             Body("With").LocalSignature.IsNil.Should().BeFalse();
         }
 
+        /// <summary>
+        /// Saves an assembly with a method that pushes a <see langword="null"/> argument and a zero function pointer and
+        /// then emits the given <c>calli</c>.
+        /// </summary>
+        /// <param name="u">The universe to define the assembly in.</param>
+        /// <param name="calli">Emits the <c>calli</c> instruction.</param>
+        /// <returns>The path of the saved assembly.</returns>
         static string EmitCalli(TestUniverse u, System.Action<ILGenerator> calli)
         {
             var assembly = u.DefineAssembly();
@@ -144,6 +170,12 @@ namespace IKVM.Reflection.Tests.Emit
             return Path.Combine(u.TempPath, "Test.dll");
         }
 
+        /// <summary>
+        /// Reads the stand-alone method signatures of an assembly with System.Reflection.Metadata.
+        /// </summary>
+        /// <param name="u">The universe the assembly was saved from; not used.</param>
+        /// <param name="file">The path of the assembly.</param>
+        /// <returns>The method signatures, formatted by <see cref="SignatureNameProvider.Format"/>.</returns>
         static string[] ReadStandAloneSignatures(TestUniverse u, string file)
         {
             using var pe = new PEReader(File.OpenRead(file));

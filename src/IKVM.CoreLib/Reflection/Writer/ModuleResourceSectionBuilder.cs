@@ -10,57 +10,59 @@ namespace IKVM.Reflection.Writer
 {
 
     /// <summary>
-    /// Implements a <see cref="ResourceSectionBuilder"/> for writing IKVM reflection resource section data.
+    /// Implements a <see cref="ResourceSectionBuilder"/> that builds the Win32 resource section (<c>.rsrc</c>) of a
+    /// module: version information, icons and the native manifest, organized as a type, name and language tree.
     /// </summary>
     class ModuleResourceSectionBuilder : ResourceSectionBuilder
     {
 
+        // the Win32 resource type IDs
         const int RT_ICON = 3;
         const int RT_GROUP_ICON = 14;
         const int RT_VERSION = 16;
         const int RT_MANIFEST = 24;
 
-        readonly ResourceDirectoryEntry root;
+        readonly ResourceDirectoryEntry _root;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance with an empty resource tree.
         /// </summary>
         public ModuleResourceSectionBuilder()
         {
-            root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
+            _root = new ResourceDirectoryEntry(new OrdinalOrName("root"));
         }
 
         /// <summary>
         /// Initializes a new instance, importing the resources from the specified builder.
         /// </summary>
-        /// <param name="other"></param>
+        /// <param name="other">The builder whose resource tree is copied.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
         public ModuleResourceSectionBuilder(ModuleResourceSectionBuilder other)
         {
             if (other is null)
                 throw new ArgumentNullException(nameof(other));
 
-            root = new ResourceDirectoryEntry(other.root);
+            _root = new ResourceDirectoryEntry(other._root);
         }
 
         /// <summary>
         /// Gets the number of entries in the root of the builder.
         /// </summary>
-        public int Count => root.Count;
+        public int Count => _root.Count;
 
         /// <summary>
-        /// Adds a VersionInfo structure.
+        /// Adds a VersionInfo structure, as resource 1 of type <c>RT_VERSION</c>, replacing any existing one.
         /// </summary>
-        /// <param name="versionInfo"></param>
-        internal void AddVersionInfo(ByteBuffer versionInfo)
-        {
-            root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].data = versionInfo;
-        }
+        /// <param name="versionInfo">The encoded VS_VERSIONINFO structure.</param>
+        internal void AddVersionInfo(ByteBuffer versionInfo) =>
+            _root[new OrdinalOrName(RT_VERSION)][new OrdinalOrName(1)][new OrdinalOrName(0)].Data = versionInfo;
 
         /// <summary>
-        /// Adds a Win32 ICO file.
+        /// Adds a Win32 ICO file. Each image in the file becomes an <c>RT_ICON</c> resource, numbered from 2, and the
+        /// directory becomes <c>RT_GROUP_ICON</c> resource 32512.
         /// </summary>
-        /// <param name="iconFile"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="iconFile">The contents of the .ico file.</param>
+        /// <exception cref="ArgumentException"><paramref name="iconFile"/> is not a valid .ico file.</exception>
         internal void AddIcon(byte[] iconFile)
         {
             var br = new BinaryReader(new MemoryStream(iconFile));
@@ -74,7 +76,7 @@ namespace IKVM.Reflection.Writer
             group.WriteUInt16(idReserved);
             group.WriteUInt16(idType);
             group.WriteUInt16(idCount);
-            for (int i = 0; i < idCount; i++)
+            for (var i = 0; i < idCount; i++)
             {
                 var bWidth = br.ReadByte();
                 var bHeight = br.ReadByte();
@@ -99,30 +101,32 @@ namespace IKVM.Reflection.Writer
 
                 var icon = new byte[dwBytesInRes];
                 Buffer.BlockCopy(iconFile, (int)dwImageOffset, icon, 0, icon.Length);
-                root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].data = ByteBuffer.Wrap(icon);
+                _root[new OrdinalOrName(RT_ICON)][new OrdinalOrName(id)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(icon);
             }
 
-            root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].data = group;
+            _root[new OrdinalOrName(RT_GROUP_ICON)][new OrdinalOrName(32512)][new OrdinalOrName(0)].Data = group;
         }
 
         /// <summary>
-        /// Adds the native manifest.
+        /// Adds the native manifest, as a resource of type <c>RT_MANIFEST</c>.
         /// </summary>
-        /// <param name="manifest"></param>
-        /// <param name="resourceID"></param>
-        internal void AddManifest(byte[] manifest, ushort resourceID)
-        {
-            root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].data = ByteBuffer.Wrap(manifest);
-        }
+        /// <param name="manifest">The contents of the manifest.</param>
+        /// <param name="resourceID">The resource ID of the manifest.</param>
+        internal void AddManifest(byte[] manifest, ushort resourceID) =>
+            _root[new OrdinalOrName(RT_MANIFEST)][new OrdinalOrName(resourceID)][new OrdinalOrName(0)].Data = ByteBuffer.Wrap(manifest);
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Serializes the resource tree, relocating the data entry offsets to the RVA of the section.
+        /// </summary>
+        /// <param name="builder">The builder to write the section to.</param>
+        /// <param name="location">The location of the section.</param>
         protected override void Serialize(BlobBuilder builder, SectionLocation location)
         {
             var bb = new ByteBuffer(1024);
             var linkOffsets = new List<int>();
-            root.Write(bb, linkOffsets);
+            _root.Write(bb, linkOffsets);
 
-            foreach (int offset in linkOffsets)
+            foreach (var offset in linkOffsets)
             {
                 bb.Position = offset;
                 bb.WriteInt32(bb.GetInt32AtCurrentPosition() + (int)location.RelativeVirtualAddress);

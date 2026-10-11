@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -28,96 +28,114 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// Collects the assembly name, file name and the standard assembly attributes (copyright, product, file version
+    /// and so on) and writes them as a Win32 VS_VERSIONINFO resource.
+    /// </summary>
     sealed class VersionInfo
     {
 
-        AssemblyName name;
-        string fileName;
-        internal string copyright;
-        internal string trademark;
-        internal string product;
-        internal string company;
-        string description;
-        string title;
-        internal string informationalVersion;
-        string fileVersion;
+        AssemblyName _name;
+        string _fileName;
+        string _copyright;
+        string _trademark;
+        string _product;
+        string _company;
+        string _description;
+        string _title;
+        string _informationalVersion;
+        string _fileVersion;
 
-        internal void SetName(AssemblyName name)
-        {
-            this.name = name;
-        }
+        /// <summary>
+        /// Sets the assembly name, which supplies the internal name, the culture and the default file version.
+        /// </summary>
+        /// <param name="name">The assembly name.</param>
+        internal void SetName(AssemblyName name) => _name = name;
 
-        internal void SetFileName(string assemblyFileName)
-        {
-            this.fileName = System.IO.Path.GetFileName(assemblyFileName);
-        }
+        /// <summary>
+        /// Sets the original file name, taken from the file name part of the specified path.
+        /// </summary>
+        /// <param name="assemblyFileName">The path of the assembly file.</param>
+        internal void SetFileName(string assemblyFileName) => _fileName = System.IO.Path.GetFileName(assemblyFileName);
 
+        /// <summary>
+        /// Records the value of a custom attribute if it is one of the assembly attributes that feed the version
+        /// resource. Only the first occurrence of each attribute is used; other attributes are ignored.
+        /// </summary>
+        /// <param name="asm">The assembly the attribute is applied to.</param>
+        /// <param name="cab">The custom attribute.</param>
         internal void SetAttribute(AssemblyBuilder asm, CustomAttributeBuilder cab)
         {
             var u = cab.Constructor.Module.Universe;
             var type = cab.Constructor.DeclaringType;
-            if (copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
+            if (_copyright == null && type == u.System_Reflection_AssemblyCopyrightAttribute)
             {
-                copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _copyright = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (trademark == null && type == u.System_Reflection_AssemblyTrademarkAttribute)
+            else if (_trademark == null && type == u.System_Reflection_AssemblyTrademarkAttribute)
             {
-                trademark = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _trademark = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (product == null && type == u.System_Reflection_AssemblyProductAttribute)
+            else if (_product == null && type == u.System_Reflection_AssemblyProductAttribute)
             {
-                product = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _product = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (company == null && type == u.System_Reflection_AssemblyCompanyAttribute)
+            else if (_company == null && type == u.System_Reflection_AssemblyCompanyAttribute)
             {
-                company = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _company = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (description == null && type == u.System_Reflection_AssemblyDescriptionAttribute)
+            else if (_description == null && type == u.System_Reflection_AssemblyDescriptionAttribute)
             {
-                description = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _description = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (title == null && type == u.System_Reflection_AssemblyTitleAttribute)
+            else if (_title == null && type == u.System_Reflection_AssemblyTitleAttribute)
             {
-                title = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _title = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (informationalVersion == null && type == u.System_Reflection_AssemblyInformationalVersionAttribute)
+            else if (_informationalVersion == null && type == u.System_Reflection_AssemblyInformationalVersionAttribute)
             {
-                informationalVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _informationalVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
-            else if (fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
+            else if (_fileVersion == null && type == u.System_Reflection_AssemblyFileVersionAttribute)
             {
-                fileVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
+                _fileVersion = (string)cab.DecodeBlob(asm).GetConstructorArgument(0);
             }
         }
 
+        /// <summary>
+        /// Writes the VS_VERSIONINFO resource. When no file version attribute was set, the assembly version, or
+        /// 0.0.0.0, is used; the product version is parsed from the informational version when one was set.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
         internal void Write(ByteBuffer bb)
         {
-            if (fileVersion == null)
+            if (_fileVersion == null)
             {
-                if (name.Version != null)
+                if (_name.Version != null)
                 {
-                    fileVersion = name.Version.ToString();
+                    _fileVersion = _name.Version.ToString();
                 }
                 else
                 {
-                    fileVersion = "0.0.0.0";
+                    _fileVersion = "0.0.0.0";
                 }
             }
 
-            int codepage = 1200;    // Unicode codepage
+            // Unicode codepage
+            var codepage = 1200;
 
-            int lcid = 0x7f;
+            var lcid = 0x7f;
             try
             {
-                if (name.CultureInfo != null)
-                    lcid = name.CultureInfo.LCID;
+                if (_name.CultureInfo != null)
+                    lcid = _name.CultureInfo.LCID;
             }
             catch (ArgumentException)
             {
                 // AssemblyName.CultureInfo throws an ArgumentException if AssemblyBuilder.__SetAssemblyCulture() was used to specify a non-existing culture
             }
 
-            var filever = ParseVersionRobust(fileVersion);
+            var filever = ParseVersionRobust(_fileVersion);
             var fileVersionMajor = filever.Major;
             var fileVersionMinor = filever.Minor;
             var fileVersionBuild = filever.Build;
@@ -127,9 +145,9 @@ namespace IKVM.Reflection.Writer
             var productVersionMinor = fileVersionMinor;
             var productVersionBuild = fileVersionBuild;
             var productVersionRevision = fileVersionRevision;
-            if (informationalVersion != null)
+            if (_informationalVersion != null)
             {
-                Version productver = ParseVersionRobust(informationalVersion);
+                Version productver = ParseVersionRobust(_informationalVersion);
                 productVersionMajor = productver.Major;
                 productVersionMinor = productver.Minor;
                 productVersionBuild = productver.Build;
@@ -143,16 +161,16 @@ namespace IKVM.Reflection.Writer
             WriteUTF16Z(stringTable, string.Format("{0:x4}{1:x4}", lcid, codepage));
             stringTable.Align(4);
 
-            WriteString(stringTable, "Comments", description);
-            WriteString(stringTable, "CompanyName", company);
-            WriteString(stringTable, "FileDescription", title);
-            WriteString(stringTable, "FileVersion", fileVersion);
-            WriteString(stringTable, "InternalName", name.Name);
-            WriteString(stringTable, "LegalCopyright", copyright);
-            WriteString(stringTable, "LegalTrademarks", trademark);
-            WriteString(stringTable, "OriginalFilename", fileName);
-            WriteString(stringTable, "ProductName", product);
-            WriteString(stringTable, "ProductVersion", informationalVersion);
+            WriteString(stringTable, "Comments", _description);
+            WriteString(stringTable, "CompanyName", _company);
+            WriteString(stringTable, "FileDescription", _title);
+            WriteString(stringTable, "FileVersion", _fileVersion);
+            WriteString(stringTable, "InternalName", _name.Name);
+            WriteString(stringTable, "LegalCopyright", _copyright);
+            WriteString(stringTable, "LegalTrademarks", _trademark);
+            WriteString(stringTable, "OriginalFilename", _fileName);
+            WriteString(stringTable, "ProductName", _product);
+            WriteString(stringTable, "ProductVersion", _informationalVersion);
 
             stringTable.Position = 0;
             stringTable.WriteInt16((short)stringTable.Length);
@@ -178,7 +196,7 @@ namespace IKVM.Reflection.Writer
 			  0x00, 0x00, 0x01, 0x00,	// dwStrucVersion
 			};
 
-            byte[] preamble2 = new byte[] {
+            var preamble2 = new byte[] {
               0x3F, 0x00, 0x00, 0x00,	// dwFileFlagsMask (??)
 			  0x00, 0x00, 0x00, 0x00,	// dwFileFlags (??)
 			  0x04, 0x00, 0x00, 0x00,	// dwFileOS
@@ -217,14 +235,26 @@ namespace IKVM.Reflection.Writer
             bb.WriteBuffer(stringFileInfo);
         }
 
+        /// <summary>
+        /// Writes a string as null-terminated UTF-16.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="str">The string to write.</param>
         static void WriteUTF16Z(ByteBuffer bb, string str)
         {
-            foreach (char c in str)
+            foreach (var c in str)
                 bb.WriteInt16((short)c);
 
             bb.WriteInt16((short)0);
         }
 
+        /// <summary>
+        /// Writes a String structure (a name and value pair) of a StringTable. A missing value is written as a single
+        /// space.
+        /// </summary>
+        /// <param name="bb">The buffer to write to.</param>
+        /// <param name="name">The name of the entry, for example <c>CompanyName</c>.</param>
+        /// <param name="value">The value of the entry, or <see langword="null"/>.</param>
         static void WriteString(ByteBuffer bb, string name, string value)
         {
             value ??= " ";
@@ -242,9 +272,15 @@ namespace IKVM.Reflection.Writer
             bb.Position = savedPos;
         }
 
+        /// <summary>
+        /// Parses up to four dot-separated numeric parts from a version string, tolerating malformed input. Parsing
+        /// of the parts stops at the first character that is neither a digit nor a dot, and missing parts are 0.
+        /// </summary>
+        /// <param name="ver">The version string.</param>
+        /// <returns>The parsed version.</returns>
         static Version ParseVersionRobust(string ver)
         {
-            int index = 0;
+            var index = 0;
             var major = ParseVersionPart(ver, ref index);
             var minor = ParseVersionPart(ver, ref index);
             var build = ParseVersionPart(ver, ref index);
@@ -252,12 +288,18 @@ namespace IKVM.Reflection.Writer
             return new Version(major, minor, build, revision);
         }
 
+        /// <summary>
+        /// Parses the digits of one version part starting at <paramref name="pos"/>, consuming a following dot.
+        /// </summary>
+        /// <param name="str">The version string.</param>
+        /// <param name="pos">The position to start at. It is advanced past the digits and the dot, if any.</param>
+        /// <returns>The numeric value of the part, wrapping on overflow.</returns>
         static ushort ParseVersionPart(string str, ref int pos)
         {
             ushort value = 0;
             while (pos < str.Length)
             {
-                char c = str[pos];
+                var c = str[pos];
                 if (c == '.')
                 {
                     pos++;

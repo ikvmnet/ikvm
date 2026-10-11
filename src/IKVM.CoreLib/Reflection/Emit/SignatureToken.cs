@@ -19,12 +19,17 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
-    internal readonly record struct SignatureToken(int Token)
+
+    /// <summary>
+    /// Represents the token returned by the metadata to represent a signature.
+    /// </summary>
+    /// <param name="Token">The metadata token of the stand-alone signature.</param>
+    readonly record struct SignatureToken(int Token)
     {
     }
 

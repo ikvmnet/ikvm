@@ -20,17 +20,31 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Describes the outcome of parsing an assembly name string.
+    /// </summary>
     enum ParseAssemblyResult
     {
 
+        /// <summary>
+        /// The assembly name was parsed successfully.
+        /// </summary>
         OK,
+
+        /// <summary>
+        /// The assembly name is malformed.
+        /// </summary>
         GenericError,
+
+        /// <summary>
+        /// The assembly name specifies the same property more than once.
+        /// </summary>
         DuplicateKey,
 
     }

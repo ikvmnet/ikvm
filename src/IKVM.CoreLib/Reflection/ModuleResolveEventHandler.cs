@@ -24,6 +24,13 @@
 namespace IKVM.Reflection
 {
 
-    internal delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs args);
+    /// <summary>
+    /// Represents the method that resolves a module of an <see cref="Assembly"/> that cannot be found by other means.
+    /// The assembly reader consults these handlers when a module listed in the manifest cannot be loaded.
+    /// </summary>
+    /// <param name="sender">The assembly that requests the module.</param>
+    /// <param name="args">The arguments describing the module to resolve.</param>
+    /// <returns>The module that satisfies the request, or <see langword="null"/> if the handler cannot resolve it.</returns>
+    delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs args);
 
 }

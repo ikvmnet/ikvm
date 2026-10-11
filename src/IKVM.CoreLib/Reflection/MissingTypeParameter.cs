@@ -24,84 +24,94 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a generic parameter of a missing type or method, whose definition, and therefore name and
+    /// constraints, is not available. Only its owner and position are known.
+    /// </summary>
     sealed class MissingTypeParameter : IKVM.Reflection.Reader.TypeParameterType
     {
 
-        readonly MemberInfo owner;
-        readonly int index;
+        readonly MemberInfo _owner;
+        readonly int _index;
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a generic parameter of a type.
         /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="index"></param>
+        /// <param name="owner">The type that declares the generic parameter.</param>
+        /// <param name="index">The position of the parameter in the type's generic parameter list.</param>
         internal MissingTypeParameter(Type owner, int index) :
             this(owner, index, Signature.ELEMENT_TYPE_VAR)
         {
-
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a generic parameter of a method.
         /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="index"></param>
+        /// <param name="owner">The method that declares the generic parameter.</param>
+        /// <param name="index">The position of the parameter in the method's generic parameter list.</param>
         internal MissingTypeParameter(MethodInfo owner, int index) :
             this(owner, index, Signature.ELEMENT_TYPE_MVAR)
         {
-
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="index"></param>
-        /// <param name="sigElementType"></param>
+        /// <param name="owner">The type or method that declares the generic parameter.</param>
+        /// <param name="index">The position of the parameter in the owner's generic parameter list.</param>
+        /// <param name="sigElementType">The signature element type: <c>ELEMENT_TYPE_VAR</c> for a type parameter or <c>ELEMENT_TYPE_MVAR</c> for a method parameter.</param>
         MissingTypeParameter(MemberInfo owner, int index, byte sigElementType) :
             base(sigElementType)
         {
-            this.owner = owner;
-            this.index = index;
+            _owner = owner;
+            _index = index;
         }
 
-        public override Module Module
-        {
-            get { return owner.Module; }
-        }
+        /// <summary>
+        /// Gets the module of the type or method that declares the parameter.
+        /// </summary>
+        public override Module Module => _owner.Module;
 
-        public override string Name
-        {
-            get { return null; }
-        }
+        /// <summary>
+        /// Gets the name of the parameter, which is always <see langword="null"/> because it is not known.
+        /// </summary>
+        public override string Name => null;
 
-        public override int GenericParameterPosition
-        {
-            get { return index; }
-        }
+        /// <summary>
+        /// Gets the position of the type parameter in the type parameter list of the generic type or method that
+        /// declared the parameter.
+        /// </summary>
+        public override int GenericParameterPosition => _index;
 
-        public override MethodBase DeclaringMethod
-        {
-            get { return owner as MethodBase; }
-        }
+        /// <summary>
+        /// Gets the generic method that declares the parameter, or <see langword="null"/> for a parameter of a generic
+        /// type.
+        /// </summary>
+        public override MethodBase DeclaringMethod => _owner as MethodBase;
 
-        public override Type DeclaringType
-        {
-            get { return owner as Type; }
-        }
+        /// <summary>
+        /// Gets the generic type that declares the parameter, or <see langword="null"/> for a parameter of a generic
+        /// method.
+        /// </summary>
+        public override Type DeclaringType => _owner as Type;
 
+        /// <summary>
+        /// Substitutes the parameter with the matching type or method argument supplied by <paramref name="binder"/>.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <returns>The bound type argument.</returns>
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            if (owner is MethodBase)
+            if (_owner is MethodBase)
                 return binder.BindMethodParameter(this);
             else
                 return binder.BindTypeParameter(this);
         }
 
-        internal override bool IsBaked
-        {
-            get { return owner.IsBaked; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the owner of the parameter is complete.
+        /// </summary>
+        internal override bool IsBaked => _owner.IsBaked;
 
     }
 

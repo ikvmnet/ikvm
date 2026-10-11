@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -29,26 +29,39 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal sealed class ManifestResourceInfo
+    /// <summary>
+    /// Provides information about where a manifest resource is located.
+    /// </summary>
+    sealed class ManifestResourceInfo
     {
 
-        readonly ModuleReader module;
-        readonly EntityHandle implementation;
+        readonly ModuleReader _module;
+        readonly EntityHandle _implementation;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The module whose manifest contains the resource.</param>
         /// <param name="implementation">The Implementation of the ManifestResource row, nil for a resource embedded in the module.</param>
         internal ManifestResourceInfo(ModuleReader module, EntityHandle implementation)
         {
-            this.module = module;
-            this.implementation = implementation;
+            _module = module;
+            _implementation = implementation;
         }
 
-        public Assembly ReferencedAssembly => implementation.Kind == HandleKind.AssemblyReference && implementation.IsNil == false ? module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1) : null;
+        /// <summary>
+        /// Gets the containing assembly for the manifest resource, or <see langword="null"/> if the resource is not
+        /// located in another assembly.
+        /// </summary>
+        public Assembly ReferencedAssembly =>
+            _implementation.Kind == HandleKind.AssemblyReference && _implementation.IsNil == false ? _module.ResolveAssemblyRef(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
-        public string FileName => implementation.Kind == HandleKind.AssemblyFile && implementation.IsNil == false ? module.GetFileName(MetadataTokens.GetRowNumber(implementation) - 1) : null;
+        /// <summary>
+        /// Gets the name of the file that contains the manifest resource, or <see langword="null"/> if the resource is
+        /// not located in a separate file of the same assembly.
+        /// </summary>
+        public string FileName =>
+            _implementation.Kind == HandleKind.AssemblyFile && _implementation.IsNil == false ? _module.GetFileName(MetadataTokens.GetRowNumber(_implementation) - 1) : null;
 
     }
 

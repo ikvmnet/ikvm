@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,6 +26,7 @@ namespace IKVM.Reflection.Tests
         /// <summary>
         /// Gets the fixture target frameworks, as theory data.
         /// </summary>
+        /// <returns>One row per fixture target framework, each holding its TFM.</returns>
         public static IEnumerable<object[]> GetTargetFrameworkTestData() => TargetFrameworks.Select(i => new object[] { i });
 
         /// <summary>
@@ -45,22 +46,22 @@ namespace IKVM.Reflection.Tests
         /// <summary>
         /// Gets the path of the fixture assembly built for the given target framework.
         /// </summary>
-        /// <param name="tfm"></param>
-        /// <returns></returns>
+        /// <param name="tfm">The target framework of the fixture build.</param>
+        /// <returns>The path of the fixture assembly under the test output directory.</returns>
         public static string GetAssemblyPath(string tfm) => Path.Combine(AppContext.BaseDirectory, "fixture", tfm, "IKVM.Reflection.Tests.Fixture.dll");
 
         /// <summary>
         /// Gets the path of the checked-in snapshot for the given target framework, in the output directory.
         /// </summary>
-        /// <param name="tfm"></param>
-        /// <returns></returns>
+        /// <param name="tfm">The target framework whose snapshot is wanted.</param>
+        /// <returns>The path of the copy of the snapshot in the test output directory.</returns>
         public static string GetSnapshotPath(string tfm) => Path.Combine(AppContext.BaseDirectory, "Snapshots", tfm + ".txt");
 
         /// <summary>
         /// Gets the path of the snapshot for the given target framework in the source tree, for regeneration.
         /// </summary>
-        /// <param name="tfm"></param>
-        /// <returns></returns>
+        /// <param name="tfm">The target framework whose snapshot is wanted.</param>
+        /// <returns>The path of the snapshot in the project directory recorded in the test assembly metadata.</returns>
         public static string GetSourceSnapshotPath(string tfm)
         {
             var dir = typeof(Fixture).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().First(i => i.Key == "ProjectDirectory").Value!;
@@ -70,8 +71,8 @@ namespace IKVM.Reflection.Tests
         /// <summary>
         /// Reads the checked-in snapshot for the given target framework, normalizing line endings.
         /// </summary>
-        /// <param name="tfm"></param>
-        /// <returns></returns>
+        /// <param name="tfm">The target framework whose snapshot is read.</param>
+        /// <returns>The text of the snapshot, with line feeds as line endings.</returns>
         public static string ReadSnapshot(string tfm) => File.ReadAllText(GetSnapshotPath(tfm)).Replace("\r\n", "\n");
 
         /// <summary>

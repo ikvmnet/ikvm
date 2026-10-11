@@ -1,10 +1,13 @@
-using System.IO;
+﻿using System.IO;
 
 using Xunit;
 
 namespace IKVM.Reflection.Tests.Reader
 {
 
+    /// <summary>
+    /// Tests for reading existing modules from disk.
+    /// </summary>
     public class ModuleReaderTests
     {
 
@@ -12,7 +15,7 @@ namespace IKVM.Reflection.Tests.Reader
         /// Loads the fixture built for <paramref name="tfm"/> and checks IKVM.Reflection reports what the runtime of that
         /// target framework reports, whatever the host runtime is.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework of the fixture build to load.</param>
         [Theory]
         [MemberData(nameof(Fixture.GetTargetFrameworkTestData), MemberType = typeof(Fixture))]
         public void ReadsFixtureLikeTargetRuntime(string tfm)
@@ -28,7 +31,7 @@ namespace IKVM.Reflection.Tests.Reader
         /// The tables stream version is read from the metadata root rather than from System.Reflection.Metadata, which
         /// does not expose it. Roslyn writes version 2.0, which is what the runtime reports for its own modules.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework of the fixture build to load.</param>
         [Theory]
         [MemberData(nameof(Fixture.GetTargetFrameworkTestData), MemberType = typeof(Fixture))]
         public void ReportsTablesStreamVersion(string tfm)

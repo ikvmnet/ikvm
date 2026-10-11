@@ -24,8 +24,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Reflection.Metadata;
+using System.Text;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -33,123 +33,160 @@ using IKVM.Reflection.Reader;
 namespace IKVM.Reflection
 {
 
-    internal readonly struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
+    /// <summary>
+    /// An immutable, ordered list of the optional (modopt) and required (modreq) custom modifiers on a type in a
+    /// signature. Internally the modifier types are stored in one array in which <see cref="MarkerType.ModOpt"/> and
+    /// <see cref="MarkerType.ModReq"/> entries switch between optional and required runs.
+    /// </summary>
+    readonly struct CustomModifiers : IEquatable<CustomModifiers>, IEnumerable<CustomModifiers.Entry>
     {
 
+        /// <summary>
+        /// A single custom modifier.
+        /// </summary>
+        /// <param name="Type">The modifier type.</param>
+        /// <param name="IsRequired"><see langword="true"/> for a required modifier (modreq); <see langword="false"/> for an optional one (modopt).</param>
         public readonly record struct Entry(Type Type, bool IsRequired);
 
+        /// <summary>
+        /// Enumerates the custom modifiers in order, skipping the marker entries.
+        /// </summary>
         public struct Enumerator : IEnumerator<Entry>
         {
 
-            readonly Type[] types;
-            int index;
-            bool required;
+            readonly Type[] _types;
+            int _index;
+            bool _required;
 
             /// <summary>
-            /// Initializes a new instance
+            /// Initializes a new instance.
             /// </summary>
-            /// <param name="types"></param>
+            /// <param name="types">The modifier array to enumerate, or <see langword="null"/> for no modifiers.</param>
             internal Enumerator(Type[] types)
             {
-                this.types = types;
-                this.index = -1;
-                this.required = Initial == MarkerType.ModReq;
+                _types = types;
+                _index = -1;
+                _required = Initial == MarkerType.ModReq;
             }
 
+            /// <inheritdoc />
             void System.Collections.IEnumerator.Reset()
             {
-                this.index = -1;
-                this.required = Initial == MarkerType.ModReq;
+                _index = -1;
+                _required = Initial == MarkerType.ModReq;
             }
 
-            public Entry Current => new Entry(types[index], required);
+            /// <summary>
+            /// Gets the modifier at the current position of the enumerator.
+            /// </summary>
+            public Entry Current => new(_types[_index], _required);
 
+            /// <summary>
+            /// Advances the enumerator to the next modifier, skipping a marker that switches between optional and
+            /// required modifiers.
+            /// </summary>
+            /// <returns><see langword="true"/> if the enumerator was advanced to the next modifier; <see langword="false"/> if it has passed the end.</returns>
             public bool MoveNext()
             {
-                if (types == null || index == types.Length)
+                if (_types == null || _index == _types.Length)
                     return false;
 
-                index++;
+                _index++;
 
-                if (index == types.Length)
+                if (_index == _types.Length)
                 {
                     return false;
                 }
-                else if (types[index] == MarkerType.ModOpt)
+                else if (_types[_index] == MarkerType.ModOpt)
                 {
-                    required = false;
-                    index++;
+                    _required = false;
+                    _index++;
                 }
-                else if (types[index] == MarkerType.ModReq)
+                else if (_types[_index] == MarkerType.ModReq)
                 {
-                    required = true;
-                    index++;
+                    _required = true;
+                    _index++;
                 }
 
                 return true;
             }
 
+            /// <inheritdoc />
             object System.Collections.IEnumerator.Current => Current;
 
+            /// <inheritdoc />
             void IDisposable.Dispose()
             {
             }
 
         }
 
-        static Type Initial => MarkerType.ModOpt; // note that FromReqOpt assumes that Initial == ModOpt
+        /// <summary>
+        /// Gets the marker for the mode a modifier array starts in when it has no leading marker: modifiers are
+        /// optional until a <see cref="MarkerType.ModReq"/> marker is seen.
+        /// </summary>
+        // note that FromReqOpt assumes that Initial == ModOpt
+        static Type Initial => MarkerType.ModOpt;
 
-        readonly Type[] types;
+        readonly Type[] _types;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="types"></param>
+        /// <param name="types">The modifier array, including markers, or <see langword="null"/> for no modifiers. Must not be empty.</param>
         CustomModifiers(Type[] types)
         {
             Debug.Assert(types == null || types.Length != 0);
-            this.types = types;
+            _types = types;
         }
 
-        public Enumerator GetEnumerator()
-        {
-            return new Enumerator(types);
-        }
+        /// <summary>
+        /// Returns an enumerator that iterates through the custom modifiers.
+        /// </summary>
+        /// <returns>An enumerator for the custom modifiers.</returns>
+        public Enumerator GetEnumerator() => new Enumerator(_types);
 
-        IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        /// <inheritdoc />
+        IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator() => GetEnumerator();
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        /// <inheritdoc />
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public bool IsEmpty
-        {
-            get { return types == null; }
-        }
+        /// <summary>
+        /// Gets whether there are no custom modifiers.
+        /// </summary>
+        public bool IsEmpty => _types == null;
 
-        public bool Equals(CustomModifiers other)
-        {
-            return Util.ArrayEquals(types, other.types);
-        }
+        /// <summary>
+        /// Returns whether this list contains the same modifiers in the same order as another one.
+        /// </summary>
+        /// <param name="other">The list to compare with.</param>
+        /// <returns><see langword="true"/> if the lists are equal; otherwise <see langword="false"/>.</returns>
+        public bool Equals(CustomModifiers other) => Util.ArrayEquals(_types, other._types);
 
+        /// <summary>
+        /// Returns whether the specified object is a <see cref="CustomModifiers"/> with the same modifiers in the same
+        /// order.
+        /// </summary>
+        /// <param name="obj">The object to compare with.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an equal list; otherwise <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as CustomModifiers?;
             return other != null && Equals(other.Value);
         }
 
-        public override int GetHashCode()
-        {
-            return Util.GetHashCode(types);
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => Util.GetHashCode(_types);
 
+        /// <summary>
+        /// Returns the modifiers in IL assembler syntax, for example <c>modreq(System.Runtime.CompilerServices.IsVolatile)</c>,
+        /// separated by spaces.
+        /// </summary>
+        /// <returns>The modifiers as a string, or an empty string if there are none.</returns>
         public override string ToString()
         {
-            if (types == null)
+            if (_types == null)
                 return string.Empty;
 
             var sb = new StringBuilder();
@@ -163,17 +200,22 @@ namespace IKVM.Reflection
             return sb.ToString();
         }
 
-        public bool ContainsMissingType
-        {
-            get { return Type.ContainsMissingType(types); }
-        }
+        /// <summary>
+        /// Gets whether any of the modifier types is a missing type.
+        /// </summary>
+        public bool ContainsMissingType => Type.ContainsMissingType(_types);
 
+        /// <summary>
+        /// Gets either the required or the optional modifiers, in reverse order to match reflection.
+        /// </summary>
+        /// <param name="required"><see langword="true"/> to get the required modifiers; <see langword="false"/> to get the optional ones.</param>
+        /// <returns>The modifier types.</returns>
         Type[] GetRequiredOrOptional(bool required)
         {
-            if (types == null)
+            if (_types == null)
                 return Type.EmptyTypes;
 
-            int count = 0;
+            var count = 0;
             foreach (var e in this)
                 if (e.IsRequired == required)
                     count++;
@@ -181,37 +223,46 @@ namespace IKVM.Reflection
             var result = new Type[count];
             foreach (var e in this)
                 if (e.IsRequired == required)
-                    result[--count] = e.Type; // FXBUG reflection (and ildasm) return custom modifiers in reverse order while SRE writes them in the specified order
+                    // FXBUG reflection (and ildasm) return custom modifiers in reverse order while SRE writes them in the specified order
+                    result[--count] = e.Type;
 
             return result;
         }
 
-        internal Type[] GetRequired()
-        {
-            return GetRequiredOrOptional(true);
-        }
+        /// <summary>
+        /// Gets the required (modreq) modifiers, in reverse order to match reflection.
+        /// </summary>
+        /// <returns>The required modifier types.</returns>
+        internal Type[] GetRequired() => GetRequiredOrOptional(true);
 
-        internal Type[] GetOptional()
-        {
-            return GetRequiredOrOptional(false);
-        }
+        /// <summary>
+        /// Gets the optional (modopt) modifiers, in reverse order to match reflection.
+        /// </summary>
+        /// <returns>The optional modifier types.</returns>
+        internal Type[] GetOptional() => GetRequiredOrOptional(false);
 
+        /// <summary>
+        /// Returns the modifiers with any generic type parameters in the modifier types replaced using the specified
+        /// binder.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the type arguments.</param>
+        /// <returns>The bound modifiers, sharing the array with this instance when nothing changed.</returns>
         internal CustomModifiers Bind(IGenericBinder binder)
         {
-            if (types == null)
+            if (_types == null)
                 return this;
 
-            var result = types;
-            for (var i = 0; i < types.Length; i++)
+            var result = _types;
+            for (var i = 0; i < _types.Length; i++)
             {
-                if (types[i] == MarkerType.ModOpt || types[i] == MarkerType.ModReq)
+                if (_types[i] == MarkerType.ModOpt || _types[i] == MarkerType.ModReq)
                     continue;
 
-                var type = types[i].BindTypeParameters(binder);
-                if (!ReferenceEquals(type, types[i]))
+                var type = _types[i].BindTypeParameters(binder);
+                if (!ReferenceEquals(type, _types[i]))
                 {
-                    if (result == types)
-                        result = (Type[])types.Clone();
+                    if (result == _types)
+                        result = (Type[])_types.Clone();
 
                     result[i] = type;
                 }
@@ -220,6 +271,13 @@ namespace IKVM.Reflection
             return new CustomModifiers(result);
         }
 
+        /// <summary>
+        /// Reads the custom modifiers, if any, at the current position of a signature blob.
+        /// </summary>
+        /// <param name="module">The module the signature belongs to.</param>
+        /// <param name="br">The reader positioned at the start of the modifiers. It is advanced past them.</param>
+        /// <param name="context">The generic context used to resolve type parameters.</param>
+        /// <returns>The modifiers read, or an empty list if there are none.</returns>
         internal static CustomModifiers Read(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             var b = br.PeekByte();
@@ -245,6 +303,10 @@ namespace IKVM.Reflection
             return new CustomModifiers(list.ToArray());
         }
 
+        /// <summary>
+        /// Advances a signature blob reader past any custom modifiers at its current position without resolving them.
+        /// </summary>
+        /// <param name="br">The reader to advance.</param>
         internal static void Skip(ref BlobReader br)
         {
             var b = br.PeekByte();
@@ -256,6 +318,13 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Creates a modifier list from separate arrays of required and optional modifiers, as passed to the
+        /// System.Reflection.Emit APIs. The optional modifiers are placed first.
+        /// </summary>
+        /// <param name="req">The required modifiers, or <see langword="null"/>.</param>
+        /// <param name="opt">The optional modifiers, or <see langword="null"/>.</param>
+        /// <returns>The combined modifier list.</returns>
         internal static CustomModifiers FromReqOpt(Type[] req, Type[] opt)
         {
             List<Type> list = null;
@@ -268,7 +337,7 @@ namespace IKVM.Reflection
 
             if (req != null && req.Length != 0)
             {
-                list ??= new List<Type>();
+                list ??= [];
                 list.Add(MarkerType.ModReq);
                 list.AddRange(req);
             }
@@ -279,10 +348,12 @@ namespace IKVM.Reflection
                 return new CustomModifiers(list.ToArray());
         }
 
-        static bool IsCustomModifier(byte b)
-        {
-            return b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
-        }
+        /// <summary>
+        /// Returns whether a signature byte is ELEMENT_TYPE_CMOD_OPT or ELEMENT_TYPE_CMOD_REQD.
+        /// </summary>
+        /// <param name="b">The signature byte.</param>
+        /// <returns><see langword="true"/> if the byte introduces a custom modifier; otherwise <see langword="false"/>.</returns>
+        static bool IsCustomModifier(byte b) => b == Signature.ELEMENT_TYPE_CMOD_OPT || b == Signature.ELEMENT_TYPE_CMOD_REQD;
 
     }
 

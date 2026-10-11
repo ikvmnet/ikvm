@@ -19,15 +19,19 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
 
-    internal interface ICustomAttributeProvider
-	{
-	}
+    /// <summary>
+    /// Marks an object that can carry custom attributes. Unlike its System.Reflection counterpart this interface declares
+    /// no members; custom attributes are read through <see cref="CustomAttributeData"/>.
+    /// </summary>
+    interface ICustomAttributeProvider
+    {
+    }
 
 }

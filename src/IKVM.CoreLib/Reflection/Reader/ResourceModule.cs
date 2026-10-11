@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -27,80 +27,100 @@ using System.Collections.Generic;
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a file of a multi-file assembly that the manifest's File table marks as containing no metadata. The
+    /// module defines no types; its contents are only reachable as a resource.
+    /// </summary>
     sealed class ResourceModule : NonPEModule
     {
 
-        readonly ModuleReader manifest;
-        readonly int index;
-        readonly string location;
+        readonly ModuleReader _manifest;
+
+        /// <summary>
+        /// The index of the file in the manifest's File table.
+        /// </summary>
+        readonly int _index;
+
+        readonly string _location;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="manifest"></param>
-        /// <param name="index"></param>
-        /// <param name="location"></param>
-        internal ResourceModule(ModuleReader manifest, int index, string location) : 
+        /// <param name="manifest">The manifest module of the assembly that lists the file.</param>
+        /// <param name="index">The index of the file in the manifest's File table.</param>
+        /// <param name="location">The full path of the file, or <see langword="null"/> if it is not known.</param>
+        internal ResourceModule(ModuleReader manifest, int index, string location) :
             base(manifest.Universe)
         {
-            this.manifest = manifest;
-            this.index = index;
-            this.location = location;
+            _manifest = manifest;
+            _index = index;
+            _location = location;
         }
 
-        public override int MDStreamVersion
-        {
-            get { throw new NotSupportedException(); }
-        }
+        /// <summary>
+        /// Not supported for a resource module.
+        /// </summary>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
+        public override int MDStreamVersion => throw new NotSupportedException();
 
-        public override bool IsResource()
-        {
-            return true;
-        }
+        /// <summary>
+        /// Gets a value indicating whether the object is a resource, which is always <see langword="true"/>.
+        /// </summary>
+        /// <returns><see langword="true"/>.</returns>
+        public override bool IsResource() => true;
 
-        public override Assembly Assembly
-        {
-            get { return manifest.Assembly; }
-        }
+        /// <inheritdoc />
+        public override Assembly Assembly => _manifest.Assembly;
 
-        public override string FullyQualifiedName
-        {
-            get { return location ?? "<Unknown>"; }
-        }
+        /// <summary>
+        /// Gets the full path of the file, or "&lt;Unknown&gt;" if it is not known.
+        /// </summary>
+        public override string FullyQualifiedName => _location ?? "<Unknown>";
 
-        public override string Name
-        {
-            get { return location == null ? "<Unknown>" : System.IO.Path.GetFileName(location); }
-        }
+        /// <summary>
+        /// Gets the file name of the file, without its path, or "&lt;Unknown&gt;" if it is not known.
+        /// </summary>
+        public override string Name => _location == null ? "<Unknown>" : System.IO.Path.GetFileName(_location);
 
-        public override string ScopeName
-        {
-            get { return manifest.GetFileName(index); }
-        }
+        /// <summary>
+        /// Gets the name of the file as listed in the manifest's File table.
+        /// </summary>
+        public override string ScopeName => _manifest.GetFileName(_index);
 
-        public override Guid ModuleVersionId
-        {
-            get { throw new NotSupportedException(); }
-        }
+        /// <summary>
+        /// Not supported for a resource module.
+        /// </summary>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
+        public override Guid ModuleVersionId => throw new NotSupportedException();
 
-        internal override Type FindType(TypeName typeName)
-        {
-            return null;
-        }
+        /// <summary>
+        /// Finds no type, because a resource module defines none.
+        /// </summary>
+        /// <param name="typeName">The name of the type to find.</param>
+        /// <returns>Always <see langword="null"/>.</returns>
+        internal override Type FindType(TypeName typeName) => null;
 
-        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
-        {
-            return null;
-        }
+        /// <summary>
+        /// Finds no type, because a resource module defines none.
+        /// </summary>
+        /// <param name="lowerCaseName">The lower-case name of the type to find.</param>
+        /// <returns>Always <see langword="null"/>.</returns>
+        internal override Type FindTypeIgnoreCase(TypeName lowerCaseName) => null;
 
+        /// <summary>
+        /// Adds nothing, because a resource module defines no types.
+        /// </summary>
+        /// <param name="list">The list the types would be added to.</param>
         internal override void GetTypesImpl(List<Type> list)
         {
         }
 
-        protected override Exception ArgumentOutOfRangeException()
-        {
-            return new NotSupportedException();
-        }
+        /// <summary>
+        /// Creates the exception thrown where the base class would throw
+        /// <see cref="System.ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <returns>A <see cref="NotSupportedException"/>.</returns>
+        protected override Exception ArgumentOutOfRangeException() => new NotSupportedException();
 
     }
 
