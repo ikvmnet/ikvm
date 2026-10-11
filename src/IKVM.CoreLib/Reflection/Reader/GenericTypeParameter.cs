@@ -21,9 +21,8 @@
   jeroen@frijters.net
   
 */
-using System.Collections.Generic;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
@@ -32,106 +31,60 @@ namespace IKVM.Reflection.Reader
     {
 
         readonly ModuleReader module;
-        readonly int index;
+        readonly GenericParameterHandle handle;
+        readonly GenericParameter definition;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="module"></param>
-        /// <param name="index"></param>
+        /// <param name="handle"></param>
         /// <param name="sigElementType"></param>
-        internal GenericTypeParameter(ModuleReader module, int index, byte sigElementType) :
+        internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
             this.module = module;
-            this.index = index;
+            this.handle = handle;
+            this.definition = module.Metadata.GetGenericParameter(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
+        public override bool Equals(object obj) => base.Equals(obj);
 
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        public override int GetHashCode() => base.GetHashCode();
 
-        public override string Namespace
-        {
-            get { return DeclaringType.Namespace; }
-        }
+        public override string Namespace => DeclaringType.Namespace;
 
-        public override string Name
-        {
-            get { return module.GetString(module.GenericParamTable.records[index].Name); }
-        }
+        public override string Name => module.GetString(definition.Name);
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        public override Module Module => module;
 
-        public override int MetadataToken
-        {
-            get { return (GenericParamTable.Index << 24) + index + 1; }
-        }
+        public override int MetadataToken => MetadataTokens.GetToken(handle);
 
-        public override int GenericParameterPosition
-        {
-            get { return module.GenericParamTable.records[index].Number; }
-        }
+        public override int GenericParameterPosition => definition.Index;
 
-        public override Type DeclaringType
-        {
-            get
-            {
-                var owner = module.GenericParamTable.records[index].Owner;
-                return (owner >> 24) == TypeDefTable.Index ? module.ResolveType(owner) : null;
-            }
-        }
+        public override Type DeclaringType => definition.Parent.Kind == HandleKind.TypeDefinition ? module.ResolveType(MetadataTokens.GetToken(definition.Parent)) : null;
 
-        public override MethodBase DeclaringMethod
-        {
-            get
-            {
-                var owner = module.GenericParamTable.records[index].Owner;
-                return (owner >> 24) == MethodDefTable.Index ? module.ResolveMethod(owner) : null;
-            }
-        }
+        public override MethodBase DeclaringMethod => definition.Parent.Kind == HandleKind.MethodDefinition ? module.ResolveMethod(MetadataTokens.GetToken(definition.Parent)) : null;
 
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
-            var list = new List<Type>();
-            foreach (int i in module.GenericParamConstraint.Filter(MetadataToken))
-                list.Add(module.ResolveType(module.GenericParamConstraint.records[i].Constraint, context));
+            var handles = definition.GetConstraints();
+            var constraints = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
+            for (int i = 0; i < constraints.Length; i++)
+                constraints[i] = module.ResolveType(MetadataTokens.GetToken(module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
 
-            return list.ToArray();
+            return constraints;
         }
 
-        public override GenericParameterAttributes GenericParameterAttributes
-        {
-            get { return (GenericParameterAttributes)module.GenericParamTable.records[index].Flags; }
-        }
+        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)definition.Attributes;
 
         internal override Type BindTypeParameters(IGenericBinder binder)
         {
-            var owner = module.GenericParamTable.records[index].Owner;
-            if ((owner >> 24) == MethodDefTable.Index)
-            {
-                return binder.BindMethodParameter(this);
-            }
-            else
-            {
-                return binder.BindTypeParameter(this);
-            }
+            return definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
         }
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
     }
 

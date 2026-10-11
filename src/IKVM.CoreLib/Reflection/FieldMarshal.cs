@@ -28,7 +28,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
@@ -57,65 +56,81 @@ namespace IKVM.Reflection
             fm = new FieldMarshal();
 
             if (module is ModuleBuilder builder)
-                return builder.TryGetFieldMarshal(token, out var nativeType) && Decode(module, new ByteReader(nativeType, 0, nativeType.Length), out fm);
+            {
+                if (builder.TryGetFieldMarshal(token, out var nativeType) == false)
+                    return false;
 
-            foreach (var i in module.FieldMarshalTable.Filter(token))
-                return Decode(module, module.GetBlobReader(module.FieldMarshalTable.records[i].NativeType), out fm);
+                unsafe
+                {
+                    fixed (byte* p = nativeType)
+                        return Decode(module, new BlobReader(p, nativeType.Length), out fm);
+                }
+            }
 
-            return false;
+            if (module is not ModuleReader reader || (token & 0xFFFFFF) == 0)
+                return false;
+
+            var descriptor = (token >> 24) switch
+            {
+                (int)TableIndex.Field => reader.Metadata.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                (int)TableIndex.Param => reader.Metadata.GetParameter(MetadataTokens.ParameterHandle(token & 0xFFFFFF)).GetMarshallingDescriptor(),
+                _ => default,
+            };
+
+            return descriptor.IsNil == false && Decode(module, module.GetBlobReader(descriptor), out fm);
         }
 
-        static bool Decode(Module module, ByteReader blob, out FieldMarshal fm)
+        static bool Decode(Module module, BlobReader blob, out FieldMarshal fm)
         {
             fm = new FieldMarshal();
 
-            fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedUInt();
+            fm.UnmanagedType = (UnmanagedType)blob.ReadCompressedInteger();
             switch (fm.UnmanagedType)
             {
                 case UnmanagedType.LPArray:
-                    fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    fm.ArraySubType = (UnmanagedType)blob.ReadCompressedInteger();
                     if (fm.ArraySubType == NATIVE_TYPE_MAX)
                         fm.ArraySubType = null;
 
-                    if (blob.Length != 0)
+                    if (blob.RemainingBytes != 0)
                     {
-                        fm.SizeParamIndex = (short)blob.ReadCompressedUInt();
-                        if (blob.Length != 0)
+                        fm.SizeParamIndex = (short)blob.ReadCompressedInteger();
+                        if (blob.RemainingBytes != 0)
                         {
-                            fm.SizeConst = blob.ReadCompressedUInt();
-                            if (blob.Length != 0 && blob.ReadCompressedUInt() == 0)
+                            fm.SizeConst = blob.ReadCompressedInteger();
+                            if (blob.RemainingBytes != 0 && blob.ReadCompressedInteger() == 0)
                                 fm.SizeParamIndex = null;
                         }
                     }
                     break;
                 case UnmanagedType.SafeArray:
-                    if (blob.Length != 0)
+                    if (blob.RemainingBytes != 0)
                     {
-                        fm.SafeArraySubType = (VarEnum)blob.ReadCompressedUInt();
-                        if (blob.Length != 0)
-                            fm.SafeArrayUserDefinedSubType = ReadType(module, blob);
+                        fm.SafeArraySubType = (VarEnum)blob.ReadCompressedInteger();
+                        if (blob.RemainingBytes != 0)
+                            fm.SafeArrayUserDefinedSubType = ReadType(module, ref blob);
                     }
                     break;
                 case UnmanagedType.ByValArray:
-                    fm.SizeConst = blob.ReadCompressedUInt();
-                    if (blob.Length != 0)
-                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedUInt();
+                    fm.SizeConst = blob.ReadCompressedInteger();
+                    if (blob.RemainingBytes != 0)
+                        fm.ArraySubType = (UnmanagedType)blob.ReadCompressedInteger();
                     break;
                 case UnmanagedType.ByValTStr:
-                    fm.SizeConst = blob.ReadCompressedUInt();
+                    fm.SizeConst = blob.ReadCompressedInteger();
                     break;
                 case UnmanagedType.Interface:
                 case UnmanagedType.IDispatch:
                 case UnmanagedType.IUnknown:
-                    if (blob.Length != 0)
-                        fm.IidParameterIndex = blob.ReadCompressedUInt();
+                    if (blob.RemainingBytes != 0)
+                        fm.IidParameterIndex = blob.ReadCompressedInteger();
                     break;
                 case UnmanagedType_CustomMarshaler:
                     {
-                        blob.ReadCompressedUInt();
-                        blob.ReadCompressedUInt();
-                        fm.MarshalType = ReadString(blob);
-                        fm.MarshalCookie = ReadString(blob);
+                        blob.ReadCompressedInteger();
+                        blob.ReadCompressedInteger();
+                        fm.MarshalType = ReadString(ref blob);
+                        fm.MarshalCookie = ReadString(ref blob);
 
                         var parser = TypeNameParser.Parse(fm.MarshalType, false);
                         if (!parser.Error)
@@ -226,9 +241,9 @@ namespace IKVM.Reflection
             return bb.ToArray();
         }
 
-        static Type ReadType(Module module, ByteReader br)
+        static Type ReadType(Module module, ref BlobReader br)
         {
-            var str = ReadString(br);
+            var str = ReadString(ref br);
             if (str == "")
                 return null;
 
@@ -240,9 +255,9 @@ namespace IKVM.Reflection
             WriteString(bb, type.Assembly == module.Assembly ? type.FullName : type.AssemblyQualifiedName);
         }
 
-        static string ReadString(ByteReader br)
+        static string ReadString(ref BlobReader br)
         {
-            return Encoding.UTF8.GetString(br.ReadBytes(br.ReadCompressedUInt()));
+            return Encoding.UTF8.GetString(br.ReadBytes(br.ReadCompressedInteger()));
         }
 
         static void WriteString(BlobBuilder bb, string str)

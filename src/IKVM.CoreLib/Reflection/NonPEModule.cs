@@ -61,7 +61,7 @@ namespace IKVM.Reflection
             throw InvalidOperationException();
         }
 
-        internal sealed override ByteReader GetBlobReader(BlobHandle handle)
+        internal sealed override BlobReader GetBlobReader(BlobHandle handle)
         {
             throw InvalidOperationException();
         }

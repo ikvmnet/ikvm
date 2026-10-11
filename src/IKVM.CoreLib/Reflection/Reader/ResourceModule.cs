@@ -75,7 +75,7 @@ namespace IKVM.Reflection.Reader
 
         public override string ScopeName
         {
-            get { return manifest.GetString(manifest.FileTable.records[index].Name); }
+            get { return manifest.GetFileName(index); }
         }
 
         public override Guid ModuleVersionId

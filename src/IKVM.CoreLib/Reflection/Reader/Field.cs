@@ -21,9 +21,8 @@
   jeroen@frijters.net
   
 */
-using System;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
@@ -33,7 +32,8 @@ namespace IKVM.Reflection.Reader
 
         readonly ModuleReader module;
         readonly TypeDefImpl declaringType;
-        readonly int index;
+        readonly FieldDefinitionHandle handle;
+        readonly FieldDefinition definition;
 
         FieldSignature lazyFieldSig;
 
@@ -42,80 +42,46 @@ namespace IKVM.Reflection.Reader
         /// </summary>
         /// <param name="module"></param>
         /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
+        /// <param name="handle"></param>
+        internal FieldDefImpl(ModuleReader module, TypeDefImpl declaringType, FieldDefinitionHandle handle)
         {
             this.module = module;
             this.declaringType = declaringType;
-            this.index = index;
+            this.handle = handle;
+            this.definition = module.Metadata.GetFieldDefinition(handle);
         }
 
-        public override FieldAttributes Attributes
-        {
-            get { return (FieldAttributes)(ushort)module.FieldTable.records[index].Flags; }
-        }
+        public override FieldAttributes Attributes => (FieldAttributes)definition.Attributes;
 
-        public override Type DeclaringType
-        {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
-        }
+        public override Type DeclaringType => declaringType.IsModulePseudoType ? null : declaringType;
 
-        public override string Name
-        {
-            get { return module.GetString(module.FieldTable.records[index].Name); }
-        }
+        public override string Name => module.GetString(definition.Name);
 
-        public override string ToString()
-        {
-            return this.FieldType.Name + " " + this.Name;
-        }
+        public override string ToString() => FieldType.Name + " " + Name;
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        public override Module Module => module;
 
-        public override int MetadataToken
-        {
-            get { return (FieldTable.Index << 24) + index + 1; }
-        }
+        public override int MetadataToken => MetadataTokens.GetToken(handle);
 
-        public override object GetRawConstantValue()
-        {
-            return module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
-        }
+        public override object GetRawConstantValue() => module.GetConstantValue(definition.GetDefaultValue());
 
         public override bool __TryGetFieldOffset(out int offset)
         {
-            foreach (int i in this.Module.FieldLayoutTable.Filter(index + 1))
-            {
-                offset = Module.FieldLayoutTable.records[i].Offset;
+            offset = definition.GetOffset();
+            if (offset != -1)
                 return true;
-            }
 
             offset = 0;
             return false;
         }
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(module.FieldTable.records[index].Signature), declaringType); }
-        }
+        internal override FieldSignature FieldSignature => lazyFieldSig ??= FieldSignature.ReadSig(module, module.GetBlobReader(definition.Signature), declaringType);
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
-        }
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(declaringType, Name, FieldSignature);
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        internal override int GetCurrentToken() => MetadataToken;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        internal override bool IsBaked => true;
 
     }
 

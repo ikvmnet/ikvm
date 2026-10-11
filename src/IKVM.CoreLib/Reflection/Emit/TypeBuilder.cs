@@ -29,7 +29,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Impl;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {
@@ -351,7 +350,6 @@ namespace IKVM.Reflection.Emit
             if (!hasConstructor && !IsModulePseudoType && !IsInterface && !IsValueType && !(IsAbstract && IsSealed))
                 ((MethodBuilder)DefineDefaultConstructor(MethodAttributes.Public).GetMethodInfo()).Bake();
 
-
             if (!IsModulePseudoType)
             {
                 var baseType = BaseType;
@@ -594,11 +592,6 @@ namespace IKVM.Reflection.Emit
         internal override int GetModuleBuilderToken()
         {
             return token;
-        }
-
-        internal bool HasNestedTypes
-        {
-            get { return (typeFlags & TypeFlags.HasNestedTypes) != 0; }
         }
 
         /// <summary>

@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Reflection.Metadata;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
@@ -219,7 +220,7 @@ namespace IKVM.Reflection
             return new CustomModifiers(result);
         }
 
-        internal static CustomModifiers Read(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static CustomModifiers Read(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             var b = br.PeekByte();
             if (!IsCustomModifier(b))
@@ -236,7 +237,7 @@ namespace IKVM.Reflection
                     list.Add(mode);
                 }
 
-                list.Add(Signature.ReadTypeDefOrRefEncoded(module, br, context));
+                list.Add(Signature.ReadTypeDefOrRefEncoded(module, ref br, context));
                 b = br.PeekByte();
             }
             while (IsCustomModifier(b));
@@ -244,13 +245,13 @@ namespace IKVM.Reflection
             return new CustomModifiers(list.ToArray());
         }
 
-        internal static void Skip(ByteReader br)
+        internal static void Skip(ref BlobReader br)
         {
             var b = br.PeekByte();
             while (IsCustomModifier(b))
             {
                 br.ReadByte();
-                br.ReadCompressedUInt();
+                br.ReadCompressedInteger();
                 b = br.PeekByte();
             }
         }

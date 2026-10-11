@@ -33,7 +33,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.Reflection.Diagnostics;
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Emit
 {

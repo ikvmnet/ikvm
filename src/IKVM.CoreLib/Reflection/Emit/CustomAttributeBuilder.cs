@@ -142,9 +142,9 @@ namespace IKVM.Reflection.Emit
                 // prolog
                 WriteUInt16(1);
 
-                var pi = cab.con.GetParameters();
-                for (int i = 0; i < pi.Length; i++)
-                    WriteFixedArg(pi[i].ParameterType, cab.constructorArgs[i]);
+                var parameterTypes = cab.con.GetParameterTypes();
+                for (int i = 0; i < parameterTypes.Length; i++)
+                    WriteFixedArg(parameterTypes[i], cab.constructorArgs[i]);
 
                 WriteNamedArguments(false);
             }
@@ -559,7 +559,11 @@ namespace IKVM.Reflection.Emit
                 if (constructorArgs != null)
                     return new CustomAttributeData(asm, con, (int)constructorArgs[0], blob, -1);
 
-                return new CustomAttributeData(asm, con, new IKVM.Reflection.Reader.ByteReader(blob, 0, blob.Length));
+                unsafe
+                {
+                    fixed (byte* p = blob)
+                        return new CustomAttributeData(asm, con, new System.Reflection.Metadata.BlobReader(p, blob.Length));
+                }
             }
             else
             {
@@ -574,9 +578,9 @@ namespace IKVM.Reflection.Emit
                         namedArgs.Add(new CustomAttributeNamedArgument(namedFields[i], RewrapValue(namedFields[i].FieldType, fieldValues[i])));
 
                 var args = new List<CustomAttributeTypedArgument>(constructorArgs.Length);
-                var parameters = Constructor.GetParameters();
+                var parameterTypes = Constructor.GetParameterTypes();
                 for (int i = 0; i < constructorArgs.Length; i++)
-                    args.Add(RewrapValue(parameters[i].ParameterType, constructorArgs[i]));
+                    args.Add(RewrapValue(parameterTypes[i], constructorArgs[i]));
 
                 return new CustomAttributeData(asm.ManifestModule, con, args, namedArgs);
             }

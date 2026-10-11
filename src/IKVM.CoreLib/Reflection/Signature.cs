@@ -27,7 +27,6 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
 
 using IKVM.Reflection.Emit;
-using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
 
@@ -85,16 +84,16 @@ namespace IKVM.Reflection
 
         internal abstract void Write(ModuleBuilder module, BlobBuilder bb);
 
-        static Type ReadGenericInst(ModuleReader module, ByteReader br, IGenericContext context)
+        static Type ReadGenericInst(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             Type type;
             switch (br.ReadByte())
             {
                 case ELEMENT_TYPE_CLASS:
-                    type = ReadTypeDefOrRefEncoded(module, br, context).MarkNotValueType();
+                    type = ReadTypeDefOrRefEncoded(module, ref br, context).MarkNotValueType();
                     break;
                 case ELEMENT_TYPE_VALUETYPE:
-                    type = ReadTypeDefOrRefEncoded(module, br, context).MarkValueType();
+                    type = ReadTypeDefOrRefEncoded(module, ref br, context).MarkValueType();
                     break;
                 default:
                     throw new BadImageFormatException();
@@ -103,37 +102,37 @@ namespace IKVM.Reflection
             if (!type.__IsMissing && !type.IsGenericTypeDefinition)
                 throw new BadImageFormatException();
 
-            int genArgCount = br.ReadCompressedUInt();
+            int genArgCount = br.ReadCompressedInteger();
             var args = new Type[genArgCount];
             CustomModifiers[] mods = null;
             for (int i = 0; i < genArgCount; i++)
             {
                 // LAMESPEC the Type production (23.2.12) doesn't include CustomMod* for genericinst, but C++ uses it, the verifier allows it and ildasm also supports it
-                var cm = CustomModifiers.Read(module, br, context);
+                var cm = CustomModifiers.Read(module, ref br, context);
                 if (!cm.IsEmpty)
                 {
                     mods ??= new CustomModifiers[genArgCount];
                     mods[i] = cm;
                 }
 
-                args[i] = ReadType(module, br, context);
+                args[i] = ReadType(module, ref br, context);
             }
 
             return GenericTypeInstance.Make(type, args, mods);
         }
 
-        internal static Type ReadTypeSpec(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static Type ReadTypeSpec(ModuleReader module, BlobReader br, IGenericContext context)
         {
             // LAMESPEC a TypeSpec can contain custom modifiers (C++/CLI generates "newarr (TypeSpec with custom modifiers)")
-            CustomModifiers.Skip(br);
+            CustomModifiers.Skip(ref br);
             // LAMESPEC anything can be adorned by (useless) custom modifiers
             // also, VAR and MVAR are also used in TypeSpec (contrary to what the spec says)
-            return ReadType(module, br, context);
+            return ReadType(module, ref br, context);
         }
 
-        private static Type ReadFunctionPointer(ModuleReader module, ByteReader br, IGenericContext context)
+        private static Type ReadFunctionPointer(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
-            __StandAloneMethodSig sig = MethodSignature.ReadStandAloneMethodSig(module, br, context);
+            __StandAloneMethodSig sig = MethodSignature.ReadStandAloneMethodSig(module, ref br, context);
             if (module.Universe.EnableFunctionPointers)
             {
                 return FunctionPointerType.Make(module.Universe, sig);
@@ -145,48 +144,48 @@ namespace IKVM.Reflection
             }
         }
 
-        internal static Type[] ReadMethodSpec(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static Type[] ReadMethodSpec(ModuleReader module, BlobReader br, IGenericContext context)
         {
             if (br.ReadByte() != GENERICINST)
                 throw new BadImageFormatException();
 
-            var args = new Type[br.ReadCompressedUInt()];
+            var args = new Type[br.ReadCompressedInteger()];
             for (int i = 0; i < args.Length; i++)
             {
-                CustomModifiers.Skip(br);
-                args[i] = ReadType(module, br, context);
+                CustomModifiers.Skip(ref br);
+                args[i] = ReadType(module, ref br, context);
             }
 
             return args;
         }
 
-        static int[] ReadArraySizes(ByteReader br)
+        static int[] ReadArraySizes(ref BlobReader br)
         {
-            var num = br.ReadCompressedUInt();
+            var num = br.ReadCompressedInteger();
             if (num == 0)
                 return null;
 
             var arr = new int[num];
             for (var i = 0; i < num; i++)
-                arr[i] = br.ReadCompressedUInt();
+                arr[i] = br.ReadCompressedInteger();
 
             return arr;
         }
 
-        private static int[] ReadArrayBounds(ByteReader br)
+        private static int[] ReadArrayBounds(ref BlobReader br)
         {
-            var num = br.ReadCompressedUInt();
+            var num = br.ReadCompressedInteger();
             if (num == 0)
                 return null;
 
             var arr = new int[num];
             for (var i = 0; i < num; i++)
-                arr[i] = br.ReadCompressedInt();
+                arr[i] = br.ReadCompressedSignedInteger();
 
             return arr;
         }
 
-        static Type ReadTypeOrVoid(ModuleReader module, ByteReader br, IGenericContext context)
+        static Type ReadTypeOrVoid(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             if (br.PeekByte() == ELEMENT_TYPE_VOID)
             {
@@ -195,20 +194,20 @@ namespace IKVM.Reflection
             }
             else
             {
-                return ReadType(module, br, context);
+                return ReadType(module, ref br, context);
             }
         }
 
         // see ECMA 335 CLI spec June 2006 section 23.2.12 for this production
-        protected static Type ReadType(ModuleReader module, ByteReader br, IGenericContext context)
+        protected static Type ReadType(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             CustomModifiers mods;
             switch (br.ReadByte())
             {
                 case ELEMENT_TYPE_CLASS:
-                    return ReadTypeDefOrRefEncoded(module, br, context).MarkNotValueType();
+                    return ReadTypeDefOrRefEncoded(module, ref br, context).MarkNotValueType();
                 case ELEMENT_TYPE_VALUETYPE:
-                    return ReadTypeDefOrRefEncoded(module, br, context).MarkValueType();
+                    return ReadTypeDefOrRefEncoded(module, ref br, context).MarkValueType();
                 case ELEMENT_TYPE_BOOLEAN:
                     return module.Universe.System_Boolean;
                 case ELEMENT_TYPE_CHAR:
@@ -242,45 +241,45 @@ namespace IKVM.Reflection
                 case ELEMENT_TYPE_OBJECT:
                     return module.Universe.System_Object;
                 case ELEMENT_TYPE_VAR:
-                    return context.GetGenericTypeArgument(br.ReadCompressedUInt());
+                    return context.GetGenericTypeArgument(br.ReadCompressedInteger());
                 case ELEMENT_TYPE_MVAR:
-                    return context.GetGenericMethodArgument(br.ReadCompressedUInt());
+                    return context.GetGenericMethodArgument(br.ReadCompressedInteger());
                 case ELEMENT_TYPE_GENERICINST:
-                    return ReadGenericInst(module, br, context);
+                    return ReadGenericInst(module, ref br, context);
                 case ELEMENT_TYPE_SZARRAY:
-                    mods = CustomModifiers.Read(module, br, context);
-                    return ReadType(module, br, context).__MakeArrayType(mods);
+                    mods = CustomModifiers.Read(module, ref br, context);
+                    return ReadType(module, ref br, context).__MakeArrayType(mods);
                 case ELEMENT_TYPE_ARRAY:
-                    mods = CustomModifiers.Read(module, br, context);
-                    return ReadType(module, br, context).__MakeArrayType(br.ReadCompressedUInt(), ReadArraySizes(br), ReadArrayBounds(br), mods);
+                    mods = CustomModifiers.Read(module, ref br, context);
+                    return ReadType(module, ref br, context).__MakeArrayType(br.ReadCompressedInteger(), ReadArraySizes(ref br), ReadArrayBounds(ref br), mods);
                 case ELEMENT_TYPE_PTR:
-                    mods = CustomModifiers.Read(module, br, context);
-                    return ReadTypeOrVoid(module, br, context).__MakePointerType(mods);
+                    mods = CustomModifiers.Read(module, ref br, context);
+                    return ReadTypeOrVoid(module, ref br, context).__MakePointerType(mods);
                 case ELEMENT_TYPE_FNPTR:
-                    return ReadFunctionPointer(module, br, context);
+                    return ReadFunctionPointer(module, ref br, context);
                 default:
                     throw new BadImageFormatException();
             }
         }
 
-        static Type ReadTypeOrByRef(ModuleReader module, ByteReader br, IGenericContext context)
+        static Type ReadTypeOrByRef(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             if (br.PeekByte() == ELEMENT_TYPE_BYREF)
             {
                 br.ReadByte();
                 // LAMESPEC it is allowed (by C++/CLI, ilasm and peverify) to have custom modifiers after the BYREF
                 // (which makes sense, as it is analogous to pointers)
-                var mods = CustomModifiers.Read(module, br, context);
+                var mods = CustomModifiers.Read(module, ref br, context);
                 // C++/CLI generates void& local variables, so we need to use ReadTypeOrVoid here
-                return ReadTypeOrVoid(module, br, context).__MakeByRefType(mods);
+                return ReadTypeOrVoid(module, ref br, context).__MakeByRefType(mods);
             }
             else
             {
-                return ReadType(module, br, context);
+                return ReadType(module, ref br, context);
             }
         }
 
-        protected static Type ReadRetType(ModuleReader module, ByteReader br, IGenericContext context)
+        protected static Type ReadRetType(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             switch (br.PeekByte())
             {
@@ -291,11 +290,11 @@ namespace IKVM.Reflection
                     br.ReadByte();
                     return module.Universe.System_TypedReference;
                 default:
-                    return ReadTypeOrByRef(module, br, context);
+                    return ReadTypeOrByRef(module, ref br, context);
             }
         }
 
-        protected static Type ReadParam(ModuleReader module, ByteReader br, IGenericContext context)
+        protected static Type ReadParam(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             switch (br.PeekByte())
             {
@@ -303,7 +302,7 @@ namespace IKVM.Reflection
                     br.ReadByte();
                     return module.Universe.System_TypedReference;
                 default:
-                    return ReadTypeOrByRef(module, br, context);
+                    return ReadTypeOrByRef(module, ref br, context);
             }
         }
 
@@ -396,14 +395,14 @@ namespace IKVM.Reflection
             }
         }
 
-        internal static Type ReadTypeDefOrRefEncoded(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static Type ReadTypeDefOrRefEncoded(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
-            var encoded = br.ReadCompressedUInt();
+            var encoded = br.ReadCompressedInteger();
             return (encoded & 3) switch
             {
-                0 => module.ResolveType((TypeDefTable.Index << 24) + (encoded >> 2), null, null),
-                1 => module.ResolveType((TypeRefTable.Index << 24) + (encoded >> 2), null, null),
-                2 => module.ResolveType((TypeSpecTable.Index << 24) + (encoded >> 2), context),
+                0 => module.ResolveType(((int)TableIndex.TypeDef << 24) + (encoded >> 2), null, null),
+                1 => module.ResolveType(((int)TableIndex.TypeRef << 24) + (encoded >> 2), null, null),
+                2 => module.ResolveType(((int)TableIndex.TypeSpec << 24) + (encoded >> 2), context),
                 _ => throw new BadImageFormatException(),
             };
         }

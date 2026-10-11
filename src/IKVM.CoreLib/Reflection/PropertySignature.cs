@@ -141,7 +141,7 @@ namespace IKVM.Reflection
             return Util.ArrayEquals(types, parameterTypes);
         }
 
-        internal static PropertySignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        internal static PropertySignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
         {
             var flags = br.ReadByte();
             if ((flags & PROPERTY) == 0)
@@ -153,15 +153,15 @@ namespace IKVM.Reflection
             if ((flags & EXPLICITTHIS) != 0)
                 callingConvention |= CallingConventions.ExplicitThis;
 
-            int paramCount = br.ReadCompressedUInt();
+            int paramCount = br.ReadCompressedInteger();
             CustomModifiers[] mods = null;
-            PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-            var returnType = ReadRetType(module, br, context);
+            PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+            var returnType = ReadRetType(module, ref br, context);
             var parameterTypes = new Type[paramCount];
             for (int i = 0; i < parameterTypes.Length; i++)
             {
-                PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                parameterTypes[i] = ReadParam(module, br, context);
+                PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, ref br, context);
             }
 
             return new PropertySignature(callingConvention, returnType, parameterTypes, PackedCustomModifiers.Wrap(mods));
