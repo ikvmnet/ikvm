@@ -357,7 +357,7 @@ namespace IKVM.Tools.Importer
                     if (f.SourceFileAttribute != null)
                     {
                         var path = itemRef.Path;
-                        if (path != null)
+                        if (path != null && state.inputDirectories.MayContainFile(path.DirectoryName, f.SourceFileAttribute))
                         {
                             var sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
                             if (File.Exists(sourceFile))

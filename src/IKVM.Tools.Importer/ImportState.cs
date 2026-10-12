@@ -77,6 +77,7 @@ namespace IKVM.Tools.Importer
         internal string[] privatePackages;
         internal string[] publicPackages;
         internal string sourcepath;
+        internal InputDirectoryCache inputDirectories = new InputDirectoryCache();
         internal Dictionary<string, string> externalResources;
         internal string classLoader;
         internal PortableExecutableKinds pekind = PortableExecutableKinds.ILOnly;
