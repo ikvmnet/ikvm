@@ -308,6 +308,7 @@ java/awt/Focus/DeiconifiedFrameLoosesFocus/DeiconifiedFrameLoosesFocus.html     
 java/awt/Focus/FocusEmbeddedFrameTest/FocusEmbeddedFrameTest.java                                                       generic-all
 java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java                                                       generic-all
 java/awt/Focus/FocusTransitionTest/FocusTransitionTest.java                                                             generic-all
+java/awt/Focus/FocusTraversalPolicy/ButtonGroupLayoutTraversal/ButtonGroupLayoutTraversalTest.java                      linux-all
 java/awt/Focus/FocusTraversalPolicy/DefaultFTPTest.java                                                                 generic-all
 java/awt/Focus/FocusTraversalPolicy/InitialFTP.java                                                                     generic-all
 java/awt/Focus/FocusTraversalPolicy/InitialFTP_AWT.java                                                                 generic-all
