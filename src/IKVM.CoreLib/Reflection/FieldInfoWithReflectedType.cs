@@ -27,106 +27,87 @@ using System.Diagnostics;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Wraps a <see cref="FieldInfo"/> obtained through a type other than its declaring type. Every member forwards to
+    /// the wrapped field; the reflected type only takes part in equality, so that the same field obtained through
+    /// different types compares unequal, as it does in System.Reflection.
+    /// </summary>
     sealed class FieldInfoWithReflectedType : FieldInfo
     {
 
-        readonly Type reflectedType;
-        readonly FieldInfo field;
+        readonly Type _reflectedType;
+        readonly FieldInfo _field;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reflectedType"></param>
-        /// <param name="field"></param>
+        /// <param name="reflectedType">The type through which the field was obtained. Must not be the field's declaring type.</param>
+        /// <param name="field">The field to wrap.</param>
         internal FieldInfoWithReflectedType(Type reflectedType, FieldInfo field)
         {
             Debug.Assert(reflectedType != field.DeclaringType);
-            this.reflectedType = reflectedType;
-            this.field = field;
+            _reflectedType = reflectedType;
+            _field = field;
         }
 
-        public override FieldAttributes Attributes
-        {
-            get { return field.Attributes; }
-        }
+        /// <inheritdoc />
+        public override FieldAttributes Attributes => _field.Attributes;
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return field.__TryGetFieldOffset(out offset);
-        }
+        /// <inheritdoc />
+        public override bool __TryGetFieldOffset(out int offset) => _field.__TryGetFieldOffset(out offset);
 
-        public override object GetRawConstantValue()
-        {
-            return field.GetRawConstantValue();
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _field.GetRawConstantValue();
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return field.FieldSignature; }
-        }
+        /// <inheritdoc />
+        internal override FieldSignature FieldSignature => _field.FieldSignature;
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return field.ImportTo(module);
-        }
+        /// <inheritdoc />
+        internal override int ImportTo(Emit.ModuleBuilder module) => _field.ImportTo(module);
 
-        internal override FieldInfo BindTypeParameters(Type type)
-        {
-            return field.BindTypeParameters(type);
-        }
+        /// <inheritdoc />
+        internal override FieldInfo BindTypeParameters(Type type) => _field.BindTypeParameters(type);
 
-        public override bool __IsMissing
-        {
-            get { return field.__IsMissing; }
-        }
+        /// <inheritdoc />
+        public override bool __IsMissing => _field.__IsMissing;
 
-        public override Type DeclaringType
-        {
-            get { return field.DeclaringType; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => _field.DeclaringType;
 
+        /// <summary>
+        /// Determines whether the specified object is a <see cref="FieldInfoWithReflectedType"/> that wraps the same
+        /// field obtained through the same reflected type.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> wraps the same field and reflected type; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as FieldInfoWithReflectedType;
             return other != null
-                && other.reflectedType == reflectedType
-                && other.field == field;
+                && other._reflectedType == _reflectedType
+                && other._field == _field;
         }
 
-        public override int GetHashCode()
-        {
-            return reflectedType.GetHashCode() ^ field.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _reflectedType.GetHashCode() ^ _field.GetHashCode();
 
-        public override int MetadataToken
-        {
-            get { return field.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _field.MetadataToken;
 
-        public override Module Module
-        {
-            get { return field.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _field.Module;
 
-        public override string Name
-        {
-            get { return field.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _field.Name;
 
-        public override string ToString()
-        {
-            return field.ToString();
-        }
+        /// <inheritdoc />
+        public override string ToString() => _field.ToString();
 
-        internal override int GetCurrentToken()
-        {
-            return field.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _field.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return field.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _field.IsBaked;
 
     }
 

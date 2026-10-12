@@ -22,213 +22,197 @@
   
 */
 using System;
-using System.Collections.Generic;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a method defined by a row of the MethodDef table of a module read from metadata.
+    /// </summary>
     sealed class MethodDefImpl : MethodInfo
     {
 
-        readonly ModuleReader module;
-        readonly int index;
-        readonly TypeDefImpl declaringType;
-        MethodSignature lazyMethodSignature;
-        ParameterInfo returnParameter;
-        ParameterInfo[] parameters;
-        Type[] typeArgs;
+        readonly ModuleReader _module;
+        readonly MethodDefinitionHandle _handle;
+        readonly MethodDefinition _definition;
+        readonly TypeDefImpl _declaringType;
+        MethodSignature _lazyMethodSignature;
+        ParameterInfo _returnParameter;
+        ParameterInfo[] _parameters;
+        Type[] _typeArgs;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal MethodDefImpl(ModuleReader module, TypeDefImpl declaringType, int index)
+        /// <param name="module">The module that contains the method definition.</param>
+        /// <param name="declaringType">The type that defines the method; for a global method, the module's &lt;Module&gt; pseudo type.</param>
+        /// <param name="handle">The handle of the method definition in the module's metadata.</param>
+        internal MethodDefImpl(ModuleReader module, TypeDefImpl declaringType, MethodDefinitionHandle handle)
         {
-            this.module = module;
-            this.index = index;
-            this.declaringType = declaringType;
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetMethodDefinition(handle);
+            _declaringType = declaringType;
         }
 
-        public override CallingConventions CallingConvention
-        {
-            get { return MethodSignature.CallingConvention; }
-        }
+        /// <inheritdoc />
+        public override CallingConventions CallingConvention => MethodSignature.CallingConvention;
 
-        public override MethodAttributes Attributes
-        {
-            get { return (MethodAttributes)(ushort)module.MethodDefTable.records[index].Flags; }
-        }
+        /// <inheritdoc />
+        public override MethodAttributes Attributes => (MethodAttributes)_definition.Attributes;
 
-        public override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            return (MethodImplAttributes)(ushort)module.MethodDefTable.records[index].ImplFlags;
-        }
+        /// <inheritdoc />
+        public override MethodImplAttributes GetMethodImplementationFlags() => (MethodImplAttributes)_definition.ImplAttributes;
 
+        /// <inheritdoc />
         public override ParameterInfo[] GetParameters()
         {
             PopulateParameters();
-            return (ParameterInfo[])parameters.Clone();
+            return (ParameterInfo[])_parameters.Clone();
         }
 
+        /// <summary>
+        /// Creates the parameter and return parameter objects on first use, from the Param rows of the method and its
+        /// signature.
+        /// </summary>
         void PopulateParameters()
         {
-            if (parameters == null)
+            if (_parameters == null)
             {
-                var methodSignature = MethodSignature;
-                parameters = new ParameterInfo[methodSignature.GetParameterCount()];
+                var array = new ParameterInfo[MethodSignature.GetParameterCount()];
 
-                var parameter = module.MethodDefTable.records[index].ParamList - 1;
-                var end = module.MethodDefTable.records.Length > index + 1 ? module.MethodDefTable.records[index + 1].ParamList - 1 : module.ParamTable.records.Length;
-                for (; parameter < end; parameter++)
+                // sequence 0 is the return parameter; parameters without a row get one without metadata
+                foreach (var h in _definition.GetParameters())
                 {
-                    var seq = module.ParamTable.records[parameter].Sequence - 1;
-                    if (seq == -1)
-                        returnParameter = new ParameterInfoImpl(this, seq, parameter);
-                    else
-                        parameters[seq] = new ParameterInfoImpl(this, seq, parameter);
+                    var position = _module.Metadata.GetParameter(h).SequenceNumber - 1;
+                    if (position == -1)
+                        _returnParameter = new ParameterInfoImpl(this, position, h);
+                    else if (position < array.Length)
+                        array[position] = new ParameterInfoImpl(this, position, h);
                 }
 
-                for (int i = 0; i < parameters.Length; i++)
-                    if (parameters[i] == null)
-                        parameters[i] = new ParameterInfoImpl(this, i, -1);
+                for (var i = 0; i < array.Length; i++)
+                    array[i] ??= new ParameterInfoImpl(this, i, default);
 
-                if (returnParameter == null)
-                    returnParameter = new ParameterInfoImpl(this, -1, -1);
+                _returnParameter ??= new ParameterInfoImpl(this, -1, default);
+                _parameters = array;
             }
         }
 
+        /// <inheritdoc />
         internal override Type[] GetParameterTypes()
         {
             var parameterTypes = new Type[MethodSignature.GetParameterCount()];
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < parameterTypes.Length; i++)
                 parameterTypes[i] = MethodSignature.GetParameterType(i);
 
             return parameterTypes;
         }
 
-        internal override int ParameterCount
-        {
-            get { return MethodSignature.GetParameterCount(); }
-        }
+        /// <inheritdoc />
+        internal override int ParameterCount => MethodSignature.GetParameterCount();
 
+        /// <inheritdoc />
         public override ParameterInfo ReturnParameter
         {
             get
             {
                 PopulateParameters();
-                return returnParameter;
+                return _returnParameter;
             }
         }
 
-        public override Type ReturnType
-        {
-            get
-            {
-                return MethodSignature.GetReturnType(this);
-            }
-        }
+        /// <inheritdoc />
+        public override Type ReturnType => MethodSignature.GetReturnType(this);
 
-        public override Type DeclaringType
-        {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
-        }
+        /// <summary>
+        /// Gets the class that declares this member, or <see langword="null"/> for a global method, which is defined on
+        /// the module's &lt;Module&gt; pseudo type.
+        /// </summary>
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override string Name
-        {
-            get { return module.GetString(module.MethodDefTable.records[index].Name); }
-        }
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override int MetadataToken
-        {
-            get { return (MethodDefTable.Index << 24) + index + 1; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override bool IsGenericMethodDefinition
-        {
-            get
-            {
-                PopulateGenericArguments();
-                return typeArgs.Length > 0;
-            }
-        }
+        /// <inheritdoc />
+        public override bool IsGenericMethodDefinition => _definition.GetGenericParameters().Count > 0;
 
-        public override bool IsGenericMethod
-        {
-            get { return IsGenericMethodDefinition; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the method is generic. A method read from a MethodDef row is generic only
+        /// when it is a generic method definition.
+        /// </summary>
+        public override bool IsGenericMethod => IsGenericMethodDefinition;
 
+        /// <inheritdoc />
         public override Type[] GetGenericArguments()
         {
             PopulateGenericArguments();
-            return Util.Copy(typeArgs);
+            return Util.Copy(_typeArgs);
         }
 
+        /// <summary>
+        /// Creates the generic method parameter types on first use, from the GenericParam rows of the method.
+        /// </summary>
         void PopulateGenericArguments()
         {
-            if (typeArgs == null)
+            if (_typeArgs == null)
             {
-                var token = MetadataToken;
-                var first = module.GenericParamTable.FindFirstByOwner(token);
-                if (first == -1)
-                {
-                    typeArgs = Type.EmptyTypes;
-                }
-                else
-                {
-                    var list = new List<Type>();
-                    var len = module.GenericParamTable.records.Length;
-                    for (int i = first; i < len && module.GenericParamTable.records[i].Owner == token; i++)
-                        list.Add(new GenericTypeParameter(module, i, Signature.ELEMENT_TYPE_MVAR));
+                var handles = _definition.GetGenericParameters();
+                var args = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
+                for (var i = 0; i < args.Length; i++)
+                    args[i] = new GenericTypeParameter(_module, handles[i], Signature.ELEMENT_TYPE_MVAR);
 
-                    typeArgs = list.ToArray();
-                }
+                _typeArgs = args;
             }
         }
 
+        /// <inheritdoc />
         internal override Type GetGenericMethodArgument(int index)
         {
             PopulateGenericArguments();
-            return typeArgs[index];
+            return _typeArgs[index];
         }
 
-        public override MethodInfo GetGenericMethodDefinition()
-        {
-            return IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
-        }
+        /// <summary>
+        /// Returns a <see cref="MethodInfo"/> object that represents a generic method definition from which the current
+        /// method can be constructed.
+        /// </summary>
+        /// <returns>The current method, which is a generic method definition.</returns>
+        /// <exception cref="InvalidOperationException">The current method is not a generic method.</exception>
+        public override MethodInfo GetGenericMethodDefinition() =>
+            IsGenericMethodDefinition ? (MethodInfo)this : throw new InvalidOperationException();
 
-        public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
-        {
-            return new GenericMethodInstance(declaringType, this, typeArguments);
-        }
+        /// <inheritdoc />
+        public override MethodInfo MakeGenericMethod(params Type[] typeArguments) => new GenericMethodInstance(_declaringType, this, typeArguments);
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _module;
 
-        internal override MethodSignature MethodSignature
-        {
-            get { return lazyMethodSignature ??= MethodSignature.ReadSig(module, module.GetBlobReader(module.MethodDefTable.records[index].Signature), this); }
-        }
+        /// <summary>
+        /// Gets the signature of the method, decoded from the method's signature blob on first use.
+        /// </summary>
+        internal override MethodSignature MethodSignature =>
+            _lazyMethodSignature ??= MethodSignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), this);
 
-        internal override int ImportTo(Emit.ModuleBuilder module)
-        {
-            return module.ImportMethodOrField(declaringType, this.Name, this.MethodSignature);
-        }
+        /// <summary>
+        /// Imports the method into <paramref name="module"/> as a MemberRef on its declaring type.
+        /// </summary>
+        /// <param name="module">The module being built that references the method.</param>
+        /// <returns>The token of the method reference in <paramref name="module"/>.</returns>
+        internal override int ImportTo(Emit.ModuleBuilder module) => module.ImportMethodOrField(_declaringType, Name, MethodSignature);
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => MetadataToken;
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the method is complete; a method read from metadata always is.
+        /// </summary>
+        internal override bool IsBaked => true;
 
     }
 

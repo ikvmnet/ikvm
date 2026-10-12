@@ -19,22 +19,43 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Identifies kinds of exception-handling clauses.
+    /// </summary>
     [Flags]
-    internal enum ExceptionHandlingClauseOptions
-	{
+    enum ExceptionHandlingClauseOptions
+    {
 
-		Clause  = 0x0000,
-		Filter  = 0x0001,
-		Finally = 0x0002,
-		Fault   = 0x0004,
+        /// <summary>
+        /// The clause accepts all exceptions that derive from a specified type.
+        /// </summary>
+        Clause = 0x0000,
 
-	}
+        /// <summary>
+        /// The clause contains user-specified instructions that determine whether the exception should be ignored
+        /// (that is, whether normal execution should resume), be handled by the associated handler, or be passed on to
+        /// the next clause.
+        /// </summary>
+        Filter = 0x0001,
+
+        /// <summary>
+        /// The clause is executed whenever the try block exits, whether through normal control flow or because of an
+        /// unhandled exception.
+        /// </summary>
+        Finally = 0x0002,
+
+        /// <summary>
+        /// The clause is executed if an exception occurs, but not on completion of normal control flow.
+        /// </summary>
+        Fault = 0x0004,
+
+    }
 
 }

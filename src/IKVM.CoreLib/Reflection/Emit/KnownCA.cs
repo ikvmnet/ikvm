@@ -34,7 +34,11 @@ namespace IKVM.Reflection.Emit
     enum KnownCA
     {
 
+        /// <summary>
+        /// The attribute is not a pseudo-custom attribute and is emitted as an ordinary custom attribute.
+        /// </summary>
         Unknown,
+
         DllImportAttribute,
         ComImportAttribute,
         SerializableAttribute,
@@ -48,7 +52,11 @@ namespace IKVM.Reflection.Emit
         StructLayoutAttribute,
         FieldOffsetAttribute,
         SpecialNameAttribute,
-        // the following is not part of the runtime known custom attributes, but we handle it here for efficiency and convenience
+
+        /// <summary>
+        /// Not one of the runtime's known custom attributes, but recognized here for efficiency and convenience so the
+        /// builders can set the HasSecurity flag; the attribute itself is still emitted as an ordinary custom attribute.
+        /// </summary>
         SuppressUnmanagedCodeSecurityAttribute,
 
     }

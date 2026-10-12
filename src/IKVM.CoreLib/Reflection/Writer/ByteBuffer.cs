@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -24,304 +24,203 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
-
-using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// A growable little-endian byte buffer with a movable write position, used to build unmanaged (Win32) resources.
+    /// </summary>
     sealed class ByteBuffer
     {
 
-        internal static ByteBuffer Wrap(byte[] buf)
-        {
-            return new ByteBuffer(buf, buf.Length);
-        }
+        /// <summary>
+        /// Creates a buffer over an existing array, positioned at its end.
+        /// </summary>
+        /// <param name="buf">The array to use as the buffer's initial contents. It is used directly, not copied.</param>
+        /// <returns>A buffer whose length is the length of <paramref name="buf"/>.</returns>
+        internal static ByteBuffer Wrap(byte[] buf) => new ByteBuffer(buf, buf.Length);
 
-        byte[] buffer;
-        int pos;
-        int __length;   // __length is only valid if > pos, otherwise pos is the current length
+        byte[] _buffer;
+        int _pos;
+
+        /// <summary>
+        /// The furthest position written before <see cref="Position"/> was moved back. It is only valid if greater than
+        /// <see cref="_pos"/>; otherwise <see cref="_pos"/> is the current length.
+        /// </summary>
+        int __length;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="initialCapacity"></param>
+        /// <param name="initialCapacity">The initial size of the underlying array.</param>
         internal ByteBuffer(int initialCapacity)
         {
-            buffer = new byte[initialCapacity];
+            _buffer = new byte[initialCapacity];
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance over an existing array.
         /// </summary>
-        /// <param name="wrap"></param>
-        /// <param name="length"></param>
-        private ByteBuffer(byte[] wrap, int length)
+        /// <param name="wrap">The array to use as the buffer.</param>
+        /// <param name="length">The number of bytes of <paramref name="wrap"/> that are already in use; the position starts here.</param>
+        ByteBuffer(byte[] wrap, int length)
         {
-            buffer = wrap;
-            pos = length;
+            _buffer = wrap;
+            _pos = length;
         }
 
+        /// <summary>
+        /// Gets or sets the position at which the next write occurs. Moving the position back does not shorten the
+        /// buffer.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">The value is beyond the current length or capacity.</exception>
         internal int Position
         {
-            get { return pos; }
+            get => _pos;
             set
             {
-                if (value > Length || value > buffer.Length)
+                if (value > Length || value > _buffer.Length)
                     throw new ArgumentOutOfRangeException();
 
-                __length = Math.Max(__length, pos);
-                pos = value;
+                __length = Math.Max(__length, _pos);
+                _pos = value;
             }
-        }
-
-        internal int Length
-        {
-            get { return Math.Max(pos, __length); }
         }
 
         /// <summary>
-        /// Insert count bytes at the current position (without advancing the current position)
+        /// Gets the number of bytes written to the buffer.
         /// </summary>
-        /// <param name="count"></param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        internal void Insert(int count)
-        {
-            if (count > 0)
-            {
-                var len = Length;
-                var free = buffer.Length - len;
-                if (free < count)
-                    Grow(count - free);
+        internal int Length => Math.Max(_pos, __length);
 
-                Buffer.BlockCopy(buffer, pos, buffer, pos + count, len - pos);
-                __length = Math.Max(__length, pos) + count;
-            }
-            else if (count < 0)
-            {
-                throw new ArgumentOutOfRangeException("count");
-            }
-        }
-
+        /// <summary>
+        /// Enlarges the underlying array to at least double its size, or by <paramref name="minGrow"/> bytes if that is
+        /// more.
+        /// </summary>
+        /// <param name="minGrow">The minimum number of bytes to add.</param>
         void Grow(int minGrow)
         {
-            var newbuf = new byte[Math.Max(buffer.Length + minGrow, buffer.Length * 2)];
-            Buffer.BlockCopy(buffer, 0, newbuf, 0, buffer.Length);
-            buffer = newbuf;
+            var newbuf = new byte[Math.Max(_buffer.Length + minGrow, _buffer.Length * 2)];
+            Buffer.BlockCopy(_buffer, 0, newbuf, 0, _buffer.Length);
+            _buffer = newbuf;
         }
 
         /// <summary>
-        /// 
+        /// Reads the little-endian 32-bit integer at the current position.
         /// </summary>
         /// <remarks>
         /// This does not advance the position.
         /// </remarks>
-        /// <returns></returns>
+        /// <returns>The integer at the current position.</returns>
         internal int GetInt32AtCurrentPosition()
         {
-            return buffer[pos]
-                + (buffer[pos + 1] << 8)
-                + (buffer[pos + 2] << 16)
-                + (buffer[pos + 3] << 24);
+            return _buffer[_pos]
+                + (_buffer[_pos + 1] << 8)
+                + (_buffer[_pos + 2] << 16)
+                + (_buffer[_pos + 3] << 24);
         }
 
         /// <summary>
-        /// Return the number of bytes that the compressed int at the current position takes
+        /// Writes an array of bytes at the current position and advances the position.
         /// </summary>
-        /// <returns></returns>
-        internal int GetCompressedUIntLength()
-        {
-            return (buffer[pos] & 0xC0) switch
-            {
-                0x80 => 2,
-                0xC0 => 4,
-                _ => 1,
-            };
-        }
-
+        /// <param name="value">The bytes to write.</param>
         internal void WriteBytes(byte[] value)
         {
-            if (pos + value.Length > buffer.Length)
+            if (_pos + value.Length > _buffer.Length)
                 Grow(value.Length);
 
-            Buffer.BlockCopy(value, 0, buffer, pos, value.Length);
-            pos += value.Length;
+            Buffer.BlockCopy(value, 0, _buffer, _pos, value.Length);
+            _pos += value.Length;
         }
 
+        /// <summary>
+        /// Writes a byte at the current position and advances the position.
+        /// </summary>
+        /// <param name="value">The byte to write.</param>
         internal void WriteByte(byte value)
         {
-            if (pos == buffer.Length)
+            if (_pos == _buffer.Length)
                 Grow(1);
-            buffer[pos++] = value;
+            _buffer[_pos++] = value;
         }
 
-        internal void WriteSByte(sbyte value)
-        {
-            WriteByte((byte)value);
-        }
+        /// <summary>
+        /// Writes a little-endian unsigned 16-bit integer at the current position and advances the position.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        internal void WriteUInt16(ushort value) => WriteInt16((short)value);
 
-        internal void WriteUInt16(ushort value)
-        {
-            WriteInt16((short)value);
-        }
-
+        /// <summary>
+        /// Writes a little-endian 16-bit integer at the current position and advances the position.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
         internal void WriteInt16(short value)
         {
-            if (pos + 2 > buffer.Length)
+            if (_pos + 2 > _buffer.Length)
                 Grow(2);
 
-            buffer[pos++] = (byte)value;
-            buffer[pos++] = (byte)(value >> 8);
+            _buffer[_pos++] = (byte)value;
+            _buffer[_pos++] = (byte)(value >> 8);
         }
 
-        internal void WriteUInt32(uint value)
-        {
-            WriteInt32((int)value);
-        }
+        /// <summary>
+        /// Writes a little-endian unsigned 32-bit integer at the current position and advances the position.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        internal void WriteUInt32(uint value) => WriteInt32((int)value);
 
+        /// <summary>
+        /// Writes a little-endian 32-bit integer at the current position and advances the position.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
         internal void WriteInt32(int value)
         {
-            if (pos + 4 > buffer.Length)
+            if (_pos + 4 > _buffer.Length)
                 Grow(4);
 
-            buffer[pos++] = (byte)value;
-            buffer[pos++] = (byte)(value >> 8);
-            buffer[pos++] = (byte)(value >> 16);
-            buffer[pos++] = (byte)(value >> 24);
+            _buffer[_pos++] = (byte)value;
+            _buffer[_pos++] = (byte)(value >> 8);
+            _buffer[_pos++] = (byte)(value >> 16);
+            _buffer[_pos++] = (byte)(value >> 24);
         }
 
-        internal void WriteUInt64(ulong value)
-        {
-            WriteInt64((long)value);
-        }
-
-        internal void WriteInt64(long value)
-        {
-            if (pos + 8 > buffer.Length)
-                Grow(8);
-            buffer[pos++] = (byte)value;
-            buffer[pos++] = (byte)(value >> 8);
-            buffer[pos++] = (byte)(value >> 16);
-            buffer[pos++] = (byte)(value >> 24);
-            buffer[pos++] = (byte)(value >> 32);
-            buffer[pos++] = (byte)(value >> 40);
-            buffer[pos++] = (byte)(value >> 48);
-            buffer[pos++] = (byte)(value >> 56);
-        }
-
-        internal void WriteSingle(float value)
-        {
-            WriteInt32(SingleConverter.SingleToInt32Bits(value));
-        }
-
-        internal void WriteDouble(double value)
-        {
-            WriteInt64(BitConverter.DoubleToInt64Bits(value));
-        }
-
-        internal void WriteSerializedString(string str)
-        {
-            if (str == null)
-            {
-                WriteByte((byte)0xFF);
-            }
-            else
-            {
-                var buf = Encoding.UTF8.GetBytes(str);
-                WriteCompressedInteger(buf.Length);
-                WriteBytes(buf);
-            }
-        }
-
-        internal void WriteCompressedInteger(int value)
-        {
-            if (value <= 0x7F)
-            {
-                WriteByte((byte)value);
-            }
-            else if (value <= 0x3FFF)
-            {
-                WriteByte((byte)(0x80 | (value >> 8)));
-                WriteByte((byte)value);
-            }
-            else
-            {
-                WriteByte((byte)(0xC0 | (value >> 24)));
-                WriteByte((byte)(value >> 16));
-                WriteByte((byte)(value >> 8));
-                WriteByte((byte)value);
-            }
-        }
-
-        internal void WriteCompressedSignedInteger(int value)
-        {
-            if (value >= 0)
-            {
-                WriteCompressedInteger(value << 1);
-            }
-            else if (value >= -64)
-            {
-                value = ((value << 1) & 0x7F) | 1;
-                WriteByte((byte)value);
-            }
-            else if (value >= -8192)
-            {
-                value = ((value << 1) & 0x3FFF) | 1;
-                WriteByte((byte)(0x80 | (value >> 8)));
-                WriteByte((byte)value);
-            }
-            else
-            {
-                value = ((value << 1) & 0x1FFFFFFF) | 1;
-                WriteByte((byte)(0xC0 | (value >> 24)));
-                WriteByte((byte)(value >> 16));
-                WriteByte((byte)(value >> 8));
-                WriteByte((byte)value);
-            }
-        }
-
+        /// <summary>
+        /// Writes the contents of another buffer at the current position and advances the position.
+        /// </summary>
+        /// <param name="bb">The buffer whose contents, up to its length, are written.</param>
         internal void WriteBuffer(ByteBuffer bb)
         {
-            if (pos + bb.Length > buffer.Length)
+            if (_pos + bb.Length > _buffer.Length)
                 Grow(bb.Length);
 
-            Buffer.BlockCopy(bb.buffer, 0, buffer, pos, bb.Length);
-            pos += bb.Length;
+            Buffer.BlockCopy(bb._buffer, 0, _buffer, _pos, bb.Length);
+            _pos += bb.Length;
         }
 
+        /// <summary>
+        /// Writes zero bytes until the position is a multiple of <paramref name="alignment"/>.
+        /// </summary>
+        /// <param name="alignment">The alignment, which must be a power of two.</param>
         internal void Align(int alignment)
         {
-            if (pos + alignment > buffer.Length)
+            if (_pos + alignment > _buffer.Length)
                 Grow(alignment);
-            int newpos = (pos + alignment - 1) & ~(alignment - 1);
-            while (pos < newpos)
-                buffer[pos++] = 0;
+            var newpos = (_pos + alignment - 1) & ~(alignment - 1);
+            while (_pos < newpos)
+                _buffer[_pos++] = 0;
         }
 
-        internal void WriteTypeDefOrRefEncoded(int token)
-        {
-            switch (token >> 24)
-            {
-                case TypeDefTable.Index:
-                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 0);
-                    break;
-                case TypeRefTable.Index:
-                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 1);
-                    break;
-                case TypeSpecTable.Index:
-                    WriteCompressedInteger((token & 0xFFFFFF) << 2 | 2);
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-        }
-
+        /// <summary>
+        /// Copies the bytes written to the buffer to a new array.
+        /// </summary>
+        /// <returns>A new array of <see cref="Length"/> bytes.</returns>
         internal byte[] ToArray()
         {
             var len = Length;
             var buf = new byte[len];
-            Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            Buffer.BlockCopy(_buffer, 0, buf, 0, len);
             return buf;
         }
 

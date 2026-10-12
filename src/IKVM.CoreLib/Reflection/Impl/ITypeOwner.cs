@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,9 +26,18 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Impl
 {
 
+    /// <summary>
+    /// Implemented by the builders that can own a <see cref="TypeBuilder"/>: a module builder for a top-level type, or
+    /// a type builder for a nested type.
+    /// </summary>
     interface ITypeOwner
-	{
-		ModuleBuilder ModuleBuilder { get; }
-	}
+    {
+
+        /// <summary>
+        /// Gets the module builder in which the owned types are defined.
+        /// </summary>
+        ModuleBuilder ModuleBuilder { get; }
+
+    }
 
 }

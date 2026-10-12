@@ -13,123 +13,77 @@ namespace IKVM.Reflection.Diagnostics
 {
 
     /// <summary>
-    /// Symbol writer base implementation that outputs symbols for module builders.
+    /// Symbol writer base implementation that outputs symbols for module builders. It records documents, sequence
+    /// points, scopes, local variables and namespace imports as they are defined, and writes them as Portable PDB
+    /// tables when <see cref="WriteTo"/> is called.
     /// </summary>
-    internal class PortablePdbSymbolWriter : IMetadataSymbolWriter
+    class PortablePdbSymbolWriter : IMetadataSymbolWriter
     {
 
+        /// <summary>
+        /// Represents a source document defined through <see cref="DefineDocument"/>.
+        /// </summary>
         protected sealed class Document : ISymbolDocumentWriter
         {
 
-            readonly string url;
-            readonly Guid language;
-            readonly Guid languageVendor;
-            readonly Guid documentType;
+            readonly string _url;
+            readonly Guid _language;
 
-            Guid algorithmId;
-            byte[] checksum;
-            byte[] source;
+            Guid _algorithmId;
+            byte[] _checksum;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="url"></param>
-            /// <param name="language"></param>
-            /// <param name="languageVendor"></param>
-            /// <param name="documentType"></param>
+            /// <param name="url">The URL that identifies the document.</param>
+            /// <param name="language">The document language.</param>
+            /// <param name="languageVendor">The identity of the vendor for the document language.</param>
+            /// <param name="documentType">The type of the document.</param>
             internal Document(string url, Guid language, Guid languageVendor, Guid documentType)
             {
-                this.url = url;
-                this.language = language;
-                this.languageVendor = languageVendor;
-                this.documentType = documentType;
+                _url = url;
+                _language = language;
             }
 
             /// <summary>
-            /// Sets the checksum.
+            /// Sets checksum information.
             /// </summary>
-            /// <param name="algorithmId"></param>
-            /// <param name="checksum"></param>
+            /// <param name="algorithmId">The GUID representing the algorithm ID.</param>
+            /// <param name="checksum">The checksum.</param>
             public void SetCheckSum(Guid algorithmId, byte[] checksum)
             {
-                this.algorithmId = algorithmId;
-                this.checksum = checksum;
+                _algorithmId = algorithmId;
+                _checksum = checksum;
             }
 
             /// <summary>
-            /// Sets the source.
+            /// Stores the raw source for a document in the symbol store. Embedding source is not supported, so the
+            /// source is ignored.
             /// </summary>
-            /// <param name="source"></param>
+            /// <param name="source">The document source represented as unsigned bytes.</param>
             public void SetSource(byte[] source)
             {
-                this.source = source;
             }
 
             /// <summary>
             /// Gets the URL of the document.
             /// </summary>
-
-            public string Url => url;
+            public string Url => _url;
 
             /// <summary>
             /// Gets the language of the document.
             /// </summary>
-            public Guid Language => language;
+            public Guid Language => _language;
 
             /// <summary>
             /// Gets the checksum algorithm ID.
             /// </summary>
-            public Guid AlgorithmId => algorithmId;
+            public Guid AlgorithmId => _algorithmId;
 
             /// <summary>
             /// Gets the checksum.
             /// </summary>
-            public byte[] Checksum => checksum;
-
-        }
-
-        /// <summary>
-        /// Track local variable information.
-        /// </summary>
-        protected readonly struct LocalVar
-        {
-
-            readonly System.Reflection.FieldAttributes attributes;
-            readonly byte[] signature;
-            readonly SymAddressKind addrKind;
-            readonly int addr1;
-            readonly int addr2;
-            readonly int addr3;
-            readonly int startOffset;
-            readonly int endOffset;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="attributes"></param>
-            /// <param name="signature"></param>
-            /// <param name="addrKind"></param>
-            /// <param name="addr1"></param>
-            /// <param name="addr2"></param>
-            /// <param name="addr3"></param>
-            /// <param name="startOffset"></param>
-            /// <param name="endOffset"></param>
-            internal LocalVar(System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
-            {
-                this.attributes = attributes;
-                this.signature = signature;
-                this.addrKind = addrKind;
-                this.addr1 = addr1;
-                this.addr2 = addr2;
-                this.addr3 = addr3;
-                this.startOffset = startOffset;
-                this.endOffset = endOffset;
-            }
-
-            /// <summary>
-            /// Gets the first address.
-            /// </summary>
-            public int Address1 => addr1;
+            public byte[] Checksum => _checksum;
 
         }
 
@@ -139,45 +93,70 @@ namespace IKVM.Reflection.Diagnostics
         protected sealed class Scope
         {
 
-            internal int startOffset;
-            internal int endOffset;
-            internal List<Scope> scopes;
-            internal Dictionary<string, LocalVar> locals;
-            internal List<string> namespaces;
+            readonly int _startOffset;
+            int _endOffset;
+            List<Scope> _scopes;
+            Dictionary<string, int> _locals;
+            List<string> _namespaces;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="startOffset"></param>
+            /// <param name="startOffset">The IL offset at which the scope begins.</param>
             internal Scope(int startOffset)
             {
-                this.startOffset = startOffset;
+                _startOffset = startOffset;
             }
 
             /// <summary>
             /// Gets the start offset.
             /// </summary>
-            public int StartOffset => startOffset;
+            public int StartOffset => _startOffset;
 
             /// <summary>
             /// Gets the end offset.
             /// </summary>
-            public int EndOffset => endOffset;
+            public int EndOffset => _endOffset;
 
             /// <summary>
-            /// Gets the nested scopes.
+            /// Gets the scopes nested directly in this one.
             /// </summary>
-            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)scopes ?? Array.Empty<Scope>();
+            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)_scopes ?? Array.Empty<Scope>();
 
             /// <summary>
-            /// Gets the local variables.
+            /// Gets the local variables declared in this scope, by name, with their slots in the local signature.
             /// </summary>
-            public IReadOnlyDictionary<string, LocalVar> Locals => (IReadOnlyDictionary<string, LocalVar>)locals ?? ImmutableDictionary<string, LocalVar>.Empty;
+            public IReadOnlyDictionary<string, int> Locals => (IReadOnlyDictionary<string, int>)_locals ?? ImmutableDictionary<string, int>.Empty;
 
             /// <summary>
-            /// Gets the namespaces.
+            /// Gets the namespaces imported in this scope.
             /// </summary>
-            public IReadOnlyList<string> Namespaces => (IReadOnlyList<string>)namespaces ?? Array.Empty<string>();
+            public IReadOnlyList<string> Namespaces => (IReadOnlyList<string>)_namespaces ?? Array.Empty<string>();
+
+            /// <summary>
+            /// Closes the scope at the specified offset.
+            /// </summary>
+            /// <param name="endOffset">The IL offset of the end of the scope.</param>
+            internal void Close(int endOffset) => _endOffset = endOffset;
+
+            /// <summary>
+            /// Adds a scope nested directly in this one.
+            /// </summary>
+            /// <param name="scope">The nested scope.</param>
+            internal void AddScope(Scope scope) => (_scopes ??= []).Add(scope);
+
+            /// <summary>
+            /// Declares a local variable in this scope.
+            /// </summary>
+            /// <param name="name">The name of the variable.</param>
+            /// <param name="slot">The slot of the variable in the local signature.</param>
+            internal void AddLocal(string name, int slot) => (_locals ??= [])[name] = slot;
+
+            /// <summary>
+            /// Imports a namespace in this scope.
+            /// </summary>
+            /// <param name="name">The full name of the namespace.</param>
+            internal void AddNamespace(string name) => (_namespaces ??= []).Add(name);
 
         }
 
@@ -187,291 +166,369 @@ namespace IKVM.Reflection.Diagnostics
         protected sealed class Method
         {
 
-            readonly int token;
-            readonly StandaloneSignatureHandle localSignatureHandle;
-            internal List<SequencePoint> sequencePoints;
-            internal List<Scope> scopes;
-            internal Stack<Scope> scopeStack;
+            readonly int _token;
+            readonly StandaloneSignatureHandle _localSignatureHandle;
+            List<SequencePoint> _sequencePoints;
+            List<Scope> _scopes;
+            Stack<Scope> _scopeStack;
 
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="token"></param>
-            /// <param name="localSignatureHandle"></param>
             internal Method(int token, StandaloneSignatureHandle localSignatureHandle)
             {
-                this.token = token;
-                this.localSignatureHandle = localSignatureHandle;
+                _token = token;
+                _localSignatureHandle = localSignatureHandle;
             }
 
             /// <summary>
             /// Gets the token of the method.
             /// </summary>
-            public int Token => token;
+            public int Token => _token;
 
             /// <summary>
             /// Gets the local variable signature.
             /// </summary>
-            public StandaloneSignatureHandle LocalSignatureHandle => localSignatureHandle;
+            public StandaloneSignatureHandle LocalSignatureHandle => _localSignatureHandle;
 
             /// <summary>
             /// Gets the sequence points.
             /// </summary>
-            public IReadOnlyList<SequencePoint> SequencePoints => (IReadOnlyList<SequencePoint>)sequencePoints ?? Array.Empty<SequencePoint>();
+            public IReadOnlyList<SequencePoint> SequencePoints => (IReadOnlyList<SequencePoint>)_sequencePoints ?? Array.Empty<SequencePoint>();
 
             /// <summary>
             /// Gets the scopes.
             /// </summary>
-            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)scopes ?? Array.Empty<Scope>();
+            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)_scopes ?? Array.Empty<Scope>();
+
+            /// <summary>
+            /// Gets the innermost open scope, or <see langword="null"/> if no scope is open.
+            /// </summary>
+            internal Scope CurrentScope => _scopeStack is { Count: > 0 } ? _scopeStack.Peek() : null;
+
+            /// <summary>
+            /// Adds a sequence point to the method.
+            /// </summary>
+            /// <param name="sequencePoint">The sequence point.</param>
+            internal void AddSequencePoint(SequencePoint sequencePoint) => (_sequencePoints ??= []).Add(sequencePoint);
+
+            /// <summary>
+            /// Opens a scope, nested in the current scope or at the top level of the method.
+            /// </summary>
+            /// <param name="scope">The scope to open.</param>
+            internal void OpenScope(Scope scope)
+            {
+                if (CurrentScope is { } parent)
+                    parent.AddScope(scope);
+                else
+                    (_scopes ??= []).Add(scope);
+
+                (_scopeStack ??= new()).Push(scope);
+            }
+
+            /// <summary>
+            /// Closes the innermost open scope.
+            /// </summary>
+            /// <returns>The closed scope, or <see langword="null"/> if no scope is open.</returns>
+            internal Scope CloseScope() => _scopeStack is { Count: > 0 } ? _scopeStack.Pop() : null;
 
         }
 
         /// <summary>
-        /// Describes a sequence point on a method.
+        /// Describes a set of sequence points in one document, as passed to a single call of
+        /// <see cref="DefineSequencePoints"/>. The arrays are parallel, with one element per sequence point.
         /// </summary>
         protected readonly struct SequencePoint
         {
 
-            readonly Document document;
-            readonly int[] offsets;
-            readonly int[] lines;
-            readonly int[] columns;
-            readonly int[] endLines;
-            readonly int[] endColumns;
+            readonly Document _document;
+            readonly int[] _offsets;
+            readonly int[] _lines;
+            readonly int[] _columns;
+            readonly int[] _endLines;
+            readonly int[] _endColumns;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="offsets"></param>
-            /// <param name="lines"></param>
-            /// <param name="columns"></param>
-            /// <param name="endLines"></param>
-            /// <param name="endColumns"></param>
+            /// <param name="document">The document for which the sequence points are being defined.</param>
+            /// <param name="offsets">The sequence point offsets measured from the beginning of methods.</param>
+            /// <param name="lines">The starting lines for the sequence points.</param>
+            /// <param name="columns">The starting columns for the sequence points.</param>
+            /// <param name="endLines">The ending lines for the sequence points.</param>
+            /// <param name="endColumns">The ending columns for the sequence points.</param>
             internal SequencePoint(Document document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
             {
-                this.document = document;
-                this.offsets = offsets;
-                this.lines = lines;
-                this.columns = columns;
-                this.endLines = endLines;
-                this.endColumns = endColumns;
+                _document = document;
+                _offsets = offsets;
+                _lines = lines;
+                _columns = columns;
+                _endLines = endLines;
+                _endColumns = endColumns;
             }
 
             /// <summary>
             /// Gets the document.
             /// </summary>
-            public Document Document => document;
+            public Document Document => _document;
 
             /// <summary>
             /// Gets the offsets.
             /// </summary>
-            public int[] Offsets => offsets;
+            public int[] Offsets => _offsets;
 
             /// <summary>
-            /// Gets the lines
+            /// Gets the starting lines.
             /// </summary>
-            public int[] Lines => lines;
+            public int[] Lines => _lines;
 
             /// <summary>
-            /// Gets the columns.
+            /// Gets the starting columns.
             /// </summary>
-            public int[] Columns => columns;
+            public int[] Columns => _columns;
 
             /// <summary>
-            /// Gets the line endings.
+            /// Gets the ending lines.
             /// </summary>
-            public int[] EndLines => endLines;
+            public int[] EndLines => _endLines;
 
             /// <summary>
-            /// Gets the column endings.
+            /// Gets the ending columns.
             /// </summary>
-            public int[] EndColumns => endColumns;
+            public int[] EndColumns => _endColumns;
 
         }
 
-        readonly ModuleBuilder module;
-        Dictionary<string, Document> documents;
-        List<Method> methods;
-        Method currentMethod;
-        int userEntryPoint;
+
+        /// <summary>
+        /// The documents defined so far, by URL, or <see langword="null"/> if none has been defined.
+        /// </summary>
+        Dictionary<string, Document> _documents;
+
+        /// <summary>
+        /// The methods that have been closed, in the order they were closed, or <see langword="null"/> if there are none.
+        /// </summary>
+        List<Method> _methods;
+
+        /// <summary>
+        /// The method that is currently open, or <see langword="null"/> if no method is open.
+        /// </summary>
+        Method _currentMethod;
+
+        /// <summary>
+        /// The metadata token of the user entry point, or 0 if none has been set.
+        /// </summary>
+        int _userEntryPoint;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The module the symbols are written for.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="module"/> is <see langword="null"/>.</exception>
         public PortablePdbSymbolWriter(ModuleBuilder module)
         {
-            this.module = module ?? throw new ArgumentNullException(nameof(module));
+            if (module is null)
+                throw new ArgumentNullException(nameof(module));
         }
 
-        /// <inheritdoc />
-        public virtual void Initialize(IntPtr emitter, string filename, bool fFullBuild)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="emitter">The metadata emitter interface.</param>
+        /// <param name="filename">The file name associated with the debug information.</param>
+        /// <param name="fFullBuild"><see langword="true"/> if this is a full rebuild; <see langword="false"/> if this is an incremental compilation.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public virtual void Initialize(IntPtr emitter, string filename, bool fFullBuild) => throw new NotImplementedException();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Defines a source document. A document with the same URL as one defined earlier is returned again rather than
+        /// defined twice.
+        /// </summary>
+        /// <param name="url">The URL that identifies the document.</param>
+        /// <param name="language">The document language.</param>
+        /// <param name="languageVendor">The identity of the vendor for the document language.</param>
+        /// <param name="documentType">The type of the document.</param>
+        /// <returns>The object that represents the document.</returns>
         public virtual ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
         {
-            documents ??= new();
-            if (documents.TryGetValue(url, out var doc) == false)
-                documents.Add(url, doc = new Document(url, language, languageVendor, documentType));
+            _documents ??= [];
+            if (_documents.TryGetValue(url, out var doc) == false)
+                _documents.Add(url, doc = new Document(url, language, languageVendor, documentType));
 
             return doc;
         }
 
-        /// <inheritdoc />
-        public virtual void OpenNamespace(string name)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Not supported; use <see cref="UsingNamespace"/> to record namespace imports in a scope.
+        /// </summary>
+        /// <param name="name">The name of the new namespace.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public virtual void OpenNamespace(string name) => throw new NotImplementedException();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Opens a method to place symbol information into, without a local variable signature.
+        /// </summary>
+        /// <param name="method">The metadata token for the method to be opened.</param>
         public virtual void OpenMethod(SymbolToken method)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
-            currentMethod = new Method(method.GetToken(), default);
+            _currentMethod = new Method(method.GetToken(), default);
         }
 
         /// <summary>
         /// Opens a method to place symbol information into.
         /// </summary>
-        /// <param name="method"></param>
-        /// <param name="localSignatureHandle"></param>
+        /// <param name="method">The metadata token for the method to be opened. Must be a real token, not a pseudo token.</param>
+        /// <param name="localSignatureHandle">The local variable signature of the method body, or a nil handle if it has no locals.</param>
         public virtual void OpenMethod(SymbolToken method, StandaloneSignatureHandle localSignatureHandle)
         {
             Debug.Assert(ModuleBuilder.IsPseudoToken(method.GetToken()) == false);
-            currentMethod = new Method(method.GetToken(), localSignatureHandle);
+            _currentMethod = new Method(method.GetToken(), localSignatureHandle);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Defines a group of sequence points within the current method.
+        /// </summary>
+        /// <param name="document">The document object for which the sequence points are being defined.</param>
+        /// <param name="offsets">The sequence point offsets measured from the beginning of methods.</param>
+        /// <param name="lines">The document lines for the sequence points.</param>
+        /// <param name="columns">The document positions for the sequence points.</param>
+        /// <param name="endLines">The document end lines for the sequence points.</param>
+        /// <param name="endColumns">The document end positions for the sequence points.</param>
+        /// <exception cref="InvalidOperationException">No method is open, or <paramref name="document"/> was not obtained from this symbol writer.</exception>
         public virtual void DefineSequencePoints(ISymbolDocumentWriter document, int[] offsets, int[] lines, int[] columns, int[] endLines, int[] endColumns)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
             if (document is not Document doc)
                 throw new InvalidOperationException("Document not obtained from symbol writer.");
 
-            var sequencePoint = new SequencePoint(doc, offsets, lines, columns, endLines, endColumns);
-            currentMethod.sequencePoints ??= new();
-            currentMethod.sequencePoints.Add(sequencePoint);
+            _currentMethod.AddSequencePoint(new SequencePoint(doc, offsets, lines, columns, endLines, endColumns));
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Opens a new lexical scope in the current method, nested in the innermost open scope if there is one.
+        /// </summary>
+        /// <param name="startOffset">The offset, in bytes, from the beginning of the method to the first instruction in the lexical scope.</param>
+        /// <returns>Always 0; scope identifiers are not used by this writer.</returns>
+        /// <exception cref="InvalidOperationException">No method is open.</exception>
         public virtual int OpenScope(int startOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = new Scope(startOffset);
-
-            if (currentMethod.scopeStack == null || currentMethod.scopeStack.Count == 0)
-            {
-                currentMethod.scopes ??= new();
-                currentMethod.scopes.Add(scope);
-            }
-            else
-            {
-                var thisScope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
-                thisScope.scopes ??= new();
-                thisScope.scopes.Add(scope);
-            }
-
-            currentMethod.scopeStack ??= new();
-            currentMethod.scopeStack.Push(scope);
-
+            _currentMethod.OpenScope(new Scope(startOffset));
             return 0;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Specifies that the given, fully qualified namespace name is used within the open lexical scope.
+        /// </summary>
+        /// <param name="fullName">The fully qualified name of the namespace.</param>
+        /// <exception cref="InvalidOperationException">No method or no scope is open.</exception>
         public virtual void UsingNamespace(string fullName)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
-            if (scope == null)
-                throw new InvalidOperationException("No open scope.");
-
-            scope.namespaces ??= new();
-            scope.namespaces.Add(fullName);
+            var scope = _currentMethod.CurrentScope ?? throw new InvalidOperationException("No open scope.");
+            scope.AddNamespace(fullName);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Defines a single variable in the current lexical scope. A later definition with the same name in the same
+        /// scope replaces the earlier one.
+        /// </summary>
+        /// <param name="name">The local variable name.</param>
+        /// <param name="attributes">A bitwise combination of the <see cref="System.Reflection.FieldAttributes"/> values.</param>
+        /// <param name="signature">The local variable signature.</param>
+        /// <param name="addrKind">The address types for <paramref name="addr1"/>, <paramref name="addr2"/>, and <paramref name="addr3"/>.</param>
+        /// <param name="addr1">The first address for the local variable specification; written as the slot index of the local.</param>
+        /// <param name="addr2">The second address for the local variable specification.</param>
+        /// <param name="addr3">The third address for the local variable specification.</param>
+        /// <param name="startOffset">The start offset for the variable. If this parameter is zero, it is ignored and the variable is defined throughout the entire scope.</param>
+        /// <param name="endOffset">The end offset for the variable. If this parameter is zero, it is ignored and the variable is defined throughout the entire scope.</param>
+        /// <exception cref="InvalidOperationException">No method or no scope is open.</exception>
         public virtual void DefineLocalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Peek() : null;
-            if (scope == null)
-                throw new InvalidOperationException("No open scope.");
-
-            scope.locals ??= new();
-            scope.locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, addr3, startOffset, endOffset);
+            // a Portable PDB records only the name and the slot, which is the first address of a local
+            var scope = _currentMethod.CurrentScope ?? throw new InvalidOperationException("No open scope.");
+            scope.AddLocal(name, addr1);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Closes the current lexical scope.
+        /// </summary>
+        /// <param name="endOffset">The points past the last instruction in the scope.</param>
+        /// <exception cref="InvalidOperationException">No method or no scope is open.</exception>
         public virtual void CloseScope(int endOffset)
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = currentMethod.scopeStack != null ? currentMethod.scopeStack.Pop() : null;
-            if (scope == null)
-                throw new InvalidOperationException("No open scope.");
-
-            scope.endOffset = endOffset;
+            var scope = _currentMethod.CloseScope() ?? throw new InvalidOperationException("No open scope.");
+            scope.Close(endOffset);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Closes the current method and keeps its symbol information to be written by <see cref="WriteTo"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">No method is open.</exception>
         public virtual void CloseMethod()
         {
-            if (currentMethod == null)
+            if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            methods ??= new();
-            methods.Add(currentMethod);
-            currentMethod = null;
+            _methods ??= [];
+            _methods.Add(_currentMethod);
+            _currentMethod = null;
         }
 
-        /// <inheritdoc />
-        public virtual void CloseNamespace()
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public virtual void CloseNamespace() => throw new NotImplementedException();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Closes the symbol writer. This implementation has nothing to release.
+        /// </summary>
         public virtual void Close()
         {
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Writes the recorded symbol information to the Portable PDB metadata. The methods must have been closed in
+        /// <c>MethodDef</c> row order, because each one becomes the <c>MethodDebugInformation</c> row with the same row
+        /// number.
+        /// </summary>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="userEntryPoint">Set to the metadata token of the user entry point, or 0 if none was set.</param>
         public virtual void WriteTo(MetadataBuilder metadata, out int userEntryPoint)
         {
             metadata.GetOrAddString("");
             metadata.GetOrAddUserString("");
 
-            if (methods != null)
+            if (_methods != null)
             {
                 var documentCache = new Dictionary<Document, DocumentHandle>();
-                foreach (var method in methods)
+                foreach (var method in _methods)
                     WriteMethod(metadata, method, documentCache);
             }
 
-            userEntryPoint = this.userEntryPoint;
+            userEntryPoint = _userEntryPoint;
         }
 
         /// <summary>
-        /// Writes the given method.
+        /// Writes the sequence points and scopes of the method and its <c>MethodDebugInformation</c> row.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="method"></param>
-        /// <param name="documentCache"></param>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="method">The method to write.</param>
+        /// <param name="documentCache">The handles of the documents written so far.</param>
         void WriteMethod(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache)
         {
-            // find first document and set as initial, as it will be directly on method debug information
+            // if all sequence points are in one document, it goes directly on the method debug information
             var initialDocument = GetSingleDocument(method.SequencePoints);
             var initialDocumentHandle = initialDocument != null ? GetOrWriteDocument(metadata, initialDocument, documentCache) : default;
             var currentDocumentHandle = initialDocumentHandle;
@@ -486,10 +543,11 @@ namespace IKVM.Reflection.Diagnostics
         }
 
         /// <summary>
-        /// Returns the single unique <see cref="Document"/> in a set of sequence points, or <c>null</c> if there is no single unique document.
+        /// Returns the single unique <see cref="Document"/> in a set of sequence points, or <see langword="null"/> if
+        /// there is no single unique document.
         /// </summary>
-        /// <param name="sequencePoints"></param>
-        /// <returns></returns>
+        /// <param name="sequencePoints">The sequence points to examine.</param>
+        /// <returns>The document shared by all of the sequence points, or <see langword="null"/> if they are in more than one document or there are none.</returns>
         Document GetSingleDocument(IEnumerable<SequencePoint> sequencePoints)
         {
             var s = sequencePoints.Select(i => i.Document).Distinct().Take(2).ToList();
@@ -497,14 +555,13 @@ namespace IKVM.Reflection.Diagnostics
         }
 
         /// <summary>
-        /// Writes the sequence points for the method.
+        /// Writes the sequence points for the method, ordered by IL offset, as a sequence points blob.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="method"></param>
-        /// <param name="documentCache"></param>
-        /// <param name="sequencePointHandle"></param>
-        /// <param name="previousDocument"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="method">The method whose sequence points are written.</param>
+        /// <param name="documentCache">The handles of the documents written so far.</param>
+        /// <param name="sequencePointHandle">Set to the handle of the sequence points blob, or a nil handle if the method has no sequence points.</param>
+        /// <param name="previousDocument">The document the blob starts in; updated as the encoder switches documents.</param>
         void WriteSequencePoints(MetadataBuilder metadata, Method method, Dictionary<Document, DocumentHandle> documentCache, out BlobHandle sequencePointHandle, ref DocumentHandle previousDocument)
         {
             // no sequence points?
@@ -532,21 +589,22 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Expands the set of sequence points with multiple offsets into single sequence point records for each offset.
         /// </summary>
-        /// <param name="sequencePoints"></param>
-        /// <returns></returns>
+        /// <param name="sequencePoints">The sequence point groups recorded on a method.</param>
+        /// <returns>One record per offset, in the order they were defined.</returns>
         IEnumerable<(Document Document, int Offset, int StartLine, int EndLine, int StartColumn, int EndColumn)> ExpandSequencePoints(IReadOnlyList<SequencePoint> sequencePoints)
         {
-            for (int i = 0; i < sequencePoints.Count; i++)
-                for (int j = 0; j < sequencePoints[i].Offsets.Length; j++)
+            for (var i = 0; i < sequencePoints.Count; i++)
+                for (var j = 0; j < sequencePoints[i].Offsets.Length; j++)
                     yield return (sequencePoints[i].Document, sequencePoints[i].Offsets[j], sequencePoints[i].Lines[j], sequencePoints[i].EndLines[j], sequencePoints[i].Columns[j], sequencePoints[i].EndColumns[j]);
         }
 
         /// <summary>
         /// Gets or writes the handle to a document in the metadata.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="document"></param>
-        /// <param name="documentCache"></param>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="document">The document, or <see langword="null"/>.</param>
+        /// <param name="documentCache">The handles of the documents written so far; updated when the document is written.</param>
+        /// <returns>The handle of the <c>Document</c> row, or a nil handle if <paramref name="document"/> is <see langword="null"/>.</returns>
         DocumentHandle GetOrWriteDocument(MetadataBuilder metadata, Document document, Dictionary<Document, DocumentHandle> documentCache)
         {
             if (document == null)
@@ -561,9 +619,9 @@ namespace IKVM.Reflection.Diagnostics
         /// <summary>
         /// Writes the document to the metadata.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="document"></param>
-        /// <returns></returns>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="document">The document to write.</param>
+        /// <returns>The handle of the added <c>Document</c> row.</returns>
         DocumentHandle WriteDocument(MetadataBuilder metadata, Document document)
         {
             return metadata.AddDocument(
@@ -574,10 +632,11 @@ namespace IKVM.Reflection.Diagnostics
         }
 
         /// <summary>
-        /// Writes the scopes of the method.
+        /// Writes the scopes of the method, ordered by start offset and then outermost first, as the <c>LocalScope</c>
+        /// table requires.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="method"></param>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="method">The method whose scopes are written.</param>
         void WriteScopes(MetadataBuilder metadata, Method method)
         {
             foreach (var scope in method.Scopes.OrderBy(i => i.StartOffset).ThenByDescending(i => i.EndOffset - i.StartOffset))
@@ -585,23 +644,20 @@ namespace IKVM.Reflection.Diagnostics
         }
 
         /// <summary>
-        /// Writes the given scope.
+        /// Writes the given outermost scope and its nested scopes.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="method"></param>
-        /// <param name="scope"></param>
-        void WriteScope(MetadataBuilder metadata, Method method, Scope scope)
-        {
-            WriteScope(metadata, method, scope, default);
-        }
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="method">The method that contains the scope.</param>
+        /// <param name="scope">The scope to write.</param>
+        void WriteScope(MetadataBuilder metadata, Method method, Scope scope) => WriteScope(metadata, method, scope, default);
 
         /// <summary>
-        /// Writes the given scope.
+        /// Writes the given scope, its local variables and namespace imports, and then its nested scopes.
         /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="method"></param>
-        /// <param name="scope"></param>
-        /// <param name="parentImportScope"></param>
+        /// <param name="metadata">The metadata builder for the Portable PDB.</param>
+        /// <param name="method">The method that contains the scope.</param>
+        /// <param name="scope">The scope to write.</param>
+        /// <param name="parentImportScope">The import scope of the enclosing scope, or a nil handle for an outermost scope.</param>
         void WriteScope(MetadataBuilder metadata, Method method, Scope scope, ImportScopeHandle parentImportScope)
         {
             // insert import scope for this scope
@@ -615,25 +671,23 @@ namespace IKVM.Reflection.Diagnostics
                 foreach (var ns in scope.Namespaces)
                     enc.ImportNamespace(metadata.GetOrAddBlobUTF8(ns));
 
-                // write nested scope imports
+                // add the import scope, nested in the parent import scope
                 importScope = metadata.AddImportScope(parentImportScope, metadata.GetOrAddBlob(buf));
             }
 
-            // insert variables for this scope, keeping first entry
-            var variableList = default(LocalVariableHandle);
-            foreach (var kvp in scope.Locals.OrderBy(i => i.Value.Address1))
-            {
-                var h = metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value.Address1, metadata.GetOrAddString(kvp.Key));
-                if (variableList.IsNil)
-                    variableList = h;
-            }
+            // the scope's variables and constants are the runs of rows starting at the next row of each table, which
+            // for a scope without any is where the next scope's begin
+            var variableList = MetadataTokens.LocalVariableHandle(metadata.GetRowCount(TableIndex.LocalVariable) + 1);
+            var constantList = MetadataTokens.LocalConstantHandle(metadata.GetRowCount(TableIndex.LocalConstant) + 1);
+            foreach (var kvp in scope.Locals.OrderBy(i => i.Value))
+                metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value, metadata.GetOrAddString(kvp.Key));
 
             // add scope
             metadata.AddLocalScope(
                 (MethodDefinitionHandle)MetadataTokens.EntityHandle(method.Token),
                 importScope,
                 variableList,
-                default,
+                constantList,
                 scope.StartOffset,
                 scope.EndOffset - scope.StartOffset);
 
@@ -644,55 +698,94 @@ namespace IKVM.Reflection.Diagnostics
 
         #region Not Implemented
 
-        /// <inheritdoc />
-        public void DefineField(SymbolToken parent, string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
-        {
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="parent">The metadata type or method token.</param>
+        /// <param name="name">The field name.</param>
+        /// <param name="attributes">A bitwise combination of the <see cref="System.Reflection.FieldAttributes"/> values.</param>
+        /// <param name="signature">The field signature.</param>
+        /// <param name="addrKind">The address types for <paramref name="addr1"/> and <paramref name="addr2"/>.</param>
+        /// <param name="addr1">The first address for the field specification.</param>
+        /// <param name="addr2">The second address for the field specification.</param>
+        /// <param name="addr3">The third address for the field specification.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void DefineField(SymbolToken parent, string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3) =>
             throw new NotImplementedException();
-        }
 
-        /// <inheritdoc />
-        public void DefineGlobalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3)
-        {
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="name">The global variable name.</param>
+        /// <param name="attributes">A bitwise combination of the <see cref="System.Reflection.FieldAttributes"/> values.</param>
+        /// <param name="signature">The global variable signature.</param>
+        /// <param name="addrKind">The address types for <paramref name="addr1"/>, <paramref name="addr2"/>, and <paramref name="addr3"/>.</param>
+        /// <param name="addr1">The first address for the global variable specification.</param>
+        /// <param name="addr2">The second address for the global variable specification.</param>
+        /// <param name="addr3">The third address for the global variable specification.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void DefineGlobalVariable(string name, System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3) =>
             throw new NotImplementedException();
-        }
 
-        /// <inheritdoc />
-        public void DefineParameter(string name, System.Reflection.ParameterAttributes attributes, int sequence, SymAddressKind addrKind, int addr1, int addr2, int addr3)
-        {
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="name">The parameter name.</param>
+        /// <param name="attributes">A bitwise combination of the <see cref="System.Reflection.ParameterAttributes"/> values.</param>
+        /// <param name="sequence">The parameter signature.</param>
+        /// <param name="addrKind">The address types for <paramref name="addr1"/>, <paramref name="addr2"/>, and <paramref name="addr3"/>.</param>
+        /// <param name="addr1">The first address for the parameter specification.</param>
+        /// <param name="addr2">The second address for the parameter specification.</param>
+        /// <param name="addr3">The third address for the parameter specification.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void DefineParameter(string name, System.Reflection.ParameterAttributes attributes, int sequence, SymAddressKind addrKind, int addr1, int addr2, int addr3) =>
             throw new NotImplementedException();
-        }
 
-        /// <inheritdoc />
-        public void SetMethodSourceRange(ISymbolDocumentWriter startDoc, int startLine, int startColumn, ISymbolDocumentWriter endDoc, int endLine, int endColumn)
-        {
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="startDoc">The document containing the starting position.</param>
+        /// <param name="startLine">The starting line number.</param>
+        /// <param name="startColumn">The starting column.</param>
+        /// <param name="endDoc">The document containing the ending position.</param>
+        /// <param name="endLine">The ending line number.</param>
+        /// <param name="endColumn">The ending column number.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void SetMethodSourceRange(ISymbolDocumentWriter startDoc, int startLine, int startColumn, ISymbolDocumentWriter endDoc, int endLine, int endColumn) =>
             throw new NotImplementedException();
-        }
 
-        /// <inheritdoc />
-        public void SetScopeRange(int scopeID, int startOffset, int endOffset)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="scopeID">The scope identifier for the scope.</param>
+        /// <param name="startOffset">The byte offset of the beginning of the lexical scope.</param>
+        /// <param name="endOffset">The byte offset of the end of the lexical scope.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void SetScopeRange(int scopeID, int startOffset, int endOffset) => throw new NotImplementedException();
 
-        /// <inheritdoc />
-        public void SetSymAttribute(SymbolToken parent, string name, byte[] data)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="parent">The metadata token for which the attribute is being defined.</param>
+        /// <param name="name">The attribute name.</param>
+        /// <param name="data">The attribute value.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void SetSymAttribute(SymbolToken parent, string name, byte[] data) => throw new NotImplementedException();
 
-        /// <inheritdoc />
-        public void SetUnderlyingWriter(IntPtr underlyingWriter)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public void SetUserEntryPoint(SymbolToken entryMethod)
-        {
-            this.userEntryPoint = entryMethod.GetToken();
-        }
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <param name="underlyingWriter">A pointer to code that represents the underlying writer.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
+        public void SetUnderlyingWriter(IntPtr underlyingWriter) => throw new NotImplementedException();
 
         #endregion
+
+        /// <summary>
+        /// Identifies the user-defined method as the user entry point for the current module.
+        /// </summary>
+        /// <param name="entryMethod">The metadata token for the method that is the user entry point.</param>
+        public void SetUserEntryPoint(SymbolToken entryMethod) => _userEntryPoint = entryMethod.GetToken();
 
     }
 

@@ -1,4 +1,4 @@
-#if IKVM_REFLECTION
+﻿#if IKVM_REFLECTION
 namespace IKVM.Reflection.Tests.Dump.Ikvm
 #else
 namespace IKVM.Reflection.Tests.Dump.Runtime
@@ -22,7 +22,7 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 #endif
 
     /// <summary>
-    /// What a rendering covers.
+    /// Selects what a rendering covers.
     /// </summary>
 #if IKVM_REFLECTION
     enum DumpScope
@@ -62,11 +62,21 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 #endif
     {
 
+        /// <summary>
+        /// Binds every member declared by a type itself, whatever its visibility and whether it is static.
+        /// </summary>
         const BindingFlags DeclaredOnly = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
+        /// <summary>
+        /// Binds the public members a type declares or inherits, including inherited static members.
+        /// </summary>
         const BindingFlags PublicFlattened = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
 
-        static readonly HashSet<string> PseudoAttributes =
+        /// <summary>
+        /// The full names of the pseudo custom attributes, which are left out of the rendering; the metadata they stand for
+        /// is rendered through the dedicated properties instead.
+        /// </summary>
+        static readonly HashSet<string> s_pseudoAttributes =
         [
             "System.SerializableAttribute",
             "System.NonSerializedAttribute",
@@ -87,9 +97,9 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         /// <summary>
         /// Renders the given assembly.
         /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="scope"></param>
-        /// <returns></returns>
+        /// <param name="assembly">The assembly to render.</param>
+        /// <param name="scope">What the rendering covers.</param>
+        /// <returns>The rendering, with <c>\n</c> line endings.</returns>
         public static string Dump(Assembly assembly, DumpScope scope = DumpScope.Full)
         {
             var w = new Writer(scope);
@@ -108,6 +118,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             return w.ToString();
         }
 
+        /// <summary>
+        /// Renders a type defined in the dumped assembly: its attributes, hierarchy, generic parameters, custom attributes
+        /// and declared members, and the members the public flattened lookup finds in this assembly.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="type">The type to render.</param>
         static void TypeDefinition(Writer w, Type type)
         {
             w.Line("type " + TypeName(type));
@@ -153,6 +169,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
                 w.Line("visible " + i);
         }
 
+        /// <summary>
+        /// Renders the generic parameters among the given generic arguments, with their constraints and custom attributes.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="parameters">The generic arguments of a type or method; those that are not generic parameters are skipped.</param>
         static void GenericParameters(Writer w, Type[] parameters)
         {
             foreach (var p in parameters)
@@ -169,6 +190,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             }
         }
 
+        /// <summary>
+        /// Renders a field.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="field">The field to render.</param>
         static void Field(Writer w, FieldInfo field)
         {
             w.Line("field " + field.Name + " : " + TypeName(field.FieldType));
@@ -180,6 +206,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             CustomAttributes(w, () => field.GetCustomAttributesData());
         }
 
+        /// <summary>
+        /// Renders a method or constructor, with its return parameter, base definition, generic parameters and parameters.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="method">The method or constructor to render.</param>
         static void Method(Writer w, MethodBase method)
         {
             w.Line("method " + MethodKey(method));
@@ -209,6 +240,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             CustomAttributes(w, () => method.GetCustomAttributesData());
         }
 
+        /// <summary>
+        /// Renders a parameter or return parameter.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="label">The label the line starts with, such as <c>return</c> or <c>parameter 0</c>.</param>
+        /// <param name="parameter">The parameter to render.</param>
         static void Parameter(Writer w, string label, ParameterInfo parameter)
         {
             w.Line(label + (parameter.Position >= 0 ? " " + (parameter.Name ?? "<null>") : "") + " : " + TypeName(parameter.ParameterType));
@@ -221,6 +258,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             CustomAttributes(w, () => parameter.GetCustomAttributesData());
         }
 
+        /// <summary>
+        /// Renders a property, with its index parameters and accessors.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="property">The property to render.</param>
         static void Property(Writer w, PropertyInfo property)
         {
             w.Line("property " + property.Name + " : " + TypeName(property.PropertyType));
@@ -238,6 +280,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             CustomAttributes(w, () => property.GetCustomAttributesData());
         }
 
+        /// <summary>
+        /// Renders an event, with its accessors.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="event">The event to render.</param>
         static void Event(Writer w, EventInfo @event)
         {
             w.Line("event " + @event.Name + " : " + TypeName(@event.EventHandlerType));
@@ -254,6 +301,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             CustomAttributes(w, () => @event.GetCustomAttributesData());
         }
 
+        /// <summary>
+        /// Renders required and optional custom modifiers, in declaration order.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="required">The required custom modifiers.</param>
+        /// <param name="optional">The optional custom modifiers.</param>
         static void Modifiers(Writer w, Type[] required, Type[] optional)
         {
             foreach (var m in required)
@@ -262,6 +315,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
                 w.Line("modopt " + TypeName(m));
         }
 
+        /// <summary>
+        /// Renders custom attributes other than pseudo custom attributes, sorted, so the order the implementations return
+        /// them in does not matter.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="getAttributes">Gets the custom attributes; an exception it throws is rendered as an error line.</param>
         static void CustomAttributes(Writer w, Func<IList<CustomAttributeData>> getAttributes)
         {
             var lines = new List<string>();
@@ -279,10 +338,15 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
                 w.Line(l);
         }
 
+        /// <summary>
+        /// Renders a custom attribute as one line, with its constructor arguments and its named arguments sorted by name.
+        /// </summary>
+        /// <param name="a">The custom attribute to render.</param>
+        /// <returns>The line, or <see langword="null"/> for a pseudo custom attribute.</returns>
         static string Attribute(CustomAttributeData a)
         {
             var type = a.Constructor.DeclaringType;
-            if (PseudoAttributes.Contains(type.FullName))
+            if (s_pseudoAttributes.Contains(type.FullName))
                 return null;
 
             var b = new StringBuilder();
@@ -299,6 +363,10 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         /// Runs the given function, rendering an exception as an error line so one failure does not hide the rest.
         /// Only the exception type is rendered, since messages differ between implementations.
         /// </summary>
+        /// <typeparam name="T">The type of the result.</typeparam>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="func">The function to run.</param>
+        /// <returns>The result of <paramref name="func"/>, or <see langword="null"/> if it threw.</returns>
         static T Guard<T>(Writer w, Func<T> func) where T : class
         {
             try
@@ -312,6 +380,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             }
         }
 
+        /// <summary>
+        /// Runs the given action, rendering an exception as an error line so one failure does not hide the rest. Only the
+        /// exception type is rendered, since messages differ between implementations.
+        /// </summary>
+        /// <param name="w">The writer to render to.</param>
+        /// <param name="action">The action to run.</param>
         static void Guard(Writer w, Action action)
         {
             try
@@ -324,6 +398,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             }
         }
 
+        /// <summary>
+        /// Renders a custom attribute argument as its type followed by its value, with array elements rendered in turn.
+        /// </summary>
+        /// <param name="argument">The argument to render.</param>
+        /// <returns>The rendered argument.</returns>
         static string TypedValue(CustomAttributeTypedArgument argument)
         {
             var type = TypeName(argument.ArgumentType);
@@ -333,6 +412,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             return type + " " + Value(argument.Value);
         }
 
+        /// <summary>
+        /// Renders a constant or custom attribute value culture-invariantly. Floating point values are rendered as their
+        /// bits, so they compare exactly.
+        /// </summary>
+        /// <param name="value">The value to render.</param>
+        /// <returns>The rendered value.</returns>
         static string Value(object value) => value switch
         {
             null => "null",
@@ -346,6 +431,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             _ => value.GetType().Name + " " + value,
         };
 
+        /// <summary>
+        /// Renders the name and signature of a member, which identifies it among the members of its type.
+        /// </summary>
+        /// <param name="member">The member to render.</param>
+        /// <returns>The rendered member.</returns>
         static string MemberKey(MemberInfo member) => member switch
         {
             MethodBase m => MethodKey(m),
@@ -356,6 +446,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             _ => member.Name,
         };
 
+        /// <summary>
+        /// Renders the name, generic parameters, parameter types and return type of a method, which identifies it among the
+        /// methods of its type and orders the rendering.
+        /// </summary>
+        /// <param name="method">The method or constructor to render.</param>
+        /// <returns>The rendered signature.</returns>
         static string MethodKey(MethodBase method)
         {
             var b = new StringBuilder();
@@ -375,8 +471,8 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         /// <summary>
         /// Renders a type name without assembly identity.
         /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="type">The type to render, or <see langword="null"/>.</param>
+        /// <returns>The rendered name, or <c>&lt;null&gt;</c> if <paramref name="type"/> is <see langword="null"/>.</returns>
         static string TypeName(Type type)
         {
             if (type == null)
@@ -399,6 +495,11 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
             return type.Namespace != null ? type.Namespace + "." + type.Name : type.Name;
         }
 
+        /// <summary>
+        /// Renders the raw value of an enum as hexadecimal, so flags that one implementation does not name still compare.
+        /// </summary>
+        /// <param name="value">The enum value to render.</param>
+        /// <returns>The value as <c>0x</c> followed by hexadecimal digits.</returns>
         static string Hex(Enum value)
         {
             // mask to the width of the enum, since the IKVM.Reflection and System.Reflection enums are not all the same width
@@ -408,9 +509,12 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
         }
 
         /// <summary>
-        /// Renders a function pointer type, or returns <c>null</c> if the type is not one. Calling conventions beyond
-        /// managed and unmanaged are not rendered, because runtime reflection only reports them on modified types.
+        /// Renders a function pointer type, or returns <see langword="null"/> if the type is not one. Calling conventions
+        /// beyond managed and unmanaged are not rendered, because runtime reflection only reports them on modified types.
+        /// Runtimes before .NET 8 cannot report function pointer types, so there nothing is rendered.
         /// </summary>
+        /// <param name="type">The type to render.</param>
+        /// <returns>The rendered function pointer type, or <see langword="null"/>.</returns>
         static string FunctionPointer(Type type)
         {
 #if IKVM_REFLECTION
@@ -429,35 +533,69 @@ namespace IKVM.Reflection.Tests.Dump.Runtime
 #endif
         }
 
+        /// <summary>
+        /// Renders a flag word, preceded by a space, when the flag is set.
+        /// </summary>
+        /// <param name="value">Whether the flag is set.</param>
+        /// <param name="name">The word to render.</param>
+        /// <returns>The word preceded by a space, or an empty string.</returns>
         static string Flag(bool value, string name) => value ? " " + name : "";
 
+        /// <summary>
+        /// Accumulates the rendering as lines indented by two spaces per level.
+        /// </summary>
+        /// <param name="scope">What the rendering covers.</param>
         sealed class Writer(DumpScope scope)
         {
 
-            readonly StringBuilder builder = new();
-            int depth;
+            readonly StringBuilder _builder = new();
+            int _depth;
 
+            /// <summary>
+            /// Gets what the rendering covers.
+            /// </summary>
             public DumpScope Scope => scope;
 
             /// <summary>
             /// Gets whether a member with the given rendered signature is in scope.
             /// </summary>
+            /// <param name="signature">The rendered signature of the member.</param>
+            /// <returns><see langword="true"/> unless the scope is <see cref="DumpScope.Emittable"/> and the signature uses a function pointer.</returns>
             public bool Includes(string signature) => scope == DumpScope.Full || signature.Contains("fnptr") == false;
 
-            public void Line(string text) => builder.Append(' ', depth * 2).Append(text).Append('\n');
+            /// <summary>
+            /// Appends a line at the current indentation.
+            /// </summary>
+            /// <param name="text">The text of the line.</param>
+            public void Line(string text) => _builder.Append(' ', _depth * 2).Append(text).Append('\n');
 
+            /// <summary>
+            /// Indents the lines that follow by one more level, until the returned object is disposed.
+            /// </summary>
+            /// <returns>An object that restores the previous indentation when disposed.</returns>
             public IDisposable Indent()
             {
-                depth++;
+                _depth++;
                 return new Dedent(this);
             }
 
-            public override string ToString() => builder.ToString();
+            /// <summary>
+            /// Gets the rendering so far.
+            /// </summary>
+            /// <returns>The lines appended so far.</returns>
+            public override string ToString() => _builder.ToString();
 
+            /// <summary>
+            /// Restores the indentation of a <see cref="Writer"/> when disposed.
+            /// </summary>
+            /// <param name="writer">The writer whose indentation to restore.</param>
             sealed class Dedent(Writer writer) : IDisposable
             {
 
-                public void Dispose() => writer.depth--;
+                /// <summary>
+                /// Reduces the indentation by one level.
+                /// </summary>
+                public void Dispose() => writer._depth--;
 
             }
 

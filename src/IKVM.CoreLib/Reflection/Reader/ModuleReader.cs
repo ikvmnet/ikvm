@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,425 +26,283 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
-using System.Text;
+using System.Reflection.PortableExecutable;
 
-using IKVM.Reflection.Metadata;
+using SrmMetadataReader = System.Reflection.Metadata.MetadataReader;
+using SrmPEReader = System.Reflection.PortableExecutable.PEReader;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// A module read from a PE image, on top of System.Reflection.Metadata. Types, members and other metadata are
+    /// resolved lazily and cached by row.
+    /// </summary>
     sealed class ModuleReader : Module
     {
 
+        /// <summary>
+        /// A type forwarded to another assembly by an ExportedType row, resolved on first use.
+        /// </summary>
         sealed class LazyForwardedType
         {
 
-            readonly int index;
-            Type type;
+            readonly int _index;
+            Type _type;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="index"></param>
+            /// <param name="index">The zero-based index of the ExportedType row.</param>
             internal LazyForwardedType(int index)
             {
-                this.index = index;
+                _index = index;
             }
 
+            /// <summary>
+            /// Resolves the forwarded type, caching the result. If the type is reached again while it is being resolved,
+            /// because of circular forwarding, a missing type is returned instead, or an exception is thrown if missing types
+            /// are not allowed.
+            /// </summary>
+            /// <param name="module">The module that contains the ExportedType row.</param>
+            /// <returns>The forwarded type.</returns>
             internal Type GetType(ModuleReader module)
             {
                 // guard against circular type forwarding
-                if (type == MarkerType.LazyResolveInProgress)
+                if (_type == MarkerType.LazyResolveInProgress)
                 {
-                    var typeName = module.GetTypeName(module.ExportedTypeTable.records[index].TypeNamespace, module.ExportedTypeTable.records[index].TypeName);
-                    return module.Universe.GetMissingTypeOrThrow(module, module, null, typeName);
+                    var exported = module._metadata.GetExportedType(MetadataTokens.ExportedTypeHandle(_index + 1));
+                    return module.Universe.GetMissingTypeOrThrow(module, module, null, module.GetTypeName(exported.Namespace, exported.Name));
                 }
-                else if (type == null)
+                else if (_type == null)
                 {
-                    type = MarkerType.LazyResolveInProgress;
-                    type = module.ResolveExportedType(index);
+                    _type = MarkerType.LazyResolveInProgress;
+                    _type = module.ResolveExportedType(_index);
                 }
 
-                return type;
+                return _type;
             }
 
         }
 
-        readonly Stream stream;
-        readonly string location;
-        Assembly assembly;
-        readonly PEReader peFile = new PEReader();
-        readonly CliHeader cliHeader = new CliHeader();
-        string imageRuntimeVersion;
-        int metadataStreamVersion;
-        byte[] stringHeap;
-        byte[] blobHeap;
-        byte[] guidHeap;
-        uint userStringHeapOffset;
-        uint userStringHeapSize;
-        byte[] lazyUserStringHeap;
-        TypeDefImpl[] typeDefs;
-        TypeDefImpl moduleType;
-        Assembly[] assemblyRefs;
-        Type[] typeRefs;
-        Type[] typeSpecs;
-        FieldInfo[] fields;
-        MethodBase[] methods;
-        MemberInfo[] memberRefs;
-        Dictionary<StringHandle, string> strings = new Dictionary<StringHandle, string>();
-        Dictionary<TypeName, Type> types = new Dictionary<TypeName, Type>();
-        Dictionary<TypeName, LazyForwardedType> forwardedTypes = new Dictionary<TypeName, LazyForwardedType>();
+        readonly Stream _stream;
+        readonly string _location;
+        readonly Assembly _assembly;
+        readonly SrmPEReader _pe;
+        readonly SrmMetadataReader _metadata;
+        readonly Dictionary<int, string> _userStrings = [];
+        TypeDefImpl[] _typeDefs;
+        TypeDefImpl _moduleType;
+        Assembly[] _assemblyRefs;
+        Type[] _typeRefs;
+        Type[] _typeSpecs;
+        FieldInfo[] _fields;
+        MethodBase[] _methods;
+        MemberInfo[] _memberRefs;
+        readonly Dictionary<StringHandle, string> _strings = [];
+        readonly Dictionary<TypeName, Type> _types = [];
+        readonly Dictionary<TypeName, LazyForwardedType> _forwardedTypes = [];
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="universe"></param>
-        /// <param name="stream"></param>
-        /// <param name="location"></param>
-        /// <param name="mapped"></param>
+        /// <param name="assembly">
+        /// The assembly the module belongs to, or <see langword="null"/> to create an <see cref="AssemblyReader"/> if
+        /// the module has a manifest.
+        /// </param>
+        /// <param name="universe">The universe the module is loaded into.</param>
+        /// <param name="stream">The stream containing the image. It is left open by the PE reader and disposed with the module.</param>
+        /// <param name="location">The path the module was read from, or <see langword="null"/>.</param>
+        /// <param name="mapped"><see langword="true"/> if the stream contains an image mapped by the loader rather than a file.</param>
+        /// <exception cref="BadImageFormatException">The image has no metadata.</exception>
         internal ModuleReader(AssemblyReader assembly, Universe universe, Stream stream, string location, bool mapped) :
             base(universe)
         {
-            this.stream = stream;
-            this.location = location;
-            Read(stream, mapped);
+            _stream = stream;
+            _location = location;
 
-            if (assembly == null && AssemblyTable.records.Length != 0)
+            _pe = new SrmPEReader(stream, PEStreamOptions.LeaveOpen | (mapped ? PEStreamOptions.IsLoadedImage : PEStreamOptions.Default));
+            if (_pe.HasMetadata == false)
+                throw new BadImageFormatException("The image has no metadata.");
+
+            _metadata = _pe.GetMetadataReader(MetadataReaderOptions.None);
+
+            if (assembly == null && _metadata.IsAssembly)
                 assembly = new AssemblyReader(location, this);
 
-            this.assembly = assembly;
+            _assembly = assembly;
         }
 
-        void Read(Stream stream, bool mapped)
-        {
-            var br = new BinaryReader(stream);
-            peFile.Read(br, mapped);
-            stream.Seek(peFile.RvaToFileOffset(peFile.GetComDescriptorVirtualAddress()), SeekOrigin.Begin);
-            cliHeader.Read(br);
-
-            stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress), SeekOrigin.Begin);
-            foreach (var sh in ReadStreamHeaders(br, out imageRuntimeVersion))
-            {
-                switch (sh.Name)
-                {
-                    case "#Strings":
-                        stringHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#Blob":
-                        blobHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#US":
-                        userStringHeapOffset = sh.Offset;
-                        userStringHeapSize = sh.Size;
-                        break;
-                    case "#GUID":
-                        guidHeap = ReadHeap(stream, sh.Offset, sh.Size);
-                        break;
-                    case "#~":
-                    case "#-":
-                        stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + sh.Offset), SeekOrigin.Begin);
-                        ReadTables(br);
-                        break;
-                    default:
-                        // we ignore unknown streams, because the CLR does so too
-                        // (and some obfuscators add bogus streams)
-                        break;
-                }
-            }
-        }
-
-        static StreamHeader[] ReadStreamHeaders(BinaryReader br, out string version)
-        {
-            var signature = br.ReadUInt32();
-            if (signature != 0x424A5342)
-                throw new BadImageFormatException("Invalid metadata signature");
-
-            /*ushort MajorVersion =*/
-            br.ReadUInt16();
-            /*ushort MinorVersion =*/
-            br.ReadUInt16();
-            /*uint Reserved =*/
-            br.ReadUInt32();
-            var Length = br.ReadUInt32();
-            var buf = br.ReadBytes((int)Length);
-            version = Encoding.UTF8.GetString(buf).TrimEnd('\u0000');
-            /*ushort Flags =*/
-            br.ReadUInt16();
-
-            var streams = br.ReadUInt16();
-            var streamHeaders = new StreamHeader[streams];
-            for (int i = 0; i < streamHeaders.Length; i++)
-            {
-                streamHeaders[i] = new StreamHeader();
-                streamHeaders[i].Read(br);
-            }
-
-            return streamHeaders;
-        }
-
-        void ReadTables(BinaryReader br)
-        {
-            var tables = GetTables();
-
-            /*uint Reserved0 =*/
-            br.ReadUInt32();
-            var majorVersion = br.ReadByte();
-            var minorVersion = br.ReadByte();
-            metadataStreamVersion = majorVersion << 16 | minorVersion;
-            var heapSizes = br.ReadByte();
-            /*byte Reserved7 =*/
-            br.ReadByte();
-
-            ulong valid = br.ReadUInt64();
-            ulong sorted = br.ReadUInt64();
-            for (int i = 0; i < 64; i++)
-            {
-                if ((valid & (1UL << i)) != 0)
-                {
-                    tables[i].Sorted = (sorted & (1UL << i)) != 0;
-                    tables[i].RowCount = br.ReadInt32();
-                }
-            }
-
-            var mr = new MetadataReader(this, br.BaseStream, heapSizes);
-            for (int i = 0; i < 64; i++)
-                if ((valid & (1UL << i)) != 0)
-                    tables[i].Read(mr);
-
-            if (ParamPtrTable.RowCount != 0)
-                throw new NotImplementedException("ParamPtr table support has not yet been implemented.");
-        }
-
-        byte[] ReadHeap(Stream stream, uint offset, uint size)
-        {
-            var buf = new byte[size];
-            stream.Seek(peFile.RvaToFileOffset(cliHeader.MetaData.VirtualAddress + offset), SeekOrigin.Begin);
-
-            for (var pos = 0; pos < buf.Length;)
-            {
-                var read = stream.Read(buf, pos, buf.Length - pos);
-                if (read == 0)
-                    throw new BadImageFormatException();
-
-                pos += read;
-            }
-
-            return buf;
-        }
-
-        internal void SeekRVA(int rva)
-        {
-            GetStream().Seek(peFile.RvaToFileOffset((uint)rva), SeekOrigin.Begin);
-        }
-
-        internal Stream GetStream()
-        {
-            return stream;
-        }
-
+        /// <summary>
+        /// Adds the types defined in the module, except the module pseudo type, to the list.
+        /// </summary>
+        /// <param name="list">The list to add to.</param>
         internal override void GetTypesImpl(List<Type> list)
         {
             PopulateTypeDef();
 
-            foreach (var type in typeDefs)
-                if (type != moduleType)
+            foreach (var type in _typeDefs)
+                if (type != _moduleType)
                     list.Add(type);
         }
 
+        /// <summary>
+        /// Creates the TypeDef objects and indexes the top-level and forwarded types by name, on first use.
+        /// </summary>
         void PopulateTypeDef()
         {
-            if (typeDefs == null)
+            if (_typeDefs == null)
             {
-                typeDefs = new TypeDefImpl[TypeDefTable.records.Length];
-                for (int i = 0; i < typeDefs.Length; i++)
+                _typeDefs = new TypeDefImpl[_metadata.TypeDefinitions.Count];
+                for (var i = 0; i < _typeDefs.Length; i++)
                 {
-                    var type = new TypeDefImpl(this, i);
-                    typeDefs[i] = type;
+                    var type = new TypeDefImpl(this, MetadataTokens.TypeDefinitionHandle(i + 1));
+                    _typeDefs[i] = type;
                     if (type.IsModulePseudoType)
-                        moduleType = type;
+                        _moduleType = type;
                     else if (!type.IsNestedByFlags)
-                        types.Add(type.TypeName, type);
+                        _types.Add(type.TypeName, type);
                 }
 
                 // add forwarded types to forwardedTypes dictionary (because Module.GetType(string) should return them)
-                for (int i = 0; i < ExportedTypeTable.records.Length; i++)
+                foreach (var h in _metadata.ExportedTypes)
                 {
-                    int implementation = ExportedTypeTable.records[i].Implementation;
-                    if (implementation >> 24 == AssemblyRefTable.Index)
-                    {
-                        var typeName = GetTypeName(ExportedTypeTable.records[i].TypeNamespace, ExportedTypeTable.records[i].TypeName);
-                        forwardedTypes.Add(typeName, new LazyForwardedType(i));
-                    }
+                    var exported = _metadata.GetExportedType(h);
+                    if (exported.Implementation.Kind == HandleKind.AssemblyReference)
+                        _forwardedTypes.Add(GetTypeName(exported.Namespace, exported.Name), new LazyForwardedType(MetadataTokens.GetRowNumber(h) - 1));
                 }
             }
         }
 
+        /// <summary>
+        /// Gets a string from the #Strings heap, caching it.
+        /// </summary>
+        /// <param name="handle">The handle of the string.</param>
+        /// <returns>The string, or <see langword="null"/> if <paramref name="handle"/> is nil.</returns>
         internal override string GetString(StringHandle handle)
         {
             if (handle.IsNil)
                 return null;
 
-            if (!strings.TryGetValue(handle, out var str))
-            {
-                int len = 0;
-                while (stringHeap[MetadataTokens.GetHeapOffset(handle) + len] != 0)
-                    len++;
-
-                str = Encoding.UTF8.GetString(stringHeap, MetadataTokens.GetHeapOffset(handle), len);
-                strings.Add(handle, str);
-            }
+            if (_strings.TryGetValue(handle, out var str) == false)
+                _strings.Add(handle, str = _metadata.GetString(handle));
 
             return str;
         }
 
-        static int ReadCompressedUInt(byte[] buffer, ref int offset)
+        /// <summary>
+        /// Gets a copy of a blob from the #Blob heap.
+        /// </summary>
+        /// <param name="handle">The handle of the blob.</param>
+        /// <returns>A new array with the contents of the blob.</returns>
+        internal byte[] GetBlobCopy(BlobHandle handle) => _metadata.GetBlobBytes(handle);
+
+        /// <summary>
+        /// Gets the metadata reader over the module.
+        /// </summary>
+        internal SrmMetadataReader Metadata => _metadata;
+
+        /// <summary>
+        /// Gets the value of a constant row.
+        /// </summary>
+        /// <param name="handle">The Constant row.</param>
+        /// <returns>The value of the constant.</returns>
+        /// <exception cref="InvalidOperationException">The member has no constant.</exception>
+        internal object GetConstantValue(ConstantHandle handle)
         {
-            var b1 = buffer[offset++];
-            if (b1 <= 0x7F)
+            if (handle.IsNil)
+                throw new InvalidOperationException();
+
+            var constant = _metadata.GetConstant(handle);
+            var value = _metadata.GetBlobReader(constant.Value);
+            return constant.TypeCode switch
             {
-                return b1;
-            }
-            else if ((b1 & 0xC0) == 0x80)
-            {
-                var b2 = buffer[offset++];
-                return ((b1 & 0x3F) << 8) | b2;
-            }
-            else
-            {
-                var b2 = buffer[offset++];
-                var b3 = buffer[offset++];
-                var b4 = buffer[offset++];
-                return ((b1 & 0x3F) << 24) + (b2 << 16) + (b3 << 8) + b4;
-            }
+                ConstantTypeCode.Boolean => value.ReadBoolean(),
+                ConstantTypeCode.Char => value.ReadChar(),
+                ConstantTypeCode.SByte => value.ReadSByte(),
+                ConstantTypeCode.Byte => value.ReadByte(),
+                ConstantTypeCode.Int16 => value.ReadInt16(),
+                ConstantTypeCode.UInt16 => value.ReadUInt16(),
+                ConstantTypeCode.Int32 => value.ReadInt32(),
+                ConstantTypeCode.UInt32 => value.ReadUInt32(),
+                ConstantTypeCode.Int64 => value.ReadInt64(),
+                ConstantTypeCode.UInt64 => value.ReadUInt64(),
+                ConstantTypeCode.Single => value.ReadSingle(),
+                ConstantTypeCode.Double => value.ReadDouble(),
+                ConstantTypeCode.String => value.ReadUTF16(value.Length),
+                ConstantTypeCode.NullReference => null,
+                _ => throw new BadImageFormatException(),
+            };
         }
 
-        internal byte[] GetBlobCopy(BlobHandle handle)
-        {
-            var idx = MetadataTokens.GetHeapOffset(handle);
-            var len = ReadCompressedUInt(blobHeap, ref idx);
-            var buf = new byte[len];
-            Buffer.BlockCopy(blobHeap, idx, buf, 0, len);
-            return buf;
-        }
+        /// <inheritdoc />
+        internal override BlobReader GetBlobReader(BlobHandle handle) => _metadata.GetBlobReader(handle);
 
-        internal override ByteReader GetBlobReader(BlobHandle handle)
-        {
-            return ByteReader.FromBlob(blobHeap, handle);
-        }
-
+        /// <summary>
+        /// Returns the string identified by the specified metadata token.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a string in the string heap of the module.</param>
+        /// <returns>A string containing a string value from the metadata string heap.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a token for a string.</exception>
         public override string ResolveString(int metadataToken)
         {
             if ((metadataToken >> 24) != 0x70)
                 throw TokenOutOfRangeException(metadataToken);
 
-            var h = MetadataTokens.StringHandle(metadataToken);
-
-            if (strings.TryGetValue(h, out var str) == false)
-            {
-                lazyUserStringHeap ??= ReadHeap(GetStream(), userStringHeapOffset, userStringHeapSize);
-
-                var index = metadataToken & 0xFFFFFF;
-                var len = ReadCompressedUInt(lazyUserStringHeap, ref index) & ~1;
-                var sb = new StringBuilder(len / 2);
-                for (int i = 0; i < len; i += 2)
-                {
-                    var ch = (char)(lazyUserStringHeap[index + i] | lazyUserStringHeap[index + i + 1] << 8);
-                    sb.Append(ch);
-                }
-
-                str = sb.ToString();
-                strings.Add(h, str);
-            }
+            if (_userStrings.TryGetValue(metadataToken, out var str) == false)
+                _userStrings.Add(metadataToken, str = _metadata.GetUserString(MetadataTokens.UserStringHandle(metadataToken & 0xFFFFFF)));
 
             return str;
         }
 
+        /// <summary>
+        /// Resolves a TypeDef, TypeRef or TypeSpec token. A TypeSpec is cached only when resolving it did not depend on the
+        /// generic context.
+        /// </summary>
+        /// <param name="metadataToken">The token to resolve.</param>
+        /// <param name="context">The generic context used to resolve a TypeSpec, or <see langword="null"/>.</param>
+        /// <returns>The type.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid type token in this module.</exception>
+        /// <exception cref="BadImageFormatException">A TypeSpec refers to itself.</exception>
         internal override Type ResolveType(int metadataToken, IGenericContext context)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
                 throw TokenOutOfRangeException(metadataToken);
 
-            if ((metadataToken >> 24) == TypeDefTable.Index && index < TypeDefTable.RowCount)
+            if ((metadataToken >> 24) == (int)TableIndex.TypeDef && index < _metadata.TypeDefinitions.Count)
             {
                 PopulateTypeDef();
-                return typeDefs[index];
+                return _typeDefs[index];
             }
 
-            if ((metadataToken >> 24) == TypeRefTable.Index && index < TypeRefTable.RowCount)
+            if ((metadataToken >> 24) == (int)TableIndex.TypeRef && index < _metadata.TypeReferences.Count)
             {
-                typeRefs ??= new Type[TypeRefTable.records.Length];
-
-                if (typeRefs[index] == null)
-                {
-                    var scope = TypeRefTable.records[index].ResolutionScope;
-                    switch (scope >> 24)
-                    {
-                        case AssemblyRefTable.Index:
-                            {
-                                var assembly = ResolveAssemblyRef((scope & 0xFFFFFF) - 1);
-                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
-                                typeRefs[index] = assembly.ResolveType(this, typeName);
-                                break;
-                            }
-                        case TypeRefTable.Index:
-                            {
-                                var outer = ResolveType(scope, null);
-                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
-                                typeRefs[index] = outer.ResolveNestedType(this, typeName);
-                                break;
-                            }
-                        case ModuleTable.Index:
-                        case ModuleRefTable.Index:
-                            {
-                                Module module;
-
-                                if (scope >> 24 == ModuleTable.Index)
-                                {
-                                    if (scope == 0 || scope == 1)
-                                        module = this;
-                                    else
-                                        throw new NotImplementedException("self reference scope?");
-                                }
-                                else
-                                {
-                                    module = ResolveModuleRef(ModuleRefTable.records[(scope & 0xFFFFFF) - 1]);
-                                }
-
-                                var typeName = GetTypeName(TypeRefTable.records[index].TypeNamespace, TypeRefTable.records[index].TypeName);
-                                typeRefs[index] = module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName);
-                                break;
-                            }
-                        default:
-                            throw new NotImplementedException("ResolutionScope = " + scope.ToString("X"));
-                    }
-                }
-
-                return typeRefs[index];
+                _typeRefs ??= new Type[_metadata.TypeReferences.Count];
+                return _typeRefs[index] ??= ResolveTypeRef(_metadata.GetTypeReference(MetadataTokens.TypeReferenceHandle(index + 1)));
             }
 
-            if ((metadataToken >> 24) == TypeSpecTable.Index && index < TypeSpecTable.RowCount)
+            if ((metadataToken >> 24) == (int)TableIndex.TypeSpec && index < _metadata.GetTableRowCount(TableIndex.TypeSpec))
             {
-                typeSpecs ??= new Type[TypeSpecTable.records.Length];
+                _typeSpecs ??= new Type[_metadata.GetTableRowCount(TableIndex.TypeSpec)];
 
-                var type = typeSpecs[index];
+                var type = _typeSpecs[index];
                 if (type == null)
                 {
                     var tc = context == null ? null : new TrackingGenericContext(context);
-                    typeSpecs[index] = MarkerType.LazyResolveInProgress;
+                    _typeSpecs[index] = MarkerType.LazyResolveInProgress;
 
                     try
                     {
-                        type = Signature.ReadTypeSpec(this, ByteReader.FromBlob(blobHeap, TypeSpecTable.records[index]), tc);
+                        type = Signature.ReadTypeSpec(this, GetBlobReader(_metadata.GetTypeSpecification(MetadataTokens.TypeSpecificationHandle(index + 1)).Signature), tc);
                     }
                     finally
                     {
-                        typeSpecs[index] = null;
+                        _typeSpecs[index] = null;
                     }
 
                     if (tc == null || !tc.IsUsed)
-                        typeSpecs[index] = type;
+                        _typeSpecs[index] = type;
                 }
                 else if (type == MarkerType.LazyResolveInProgress)
                 {
@@ -452,7 +310,7 @@ namespace IKVM.Reflection.Reader
                     {
                         return Universe
                             .GetMissingTypeOrThrow(this, this, null, new TypeName(null, "Cyclic TypeSpec " + metadataToken.ToString("X")))
-                            .SetMetadataTokenForMissing(metadataToken, 0);
+                            .SetMetadataTokenForMissing(metadataToken);
                     }
 
                     throw new BadImageFormatException("Cyclic TypeSpec " + metadataToken.ToString("X"));
@@ -464,188 +322,281 @@ namespace IKVM.Reflection.Reader
             throw TokenOutOfRangeException(metadataToken);
         }
 
+        /// <summary>
+        /// Resolves a TypeRef row through its resolution scope.
+        /// </summary>
+        /// <param name="reference">The TypeRef row.</param>
+        /// <returns>The referenced type, or a missing type if it cannot be found and missing types are allowed.</returns>
+        /// <exception cref="BadImageFormatException">The resolution scope is not valid.</exception>
+        Type ResolveTypeRef(TypeReference reference)
+        {
+            var typeName = GetTypeName(reference.Namespace, reference.Name);
+            var scope = reference.ResolutionScope;
+
+            // a nil scope is a reference to an exported type, which we find through this module
+            if (scope.IsNil)
+                return FindType(typeName) ?? Universe.GetMissingTypeOrThrow(this, this, null, typeName);
+
+            switch (scope.Kind)
+            {
+                case HandleKind.AssemblyReference:
+                    return ResolveAssemblyRef(MetadataTokens.GetRowNumber(scope) - 1).ResolveType(this, typeName);
+                case HandleKind.TypeReference:
+                    return ResolveType(MetadataTokens.GetToken(scope), null).ResolveNestedType(this, typeName);
+                case HandleKind.ModuleDefinition:
+                    return FindType(typeName) ?? Universe.GetMissingTypeOrThrow(this, this, null, typeName);
+                case HandleKind.ModuleReference:
+                    var module = ResolveModuleRef(_metadata.GetModuleReference((ModuleReferenceHandle)scope).Name);
+                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName);
+                default:
+                    throw new BadImageFormatException("ResolutionScope = " + MetadataTokens.GetToken(scope).ToString("X"));
+            }
+        }
+
+        /// <summary>
+        /// Finds a module of this assembly by the name in a ModuleRef row.
+        /// </summary>
+        /// <param name="moduleNameIndex">The name of the module.</param>
+        /// <returns>The module.</returns>
+        /// <exception cref="FileNotFoundException">The assembly has no module with that name.</exception>
         Module ResolveModuleRef(StringHandle moduleNameIndex)
         {
             var moduleName = GetString(moduleNameIndex);
-            return assembly.GetModule(moduleName) ?? throw new FileNotFoundException(moduleName);
+            return _assembly.GetModule(moduleName) ?? throw new FileNotFoundException(moduleName);
         }
 
+        /// <summary>
+        /// Wraps a generic context and records whether it was consulted, to decide whether a resolved TypeSpec is
+        /// independent of the context and can be cached.
+        /// </summary>
         sealed class TrackingGenericContext : IGenericContext
         {
 
-            readonly IGenericContext context;
-            bool used;
+            readonly IGenericContext _context;
+            bool _used;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="context"></param>
+            /// <param name="context">The context to wrap.</param>
             internal TrackingGenericContext(IGenericContext context)
             {
-                this.context = context;
+                _context = context;
             }
 
-            internal bool IsUsed
-            {
-                get { return used; }
-            }
+            /// <summary>
+            /// Gets whether a type argument has been requested from the context.
+            /// </summary>
+            internal bool IsUsed => _used;
 
+            /// <inheritdoc />
             public Type GetGenericTypeArgument(int index)
             {
-                used = true;
-                return context.GetGenericTypeArgument(index);
+                _used = true;
+                return _context.GetGenericTypeArgument(index);
             }
 
+            /// <inheritdoc />
             public Type GetGenericMethodArgument(int index)
             {
-                used = true;
-                return context.GetGenericMethodArgument(index);
+                _used = true;
+                return _context.GetGenericMethodArgument(index);
             }
 
         }
 
-        TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName)
-        {
-            return new TypeName(GetString(typeNamespace), GetString(typeName));
-        }
+        /// <summary>
+        /// Creates a type name from #Strings heap handles.
+        /// </summary>
+        /// <param name="typeNamespace">The namespace of the type.</param>
+        /// <param name="typeName">The name of the type.</param>
+        /// <returns>The type name.</returns>
+        TypeName GetTypeName(StringHandle typeNamespace, StringHandle typeName) => new TypeName(GetString(typeNamespace), GetString(typeName));
 
+        /// <summary>
+        /// Resolves the assembly referenced by an AssemblyRef row, caching it.
+        /// </summary>
+        /// <param name="index">The zero-based index of the AssemblyRef row.</param>
+        /// <returns>The referenced assembly.</returns>
         internal Assembly ResolveAssemblyRef(int index)
         {
-            assemblyRefs ??= new Assembly[AssemblyRefTable.RowCount];
-            assemblyRefs[index] ??= ResolveAssemblyRefImpl(ref AssemblyRefTable.records[index]);
-            return assemblyRefs[index];
+            _assemblyRefs ??= new Assembly[_metadata.AssemblyReferences.Count];
+            return _assemblyRefs[index] ??= ResolveAssemblyRefImpl(_metadata.GetAssemblyReference(MetadataTokens.AssemblyReferenceHandle(index + 1)));
         }
 
-        Assembly ResolveAssemblyRefImpl(ref AssemblyRefTable.Record rec)
+        /// <summary>
+        /// Loads the assembly referenced by an AssemblyRef row into the universe.
+        /// </summary>
+        /// <param name="reference">The AssemblyRef row.</param>
+        /// <returns>The referenced assembly.</returns>
+        Assembly ResolveAssemblyRefImpl(AssemblyReference reference)
         {
-            const int PublicKey = 0x0001;
-
+            var flags = (int)reference.Flags;
+            var version = reference.Version;
             var name = AssemblyName.GetFullName(
-                GetString(rec.Name),
-                rec.MajorVersion,
-                rec.MinorVersion,
-                rec.BuildNumber,
-                rec.RevisionNumber,
-                rec.Culture.IsNil ? "neutral" : GetString(rec.Culture),
-                rec.PublicKeyOrToken.IsNil ? Array.Empty<byte>() : (rec.Flags & PublicKey) == 0 ? GetBlobCopy(rec.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(rec.PublicKeyOrToken)),
-                rec.Flags);
+                GetString(reference.Name),
+                (ushort)version.Major,
+                (ushort)version.Minor,
+                (ushort)version.Build,
+                (ushort)version.Revision,
+                reference.Culture.IsNil ? "neutral" : GetString(reference.Culture),
+                reference.PublicKeyOrToken.IsNil ? Array.Empty<byte>() : (flags & PublicKeyFlag) == 0 ? GetBlobCopy(reference.PublicKeyOrToken) : AssemblyName.ComputePublicKeyToken(GetBlobCopy(reference.PublicKeyOrToken)),
+                flags);
 
             return Universe.Load(name, this, true);
         }
 
-        public override Guid ModuleVersionId => GuidFromSpan(guidHeap.AsSpan(16 * (MetadataTokens.GetHeapOffset(ModuleTable.records[0].Mvid) - 1), 16));
+        /// <summary>
+        /// The AssemblyRef flag indicating that the row holds a full public key rather than a public key token.
+        /// </summary>
+        const int PublicKeyFlag = 0x0001;
+
+        /// <inheritdoc />
+        public override Guid ModuleVersionId => _metadata.GetGuid(_metadata.GetModuleDefinition().Mvid);
 
         /// <summary>
-        /// Creates a new <see cref="Guid"/> from a span. Optimized for .NET.
+        /// Gets the fully qualified name and path of the module, or <c>&lt;Unknown&gt;</c> if it was not read from a file.
         /// </summary>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        static Guid GuidFromSpan(ReadOnlySpan<byte> b)
-        {
-#if NETFRAMEWORK
-            var _a = (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
-            var _b = (short)((b[5] << 8) | b[4]);
-            var _c = (short)((b[7] << 8) | b[6]);
-            var _d = b[8];
-            var _e = b[9];
-            var _f = b[10];
-            var _g = b[11];
-            var _h = b[12];
-            var _i = b[13];
-            var _j = b[14];
-            var _k = b[15];
-            return new Guid(_a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k);
-#else
-            return new Guid(b);
-#endif
-        }
+        public override string FullyQualifiedName => _location ?? "<Unknown>";
 
-        public override string FullyQualifiedName => location ?? "<Unknown>";
+        /// <summary>
+        /// Gets the file name of the module, or <c>&lt;Unknown&gt;</c> if it was not read from a file.
+        /// </summary>
+        public override string Name => _location == null ? "<Unknown>" : Path.GetFileName(_location);
 
-        public override string Name => location == null ? "<Unknown>" : Path.GetFileName(location);
+        /// <inheritdoc />
+        public override Assembly Assembly => _assembly;
 
-        public override Assembly Assembly => assembly;
-
+        /// <summary>
+        /// Finds a top-level type defined in, or forwarded by, the module.
+        /// </summary>
+        /// <param name="typeName">The name of the type.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindType(TypeName typeName)
         {
             PopulateTypeDef();
 
-            if (!types.TryGetValue(typeName, out var type))
-                if (forwardedTypes.TryGetValue(typeName, out var fw))
+            if (!_types.TryGetValue(typeName, out var type))
+                if (_forwardedTypes.TryGetValue(typeName, out var fw))
                     return fw.GetType(this);
 
             return type;
         }
 
+        /// <summary>
+        /// Finds a top-level type defined in, or forwarded by, the module, ignoring case.
+        /// </summary>
+        /// <param name="lowerCaseName">The name of the type, in lower case.</param>
+        /// <returns>The type, or <see langword="null"/> if it is not found.</returns>
         internal override Type FindTypeIgnoreCase(TypeName lowerCaseName)
         {
             PopulateTypeDef();
 
-            foreach (var type in types.Values)
+            foreach (var type in _types.Values)
                 if (type.TypeName.ToLowerInvariant() == lowerCaseName)
                     return type;
 
-            foreach (var name in forwardedTypes.Keys)
+            foreach (var name in _forwardedTypes.Keys)
                 if (name.ToLowerInvariant() == lowerCaseName)
-                    return forwardedTypes[name].GetType(this);
+                    return _forwardedTypes[name].GetType(this);
 
             return null;
         }
 
-        Exception TokenOutOfRangeException(int metadataToken)
-        {
-            return new ArgumentOutOfRangeException("metadataToken", String.Format("Token 0x{0:x8} is not valid in the scope of module {1}.", metadataToken, this.Name));
-        }
+        /// <summary>
+        /// Creates the exception for a token that is not valid in this module.
+        /// </summary>
+        /// <param name="metadataToken">The token.</param>
+        /// <returns>An <see cref="ArgumentOutOfRangeException"/> for <paramref name="metadataToken"/>.</returns>
+        Exception TokenOutOfRangeException(int metadataToken) =>
+            new ArgumentOutOfRangeException("metadataToken", string.Format("Token 0x{0:x8} is not valid in the scope of module {1}.", metadataToken, Name));
 
+        /// <summary>
+        /// Returns the type or member identified by the specified metadata token, in the context defined by the specified
+        /// generic type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a type or member in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="MemberInfo"/> object representing the type or member that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
         public override MemberInfo ResolveMember(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             switch (metadataToken >> 24)
             {
-                case FieldTable.Index:
+                case (int)TableIndex.Field:
                     return ResolveField(metadataToken, genericTypeArguments, genericMethodArguments);
-                case MemberRefTable.Index:
-                    int index = (metadataToken & 0xFFFFFF) - 1;
-                    if (index < 0 || index >= MemberRefTable.RowCount)
+                case (int)TableIndex.MemberRef:
+                    var index = (metadataToken & 0xFFFFFF) - 1;
+                    if (index < 0 || index >= _metadata.MemberReferences.Count)
                         goto default;
 
                     return GetMemberRef(index, genericTypeArguments, genericMethodArguments);
-                case MethodDefTable.Index:
-                case MethodSpecTable.Index:
+                case (int)TableIndex.MethodDef:
+                case (int)TableIndex.MethodSpec:
                     return ResolveMethod(metadataToken, genericTypeArguments, genericMethodArguments);
-                case TypeRefTable.Index:
-                case TypeDefTable.Index:
-                case TypeSpecTable.Index:
+                case (int)TableIndex.TypeRef:
+                case (int)TableIndex.TypeDef:
+                case (int)TableIndex.TypeSpec:
                     return ResolveType(metadataToken, genericTypeArguments, genericMethodArguments);
                 default:
                     throw TokenOutOfRangeException(metadataToken);
             }
         }
 
-        internal FieldInfo GetFieldAt(TypeDefImpl owner, int index)
+        /// <summary>
+        /// Gets the field defined by a Field row, creating and caching it on first use.
+        /// </summary>
+        /// <param name="owner">The type that declares the field, or <see langword="null"/> to look it up.</param>
+        /// <param name="handle">The Field row.</param>
+        /// <returns>The field.</returns>
+        internal FieldInfo GetFieldAt(TypeDefImpl owner, FieldDefinitionHandle handle)
         {
-            fields ??= new FieldInfo[FieldTable.records.Length];
-            fields[index] ??= new FieldDefImpl(this, owner ?? FindFieldOwner(index), index);
-            return fields[index];
+            var index = MetadataTokens.GetRowNumber(handle) - 1;
+            _fields ??= new FieldInfo[_metadata.FieldDefinitions.Count];
+            _fields[index] ??= new FieldDefImpl(this, owner ?? GetTypeDef(_metadata.GetFieldDefinition(handle).GetDeclaringType()), handle);
+            return _fields[index];
         }
 
+        /// <summary>
+        /// Gets the type defined by a TypeDef row.
+        /// </summary>
+        /// <param name="handle">The TypeDef row.</param>
+        /// <returns>The type.</returns>
+        TypeDefImpl GetTypeDef(TypeDefinitionHandle handle)
+        {
+            PopulateTypeDef();
+            return _typeDefs[MetadataTokens.GetRowNumber(handle) - 1];
+        }
+
+        /// <summary>
+        /// Returns the field identified by the specified metadata token, in the context defined by the specified generic
+        /// type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a field in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="FieldInfo"/> object representing the field that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
+        /// <exception cref="ArgumentException"><paramref name="metadataToken"/> is a MemberRef that does not refer to a field.</exception>
         public override FieldInfo ResolveField(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == FieldTable.Index && index < FieldTable.RowCount)
+            else if ((metadataToken >> 24) == (int)TableIndex.Field && index < _metadata.FieldDefinitions.Count)
             {
-                return GetFieldAt(null, index);
+                return GetFieldAt(null, MetadataTokens.FieldDefinitionHandle(index + 1));
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
+            else if ((metadataToken >> 24) == (int)TableIndex.MemberRef && index < _metadata.MemberReferences.Count)
             {
                 var field = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as FieldInfo;
                 if (field != null)
                     return field;
 
-                throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid FieldInfo token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
+                throw new ArgumentException(string.Format("Token 0x{0:x8} is not a valid FieldInfo token in the scope of module {1}.", metadataToken, Name), "metadataToken");
             }
             else
             {
@@ -653,58 +604,59 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        TypeDefImpl FindFieldOwner(int fieldIndex)
+        /// <summary>
+        /// Gets the method or constructor defined by a MethodDef row, creating and caching it on first use.
+        /// </summary>
+        /// <param name="owner">The type that declares the method, or <see langword="null"/> to look it up.</param>
+        /// <param name="handle">The MethodDef row.</param>
+        /// <returns>The method, or a <see cref="ConstructorInfo"/> if it is a constructor.</returns>
+        internal MethodBase GetMethodAt(TypeDefImpl owner, MethodDefinitionHandle handle)
         {
-            // TODO use binary search?
-            for (int i = 0; i < TypeDefTable.records.Length; i++)
+            var index = MetadataTokens.GetRowNumber(handle) - 1;
+            _methods ??= new MethodBase[_metadata.MethodDefinitions.Count];
+            if (_methods[index] == null)
             {
-                var field = TypeDefTable.records[i].FieldList - 1;
-                var end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].FieldList - 1 : FieldTable.records.Length;
-                if (field <= fieldIndex && fieldIndex < end)
-                {
-                    PopulateTypeDef();
-                    return typeDefs[i];
-                }
+                var method = new MethodDefImpl(this, owner ?? GetTypeDef(_metadata.GetMethodDefinition(handle).GetDeclaringType()), handle);
+                _methods[index] = method.IsConstructor ? new ConstructorInfoImpl(method) : (MethodBase)method;
             }
 
-            throw new InvalidOperationException();
+            return _methods[index];
         }
 
-        internal MethodBase GetMethodAt(TypeDefImpl owner, int index)
-        {
-            methods ??= new MethodBase[MethodDefTable.records.Length];
-            if (methods[index] == null)
-            {
-                var method = new MethodDefImpl(this, owner ?? FindMethodOwner(index), index);
-                methods[index] = method.IsConstructor ? new ConstructorInfoImpl(method) : (MethodBase)method;
-            }
-
-            return methods[index];
-        }
-
+        /// <summary>
+        /// Returns the method or constructor identified by the specified metadata token, in the context defined by the
+        /// specified generic type parameters.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a method or constructor in the module.</param>
+        /// <param name="genericTypeArguments">An array of <see cref="Type"/> objects representing the generic type arguments of the type where the token is in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">An array of <see cref="Type"/> objects representing the generic method arguments of the method where the token is in scope, or <see langword="null"/>.</param>
+        /// <returns>A <see cref="MethodBase"/> object representing the method that is identified by the specified metadata token.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid token in the scope of the module.</exception>
+        /// <exception cref="ArgumentException"><paramref name="metadataToken"/> is a MemberRef that does not refer to a method.</exception>
         public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
+            var index = (metadataToken & 0xFFFFFF) - 1;
             if (index < 0)
             {
                 throw TokenOutOfRangeException(metadataToken);
             }
-            else if ((metadataToken >> 24) == MethodDefTable.Index && index < MethodDefTable.RowCount)
+            else if ((metadataToken >> 24) == (int)TableIndex.MethodDef && index < _metadata.MethodDefinitions.Count)
             {
-                return GetMethodAt(null, index);
+                return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(index + 1));
             }
-            else if ((metadataToken >> 24) == MemberRefTable.Index && index < MemberRefTable.RowCount)
+            else if ((metadataToken >> 24) == (int)TableIndex.MemberRef && index < _metadata.MemberReferences.Count)
             {
                 var method = GetMemberRef(index, genericTypeArguments, genericMethodArguments) as MethodBase;
                 if (method != null)
                     return method;
 
-                throw new ArgumentException(String.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, this.Name), "metadataToken");
+                throw new ArgumentException(string.Format("Token 0x{0:x8} is not a valid MethodBase token in the scope of module {1}.", metadataToken, Name), "metadataToken");
             }
-            else if ((metadataToken >> 24) == MethodSpecTable.Index && index < MethodSpecTable.RowCount)
+            else if ((metadataToken >> 24) == (int)TableIndex.MethodSpec && index < _metadata.GetTableRowCount(TableIndex.MethodSpec))
             {
-                var method = (MethodInfo)ResolveMethod(MethodSpecTable.records[index].Method, genericTypeArguments, genericMethodArguments);
-                var instantiation = ByteReader.FromBlob(blobHeap, MethodSpecTable.records[index].Instantiation);
+                var spec = _metadata.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle(index + 1));
+                var method = (MethodInfo)ResolveMethod(MetadataTokens.GetToken(spec.Method), genericTypeArguments, genericMethodArguments);
+                var instantiation = GetBlobReader(spec.Signature);
                 return method.MakeGenericMethod(Signature.ReadMethodSpec(this, instantiation, new GenericContext(genericTypeArguments, genericMethodArguments)));
             }
             else
@@ -713,59 +665,50 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        public override string ScopeName
-        {
-            get { return GetString(ModuleTable.records[0].Name); }
-        }
+        /// <inheritdoc />
+        public override string ScopeName => GetString(_metadata.GetModuleDefinition().Name);
 
-        TypeDefImpl FindMethodOwner(int methodIndex)
-        {
-            // TODO use binary search?
-            for (int i = 0; i < TypeDefTable.records.Length; i++)
-            {
-                int method = TypeDefTable.records[i].MethodList - 1;
-                int end = TypeDefTable.records.Length > i + 1 ? TypeDefTable.records[i + 1].MethodList - 1 : MethodDefTable.records.Length;
-                if (method <= methodIndex && methodIndex < end)
-                {
-                    PopulateTypeDef();
-                    return typeDefs[i];
-                }
-            }
-
-            throw new InvalidOperationException();
-        }
-
+        /// <summary>
+        /// Resolves the member referenced by a MemberRef row. Members of a TypeSpec or MethodDef parent are not cached, the
+        /// former because they depend on the generic context; the others are.
+        /// </summary>
+        /// <param name="index">The zero-based index of the MemberRef row.</param>
+        /// <param name="genericTypeArguments">The generic type arguments in scope, or <see langword="null"/>.</param>
+        /// <param name="genericMethodArguments">The generic method arguments in scope, or <see langword="null"/>.</param>
+        /// <returns>The referenced member.</returns>
+        /// <exception cref="BadImageFormatException">The parent of the MemberRef is not valid.</exception>
         MemberInfo GetMemberRef(int index, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
-            memberRefs ??= new MemberInfo[MemberRefTable.records.Length];
+            _memberRefs ??= new MemberInfo[_metadata.MemberReferences.Count];
 
-            if (memberRefs[index] == null)
+            if (_memberRefs[index] == null)
             {
-                var owner = MemberRefTable.records[index].Class;
-                var sig = MemberRefTable.records[index].Signature;
-                var name = GetString(MemberRefTable.records[index].Name);
+                var reference = _metadata.GetMemberReference(MetadataTokens.MemberReferenceHandle(index + 1));
+                var owner = MetadataTokens.GetToken(reference.Parent);
+                var sig = reference.Signature;
+                var name = GetString(reference.Name);
                 switch (owner >> 24)
                 {
-                    case MethodDefTable.Index:
-                        return GetMethodAt(null, (owner & 0xFFFFFF) - 1);
-                    case ModuleRefTable.Index:
-                        memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+                    case (int)TableIndex.MethodDef:
+                        return GetMethodAt(null, MetadataTokens.MethodDefinitionHandle(owner & 0xFFFFFF));
+                    case (int)TableIndex.ModuleRef:
+                        _memberRefs[index] = ResolveTypeMemberRef(ResolveModuleType(owner), name, GetBlobReader(sig));
                         break;
-                    case TypeDefTable.Index:
-                    case TypeRefTable.Index:
-                        memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, ByteReader.FromBlob(blobHeap, sig));
+                    case (int)TableIndex.TypeDef:
+                    case (int)TableIndex.TypeRef:
+                        _memberRefs[index] = ResolveTypeMemberRef(ResolveType(owner), name, GetBlobReader(sig));
                         break;
-                    case TypeSpecTable.Index:
+                    case (int)TableIndex.TypeSpec:
                         {
                             var type = ResolveType(owner, genericTypeArguments, genericMethodArguments);
                             if (type.IsArray)
                             {
-                                var methodSig = MethodSignature.ReadSig(this, ByteReader.FromBlob(blobHeap, sig), new GenericContext(genericTypeArguments, genericMethodArguments));
+                                var methodSig = MethodSignature.ReadSig(this, GetBlobReader(sig), new GenericContext(genericTypeArguments, genericMethodArguments));
                                 return type.FindMethod(name, methodSig) ?? Universe.GetMissingMethodOrThrow(this, type, name, methodSig);
                             }
                             else if (type.IsConstructedGenericType)
                             {
-                                var member = ResolveTypeMemberRef(type.GetGenericTypeDefinition(), name, ByteReader.FromBlob(blobHeap, sig));
+                                var member = ResolveTypeMemberRef(type.GetGenericTypeDefinition(), name, GetBlobReader(sig));
                                 var mb = member as MethodBase;
                                 if (mb != null)
                                     member = mb.BindTypeParameters(type);
@@ -778,7 +721,7 @@ namespace IKVM.Reflection.Reader
                             }
                             else
                             {
-                                return ResolveTypeMemberRef(type, name, ByteReader.FromBlob(blobHeap, sig));
+                                return ResolveTypeMemberRef(type, name, GetBlobReader(sig));
                             }
                         }
                     default:
@@ -786,21 +729,37 @@ namespace IKVM.Reflection.Reader
                 }
             }
 
-            return memberRefs[index];
+            return _memberRefs[index];
         }
 
+        /// <summary>
+        /// Gets the module pseudo type of the module named by a ModuleRef row, which declares the global members referenced
+        /// through it.
+        /// </summary>
+        /// <param name="token">The ModuleRef token.</param>
+        /// <returns>The module pseudo type.</returns>
+        /// <exception cref="BadImageFormatException">The module is not found or is a resource module.</exception>
         Type ResolveModuleType(int token)
         {
-            int index = (token & 0xFFFFFF) - 1;
-            var name = GetString(ModuleRefTable.records[index]);
-            var module = assembly.GetModule(name);
+            var name = GetString(_metadata.GetModuleReference(MetadataTokens.ModuleReferenceHandle(token & 0xFFFFFF)).Name);
+            var module = _assembly.GetModule(name);
             if (module == null || module.IsResource())
                 throw new BadImageFormatException();
 
             return module.GetModuleType();
         }
 
-        MemberInfo ResolveTypeMemberRef(Type type, string name, ByteReader sig)
+        /// <summary>
+        /// Finds the field or method with the given name and signature in a type or its base types. If it is not declared
+        /// by the type and missing members are allowed, a missing member on the type is returned instead.
+        /// </summary>
+        /// <param name="type">The type to search.</param>
+        /// <param name="name">The name of the member.</param>
+        /// <param name="sig">The signature of the member, whose first byte tells a field from a method.</param>
+        /// <returns>The member.</returns>
+        /// <exception cref="MissingFieldException">The field is not found.</exception>
+        /// <exception cref="MissingMethodException">The method is not found.</exception>
+        MemberInfo ResolveTypeMemberRef(Type type, string name, BlobReader sig)
         {
             if (sig.PeekByte() == Signature.FIELD)
             {
@@ -836,117 +795,143 @@ namespace IKVM.Reflection.Reader
             }
         }
 
-        internal ByteReader GetStandAloneSig(int index)
-        {
-            return ByteReader.FromBlob(blobHeap, StandAloneSigTable.records[index]);
-        }
-
+        /// <summary>
+        /// Returns the signature blob identified by a metadata token.
+        /// </summary>
+        /// <param name="metadataToken">A metadata token that identifies a signature in the module.</param>
+        /// <returns>An array of bytes representing the signature blob.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="metadataToken"/> is not a valid StandAloneSig token in the scope of the module.</exception>
         public override byte[] ResolveSignature(int metadataToken)
         {
-            int index = (metadataToken & 0xFFFFFF) - 1;
-            if ((metadataToken >> 24) == StandAloneSigTable.Index && index >= 0 && index < StandAloneSigTable.RowCount)
-            {
-                var br = GetStandAloneSig(index);
-                return br.ReadBytes(br.Length);
-            }
-            else
-            {
-                throw TokenOutOfRangeException(metadataToken);
-            }
+            var index = (metadataToken & 0xFFFFFF) - 1;
+            if ((metadataToken >> 24) == (int)TableIndex.StandAloneSig && index >= 0 && index < _metadata.GetTableRowCount(TableIndex.StandAloneSig))
+                return GetBlobCopy(_metadata.GetStandaloneSignature(MetadataTokens.StandaloneSignatureHandle(index + 1)).Signature);
+
+            throw TokenOutOfRangeException(metadataToken);
         }
 
+        /// <summary>
+        /// Gets the managed entry point of the module.
+        /// </summary>
+        /// <returns>The entry point method, or <see langword="null"/> if there is none or it is native.</returns>
         internal MethodInfo GetEntryPoint()
         {
-            if (cliHeader.EntryPointToken != 0 && (cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_NATIVE_ENTRYPOINT) == 0)
-                return (MethodInfo)ResolveMethod((int)cliHeader.EntryPointToken);
+            var cor = _pe.PEHeaders.CorHeader;
+            if (cor.EntryPointTokenOrRelativeVirtualAddress != 0 && (cor.Flags & CorFlags.NativeEntryPoint) == 0)
+                return (MethodInfo)ResolveMethod(cor.EntryPointTokenOrRelativeVirtualAddress);
 
             return null;
         }
 
+        /// <summary>
+        /// Finds the ManifestResource row with the given name.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>The row, or a nil handle if there is none.</returns>
+        ManifestResourceHandle FindManifestResource(string resourceName)
+        {
+            foreach (var h in _metadata.ManifestResources)
+                if (resourceName == GetString(_metadata.GetManifestResource(h).Name))
+                    return h;
+
+            return default;
+        }
+
+        /// <summary>
+        /// Gets information about where a manifest resource is stored.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>
+        /// The resource information, or <see langword="null"/> if the resource is not found, including when it refers to a
+        /// loaded assembly that does not have it.
+        /// </returns>
         internal ManifestResourceInfo GetManifestResourceInfo(string resourceName)
         {
-            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
-            {
-                if (resourceName == GetString(ManifestResourceTable.records[i].Name))
-                {
-                    var info = new ManifestResourceInfo(this, i);
-                    var asm = info.ReferencedAssembly;
-                    if (asm != null && !asm.__IsMissing && asm.GetManifestResourceInfo(resourceName) == null)
-                        return null;
+            var h = FindManifestResource(resourceName);
+            if (h.IsNil)
+                return null;
 
-                    return info;
-                }
-            }
+            var info = new ManifestResourceInfo(this, _metadata.GetManifestResource(h).Implementation);
+            var asm = info.ReferencedAssembly;
+            if (asm != null && !asm.__IsMissing && asm.GetManifestResourceInfo(resourceName) == null)
+                return null;
 
-            return null;
+            return info;
         }
 
+        /// <summary>
+        /// Opens a manifest resource, which may be embedded, linked from a file, or defined in a referenced assembly.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource.</param>
+        /// <returns>A stream over the resource, or <see langword="null"/> if it is not found or is an empty file.</returns>
+        /// <exception cref="BadImageFormatException">The implementation of the resource is not valid.</exception>
         internal Stream GetManifestResourceStream(string resourceName)
         {
-            for (int i = 0; i < ManifestResourceTable.records.Length; i++)
+            var h = FindManifestResource(resourceName);
+            if (h.IsNil)
+                return null;
+
+            var resource = _metadata.GetManifestResource(h);
+            if (resource.Implementation.IsNil == false)
             {
-                if (resourceName == GetString(ManifestResourceTable.records[i].Name))
+                var info = new ManifestResourceInfo(this, resource.Implementation);
+                switch (resource.Implementation.Kind)
                 {
-                    if (ManifestResourceTable.records[i].Implementation != 0x26000000)
-                    {
-                        var info = new ManifestResourceInfo(this, i);
-                        switch (ManifestResourceTable.records[i].Implementation >> 24)
+                    case HandleKind.AssemblyFile:
+                        var fileName = Path.Combine(Path.GetDirectoryName(_location), info.FileName);
+                        if (System.IO.File.Exists(fileName))
                         {
-                            case FileTable.Index:
-                                var fileName = Path.Combine(Path.GetDirectoryName(location), info.FileName);
-                                if (System.IO.File.Exists(fileName))
-                                {
-                                    // note that, like System.Reflection, we return null for zero length files and
-                                    // ManifestResource.Offset is ignored
-                                    var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-                                    if (fs.Length == 0)
-                                    {
-                                        fs.Dispose();
-                                        return null;
-                                    }
-
-                                    return fs;
-                                }
-
+                            // note that, like System.Reflection, we return null for zero length files and
+                            // ManifestResource.Offset is ignored
+                            var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+                            if (fs.Length == 0)
+                            {
+                                fs.Dispose();
                                 return null;
-                            case AssemblyRefTable.Index:
-                                var asm = info.ReferencedAssembly;
-                                if (asm.__IsMissing)
-                                    return null;
+                            }
 
-                                return asm.GetManifestResourceStream(resourceName);
-                            default:
-                                throw new BadImageFormatException();
+                            return fs;
                         }
-                    }
-                    SeekRVA((int)cliHeader.Resources.VirtualAddress + ManifestResourceTable.records[i].Offset);
-                    var br = new BinaryReader(stream);
-                    var length = br.ReadInt32();
-                    return new MemoryStream(br.ReadBytes(length));
+
+                        return null;
+                    case HandleKind.AssemblyReference:
+                        var asm = info.ReferencedAssembly;
+                        if (asm.__IsMissing)
+                            return null;
+
+                        return asm.GetManifestResourceStream(resourceName);
+                    default:
+                        throw new BadImageFormatException();
                 }
             }
 
-            return null;
+            // an embedded resource is its length followed by its content
+            var data = _pe.GetSectionData(_pe.PEHeaders.CorHeader.ResourcesDirectory.RelativeVirtualAddress + (int)resource.Offset).GetReader();
+            var length = data.ReadInt32();
+            return new MemoryStream(data.ReadBytes(length));
         }
 
+        /// <summary>
+        /// Gets the names of the assemblies referenced by the module, read directly from its AssemblyRef rows without
+        /// loading them.
+        /// </summary>
+        /// <returns>The referenced assembly names.</returns>
         public AssemblyName[] __GetReferencedAssemblies()
         {
-            var list = new List<AssemblyName>();
-            for (int i = 0; i < AssemblyRefTable.records.Length; i++)
+            var list = new List<AssemblyName>(_metadata.AssemblyReferences.Count);
+            foreach (var h in _metadata.AssemblyReferences)
             {
-                var name = new AssemblyName();
-                name.Name = GetString(AssemblyRefTable.records[i].Name);
-                name.Version = new Version(
-                    AssemblyRefTable.records[i].MajorVersion,
-                    AssemblyRefTable.records[i].MinorVersion,
-                    AssemblyRefTable.records[i].BuildNumber,
-                    AssemblyRefTable.records[i].RevisionNumber);
-
-                if (AssemblyRefTable.records[i].PublicKeyOrToken.IsNil == false)
+                var reference = _metadata.GetAssemblyReference(h);
+                var name = new AssemblyName
                 {
-                    byte[] keyOrToken = GetBlobCopy(AssemblyRefTable.records[i].PublicKeyOrToken);
-                    const int PublicKey = 0x0001;
-                    if ((AssemblyRefTable.records[i].Flags & PublicKey) != 0)
+                    Name = GetString(reference.Name),
+                    Version = reference.Version
+                };
+
+                if (reference.PublicKeyOrToken.IsNil == false)
+                {
+                    var keyOrToken = GetBlobCopy(reference.PublicKeyOrToken);
+                    if (((int)reference.Flags & PublicKeyFlag) != 0)
                         name.SetPublicKey(keyOrToken);
                     else
                         name.SetPublicKeyToken(keyOrToken);
@@ -956,101 +941,166 @@ namespace IKVM.Reflection.Reader
                     name.SetPublicKeyToken(Array.Empty<byte>());
                 }
 
-                if (AssemblyRefTable.records[i].Culture.IsNil == false)
-                    name.CultureName = GetString(AssemblyRefTable.records[i].Culture);
-                else
-                    name.CultureName = "";
+                name.CultureName = reference.Culture.IsNil == false ? GetString(reference.Culture) : "";
 
-                if (AssemblyRefTable.records[i].HashValue.IsNil == false)
-                    name.hash = GetBlobCopy(AssemblyRefTable.records[i].HashValue);
+                if (reference.HashValue.IsNil == false)
+                    name.Hash = GetBlobCopy(reference.HashValue);
 
-                name.RawFlags = (AssemblyNameFlags)AssemblyRefTable.records[i].Flags;
+                name.RawFlags = (AssemblyNameFlags)(int)reference.Flags;
                 list.Add(name);
             }
 
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Resolves the types in the ExportedType table: forwarded types and the types of the other modules of the assembly.
+        /// </summary>
+        /// <returns>The exported types.</returns>
         public override Type[] __GetExportedTypes()
         {
-            var arr = new Type[ExportedTypeTable.RowCount];
-            for (int i = 0; i < arr.Length; i++)
+            var arr = new Type[_metadata.ExportedTypes.Count];
+            for (var i = 0; i < arr.Length; i++)
                 arr[i] = ResolveExportedType(i);
 
             return arr;
         }
 
-        private Type ResolveExportedType(int index)
+        /// <summary>
+        /// Resolves the type described by an ExportedType row through its implementation.
+        /// </summary>
+        /// <param name="index">The zero-based index of the ExportedType row.</param>
+        /// <returns>The type, or a missing type if it cannot be found and missing types are allowed.</returns>
+        /// <exception cref="BadImageFormatException">The implementation of the row is not valid.</exception>
+        Type ResolveExportedType(int index)
         {
-            var typeName = GetTypeName(ExportedTypeTable.records[index].TypeNamespace, ExportedTypeTable.records[index].TypeName);
-            var implementation = ExportedTypeTable.records[index].Implementation;
-            var token = ExportedTypeTable.records[index].TypeDefId;
-            var flags = ExportedTypeTable.records[index].Flags;
-            switch (implementation >> 24)
+            var exported = _metadata.GetExportedType(MetadataTokens.ExportedTypeHandle(index + 1));
+            var typeName = GetTypeName(exported.Namespace, exported.Name);
+            var implementation = exported.Implementation;
+            var token = exported.GetTypeDefinitionId();
+            switch (implementation.Kind)
             {
-                case AssemblyRefTable.Index:
-                    return ResolveAssemblyRef((implementation & 0xFFFFFF) - 1).ResolveType(this, typeName).SetMetadataTokenForMissing(token, flags);
-                case ExportedTypeTable.Index:
-                    return ResolveExportedType((implementation & 0xFFFFFF) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token, flags);
-                case FileTable.Index:
-                    Module module = assembly.GetModule(GetString(FileTable.records[(implementation & 0xFFFFFF) - 1].Name));
-                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token, flags);
+                case HandleKind.AssemblyReference:
+                    return ResolveAssemblyRef(MetadataTokens.GetRowNumber(implementation) - 1).ResolveType(this, typeName).SetMetadataTokenForMissing(token);
+                case HandleKind.ExportedType:
+                    return ResolveExportedType(MetadataTokens.GetRowNumber(implementation) - 1).ResolveNestedType(this, typeName).SetMetadataTokenForMissing(token);
+                case HandleKind.AssemblyFile:
+                    var module = _assembly.GetModule(GetString(_metadata.GetAssemblyFile((AssemblyFileHandle)implementation).Name));
+                    return module.FindType(typeName) ?? module.Universe.GetMissingTypeOrThrow(this, module, null, typeName).SetMetadataTokenForMissing(token);
                 default:
                     throw new BadImageFormatException();
             }
         }
 
+        /// <summary>
+        /// Gets the number of rows in the File table.
+        /// </summary>
+        internal int FileCount => _metadata.AssemblyFiles.Count;
+
+        /// <summary>
+        /// Gets the name of the file at the specified index of the File table.
+        /// </summary>
+        /// <param name="index">The zero-based index of the File row.</param>
+        /// <returns>The file name.</returns>
+        internal string GetFileName(int index) => GetString(_metadata.GetAssemblyFile(MetadataTokens.AssemblyFileHandle(index + 1)).Name);
+
+        /// <summary>
+        /// Gets whether the file at the specified index of the File table contains metadata.
+        /// </summary>
+        /// <param name="index">The zero-based index of the File row.</param>
+        /// <returns><see langword="true"/> if the file is a module; <see langword="false"/> if it is a resource file.</returns>
+        internal bool FileContainsMetadata(int index) => _metadata.GetAssemblyFile(MetadataTokens.AssemblyFileHandle(index + 1)).ContainsMetadata;
+
+        /// <summary>
+        /// Gets the module pseudo type <c>&lt;Module&gt;</c>, which declares the global members.
+        /// </summary>
+        /// <returns>The module pseudo type.</returns>
         internal override Type GetModuleType()
         {
             PopulateTypeDef();
-            return moduleType;
+            return _moduleType;
         }
 
-        public string __ImageRuntimeVersion
+        /// <summary>
+        /// Gets the runtime version string stored in the metadata root.
+        /// </summary>
+        public string __ImageRuntimeVersion => _metadata.MetadataVersion;
+
+        /// <inheritdoc />
+        public override int MDStreamVersion => GetTablesStreamVersion();
+
+        /// <summary>
+        /// Gets the version of the #~ or #- stream, which System.Reflection.Metadata does not expose, from the metadata root.
+        /// </summary>
+        /// <returns>The major version shifted left by 16 bits, combined with the minor version.</returns>
+        /// <exception cref="BadImageFormatException">The metadata has no tables stream.</exception>
+        unsafe int GetTablesStreamVersion()
         {
-            get { return imageRuntimeVersion; }
+            var root = new BlobReader(_metadata.MetadataPointer, _metadata.MetadataLength)
+            {
+                Offset = 12
+            };
+            root.Offset += 4 + root.ReadInt32() + 2; // version string and flags
+
+            for (int i = root.ReadUInt16(); i > 0; i--)
+            {
+                var offset = root.ReadInt32();
+                root.ReadInt32(); // size
+                var name = root.ReadUTF8(root.IndexOf(0));
+                root.Offset = (root.Offset + 4) & ~3; // the terminator and the padding to four bytes
+
+                if (name is "#~" or "#-")
+                {
+                    var stream = new BlobReader(_metadata.MetadataPointer + offset, _metadata.MetadataLength - offset)
+                    {
+                        Offset = 4
+                    };
+                    return stream.ReadByte() << 16 | stream.ReadByte();
+                }
+            }
+
+            throw new BadImageFormatException("The metadata has no tables stream.");
         }
 
-        public override int MDStreamVersion
-        {
-            get { return metadataStreamVersion; }
-        }
-
+        /// <summary>
+        /// Gets a pair of values indicating the nature of the code in a module and the platform targeted by the module.
+        /// </summary>
+        /// <param name="peKind">When this method returns, a combination of the <see cref="PortableExecutableKinds"/> values indicating the nature of the code in the module.</param>
+        /// <param name="machine">When this method returns, one of the <see cref="ImageFileMachine"/> values indicating the platform targeted by the module.</param>
         public void GetPEKind(out PortableExecutableKinds peKind, out ImageFileMachine machine)
         {
+            var headers = _pe.PEHeaders;
+            var flags = headers.CorHeader.Flags;
+
             peKind = 0;
-            if ((cliHeader.Flags & CliHeader.COMIMAGE_FLAGS_ILONLY) != 0)
+            if ((flags & CorFlags.ILOnly) != 0)
                 peKind |= PortableExecutableKinds.ILOnly;
 
-            switch (cliHeader.Flags & (CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED))
+            // 32BITPREFERRED by itself is illegal, so it is ignored
+            switch (flags & (CorFlags.Requires32Bit | CorFlags.Prefers32Bit))
             {
-                case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED:
+                case CorFlags.Requires32Bit:
                     peKind |= PortableExecutableKinds.Required32Bit;
                     break;
-                case CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED:
+                case CorFlags.Requires32Bit | CorFlags.Prefers32Bit:
                     peKind |= PortableExecutableKinds.Preferred32Bit;
-                    break;
-                default:
-                    // COMIMAGE_FLAGS_32BITPREFERRED by itself is illegal, so we ignore it
-                    // (not setting any flag is ok)
                     break;
             }
 
-            if (peFile.OptionalHeader.Magic == IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+            if (headers.PEHeader.Magic == PEMagic.PE32Plus)
                 peKind |= PortableExecutableKinds.PE32Plus;
 
-            machine = (ImageFileMachine)peFile.FileHeader.Machine;
+            machine = (ImageFileMachine)headers.CoffHeader.Machine;
         }
 
+        /// <summary>
+        /// Releases the PE reader and the stream the module was read from.
+        /// </summary>
         internal override void Dispose()
         {
-            stream?.Dispose();
-        }
+            _pe.Dispose();
 
-        internal override void ExportTypes(AssemblyFileHandle fileToken, IKVM.Reflection.Emit.ModuleBuilder manifestModule)
-        {
-            PopulateTypeDef();
-            manifestModule.ExportTypes(typeDefs, fileToken);
+            _stream?.Dispose();
         }
 
     }

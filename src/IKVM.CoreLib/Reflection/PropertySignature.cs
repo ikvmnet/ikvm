@@ -1,4 +1,4 @@
-using System.Reflection.Metadata;
+﻿using System.Reflection.Metadata;
 /*
   Copyright (C) 2009-2011 Jeroen Frijters
 
@@ -29,119 +29,153 @@ using IKVM.Reflection.Writer;
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents the signature of a property: its calling convention, property type, index parameter types and their custom modifiers.
+    /// </summary>
     sealed class PropertySignature : Signature
     {
 
-        CallingConventions callingConvention;
-        readonly Type propertyType;
-        readonly Type[] parameterTypes;
-        readonly PackedCustomModifiers customModifiers;
+        CallingConventions _callingConvention;
+        readonly Type _propertyType;
+        readonly Type[] _parameterTypes;
+        readonly PackedCustomModifiers _customModifiers;
 
-        internal static PropertySignature Create(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
-        {
-            return new PropertySignature(callingConvention, propertyType, Util.Copy(parameterTypes), customModifiers);
-        }
+        /// <summary>
+        /// Creates a property signature from the specified components.
+        /// </summary>
+        /// <param name="callingConvention">The calling convention of the property.</param>
+        /// <param name="propertyType">The type of the property.</param>
+        /// <param name="parameterTypes">The types of the index parameters, or <see langword="null"/>; the array is copied.</param>
+        /// <param name="customModifiers">The custom modifiers of the property type and parameters.</param>
+        /// <returns>The property signature.</returns>
+        internal static PropertySignature Create(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers) =>
+            new PropertySignature(callingConvention, propertyType, Util.Copy(parameterTypes), customModifiers);
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="callingConvention"></param>
-        /// <param name="propertyType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="customModifiers"></param>
+        /// <param name="callingConvention">The calling convention of the property.</param>
+        /// <param name="propertyType">The type of the property.</param>
+        /// <param name="parameterTypes">The types of the index parameters.</param>
+        /// <param name="customModifiers">The custom modifiers of the property type and parameters.</param>
         PropertySignature(CallingConventions callingConvention, Type propertyType, Type[] parameterTypes, PackedCustomModifiers customModifiers)
         {
-            this.callingConvention = callingConvention;
-            this.propertyType = propertyType;
-            this.parameterTypes = parameterTypes;
-            this.customModifiers = customModifiers;
+            _callingConvention = callingConvention;
+            _propertyType = propertyType;
+            _parameterTypes = parameterTypes;
+            _customModifiers = customModifiers;
         }
 
+        /// <summary>
+        /// Determines whether the specified object is a property signature with the same property type and custom modifiers.
+        /// </summary>
+        /// <param name="obj">The object to compare with.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> is an equal property signature; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
-            var other = obj as PropertySignature;
-            return other != null
-                && other.propertyType.Equals(propertyType)
-                && other.customModifiers.Equals(customModifiers);
+            return obj is PropertySignature other
+                && other._propertyType.Equals(_propertyType)
+                && Util.ArrayEquals(other._parameterTypes, _parameterTypes)
+                && other._customModifiers.Equals(_customModifiers);
         }
 
-        public override int GetHashCode()
-        {
-            return propertyType.GetHashCode() ^ customModifiers.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _propertyType.GetHashCode() ^ Util.GetHashCode(_parameterTypes) ^ _customModifiers.GetHashCode();
 
-        internal int ParameterCount
-        {
-            get { return parameterTypes.Length; }
-        }
+        /// <summary>
+        /// Gets the number of index parameters.
+        /// </summary>
+        internal int ParameterCount => _parameterTypes.Length;
 
+        /// <summary>
+        /// Sets whether the property is an instance property, by setting or clearing <see cref="CallingConventions.HasThis"/>.
+        /// </summary>
         internal bool HasThis
         {
             set
             {
                 if (value)
-                    callingConvention |= CallingConventions.HasThis;
+                    _callingConvention |= CallingConventions.HasThis;
                 else
-                    callingConvention &= ~CallingConventions.HasThis;
+                    _callingConvention &= ~CallingConventions.HasThis;
             }
         }
 
-        internal Type PropertyType
-        {
-            get { return propertyType; }
-        }
+        /// <summary>
+        /// Gets the type of the property.
+        /// </summary>
+        internal Type PropertyType => _propertyType;
 
-        internal CustomModifiers GetCustomModifiers()
-        {
-            return customModifiers.GetReturnTypeCustomModifiers();
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the property type.
+        /// </summary>
+        /// <returns>The custom modifiers of the property type.</returns>
+        internal CustomModifiers GetCustomModifiers() => _customModifiers.GetReturnTypeCustomModifiers();
 
-        internal PropertySignature ExpandTypeParameters(Type declaringType)
-        {
-            return new PropertySignature(callingConvention, propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, parameterTypes), customModifiers.Bind(declaringType));
-        }
+        /// <summary>
+        /// Creates a copy of this signature with the generic type parameters replaced by the type arguments of <paramref name="declaringType"/>.
+        /// </summary>
+        /// <param name="declaringType">The constructed generic type that supplies the type arguments.</param>
+        /// <returns>The bound property signature.</returns>
+        internal PropertySignature ExpandTypeParameters(Type declaringType) =>
+            new PropertySignature(_callingConvention, _propertyType.BindTypeParameters(declaringType), BindTypeParameters(declaringType, _parameterTypes), _customModifiers.Bind(declaringType));
 
+        /// <inheritdoc />
         internal override void Write(ModuleBuilder module, BlobBuilder bb)
         {
             var flags = PROPERTY;
-            if ((callingConvention & CallingConventions.HasThis) != 0)
+            if ((_callingConvention & CallingConventions.HasThis) != 0)
                 flags |= HASTHIS;
-            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+            if ((_callingConvention & CallingConventions.ExplicitThis) != 0)
                 flags |= EXPLICITTHIS;
-            if ((callingConvention & CallingConventions.VarArgs) != 0)
+            if ((_callingConvention & CallingConventions.VarArgs) != 0)
                 flags |= VARARG;
 
             bb.WriteByte(flags);
-            bb.WriteCompressedInteger(parameterTypes == null ? 0 : parameterTypes.Length);
-            WriteCustomModifiers(module, bb, customModifiers.GetReturnTypeCustomModifiers());
-            WriteType(module, bb, propertyType);
+            bb.WriteCompressedInteger(_parameterTypes == null ? 0 : _parameterTypes.Length);
+            WriteCustomModifiers(module, bb, _customModifiers.GetReturnTypeCustomModifiers());
+            WriteType(module, bb, _propertyType);
 
-            if (parameterTypes != null)
+            if (_parameterTypes != null)
             {
-                for (var i = 0; i < parameterTypes.Length; i++)
+                for (var i = 0; i < _parameterTypes.Length; i++)
                 {
-                    WriteCustomModifiers(module, bb, customModifiers.GetParameterCustomModifiers(i));
-                    WriteType(module, bb, parameterTypes[i]);
+                    WriteCustomModifiers(module, bb, _customModifiers.GetParameterCustomModifiers(i));
+                    WriteType(module, bb, _parameterTypes[i]);
                 }
             }
         }
 
-        internal Type GetParameter(int parameter)
-        {
-            return parameterTypes[parameter];
-        }
+        /// <summary>
+        /// Gets the type of the specified index parameter.
+        /// </summary>
+        /// <param name="parameter">The zero-based position of the parameter.</param>
+        /// <returns>The type of the parameter.</returns>
+        internal Type GetParameter(int parameter) => _parameterTypes[parameter];
 
-        internal CustomModifiers GetParameterCustomModifiers(int parameter)
-        {
-            return customModifiers.GetParameterCustomModifiers(parameter);
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the specified index parameter.
+        /// </summary>
+        /// <param name="parameter">The zero-based position of the parameter.</param>
+        /// <returns>The custom modifiers of the parameter.</returns>
+        internal CustomModifiers GetParameterCustomModifiers(int parameter) => _customModifiers.GetParameterCustomModifiers(parameter);
 
-        internal bool MatchParameterTypes(Type[] types)
-        {
-            return Util.ArrayEquals(types, parameterTypes);
-        }
+        /// <summary>
+        /// Determines whether the index parameter types of this signature equal <paramref name="types"/>.
+        /// </summary>
+        /// <param name="types">The parameter types to compare with.</param>
+        /// <returns><see langword="true"/> if the parameter types are equal; otherwise, <see langword="false"/>.</returns>
+        internal bool MatchParameterTypes(Type[] types) => Util.ArrayEquals(types, _parameterTypes);
 
-        internal static PropertySignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        /// <summary>
+        /// Reads a property signature from a metadata blob.
+        /// </summary>
+        /// <param name="module">The module the signature belongs to.</param>
+        /// <param name="br">The reader positioned at the start of the signature.</param>
+        /// <param name="context">The generic context used to resolve generic parameters.</param>
+        /// <returns>The property signature.</returns>
+        /// <exception cref="BadImageFormatException">The blob is not a property signature.</exception>
+        internal static PropertySignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
         {
             var flags = br.ReadByte();
             if ((flags & PROPERTY) == 0)
@@ -153,18 +187,20 @@ namespace IKVM.Reflection
             if ((flags & EXPLICITTHIS) != 0)
                 callingConvention |= CallingConventions.ExplicitThis;
 
-            int paramCount = br.ReadCompressedUInt();
+            var paramCount = br.ReadCompressedInteger();
             CustomModifiers[] mods = null;
-            PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-            var returnType = ReadRetType(module, br, context);
+            PackedCustomModifiers.Pack(ref mods, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+            var returnType = ReadRetType(module, ref br, context);
             var parameterTypes = new Type[paramCount];
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < parameterTypes.Length; i++)
             {
-                PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                parameterTypes[i] = ReadParam(module, br, context);
+                PackedCustomModifiers.Pack(ref mods, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, ref br, context);
             }
 
             return new PropertySignature(callingConvention, returnType, parameterTypes, PackedCustomModifiers.Wrap(mods));
         }
+
     }
+
 }

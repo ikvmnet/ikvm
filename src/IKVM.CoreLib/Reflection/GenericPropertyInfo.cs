@@ -24,135 +24,111 @@
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// Represents a property of a constructed generic type, wrapping the property of the generic type definition.
+    /// </summary>
     sealed class GenericPropertyInfo : PropertyInfo
     {
 
-        readonly Type typeInstance;
-        readonly PropertyInfo property;
+        readonly Type _typeInstance;
+        readonly PropertyInfo _property;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="typeInstance"></param>
-        /// <param name="property"></param>
+        /// <param name="typeInstance">The constructed generic type that declares the property.</param>
+        /// <param name="property">The property of the generic type definition.</param>
         internal GenericPropertyInfo(Type typeInstance, PropertyInfo property)
         {
-            this.typeInstance = typeInstance;
-            this.property = property;
+            _typeInstance = typeInstance;
+            _property = property;
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             var other = obj as GenericPropertyInfo;
-            return other != null && other.typeInstance == typeInstance && other.property == property;
+            return other != null && other._typeInstance == _typeInstance && other._property == _property;
         }
 
-        public override int GetHashCode()
-        {
-            return typeInstance.GetHashCode() * 537 + property.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _typeInstance.GetHashCode() * 537 + _property.GetHashCode();
 
-        public override PropertyAttributes Attributes
-        {
-            get { return property.Attributes; }
-        }
+        /// <inheritdoc />
+        public override PropertyAttributes Attributes => _property.Attributes;
 
-        public override bool CanRead
-        {
-            get { return property.CanRead; }
-        }
+        /// <inheritdoc />
+        public override bool CanRead => _property.CanRead;
 
-        public override bool CanWrite
-        {
-            get { return property.CanWrite; }
-        }
+        /// <inheritdoc />
+        public override bool CanWrite => _property.CanWrite;
 
-        private MethodInfo Wrap(MethodInfo method)
+        /// <summary>
+        /// Wraps an accessor of the underlying property as a method of the constructed generic type.
+        /// </summary>
+        /// <param name="method">The accessor method, or <see langword="null"/>.</param>
+        /// <returns>The accessor as a member of the constructed type, or <see langword="null"/> if <paramref name="method"/> is <see langword="null"/>.</returns>
+        MethodInfo Wrap(MethodInfo method)
         {
             if (method == null)
                 return null;
 
-            return new GenericMethodInstance(typeInstance, method, null);
+            return new GenericMethodInstance(_typeInstance, method, null);
         }
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return Wrap(property.GetGetMethod(nonPublic));
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetGetMethod(bool nonPublic) => Wrap(_property.GetGetMethod(nonPublic));
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return Wrap(property.GetSetMethod(nonPublic));
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetSetMethod(bool nonPublic) => Wrap(_property.GetSetMethod(nonPublic));
 
+        /// <inheritdoc />
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            var accessors = property.GetAccessors(nonPublic);
-            for (int i = 0; i < accessors.Length; i++)
+            var accessors = _property.GetAccessors(nonPublic);
+            for (var i = 0; i < accessors.Length; i++)
                 accessors[i] = Wrap(accessors[i]);
 
             return accessors;
         }
 
-        public override object GetRawConstantValue()
-        {
-            return property.GetRawConstantValue();
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _property.GetRawConstantValue();
 
-        internal override bool IsPublic
-        {
-            get { return property.IsPublic; }
-        }
+        /// <inheritdoc />
+        internal override bool IsPublic => _property.IsPublic;
 
-        internal override bool IsNonPrivate
-        {
-            get { return property.IsNonPrivate; }
-        }
+        /// <inheritdoc />
+        internal override bool IsNonPrivate => _property.IsNonPrivate;
 
-        internal override bool IsStatic
-        {
-            get { return property.IsStatic; }
-        }
+        /// <inheritdoc />
+        internal override bool IsStatic => _property.IsStatic;
 
-        internal override PropertySignature PropertySignature
-        {
-            get { return property.PropertySignature.ExpandTypeParameters(typeInstance); }
-        }
+        /// <summary>
+        /// Gets the signature of the property, with the generic type parameters replaced by the type arguments of the declaring type.
+        /// </summary>
+        internal override PropertySignature PropertySignature => _property.PropertySignature.ExpandTypeParameters(_typeInstance);
 
-        public override string Name
-        {
-            get { return property.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _property.Name;
 
-        public override Type DeclaringType
-        {
-            get { return typeInstance; }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType => _typeInstance;
 
-        public override Module Module
-        {
-            get { return typeInstance.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _typeInstance.Module;
 
-        public override int MetadataToken
-        {
-            get { return property.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _property.MetadataToken;
 
-        internal override PropertyInfo BindTypeParameters(Type type)
-        {
-            return new GenericPropertyInfo(typeInstance.BindTypeParameters(type), property);
-        }
+        /// <inheritdoc />
+        internal override PropertyInfo BindTypeParameters(Type type) => new GenericPropertyInfo(_typeInstance.BindTypeParameters(type), _property);
 
-        internal override bool IsBaked
-        {
-            get { return property.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _property.IsBaked;
 
-        internal override int GetCurrentToken()
-        {
-            return property.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _property.GetCurrentToken();
 
     }
 

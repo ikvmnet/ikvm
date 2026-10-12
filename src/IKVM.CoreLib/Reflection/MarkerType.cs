@@ -25,67 +25,83 @@ using System;
 
 namespace IKVM.Reflection
 {
+
+    /// <summary>
+    /// A placeholder type that is never a real type. Instances are used as markers inside type lists, for example to
+    /// separate optional from required custom modifiers, and as a sentinel while a type is being resolved. Every
+    /// member that would describe a real type throws <see cref="InvalidOperationException"/>.
+    /// </summary>
     sealed class MarkerType : Type
     {
 
-        // used by CustomModifiers and SignatureHelper
+        /// <summary>
+        /// Marks the start of optional custom modifiers in a modifier list. Used by CustomModifiers and SignatureHelper.
+        /// </summary>
         internal static readonly Type ModOpt = new MarkerType(Signature.ELEMENT_TYPE_CMOD_OPT);
+
+        /// <summary>
+        /// Marks the start of required custom modifiers in a modifier list. Used by CustomModifiers and SignatureHelper.
+        /// </summary>
         internal static readonly Type ModReq = new MarkerType(Signature.ELEMENT_TYPE_CMOD_REQD);
-        // used by SignatureHelper
+
+        /// <summary>
+        /// Marks the start of the variable arguments in a call site signature. Used by SignatureHelper.
+        /// </summary>
         internal static readonly Type Sentinel = new MarkerType(Signature.SENTINEL);
+
+        /// <summary>
+        /// Marks a pinned local variable. Used by SignatureHelper.
+        /// </summary>
         internal static readonly Type Pinned = new MarkerType(Signature.ELEMENT_TYPE_PINNED);
-        // used by ModuleReader.LazyForwardedType and TypeSpec resolution
+
+        /// <summary>
+        /// Stored in place of a type while it is being resolved, to detect recursive resolution. Used by
+        /// ModuleReader.LazyForwardedType and TypeSpec resolution.
+        /// </summary>
         internal static readonly Type LazyResolveInProgress = new MarkerType(0xFF);
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="sigElementType"></param>
+        /// <param name="sigElementType">The signature element type the marker stands for.</param>
         MarkerType(byte sigElementType) :
             base(sigElementType)
         {
 
         }
 
-        public override Type BaseType
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a marker has no base type.</exception>
+        public override Type BaseType => throw new InvalidOperationException();
 
-        public override TypeAttributes Attributes
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a marker has no attributes.</exception>
+        public override TypeAttributes Attributes => throw new InvalidOperationException();
 
-        public override string Name
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a marker has no name.</exception>
+        public override string Name => throw new InvalidOperationException();
 
-        public override string FullName
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a marker has no name.</exception>
+        public override string FullName => throw new InvalidOperationException();
 
-        public override Module Module
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown; a marker belongs to no module.</exception>
+        public override Module Module => throw new InvalidOperationException();
 
-        internal override bool IsBaked
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown.</exception>
+        internal override bool IsBaked => throw new InvalidOperationException();
 
-        public override bool __IsMissing
-        {
-            get { return false; }
-        }
+        /// <summary>
+        /// Gets whether the type is missing, which is never the case for a marker.
+        /// </summary>
+        public override bool __IsMissing => false;
 
-        protected override bool IsValueTypeImpl
-        {
-            get { throw new InvalidOperationException(); }
-        }
+        /// <inheritdoc />
+        /// <exception cref="InvalidOperationException">Always thrown.</exception>
+        protected override bool IsValueTypeImpl => throw new InvalidOperationException();
 
     }
 

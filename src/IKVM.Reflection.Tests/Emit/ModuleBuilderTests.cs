@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 using FluentAssertions;
 
@@ -7,9 +7,16 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="IKVM.Reflection.Emit.ModuleBuilder"/>.
+    /// </summary>
     public class ModuleBuilderTests
     {
 
+        /// <summary>
+        /// Checks that manifest resources defined on a module are written to the saved assembly with their contents.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanDefineManifestResource(string tfm)
@@ -37,7 +44,7 @@ namespace IKVM.Reflection.Tests.Emit
         /// renders like the original within what the builders can emit. The reader tests tie the rendering of the original
         /// to what the runtime of that target framework reports.
         /// </summary>
-        /// <param name="tfm"></param>
+        /// <param name="tfm">The target framework of the fixture build to copy.</param>
         [Theory]
         [MemberData(nameof(Fixture.GetTargetFrameworkTestData), MemberType = typeof(Fixture))]
         public void CanRewriteFixtureLikeTargetRuntime(string tfm)
@@ -54,6 +61,10 @@ namespace IKVM.Reflection.Tests.Emit
             TextDiff.ShouldMatch(actual, expected, $"between the {tfm} fixture and its copy emitted on {Fixture.HostTargetFramework}");
         }
 
+        /// <summary>
+        /// Checks that the module version ID the module builder reports is the one written to the saved image.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void ModuleVersionIdMatchesWrittenImage(string tfm)
@@ -68,10 +79,16 @@ namespace IKVM.Reflection.Tests.Emit
             module.ModuleVersionId.Should().Be(u.VerifyAndLoad("Test.dll").ManifestModule.ModuleVersionId);
         }
 
+        /// <summary>
+        /// Checks that with <see cref="UniverseOptions.DeterministicOutput"/> saving the same assembly twice gives
+        /// identical bytes.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void DeterministicOutputIsRepeatable(string tfm)
         {
+            // defines and saves the same assembly in a fresh universe and returns its bytes
             byte[] Save()
             {
                 using var u = TestUniverse.Create(tfm, UniverseOptions.DeterministicOutput);
@@ -87,6 +104,11 @@ namespace IKVM.Reflection.Tests.Emit
             Save().Should().Equal(Save());
         }
 
+        /// <summary>
+        /// Reads a stream to its end.
+        /// </summary>
+        /// <param name="stream">The stream to read.</param>
+        /// <returns>The bytes read.</returns>
         static byte[] ReadAll(Stream stream)
         {
             using var m = new MemoryStream();

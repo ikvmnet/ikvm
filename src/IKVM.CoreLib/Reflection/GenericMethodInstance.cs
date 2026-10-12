@@ -26,136 +26,150 @@ using System;
 namespace IKVM.Reflection
 {
 
-    // this represents both generic method instantiations and non-generic methods on generic type instantations
-    // (this means that it can be a generic method declaration as well as a generic method instance)
+    /// <summary>
+    /// Represents both generic method instantiations and methods on generic type instantiations. This means that it
+    /// can be a generic method definition (a generic method on a constructed type, not yet instantiated) as well as a
+    /// generic method instance.
+    /// </summary>
     sealed class GenericMethodInstance : MethodInfo
     {
 
-        readonly Type declaringType;
-        readonly MethodInfo method;
-        readonly Type[] methodArgs;
-        MethodSignature lazyMethodSignature;
+        readonly Type _declaringType;
+        readonly MethodInfo _method;
+
+        // the method type arguments, or null if the method is not instantiated
+        readonly Type[] _methodArgs;
+        MethodSignature _lazyMethodSignature;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="method"></param>
-        /// <param name="methodArgs"></param>
+        /// <param name="declaringType">The type that declares the method, which may be a constructed generic type.</param>
+        /// <param name="method">The method as declared on its generic type definition; never a <see cref="GenericMethodInstance"/>.</param>
+        /// <param name="methodArgs">The method type arguments, or <see langword="null"/> if the method is not instantiated.</param>
         internal GenericMethodInstance(Type declaringType, MethodInfo method, Type[] methodArgs)
         {
             System.Diagnostics.Debug.Assert(method is not GenericMethodInstance);
-            this.declaringType = declaringType;
-            this.method = method;
-            this.methodArgs = methodArgs;
+            _declaringType = declaringType;
+            _method = method;
+            _methodArgs = methodArgs;
         }
 
+        /// <summary>
+        /// Determines whether the specified object is a generic method instance of the same method, declaring type and
+        /// method type arguments.
+        /// </summary>
+        /// <param name="obj">The object to compare with.</param>
+        /// <returns><see langword="true"/> if the methods are equal; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as GenericMethodInstance;
             return other != null
-                && other.method.Equals(method)
-                && other.declaringType.Equals(declaringType)
-                && Util.ArrayEquals(other.methodArgs, methodArgs);
+                && other._method.Equals(_method)
+                && other._declaringType.Equals(_declaringType)
+                && Util.ArrayEquals(other._methodArgs, _methodArgs);
         }
 
-        public override int GetHashCode()
-        {
-            return declaringType.GetHashCode() * 33 ^ method.GetHashCode() ^ Util.GetHashCode(methodArgs);
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _declaringType.GetHashCode() * 33 ^ _method.GetHashCode() ^ Util.GetHashCode(_methodArgs);
 
-        public override Type ReturnType
-        {
-            get { return method.ReturnType.BindTypeParameters(this); }
-        }
+        /// <summary>
+        /// Gets the return type of the method, with the type parameters bound to the type arguments.
+        /// </summary>
+        public override Type ReturnType => _method.ReturnType.BindTypeParameters(this);
 
-        public override ParameterInfo ReturnParameter
-        {
-            get { return new GenericParameterInfoImpl(this, method.ReturnParameter); }
-        }
+        /// <summary>
+        /// Gets the return parameter of the method, with the type parameters in its type bound to the type arguments.
+        /// </summary>
+        public override ParameterInfo ReturnParameter => new GenericParameterInfoImpl(this, _method.ReturnParameter);
 
+        /// <summary>
+        /// Gets the parameters of the method, with the type parameters in their types bound to the type arguments.
+        /// </summary>
+        /// <returns>The parameters.</returns>
         public override ParameterInfo[] GetParameters()
         {
-            var parameters = method.GetParameters();
-            for (int i = 0; i < parameters.Length; i++)
+            var parameters = _method.GetParameters();
+            for (var i = 0; i < parameters.Length; i++)
                 parameters[i] = new GenericParameterInfoImpl(this, parameters[i]);
 
             return parameters;
         }
 
+        /// <summary>
+        /// Gets the parameter types of the method, bound against the underlying method.
+        /// </summary>
+        /// <returns>The parameter types.</returns>
         internal override Type[] GetParameterTypes()
         {
-            var parameterTypes = method.GetParameterTypes();
-            for (int i = 0; i < parameterTypes.Length; i++)
-                parameterTypes[i] = parameterTypes[i].BindTypeParameters(method);
+            var parameterTypes = _method.GetParameterTypes();
+            for (var i = 0; i < parameterTypes.Length; i++)
+                parameterTypes[i] = parameterTypes[i].BindTypeParameters(this);
 
             return parameterTypes;
         }
 
-        internal override int ParameterCount
-        {
-            get { return method.ParameterCount; }
-        }
+        /// <inheritdoc />
+        internal override int ParameterCount => _method.ParameterCount;
 
-        public override CallingConventions CallingConvention
-        {
-            get { return method.CallingConvention; }
-        }
+        /// <inheritdoc />
+        public override CallingConventions CallingConvention => _method.CallingConvention;
 
-        public override MethodAttributes Attributes
-        {
-            get { return method.Attributes; }
-        }
+        /// <inheritdoc />
+        public override MethodAttributes Attributes => _method.Attributes;
 
-        public override MethodImplAttributes GetMethodImplementationFlags()
-        {
-            return method.GetMethodImplementationFlags();
-        }
+        /// <inheritdoc />
+        public override MethodImplAttributes GetMethodImplementationFlags() => _method.GetMethodImplementationFlags();
 
-        public override string Name
-        {
-            get { return method.Name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _method.Name;
 
-        public override Type DeclaringType
-        {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
-        }
+        /// <summary>
+        /// Gets the type that declares the method, or <see langword="null"/> if it is a global method declared by the
+        /// module pseudo type.
+        /// </summary>
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override Module Module
-        {
-            get { return method.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _method.Module;
 
-        public override int MetadataToken
-        {
-            get { return method.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => _method.MetadataToken;
 
-        public override MethodInfo MakeGenericMethod(params Type[] typeArguments)
-        {
-            return new GenericMethodInstance(declaringType, method, typeArguments);
-        }
+        /// <summary>
+        /// Instantiates the underlying method on the same declaring type with the given type arguments.
+        /// </summary>
+        /// <param name="typeArguments">The method type arguments.</param>
+        /// <returns>The constructed method.</returns>
+        public override MethodInfo MakeGenericMethod(params Type[] typeArguments) =>
+            new GenericMethodInstance(_declaringType, _method, typeArguments);
 
-        public override bool IsGenericMethod
-        {
-            get { return method.IsGenericMethod; }
-        }
+        /// <inheritdoc />
+        public override bool IsGenericMethod => _method.IsGenericMethod;
 
-        public override bool IsGenericMethodDefinition
-        {
-            get { return method.IsGenericMethodDefinition && methodArgs == null; }
-        }
+        /// <summary>
+        /// Gets whether the method is a generic method definition, which is the case when the underlying method is one
+        /// and it has not been instantiated.
+        /// </summary>
+        public override bool IsGenericMethodDefinition => _method.IsGenericMethodDefinition && _methodArgs == null;
 
+        /// <summary>
+        /// Gets whether the declaring type or any of the method type arguments contains unassigned generic type
+        /// parameters.
+        /// </summary>
         public override bool ContainsGenericParameters
         {
             get
             {
-                if (declaringType.ContainsGenericParameters)
+                if (_declaringType.ContainsGenericParameters)
                     return true;
 
-                if (methodArgs != null)
-                    foreach (var type in methodArgs)
+                // a generic method definition that has not been instantiated has its own type parameters
+                if (_methodArgs == null && _method.IsGenericMethodDefinition)
+                    return true;
+
+                if (_methodArgs != null)
+                    foreach (var type in _methodArgs)
                         if (type.ContainsGenericParameters)
                             return true;
 
@@ -163,66 +177,86 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Returns the generic method definition this method is constructed from: this method if it is a definition,
+        /// the uninstantiated method on the same constructed type, or the underlying method.
+        /// </summary>
+        /// <returns>The generic method definition.</returns>
+        /// <exception cref="InvalidOperationException">The method is not generic.</exception>
         public override MethodInfo GetGenericMethodDefinition()
         {
             if (IsGenericMethod)
             {
                 if (IsGenericMethodDefinition)
                     return this;
-                else if (declaringType.IsConstructedGenericType)
-                    return new GenericMethodInstance(declaringType, method, null);
+                else if (_declaringType.IsConstructedGenericType)
+                    return new GenericMethodInstance(_declaringType, _method, null);
                 else
-                    return method;
+                    return _method;
             }
 
             throw new InvalidOperationException();
         }
 
+        /// <summary>
+        /// Gets the method type arguments, or the type parameters of the underlying method if it has not been
+        /// instantiated.
+        /// </summary>
+        /// <returns>A copy of the type arguments.</returns>
         public override Type[] GetGenericArguments()
         {
-            if (methodArgs == null)
-                return method.GetGenericArguments();
+            if (_methodArgs == null)
+                return _method.GetGenericArguments();
             else
-                return (Type[])methodArgs.Clone();
+                return (Type[])_methodArgs.Clone();
         }
 
+        /// <inheritdoc />
         internal override Type GetGenericMethodArgument(int index)
         {
-            if (methodArgs == null)
-                return method.GetGenericMethodArgument(index);
+            if (_methodArgs == null)
+                return _method.GetGenericMethodArgument(index);
             else
-                return methodArgs[index];
+                return _methodArgs[index];
         }
 
-
+        /// <summary>
+        /// Imports the method into a module being built: as a MemberRef on the declaring type if it has not been
+        /// instantiated, otherwise as a MethodSpec.
+        /// </summary>
+        /// <param name="module">The module being built.</param>
+        /// <returns>The token of the method in <paramref name="module"/>.</returns>
         internal override int ImportTo(Emit.ModuleBuilder module)
         {
-            if (methodArgs == null)
-                return module.ImportMethodOrField(declaringType, method.Name, method.MethodSignature);
+            if (_methodArgs == null)
+                return module.ImportMethodOrField(_declaringType, _method.Name, _method.MethodSignature);
             else
-                return module.ImportMethodSpec(declaringType, method, methodArgs);
+                return module.ImportMethodSpec(_declaringType, _method, _methodArgs);
         }
 
-        internal override MethodSignature MethodSignature
-        {
-            get { return lazyMethodSignature ?? (lazyMethodSignature = method.MethodSignature.Bind(declaringType, methodArgs)); }
-        }
+        /// <summary>
+        /// Gets the signature of the method, bound to the type arguments of the declaring type and the method. It is
+        /// computed on first use.
+        /// </summary>
+        internal override MethodSignature MethodSignature => _lazyMethodSignature ??= _method.MethodSignature.Bind(_declaringType, _methodArgs);
 
+        /// <summary>
+        /// Returns this method as a member of the declaring type bound to the given type arguments. Only valid for a
+        /// method that has not been instantiated.
+        /// </summary>
+        /// <param name="type">The constructed type that supplies the type arguments.</param>
+        /// <returns>The bound method.</returns>
         internal override MethodBase BindTypeParameters(Type type)
         {
-            System.Diagnostics.Debug.Assert(methodArgs == null);
-            return new GenericMethodInstance(declaringType.BindTypeParameters(type), method, null);
+            System.Diagnostics.Debug.Assert(_methodArgs == null);
+            return new GenericMethodInstance(_declaringType.BindTypeParameters(type), _method, null);
         }
 
-        internal override int GetCurrentToken()
-        {
-            return method.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => _method.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return method.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => _method.IsBaked;
 
     }
 

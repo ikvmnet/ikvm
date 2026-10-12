@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -19,13 +19,18 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 namespace IKVM.Reflection
 {
 
-    internal readonly struct ParameterModifier
+    /// <summary>
+    /// Attaches a modifier to parameters so that binding can work with parameter signatures in which the types have
+    /// been modified. This mirror carries no data; it exists so that method signatures match System.Reflection.
+    /// </summary>
+    readonly struct ParameterModifier
     {
+
     }
 
 }

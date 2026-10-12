@@ -9,9 +9,16 @@ using Xunit;
 namespace IKVM.Reflection.Tests.Emit
 {
 
+    /// <summary>
+    /// Tests for <see cref="AssemblyBuilder"/>.
+    /// </summary>
     public class AssemblyBuilderTests
     {
 
+        /// <summary>
+        /// Reads the sample icon embedded in the test assembly.
+        /// </summary>
+        /// <returns>The bytes of the icon file.</returns>
         static byte[] GetSampleIcon()
         {
             using var s = typeof(AssemblyBuilderTests).Assembly.GetManifestResourceStream("IKVM.Reflection.Tests.sample.ico")!;
@@ -20,6 +27,11 @@ namespace IKVM.Reflection.Tests.Emit
             return m.ToArray();
         }
 
+        /// <summary>
+        /// Checks that a custom attribute with a constructor argument set on an assembly builder is written to the
+        /// saved assembly with its constructor and argument.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSetCustomAttributeWithArgument(string tfm)
@@ -39,6 +51,11 @@ namespace IKVM.Reflection.Tests.Emit
             d.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be("1.0.0.0");
         }
 
+        /// <summary>
+        /// Checks that an assembly with an icon resource defined by
+        /// <see cref="AssemblyBuilder.__DefineIconResource(byte[])"/> saves, verifies and loads.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanDefineIconResource(string tfm)
@@ -54,6 +71,10 @@ namespace IKVM.Reflection.Tests.Emit
             u.VerifyAndLoad("Test.dll").GetName().Name.Should().Be("Test");
         }
 
+        /// <summary>
+        /// Checks that a console application saves with its entry point.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSaveConsoleApplication(string tfm)
@@ -61,6 +82,10 @@ namespace IKVM.Reflection.Tests.Emit
             CanSaveApplication(tfm, PEFileKinds.ConsoleApplication, false);
         }
 
+        /// <summary>
+        /// Checks that a Windows application with an icon resource saves with its entry point.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
         [Theory]
         [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
         public void CanSaveWindowsApplicationWithIcon(string tfm)
@@ -68,6 +93,13 @@ namespace IKVM.Reflection.Tests.Emit
             CanSaveApplication(tfm, PEFileKinds.WindowApplication, true);
         }
 
+        /// <summary>
+        /// Saves an executable with a static <c>Main</c> entry point and checks that it verifies and that its entry point
+        /// reads back.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies are loaded.</param>
+        /// <param name="kind">The kind of executable to save.</param>
+        /// <param name="icon">Whether to define an icon resource.</param>
         static void CanSaveApplication(string tfm, PEFileKinds kind, bool icon)
         {
             using var u = TestUniverse.Create(tfm);

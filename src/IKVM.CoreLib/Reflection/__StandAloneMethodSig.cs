@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2010 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,109 +26,123 @@ using System.Runtime.InteropServices;
 namespace IKVM.Reflection
 {
 
-    internal sealed class __StandAloneMethodSig
+    /// <summary>
+    /// Represents a stand-alone method signature, such as the signature referenced by a <c>calli</c> instruction. This is
+    /// an IKVM extension; System.Reflection has no equivalent type.
+    /// </summary>
+    sealed class __StandAloneMethodSig
     {
 
-        readonly bool unmanaged;
-        readonly CallingConvention unmanagedCallingConvention;
-        readonly CallingConventions callingConvention;
-        readonly Type returnType;
-        readonly Type[] parameterTypes;
-        readonly Type[] optionalParameterTypes;
-        readonly PackedCustomModifiers customModifiers;
+        readonly bool _unmanaged;
+        readonly CallingConvention _unmanagedCallingConvention;
+        readonly CallingConventions _callingConvention;
+        readonly Type _returnType;
+        readonly Type[] _parameterTypes;
+        readonly Type[] _optionalParameterTypes;
+        readonly PackedCustomModifiers _customModifiers;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="unmanaged"></param>
-        /// <param name="unmanagedCallingConvention"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="returnType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="optionalParameterTypes"></param>
-        /// <param name="customModifiers"></param>
+        /// <param name="unmanaged"><see langword="true"/> if the signature uses an unmanaged calling convention.</param>
+        /// <param name="unmanagedCallingConvention">The unmanaged calling convention; meaningful only when <paramref name="unmanaged"/> is <see langword="true"/>.</param>
+        /// <param name="callingConvention">The managed calling convention; meaningful only when <paramref name="unmanaged"/> is <see langword="false"/>.</param>
+        /// <param name="returnType">The return type.</param>
+        /// <param name="parameterTypes">The types of the fixed parameters.</param>
+        /// <param name="optionalParameterTypes">The types of the variable arguments that follow the sentinel, for a vararg call site.</param>
+        /// <param name="customModifiers">The custom modifiers of the return type and parameters.</param>
         internal __StandAloneMethodSig(bool unmanaged, CallingConvention unmanagedCallingConvention, CallingConventions callingConvention, Type returnType, Type[] parameterTypes, Type[] optionalParameterTypes, PackedCustomModifiers customModifiers)
         {
-            this.unmanaged = unmanaged;
-            this.unmanagedCallingConvention = unmanagedCallingConvention;
-            this.callingConvention = callingConvention;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-            this.optionalParameterTypes = optionalParameterTypes;
-            this.customModifiers = customModifiers;
+            _unmanaged = unmanaged;
+            _unmanagedCallingConvention = unmanagedCallingConvention;
+            _callingConvention = callingConvention;
+            _returnType = returnType;
+            _parameterTypes = parameterTypes;
+            _optionalParameterTypes = optionalParameterTypes;
+            _customModifiers = customModifiers;
         }
 
+        /// <summary>
+        /// Determines whether this signature is identical to another.
+        /// </summary>
+        /// <param name="other">The signature to compare with, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the calling conventions, return type, parameter types and custom modifiers are all equal; otherwise, <see langword="false"/>.</returns>
         public bool Equals(__StandAloneMethodSig other)
         {
             return other != null
-                && other.unmanaged == unmanaged
-                && other.unmanagedCallingConvention == unmanagedCallingConvention
-                && other.callingConvention == callingConvention
-                && other.returnType == returnType
-                && Util.ArrayEquals(other.parameterTypes, parameterTypes)
-                && Util.ArrayEquals(other.optionalParameterTypes, optionalParameterTypes)
-                && other.customModifiers.Equals(customModifiers);
+                && other._unmanaged == _unmanaged
+                && other._unmanagedCallingConvention == _unmanagedCallingConvention
+                && other._callingConvention == _callingConvention
+                && other._returnType == _returnType
+                && Util.ArrayEquals(other._parameterTypes, _parameterTypes)
+                && Util.ArrayEquals(other._optionalParameterTypes, _optionalParameterTypes)
+                && other._customModifiers.Equals(_customModifiers);
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as __StandAloneMethodSig);
-        }
+        /// <inheritdoc />
+        public override bool Equals(object obj) => Equals(obj as __StandAloneMethodSig);
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            return returnType.GetHashCode()
-                ^ Util.GetHashCode(parameterTypes);
+            return _returnType.GetHashCode()
+                ^ Util.GetHashCode(_parameterTypes);
         }
 
-        public bool IsUnmanaged
-        {
-            get { return unmanaged; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the signature uses an unmanaged calling convention.
+        /// </summary>
+        public bool IsUnmanaged => _unmanaged;
 
-        public CallingConventions CallingConvention
-        {
-            get { return callingConvention; }
-        }
+        /// <summary>
+        /// Gets the managed calling convention of the signature.
+        /// </summary>
+        public CallingConventions CallingConvention => _callingConvention;
 
-        public CallingConvention UnmanagedCallingConvention
-        {
-            get { return unmanagedCallingConvention; }
-        }
+        /// <summary>
+        /// Gets the unmanaged calling convention of the signature.
+        /// </summary>
+        public CallingConvention UnmanagedCallingConvention => _unmanagedCallingConvention;
 
-        public Type ReturnType
-        {
-            get { return returnType; }
-        }
+        /// <summary>
+        /// Gets the return type of the signature.
+        /// </summary>
+        public Type ReturnType => _returnType;
 
-        public CustomModifiers GetReturnTypeCustomModifiers()
-        {
-            return customModifiers.GetReturnTypeCustomModifiers();
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the return type.
+        /// </summary>
+        /// <returns>The custom modifiers of the return type.</returns>
+        public CustomModifiers GetReturnTypeCustomModifiers() => _customModifiers.GetReturnTypeCustomModifiers();
 
-        public Type[] ParameterTypes
-        {
-            get { return Util.Copy(parameterTypes); }
-        }
+        /// <summary>
+        /// Gets a copy of the types of the fixed parameters.
+        /// </summary>
+        public Type[] ParameterTypes => Util.Copy(_parameterTypes);
 
-        public Type[] OptionalParameterTypes
-        {
-            get { return Util.Copy(optionalParameterTypes); }
-        }
+        /// <summary>
+        /// Gets a copy of the types of the variable arguments that follow the sentinel.
+        /// </summary>
+        public Type[] OptionalParameterTypes => Util.Copy(_optionalParameterTypes);
 
-        public CustomModifiers GetParameterCustomModifiers(int index)
-        {
-            return customModifiers.GetParameterCustomModifiers(index);
-        }
+        /// <summary>
+        /// Gets the custom modifiers of a parameter.
+        /// </summary>
+        /// <param name="index">The zero-based index of the parameter.</param>
+        /// <returns>The custom modifiers of the parameter.</returns>
+        public CustomModifiers GetParameterCustomModifiers(int index) => _customModifiers.GetParameterCustomModifiers(index);
 
+        /// <summary>
+        /// Gets a value indicating whether the signature refers to a type that could not be resolved.
+        /// </summary>
         public bool ContainsMissingType
         {
             get
             {
-                return returnType.__ContainsMissingType
-                    || Type.ContainsMissingType(parameterTypes)
-                    || Type.ContainsMissingType(optionalParameterTypes)
-                    || customModifiers.ContainsMissingType;
+                return _returnType.__ContainsMissingType
+                    || Type.ContainsMissingType(_parameterTypes)
+                    || Type.ContainsMissingType(_optionalParameterTypes)
+                    || _customModifiers.ContainsMissingType;
             }
         }
 

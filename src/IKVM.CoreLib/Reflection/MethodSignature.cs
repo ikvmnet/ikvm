@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -34,136 +34,183 @@ namespace IKVM.Reflection
 {
 
     /// <summary>
-    /// Represents a method signature from IL metadadata.
+    /// Represents a method signature from IL metadata: the calling convention, generic parameter count, return type,
+    /// parameter types and their custom modifiers. Within a signature, the type parameters of a generic method are
+    /// kept unbound so that signatures of a generic method definition and of its declarations compare equal.
     /// </summary>
     sealed class MethodSignature : Signature
     {
 
+        /// <summary>
+        /// A generic context used while reading the signature of a generic method. Type parameters of the declaring
+        /// type come from the original context, while method type parameters are left unbound.
+        /// </summary>
         sealed class UnboundGenericMethodContext : IGenericContext
         {
 
-            readonly IGenericContext original;
+            readonly IGenericContext _original;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="original"></param>
+            /// <param name="original">The context that supplies the type arguments of the declaring type.</param>
             internal UnboundGenericMethodContext(IGenericContext original)
             {
-                this.original = original;
+                _original = original;
             }
 
-            public Type GetGenericTypeArgument(int index)
-            {
-                return original.GetGenericTypeArgument(index);
-            }
+            /// <summary>
+            /// Gets the type argument at the specified position from the original context.
+            /// </summary>
+            /// <param name="index">The zero-based position of the type parameter.</param>
+            /// <returns>The type argument supplied by the original context.</returns>
+            public Type GetGenericTypeArgument(int index) => _original.GetGenericTypeArgument(index);
 
-            public Type GetGenericMethodArgument(int index)
-            {
-                return UnboundGenericMethodParameter.Make(index);
-            }
+            /// <summary>
+            /// Gets an unbound generic method parameter at the specified position.
+            /// </summary>
+            /// <param name="index">The zero-based position of the method type parameter.</param>
+            /// <returns>The <see cref="UnboundGenericMethodParameter"/> for <paramref name="index"/>.</returns>
+            public Type GetGenericMethodArgument(int index) => UnboundGenericMethodParameter.Make(index);
 
         }
 
+        /// <summary>
+        /// Binds the type parameters in a signature to the type arguments of a declaring type and, optionally, to the
+        /// type arguments of a generic method instantiation.
+        /// </summary>
         sealed class Binder : IGenericBinder
         {
 
-            readonly Type declaringType;
-            readonly Type[] methodArgs;
+            readonly Type _declaringType;
+            readonly Type[] _methodArgs;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            /// <param name="declaringType"></param>
-            /// <param name="methodArgs"></param>
+            /// <param name="declaringType">The type that supplies the type arguments for type parameters.</param>
+            /// <param name="methodArgs">The type arguments for method type parameters, or <see langword="null"/> to leave them unbound.</param>
             internal Binder(Type declaringType, Type[] methodArgs)
             {
-                this.declaringType = declaringType;
-                this.methodArgs = methodArgs;
+                _declaringType = declaringType;
+                _methodArgs = methodArgs;
             }
 
-            public Type BindTypeParameter(Type type)
-            {
-                return declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
-            }
+            /// <summary>
+            /// Binds a type parameter to the corresponding type argument of the declaring type.
+            /// </summary>
+            /// <param name="type">The type parameter to bind.</param>
+            /// <returns>The type argument of the declaring type at the parameter's position.</returns>
+            public Type BindTypeParameter(Type type) => _declaringType.GetGenericTypeArgument(type.GenericParameterPosition);
 
+            /// <summary>
+            /// Binds a method type parameter to the corresponding method type argument.
+            /// </summary>
+            /// <param name="type">The method type parameter to bind.</param>
+            /// <returns>The method type argument at the parameter's position, or <paramref name="type"/> itself if no method type arguments were given.</returns>
             public Type BindMethodParameter(Type type)
             {
-                if (methodArgs == null)
+                if (_methodArgs == null)
                     return type;
 
-                return methodArgs[type.GenericParameterPosition];
+                return _methodArgs[type.GenericParameterPosition];
             }
+
         }
 
+        /// <summary>
+        /// Replaces the method type parameters in a signature with unbound generic method parameters and leaves type
+        /// parameters alone. Used by <see cref="MakeFromBuilder"/> to normalize the signatures of generic methods.
+        /// </summary>
         sealed class Unbinder : IGenericBinder
         {
 
-            internal static readonly Unbinder Instance = new Unbinder();
+            /// <summary>
+            /// The single shared instance.
+            /// </summary>
+            internal static readonly Unbinder Instance = new();
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             Unbinder()
             {
-
             }
 
-            public Type BindTypeParameter(Type type)
-            {
-                return type;
-            }
+            /// <summary>
+            /// Leaves a type parameter unchanged.
+            /// </summary>
+            /// <param name="type">The type parameter.</param>
+            /// <returns><paramref name="type"/>.</returns>
+            public Type BindTypeParameter(Type type) => type;
 
-            public Type BindMethodParameter(Type type)
-            {
-                return UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
-            }
+            /// <summary>
+            /// Replaces a method type parameter with the unbound generic method parameter at the same position.
+            /// </summary>
+            /// <param name="type">The method type parameter.</param>
+            /// <returns>The <see cref="UnboundGenericMethodParameter"/> at the position of <paramref name="type"/>.</returns>
+            public Type BindMethodParameter(Type type) => UnboundGenericMethodParameter.Make(type.GenericParameterPosition);
 
         }
 
-        readonly Type returnType;
-        readonly Type[] parameterTypes;
-        readonly PackedCustomModifiers modifiers;
-        readonly CallingConventions callingConvention;
-        readonly int genericParamCount;
+        readonly Type _returnType;
+        readonly Type[] _parameterTypes;
+        readonly PackedCustomModifiers _modifiers;
+        readonly CallingConventions _callingConvention;
+        readonly int _genericParamCount;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="returnType"></param>
-        /// <param name="parameterTypes"></param>
-        /// <param name="modifiers"></param>
-        /// <param name="callingConvention"></param>
-        /// <param name="genericParamCount"></param>
+        /// <param name="returnType">The return type.</param>
+        /// <param name="parameterTypes">The parameter types. The array is kept, not copied.</param>
+        /// <param name="modifiers">The custom modifiers of the return type and parameters.</param>
+        /// <param name="callingConvention">The calling convention.</param>
+        /// <param name="genericParamCount">The number of generic method parameters, or 0 for a non-generic method.</param>
         internal MethodSignature(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
         {
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-            this.modifiers = modifiers;
-            this.callingConvention = callingConvention;
-            this.genericParamCount = genericParamCount;
+            _returnType = returnType;
+            _parameterTypes = parameterTypes;
+            _modifiers = modifiers;
+            _callingConvention = callingConvention;
+            _genericParamCount = genericParamCount;
         }
 
+        /// <summary>
+        /// Determines whether the specified object is a method signature with the same calling convention, generic
+        /// parameter count, return type, parameter types and custom modifiers.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns><see langword="true"/> if the signatures are equal; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
-            var other = obj as MethodSignature;
-            return other != null
-                && other.callingConvention == callingConvention
-                && other.genericParamCount == genericParamCount
-                && other.returnType.Equals(returnType)
-                && Util.ArrayEquals(other.parameterTypes, parameterTypes)
-                && other.modifiers.Equals(modifiers);
+            return obj is MethodSignature other
+                && other._callingConvention == _callingConvention
+                && other._genericParamCount == _genericParamCount
+                && other._returnType.Equals(_returnType)
+                && Util.ArrayEquals(other._parameterTypes, _parameterTypes)
+                && other._modifiers.Equals(_modifiers);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
-            return genericParamCount ^ 77 * (int)callingConvention
-                ^ 3 * returnType.GetHashCode()
-                ^ Util.GetHashCode(parameterTypes) * 5
-                ^ modifiers.GetHashCode() * 55;
+            return _genericParamCount ^ 77 * (int)_callingConvention
+                ^ 3 * _returnType.GetHashCode()
+                ^ Util.GetHashCode(_parameterTypes) * 5
+                ^ _modifiers.GetHashCode() * 55;
         }
 
-        internal static MethodSignature ReadSig(ModuleReader module, ByteReader br, IGenericContext context)
+        /// <summary>
+        /// Reads a MethodDefSig or MethodRefSig blob. For a vararg signature, reading stops at the sentinel, so only
+        /// the fixed parameters are returned.
+        /// </summary>
+        /// <param name="module">The module the signature is read from.</param>
+        /// <param name="br">The reader positioned at the start of the signature.</param>
+        /// <param name="context">The generic context used to resolve type parameters.</param>
+        /// <returns>The method signature.</returns>
+        /// <exception cref="BadImageFormatException">The calling convention is not a managed default or vararg convention.</exception>
+        internal static MethodSignature ReadSig(ModuleReader module, BlobReader br, IGenericContext context)
         {
             var flags = br.ReadByte();
             var callingConvention = (flags & 7) switch
@@ -182,17 +229,17 @@ namespace IKVM.Reflection
             var genericParamCount = 0;
             if ((flags & GENERIC) != 0)
             {
-                genericParamCount = br.ReadCompressedUInt();
+                genericParamCount = br.ReadCompressedInteger();
                 context = new UnboundGenericMethodContext(context);
             }
 
-            var paramCount = br.ReadCompressedUInt();
+            var paramCount = br.ReadCompressedInteger();
             CustomModifiers[] modifiers = null;
-            PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
-            var returnType = ReadRetType(module, br, context);
+            PackedCustomModifiers.Pack(ref modifiers, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+            var returnType = ReadRetType(module, ref br, context);
 
             var parameterTypes = new Type[paramCount];
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < parameterTypes.Length; i++)
             {
                 if ((callingConvention & CallingConventions.VarArgs) != 0 && br.PeekByte() == SENTINEL)
                 {
@@ -203,14 +250,23 @@ namespace IKVM.Reflection
                     break;
                 }
 
-                PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                parameterTypes[i] = ReadParam(module, br, context);
+                PackedCustomModifiers.Pack(ref modifiers, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                parameterTypes[i] = ReadParam(module, ref br, context);
             }
 
             return new MethodSignature(returnType, parameterTypes, PackedCustomModifiers.Wrap(modifiers), callingConvention, genericParamCount);
         }
 
-        internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ByteReader br, IGenericContext context)
+        /// <summary>
+        /// Reads a StandAloneMethodSig blob, as used by <c>calli</c>, including unmanaged calling conventions and the
+        /// optional parameters after a vararg sentinel.
+        /// </summary>
+        /// <param name="module">The module the signature is read from.</param>
+        /// <param name="br">The reader positioned at the start of the signature.</param>
+        /// <param name="context">The generic context used to resolve type parameters.</param>
+        /// <returns>The stand-alone method signature.</returns>
+        /// <exception cref="BadImageFormatException">The calling convention is not recognized, or the signature is marked generic.</exception>
+        internal static __StandAloneMethodSig ReadStandAloneMethodSig(ModuleReader module, ref BlobReader br, IGenericContext context)
         {
             CallingConventions callingConvention = 0;
             System.Runtime.InteropServices.CallingConvention unmanagedCallingConvention = 0;
@@ -254,16 +310,16 @@ namespace IKVM.Reflection
             if ((flags & GENERIC) != 0)
                 throw new BadImageFormatException();
 
-            var paramCount = br.ReadCompressedUInt();
+            var paramCount = br.ReadCompressedInteger();
             CustomModifiers[] customModifiers = null;
-            PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, br, context), paramCount + 1);
+            PackedCustomModifiers.Pack(ref customModifiers, 0, CustomModifiers.Read(module, ref br, context), paramCount + 1);
 
-            var returnType = ReadRetType(module, br, context);
+            var returnType = ReadRetType(module, ref br, context);
 
             var parameterTypes = new List<Type>();
             var optionalParameterTypes = new List<Type>();
             var curr = parameterTypes;
-            for (int i = 0; i < paramCount; i++)
+            for (var i = 0; i < paramCount; i++)
             {
                 if (br.PeekByte() == SENTINEL)
                 {
@@ -271,59 +327,93 @@ namespace IKVM.Reflection
                     curr = optionalParameterTypes;
                 }
 
-                PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, br, context), paramCount + 1);
-                curr.Add(ReadParam(module, br, context));
+                PackedCustomModifiers.Pack(ref customModifiers, i + 1, CustomModifiers.Read(module, ref br, context), paramCount + 1);
+                curr.Add(ReadParam(module, ref br, context));
             }
 
             return new __StandAloneMethodSig(unmanaged, unmanagedCallingConvention, callingConvention, returnType, parameterTypes.ToArray(), optionalParameterTypes.ToArray(), PackedCustomModifiers.Wrap(customModifiers));
         }
 
-        internal int GetParameterCount()
-        {
-            return parameterTypes.Length;
-        }
+        /// <summary>
+        /// Gets the number of parameters in the signature.
+        /// </summary>
+        /// <returns>The number of parameters.</returns>
+        internal int GetParameterCount() => _parameterTypes.Length;
 
-        internal Type GetParameterType(int index)
-        {
-            return parameterTypes[index];
-        }
+        /// <summary>
+        /// Gets the unbound type of the parameter at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based position of the parameter.</param>
+        /// <returns>The parameter type as stored in the signature.</returns>
+        internal Type GetParameterType(int index) => _parameterTypes[index];
 
-        internal Type GetReturnType(IGenericBinder binder)
-        {
-            return returnType.BindTypeParameters(binder);
-        }
+        /// <summary>
+        /// Gets the return type with its type parameters bound by the specified binder.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <returns>The bound return type.</returns>
+        internal Type GetReturnType(IGenericBinder binder) => _returnType.BindTypeParameters(binder);
 
-        internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder)
-        {
-            return modifiers.GetReturnTypeCustomModifiers().Bind(binder);
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the return type with their type parameters bound by the specified binder.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <returns>The bound custom modifiers of the return type.</returns>
+        internal CustomModifiers GetReturnTypeCustomModifiers(IGenericBinder binder) => _modifiers.GetReturnTypeCustomModifiers().Bind(binder);
 
-        internal Type GetParameterType(IGenericBinder binder, int index)
-        {
-            return parameterTypes[index].BindTypeParameters(binder);
-        }
+        /// <summary>
+        /// Gets the type of the parameter at the specified position with its type parameters bound by the specified
+        /// binder.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <param name="index">The zero-based position of the parameter.</param>
+        /// <returns>The bound parameter type.</returns>
+        internal Type GetParameterType(IGenericBinder binder, int index) => _parameterTypes[index].BindTypeParameters(binder);
 
-        internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index)
-        {
-            return modifiers.GetParameterCustomModifiers(index).Bind(binder);
-        }
+        /// <summary>
+        /// Gets the custom modifiers of the parameter at the specified position with their type parameters bound by the
+        /// specified binder.
+        /// </summary>
+        /// <param name="binder">The binder that supplies the generic arguments.</param>
+        /// <param name="index">The zero-based position of the parameter.</param>
+        /// <returns>The bound custom modifiers of the parameter.</returns>
+        internal CustomModifiers GetParameterCustomModifiers(IGenericBinder binder, int index) =>
+            _modifiers.GetParameterCustomModifiers(index).Bind(binder);
 
-        internal CallingConventions CallingConvention
-        {
-            get { return callingConvention; }
-        }
+        /// <summary>
+        /// Gets the calling convention of the signature.
+        /// </summary>
+        internal CallingConventions CallingConvention => _callingConvention;
 
-        internal int GenericParameterCount
-        {
-            get { return genericParamCount; }
-        }
+        /// <summary>
+        /// Gets the number of generic method parameters, or 0 for a non-generic method.
+        /// </summary>
+        internal int GenericParameterCount => _genericParamCount;
 
+        /// <summary>
+        /// Creates a copy of the signature with its type parameters bound to the type arguments of the specified type
+        /// and, optionally, its method type parameters bound to the specified method type arguments.
+        /// </summary>
+        /// <param name="type">The type that supplies the type arguments.</param>
+        /// <param name="methodArgs">The method type arguments, or <see langword="null"/> to leave method type parameters unbound.</param>
+        /// <returns>The bound signature.</returns>
         internal MethodSignature Bind(Type type, Type[] methodArgs)
         {
             var binder = new Binder(type, methodArgs);
-            return new MethodSignature(returnType.BindTypeParameters(binder), BindTypeParameters(binder, parameterTypes), modifiers.Bind(binder), callingConvention, genericParamCount);
+            return new MethodSignature(_returnType.BindTypeParameters(binder), BindTypeParameters(binder, _parameterTypes), _modifiers.Bind(binder), _callingConvention, _genericParamCount);
         }
 
+        /// <summary>
+        /// Creates a signature from the types given to a builder. For a generic method, the method's own type
+        /// parameters are replaced with unbound generic method parameters so the signature compares equal to one read
+        /// from metadata.
+        /// </summary>
+        /// <param name="returnType">The return type.</param>
+        /// <param name="parameterTypes">The parameter types.</param>
+        /// <param name="modifiers">The custom modifiers of the return type and parameters.</param>
+        /// <param name="callingConvention">The calling convention.</param>
+        /// <param name="genericParamCount">The number of generic method parameters, or 0 for a non-generic method.</param>
+        /// <returns>The method signature.</returns>
         internal static MethodSignature MakeFromBuilder(Type returnType, Type[] parameterTypes, PackedCustomModifiers modifiers, CallingConventions callingConvention, int genericParamCount)
         {
             if (genericParamCount > 0)
@@ -336,29 +426,42 @@ namespace IKVM.Reflection
             return new MethodSignature(returnType, parameterTypes, modifiers, callingConvention, genericParamCount);
         }
 
-        internal bool MatchParameterTypes(MethodSignature other)
-        {
-            return Util.ArrayEquals(other.parameterTypes, parameterTypes);
-        }
+        /// <summary>
+        /// Determines whether another signature has the same parameter types, ignoring everything else.
+        /// </summary>
+        /// <param name="other">The signature to compare with.</param>
+        /// <returns><see langword="true"/> if the parameter types are equal; otherwise, <see langword="false"/>.</returns>
+        internal bool MatchParameterTypes(MethodSignature other) => Util.ArrayEquals(other._parameterTypes, _parameterTypes);
 
-        internal bool MatchParameterTypes(Type[] types)
-        {
-            return Util.ArrayEquals(types, parameterTypes);
-        }
+        /// <summary>
+        /// Determines whether the signature has the specified parameter types.
+        /// </summary>
+        /// <param name="types">The parameter types to compare with.</param>
+        /// <returns><see langword="true"/> if the parameter types are equal; otherwise, <see langword="false"/>.</returns>
+        internal bool MatchParameterTypes(Type[] types) => Util.ArrayEquals(types, _parameterTypes);
 
-        internal override void Write(ModuleBuilder module, BlobBuilder bb)
-        {
-            WriteImpl(module, bb, parameterTypes.Length);
-        }
+        /// <summary>
+        /// Writes the signature as a MethodDefSig blob.
+        /// </summary>
+        /// <param name="module">The module the signature is written for, used to obtain type tokens.</param>
+        /// <param name="bb">The blob builder to write to.</param>
+        internal override void Write(ModuleBuilder module, BlobBuilder bb) => WriteImpl(module, bb, _parameterTypes.Length);
 
+        /// <summary>
+        /// Writes the signature as a MethodRefSig blob, appending the optional vararg parameters after a sentinel.
+        /// </summary>
+        /// <param name="module">The module the signature is written for, used to obtain type tokens.</param>
+        /// <param name="bb">The blob builder to write to.</param>
+        /// <param name="optionalParameterTypes">The types of the optional vararg parameters.</param>
+        /// <param name="customModifiers">The custom modifiers of the optional parameters, or <see langword="null"/>.</param>
         internal void WriteMethodRef(ModuleBuilder module, BlobBuilder bb, Type[] optionalParameterTypes, CustomModifiers[] customModifiers)
         {
-            WriteImpl(module, bb, parameterTypes.Length + optionalParameterTypes.Length);
+            WriteImpl(module, bb, _parameterTypes.Length + optionalParameterTypes.Length);
 
             if (optionalParameterTypes.Length > 0)
             {
                 bb.WriteByte(SENTINEL);
-                for (int i = 0; i < optionalParameterTypes.Length; i++)
+                for (var i = 0; i < optionalParameterTypes.Length; i++)
                 {
                     WriteCustomModifiers(module, bb, Util.NullSafeElementAt(customModifiers, i));
                     WriteType(module, bb, optionalParameterTypes[i]);
@@ -366,16 +469,22 @@ namespace IKVM.Reflection
             }
         }
 
+        /// <summary>
+        /// Writes the calling convention, generic parameter count, parameter count, return type and fixed parameters.
+        /// </summary>
+        /// <param name="module">The module the signature is written for, used to obtain type tokens.</param>
+        /// <param name="bb">The blob builder to write to.</param>
+        /// <param name="parameterCount">The parameter count to write, which includes any optional vararg parameters.</param>
         void WriteImpl(ModuleBuilder module, BlobBuilder bb, int parameterCount)
         {
             byte first;
 
-            if ((callingConvention & CallingConventions.Any) == CallingConventions.VarArgs)
+            if ((_callingConvention & CallingConventions.Any) == CallingConventions.VarArgs)
             {
-                Debug.Assert(genericParamCount == 0);
+                Debug.Assert(_genericParamCount == 0);
                 first = VARARG;
             }
-            else if (genericParamCount > 0)
+            else if (_genericParamCount > 0)
             {
                 first = GENERIC;
             }
@@ -384,27 +493,28 @@ namespace IKVM.Reflection
                 first = DEFAULT;
             }
 
-            if ((callingConvention & CallingConventions.HasThis) != 0)
+            if ((_callingConvention & CallingConventions.HasThis) != 0)
                 first |= HASTHIS;
 
-            if ((callingConvention & CallingConventions.ExplicitThis) != 0)
+            if ((_callingConvention & CallingConventions.ExplicitThis) != 0)
                 first |= EXPLICITTHIS;
 
             bb.WriteByte(first);
 
-            if (genericParamCount > 0)
-                bb.WriteCompressedInteger(genericParamCount);
+            if (_genericParamCount > 0)
+                bb.WriteCompressedInteger(_genericParamCount);
 
             bb.WriteCompressedInteger(parameterCount);
+
             // RetType
-            WriteCustomModifiers(module, bb, modifiers.GetReturnTypeCustomModifiers());
-            WriteType(module, bb, returnType);
+            WriteCustomModifiers(module, bb, _modifiers.GetReturnTypeCustomModifiers());
+            WriteType(module, bb, _returnType);
 
             // Param
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (var i = 0; i < _parameterTypes.Length; i++)
             {
-                WriteCustomModifiers(module, bb, modifiers.GetParameterCustomModifiers(i));
-                WriteType(module, bb, parameterTypes[i]);
+                WriteCustomModifiers(module, bb, _modifiers.GetParameterCustomModifiers(i));
+                WriteType(module, bb, _parameterTypes[i]);
             }
         }
 

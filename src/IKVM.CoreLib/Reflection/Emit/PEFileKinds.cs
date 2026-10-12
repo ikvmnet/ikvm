@@ -19,19 +19,33 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 
 namespace IKVM.Reflection.Emit
 {
 
-    internal enum PEFileKinds
-	{
+    /// <summary>
+    /// Specifies the type of the portable executable (PE) file.
+    /// </summary>
+    enum PEFileKinds
+    {
 
-		Dll = 1,
-		ConsoleApplication = 2,
-		WindowApplication = 3,
+        /// <summary>
+        /// The portable executable (PE) file is a DLL.
+        /// </summary>
+        Dll = 1,
 
-	}
+        /// <summary>
+        /// The application is a console (not a Windows-based) application.
+        /// </summary>
+        ConsoleApplication = 2,
+
+        /// <summary>
+        /// The application is a Windows-based application.
+        /// </summary>
+        WindowApplication = 3,
+
+    }
 
 }

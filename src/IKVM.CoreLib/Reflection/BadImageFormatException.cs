@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -19,15 +19,18 @@
 
   Jeroen Frijters
   jeroen@frijters.net
-  
+
 */
 using System;
 
 namespace IKVM.Reflection
 {
 
+    /// <summary>
+    /// The exception that is thrown when the file image of an assembly or module is invalid.
+    /// </summary>
     [Serializable]
-    internal sealed class BadImageFormatException : Exception
+    sealed class BadImageFormatException : Exception
     {
 
         /// <summary>
@@ -38,9 +41,9 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance with the specified error message.
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="message">The message that describes the error.</param>
         public BadImageFormatException(string message) :
             base(message)
         {

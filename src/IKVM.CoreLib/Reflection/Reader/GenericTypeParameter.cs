@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,117 +21,86 @@
   jeroen@frijters.net
   
 */
-using System.Collections.Generic;
-
-using IKVM.Reflection.Metadata;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a generic type or method parameter defined in the GenericParam table of a module that was read from a file.
+    /// </summary>
     sealed class GenericTypeParameter : TypeParameterType
     {
 
-        readonly ModuleReader module;
-        readonly int index;
+        readonly ModuleReader _module;
+        readonly GenericParameterHandle _handle;
+        readonly GenericParameter _definition;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="index"></param>
-        /// <param name="sigElementType"></param>
-        internal GenericTypeParameter(ModuleReader module, int index, byte sigElementType) :
+        /// <param name="module">The module that defines the generic parameter.</param>
+        /// <param name="handle">The handle of the generic parameter in the GenericParam table.</param>
+        /// <param name="sigElementType">The signature element type: <c>ELEMENT_TYPE_VAR</c> for a type parameter or <c>ELEMENT_TYPE_MVAR</c> for a method parameter.</param>
+        internal GenericTypeParameter(ModuleReader module, GenericParameterHandle handle, byte sigElementType) :
             base(sigElementType)
         {
-            this.module = module;
-            this.index = index;
+            _module = module;
+            _handle = handle;
+            _definition = module.Metadata.GetGenericParameter(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
+        /// <inheritdoc />
+        public override bool Equals(object obj) => base.Equals(obj);
 
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => base.GetHashCode();
 
-        public override string Namespace
-        {
-            get { return DeclaringType.Namespace; }
-        }
+        /// <inheritdoc />
+        public override string Namespace => (DeclaringType ?? DeclaringMethod.DeclaringType)?.Namespace;
 
-        public override string Name
-        {
-            get { return module.GetString(module.GenericParamTable.records[index].Name); }
-        }
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
 
-        public override Module Module
-        {
-            get { return module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _module;
 
-        public override int MetadataToken
-        {
-            get { return (GenericParamTable.Index << 24) + index + 1; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
 
-        public override int GenericParameterPosition
-        {
-            get { return module.GenericParamTable.records[index].Number; }
-        }
+        /// <inheritdoc />
+        public override int GenericParameterPosition => _definition.Index;
 
-        public override Type DeclaringType
-        {
-            get
-            {
-                var owner = module.GenericParamTable.records[index].Owner;
-                return (owner >> 24) == TypeDefTable.Index ? module.ResolveType(owner) : null;
-            }
-        }
+        /// <inheritdoc />
+        public override Type DeclaringType =>
+            _definition.Parent.Kind == HandleKind.TypeDefinition ? _module.ResolveType(MetadataTokens.GetToken(_definition.Parent)) : null;
 
-        public override MethodBase DeclaringMethod
-        {
-            get
-            {
-                var owner = module.GenericParamTable.records[index].Owner;
-                return (owner >> 24) == MethodDefTable.Index ? module.ResolveMethod(owner) : null;
-            }
-        }
+        /// <inheritdoc />
+        public override MethodBase DeclaringMethod =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? _module.ResolveMethod(MetadataTokens.GetToken(_definition.Parent)) : null;
 
+        /// <inheritdoc />
         public override Type[] GetGenericParameterConstraints()
         {
             var context = (DeclaringMethod as IGenericContext) ?? DeclaringType;
-            var list = new List<Type>();
-            foreach (int i in module.GenericParamConstraint.Filter(MetadataToken))
-                list.Add(module.ResolveType(module.GenericParamConstraint.records[i].Constraint, context));
+            var handles = _definition.GetConstraints();
+            var constraints = handles.Count == 0 ? Type.EmptyTypes : new Type[handles.Count];
+            for (var i = 0; i < constraints.Length; i++)
+                constraints[i] = _module.ResolveType(MetadataTokens.GetToken(_module.Metadata.GetGenericParameterConstraint(handles[i]).Type), context);
 
-            return list.ToArray();
+            return constraints;
         }
 
-        public override GenericParameterAttributes GenericParameterAttributes
-        {
-            get { return (GenericParameterAttributes)module.GenericParamTable.records[index].Flags; }
-        }
+        /// <inheritdoc />
+        public override GenericParameterAttributes GenericParameterAttributes => (GenericParameterAttributes)_definition.Attributes;
 
-        internal override Type BindTypeParameters(IGenericBinder binder)
-        {
-            var owner = module.GenericParamTable.records[index].Owner;
-            if ((owner >> 24) == MethodDefTable.Index)
-            {
-                return binder.BindMethodParameter(this);
-            }
-            else
-            {
-                return binder.BindTypeParameter(this);
-            }
-        }
+        /// <inheritdoc />
+        internal override Type BindTypeParameters(IGenericBinder binder) =>
+            _definition.Parent.Kind == HandleKind.MethodDefinition ? binder.BindMethodParameter(this) : binder.BindTypeParameter(this);
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => true;
 
     }
 

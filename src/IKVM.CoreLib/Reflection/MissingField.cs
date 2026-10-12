@@ -23,86 +23,104 @@
 */
 namespace IKVM.Reflection
 {
+
+    /// <summary>
+    /// A field that is referenced but could not be found, either because its declaring type is missing or because the
+    /// type does not declare it and <see cref="Universe.MissingMemberResolution"/> is enabled. The field is described
+    /// by its declaring type, name and signature. Members that need more than the signature forward to the real field
+    /// if it can be found later; otherwise they throw <see cref="MissingMemberException"/>.
+    /// </summary>
     sealed class MissingField : FieldInfo
     {
 
-        readonly Type declaringType;
-        readonly string name;
-        readonly FieldSignature signature;
-        FieldInfo forwarder;
+        readonly Type _declaringType;
+        readonly string _name;
+        readonly FieldSignature _signature;
+
+        // the real field, once it has been found
+        FieldInfo _forwarder;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="name"></param>
-        /// <param name="signature"></param>
+        /// <param name="declaringType">The type that should declare the field.</param>
+        /// <param name="name">The name of the field.</param>
+        /// <param name="signature">The signature of the field.</param>
         internal MissingField(Type declaringType, string name, FieldSignature signature)
         {
-            this.declaringType = declaringType;
-            this.name = name;
-            this.signature = signature;
+            _declaringType = declaringType;
+            _name = name;
+            _signature = signature;
         }
 
+        /// <summary>
+        /// Gets the real field.
+        /// </summary>
+        /// <exception cref="MissingMemberException">The field still cannot be found.</exception>
         FieldInfo Forwarder => TryGetForwarder() ?? throw new MissingMemberException(this);
 
+        /// <summary>
+        /// Looks up the real field in the declaring type, if the declaring type is not itself missing, and caches it.
+        /// </summary>
+        /// <returns>The real field, or <see langword="null"/> if it cannot be found.</returns>
         FieldInfo TryGetForwarder()
         {
-            if (forwarder == null && !declaringType.__IsMissing)
-                forwarder = declaringType.FindField(name, signature);
+            if (_forwarder == null && !_declaringType.__IsMissing)
+                _forwarder = _declaringType.FindField(_name, _signature);
 
-            return forwarder;
+            return _forwarder;
         }
 
-        public override bool __IsMissing
-        {
-            get { return TryGetForwarder() == null; }
-        }
+        /// <summary>
+        /// Gets whether the field is still missing, that is, whether the real field cannot be found.
+        /// </summary>
+        public override bool __IsMissing => TryGetForwarder() == null;
 
-        public override FieldAttributes Attributes
-        {
-            get { return Forwarder.Attributes; }
-        }
+        /// <inheritdoc />
+        public override FieldAttributes Attributes => Forwarder.Attributes;
 
-        public override bool __TryGetFieldOffset(out int offset)
-        {
-            return Forwarder.__TryGetFieldOffset(out offset);
-        }
+        /// <inheritdoc />
+        public override bool __TryGetFieldOffset(out int offset) => Forwarder.__TryGetFieldOffset(out offset);
 
-        public override object GetRawConstantValue()
-        {
-            return Forwarder.GetRawConstantValue();
-        }
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => Forwarder.GetRawConstantValue();
 
-        internal override FieldSignature FieldSignature
-        {
-            get { return signature; }
-        }
+        /// <inheritdoc />
+        internal override FieldSignature FieldSignature => _signature;
 
+        /// <summary>
+        /// Imports the field into a module being built: the real field if it can be found, otherwise a MemberRef made
+        /// from the declaring type, name and signature.
+        /// </summary>
+        /// <param name="module">The module being built.</param>
+        /// <returns>The token of the field in <paramref name="module"/>.</returns>
         internal override int ImportTo(IKVM.Reflection.Emit.ModuleBuilder module)
         {
             var field = TryGetForwarder();
             if (field != null)
                 return field.ImportTo(module);
 
-            return module.ImportMethodOrField(declaringType, this.Name, this.FieldSignature);
+            return module.ImportMethodOrField(_declaringType, Name, FieldSignature);
         }
 
-        public override string Name
-        {
-            get { return name; }
-        }
+        /// <inheritdoc />
+        public override string Name => _name;
 
-        public override Type DeclaringType
-        {
-            get { return declaringType.IsModulePseudoType ? null : declaringType; }
-        }
+        /// <summary>
+        /// Gets the type that declares the field, or <see langword="null"/> if it is a global field declared by the
+        /// module pseudo type.
+        /// </summary>
+        public override Type DeclaringType => _declaringType.IsModulePseudoType ? null : _declaringType;
 
-        public override Module Module
-        {
-            get { return declaringType.Module; }
-        }
+        /// <inheritdoc />
+        public override Module Module => _declaringType.Module;
 
+        /// <summary>
+        /// Returns this field as a member of the given constructed generic type: the bound real field if it can be
+        /// found, otherwise a <see cref="GenericFieldInstance"/> over this missing field.
+        /// </summary>
+        /// <param name="type">The constructed type that supplies the type arguments.</param>
+        /// <returns>The bound field.</returns>
         internal override FieldInfo BindTypeParameters(Type type)
         {
             var forwarder = TryGetForwarder();
@@ -112,39 +130,37 @@ namespace IKVM.Reflection
             return new GenericFieldInstance(type, this);
         }
 
-        public override int MetadataToken
-        {
-            get { return Forwarder.MetadataToken; }
-        }
+        /// <inheritdoc />
+        public override int MetadataToken => Forwarder.MetadataToken;
 
+        /// <summary>
+        /// Determines whether the specified object is a missing field with the same declaring type, name and signature.
+        /// </summary>
+        /// <param name="obj">The object to compare with.</param>
+        /// <returns><see langword="true"/> if the fields are equal; otherwise, <see langword="false"/>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as MissingField;
             return other != null
-                && other.declaringType == declaringType
-                && other.name == name
-                && other.signature.Equals(signature);
+                && other._declaringType == _declaringType
+                && other._name == _name
+                && other._signature.Equals(_signature);
         }
 
-        public override int GetHashCode()
-        {
-            return declaringType.GetHashCode() ^ name.GetHashCode() ^ signature.GetHashCode();
-        }
+        /// <inheritdoc />
+        public override int GetHashCode() => _declaringType.GetHashCode() ^ _name.GetHashCode() ^ _signature.GetHashCode();
 
-        public override string ToString()
-        {
-            return FieldType.Name + " " + Name;
-        }
+        /// <summary>
+        /// Returns a string that represents the field, in the form <c>FieldTypeName Name</c>.
+        /// </summary>
+        /// <returns>A string that represents the current field.</returns>
+        public override string ToString() => FieldType.Name + " " + Name;
 
-        internal override int GetCurrentToken()
-        {
-            return Forwarder.GetCurrentToken();
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => Forwarder.GetCurrentToken();
 
-        internal override bool IsBaked
-        {
-            get { return Forwarder.IsBaked; }
-        }
+        /// <inheritdoc />
+        internal override bool IsBaked => Forwarder.IsBaked;
 
     }
 

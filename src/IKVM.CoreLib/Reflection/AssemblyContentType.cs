@@ -24,12 +24,22 @@
 namespace IKVM.Reflection
 {
 
-    internal enum AssemblyContentType
-	{
+    /// <summary>
+    /// Provides information about the type of code contained in an assembly.
+    /// </summary>
+    enum AssemblyContentType
+    {
 
-		Default = 0,
-		WindowsRuntime = 1,
+        /// <summary>
+        /// The assembly contains .NET code.
+        /// </summary>
+        Default = 0,
 
-	}
+        /// <summary>
+        /// The assembly contains Windows Runtime code.
+        /// </summary>
+        WindowsRuntime = 1,
+
+    }
 
 }

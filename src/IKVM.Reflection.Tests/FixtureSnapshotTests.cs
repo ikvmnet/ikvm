@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 using FluentAssertions;
 
@@ -14,6 +14,10 @@ namespace IKVM.Reflection.Tests
     public class FixtureSnapshotTests
     {
 
+        /// <summary>
+        /// Checks that the recorded snapshot for the host target framework matches what System.Reflection reports for the
+        /// fixture built for it, or regenerates the snapshot when <see cref="Fixture.UpdateSnapshots"/> is set.
+        /// </summary>
         [Fact]
         public void HostSnapshotIsCurrent()
         {

@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2008-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -40,6 +40,10 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Reflection.Writer
 {
 
+    /// <summary>
+    /// Writes a <see cref="IKVM.Reflection.Emit.ModuleBuilder"/> to a portable executable image, and optionally a
+    /// portable PDB, using the System.Reflection.Metadata writers.
+    /// </summary>
     static class ModuleWriter
     {
 
@@ -62,39 +66,42 @@ namespace IKVM.Reflection.Writer
         const ulong DefaultSizeOfStackCommit64Bit = 0x4000;
 
         const ushort DefaultFileAlignment32Bit = 0x200;
-        const ushort DefaultFileAlignment64Bit = 0x200; //both 32 and 64 bit binaries used this value in the native stack.
+        // both 32 and 64 bit binaries used this value in the native stack
+        const ushort DefaultFileAlignment64Bit = 0x200;
 
         const ushort DefaultSectionAlignment = 0x2000;
 
         /// <summary>
-        /// Writes the module specified by <paramref name="module"/>.
+        /// Writes the module specified by <paramref name="module"/> to the file named by its fully qualified name, and
+        /// its symbols, if the module emits them, to a PDB file next to it.
         /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="module"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="nativeResources"></param>
-        /// <param name="entryPoint"></param>
-        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint)
-        {
+        /// <param name="keyPair">The key pair used to strong name sign the image, or <see langword="null"/> to leave it unsigned.</param>
+        /// <param name="publicKey">The public key of the assembly, used to size the strong name signature, or <see langword="null"/> if the assembly has none.</param>
+        /// <param name="module">The module to write.</param>
+        /// <param name="fileKind">The kind of image to write.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <param name="nativeResources">The unmanaged resources to place in the image.</param>
+        /// <param name="entryPoint">The entry point of the image, or <see langword="null"/> if it has none.</param>
+        internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint) =>
             WriteModule(keyPair, publicKey, module, fileKind, portableExecutableKind, imageFileMachine, nativeResources, entryPoint, null, null, null, null);
-        }
 
         /// <summary>
-        /// Writes the module specified by <paramref name="module"/> to the specified <see cref="Stream"/>.
+        /// Writes the module specified by <paramref name="module"/> to the specified <see cref="Stream"/>. Streams that
+        /// are not supplied are opened on files named after the module, and closed when writing completes.
         /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="module"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="nativeResources"></param>
-        /// <param name="entryPoint"></param>
-        /// <param name="peStream"></param>
-        /// <param name="pdbStream"></param>
+        /// <param name="keyPair">The key pair used to strong name sign the image, or <see langword="null"/> to leave it unsigned.</param>
+        /// <param name="publicKey">The public key of the assembly, used to size the strong name signature, or <see langword="null"/> if the assembly has none.</param>
+        /// <param name="module">The module to write.</param>
+        /// <param name="fileKind">The kind of image to write.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <param name="nativeResources">The unmanaged resources to place in the image.</param>
+        /// <param name="entryPoint">The entry point of the image, or <see langword="null"/> if it has none.</param>
+        /// <param name="peFileName">The file name of the image, or <see langword="null"/> to use the module's fully qualified name.</param>
+        /// <param name="peStream">The stream that receives the image, or <see langword="null"/> to create the file named by <paramref name="peFileName"/>.</param>
+        /// <param name="pdbFileName">The file name of the PDB, or <see langword="null"/> to derive it from <paramref name="peFileName"/>.</param>
+        /// <param name="pdbStream">The stream that receives the PDB, or <see langword="null"/> to create the file named by <paramref name="pdbFileName"/>. Ignored if the module does not emit symbols.</param>
         internal static void WriteModule(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, string peFileName, Stream peStream, string pdbFileName, Stream pdbStream)
         {
             FileStream disposablePeStream = null;
@@ -123,20 +130,21 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Implementation of module writing.
+        /// Writes the module metadata, then serializes the PDB, if the module emits symbols, and the PE image, fixes up
+        /// the module version ID and strong name signs the image.
         /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="module"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="nativeResources"></param>
-        /// <param name="entryPoint"></param>
-        /// <param name="peFileName"></param>
-        /// <param name="peStream"></param>
-        /// <param name="pdbFileName"></param>
-        /// <param name="pdbStream"></param>
+        /// <param name="keyPair">The key pair used to strong name sign the image, or <see langword="null"/> to leave it unsigned.</param>
+        /// <param name="publicKey">The public key of the assembly, used to size the strong name signature, or <see langword="null"/> if the assembly has none.</param>
+        /// <param name="module">The module to write.</param>
+        /// <param name="fileKind">The kind of image to write.</param>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <param name="nativeResources">The unmanaged resources to place in the image.</param>
+        /// <param name="entryPoint">The entry point of the image, or <see langword="null"/> if it has none.</param>
+        /// <param name="peFileName">The file name of the image, used to derive the PDB file name.</param>
+        /// <param name="peStream">The stream that receives the image.</param>
+        /// <param name="pdbFileName">The file name of the PDB, recorded in the image's debug directory.</param>
+        /// <param name="pdbStream">The stream that receives the PDB, or <see langword="null"/> to embed the PDB in the image.</param>
         static void WriteModuleImpl(StrongNameKeyPair keyPair, byte[] publicKey, IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine, ModuleResourceSectionBuilder nativeResources, MethodInfo entryPoint, string peFileName, Stream peStream, string pdbFileName, Stream pdbStream)
         {
             // add some empty entries at the top just to ensure they are present
@@ -148,13 +156,13 @@ namespace IKVM.Reflection.Writer
             // write the module content
             WriteModuleImpl(module);
 
-            // are we outputing for a 64 bit architecture?
+            // are we outputting for a 64 bit architecture?
             var is64BitArch = imageFileMachine is ImageFileMachine.AMD64 or ImageFileMachine.ARM64 or ImageFileMachine.IA64;
 
             // initialize PE header builder
             var peHeaderBuilder = new PEHeaderBuilder(
                 machine: GetMachine(imageFileMachine),
-                sectionAlignment: GetSectionAlignment(module, is64BitArch),
+                sectionAlignment: GetSectionAlignment(),
                 fileAlignment: GetFileAlignment(module, is64BitArch),
                 imageBase: GetImageBase(module, fileKind, is64BitArch),
                 majorLinkerVersion: 0x30,
@@ -163,17 +171,17 @@ namespace IKVM.Reflection.Writer
                 minorOperatingSystemVersion: 0,
                 majorImageVersion: 0,
                 minorImageVersion: 0,
-                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine, fileKind),
-                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine, fileKind),
+                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine),
+                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine),
                 subsystem: GetSubsystem(fileKind),
                 dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)module.__DllCharacteristics,
                 imageCharacteristics: GetImageCharacteristics(imageFileMachine, fileKind),
-                sizeOfStackReserve: GetSizeOfStackReserve(module, is64BitArch),
-                sizeOfStackCommit: GetSizeOfStackCommit(module, is64BitArch),
-                sizeOfHeapReserve: GetSizeOfHeapReserve(module, is64BitArch),
-                sizeOfHeapCommit: GetSizeOfHeapCommit(module, is64BitArch));
+                sizeOfStackReserve: GetSizeOfStackReserve(is64BitArch),
+                sizeOfStackCommit: GetSizeOfStackCommit(is64BitArch),
+                sizeOfHeapReserve: GetSizeOfHeapReserve(is64BitArch),
+                sizeOfHeapCommit: GetSizeOfHeapCommit(is64BitArch));
 
-            // root builder provides access to information about the assembled type metadata
+            // the metadata root, whose row counts the PDB records and which the PE builder serializes
             var rootBuilder = new MetadataRootBuilder(module.Metadata);
             var debugBuilder = default(DebugDirectoryBuilder);
 
@@ -200,7 +208,7 @@ namespace IKVM.Reflection.Writer
                 var pdbContent = new BlobBuilder();
                 var pdbContentId = pdb.Serialize(pdbContent);
 
-                // we are going to add a builder for a debug diretory
+                // we are going to add a builder for a debug directory
                 debugBuilder = new DebugDirectoryBuilder();
 
                 // mark symbols as reproducible
@@ -211,7 +219,7 @@ namespace IKVM.Reflection.Writer
                 if (pdbContentHash.IsDefaultOrEmpty == false)
                     debugBuilder.AddPdbChecksumEntry(module.Universe.PdbChecksumAlgorithm.Name, pdbContentHash);
 
-                // file name specified means we are generating an external PDB
+                // a PDB stream means we are generating an external PDB
                 if (pdbStream != null)
                 {
                     // default PDB file name
@@ -239,7 +247,7 @@ namespace IKVM.Reflection.Writer
             var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
             var peBuilder = new ManagedPEBuilder(
                 peHeaderBuilder,
-                new MetadataRootBuilder(module.Metadata),
+                rootBuilder,
                 module.ILStream,
                 managedResources: module.ResourceStream,
                 nativeResources: nativeResources.Count > 0 ? nativeResources : null,
@@ -268,13 +276,14 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// We pad the path to this minimal size to allow some tools to patch the path without the need to rewrite the entire image.
+        /// Pads the PDB path recorded in the CodeView debug entry to a minimal size, so that some tools can patch the
+        /// path without the need to rewrite the entire image.
         /// </summary>
         /// <remarks>
         /// This is a workaround. It is copied from Roslyn.
         /// </remarks>
-        /// <param name="path"></param>
-        /// <returns></returns>
+        /// <param name="path">The PDB path.</param>
+        /// <returns>The path followed by enough null characters to make it at least 260 bytes long in UTF-8, including the terminator.</returns>
         static string PadPdbPath(string path)
         {
             const int MinLength = 260;
@@ -282,15 +291,13 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Writes the managed metadata to the <see cref="MetadataBuilder"/>.
+        /// Writes the managed metadata and resources of the module to its <see cref="MetadataBuilder"/>.
         /// </summary>
-        /// <param name="module"></param>
+        /// <param name="module">The module to write.</param>
         static void WriteModuleImpl(IKVM.Reflection.Emit.ModuleBuilder module)
         {
             // registers replacements for pseudo tokens
             module.FixupMethodBodyTokens();
-
-            // fixup content in tables
 
             // close the symbol writer which may cause entries in the module table
             module.GetSymWriter()?.Close();
@@ -303,9 +310,9 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Translates the <see cref="ImageFileMachine"/> parameter into a <see cref="Machine"/> value.
         /// </summary>
-        /// <param name="imageFileMachine"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <returns>The machine type for the PE header.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="imageFileMachine"/> is not a supported platform.</exception>
         static Machine GetMachine(ImageFileMachine imageFileMachine)
         {
             return imageFileMachine switch
@@ -321,22 +328,18 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Gets the appropriate section alignment for the image.
+        /// Gets the appropriate section alignment for the image. This is currently always the default alignment.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return DefaultSectionAlignment;
-        }
+        /// <returns>The section alignment, in bytes.</returns>
+        static int GetSectionAlignment() => DefaultSectionAlignment;
 
         /// <summary>
-        /// Gets the appropriate file alignment for the image.
+        /// Gets the appropriate file alignment for the image: the alignment set on the module, or the default if none
+        /// was set.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
+        /// <param name="module">The module being written.</param>
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The file alignment, in bytes.</returns>
         static int GetFileAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
         {
             if (module.__FileAlignment == 0)
@@ -346,18 +349,18 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Gets the base address of the image.
+        /// Gets the base address of the image: the image base set on the module, rounded to a multiple of 64 KB, or the
+        /// default for the kind of image if that rounds to zero.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="fileKind"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <param name="module">The module being written.</param>
+        /// <param name="fileKind">The kind of image being written.</param>
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The preferred base address of the image.</returns>
         static ulong GetImageBase(IKVM.Reflection.Emit.ModuleBuilder module, IKVM.Reflection.Emit.PEFileKinds fileKind, bool is64BitArch)
         {
             var baseAddress = unchecked(module.__ImageBase + 0x8000) & (is64BitArch ? 0xffffffffffff0000 : 0x00000000ffff0000);
 
-            // cover values smaller than 0x8000, overflow and default value 0):
+            // cover values smaller than 0x8000, overflow and the default value 0
             if (baseAddress == 0)
             {
                 if (fileKind is IKVM.Reflection.Emit.PEFileKinds.ConsoleApplication or IKVM.Reflection.Emit.PEFileKinds.WindowApplication)
@@ -370,28 +373,27 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Gets the major subsystem verison.
+        /// Gets the major subsystem version: 6 for ARM, which requires Windows 8, and 4 otherwise.
         /// </summary>
-        /// <returns></returns>
-        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
-        {
-            return imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
-        }
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <returns>The major subsystem version.</returns>
+        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine) =>
+            imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
 
         /// <summary>
-        /// Gets the minor subsystem version.
+        /// Gets the minor subsystem version: 2 for ARM, which requires Windows 8, and 0 otherwise.
         /// </summary>
-        /// <returns></returns>
-        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds)
-        {
-            return imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
-        }
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <returns>The minor subsystem version.</returns>
+        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine) =>
+            imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
 
         /// <summary>
-        /// Obtains the appropriate <see cref="Subsystem"/> value for a given <see cref="PEFileKinds"/>.
+        /// Obtains the appropriate <see cref="Subsystem"/> value for a given
+        /// <see cref="IKVM.Reflection.Emit.PEFileKinds"/>.
         /// </summary>
-        /// <param name="fileKind"></param>
-        /// <returns></returns>
+        /// <param name="fileKind">The kind of image being written.</param>
+        /// <returns><see cref="Subsystem.WindowsGui"/> for a Windows application, and <see cref="Subsystem.WindowsCui"/> otherwise.</returns>
         static Subsystem GetSubsystem(IKVM.Reflection.Emit.PEFileKinds fileKind) => fileKind switch
         {
             IKVM.Reflection.Emit.PEFileKinds.WindowApplication => Subsystem.WindowsGui,
@@ -399,12 +401,13 @@ namespace IKVM.Reflection.Writer
         };
 
         /// <summary>
-        /// Obtains the appropriate <see cref="Characteristics"/> value for the given <see cref="ImageFileMachine"/> and <see cref="PEFileKinds"/>.
+        /// Obtains the appropriate <see cref="Characteristics"/> value for the given <see cref="ImageFileMachine"/> and
+        /// <see cref="IKVM.Reflection.Emit.PEFileKinds"/>.
         /// </summary>
-        /// <param name="imageFileMachine"></param>
-        /// <param name="fileKind"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <param name="imageFileMachine">The platform the image targets.</param>
+        /// <param name="fileKind">The kind of image being written.</param>
+        /// <returns>The image characteristics for the PE header.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="imageFileMachine"/> is not a supported platform.</exception>
         static Characteristics GetImageCharacteristics(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKind)
         {
             var characteristics = Characteristics.ExecutableImage;
@@ -439,55 +442,44 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Gets the size of the stack reserve.
+        /// Gets the size of the stack reserve. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
-        }
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The size, in bytes.</returns>
+        static ulong GetSizeOfStackReserve(bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
 
         /// <summary>
-        /// Gets the size of the stack commit.
+        /// Gets the size of the stack commit. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
-        }
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The size, in bytes.</returns>
+        static ulong GetSizeOfStackCommit(bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
 
         /// <summary>
-        /// Gets the size of the heap reserve.
+        /// Gets the size of the heap reserve. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
-        }
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The size, in bytes.</returns>
+        static ulong GetSizeOfHeapReserve(bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
 
         /// <summary>
-        /// Gets the size of the heap commit.
+        /// Gets the size of the heap commit. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="is64BitArch"></param>
-        /// <returns></returns>
-        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch)
-        {
-            return is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
-        }
+        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
+        /// <returns>The size, in bytes.</returns>
+        static ulong GetSizeOfHeapCommit(bool is64BitArch) =>
+            is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
 
         /// <summary>
-        /// Obtains the appropriate <see cref="CorFlags"/> value for the given <see cref="PortableExecutableKinds"/> and <see cref="StrongNameKeyPair"/>.
+        /// Obtains the appropriate <see cref="CorFlags"/> value for the given <see cref="PortableExecutableKinds"/> and
+        /// <see cref="StrongNameKeyPair"/>.
         /// </summary>
-        /// <param name="portableExecutableKind"></param>
-        /// <param name="keyPair"></param>
-        /// <returns></returns>
+        /// <param name="portableExecutableKind">The nature of the code in the image.</param>
+        /// <param name="keyPair">The key pair used to sign the image, or <see langword="null"/> if it is not signed.</param>
+        /// <returns>The CLI header flags.</returns>
         static CorFlags GetCorFlags(PortableExecutableKinds portableExecutableKind, StrongNameKeyPair keyPair)
         {
             var flags = default(CorFlags);
@@ -507,8 +499,8 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Gets the appropriate ID provider for the generation of the module version ID.
         /// </summary>
-        /// <param name="module"></param>
-        /// <returns></returns>
+        /// <param name="module">The module being written.</param>
+        /// <returns>A provider that derives the ID from a SHA-256 hash of the content if the universe is deterministic; otherwise, <see langword="null"/> to use a random ID.</returns>
         static Func<IEnumerable<Blob>, BlobContentId> GetDeterministicIdProvider(IKVM.Reflection.Emit.ModuleBuilder module)
         {
             if (module.Universe.Deterministic)
@@ -520,8 +512,8 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Computes the length of the strong name signature.
         /// </summary>
-        /// <param name="publicKey"></param>
-        /// <returns></returns>
+        /// <param name="publicKey">The public key blob of the assembly, or <see langword="null"/> if the assembly has none.</param>
+        /// <returns>The length of the signature in bytes, or 0 if there is no public key.</returns>
         static int ComputeStrongNameSignatureLength(byte[] publicKey)
         {
             if (publicKey == null)
@@ -530,7 +522,8 @@ namespace IKVM.Reflection.Writer
             }
             else if (publicKey.Length == 16)
             {
-                // it must be the ECMA pseudo public key, we don't know the key size of the real key, but currently both Mono and Microsoft use a 1024 bit key size
+                // it must be the ECMA pseudo public key, we don't know the key size of the real key, but currently both
+                // Mono and Microsoft use a 1024 bit key size
                 return 128;
             }
             else
@@ -544,10 +537,11 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Calculates the strong name signature for the specified blobs.
         /// </summary>
-        /// <param name="keyPair"></param>
-        /// <param name="blobs"></param>
-        /// <param name="strongNameSignatureSize"></param>
-        /// <returns></returns>
+        /// <param name="keyPair">The key pair to sign with.</param>
+        /// <param name="blobs">The blobs of the image that are covered by the signature.</param>
+        /// <param name="strongNameSignatureSize">The size reserved for the signature in the image.</param>
+        /// <returns>The signature, in the little-endian byte order the image expects.</returns>
+        /// <exception cref="InvalidOperationException">The signature does not have the reserved size.</exception>
         static byte[] GetSignature(StrongNameKeyPair keyPair, IEnumerable<Blob> blobs, int strongNameSignatureSize)
         {
             // sign the hash with the keypair

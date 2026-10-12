@@ -24,6 +24,12 @@
 namespace IKVM.Reflection
 {
 
-    internal delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
+    /// <summary>
+    /// Represents the method that is notified when a missing member referenced by a module has been resolved to a
+    /// real member.
+    /// </summary>
+    /// <param name="requestingModule">The module whose reference to the missing member was resolved.</param>
+    /// <param name="member">The member the missing member was resolved to.</param>
+    delegate void ResolvedMissingMemberHandler(Module requestingModule, MemberInfo member);
 
 }

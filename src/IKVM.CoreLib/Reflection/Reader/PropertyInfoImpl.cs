@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,125 +21,189 @@
   jeroen@frijters.net
   
 */
-using IKVM.Reflection.Metadata;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IKVM.Reflection.Reader
 {
 
+    /// <summary>
+    /// Represents a property defined by a row of the Property table of a module read from metadata.
+    /// </summary>
     sealed class PropertyInfoImpl : PropertyInfo
     {
 
-        readonly ModuleReader module;
-        readonly Type declaringType;
-        readonly int index;
+        readonly ModuleReader _module;
+        readonly Type _declaringType;
+        readonly PropertyDefinitionHandle _handle;
+        readonly PropertyDefinition _definition;
 
-        PropertySignature sig;
-        bool isPublic;
-        bool isNonPrivate;
-        bool isStatic;
-        bool flagsCached;
+        PropertySignature _sig;
+        bool _isPublic;
+        bool _isNonPrivate;
+        bool _isStatic;
+        bool _flagsCached;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="module"></param>
-        /// <param name="declaringType"></param>
-        /// <param name="index"></param>
-        internal PropertyInfoImpl(ModuleReader module, Type declaringType, int index)
+        /// <param name="module">The module that contains the property definition.</param>
+        /// <param name="declaringType">The type that declares the property.</param>
+        /// <param name="handle">The handle of the property definition in the module's metadata.</param>
+        internal PropertyInfoImpl(ModuleReader module, Type declaringType, PropertyDefinitionHandle handle)
         {
-            this.module = module;
-            this.declaringType = declaringType;
-            this.index = index;
+            _module = module;
+            _declaringType = declaringType;
+            _handle = handle;
+            _definition = module.Metadata.GetPropertyDefinition(handle);
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is PropertyInfoImpl other && other.DeclaringType == declaringType && other.index == index;
-        }
+        /// <summary>
+        /// Returns a value that indicates whether this instance is equal to a specified object. Two instances are equal
+        /// when they have the same declaring type and property definition.
+        /// </summary>
+        /// <param name="obj">An object to compare with this instance.</param>
+        /// <returns><see langword="true"/> if <paramref name="obj"/> represents the same property; otherwise, <see langword="false"/>.</returns>
+        public override bool Equals(object obj) => obj is PropertyInfoImpl other && other.DeclaringType == _declaringType && other._handle == _handle;
 
-        public override int GetHashCode() => declaringType.GetHashCode() * 77 + index;
+        /// <inheritdoc />
+        public override int GetHashCode() => _declaringType.GetHashCode() * 77 + MetadataTokens.GetRowNumber(_handle);
 
-        internal override PropertySignature PropertySignature => sig ??= PropertySignature.ReadSig(module, module.GetBlobReader(module.PropertyTable.records[index].Type), declaringType);
+        /// <summary>
+        /// Gets the signature of the property, decoded from the property's signature blob on first use.
+        /// </summary>
+        internal override PropertySignature PropertySignature =>
+            _sig ??= PropertySignature.ReadSig(_module, _module.GetBlobReader(_definition.Signature), _declaringType);
 
-        public override PropertyAttributes Attributes => (PropertyAttributes)(ushort)module.PropertyTable.records[index].Flags;
+        /// <inheritdoc />
+        public override PropertyAttributes Attributes => (PropertyAttributes)_definition.Attributes;
 
-        public override object GetRawConstantValue() => module.ConstantTable.GetRawConstantValue(module, this.MetadataToken);
+        /// <inheritdoc />
+        public override object GetRawConstantValue() => _module.GetConstantValue(_definition.GetDefaultValue());
 
+        /// <inheritdoc />
         public override bool CanRead => GetGetMethod(true) != null;
 
+        /// <inheritdoc />
         public override bool CanWrite => GetSetMethod(true) != null;
 
-        public override MethodInfo GetGetMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter);
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetGetMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Getter, nonPublic);
 
-        public override MethodInfo GetSetMethod(bool nonPublic)
-        {
-            return module.MethodSemanticsTable.GetMethod(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Setter);
-        }
+        /// <inheritdoc />
+        public override MethodInfo GetSetMethod(bool nonPublic) => Accessor(_definition.GetAccessors().Setter, nonPublic);
 
+        /// <inheritdoc />
         public override MethodInfo[] GetAccessors(bool nonPublic)
         {
-            return module.MethodSemanticsTable.GetMethods(module, this.MetadataToken, nonPublic, MethodSemanticsTable.Getter | MethodSemanticsTable.Setter | MethodSemanticsTable.Other);
+            var accessors = _definition.GetAccessors();
+            var list = new List<MethodInfo>();
+            Add(accessors.Getter);
+            Add(accessors.Setter);
+            foreach (var h in accessors.Others)
+                Add(h);
+
+            return list.ToArray();
+
+            void Add(MethodDefinitionHandle h)
+            {
+                if (Accessor(h, nonPublic) is { } m)
+                    list.Add(m);
+            }
         }
 
-        public override Type DeclaringType => declaringType;
+        /// <summary>
+        /// Resolves an accessor method of the property.
+        /// </summary>
+        /// <param name="h">The handle of the accessor method, which may be nil.</param>
+        /// <param name="nonPublic"><see langword="true"/> to return a non-public accessor; otherwise, <see langword="false"/>.</param>
+        /// <returns>The accessor, or <see langword="null"/> if <paramref name="h"/> is nil or the accessor is non-public and <paramref name="nonPublic"/> is <see langword="false"/>.</returns>
+        MethodInfo Accessor(MethodDefinitionHandle h, bool nonPublic)
+        {
+            if (h.IsNil)
+                return null;
 
-        public override Module Module => module;
+            var method = (MethodInfo)_module.ResolveMethod(MetadataTokens.GetToken(h));
+            return nonPublic || method.IsPublic ? method : null;
+        }
 
-        public override int MetadataToken => (PropertyTable.Index << 24) + index + 1;
+        /// <inheritdoc />
+        public override Type DeclaringType => _declaringType;
 
-        public override string Name => module.GetString(module.PropertyTable.records[index].Name);
+        /// <inheritdoc />
+        public override Module Module => _module;
 
+        /// <inheritdoc />
+        public override int MetadataToken => MetadataTokens.GetToken(_handle);
+
+        /// <inheritdoc />
+        public override string Name => _module.GetString(_definition.Name);
+
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the property is public.
+        /// </summary>
         internal override bool IsPublic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isPublic;
+                return _isPublic;
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the property has an access level above private.
+        /// </summary>
         internal override bool IsNonPrivate
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isNonPrivate;
+                return _isNonPrivate;
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether any accessor of the property is static.
+        /// </summary>
         internal override bool IsStatic
         {
             get
             {
-                if (!flagsCached)
+                if (!_flagsCached)
                     ComputeFlags();
 
-                return isStatic;
+                return _isStatic;
             }
         }
 
+        /// <summary>
+        /// Computes and caches the public, non-private and static flags from the property's accessors.
+        /// </summary>
         void ComputeFlags()
         {
-            module.MethodSemanticsTable.ComputeFlags(module, MetadataToken, out isPublic, out isNonPrivate, out isStatic);
-            flagsCached = true;
+            foreach (var method in GetAccessors(true))
+            {
+                _isPublic |= method.IsPublic;
+                _isNonPrivate |= (method.Attributes & MethodAttributes.MemberAccessMask) > MethodAttributes.Private;
+                _isStatic |= method.IsStatic;
+            }
+
+            _flagsCached = true;
         }
 
-        internal override bool IsBaked
-        {
-            get { return true; }
-        }
+        /// <summary>
+        /// Gets a value indicating whether the property is complete; a property read from metadata always is.
+        /// </summary>
+        internal override bool IsBaked => true;
 
-        internal override int GetCurrentToken()
-        {
-            return this.MetadataToken;
-        }
+        /// <inheritdoc />
+        internal override int GetCurrentToken() => MetadataToken;
 
     }
 

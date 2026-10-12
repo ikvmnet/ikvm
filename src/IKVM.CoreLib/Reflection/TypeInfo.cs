@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2012 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,7 +26,11 @@ using System.Collections.Generic;
 namespace IKVM.Reflection
 {
 
-    internal abstract class TypeInfo : Type, IReflectableType
+    /// <summary>
+    /// Represents type declarations for class types, interface types, array types, value types, enumeration types, type
+    /// parameters, generic type definitions, and open or closed constructed generic types.
+    /// </summary>
+    abstract class TypeInfo : Type, IReflectableType
     {
 
         /// <summary>
@@ -37,18 +41,18 @@ namespace IKVM.Reflection
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance that wraps another type and shares its type flags.
         /// </summary>
-        /// <param name="underlyingType"></param>
+        /// <param name="underlyingType">The type this instance stands in for.</param>
         internal TypeInfo(Type underlyingType) :
             base(underlyingType)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance for a type that is encoded in signatures by a single element type byte.
         /// </summary>
-        /// <param name="sigElementType"></param>
+        /// <param name="sigElementType">The signature element type (an <c>ELEMENT_TYPE_*</c> value) of the type.</param>
         internal TypeInfo(byte sigElementType) :
             base(sigElementType)
         {

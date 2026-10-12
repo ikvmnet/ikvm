@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (C) 2009-2011 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -26,40 +26,44 @@ using System;
 namespace IKVM.Reflection
 {
 
-    internal class LocalVariableInfo
+    /// <summary>
+    /// Discovers the attributes of a local variable and provides access to local variable metadata.
+    /// </summary>
+    class LocalVariableInfo
     {
 
-        readonly int index;
-        readonly Type type;
-        readonly bool pinned;
+        readonly int _index;
+        readonly Type _type;
+        readonly bool _pinned;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="index"></param>
-        /// <param name="type"></param>
-        /// <param name="pinned"></param>
+        /// <param name="index">The index of the local variable within the method body.</param>
+        /// <param name="type">The type of the local variable.</param>
+        /// <param name="pinned"><see langword="true"/> if the object referred to by the local variable is pinned in memory.</param>
         internal LocalVariableInfo(int index, Type type, bool pinned)
         {
-            this.index = index;
-            this.type = type;
-            this.pinned = pinned;
+            _index = index;
+            _type = type;
+            _pinned = pinned;
         }
 
-        public int LocalIndex
-        {
-            get { return index; }
-        }
+        /// <summary>
+        /// Gets the index of the local variable within the method body.
+        /// </summary>
+        public int LocalIndex => _index;
 
-        public Type LocalType
-        {
-            get { return type; }
-        }
+        /// <summary>
+        /// Gets the type of the local variable.
+        /// </summary>
+        public Type LocalType => _type;
 
-        public override string ToString()
-        {
-            return String.Format(pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", type, index);
-        }
+        /// <summary>
+        /// Returns a user-readable string that describes the local variable.
+        /// </summary>
+        /// <returns>A string that displays the type and index of the local variable, and whether it is pinned.</returns>
+        public override string ToString() => string.Format(_pinned ? "{0} ({1}) (pinned)" : "{0} ({1})", _type, _index);
 
     }
 
