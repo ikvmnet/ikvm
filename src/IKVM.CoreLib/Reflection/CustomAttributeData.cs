@@ -49,52 +49,24 @@ namespace IKVM.Reflection
         //
         // 1) Unresolved custom attribute
         //    - _customAttribute is not nil
-        //    - _declSecurityBlob == null
         //    - _lazyConstructor == null
         //    - _lazyConstructorArguments == null
         //    - _lazyNamedArguments == null
         //
         // 2) Resolved custom attribute
         //    - _customAttribute is not nil
-        //    - _declSecurityBlob == null
         //    - _lazyConstructor != null
         //    - _lazyConstructorArguments != null
         //    - _lazyNamedArguments != null
         //
-        // 3) Pre-resolved custom attribute
+        // 3) Pre-resolved custom attribute, pseudo custom attribute or result of CustomAttributeBuilder.ToData()
         //    - _customAttribute is nil
-        //    - _declSecurityBlob == null
         //    - _lazyConstructor != null
         //    - _lazyConstructorArguments != null
         //    - _lazyNamedArguments != null
-        //
-        // 4) Pseudo custom attribute, .NET 1.x declarative security or result of CustomAttributeBuilder.ToData()
-        //    - _customAttribute is nil
-        //    - _declSecurityBlob == null
-        //    - _lazyConstructor != null
-        //    - _lazyConstructorArguments != null
-        //    - _lazyNamedArguments != null
-        //
-        // 5) Unresolved declarative security
-        //    - _customAttribute is nil
-        //    - _declSecurityBlob != null
-        //    - _lazyConstructor != null
-        //    - _lazyConstructorArguments != null
-        //    - _lazyNamedArguments == null
-        //
-        // 6) Resolved declarative security
-        //    - _customAttribute is nil
-        //    - _declSecurityBlob != null
-        //    - _lazyConstructor != null
-        //    - _lazyConstructorArguments != null
-        //    - _lazyNamedArguments != null
-        //
-        // _declSecurityIndex is -1, except for declarative security, where it holds the index passed to the constructor
 
         readonly Module _module;
         readonly CustomAttributeHandle _customAttribute;
-        readonly int _declSecurityIndex;
-        readonly byte[] _declSecurityBlob;
 
         ConstructorInfo _lazyConstructor;
         IList<CustomAttributeTypedArgument> _lazyConstructorArguments;
@@ -111,7 +83,6 @@ namespace IKVM.Reflection
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _customAttribute = handle;
-            _declSecurityIndex = -1;
         }
 
         /// <summary>
@@ -154,7 +125,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Module module, ConstructorInfo constructor, List<CustomAttributeTypedArgument> constructorArgs, List<CustomAttributeNamedArgument> namedArguments)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
-            _declSecurityIndex = -1;
             _lazyConstructor = constructor;
 
             _lazyConstructorArguments = constructorArgs.AsReadOnly();
@@ -175,7 +145,6 @@ namespace IKVM.Reflection
         internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, BlobReader br)
         {
             _module = asm.ManifestModule;
-            _declSecurityIndex = -1;
             _lazyConstructor = constructor;
             if (br.RemainingBytes == 0)
             {
@@ -280,29 +249,6 @@ namespace IKVM.Reflection
 
                 sb.Append(arg.Value);
             }
-        }
-
-        /// <summary>
-        /// Initializes a new instance for a declarative security attribute; the named arguments are decoded from
-        /// <paramref name="blob"/> on first use (state 5).
-        /// </summary>
-        /// <param name="asm">The assembly whose manifest module the attribute applies in.</param>
-        /// <param name="constructor">The constructor of the security attribute, which takes a <c>SecurityAction</c>.</param>
-        /// <param name="securityAction">The security action, passed as the constructor argument.</param>
-        /// <param name="blob">The encoded named arguments of the security attribute.</param>
-        /// <param name="index">The index of the attribute within its permission set.</param>
-        internal CustomAttributeData(Assembly asm, ConstructorInfo constructor, int securityAction, byte[] blob, int index)
-        {
-            _module = asm.ManifestModule;
-            _declSecurityIndex = index;
-            _lazyConstructor = constructor;
-
-            var list = new List<CustomAttributeTypedArgument>
-            {
-                new CustomAttributeTypedArgument(constructor.Module.Universe.System_Security_Permissions_SecurityAction, securityAction)
-            };
-            _lazyConstructorArguments = list.AsReadOnly();
-            _declSecurityBlob = blob;
         }
 
         /// <summary>
@@ -590,27 +536,9 @@ namespace IKVM.Reflection
         {
             get
             {
+                // only an unresolved custom attribute has not decoded its named arguments
                 if (_lazyNamedArguments == null)
-                {
-                    if (_customAttribute.IsNil == false)
-                    {
-                        // 1) Unresolved Custom Attribute
-                        LazyParseArguments(true);
-                    }
-                    else
-                    {
-                        // 5) Unresolved declarative security
-                        unsafe
-                        {
-                            fixed (byte* p = _declSecurityBlob)
-                            {
-                                var br = new BlobReader(p, _declSecurityBlob.Length);
-                                // LAMESPEC the count of named arguments is a compressed integer (instead of UInt16 as NumNamed in custom attributes)
-                                _lazyNamedArguments = ReadNamedArguments(_module, ref br, br.ReadCompressedInteger(), Constructor.DeclaringType, true);
-                            }
-                        }
-                    }
-                }
+                    LazyParseArguments(true);
 
                 return _lazyNamedArguments;
             }

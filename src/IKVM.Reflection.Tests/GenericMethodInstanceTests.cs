@@ -66,6 +66,24 @@ namespace IKVM.Reflection.Tests
         }
 
         /// <summary>
+        /// Methods of a constructed generic type report whether they contain generic parameters as the runtime does:
+        /// a method that is still a generic method definition does, and one instantiated over closed types does not.
+        /// </summary>
+        [Fact]
+        public void ContainsGenericParametersMatchesRuntime()
+        {
+            var tfm = Fixture.HostTargetFramework;
+            using var u = TestUniverse.Create(tfm);
+            var runtime = System.Reflection.Assembly.LoadFrom(Fixture.GetAssemblyPath(tfm)).GetType("IKVM.Reflection.Tests.Fixture.GenericClass`1", true).MakeGenericType(typeof(int));
+            var type = LoadGenericClass(u, tfm).MakeGenericType(u.Import(typeof(int)));
+
+            foreach (var name in new[] { "Method", "GenericMethod" })
+                type.GetMethod(name).ContainsGenericParameters.Should().Be(runtime.GetMethod(name).ContainsGenericParameters, name);
+
+            type.GetMethod("GenericMethod").MakeGenericMethod(u.Import(typeof(string))).ContainsGenericParameters.Should().Be(runtime.GetMethod("GenericMethod").MakeGenericMethod(typeof(string)).ContainsGenericParameters);
+        }
+
+        /// <summary>
         /// Loads the fixture built for <paramref name="tfm"/> and returns its <c>GenericClass&lt;T&gt;</c>.
         /// </summary>
         /// <param name="u">The universe to load the fixture into.</param>

@@ -355,12 +355,6 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         readonly Dictionary<Type, int> _memberRefTypeTokens = [];
 
-        /// <summary>
-        /// The Win32 resources (version information, icons, manifest) to write to the image, or
-        /// <see langword="null"/> if there are none.
-        /// </summary>
-        internal ModuleResourceSectionBuilder NativeResources;
-
         readonly Dictionary<MemberRefKey, int> _importedMemberRefs = [];
         readonly Dictionary<MethodSpecKey, int> _importedMethodSpecs = [];
         readonly Dictionary<Assembly, int> _referencedAssemblies = [];
@@ -409,15 +403,14 @@ namespace IKVM.Reflection.Emit
         /// <param name="fileName">The name of the file the module is written to.</param>
         /// <exception cref="ArgumentNullException"><paramref name="asm"/> is <see langword="null"/>.</exception>
         internal ModuleBuilder(AssemblyBuilder asm, string moduleName, string fileName) :
-            base(asm.Universe)
+            base((asm ?? throw new ArgumentNullException(nameof(asm))).Universe)
         {
             _metadata = new MetadataBuilder();
             _ilStream = new BlobBuilder();
             _methodBodyEncoder = new MethodBodyStreamEncoder(_ilStream);
             _resourceStream = new BlobBuilder();
 
-            _asm = asm ?? throw new ArgumentNullException(nameof(asm));
-            _metadata = _metadata ?? throw new ArgumentNullException(nameof(_metadata));
+            _asm = asm;
             _moduleName = moduleName;
             FileName = fileName;
 
@@ -1421,7 +1414,7 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="fileToken">The File row of this module in the manifest module.</param>
         /// <param name="manifestModule">The manifest module of the assembly.</param>
-        internal override void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule) =>
+        internal void ExportTypes(AssemblyFileHandle fileToken, ModuleBuilder manifestModule) =>
             manifestModule.ExportTypes(_types.ToArray(), fileToken);
 
         /// <summary>
@@ -1635,34 +1628,20 @@ namespace IKVM.Reflection.Emit
         public override MethodBase ResolveMethod(int metadataToken, Type[] genericTypeArguments, Type[] genericMethodArguments)
         {
             if (genericTypeArguments != null || genericMethodArguments != null)
-            {
                 throw new NotImplementedException();
-            }
-            // this method is inefficient, but since it isn't used we don't care
+
+            // a member reference is found by a linear search, which is fine for how rarely this is called
             if ((metadataToken >> 24) == (int)TableIndex.MemberRef)
-            {
-                foreach (KeyValuePair<MemberRefKey, int> kv in _importedMemberRefs)
-                {
+                foreach (var kv in _importedMemberRefs)
                     if (kv.Value == metadataToken)
-                    {
                         return kv.Key.LookupMethod();
-                    }
-                }
-            }
-            // HACK if we're given a SymbolToken, we need to convert back
-            if ((metadataToken & 0xFF000000) == 0x06000000)
-            {
-                metadataToken = -(metadataToken & 0x00FFFFFF);
-            }
-            foreach (Type type in _types)
-            {
-                MethodBase method = ((TypeBuilder)type).LookupMethod(metadataToken);
-                if (method != null)
-                {
+
+            // the methods of a module being built are known by their pseudo tokens, and the module type is among the types
+            foreach (TypeBuilder type in _types)
+                if (type.LookupMethod(metadataToken) is { } method)
                     return method;
-                }
-            }
-            return ((TypeBuilder)_moduleType).LookupMethod(metadataToken);
+
+            return null;
         }
 
         /// <inheritdoc />
@@ -1881,7 +1860,7 @@ namespace IKVM.Reflection.Emit
             }
 
             FillAssemblyRefTable();
-            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, NativeResources, default, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(null, null, this, PEFileKinds.Dll, portableExecutableKind, imageFileMachine, null, default, null, peStream, null, pdbStream);
         }
 
         /// <inheritdoc />

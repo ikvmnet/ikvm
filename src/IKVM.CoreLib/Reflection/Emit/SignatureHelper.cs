@@ -109,19 +109,16 @@ namespace IKVM.Reflection.Emit
 
             readonly ModuleBuilder _module;
             readonly BlobBuilder _arguments = new(16);
-            readonly Type _returnType;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="module">The module the signature is built for.</param>
             /// <param name="type">The leading byte of the signature.</param>
-            /// <param name="returnType">The return type of the signature, or <see langword="null"/>.</param>
-            internal Eager(ModuleBuilder module, byte type, Type returnType) :
+            internal Eager(ModuleBuilder module, byte type) :
                 base(type)
             {
                 _module = module;
-                _returnType = returnType;
             }
 
             /// <inheritdoc />
@@ -181,24 +178,23 @@ namespace IKVM.Reflection.Emit
         /// </summary>
         /// <param name="mod">The module for which the signature is built.</param>
         /// <param name="type">The leading byte of the signature.</param>
-        /// <param name="returnType">The return type of the signature, or <see langword="null"/>.</param>
         /// <returns>The signature helper.</returns>
-        static SignatureHelper Create(Module mod, byte type, Type returnType) =>
-            mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type, returnType);
+        static SignatureHelper Create(Module mod, byte type) =>
+            mod is not ModuleBuilder mb ? new Lazy(type) : new Eager(mb, type);
 
         /// <summary>
         /// Returns a signature helper for a field.
         /// </summary>
         /// <param name="mod">The dynamic module that contains the field for which the signature helper is requested.</param>
         /// <returns>The signature helper object.</returns>
-        public static SignatureHelper GetFieldSigHelper(Module mod) => Create(mod, Signature.FIELD, null);
+        public static SignatureHelper GetFieldSigHelper(Module mod) => Create(mod, Signature.FIELD);
 
         /// <summary>
         /// Returns a signature helper for a local variable.
         /// </summary>
         /// <param name="mod">The dynamic module that contains the local variable for which the signature helper is requested.</param>
         /// <returns>The signature helper object.</returns>
-        public static SignatureHelper GetLocalVarSigHelper(Module mod) => Create(mod, Signature.LOCAL_SIG, null);
+        public static SignatureHelper GetLocalVarSigHelper(Module mod) => Create(mod, Signature.LOCAL_SIG);
 
         /// <summary>
         /// Returns a signature helper for a method given the method's module, unmanaged calling convention, and return type.
@@ -219,7 +215,7 @@ namespace IKVM.Reflection.Emit
                 _ => throw new ArgumentOutOfRangeException("unmanagedCallConv"),
             };
 
-            var sig = Create(mod, type, returnType);
+            var sig = Create(mod, type);
             sig.AddArgument(returnType);
             sig.argumentCount = 0;
             return sig;
@@ -245,7 +241,7 @@ namespace IKVM.Reflection.Emit
             if ((callingConvention & CallingConventions.VarArgs) != 0)
                 type |= Signature.VARARG;
 
-            var sig = Create(mod, type, returnType);
+            var sig = Create(mod, type);
             sig.AddArgument(returnType);
             sig.argumentCount = 0;
             return sig;

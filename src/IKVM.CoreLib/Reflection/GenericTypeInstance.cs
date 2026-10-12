@@ -447,7 +447,7 @@ namespace IKVM.Reflection
                     {
                         xargs[i] = _args[i].BindTypeParameters(binder);
                     }
-                    return Make(_type, xargs, null);
+                    return Make(_type, xargs, _mods);
                 }
             }
             return this;

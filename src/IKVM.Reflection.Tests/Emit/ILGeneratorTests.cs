@@ -59,7 +59,7 @@ namespace IKVM.Reflection.Tests.Emit
             using var u = TestUniverse.Create(tfm);
 
             var file = EmitCalli(u, il => il.EmitCalli(OpCodes.Calli, CallingConventions.Standard, u.Import(typeof(int)), [u.Import(typeof(string))], null));
-            ReadStandAloneSignatures(u, file).Should().Equal("default(String) : Int32");
+            ReadStandAloneSignatures(file).Should().Equal("default(String) : Int32");
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace IKVM.Reflection.Tests.Emit
             using var u = TestUniverse.Create(tfm);
 
             var file = EmitCalli(u, il => il.EmitCalli(OpCodes.Calli, System.Runtime.InteropServices.CallingConvention.Cdecl, u.Import(typeof(int)), [u.Import(typeof(int))]));
-            ReadStandAloneSignatures(u, file).Should().Equal("cdecl(Int32) : Int32");
+            ReadStandAloneSignatures(file).Should().Equal("cdecl(Int32) : Int32");
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace IKVM.Reflection.Tests.Emit
 
             using var pe = new PEReader(File.OpenRead(Path.Combine(u.TempPath, "Test.dll")));
             var md = pe.GetMetadataReader();
-            var provider = new SignatureNameProvider(md);
+            var provider = new SignatureNameProvider();
             var signatures = md.MemberReferences.Select(md.GetMemberReference).Where(i => md.GetString(i.Name) == "ManagedFunctionPointer").Select(i => SignatureNameProvider.Format(i.DecodeMethodSignature(provider, null))).ToList();
             signatures.Should().Equal("default(fnptr default(Int32) : Void) : fnptr default(Int32) : Int32");
         }
@@ -173,14 +173,13 @@ namespace IKVM.Reflection.Tests.Emit
         /// <summary>
         /// Reads the stand-alone method signatures of an assembly with System.Reflection.Metadata.
         /// </summary>
-        /// <param name="u">The universe the assembly was saved from; not used.</param>
         /// <param name="file">The path of the assembly.</param>
         /// <returns>The method signatures, formatted by <see cref="SignatureNameProvider.Format"/>.</returns>
-        static string[] ReadStandAloneSignatures(TestUniverse u, string file)
+        static string[] ReadStandAloneSignatures(string file)
         {
             using var pe = new PEReader(File.OpenRead(file));
             var md = pe.GetMetadataReader();
-            var provider = new SignatureNameProvider(md);
+            var provider = new SignatureNameProvider();
             return Enumerable.Range(1, System.Reflection.Metadata.Ecma335.MetadataReaderExtensions.GetTableRowCount(md, System.Reflection.Metadata.Ecma335.TableIndex.StandAloneSig))
                 .Select(i => md.GetStandaloneSignature(System.Reflection.Metadata.Ecma335.MetadataTokens.StandaloneSignatureHandle(i)))
                 .Where(i => i.GetKind() == StandaloneSignatureKind.Method)

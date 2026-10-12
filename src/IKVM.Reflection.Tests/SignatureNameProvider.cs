@@ -11,17 +11,6 @@ namespace IKVM.Reflection.Tests
     sealed class SignatureNameProvider : ISignatureTypeProvider<string, object?>
     {
 
-        readonly MetadataReader _reader;
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="reader">The metadata reader the signatures to decode come from.</param>
-        public SignatureNameProvider(MetadataReader reader)
-        {
-            _reader = reader;
-        }
-
         /// <summary>
         /// Renders a method signature as <c>convention(params) : return</c>.
         /// </summary>

@@ -28,12 +28,9 @@ namespace IKVM.Reflection.Diagnostics
 
             readonly string _url;
             readonly Guid _language;
-            readonly Guid _languageVendor;
-            readonly Guid _documentType;
 
             Guid _algorithmId;
             byte[] _checksum;
-            byte[] _source;
 
             /// <summary>
             /// Initializes a new instance.
@@ -46,8 +43,6 @@ namespace IKVM.Reflection.Diagnostics
             {
                 _url = url;
                 _language = language;
-                _languageVendor = languageVendor;
-                _documentType = documentType;
             }
 
             /// <summary>
@@ -62,11 +57,13 @@ namespace IKVM.Reflection.Diagnostics
             }
 
             /// <summary>
-            /// Stores the raw source for a document in the symbol store. The source is recorded but not currently
-            /// written to the PDB.
+            /// Stores the raw source for a document in the symbol store. Embedding source is not supported, so the
+            /// source is ignored.
             /// </summary>
             /// <param name="source">The document source represented as unsigned bytes.</param>
-            public void SetSource(byte[] source) => _source = source;
+            public void SetSource(byte[] source)
+            {
+            }
 
             /// <summary>
             /// Gets the URL of the document.
@@ -91,77 +88,16 @@ namespace IKVM.Reflection.Diagnostics
         }
 
         /// <summary>
-        /// Track local variable information.
-        /// </summary>
-        protected readonly struct LocalVar
-        {
-
-            readonly System.Reflection.FieldAttributes _attributes;
-            readonly byte[] _signature;
-            readonly SymAddressKind _addrKind;
-            readonly int _addr1;
-            readonly int _addr2;
-            readonly int _addr3;
-            readonly int _startOffset;
-            readonly int _endOffset;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="attributes">The local variable attributes.</param>
-            /// <param name="signature">The local variable signature.</param>
-            /// <param name="addrKind">The address types for <paramref name="addr1"/>, <paramref name="addr2"/> and <paramref name="addr3"/>.</param>
-            /// <param name="addr1">The first address for the local variable specification; for an IL offset address this is the slot index of the local.</param>
-            /// <param name="addr2">The second address for the local variable specification.</param>
-            /// <param name="addr3">The third address for the local variable specification.</param>
-            /// <param name="startOffset">The start offset for the variable, or 0 if it is scoped to the whole method.</param>
-            /// <param name="endOffset">The end offset for the variable, or 0 if it is scoped to the whole method.</param>
-            internal LocalVar(System.Reflection.FieldAttributes attributes, byte[] signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset)
-            {
-                _attributes = attributes;
-                _signature = signature;
-                _addrKind = addrKind;
-                _addr1 = addr1;
-                _addr2 = addr2;
-                _addr3 = addr3;
-                _startOffset = startOffset;
-                _endOffset = endOffset;
-            }
-
-            /// <summary>
-            /// Gets the first address, which is written as the slot index of the local variable.
-            /// </summary>
-            public int Address1 => _addr1;
-
-        }
-
-        /// <summary>
         /// Tracks method scope information.
         /// </summary>
         protected sealed class Scope
         {
 
             readonly int _startOffset;
-
-            /// <summary>
-            /// The IL offset at which the scope ends, set when the scope is closed.
-            /// </summary>
-            internal int endOffset;
-
-            /// <summary>
-            /// The nested scopes, or <see langword="null"/> if there are none.
-            /// </summary>
-            internal List<Scope> scopes;
-
-            /// <summary>
-            /// The local variables declared in the scope, by name, or <see langword="null"/> if there are none.
-            /// </summary>
-            internal Dictionary<string, LocalVar> locals;
-
-            /// <summary>
-            /// The namespaces imported in the scope, or <see langword="null"/> if there are none.
-            /// </summary>
-            internal List<string> namespaces;
+            int _endOffset;
+            List<Scope> _scopes;
+            Dictionary<string, int> _locals;
+            List<string> _namespaces;
 
             /// <summary>
             /// Initializes a new instance.
@@ -180,23 +116,47 @@ namespace IKVM.Reflection.Diagnostics
             /// <summary>
             /// Gets the end offset.
             /// </summary>
-            public int EndOffset => endOffset;
+            public int EndOffset => _endOffset;
 
             /// <summary>
-            /// Gets the nested scopes.
+            /// Gets the scopes nested directly in this one.
             /// </summary>
-            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)scopes ?? Array.Empty<Scope>();
+            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)_scopes ?? Array.Empty<Scope>();
 
             /// <summary>
-            /// Gets the local variables.
+            /// Gets the local variables declared in this scope, by name, with their slots in the local signature.
             /// </summary>
-            public IReadOnlyDictionary<string, LocalVar> Locals =>
-                (IReadOnlyDictionary<string, LocalVar>)locals ?? ImmutableDictionary<string, LocalVar>.Empty;
+            public IReadOnlyDictionary<string, int> Locals => (IReadOnlyDictionary<string, int>)_locals ?? ImmutableDictionary<string, int>.Empty;
 
             /// <summary>
-            /// Gets the namespaces.
+            /// Gets the namespaces imported in this scope.
             /// </summary>
-            public IReadOnlyList<string> Namespaces => (IReadOnlyList<string>)namespaces ?? Array.Empty<string>();
+            public IReadOnlyList<string> Namespaces => (IReadOnlyList<string>)_namespaces ?? Array.Empty<string>();
+
+            /// <summary>
+            /// Closes the scope at the specified offset.
+            /// </summary>
+            /// <param name="endOffset">The IL offset of the end of the scope.</param>
+            internal void Close(int endOffset) => _endOffset = endOffset;
+
+            /// <summary>
+            /// Adds a scope nested directly in this one.
+            /// </summary>
+            /// <param name="scope">The nested scope.</param>
+            internal void AddScope(Scope scope) => (_scopes ??= []).Add(scope);
+
+            /// <summary>
+            /// Declares a local variable in this scope.
+            /// </summary>
+            /// <param name="name">The name of the variable.</param>
+            /// <param name="slot">The slot of the variable in the local signature.</param>
+            internal void AddLocal(string name, int slot) => (_locals ??= [])[name] = slot;
+
+            /// <summary>
+            /// Imports a namespace in this scope.
+            /// </summary>
+            /// <param name="name">The full name of the namespace.</param>
+            internal void AddNamespace(string name) => (_namespaces ??= []).Add(name);
 
         }
 
@@ -208,27 +168,10 @@ namespace IKVM.Reflection.Diagnostics
 
             readonly int _token;
             readonly StandaloneSignatureHandle _localSignatureHandle;
+            List<SequencePoint> _sequencePoints;
+            List<Scope> _scopes;
+            Stack<Scope> _scopeStack;
 
-            /// <summary>
-            /// The sequence points defined for the method, or <see langword="null"/> if there are none.
-            /// </summary>
-            internal List<SequencePoint> sequencePoints;
-
-            /// <summary>
-            /// The outermost scopes of the method, or <see langword="null"/> if there are none.
-            /// </summary>
-            internal List<Scope> scopes;
-
-            /// <summary>
-            /// The scopes that are currently open, innermost on top, or <see langword="null"/> if none has been opened.
-            /// </summary>
-            internal Stack<Scope> ScopeStack;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="token">The <c>MethodDef</c> metadata token of the method.</param>
-            /// <param name="localSignatureHandle">The local variable signature of the method body, or a nil handle if it has no locals.</param>
             internal Method(int token, StandaloneSignatureHandle localSignatureHandle)
             {
                 _token = token;
@@ -248,12 +191,43 @@ namespace IKVM.Reflection.Diagnostics
             /// <summary>
             /// Gets the sequence points.
             /// </summary>
-            public IReadOnlyList<SequencePoint> SequencePoints => (IReadOnlyList<SequencePoint>)sequencePoints ?? Array.Empty<SequencePoint>();
+            public IReadOnlyList<SequencePoint> SequencePoints => (IReadOnlyList<SequencePoint>)_sequencePoints ?? Array.Empty<SequencePoint>();
 
             /// <summary>
             /// Gets the scopes.
             /// </summary>
-            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)scopes ?? Array.Empty<Scope>();
+            public IReadOnlyList<Scope> Scopes => (IReadOnlyList<Scope>)_scopes ?? Array.Empty<Scope>();
+
+            /// <summary>
+            /// Gets the innermost open scope, or <see langword="null"/> if no scope is open.
+            /// </summary>
+            internal Scope CurrentScope => _scopeStack is { Count: > 0 } ? _scopeStack.Peek() : null;
+
+            /// <summary>
+            /// Adds a sequence point to the method.
+            /// </summary>
+            /// <param name="sequencePoint">The sequence point.</param>
+            internal void AddSequencePoint(SequencePoint sequencePoint) => (_sequencePoints ??= []).Add(sequencePoint);
+
+            /// <summary>
+            /// Opens a scope, nested in the current scope or at the top level of the method.
+            /// </summary>
+            /// <param name="scope">The scope to open.</param>
+            internal void OpenScope(Scope scope)
+            {
+                if (CurrentScope is { } parent)
+                    parent.AddScope(scope);
+                else
+                    (_scopes ??= []).Add(scope);
+
+                (_scopeStack ??= new()).Push(scope);
+            }
+
+            /// <summary>
+            /// Closes the innermost open scope.
+            /// </summary>
+            /// <returns>The closed scope, or <see langword="null"/> if no scope is open.</returns>
+            internal Scope CloseScope() => _scopeStack is { Count: > 0 } ? _scopeStack.Pop() : null;
 
         }
 
@@ -322,7 +296,6 @@ namespace IKVM.Reflection.Diagnostics
 
         }
 
-        readonly ModuleBuilder _module;
 
         /// <summary>
         /// The documents defined so far, by URL, or <see langword="null"/> if none has been defined.
@@ -351,7 +324,8 @@ namespace IKVM.Reflection.Diagnostics
         /// <exception cref="ArgumentNullException"><paramref name="module"/> is <see langword="null"/>.</exception>
         public PortablePdbSymbolWriter(ModuleBuilder module)
         {
-            _module = module ?? throw new ArgumentNullException(nameof(module));
+            if (module is null)
+                throw new ArgumentNullException(nameof(module));
         }
 
         /// <summary>
@@ -427,9 +401,7 @@ namespace IKVM.Reflection.Diagnostics
             if (document is not Document doc)
                 throw new InvalidOperationException("Document not obtained from symbol writer.");
 
-            var sequencePoint = new SequencePoint(doc, offsets, lines, columns, endLines, endColumns);
-            _currentMethod.sequencePoints ??= [];
-            _currentMethod.sequencePoints.Add(sequencePoint);
+            _currentMethod.AddSequencePoint(new SequencePoint(doc, offsets, lines, columns, endLines, endColumns));
         }
 
         /// <summary>
@@ -443,23 +415,7 @@ namespace IKVM.Reflection.Diagnostics
             if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = new Scope(startOffset);
-
-            if (_currentMethod.ScopeStack == null || _currentMethod.ScopeStack.Count == 0)
-            {
-                _currentMethod.scopes ??= [];
-                _currentMethod.scopes.Add(scope);
-            }
-            else
-            {
-                var thisScope = _currentMethod.ScopeStack?.Peek();
-                thisScope.scopes ??= [];
-                thisScope.scopes.Add(scope);
-            }
-
-            _currentMethod.ScopeStack ??= new();
-            _currentMethod.ScopeStack.Push(scope);
-
+            _currentMethod.OpenScope(new Scope(startOffset));
             return 0;
         }
 
@@ -473,10 +429,8 @@ namespace IKVM.Reflection.Diagnostics
             if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = (_currentMethod.ScopeStack?.Peek()) ?? throw new InvalidOperationException("No open scope.");
-
-            scope.namespaces ??= [];
-            scope.namespaces.Add(fullName);
+            var scope = _currentMethod.CurrentScope ?? throw new InvalidOperationException("No open scope.");
+            scope.AddNamespace(fullName);
         }
 
         /// <summary>
@@ -498,10 +452,9 @@ namespace IKVM.Reflection.Diagnostics
             if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = (_currentMethod.ScopeStack?.Peek()) ?? throw new InvalidOperationException("No open scope.");
-
-            scope.locals ??= [];
-            scope.locals[name] = new LocalVar(attributes, signature, addrKind, addr1, addr2, addr3, startOffset, endOffset);
+            // a Portable PDB records only the name and the slot, which is the first address of a local
+            var scope = _currentMethod.CurrentScope ?? throw new InvalidOperationException("No open scope.");
+            scope.AddLocal(name, addr1);
         }
 
         /// <summary>
@@ -514,9 +467,8 @@ namespace IKVM.Reflection.Diagnostics
             if (_currentMethod == null)
                 throw new InvalidOperationException("No open method.");
 
-            var scope = (_currentMethod.ScopeStack?.Pop()) ?? throw new InvalidOperationException("No open scope.");
-
-            scope.endOffset = endOffset;
+            var scope = _currentMethod.CloseScope() ?? throw new InvalidOperationException("No open scope.");
+            scope.Close(endOffset);
         }
 
         /// <summary>
@@ -727,8 +679,8 @@ namespace IKVM.Reflection.Diagnostics
             // for a scope without any is where the next scope's begin
             var variableList = MetadataTokens.LocalVariableHandle(metadata.GetRowCount(TableIndex.LocalVariable) + 1);
             var constantList = MetadataTokens.LocalConstantHandle(metadata.GetRowCount(TableIndex.LocalConstant) + 1);
-            foreach (var kvp in scope.Locals.OrderBy(i => i.Value.Address1))
-                metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value.Address1, metadata.GetOrAddString(kvp.Key));
+            foreach (var kvp in scope.Locals.OrderBy(i => i.Value))
+                metadata.AddLocalVariable(LocalVariableAttributes.None, kvp.Value, metadata.GetOrAddString(kvp.Key));
 
             // add scope
             metadata.AddLocalScope(

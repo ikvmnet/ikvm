@@ -173,13 +173,10 @@ namespace IKVM.Reflection.Reader
         public override Module[] GetLoadedModules(bool getResourceModules)
         {
             List<Module> list = [_manifestModule];
-            foreach (Module m in _externalModules)
-            {
-                if (m != null)
-                {
-                    list.Add(m);
-                }
-            }
+            foreach (var module in _externalModules)
+                if (module != null && (getResourceModules || module.IsResource() == false))
+                    list.Add(module);
+
             return list.ToArray();
         }
 
@@ -249,58 +246,35 @@ namespace IKVM.Reflection.Reader
             if (_externalModules[index] != null)
                 return _externalModules[index];
 
-            return LoadModule(index, null, _manifestModule.GetFileName(index));
+            return LoadModule(index);
         }
 
         /// <summary>
-        /// Loads the module listed at a File table index. A file without metadata becomes a
-        /// <see cref="ResourceModule"/>. A module file that cannot be found is offered to the module resolvers, then
-        /// becomes a <see cref="MissingModule"/> if the universe allows missing members.
+        /// Loads the module stored in the file at the specified index of the File table, from the directory of the
+        /// manifest module.
         /// </summary>
-        /// <param name="index">The zero-based index of the module in the File table.</param>
-        /// <param name="rawModule">The contents of the module, or <see langword="null"/> to read it from the file next to the manifest.</param>
-        /// <param name="name">The file name of the module, or <see langword="null"/> if it has no location.</param>
-        /// <returns>The loaded module.</returns>
-        /// <exception cref="FileNotFoundException">The module file does not exist and neither a resolver nor missing member resolution supplied a module.</exception>
-        Module LoadModule(int index, byte[] rawModule, string name)
+        /// <param name="index">The index of the file in the File table.</param>
+        /// <returns>The module, a <see cref="ResourceModule"/> for a file without metadata, or a <see cref="MissingModule"/> when the file does not exist and missing members are resolved.</returns>
+        /// <exception cref="FileNotFoundException">The file does not exist and missing members are not resolved.</exception>
+        Module LoadModule(int index)
         {
-            var location = name == null ? null : Path.Combine(Path.GetDirectoryName(_location), name);
+            var location = Path.Combine(Path.GetDirectoryName(_location), _manifestModule.GetFileName(index));
             if (_manifestModule.FileContainsMetadata(index) == false)
-            {
                 return _externalModules[index] = new ResourceModule(_manifestModule, index, location);
-            }
-            else
+
+            byte[] image;
+            try
             {
-                if (rawModule == null)
-                {
-                    try
-                    {
-                        rawModule = File.ReadAllBytes(location);
-                    }
-                    catch (FileNotFoundException)
-                    {
-                        if (resolvers != null)
-                        {
-                            var arg = new ResolveEventArgs(name, this);
-                            foreach (var resolver in resolvers)
-                            {
-                                var module = resolver(this, arg);
-                                if (module != null)
-                                    return module;
-                            }
-                        }
-
-                        if (Universe.MissingMemberResolution)
-                            return _externalModules[index] = new MissingModule(this, index);
-
-                        throw;
-                    }
-                }
-                return _externalModules[index] = new ModuleReader(this, _manifestModule.Universe, new MemoryStream(rawModule), location, false);
+                image = File.ReadAllBytes(location);
             }
+            catch (FileNotFoundException) when (Universe.MissingMemberResolution)
+            {
+                return _externalModules[index] = new MissingModule(this, index);
+            }
+
+            return _externalModules[index] = new ModuleReader(this, _manifestModule.Universe, new MemoryStream(image), location, false);
         }
 
-        /// <inheritdoc />
         public override MethodInfo EntryPoint => _manifestModule.GetEntryPoint();
 
         /// <inheritdoc />

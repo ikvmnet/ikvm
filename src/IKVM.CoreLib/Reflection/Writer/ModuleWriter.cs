@@ -162,7 +162,7 @@ namespace IKVM.Reflection.Writer
             // initialize PE header builder
             var peHeaderBuilder = new PEHeaderBuilder(
                 machine: GetMachine(imageFileMachine),
-                sectionAlignment: GetSectionAlignment(module, is64BitArch),
+                sectionAlignment: GetSectionAlignment(),
                 fileAlignment: GetFileAlignment(module, is64BitArch),
                 imageBase: GetImageBase(module, fileKind, is64BitArch),
                 majorLinkerVersion: 0x30,
@@ -171,17 +171,17 @@ namespace IKVM.Reflection.Writer
                 minorOperatingSystemVersion: 0,
                 majorImageVersion: 0,
                 minorImageVersion: 0,
-                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine, fileKind),
-                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine, fileKind),
+                majorSubsystemVersion: GetMajorSubsystemVersion(imageFileMachine),
+                minorSubsystemVersion: GetMinorSubsystemVersion(imageFileMachine),
                 subsystem: GetSubsystem(fileKind),
                 dllCharacteristics: (System.Reflection.PortableExecutable.DllCharacteristics)(int)module.__DllCharacteristics,
                 imageCharacteristics: GetImageCharacteristics(imageFileMachine, fileKind),
-                sizeOfStackReserve: GetSizeOfStackReserve(module, is64BitArch),
-                sizeOfStackCommit: GetSizeOfStackCommit(module, is64BitArch),
-                sizeOfHeapReserve: GetSizeOfHeapReserve(module, is64BitArch),
-                sizeOfHeapCommit: GetSizeOfHeapCommit(module, is64BitArch));
+                sizeOfStackReserve: GetSizeOfStackReserve(is64BitArch),
+                sizeOfStackCommit: GetSizeOfStackCommit(is64BitArch),
+                sizeOfHeapReserve: GetSizeOfHeapReserve(is64BitArch),
+                sizeOfHeapCommit: GetSizeOfHeapCommit(is64BitArch));
 
-            // root builder provides access to information about the assembled type metadata
+            // the metadata root, whose row counts the PDB records and which the PE builder serializes
             var rootBuilder = new MetadataRootBuilder(module.Metadata);
             var debugBuilder = default(DebugDirectoryBuilder);
 
@@ -247,7 +247,7 @@ namespace IKVM.Reflection.Writer
             var strongNameSignatureSize = ComputeStrongNameSignatureLength(publicKey);
             var peBuilder = new ManagedPEBuilder(
                 peHeaderBuilder,
-                new MetadataRootBuilder(module.Metadata),
+                rootBuilder,
                 module.ILStream,
                 managedResources: module.ResourceStream,
                 nativeResources: nativeResources.Count > 0 ? nativeResources : null,
@@ -330,10 +330,8 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Gets the appropriate section alignment for the image. This is currently always the default alignment.
         /// </summary>
-        /// <param name="module">The module being written.</param>
-        /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
         /// <returns>The section alignment, in bytes.</returns>
-        static int GetSectionAlignment(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) => DefaultSectionAlignment;
+        static int GetSectionAlignment() => DefaultSectionAlignment;
 
         /// <summary>
         /// Gets the appropriate file alignment for the image: the alignment set on the module, or the default if none
@@ -378,18 +376,16 @@ namespace IKVM.Reflection.Writer
         /// Gets the major subsystem version: 6 for ARM, which requires Windows 8, and 4 otherwise.
         /// </summary>
         /// <param name="imageFileMachine">The platform the image targets.</param>
-        /// <param name="fileKinds">The kind of image being written. Not currently used.</param>
         /// <returns>The major subsystem version.</returns>
-        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds) =>
+        static ushort GetMajorSubsystemVersion(ImageFileMachine imageFileMachine) =>
             imageFileMachine == ImageFileMachine.ARM ? (ushort)6 : (ushort)4;
 
         /// <summary>
         /// Gets the minor subsystem version: 2 for ARM, which requires Windows 8, and 0 otherwise.
         /// </summary>
         /// <param name="imageFileMachine">The platform the image targets.</param>
-        /// <param name="fileKinds">The kind of image being written. Not currently used.</param>
         /// <returns>The minor subsystem version.</returns>
-        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine, IKVM.Reflection.Emit.PEFileKinds fileKinds) =>
+        static ushort GetMinorSubsystemVersion(ImageFileMachine imageFileMachine) =>
             imageFileMachine == ImageFileMachine.ARM ? (ushort)2 : (ushort)0;
 
         /// <summary>
@@ -448,37 +444,33 @@ namespace IKVM.Reflection.Writer
         /// <summary>
         /// Gets the size of the stack reserve. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module">The module being written. Not currently used.</param>
         /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
         /// <returns>The size, in bytes.</returns>
-        static ulong GetSizeOfStackReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+        static ulong GetSizeOfStackReserve(bool is64BitArch) =>
             is64BitArch ? DefaultSizeOfStackReserve64Bit : DefaultSizeOfStackReserve32Bit;
 
         /// <summary>
         /// Gets the size of the stack commit. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module">The module being written. Not currently used.</param>
         /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
         /// <returns>The size, in bytes.</returns>
-        static ulong GetSizeOfStackCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+        static ulong GetSizeOfStackCommit(bool is64BitArch) =>
             is64BitArch ? DefaultSizeOfStackCommit64Bit : DefaultSizeOfStackCommit32Bit;
 
         /// <summary>
         /// Gets the size of the heap reserve. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module">The module being written. Not currently used.</param>
         /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
         /// <returns>The size, in bytes.</returns>
-        static ulong GetSizeOfHeapReserve(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+        static ulong GetSizeOfHeapReserve(bool is64BitArch) =>
             is64BitArch ? DefaultSizeOfHeapReserve64Bit : DefaultSizeOfHeapReserve32Bit;
 
         /// <summary>
         /// Gets the size of the heap commit. This is currently always the default for the platform.
         /// </summary>
-        /// <param name="module">The module being written. Not currently used.</param>
         /// <param name="is64BitArch">Whether the image targets a 64 bit platform.</param>
         /// <returns>The size, in bytes.</returns>
-        static ulong GetSizeOfHeapCommit(IKVM.Reflection.Emit.ModuleBuilder module, bool is64BitArch) =>
+        static ulong GetSizeOfHeapCommit(bool is64BitArch) =>
             is64BitArch ? DefaultSizeOfHeapCommit64Bit : DefaultSizeOfHeapCommit32Bit;
 
         /// <summary>

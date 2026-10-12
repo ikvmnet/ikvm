@@ -263,7 +263,7 @@ namespace IKVM.Reflection
         {
             get
             {
-                // MissingType sets both flags for WinRT projection types
+                // both flags are set when signatures disagree about the type, and the type itself decides
                 return (typeFlags & (TypeFlags.ValueType | TypeFlags.NotValueType)) switch
                 {
                     0 or TypeFlags.ValueType | TypeFlags.NotValueType => IsValueTypeImpl,
@@ -1083,9 +1083,7 @@ namespace IKVM.Reflection
                         {
                             if (mi.IsVirtual)
                             {
-                                if (baseMethods == null)
-                                    baseMethods = [];
-                                else if (baseMethods.Contains(mi.GetBaseDefinition()))
+                                if (baseMethods.Contains(mi.GetBaseDefinition()))
                                     continue;
 
                                 baseMethods.Add(mi.GetBaseDefinition());
@@ -1267,7 +1265,7 @@ namespace IKVM.Reflection
             return GetMemberByName<ConstructorInfo>(name, bindingAttr | BindingFlags.DeclaredOnly,
                 delegate (ConstructorInfo ctor)
                 { return ctor.MethodSignature.MatchParameterTypes(types); })
-                ?? GetMethodWithBinder<ConstructorInfo>(name, bindingAttr, binder ?? DefaultBinder, types, modifiers);
+                ?? GetMethodWithBinder<ConstructorInfo>(name, bindingAttr | BindingFlags.DeclaredOnly, binder ?? DefaultBinder, types, modifiers);
         }
 
         /// <summary>
@@ -2481,9 +2479,8 @@ namespace IKVM.Reflection
         /// Does nothing for other types.
         /// </summary>
         /// <param name="token">The metadata token to record.</param>
-        /// <param name="flags">The type attributes to record.</param>
         /// <returns>This instance.</returns>
-        internal virtual Type SetMetadataTokenForMissing(int token, int flags) => this;
+        internal virtual Type SetMetadataTokenForMissing(int token) => this;
 
         /// <summary>
         /// Marks a type whose namespace and name match a built-in type, <c>System.Enum</c> or <c>System.ValueType</c>

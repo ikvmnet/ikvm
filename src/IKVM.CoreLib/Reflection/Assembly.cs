@@ -44,11 +44,6 @@ namespace IKVM.Reflection
         protected string fullName;
 
         /// <summary>
-        /// The handlers consulted when a module file of the assembly cannot be found.
-        /// </summary>
-        protected List<ModuleResolveEventHandler> resolvers;
-
-        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="universe">The universe that holds the assembly.</param>

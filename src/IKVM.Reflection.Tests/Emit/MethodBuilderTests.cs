@@ -58,6 +58,37 @@ namespace IKVM.Reflection.Tests.Emit
             md.GetString(md.GetModuleReference(import.Module).Name).Should().Be("user32.dll");
         }
 
+    
+
+        /// <summary>
+        /// A builder's parameter reports a decimal default recorded with <c>DecimalConstantAttribute</c>, as the same
+        /// parameter does once the assembly is saved and read back.
+        /// </summary>
+        /// <param name="tfm">The target framework whose reference assemblies the universe loads.</param>
+        [Theory]
+        [MemberData(nameof(FrameworkSpec.GetFrameworkTestData), MemberType = typeof(FrameworkSpec))]
+        public void ParameterReportsDecimalConstantDefault(string tfm)
+        {
+            using var u = TestUniverse.Create(tfm);
+            var assembly = u.DefineAssembly();
+            var module = assembly.DefineDynamicModule("Test", "Test.dll", false);
+            var type = module.DefineType("Type", TypeAttributes.Public);
+            var method = type.DefineMethod("Method", MethodAttributes.Public | MethodAttributes.Static, u.Import(typeof(void)), [u.Import(typeof(decimal))]);
+            var parameter = method.DefineParameter(1, ParameterAttributes.Optional, "value");
+            var byteType = u.Import(typeof(byte));
+            var uintType = u.Import(typeof(uint));
+            var constant = u.Import(typeof(System.Runtime.CompilerServices.DecimalConstantAttribute)).GetConstructor([byteType, byteType, uintType, uintType, uintType]);
+            parameter.SetCustomAttribute(new CustomAttributeBuilder(constant, [(byte)2, (byte)0, 0u, 0u, 1234u]));
+            method.GetILGenerator().Emit(OpCodes.Ret);
+            var created = type.CreateType();
+
+            created.GetMethod("Method")!.GetParameters()[0].RawDefaultValue.Should().Be(12.34m);
+
+            assembly.Save("Test.dll");
+            using var reader = TestUniverse.Create(tfm);
+            reader.Universe.LoadFile(System.IO.Path.Combine(u.TempPath, "Test.dll")).GetType("Type", true).GetMethod("Method")!.GetParameters()[0].RawDefaultValue.Should().Be(12.34m);
+        }
+
     }
 
 }

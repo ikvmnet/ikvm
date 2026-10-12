@@ -130,9 +130,9 @@ namespace IKVM.Reflection
 #endif
                 }
             }
-            catch
+            catch (Exception e)
             {
-                throw new ArgumentException("Unable to obtain public key for StrongNameKeyPair.");
+                throw new ArgumentException("Unable to obtain public key for StrongNameKeyPair.", e);
             }
         }
 

@@ -62,21 +62,6 @@ namespace IKVM.Reflection.Writer
         }
 
         /// <summary>
-        /// Initializes a new instance as a copy of the specified instance, copying its child entries recursively.
-        /// </summary>
-        /// <param name="other">The entry to copy.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
-        internal ResourceDirectoryEntry(ResourceDirectoryEntry other)
-        {
-            if (other is null)
-                throw new ArgumentNullException(nameof(other));
-
-            _ordinalOrName = other._ordinalOrName;
-            _entries = other._entries.Select(i => new ResourceDirectoryEntry(i)).ToList();
-            _namedEntries = other._namedEntries;
-        }
-
-        /// <summary>
         /// Gets the number of entries added.
         /// </summary>
         public int Count => _entries.Count;

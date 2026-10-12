@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Security;
@@ -174,7 +175,7 @@ namespace IKVM.Reflection
         Type _typeof_System_Reflection_AssemblyInformationalVersionAttribute;
         Type _typeof_System_Reflection_AssemblyFileVersionAttribute;
         Type _typeof_System_Security_Permissions_CodeAccessSecurityAttribute;
-        Type _typeof_System_Security_Permissions_SecurityAction;
+
         readonly List<ResolveEventHandler> _resolvers = [];
 
         /// <summary>
@@ -550,13 +551,6 @@ namespace IKVM.Reflection
             _typeof_System_Security_Permissions_CodeAccessSecurityAttribute ??= ImportCoreLibType("System.Security.Permissions", "CodeAccessSecurityAttribute");
 
         /// <summary>
-        /// Gets the <c>System.Security.Permissions.SecurityAction</c> type of the core library, or <see langword="null"/>
-        /// if it is not defined.
-        /// </summary>
-        internal Type System_Security_Permissions_SecurityAction =>
-            _typeof_System_Security_Permissions_SecurityAction ??= ImportCoreLibType("System.Security.Permissions", "SecurityAction");
-
-        /// <summary>
         /// Gets a value indicating whether the core library is already known to the universe, without attempting to
         /// resolve it.
         /// </summary>
@@ -768,7 +762,7 @@ namespace IKVM.Reflection
         /// <exception cref="ArgumentException"><paramref name="refname"/> is not a valid assembly name.</exception>
         static string GetSimpleAssemblyName(string refname)
         {
-            if (Fusion.ParseAssemblySimpleName(refname, out var pos, out var name) != ParseAssemblyResult.OK)
+            if (Fusion.ParseAssemblySimpleName(refname, out _, out var name) != ParseAssemblyResult.OK)
                 throw new ArgumentException();
 
             return name;
@@ -787,7 +781,7 @@ namespace IKVM.Reflection
                 var simpleName = GetSimpleAssemblyName(refname);
                 for (var i = 0; i < _assemblies.Count; i++)
                 {
-                    if (simpleName.Equals(_assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(_coreLibName, refname, false, _assemblies[i].FullName, false, out var result))
+                    if (simpleName.Equals(_assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(_coreLibName, refname, false, _assemblies[i].FullName, false, out _))
                     {
                         asm = _assemblies[i];
                         _assembliesByName.Add(refname, asm);
@@ -808,7 +802,7 @@ namespace IKVM.Reflection
         {
             var simpleName = GetSimpleAssemblyName(refname);
             foreach (var asm in _dynamicAssemblies)
-                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(_coreLibName, refname, false, asm.FullName, false, out var result))
+                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(_coreLibName, refname, false, asm.FullName, false, out _))
                     return asm;
 
             return null;
@@ -839,7 +833,7 @@ namespace IKVM.Reflection
 
             if (_resolvers.Count == 0)
             {
-                asm = DefaultResolver(refname, throwOnError);
+                asm = DefaultResolver(refname);
             }
             else
             {
@@ -874,16 +868,8 @@ namespace IKVM.Reflection
         /// dynamic assemblies of the universe.
         /// </summary>
         /// <param name="refname">The assembly display name to resolve.</param>
-        /// <param name="throwOnError">Unused.</param>
         /// <returns>The matching dynamic assembly, or <see langword="null"/> if there is none.</returns>
-        Assembly DefaultResolver(string refname, bool throwOnError)
-        {
-            var asm = GetDynamicAssembly(refname);
-            if (asm != null)
-                return asm;
-
-            return null;
-        }
+        Assembly DefaultResolver(string refname) => GetDynamicAssembly(refname);
 
         /// <summary>
         /// Gets the type with the specified assembly-qualified name. A name without an assembly is looked up in the core
@@ -1001,7 +987,7 @@ namespace IKVM.Reflection
         public bool CompareAssemblyIdentity(string coreLibName, string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             return _useNativeFusion
-                ? Fusion.CompareAssemblyIdentityNative(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
+                ? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
                 : Fusion.CompareAssemblyIdentityPure(coreLibName, assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
@@ -1025,21 +1011,10 @@ namespace IKVM.Reflection
         /// Forgets every name an assembly has been cached under, after its name has changed.
         /// </summary>
         /// <param name="assembly">The assembly whose name changed.</param>
-        /// <param name="oldName">The previous name of the assembly. Unused; the cache is searched by assembly.</param>
-        internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
+        internal void RenameAssembly(Assembly assembly)
         {
-            List<string> remove = [];
-            foreach (KeyValuePair<string, Assembly> kv in _assembliesByName)
-            {
-                if (kv.Value == assembly)
-                {
-                    remove.Add(kv.Key);
-                }
-            }
-            foreach (var key in remove)
-            {
+            foreach (var key in _assembliesByName.Where(i => i.Value == assembly).Select(i => i.Key).ToList())
                 _assembliesByName.Remove(key);
-            }
         }
 
         /// <summary>

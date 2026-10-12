@@ -76,7 +76,7 @@ namespace IKVM.Reflection.Writer
         public readonly bool Equals(OrdinalOrName other) => Ordinal == other.Ordinal && StringComparer.OrdinalIgnoreCase.Equals(Name, other.Name);
 
         /// <inheritdoc />
-        public override readonly int GetHashCode() => Ordinal.GetHashCode() ^ StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
+        public override readonly int GetHashCode() => Ordinal.GetHashCode() ^ (Name is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(Name));
 
     }
 

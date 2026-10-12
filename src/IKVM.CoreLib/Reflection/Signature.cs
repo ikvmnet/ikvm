@@ -705,7 +705,7 @@ namespace IKVM.Reflection
                         bb.WriteByte((byte)0x04);   // FASTCALL
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException("callingConvention");
+                        throw new ArgumentOutOfRangeException(nameof(sig), sig.UnmanagedCallingConvention, "Unsupported unmanaged calling convention.");
                 }
             }
             else

@@ -164,6 +164,10 @@ namespace IKVM.Reflection
                 if (_declaringType.ContainsGenericParameters)
                     return true;
 
+                // a generic method definition that has not been instantiated has its own type parameters
+                if (_methodArgs == null && _method.IsGenericMethodDefinition)
+                    return true;
+
                 if (_methodArgs != null)
                     foreach (var type in _methodArgs)
                         if (type.ContainsGenericParameters)

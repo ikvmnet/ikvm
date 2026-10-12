@@ -83,12 +83,6 @@ namespace IKVM.Reflection.Emit
         readonly List<ResourceFile> _resourceFiles = [];
         readonly List<ModuleBuilder> _modules = [];
 
-        /// <summary>
-        /// Existing modules that belong to the assembly in addition to the modules defined with
-        /// <see cref="DefineDynamicModule"/>.
-        /// </summary>
-        readonly List<Module> _addedModules = [];
-
         readonly List<CustomAttributeBuilder> _customAttributes = [];
         readonly List<TypeForwarder> _typeForwarders = [];
 
@@ -215,11 +209,10 @@ namespace IKVM.Reflection.Emit
         /// <summary>
         /// Clears the cached full name and re-registers the assembly with the universe under its new name.
         /// </summary>
-        /// <param name="oldName">The name the assembly was registered under.</param>
-        void Rename(AssemblyName oldName)
+        void Rename()
         {
             fullName = null;
-            Universe.RenameAssembly(this, oldName);
+            Universe.RenameAssembly(this);
         }
 
         /// <summary>
@@ -228,9 +221,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="version">The new version, or <see langword="null"/> for 0.0.0.0.</param>
         public void __SetAssemblyVersion(Version version)
         {
-            AssemblyName oldName = GetName();
             SetVersionHelper(version);
-            Rename(oldName);
+            Rename();
         }
 
         /// <summary>
@@ -239,9 +231,8 @@ namespace IKVM.Reflection.Emit
         /// <param name="cultureName">The name of the new culture, or <see langword="null"/> for the invariant culture.</param>
         public void __SetAssemblyCulture(string cultureName)
         {
-            AssemblyName oldName = GetName();
             _culture = cultureName;
-            Rename(oldName);
+            Rename();
         }
 
         /// <summary>
@@ -331,7 +322,7 @@ namespace IKVM.Reflection.Emit
         /// <param name="portableExecutableKind">A bitwise combination of the <see cref="PortableExecutableKinds"/> values that specifies the nature of the code.</param>
         /// <param name="imageFileMachine">One of the <see cref="ImageFileMachine"/> values that specifies the target platform.</param>
         public void Save(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine) =>
-            SaveImpl(assemblyFileName, null, null, portableExecutableKind, imageFileMachine);
+            SaveImpl(assemblyFileName, portableExecutableKind, imageFileMachine);
 
         /// <summary>
         /// Implements the logic to save all of the modules within the assembly. The module whose file name matches
@@ -339,12 +330,10 @@ namespace IKVM.Reflection.Emit
         /// is defined. Every other module is written to its own file and linked from the manifest.
         /// </summary>
         /// <param name="assemblyFileName">The file name of the manifest module.</param>
-        /// <param name="peStream">The stream to write the manifest module to, or <see langword="null"/> to write it to a file.</param>
-        /// <param name="pdbStream">The stream to write the manifest module's symbols to, or <see langword="null"/> to write them to a file.</param>
         /// <param name="portableExecutableKind">The nature of the code in the executables.</param>
         /// <param name="imageFileMachine">The target platform.</param>
         /// <exception cref="NotSupportedException">The entry point is in a module other than the manifest module.</exception>
-        void SaveImpl(string assemblyFileName, Stream peStream, Stream pdbStream, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
+        void SaveImpl(string assemblyFileName, PortableExecutableKinds portableExecutableKind, ImageFileMachine imageFileMachine)
         {
             ModuleBuilder manifestModule = null;
 
@@ -372,7 +361,7 @@ namespace IKVM.Reflection.Emit
                 (System.Reflection.AssemblyHashAlgorithm)_hashAlgorithm);
 
             // final copy of manifest module native resources
-            var nativeResources = manifestModule.NativeResources != null ? new ModuleResourceSectionBuilder(manifestModule.NativeResources) : new ModuleResourceSectionBuilder();
+            var nativeResources = new ModuleResourceSectionBuilder();
 
             // version info specified on assembly: insert into manifest module
             if (_versionInfo != null)
@@ -427,7 +416,7 @@ namespace IKVM.Reflection.Emit
                     }
                     else
                     {
-                        ModuleWriter.WriteModule(null, null, module, _fileKind, portableExecutableKind, imageFileMachine, module.NativeResources, default);
+                        ModuleWriter.WriteModule(null, null, module, _fileKind, portableExecutableKind, imageFileMachine, null, default);
                         fileToken = AddFile(manifestModule, module.FileName, 0 /*ContainsMetaData*/);
                     }
 
@@ -435,15 +424,8 @@ namespace IKVM.Reflection.Emit
                 }
             }
 
-            // import existing modules
-            foreach (var module in _addedModules)
-            {
-                var fileToken = AddFile(manifestModule, module.FullyQualifiedName, 0 /*ContainsMetaData*/);
-                module.ExportTypes(fileToken, manifestModule);
-            }
-
             // finally, write the manifest module
-            ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, peStream, null, pdbStream);
+            ModuleWriter.WriteModule(_keyPair, _publicKey, manifestModule, _fileKind, portableExecutableKind, imageFileMachine, nativeResources, _entryPoint, null, null, null, null);
         }
 
         /// <summary>
@@ -455,9 +437,7 @@ namespace IKVM.Reflection.Emit
         /// <returns>A handle to the added <c>File</c> row.</returns>
         AssemblyFileHandle AddFile(ModuleBuilder manifestModule, string fileName, int flags)
         {
-            var fullPath = fileName;
-            if (Dir != null)
-                fullPath = Path.Combine(Dir, fileName);
+            var fullPath = Path.Combine(Dir, fileName);
 
             using var sha1 = SHA1.Create();
             using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
@@ -537,9 +517,6 @@ namespace IKVM.Reflection.Emit
             foreach (var module in _modules)
                 module.GetTypesImpl(list);
 
-            foreach (var module in _addedModules)
-                module.GetTypesImpl(list);
-
             return list.ToArray();
         }
 
@@ -553,13 +530,6 @@ namespace IKVM.Reflection.Emit
                     return type;
             }
 
-            foreach (Module module in _addedModules)
-            {
-                var type = module.FindType(typeName);
-                if (type != null)
-                    return type;
-            }
-
             return null;
         }
 
@@ -569,13 +539,6 @@ namespace IKVM.Reflection.Emit
             foreach (var mb in _modules)
             {
                 var type = mb.FindTypeIgnoreCase(lowerCaseName);
-                if (type != null)
-                    return type;
-            }
-
-            foreach (Module module in _addedModules)
-            {
-                var type = module.FindTypeIgnoreCase(lowerCaseName);
                 if (type != null)
                     return type;
             }
@@ -616,10 +579,6 @@ namespace IKVM.Reflection.Emit
                 if (getResourceModules || !module.IsResource())
                     list.Add(module);
 
-            foreach (var module in _addedModules)
-                if (getResourceModules || !module.IsResource())
-                    list.Add(module);
-
             return list.ToArray();
         }
 
@@ -631,10 +590,6 @@ namespace IKVM.Reflection.Emit
         public override Module GetModule(string name)
         {
             foreach (var module in _modules)
-                if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                    return module;
-
-            foreach (var module in _addedModules)
                 if (module.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return module;
 

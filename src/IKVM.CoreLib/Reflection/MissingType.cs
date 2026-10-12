@@ -42,12 +42,6 @@ namespace IKVM.Reflection
         int _token;
 
         /// <summary>
-        /// The type attributes of the exported type entry that resolved to this type, recorded by
-        /// <see cref="SetMetadataTokenForMissing(int, int)"/>.
-        /// </summary>
-        int _flags;
-
-        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="module">The module the missing type is expected to be defined in.</param>
@@ -123,7 +117,7 @@ namespace IKVM.Reflection
         public override Module Module => _module;
 
         /// <summary>
-        /// Gets the token recorded by <see cref="SetMetadataTokenForMissing(int, int)"/>, or 0 if none was recorded.
+        /// Gets the token recorded by <see cref="SetMetadataTokenForMissing(int)"/>, or 0 if none was recorded.
         /// </summary>
         public override int MetadataToken => _token;
 
@@ -263,16 +257,13 @@ namespace IKVM.Reflection
         internal override Type BindTypeParameters(IGenericBinder binder) => this;
 
         /// <summary>
-        /// Records the token and type attributes of the exported type entry (or other reference) that resolved to this
-        /// missing type.
+        /// Records the token of the exported type entry (or other reference) that resolved to this missing type.
         /// </summary>
         /// <param name="token">The token to report from <see cref="MetadataToken"/>, such as the type definition id hint of an exported type.</param>
-        /// <param name="flags">The type attributes of the exported type entry, or 0.</param>
         /// <returns>This instance.</returns>
-        internal override Type SetMetadataTokenForMissing(int token, int flags)
+        internal override Type SetMetadataTokenForMissing(int token)
         {
             _token = token;
-            _flags = flags;
             return this;
         }
 
