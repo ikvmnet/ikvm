@@ -812,8 +812,12 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_canPassLongToCallback(JNIEnv
     (*env)->CallVoidMethod(env, cb, mth, value);
 }
 
+// the virtual machine passed to JNI_OnLoad, checked by JniEnvTests.c
+JavaVM* onLoadVM = NULL;
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 {
+    onLoadVM = vm;
     return JNI_VERSION_1_8;
 }
 
